@@ -1,11 +1,12 @@
-import GroupMemberForm from '../../form';
 import CardList from './card-list';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { getTranslations } from 'next-intl/server';
+import { Check, CircleHelp, Mail, Send, X } from 'lucide-react';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 interface SearchParams {
@@ -30,28 +31,86 @@ export default async function HomeworkCheck({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const t = await getTranslations();
+  // const t = await getTranslations();
 
   const post = await getPostData(postId);
   const group = await getGroupData(wsId, groupId);
+  const status = await getPostStatus(groupId, postId);
 
   const { data: rawUsers } = await getUserData(wsId, groupId, searchParams);
   const users = rawUsers.map((u) => ({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
   }));
+
   return (
     <div>
       <FeatureSummary
-        pluralTitle={group.name || t('ws-user-groups.plural')}
-        singularTitle={group.name || t('ws-user-groups.singular')}
-        description={t('ws-user-groups.description')}
-        createTitle={t('ws-user-groups.add_user')}
-        createDescription={t('ws-user-groups.add_user_description')}
-        form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
+        title={
+          <Link
+            href={`/${wsId}/users/groups/${groupId}`}
+            className="text-2xl font-bold hover:underline"
+          >
+            {group.name}
+          </Link>
+        }
+        description={`${post.title}\n\n${post.content}`.trim()}
+        action={
+          <Button>
+            <Mail className="mr-1" />
+            Send Email
+          </Button>
+        }
       />
       <Separator className="my-4" />
-      <CardList wsId={wsId} post={post} users={users}></CardList>
+      <div className="gird-cols-1 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-dynamic-purple/15 text-dynamic-purple border-dynamic-purple/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <Send />
+            Email sent
+          </div>
+          <Separator className="bg-dynamic-purple/15 my-1" />
+          <div className="text-3xl font-semibold">
+            {status.sent}
+            <span className="opacity-50">/{status.count}</span>
+          </div>
+        </div>
+        <div className="bg-dynamic-green/15 text-dynamic-green border-dynamic-green/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <Check />
+            Checked
+          </div>
+          <Separator className="bg-dynamic-green/15 my-1" />
+          <div className="text-3xl font-semibold">
+            {status.checked}
+            <span className="opacity-50">/{status.count}</span>
+          </div>
+        </div>
+        <div className="bg-dynamic-red/15 text-dynamic-red border-dynamic-red/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <X />
+            Failed
+          </div>
+          <Separator className="bg-dynamic-red/15 my-1" />
+          <div className="text-3xl font-semibold">
+            {status.failed}
+            <span className="opacity-50">/{status.count}</span>
+          </div>
+        </div>
+        <div className="bg-dynamic-blue/15 text-dynamic-blue border-dynamic-blue/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <CircleHelp />
+            Unknown
+          </div>
+          <Separator className="bg-dynamic-blue/15 my-1" />
+          <div className="text-3xl font-semibold">
+            {status.tenative}
+            <span className="opacity-50">/{status.count}</span>
+          </div>
+        </div>
+      </div>
+      <Separator className="my-4" />
+      <CardList wsId={wsId} post={post} users={users} />
     </div>
   );
 }
@@ -85,6 +144,33 @@ async function getGroupData(wsId: string, groupId: string) {
   if (!data) notFound();
 
   return data;
+}
+
+async function getPostStatus(groupId: string, postId: string) {
+  const supabase = createClient();
+
+  const { data: users, count } = await supabase
+    .from('workspace_user_groups_users')
+    .select(
+      '...workspace_users(id, user_group_post_checks!inner(post_id, is_completed))',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('group_id', groupId)
+    .eq('workspace_users.user_group_post_checks.post_id', postId);
+
+  return {
+    sent: 0,
+    checked: users?.filter((user) =>
+      user?.user_group_post_checks?.find((check) => check?.is_completed)
+    ).length,
+    failed: users?.filter((user) =>
+      user?.user_group_post_checks?.find((check) => !check?.is_completed)
+    ).length,
+    tenative: users?.filter((user) => !user.id).length,
+    count,
+  };
 }
 
 async function getUserData(

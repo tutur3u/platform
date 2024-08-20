@@ -1,3 +1,4 @@
+import { PostEmailStatus } from './post';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -271,6 +272,9 @@ export default function UserGroupPosts({
                 <div className="whitespace-pre-line text-sm opacity-70">
                   {post.content}
                 </div>
+              )}
+              {groupId && post.id && (
+                <PostEmailStatus groupId={groupId} postId={post.id} />
               )}
             </Link>
           ))

@@ -10,7 +10,9 @@ export async function PUT(
 
   const { error } = await supabase
     .from('user_group_post_checks')
-    .update({
+    .upsert({
+      post_id: postId,
+      user_id: data.user_id,
       notes: data.notes,
       is_completed: data.is_completed,
       created_at: data.created_at,

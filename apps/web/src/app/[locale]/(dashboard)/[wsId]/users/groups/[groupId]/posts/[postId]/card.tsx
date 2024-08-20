@@ -3,13 +3,15 @@ import useEmail from '@/hooks/useEmail';
 import { cn } from '@/lib/utils';
 import { GroupPostCheck } from '@/types/db';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { isEmail } from '@/utils/email-helper';
 import { createClient } from '@/utils/supabase/client';
 import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
 import { Textarea } from '@repo/ui/components/ui/textarea';
-import { Check, Mail, X } from 'lucide-react';
+import { Check, Mail, MoveRight, X } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -31,11 +33,9 @@ export interface UserGroupPost {
 }
 
 function UserCard({ user, wsId, post }: Props) {
-  const [check, setCheck] = useState<Partial<GroupPostCheck>>({
-    user_id: user.id,
-    post_id: post.id,
-  });
+  const router = useRouter();
 
+  const [check, setCheck] = useState<Partial<GroupPostCheck>>();
   const [saving, setSaving] = useState(false);
 
   const { sendEmail, loading, error, success } = useEmail();
@@ -52,12 +52,17 @@ function UserCard({ user, wsId, post }: Props) {
         .select('*')
         .eq('user_id', user.id)
         .eq('post_id', post.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching data:', error.message);
       } else if (data) {
         setCheck(data);
+      } else {
+        setCheck({
+          user_id: user.id,
+          post_id: post.id,
+        });
       }
 
       setSaving(false);
@@ -105,6 +110,7 @@ function UserCard({ user, wsId, post }: Props) {
         post_id: post.id,
         is_completed: isCompleted,
       }));
+      router.refresh();
     } else {
       console.error('Error saving/updating data');
     }
@@ -167,11 +173,24 @@ function UserCard({ user, wsId, post }: Props) {
         <div>
           <Button
             onClick={handleSendEmail}
-            disabled={loading}
+            disabled={
+              loading ||
+              !user.email ||
+              user.email.endsWith('@easy.com' || !isEmail(user.email)) ||
+              check?.is_completed == null
+            }
             variant="secondary"
           >
             <Mail className="mr-2" />
-            Send Email
+            <span className="opacity-70">Send email</span>
+            {user.email && (
+              <>
+                <MoveRight className="mx-2 hidden h-4 w-4 opacity-70 md:inline-block" />
+                <span className="hidden underline md:inline-block">
+                  {user.email}
+                </span>
+              </>
+            )}
           </Button>
           {error && <p>Error: {error}</p>}
           {success && <p>Email sent successfully!</p>}
@@ -182,7 +201,7 @@ function UserCard({ user, wsId, post }: Props) {
             variant={
               check?.is_completed != null && check.is_completed
                 ? 'outline'
-                : undefined
+                : 'ghost'
             }
             onClick={() => handleSaveStatus({ isCompleted: false })}
             className={cn(
@@ -191,7 +210,7 @@ function UserCard({ user, wsId, post }: Props) {
                 : '',
               'border'
             )}
-            disabled={saving || check?.is_completed == null}
+            disabled={saving || !check}
           >
             <X />
           </Button>
@@ -199,7 +218,7 @@ function UserCard({ user, wsId, post }: Props) {
             variant={
               check?.is_completed != null && !check.is_completed
                 ? 'outline'
-                : undefined
+                : 'ghost'
             }
             onClick={() => handleSaveStatus({ isCompleted: true })}
             className={cn(
@@ -208,7 +227,7 @@ function UserCard({ user, wsId, post }: Props) {
                 : '',
               'border'
             )}
-            disabled={saving || check?.is_completed == null}
+            disabled={saving || !check}
           >
             <Check />
           </Button>

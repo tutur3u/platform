@@ -10,7 +10,8 @@ interface Props<T> {
   trigger?: ReactNode;
   form?: ReactNode;
   href?: string;
-  pluralTitle: string;
+  title?: ReactNode;
+  pluralTitle?: string;
   singularTitle?: string;
   description: ReactNode;
   action?: ReactNode;
@@ -33,6 +34,7 @@ export default function FeatureSummary<T>({
   defaultData,
   form,
   href,
+  title,
   pluralTitle,
   singularTitle,
   description,
@@ -66,8 +68,8 @@ export default function FeatureSummary<T>({
   return (
     <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
       <div>
-        <h1 className="text-2xl font-bold">{pluralTitle}</h1>
-        <p className="text-foreground/80">{description}</p>
+        {title || <h1 className="text-2xl font-bold">{pluralTitle}</h1>}
+        <p className="text-foreground/80 whitespace-pre-wrap">{description}</p>
       </div>
 
       <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
