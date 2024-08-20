@@ -298,7 +298,7 @@ export function FileUploader(props: FileUploaderProps) {
           Clear Files
         </Button>
         <Button
-          type="submit"
+          type="button"
           className="w-full"
           onClick={onSubmit}
           disabled={

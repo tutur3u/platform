@@ -367,6 +367,7 @@ export function ChatPanel({
             <>
               <div className="flex gap-2">
                 <Button
+                  type="button"
                   variant="secondary"
                   className="w-full"
                   onClick={async () => {
@@ -387,6 +388,7 @@ export function ChatPanel({
                   <div className="line-clamp-1">{t('public')}</div>
                 </Button>
                 <Button
+                  type="button"
                   variant="secondary"
                   className="w-full"
                   onClick={async () => {
@@ -428,6 +430,7 @@ export function ChatPanel({
 
               <div className="grid w-full gap-2">
                 <Button
+                  type="button"
                   variant="outline"
                   className="w-full"
                   onClick={() => {
@@ -445,6 +448,7 @@ export function ChatPanel({
                   {t('copy_public_link')}
                 </Button>
                 <Button
+                  type="button"
                   className="w-full"
                   onClick={() => window.open(`${BASE_URL}/ai/chats/${id}`)}
                   disabled={disablePublicLink}

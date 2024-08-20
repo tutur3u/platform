@@ -513,6 +513,7 @@ export function PromptForm({
                             </span>
                             <Button
                               size="xs"
+                              type="button"
                               variant="ghost"
                               onClick={() => {
                                 const newFiles = files.filter((file) => {
@@ -579,6 +580,7 @@ export function PromptForm({
                             </span>
                             <Button
                               size="xs"
+                              type="button"
                               variant="ghost"
                               onClick={() => {
                                 const newFiles = files.filter((file) => {
@@ -643,6 +645,7 @@ export function PromptForm({
                             </span>
                             <Button
                               size="xs"
+                              type="button"
                               variant="ghost"
                               onClick={() => {
                                 const newFiles = files.filter((file) => {
