@@ -17,6 +17,7 @@ import {
   FileText,
   Globe,
   ImageIcon,
+  Languages,
   Lock,
   NotebookPen,
   NotebookTabs,
@@ -202,14 +203,16 @@ export function PromptForm({
         className="w-full"
       >
         <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto text-xs font-semibold">
+          <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
             <Button
               size="xs"
               type="button"
               variant={responseTypes.summary ? undefined : 'secondary'}
               className={cn(
-                'border',
-                responseTypes.summary ? 'border-transparent' : 'bg-background'
+                'border text-xs',
+                responseTypes.summary
+                  ? 'border-pink-500/20 bg-pink-500/10 text-pink-700 hover:bg-pink-500/20 dark:border-pink-300/20 dark:bg-pink-300/20 dark:text-pink-300 dark:hover:bg-pink-300/30'
+                  : 'bg-background'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -217,6 +220,7 @@ export function PromptForm({
                   summary: !types.summary,
                 }))
               }
+              disabled
             >
               <ArrowDownWideNarrow className="mr-1 h-4 w-4" />
               Chat Summary
@@ -226,8 +230,10 @@ export function PromptForm({
               type="button"
               variant={responseTypes.notes ? undefined : 'secondary'}
               className={cn(
-                'border',
-                responseTypes.notes ? 'border-transparent' : 'bg-background'
+                'border text-xs',
+                responseTypes.notes
+                  ? 'border-purple-500/20 bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 dark:border-purple-300/20 dark:bg-purple-300/20 dark:text-purple-300 dark:hover:bg-purple-300/30'
+                  : 'bg-background'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -235,6 +241,7 @@ export function PromptForm({
                   notes: !types.notes,
                 }))
               }
+              disabled
             >
               <NotebookPen className="mr-1 h-4 w-4" />
               Chat Notes
@@ -244,9 +251,9 @@ export function PromptForm({
               type="button"
               variant={responseTypes.multiChoiceQuiz ? undefined : 'secondary'}
               className={cn(
-                'border',
+                'border text-xs',
                 responseTypes.multiChoiceQuiz
-                  ? 'border-transparent'
+                  ? 'border-green-500/20 bg-green-500/10 text-green-700 hover:bg-green-500/20 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300 dark:hover:bg-green-300/30'
                   : 'bg-background'
               )}
               onClick={() =>
@@ -255,6 +262,7 @@ export function PromptForm({
                   multiChoiceQuiz: !types.multiChoiceQuiz,
                 }))
               }
+              disabled
             >
               <SquareStack className="mr-1 h-4 w-4" />
               Multiple Choice
@@ -264,9 +272,9 @@ export function PromptForm({
               type="button"
               variant={responseTypes.paragraphQuiz ? undefined : 'secondary'}
               className={cn(
-                'border',
+                'border text-xs',
                 responseTypes.paragraphQuiz
-                  ? 'border-transparent'
+                  ? 'border-orange-500/20 bg-orange-500/10 text-orange-700 hover:bg-orange-500/20 dark:border-orange-300/20 dark:bg-orange-300/20 dark:text-orange-300 dark:hover:bg-orange-300/30'
                   : 'bg-background'
               )}
               onClick={() =>
@@ -275,6 +283,7 @@ export function PromptForm({
                   paragraphQuiz: !types.paragraphQuiz,
                 }))
               }
+              disabled
             >
               <PencilLine className="mr-1 h-4 w-4" />
               Paragraph Answers
@@ -284,9 +293,9 @@ export function PromptForm({
               type="button"
               variant={responseTypes.flashcards ? undefined : 'secondary'}
               className={cn(
-                'border',
+                'border text-xs',
                 responseTypes.flashcards
-                  ? 'border-transparent'
+                  ? 'border-blue-500/20 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/20 dark:text-blue-300 dark:hover:bg-blue-300/30'
                   : 'bg-background'
               )}
               onClick={() =>
@@ -295,6 +304,7 @@ export function PromptForm({
                   flashcards: !types.flashcards,
                 }))
               }
+              disabled
             >
               <NotebookTabs className="mr-1 h-4 w-4" />
               Flashcards
@@ -304,11 +314,27 @@ export function PromptForm({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  disabled={isInternalLoading}
+                  // disabled={isInternalLoading}
+                  size="icon"
+                  variant="ghost"
+                  className={cn('mr-1 transition duration-300')}
+                  disabled
+                >
+                  <Languages />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('ai_chat.response_language')}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  // disabled={isInternalLoading}
                   size="icon"
                   variant="ghost"
                   className={cn('transition duration-300')}
                   onClick={toggleChatFileUpload}
+                  disabled
                 >
                   <Paperclip />
                 </Button>

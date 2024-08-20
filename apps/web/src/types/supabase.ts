@@ -18,9 +18,11 @@ export type Database = {
           creator_id: string | null;
           finish_reason: string | null;
           id: string;
+          metadata: Json | null;
           model: string | null;
           prompt_tokens: number;
           role: Database['public']['Enums']['chat_role'];
+          type: Database['public']['Enums']['ai_message_type'];
         };
         Insert: {
           chat_id: string;
@@ -30,9 +32,11 @@ export type Database = {
           creator_id?: string | null;
           finish_reason?: string | null;
           id?: string;
+          metadata?: Json | null;
           model?: string | null;
           prompt_tokens?: number;
           role: Database['public']['Enums']['chat_role'];
+          type?: Database['public']['Enums']['ai_message_type'];
         };
         Update: {
           chat_id?: string;
@@ -42,9 +46,11 @@ export type Database = {
           creator_id?: string | null;
           finish_reason?: string | null;
           id?: string;
+          metadata?: Json | null;
           model?: string | null;
           prompt_tokens?: number;
           role?: Database['public']['Enums']['chat_role'];
+          type?: Database['public']['Enums']['ai_message_type'];
         };
         Relationships: [
           {
@@ -4634,6 +4640,14 @@ export type Database = {
       };
     };
     Enums: {
+      ai_message_type:
+        | 'message'
+        | 'file'
+        | 'summary'
+        | 'notes'
+        | 'multi_choice_quiz'
+        | 'paragraph_quiz'
+        | 'flashcards';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       workspace_role_permission:
         | 'view_infrastructure'

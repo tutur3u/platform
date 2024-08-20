@@ -1232,6 +1232,10 @@
     "copy_public_link": "Sao chép liên kết công khai",
     "open_public_link": "Mở liên kết công khai",
     "summary": "Tóm tắt",
+    "notes": "Ghi chú",
+    "multi_choice_quiz": "Câu hỏi nhiều lựa chọn",
+    "paragraph_quiz": "Câu hỏi đoạn văn",
+    "flashcards": "Thẻ ghi nhớ",
     "correct_answer_is_highlighed": "Câu trả lời đúng đã được đánh dấu",
     "you_selected": "Bạn đã chọn",
     "which_is": "đó là một câu trả lời",
@@ -1247,7 +1251,8 @@
     "permission_denied": "Quyền truy cập bị từ chối",
     "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
     "upload_files": "Tải lên tập tin",
-    "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này."
+    "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
+    "response_language": "Ngôn ngữ phản hồi"
   },
   "crud-ops": {
     "ops": "Thao tác",
