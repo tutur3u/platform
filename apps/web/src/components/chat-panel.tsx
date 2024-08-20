@@ -14,19 +14,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
+import { IconStop } from '@repo/ui/components/ui/icons';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
 import {
   ArrowDownToLine,
-  Bolt,
   Check,
   CheckCheck,
   ExternalLink,
@@ -109,7 +104,7 @@ export function ChatPanel({
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
-            !!chats ? 'right-2 md:right-6 xl:right-8' : 'right-2 md:right-4'
+            !!chats ? 'right-2 md:-right-2 lg:-right-6' : 'right-2 md:right-4'
           )}
           style={{
             bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',
@@ -237,29 +232,20 @@ export function ChatPanel({
                 </div>
               </div>
 
-              {/* {isLoading ? (
-            <Button
-              variant="outline"
-              onClick={() => stop()}
-              className="bg-background/20"
-            >
-              <IconStop className="mr-2" />
-              {t('stop_generating')}
-            </Button>
-          ) : messages?.length > 0 ? (
-            <Button
-              variant="outline"
-              onClick={() => reload()}
-              className="bg-background/20"
-            >
-              <IconRefresh className="mr-2" />
-              {t('regenerate_response')}
-            </Button>
-          ) : null} */}
+              {isLoading ? (
+                <Button
+                  variant="outline"
+                  onClick={() => stop()}
+                  className="bg-background/20"
+                >
+                  <IconStop className="mr-2" />
+                  {t('stop_generating')}
+                </Button>
+              ) : null}
             </div>
 
             <div
-              className={`bg-background/20 flex flex-col items-start justify-end rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all`}
+              className={`bg-background/20 flex flex-col items-start justify-start rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
             >
               <ChatModelSelector
                 open={showExtraOptions}
@@ -272,69 +258,28 @@ export function ChatPanel({
                 setOpen={setShowExtraOptions}
                 onChange={setModel}
               />
-              <div className="flex w-full items-center">
-                <PromptForm
-                  chat={chat}
-                  onSubmit={async (value) => {
-                    // If there is no id, create a new chat
-                    if (!id) return await createChat(value);
+              <PromptForm
+                id={id}
+                chat={chat}
+                onSubmit={async (value) => {
+                  // If there is no id, create a new chat
+                  if (!id) return await createChat(value);
 
-                    // If there is an id, append the message to the chat
-                    await append({
-                      id,
-                      content: value,
-                      role: 'user',
-                    });
-                  }}
-                  input={input}
-                  inputRef={inputRef}
-                  setInput={setInput}
-                  isLoading={isLoading}
-                />
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className={cn(
-                        'transition duration-300',
-                        !id
-                          ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
-                          : 'pointer-events-auto ml-2 w-10 opacity-100'
-                      )}
-                      disabled={!id}
-                      onClick={() => setShowChatVisibility((prev) => !prev)}
-                    >
-                      {chat?.is_public ? <Globe /> : <Lock />}
-                      <span className="sr-only">{t('chat_visibility')}</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t('chat_visibility')}</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      type="submit"
-                      variant="ghost"
-                      onClick={() => setShowExtraOptions((prev) => !prev)}
-                      className={cn(
-                        'transition-all duration-300',
-                        id
-                          ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
-                          : 'pointer-events-auto ml-2 w-10 opacity-100'
-                      )}
-                      disabled={isLoading || showExtraOptions}
-                    >
-                      <Bolt />
-                      <span className="sr-only">{t('extra_options')}</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t('extra_options')}</TooltipContent>
-                </Tooltip>
-              </div>
+                  // If there is an id, append the message to the chat
+                  await append({
+                    id,
+                    content: value,
+                    role: 'user',
+                  });
+                }}
+                input={input}
+                inputRef={inputRef}
+                setInput={setInput}
+                isLoading={isLoading}
+                showExtraOptions={showExtraOptions}
+                setShowExtraOptions={setShowExtraOptions}
+                setShowChatVisibility={setShowChatVisibility}
+              />
             </div>
           </div>
         )}

@@ -16,7 +16,19 @@ import {
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
 import { UseChatHelpers } from 'ai/react';
-import { Mic, Paperclip, RefreshCw } from 'lucide-react';
+import {
+  ArrowDownWideNarrow,
+  Bolt,
+  Globe,
+  Lock,
+  Mic,
+  NotebookPen,
+  NotebookTabs,
+  Paperclip,
+  PencilLine,
+  RefreshCw,
+  SquareStack,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -24,19 +36,27 @@ import Textarea from 'react-textarea-autosize';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
+  id: string | undefined;
   chat: Partial<AIChat> | undefined;
   inputRef: React.RefObject<HTMLTextAreaElement>;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
+  showExtraOptions: boolean;
+  setShowExtraOptions: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowChatVisibility: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function PromptForm({
   onSubmit,
+  id,
   chat,
   input,
   inputRef,
   setInput,
   isLoading,
+  showExtraOptions,
+  setShowExtraOptions,
+  setShowChatVisibility,
 }: PromptProps) {
   const t = useTranslations();
 
@@ -157,6 +177,14 @@ export function PromptForm({
   //   };
   // }, [microphoneState, connectionState]);
 
+  const [responseTypes, setResponseTypes] = useState<{
+    summary?: boolean;
+    notes?: boolean;
+    multiChoiceQuiz?: boolean;
+    paragraphQuiz?: boolean;
+    flashcards?: boolean;
+  }>({});
+
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
       <form
@@ -169,21 +197,106 @@ export function PromptForm({
         ref={formRef}
         className="w-full"
       >
-        <div className="bg-background/70 flex max-h-60 w-full items-end overflow-hidden rounded-lg border p-2 pl-4">
-          <Textarea
-            ref={inputRef}
-            tabIndex={0}
-            onKeyDown={onKeyDown}
-            rows={1}
-            value={input}
-            // value={[input, caption || ''].filter(Boolean).join(' ')}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`${t('ai_chat.send_message')}.`}
-            spellCheck={false}
-            maxRows={7}
-            className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
-          />
-          <div className="flex">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto text-xs font-semibold">
+            <Button
+              size="xs"
+              type="button"
+              variant={responseTypes.summary ? undefined : 'secondary'}
+              className={cn(
+                'border',
+                responseTypes.summary ? 'border-transparent' : 'bg-background'
+              )}
+              onClick={() =>
+                setResponseTypes((types) => ({
+                  ...types,
+                  summary: !types.summary,
+                }))
+              }
+            >
+              <ArrowDownWideNarrow className="mr-1 h-4 w-4" />
+              Chat Summary
+            </Button>
+            <Button
+              size="xs"
+              type="button"
+              variant={responseTypes.notes ? undefined : 'secondary'}
+              className={cn(
+                'border',
+                responseTypes.notes ? 'border-transparent' : 'bg-background'
+              )}
+              onClick={() =>
+                setResponseTypes((types) => ({
+                  ...types,
+                  notes: !types.notes,
+                }))
+              }
+            >
+              <NotebookPen className="mr-1 h-4 w-4" />
+              Chat Notes
+            </Button>
+            <Button
+              size="xs"
+              type="button"
+              variant={responseTypes.multiChoiceQuiz ? undefined : 'secondary'}
+              className={cn(
+                'border',
+                responseTypes.multiChoiceQuiz
+                  ? 'border-transparent'
+                  : 'bg-background'
+              )}
+              onClick={() =>
+                setResponseTypes((types) => ({
+                  ...types,
+                  multiChoiceQuiz: !types.multiChoiceQuiz,
+                }))
+              }
+            >
+              <SquareStack className="mr-1 h-4 w-4" />
+              Multiple Choice
+            </Button>
+            <Button
+              size="xs"
+              type="button"
+              variant={responseTypes.paragraphQuiz ? undefined : 'secondary'}
+              className={cn(
+                'border',
+                responseTypes.paragraphQuiz
+                  ? 'border-transparent'
+                  : 'bg-background'
+              )}
+              onClick={() =>
+                setResponseTypes((types) => ({
+                  ...types,
+                  paragraphQuiz: !types.paragraphQuiz,
+                }))
+              }
+            >
+              <PencilLine className="mr-1 h-4 w-4" />
+              Paragraph Answers
+            </Button>
+            <Button
+              size="xs"
+              type="button"
+              variant={responseTypes.flashcards ? undefined : 'secondary'}
+              className={cn(
+                'border',
+                responseTypes.flashcards
+                  ? 'border-transparent'
+                  : 'bg-background'
+              )}
+              onClick={() =>
+                setResponseTypes((types) => ({
+                  ...types,
+                  flashcards: !types.flashcards,
+                }))
+              }
+            >
+              <NotebookTabs className="mr-1 h-4 w-4" />
+              Flashcards
+            </Button>
+          </div>
+          <div className="flex items-center">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -306,6 +419,51 @@ export function PromptForm({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  size="icon"
+                  variant="ghost"
+                  className={cn(
+                    'transition duration-300',
+                    !id
+                      ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
+                      : 'pointer-events-auto ml-1 w-10 opacity-100'
+                  )}
+                  disabled={!id}
+                  onClick={() => setShowChatVisibility((prev) => !prev)}
+                >
+                  {chat?.is_public ? <Globe /> : <Lock />}
+                  <span className="sr-only">
+                    {t('ai_chat.chat_visibility')}
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('ai_chat.chat_visibility')}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  type="submit"
+                  variant="ghost"
+                  onClick={() => setShowExtraOptions((prev) => !prev)}
+                  className={cn(
+                    'transition-all duration-300',
+                    id
+                      ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
+                      : 'pointer-events-auto ml-1 w-10 opacity-100'
+                  )}
+                  disabled={isLoading || showExtraOptions}
+                >
+                  <Bolt />
+                  <span className="sr-only">{t('ai_chat.extra_options')}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('ai_chat.extra_options')}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
                   type="submit"
                   disabled={isInternalLoading || !input}
                   size="icon"
@@ -313,7 +471,7 @@ export function PromptForm({
                     'transition-all duration-300',
                     !input
                       ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
-                      : 'pointer-events-auto w-10 opacity-100'
+                      : 'pointer-events-auto ml-1 w-10 opacity-100'
                   )}
                 >
                   <IconArrowElbow />
@@ -323,6 +481,22 @@ export function PromptForm({
               <TooltipContent>{t('ai_chat.send_message')}</TooltipContent>
             </Tooltip>
           </div>
+        </div>
+
+        <div className="flex max-h-60 w-full items-end overflow-hidden rounded-lg bg-transparent">
+          <Textarea
+            ref={inputRef}
+            tabIndex={0}
+            onKeyDown={onKeyDown}
+            rows={1}
+            value={input}
+            // value={[input, caption || ''].filter(Boolean).join(' ')}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={`${t('ai_chat.send_message')}.`}
+            spellCheck={false}
+            maxRows={7}
+            className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
+          />
         </div>
       </form>
     </Dialog>
