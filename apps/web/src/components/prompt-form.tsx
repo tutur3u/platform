@@ -1,17 +1,12 @@
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@repo/ui/components/ui/dialog';
+import { Dialog } from '@repo/ui/components/ui/dialog';
 import { IconArrowElbow } from '@repo/ui/components/ui/icons';
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
@@ -19,15 +14,18 @@ import { UseChatHelpers } from 'ai/react';
 import {
   ArrowDownWideNarrow,
   Bolt,
+  FileText,
   Globe,
+  ImageIcon,
   Lock,
-  Mic,
   NotebookPen,
   NotebookTabs,
+  Package,
   Paperclip,
   PencilLine,
   RefreshCw,
   SquareStack,
+  X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -38,25 +36,31 @@ export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
   id: string | undefined;
   chat: Partial<AIChat> | undefined;
+  files: File[];
+  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
   inputRef: React.RefObject<HTMLTextAreaElement>;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
   showExtraOptions: boolean;
   setShowExtraOptions: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowChatVisibility: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleChatFileUpload: () => void;
+  toggleChatVisibility: () => void;
 }
 
 export function PromptForm({
   onSubmit,
   id,
   chat,
+  files,
+  setFiles,
   input,
   inputRef,
   setInput,
   isLoading,
   showExtraOptions,
   setShowExtraOptions,
-  setShowChatVisibility,
+  toggleChatFileUpload,
+  toggleChatVisibility,
 }: PromptProps) {
   const t = useTranslations();
 
@@ -300,11 +304,11 @@ export function PromptForm({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  disabled
-                  // disabled={isInternalLoading}
+                  disabled={isInternalLoading}
                   size="icon"
                   variant="ghost"
                   className={cn('transition duration-300')}
+                  onClick={toggleChatFileUpload}
                 >
                   <Paperclip />
                 </Button>
@@ -312,7 +316,7 @@ export function PromptForm({
               <TooltipContent>{t('ai_chat.add_attachments')}</TooltipContent>
             </Tooltip>
 
-            <Tooltip>
+            {/* <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   size="icon"
@@ -325,50 +329,50 @@ export function PromptForm({
                     chat?.id && isInternalLoading ? 'md:mr-0' : ''
                   )}
                   type="button"
-                  // onClick={() => {
-                  //   if (microphoneState === MicrophoneState.Error) {
-                  //     setShowPermissionDenied(true);
-                  //     return;
-                  //   }
+                  onClick={() => {
+                    if (microphoneState === MicrophoneState.Error) {
+                      setShowPermissionDenied(true);
+                      return;
+                    }
 
-                  //   if (
-                  //     microphoneState === MicrophoneState.Ready ||
-                  //     microphoneState === MicrophoneState.Paused
-                  //   ) {
-                  //     connectToDeepgram({
-                  //       model: 'nova-2',
-                  //       interim_results: true,
-                  //       smart_format: true,
-                  //       filler_words: true,
-                  //       utterance_end_ms: 3000,
-                  //     });
-                  //     return;
-                  //   }
+                    if (
+                      microphoneState === MicrophoneState.Ready ||
+                      microphoneState === MicrophoneState.Paused
+                    ) {
+                      connectToDeepgram({
+                        model: 'nova-2',
+                        interim_results: true,
+                        smart_format: true,
+                        filler_words: true,
+                        utterance_end_ms: 3000,
+                      });
+                      return;
+                    }
 
-                  //   if (microphoneState === MicrophoneState.Open) {
-                  //     setInput((prev) =>
-                  //       [prev, caption || ''].filter(Boolean).join(' ')
-                  //     );
-                  //     setCaption(undefined);
-                  //     disconnectFromDeepgram();
-                  //     stopMicrophone();
-                  //     return;
-                  //   }
-                  // }}
-                  // disabled={
-                  //   isInternalLoading ||
-                  //   microphoneState === MicrophoneState.Opening ||
-                  //   microphoneState === MicrophoneState.Pausing ||
-                  //   microphoneState === MicrophoneState.SettingUp ||
-                  //   microphoneState === MicrophoneState.NotSetup
-                  // }
+                    if (microphoneState === MicrophoneState.Open) {
+                      setInput((prev) =>
+                        [prev, caption || ''].filter(Boolean).join(' ')
+                      );
+                      setCaption(undefined);
+                      disconnectFromDeepgram();
+                      stopMicrophone();
+                      return;
+                    }
+                  }}
+                  disabled={
+                    isInternalLoading ||
+                    microphoneState === MicrophoneState.Opening ||
+                    microphoneState === MicrophoneState.Pausing ||
+                    microphoneState === MicrophoneState.SettingUp ||
+                    microphoneState === MicrophoneState.NotSetup
+                  }
                   disabled
                 >
-                  {/* {microphoneState === MicrophoneState.Open ? ( */}
+                  {microphoneState === MicrophoneState.Open ? (
                   <Mic />
-                  {/* ) : (
+                  ) : (
                     <MicOff />
-                  )} */}
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('ai_chat.voice_input')}</TooltipContent>
@@ -380,7 +384,7 @@ export function PromptForm({
                   </DialogDescription>
                 </DialogHeader>
               </DialogContent>
-            </Tooltip>
+            </Tooltip> */}
 
             <Tooltip>
               <TooltipTrigger className="hidden md:flex" asChild>
@@ -428,7 +432,7 @@ export function PromptForm({
                       : 'pointer-events-auto ml-1 w-10 opacity-100'
                   )}
                   disabled={!id}
-                  onClick={() => setShowChatVisibility((prev) => !prev)}
+                  onClick={toggleChatVisibility}
                 >
                   {chat?.is_public ? <Globe /> : <Lock />}
                   <span className="sr-only">
@@ -482,6 +486,183 @@ export function PromptForm({
             </Tooltip>
           </div>
         </div>
+
+        {files && files.length > 0 && (
+          <TooltipProvider>
+            <div className="mb-2 flex items-center gap-1 text-xs">
+              {files.filter((f) => f.name.endsWith('.pdf')).length > 0 && (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                      <FileText className="h-4 w-4" />
+                      {files.filter((f) => f.name.endsWith('.pdf')).length} PDFs
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="grid gap-1">
+                      {files
+                        .filter((f) => f.name.endsWith('.pdf'))
+                        .map((f, i) => (
+                          <div
+                            key={i}
+                            className="group flex items-center gap-2 rounded"
+                          >
+                            <FileText className="h-4 w-4" />
+                            <span className="line-clamp-1 w-full max-w-xs">
+                              {f.name}
+                            </span>
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => {
+                                const newFiles = files.filter((file) => {
+                                  return file.name !== f.name;
+                                });
+                                setFiles(newFiles);
+                              }}
+                              className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                            >
+                              <X />
+                            </Button>
+                          </div>
+                        ))}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {files.filter(
+                (f) =>
+                  f.name.endsWith('.png') ||
+                  f.name.endsWith('.jpg') ||
+                  f.name.endsWith('.jpeg')
+              ).length > 0 && (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                      <ImageIcon className="h-4 w-4" />
+                      {
+                        files.filter(
+                          (f) =>
+                            f.name.endsWith('.png') ||
+                            f.name.endsWith('.jpg') ||
+                            f.name.endsWith('.jpeg') ||
+                            f.name.endsWith('.webp')
+                        ).length
+                      }{' '}
+                      Images
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="grid gap-1">
+                      {files
+                        .filter(
+                          (f) =>
+                            f.name.endsWith('.png') ||
+                            f.name.endsWith('.jpg') ||
+                            f.name.endsWith('.jpeg') ||
+                            f.name.endsWith('.webp')
+                        )
+                        .map((f, i) => (
+                          <div
+                            key={i}
+                            className="group flex items-center gap-2 rounded"
+                          >
+                            <div className="size-8">
+                              <img
+                                src={URL.createObjectURL(f)}
+                                alt={f.name}
+                                className="h-8 w-8 rounded object-cover"
+                              />
+                            </div>
+                            <span className="line-clamp-1 w-full max-w-xs">
+                              {f.name}
+                            </span>
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => {
+                                const newFiles = files.filter((file) => {
+                                  return file.name !== f.name;
+                                });
+                                setFiles(newFiles);
+                              }}
+                              className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                            >
+                              <X />
+                            </Button>
+                          </div>
+                        ))}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {files.filter(
+                (f) =>
+                  !f.name.endsWith('.pdf') &&
+                  !f.name.endsWith('.png') &&
+                  !f.name.endsWith('.jpg') &&
+                  !f.name.endsWith('.jpeg') &&
+                  !f.name.endsWith('.webp')
+              ).length > 0 && (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                      <Package className="h-4 w-4" />
+                      {
+                        files.filter(
+                          (f) =>
+                            !f.name.endsWith('.pdf') &&
+                            !f.name.endsWith('.png') &&
+                            !f.name.endsWith('.jpg') &&
+                            !f.name.endsWith('.jpeg') &&
+                            !f.name.endsWith('.webp')
+                        ).length
+                      }{' '}
+                      Files
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="grid gap-1">
+                      {files
+                        .filter(
+                          (f) =>
+                            !f.name.endsWith('.pdf') &&
+                            !f.name.endsWith('.png') &&
+                            !f.name.endsWith('.jpg') &&
+                            !f.name.endsWith('.jpeg') &&
+                            !f.name.endsWith('.webp')
+                        )
+                        .map((f, i) => (
+                          <div
+                            key={i}
+                            className="group flex items-center gap-2 rounded"
+                          >
+                            <Package className="h-4 w-4" />
+                            <span className="line-clamp-1 w-full max-w-xs">
+                              {f.name}
+                            </span>
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => {
+                                const newFiles = files.filter((file) => {
+                                  return file.name !== f.name;
+                                });
+                                setFiles(newFiles);
+                              }}
+                              className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                            >
+                              <X />
+                            </Button>
+                          </div>
+                        ))}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </TooltipProvider>
+        )}
 
         <div className="flex max-h-60 w-full items-end overflow-hidden rounded-lg bg-transparent">
           <Textarea

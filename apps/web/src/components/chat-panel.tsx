@@ -6,7 +6,10 @@ import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
+import { createClient } from '@/utils/supabase/client';
+import { generateRandomUUID } from '@/utils/uuid-helper';
 import { Button } from '@repo/ui/components/ui/button';
+import { FileUploader } from '@repo/ui/components/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
-import { IconStop } from '@repo/ui/components/ui/icons';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
@@ -47,6 +49,7 @@ export interface ChatPanelProps
     | 'setInput'
   > {
   id?: string;
+  wsId: string;
   chat: Partial<AIChat> | undefined;
   chats?: AIChat[];
   count?: number | null;
@@ -64,6 +67,7 @@ export interface ChatPanelProps
 
 export function ChatPanel({
   id,
+  wsId,
   chat,
   chats,
   count,
@@ -82,11 +86,13 @@ export function ChatPanel({
   setCollapsed,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
+  const supabase = createClient();
 
   const [updating, setUpdating] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const [showChatVisibility, setShowChatVisibility] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogType, setDialogType] = useState<'files' | 'visibility'>();
   const [showExtraOptions, setShowExtraOptions] = useState(false);
 
   const disablePublicLink = isLoading || updating || !id || !chat?.is_public;
@@ -98,9 +104,45 @@ export function ChatPanel({
     if (chatInput) setChatInputHeight(chatInput.clientHeight);
   }, [input]);
 
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileProgresses, setFileProgresses] = useState<
+    Record<string, 'uploading' | 'uploaded' | 'error'>
+  >({});
+
+  const onUpload = async (files: File[]) => {
+    files.forEach(async (file) => {
+      // if the file is already uploaded, skip it
+      if (fileProgresses[file.name] === 'uploaded') return;
+
+      // Set the status of the file to uploading
+      setFileProgresses((prev) => ({
+        ...prev,
+        [file.name]: 'uploading',
+      }));
+
+      const { data: _, error } = await supabase.storage
+        .from('workspaces')
+        .upload(`${wsId}/${file.name}_${generateRandomUUID()}`, file);
+
+      if (error) {
+        setFileProgresses((prev) => ({
+          ...prev,
+          [file.name]: 'error',
+        }));
+        return;
+      }
+
+      // Set the status of the file to uploaded
+      setFileProgresses((prev) => ({
+        ...prev,
+        [file.name]: 'uploaded',
+      }));
+    });
+  };
+
   return (
-    <Dialog open={showChatVisibility} onOpenChange={setShowChatVisibility}>
-      <div className="fixed inset-x-0 bottom-0 md:sticky md:-bottom-96">
+    <Dialog open={showDialog} onOpenChange={setShowDialog}>
+      <div className="fixed inset-x-0 bottom-0 md:sticky md:-bottom-64 lg:-bottom-96">
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
@@ -232,7 +274,7 @@ export function ChatPanel({
                 </div>
               </div>
 
-              {isLoading ? (
+              {/* {isLoading ? (
                 <Button
                   variant="outline"
                   onClick={() => stop()}
@@ -241,11 +283,11 @@ export function ChatPanel({
                   <IconStop className="mr-2" />
                   {t('stop_generating')}
                 </Button>
-              ) : null}
+              ) : null} */}
             </div>
 
             <div
-              className={`bg-background/20 flex flex-col items-start justify-start rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
+              className={`bg-background/70 flex flex-col items-start justify-start rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
             >
               <ChatModelSelector
                 open={showExtraOptions}
@@ -272,13 +314,22 @@ export function ChatPanel({
                     role: 'user',
                   });
                 }}
+                files={files}
+                setFiles={setFiles}
                 input={input}
                 inputRef={inputRef}
                 setInput={setInput}
                 isLoading={isLoading}
                 showExtraOptions={showExtraOptions}
                 setShowExtraOptions={setShowExtraOptions}
-                setShowChatVisibility={setShowChatVisibility}
+                toggleChatFileUpload={() => {
+                  setDialogType('files');
+                  setShowDialog((prev) => !prev);
+                }}
+                toggleChatVisibility={() => {
+                  setDialogType('visibility');
+                  setShowDialog((prev) => !prev);
+                }}
               />
             </div>
           </div>
@@ -287,101 +338,123 @@ export function ChatPanel({
 
       <DialogContent>
         <div className="text-center">
-          <DialogHeader>
-            <DialogTitle>{t('chat_visibility')}</DialogTitle>
+          <DialogHeader className="mb-4">
+            <DialogTitle>
+              {dialogType === 'files'
+                ? t('upload_files')
+                : t('chat_visibility')}
+            </DialogTitle>
             <DialogDescription>
-              {t('chat_visibility_description')}
+              {dialogType === 'files'
+                ? t('upload_file_description')
+                : t('chat_visibility_description')}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-4 flex gap-2">
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={async () => {
-                setUpdating(true);
-                await updateChat({ is_public: true });
-                setCopiedLink(false);
-                setUpdating(false);
-              }}
-              disabled={!id || chat?.is_public}
-            >
-              {chat?.is_public ? (
-                <Check className="mr-2 h-4 w-4" />
-              ) : updating ? (
-                <LoadingIndicator className="mr-2 h-4 w-4" />
-              ) : (
-                <Globe className="mr-2 h-4 w-4" />
-              )}
-              <div className="line-clamp-1">{t('public')}</div>
-            </Button>
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={async () => {
-                setUpdating(true);
-                await updateChat({ is_public: false });
-                setCopiedLink(false);
-                setUpdating(false);
-              }}
-              disabled={!id || !chat?.is_public}
-            >
-              {!chat?.is_public ? (
-                <Check className="mr-2 h-4 w-4" />
-              ) : updating ? (
-                <LoadingIndicator className="mr-2 h-4 w-4" />
-              ) : (
-                <Lock className="mr-2 h-4 w-4" />
-              )}
-              <div className="line-clamp-1">{t('only_me')}</div>
-            </Button>
-          </div>
-
-          {chat?.is_public && (
+          {dialogType === 'files' ? (
+            <div className="grid gap-4">
+              <FileUploader
+                value={files}
+                onValueChange={setFiles}
+                maxFileCount={10}
+                maxSize={50 * 1024 * 1024}
+                progresses={fileProgresses}
+                onUpload={onUpload}
+                // disabled={isUploading}
+              />
+            </div>
+          ) : (
             <>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    setUpdating(true);
+                    await updateChat({ is_public: true });
+                    setCopiedLink(false);
+                    setUpdating(false);
+                  }}
+                  disabled={!id || chat?.is_public}
+                >
+                  {chat?.is_public ? (
+                    <Check className="mr-2 h-4 w-4" />
+                  ) : updating ? (
+                    <LoadingIndicator className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Globe className="mr-2 h-4 w-4" />
+                  )}
+                  <div className="line-clamp-1">{t('public')}</div>
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={async () => {
+                    setUpdating(true);
+                    await updateChat({ is_public: false });
+                    setCopiedLink(false);
+                    setUpdating(false);
+                  }}
+                  disabled={!id || !chat?.is_public}
+                >
+                  {!chat?.is_public ? (
+                    <Check className="mr-2 h-4 w-4" />
+                  ) : updating ? (
+                    <LoadingIndicator className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Lock className="mr-2 h-4 w-4" />
+                  )}
+                  <div className="line-clamp-1">{t('only_me')}</div>
+                </Button>
+              </div>
+
+              {chat?.is_public && (
+                <>
+                  <Separator className="my-4" />
+
+                  <div className="flex items-center justify-center">
+                    <QRCode
+                      value={`${BASE_URL}/ai/chats/${id}`}
+                      size={256}
+                      style={{
+                        borderRadius: '0.5rem',
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+
               <Separator className="my-4" />
 
-              <div className="flex items-center justify-center">
-                <QRCode
-                  value={`${BASE_URL}/ai/chats/${id}`}
-                  size={256}
-                  style={{
-                    borderRadius: '0.5rem',
+              <div className="grid w-full gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${BASE_URL}/ai/chats/${id}`);
+                    setCopiedLink(true);
+                    setTimeout(() => setCopiedLink(false), 2000);
                   }}
-                />
+                  disabled={disablePublicLink || copiedLink}
+                >
+                  {copiedLink ? (
+                    <CheckCheck className="mr-2 h-4 w-4" />
+                  ) : (
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                  )}
+                  {t('copy_public_link')}
+                </Button>
+                <Button
+                  className="w-full"
+                  onClick={() => window.open(`${BASE_URL}/ai/chats/${id}`)}
+                  disabled={disablePublicLink}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {t('open_public_link')}
+                </Button>
               </div>
             </>
           )}
-
-          <Separator className="my-4" />
-
-          <div className="grid w-full gap-2">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                navigator.clipboard.writeText(`${BASE_URL}/ai/chats/${id}`);
-                setCopiedLink(true);
-                setTimeout(() => setCopiedLink(false), 2000);
-              }}
-              disabled={disablePublicLink || copiedLink}
-            >
-              {copiedLink ? (
-                <CheckCheck className="mr-2 h-4 w-4" />
-              ) : (
-                <LinkIcon className="mr-2 h-4 w-4" />
-              )}
-              {t('copy_public_link')}
-            </Button>
-            <Button
-              className="w-full"
-              onClick={() => window.open(`${BASE_URL}/ai/chats/${id}`)}
-              disabled={disablePublicLink}
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              {t('open_public_link')}
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

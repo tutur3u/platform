@@ -1245,7 +1245,9 @@
     "send_message": "Gửi tin nhắn",
     "extra_options": "Tùy chọn khác",
     "permission_denied": "Quyền truy cập bị từ chối",
-    "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này."
+    "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
+    "upload_files": "Tải lên tập tin",
+    "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này."
   },
   "crud-ops": {
     "ops": "Thao tác",
