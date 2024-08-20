@@ -1,3 +1,5 @@
+'use client';
+
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mailbox/send/post-template';
 import useEmail from '@/hooks/useEmail';
 import { cn } from '@/lib/utils';

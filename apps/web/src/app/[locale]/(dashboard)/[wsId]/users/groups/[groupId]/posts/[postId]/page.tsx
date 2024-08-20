@@ -1,11 +1,11 @@
-import CardList from './card-list';
+import UserCard from './card';
+import { EmailList } from './email-list';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Check, CircleHelp, Mail, Send, X } from 'lucide-react';
+import { Check, CircleHelp, Send, X } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -55,22 +55,17 @@ export default async function HomeworkCheck({
           </Link>
         }
         description={`${post.title}\n\n${post.content}`.trim()}
-        action={
-          <Button>
-            <Mail className="mr-1" />
-            Send Email
-          </Button>
-        }
+        action={<EmailList users={users} />}
       />
       <Separator className="my-4" />
-      <div className="gird-cols-1 grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+      <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
         <div className="bg-dynamic-purple/15 text-dynamic-purple border-dynamic-purple/15 flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <Send />
             Email sent
           </div>
           <Separator className="bg-dynamic-purple/15 my-1" />
-          <div className="text-3xl font-semibold">
+          <div className="text-xl font-semibold md:text-3xl">
             {status.sent}
             <span className="opacity-50">/{status.count}</span>
           </div>
@@ -110,7 +105,11 @@ export default async function HomeworkCheck({
         </div>
       </div>
       <Separator className="my-4" />
-      <CardList wsId={wsId} post={post} users={users} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {users.map((user) => (
+          <UserCard key={user.id} user={user} wsId={wsId} post={post} />
+        ))}
+      </div>
     </div>
   );
 }
