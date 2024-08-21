@@ -90,7 +90,7 @@ function UserCard({ user, wsId, post }: Props) {
       !user.id ||
       !post.id ||
       !post.group_id ||
-      isCompleted === check?.is_completed
+      (isCompleted === check?.is_completed && notes === check?.notes)
     )
       return;
 
@@ -112,7 +112,7 @@ function UserCard({ user, wsId, post }: Props) {
         ...check,
         user_id: user.id,
         post_id: post.id,
-        is_completed: isCompleted ?? check?.is_completed,
+        is_completed: isCompleted ?? check?.is_completed ?? true,
         notes,
       }),
     });
@@ -123,7 +123,7 @@ function UserCard({ user, wsId, post }: Props) {
         ...prev,
         user_id: user.id,
         post_id: post.id,
-        is_completed: isCompleted ?? check?.is_completed,
+        is_completed: isCompleted ?? check?.is_completed ?? true,
         notes,
       }));
       router.refresh();
