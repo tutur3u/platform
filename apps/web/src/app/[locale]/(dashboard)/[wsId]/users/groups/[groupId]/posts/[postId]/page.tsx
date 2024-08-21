@@ -186,8 +186,8 @@ async function getUserData(
   groupId: string,
   {
     q,
-    page = '1',
-    pageSize = '10',
+    // page = '1',
+    // pageSize = '10',
     excludedGroups = [],
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
@@ -212,13 +212,13 @@ async function getUserData(
     .select('*')
     .order('full_name', { ascending: true, nullsFirst: false });
 
-  if (page && pageSize) {
-    const parsedPage = Number.parseInt(page);
-    const parsedSize = Number.parseInt(pageSize);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
+  // if (page && pageSize) {
+  //   const parsedPage = Number.parseInt(page);
+  //   const parsedSize = Number.parseInt(pageSize);
+  //   const start = (parsedPage - 1) * parsedSize;
+  //   const end = parsedPage * parsedSize;
+  //   queryBuilder.range(start, end).limit(parsedSize);
+  // }
 
   const { data, error, count } = await queryBuilder;
 
@@ -226,7 +226,7 @@ async function getUserData(
     if (!retry) throw error;
     return getUserData(wsId, groupId, {
       q,
-      pageSize,
+      // pageSize,
       excludedGroups,
       retry: false,
     });

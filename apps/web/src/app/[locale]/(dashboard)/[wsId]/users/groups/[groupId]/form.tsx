@@ -12,6 +12,7 @@ import {
 } from '@repo/ui/components/ui/avatar';
 import { Button } from '@repo/ui/components/ui/button';
 import SearchBar from '@repo/ui/components/ui/custom/search-bar';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { useQuery } from '@tanstack/react-query';
 import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -125,45 +126,47 @@ export default function GroupMemberForm({
         />
       </div>
       {groupUsers.length > 0 ? (
-        <div className="mt-4 grid grid-cols-1 gap-2">
-          {groupUsers.map((user) => (
-            <div
-              key={user.id}
-              className="flex items-start justify-between gap-2 rounded-md border p-2"
-            >
-              <div className="flex items-center gap-2 p-2">
-                <Avatar className="relative h-12 w-12 overflow-visible font-semibold">
-                  <AvatarImage
-                    src={user?.avatar_url ?? undefined}
-                    className="border-foreground/50 overflow-clip rounded-full border"
-                  />
-                  <AvatarFallback className="border-foreground/50 border font-semibold">
-                    {user?.display_name
-                      ? getInitials(user?.display_name)
-                      : null}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <div className="font-semibold">
-                    {users.find((u) => u.id === user.id)?.display_name ||
-                      'No name'}
-                  </div>
-                  <div className="text-foreground/50">
-                    {users.find((u) => u.id === user.id)?.email}
+        <ScrollArea className="h-fit w-full p-2 px-3">
+          <div className="mt-4 flex max-h-48 flex-col gap-2">
+            {groupUsers.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-start justify-between gap-2 rounded-md border p-2"
+              >
+                <div className="flex items-center gap-2 p-2">
+                  <Avatar className="relative h-12 w-12 overflow-visible font-semibold">
+                    <AvatarImage
+                      src={user?.avatar_url ?? undefined}
+                      className="border-foreground/50 overflow-clip rounded-full border"
+                    />
+                    <AvatarFallback className="border-foreground/50 border font-semibold">
+                      {user?.display_name
+                        ? getInitials(user?.display_name)
+                        : null}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <div className="font-semibold">
+                      {users.find((u) => u.id === user.id)?.display_name ||
+                        'No name'}
+                    </div>
+                    <div className="text-foreground/50">
+                      {users.find((u) => u.id === user.id)?.email}
+                    </div>
                   </div>
                 </div>
+                <Button
+                  size="xs"
+                  type="button"
+                  variant="destructive"
+                  onClick={() => handleRemoveMember(user.id)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                size="xs"
-                type="button"
-                variant="destructive"
-                onClick={() => handleRemoveMember(user.id)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </ScrollArea>
       ) : (
         <div className="text-foreground/50 mt-4 rounded border border-dashed p-4 text-center font-semibold md:p-8">
           This group has no members yet.
