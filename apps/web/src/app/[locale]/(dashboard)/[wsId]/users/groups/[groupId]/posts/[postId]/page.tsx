@@ -113,6 +113,7 @@ export default async function HomeworkCheck({
             wsId={wsId}
             post={{
               ...post,
+              group_id: groupId,
               group_name: group.name,
             }}
           />

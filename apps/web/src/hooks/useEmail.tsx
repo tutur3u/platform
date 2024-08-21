@@ -1,21 +1,7 @@
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
-import juice from 'juice';
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mailbox/send/post-template';
+import { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 import { useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
-
-interface SendEmailParams {
-  recipients: string[];
-  subject: string;
-  component: React.ReactElement; // Accept a React component
-}
-
-const sesClient = new SESClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION as string,
-  credentials: {
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID as string,
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY as string,
-  },
-});
 
 const useEmail = () => {
   const [loading, setLoading] = useState(false);
@@ -23,44 +9,60 @@ const useEmail = () => {
   const [success, setSuccess] = useState(false);
 
   const sendEmail = async ({
-    recipients,
-    subject,
-    component,
-  }: SendEmailParams): Promise<void> => {
+    wsId,
+    groupId,
+    postId,
+    post,
+    users: rawUsers,
+  }: {
+    wsId: string;
+    groupId: string;
+    postId: string;
+    post: UserGroupPost;
+    users: {
+      email: string;
+      username: string;
+      notes: string;
+      is_completed: boolean;
+    }[];
+  }): Promise<void> => {
     setLoading(true);
     setError(null);
     setSuccess(false);
 
-    try {
-      // Render the React component to an HTML string
-      const htmlContent = ReactDOMServer.renderToString(component);
+    const users = rawUsers.map((user) => ({
+      ...user,
+      content: ReactDOMServer.renderToString(
+        <PostEmailTemplate
+          post={post}
+          username={user.username}
+          isHomeworkDone={user?.is_completed}
+          notes={user?.notes || undefined}
+        />
+      ),
+    }));
 
-      // Optionally, inline CSS using Juice
-      const inlinedHtmlContent = juice(htmlContent);
-
-      const params = {
-        Source: `${process.env.NEXT_PUBLIC_SOURCE_NAME} <${process.env.NEXT_PUBLIC_SOURCE_EMAIL}>`,
-        Destination: {
-          BccAddresses: recipients,
+    const res = await fetch(
+      `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        Message: {
-          Subject: { Data: subject },
-          Body: {
-            Html: { Data: inlinedHtmlContent },
-          },
-        },
-      };
+        body: JSON.stringify({
+          users,
+        }),
+      }
+    );
 
-      const command = new SendEmailCommand(params);
-      await sesClient.send(command);
-
-      setSuccess(true);
-    } catch (err) {
-      setError((err as Error).message);
-      throw err;
-    } finally {
+    if (!res.ok) {
+      setError('Failed to send email');
       setLoading(false);
+      return;
     }
+
+    setSuccess(true);
+    setLoading(false);
   };
 
   return { sendEmail, loading, error, success };

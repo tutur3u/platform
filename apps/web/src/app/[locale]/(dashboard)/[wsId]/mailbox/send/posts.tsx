@@ -3,7 +3,6 @@
 import UserGroupPosts, {
   UserGroupPost,
 } from '../../users/groups/[groupId]/posts';
-import { PostEmailForm } from './form';
 import { createClient } from '@/utils/supabase/client';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { useSearchParams } from 'next/navigation';
@@ -86,7 +85,6 @@ export default function MailboxPosts({
               </div>
             )}
           </div>
-          <PostEmailForm post={selectedPost} />
         </>
       )}
     </>
