@@ -1,5 +1,5 @@
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import { AIChat } from '@/types/db';
+import type { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { IconArrowElbow } from '@repo/ui/components/ui/icons';
@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
-import { UseChatHelpers } from 'ai/react';
+import type { UseChatHelpers } from 'ai/react';
 import {
   ArrowDownWideNarrow,
   Bolt,
@@ -30,7 +30,8 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
 
 export interface PromptProps
@@ -528,9 +529,9 @@ export function PromptForm({
                     <div className="grid gap-1">
                       {files
                         .filter((f) => f.name.endsWith('.pdf'))
-                        .map((f, i) => (
+                        .map((f) => (
                           <div
-                            key={i}
+                            key={f.name}
                             className="group flex items-center gap-2 rounded"
                           >
                             <FileText className="h-4 w-4" />
@@ -589,9 +590,9 @@ export function PromptForm({
                             f.name.endsWith('.jpeg') ||
                             f.name.endsWith('.webp')
                         )
-                        .map((f, i) => (
+                        .map((f) => (
                           <div
-                            key={i}
+                            key={f.name}
                             className="group flex items-center gap-2 rounded"
                           >
                             <div className="size-8">
@@ -660,9 +661,9 @@ export function PromptForm({
                             !f.name.endsWith('.jpeg') &&
                             !f.name.endsWith('.webp')
                         )
-                        .map((f, i) => (
+                        .map((f) => (
                           <div
-                            key={i}
+                            key={f.name}
                             className="group flex items-center gap-2 rounded"
                           >
                             <Package className="h-4 w-4" />

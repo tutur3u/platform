@@ -1,16 +1,20 @@
-import { UserGroupPost } from '../../users/groups/[groupId]/posts/[postId]/card';
+import type { UserGroupPost } from '../../users/groups/[groupId]/posts/[postId]/card';
+import { cn } from '@/lib/utils';
 import { Head, Html, Img, Tailwind } from '@react-email/components';
 
 interface Props {
   post: UserGroupPost;
   isHomeworkDone?: boolean;
+  username: string | undefined;
+  notes: string | undefined;
 }
 
-const PostEmailTemplate = ({ post, isHomeworkDone }: Props) => {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : '';
-
+const PostEmailTemplate = ({
+  post,
+  isHomeworkDone,
+  username,
+  notes,
+}: Props) => {
   return (
     <Html>
       <Head />
@@ -20,11 +24,20 @@ const PostEmailTemplate = ({ post, isHomeworkDone }: Props) => {
             <div className="px-6 py-4">
               <div className="text-center">
                 <div className="w-full text-center">
-                  <Img
-                    src={`${baseUrl}/media/logos/easy.png`}
-                    width="100"
-                    height="38"
-                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      width: '100%',
+                    }}
+                  >
+                    <Img
+                      src="https://tuturuuu.com/media/logos/easy.png"
+                      width="100"
+                      height="38"
+                    />
+                  </div>
                   <div className="text-lg font-bold text-gray-800">
                     Easy Center
                   </div>
@@ -39,26 +52,33 @@ const PostEmailTemplate = ({ post, isHomeworkDone }: Props) => {
             </div>
             <hr />
             <div className="px-6 py-4">
-              <div className="flex w-full items-center justify-center text-center">
+              {/* <div className="flex w-full items-center justify-center text-center">
                 <div className="w-fit rounded-full bg-black px-4 py-1 text-xs font-semibold text-white">
                   Tiếng Việt
                 </div>
-              </div>
+              </div> */}
               <div className="w-full pt-4 text-center">
                 <div className="text-center font-semibold uppercase">
                   Báo cáo tiến độ học tập theo ngày
                 </div>
                 {isHomeworkDone !== undefined && (
-                  <div className="text-lg text-red-500">
-                    {isHomeworkDone ? 'Đã làm bài tập' : 'Chưa làm bài tập'}
+                  <div
+                    className={cn(
+                      'text-lg font-semibold uppercase',
+                      isHomeworkDone ? 'text-green-600' : 'text-red-600'
+                    )}
+                  >
+                    {(isHomeworkDone
+                      ? 'Đã làm bài tập'
+                      : 'Chưa làm bài tập'
+                    ).toUpperCase()}
                   </div>
                 )}
-                <div className="text-blue-500">{post.group_name}</div>
               </div>
               <p className="text-sm text-gray-600">
                 Trung tâm Easy thân gửi phụ huynh báo cáo tiến độ học tập của em{' '}
                 <span className="font-semibold text-purple-600">
-                  Huỳnh Tấn Phát
+                  {username || '<Chưa có tên>'}
                 </span>{' '}
                 trong ngày{' '}
                 {new Date().toLocaleDateString('vi', {
@@ -74,33 +94,49 @@ const PostEmailTemplate = ({ post, isHomeworkDone }: Props) => {
               </p>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold">Bài học:</span>{' '}
-                <span className="">{post.title}</span>
+                <span className="">{post.title || 'Không rõ'}</span>
               </p>
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold">Nội dung:</span> {post.content}
-              </p>
+              {post.content && (
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">Nội dung:</span>{' '}
+                  <span className="whitespace-pre-line">{post.content}</span>
+                </p>
+              )}
+              {notes && (
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">Ghi chú:</span>{' '}
+                  <span className="whitespace-pre-line">{notes}</span>
+                </p>
+              )}
             </div>
             <hr />
             <div className="px-6 py-4">
-              <div className="flex w-full items-center justify-center text-center">
+              {/* <div className="flex w-full items-center justify-center text-center">
                 <div className="w-fit rounded-full bg-black px-4 py-1 text-xs font-semibold text-white">
                   English
                 </div>
-              </div>
+              </div> */}
               <div className="w-full pt-4 text-center">
                 <div className="text-center font-semibold uppercase">
                   Daily learning progress report
                 </div>
-                <div className="text-lg text-red-500">
-                  {isHomeworkDone ? 'Homework done' : 'Homework not done'}
+                <div
+                  className={cn(
+                    'text-lg font-semibold uppercase',
+                    isHomeworkDone ? 'text-green-600' : 'text-red-600'
+                  )}
+                >
+                  {(isHomeworkDone
+                    ? 'Homework completed'
+                    : 'Homework incompleted'
+                  ).toUpperCase()}
                 </div>
-                <div className="text-blue-500">{post.group_name}</div>
               </div>
               <p className="text-sm text-gray-600">
                 Easy Center kindly sends parents a report on the learning
                 progress of{' '}
                 <span className="font-semibold text-purple-600">
-                  Huỳnh Tấn Phát
+                  {username || '<No name>'}
                 </span>{' '}
                 on{' '}
                 {new Date().toLocaleDateString('en-US', {
@@ -116,11 +152,20 @@ const PostEmailTemplate = ({ post, isHomeworkDone }: Props) => {
               </p>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold">Lesson:</span>{' '}
-                <span className="">{post.title}</span>
+                <span className="">{post.title || 'Unknown'}</span>
               </p>
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold">Content:</span> {post.content}
-              </p>
+              {post.content && (
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">Content:</span>{' '}
+                  <span className="whitespace-pre-line">{post.content}</span>
+                </p>
+              )}
+              {notes && (
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">Note:</span>{' '}
+                  <span className="whitespace-pre-line">{notes}</span>
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -3,15 +3,15 @@
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mailbox/send/post-template';
 import useEmail from '@/hooks/useEmail';
 import { cn } from '@/lib/utils';
-import { GroupPostCheck } from '@/types/db';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import type { GroupPostCheck } from '@/types/db';
+import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { isEmail } from '@/utils/email-helper';
 import { createClient } from '@/utils/supabase/client';
 import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
 import { Textarea } from '@repo/ui/components/ui/textarea';
-import { Check, Mail, MoveRight, X } from 'lucide-react';
+import { Check, Mail, MoveRight, Save, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -38,6 +38,7 @@ function UserCard({ user, wsId, post }: Props) {
   const router = useRouter();
 
   const [check, setCheck] = useState<Partial<GroupPostCheck>>();
+  const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
   const { sendEmail, loading, error, success } = useEmail();
@@ -60,20 +61,29 @@ function UserCard({ user, wsId, post }: Props) {
         console.error('Error fetching data:', error.message);
       } else if (data) {
         setCheck(data);
+        setNotes(data.notes || '');
       } else {
         setCheck({
           user_id: user.id,
           post_id: post.id,
+          notes: '',
         });
+        setNotes('');
       }
 
       setSaving(false);
     }
 
     fetchData();
-  }, [supabase, user.id, post.id, check?.user_id, check?.post_id]);
+  }, [supabase, user.id, post.id]);
 
-  async function handleSaveStatus({ isCompleted }: { isCompleted: boolean }) {
+  async function handleSaveStatus({
+    isCompleted,
+    notes,
+  }: {
+    isCompleted?: boolean;
+    notes: string;
+  }) {
     if (
       !user.id ||
       !post.id ||
@@ -100,7 +110,8 @@ function UserCard({ user, wsId, post }: Props) {
         ...check,
         user_id: user.id,
         post_id: post.id,
-        is_completed: isCompleted,
+        is_completed: isCompleted ?? check?.is_completed,
+        notes,
       }),
     });
 
@@ -110,7 +121,8 @@ function UserCard({ user, wsId, post }: Props) {
         ...prev,
         user_id: user.id,
         post_id: post.id,
-        is_completed: isCompleted,
+        is_completed: isCompleted ?? check?.is_completed,
+        notes,
       }));
       router.refresh();
     } else {
@@ -123,10 +135,18 @@ function UserCard({ user, wsId, post }: Props) {
   const handleSendEmail = async () => {
     if (post) {
       await sendEmail({
-        recipients: ['phathuynh@tuturuuu.com'],
-        subject: `Easy Center | Báo cáo tiến độ ngày ${new Date().toLocaleDateString()}`,
+        recipients: [
+          'phucvo@tuturuuu.com',
+          // 'phathuynh@tuturuuu.com',
+        ],
+        subject: `Easy Center | Báo cáo tiến độ ngày ${new Date().toLocaleDateString()} của ${user.full_name || user.display_name || user.email || '<Chưa có tên>'}`,
         component: (
-          <PostEmailTemplate isHomeworkDone={check?.is_completed} post={post} />
+          <PostEmailTemplate
+            isHomeworkDone={check?.is_completed}
+            post={post}
+            username={user.full_name || user.display_name || user.email}
+            notes={check?.notes || undefined}
+          />
         ),
       });
     }
@@ -162,13 +182,9 @@ function UserCard({ user, wsId, post }: Props) {
 
       <Textarea
         placeholder="Notes"
-        value={check?.notes || ''}
-        onChange={(e) =>
-          setCheck((prev) => ({
-            ...prev,
-            notes: e.target.value || '',
-          }))
-        }
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        disabled={saving || !check}
       />
 
       <div className="mt-4 flex justify-between">
@@ -179,7 +195,10 @@ function UserCard({ user, wsId, post }: Props) {
               loading ||
               !user.email ||
               user.email.endsWith('@easy.com' || !isEmail(user.email)) ||
-              check?.is_completed == null
+              check?.is_completed == null ||
+              saving ||
+              !check ||
+              check?.notes !== notes
             }
             variant="secondary"
           >
@@ -199,40 +218,60 @@ function UserCard({ user, wsId, post }: Props) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant={
-              check?.is_completed != null && check.is_completed
-                ? 'outline'
-                : 'ghost'
-            }
-            onClick={() => handleSaveStatus({ isCompleted: false })}
-            className={cn(
-              check?.is_completed != null && !check.is_completed
-                ? 'bg-dynamic-red/10 border-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/20'
-                : '',
-              'border'
-            )}
-            disabled={saving || !check}
-          >
-            <X />
-          </Button>
-          <Button
-            variant={
-              check?.is_completed != null && !check.is_completed
-                ? 'outline'
-                : 'ghost'
-            }
-            onClick={() => handleSaveStatus({ isCompleted: true })}
-            className={cn(
-              check?.is_completed != null && check.is_completed
-                ? 'bg-dynamic-green/10 border-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/20'
-                : '',
-              'border'
-            )}
-            disabled={saving || !check}
-          >
-            <Check />
-          </Button>
+          {check && check.notes !== notes ? (
+            <Button
+              onClick={() =>
+                handleSaveStatus({
+                  notes,
+                })
+              }
+              disabled={saving || !check}
+            >
+              <Save />
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant={
+                  check?.is_completed != null && check.is_completed
+                    ? 'outline'
+                    : 'ghost'
+                }
+                onClick={() =>
+                  handleSaveStatus({
+                    isCompleted: false,
+                    notes,
+                  })
+                }
+                className={cn(
+                  check?.is_completed != null && !check.is_completed
+                    ? 'bg-dynamic-red/10 border-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/20'
+                    : '',
+                  'border'
+                )}
+                disabled={saving || !check}
+              >
+                <X />
+              </Button>
+              <Button
+                variant={
+                  check?.is_completed != null && !check.is_completed
+                    ? 'outline'
+                    : 'ghost'
+                }
+                onClick={() => handleSaveStatus({ isCompleted: true, notes })}
+                className={cn(
+                  check?.is_completed != null && check.is_completed
+                    ? 'bg-dynamic-green/10 border-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/20'
+                    : '',
+                  'border'
+                )}
+                disabled={saving || !check}
+              >
+                <Check />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </Card>

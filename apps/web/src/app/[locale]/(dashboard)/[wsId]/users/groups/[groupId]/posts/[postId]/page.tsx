@@ -1,7 +1,7 @@
 import UserCard from './card';
 import { EmailList } from './email-list';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -107,7 +107,15 @@ export default async function HomeworkCheck({
       <Separator className="my-4" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {users.map((user) => (
-          <UserCard key={user.id} user={user} wsId={wsId} post={post} />
+          <UserCard
+            key={user.id}
+            user={user}
+            wsId={wsId}
+            post={{
+              ...post,
+              group_name: group.name,
+            }}
+          />
         ))}
       </div>
     </div>
@@ -204,8 +212,8 @@ async function getUserData(
     .order('full_name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = Number.parseInt(page);
+    const parsedSize = Number.parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);
