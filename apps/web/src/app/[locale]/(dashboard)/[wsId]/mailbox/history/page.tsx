@@ -1,6 +1,5 @@
 import { getUserColumns } from '../../users/database/columns';
 import Filters from '../../users/database/filters';
-import MailboxPosts from './posts';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -79,15 +78,6 @@ export default async function WorkspaceUsersPage({
           // Extra columns
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
         }}
-      />
-      <MailboxPosts
-        wsId={wsId}
-        emails={
-          users
-            .map((user) => user.email)
-            .filter(Boolean)
-            .filter((email) => !email?.includes('@easy.com')) as string[]
-        }
       />
     </>
   );

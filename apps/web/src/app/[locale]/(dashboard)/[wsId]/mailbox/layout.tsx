@@ -1,6 +1,6 @@
-import { NavLink, Navigation } from '@/components/navigation';
+import { type NavLink, Navigation } from '@/components/navigation';
 import { getTranslations } from 'next-intl/server';
-import React from 'react';
+import type React from 'react';
 
 interface LayoutProps {
   params: {
@@ -25,11 +25,12 @@ export default async function Layout({
     {
       title: t('workspace-mailbox.send'),
       href: `/${wsId}/mailbox/send`,
+      disabled: true,
     },
     {
       title: t('workspace-mailbox.history'),
       href: `/${wsId}/mailbox/history`,
-      disabled: true,
+      // disabled: true,
     },
     {
       title: t('dworkspace-mailbox.destination-addresses'),

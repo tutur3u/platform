@@ -2,7 +2,7 @@ import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import FleetingNavigator from './fleeting-navigator';
 import { Structure } from './structure';
-import { NavLink } from '@/components/navigation';
+import type { NavLink } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
-import { ReactNode, Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 
 interface LayoutProps {
   params: {
@@ -115,7 +115,7 @@ export default async function Layout({
     },
     {
       title: t('sidebar_tabs.mailbox'),
-      href: `/${wsId}/mailbox/send`,
+      href: `/${wsId}/mailbox/history`,
       icon: <Mail className="h-4 w-4" />,
       disabled: !verifySecret('ENABLE_MAILBOX', 'true', secrets),
     },
