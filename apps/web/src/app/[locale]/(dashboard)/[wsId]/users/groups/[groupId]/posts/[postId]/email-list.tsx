@@ -27,8 +27,8 @@ export function EmailList({ users }: { users: WorkspaceUser[] }) {
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button>
+      <DialogTrigger asChild disabled>
+        <Button disabled>
           <Mail className="mr-1" />
           Send Email
         </Button>

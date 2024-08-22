@@ -1,6 +1,5 @@
 'use client';
 
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mailbox/send/post-template';
 import useEmail from '@/hooks/useEmail';
 import { cn } from '@/lib/utils';
 import type { GroupPostCheck } from '@/types/db';
@@ -60,7 +59,10 @@ function UserCard({ user, wsId, post }: Props) {
       if (error) {
         console.error('Error fetching data:', error.message);
       } else if (data) {
-        setCheck(data);
+        setCheck({
+          ...data,
+          notes: data.notes || '',
+        });
         setNotes(data.notes || '');
       } else {
         setCheck({
@@ -88,7 +90,7 @@ function UserCard({ user, wsId, post }: Props) {
       !user.id ||
       !post.id ||
       !post.group_id ||
-      isCompleted === check?.is_completed
+      (isCompleted === check?.is_completed && notes === check?.notes)
     )
       return;
 
@@ -110,7 +112,7 @@ function UserCard({ user, wsId, post }: Props) {
         ...check,
         user_id: user.id,
         post_id: post.id,
-        is_completed: isCompleted ?? check?.is_completed,
+        is_completed: isCompleted ?? check?.is_completed ?? true,
         notes,
       }),
     });
@@ -121,7 +123,7 @@ function UserCard({ user, wsId, post }: Props) {
         ...prev,
         user_id: user.id,
         post_id: post.id,
-        is_completed: isCompleted ?? check?.is_completed,
+        is_completed: isCompleted ?? check?.is_completed ?? true,
         notes,
       }));
       router.refresh();
@@ -133,21 +135,24 @@ function UserCard({ user, wsId, post }: Props) {
   }
 
   const handleSendEmail = async () => {
-    if (post) {
+    if (post && user.email && check?.is_completed != null) {
       await sendEmail({
-        recipients: [
-          'phucvo@tuturuuu.com',
-          // 'phathuynh@tuturuuu.com',
+        wsId,
+        postId: post.id!,
+        groupId: post.group_id!,
+        post,
+        users: [
+          {
+            email: user.email,
+            username:
+              user.full_name ||
+              user.display_name ||
+              user.email ||
+              '<Chưa có tên>',
+            notes: check?.notes || '',
+            is_completed: check?.is_completed,
+          },
         ],
-        subject: `Easy Center | Báo cáo tiến độ ngày ${new Date().toLocaleDateString()} của ${user.full_name || user.display_name || user.email || '<Chưa có tên>'}`,
-        component: (
-          <PostEmailTemplate
-            isHomeworkDone={check?.is_completed}
-            post={post}
-            username={user.full_name || user.display_name || user.email}
-            notes={check?.notes || undefined}
-          />
-        ),
       });
     }
   };
@@ -198,7 +203,7 @@ function UserCard({ user, wsId, post }: Props) {
               check?.is_completed == null ||
               saving ||
               !check ||
-              check?.notes !== notes
+              (check?.notes != null && check?.notes !== notes)
             }
             variant="secondary"
           >
