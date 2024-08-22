@@ -1,5 +1,6 @@
 import { getUserColumns } from '../../users/database/columns';
 import Filters from '../../users/database/filters';
+import { getEmailColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -17,6 +18,14 @@ interface SearchParams {
   excludedGroups?: string | string[];
 }
 
+interface sentEmail {
+  created_at?: string;
+  sender_id?: string;
+  receiver_id?: string;
+  context?: string;
+  post_id?: string;
+  email?: string;
+}
 interface Props {
   params: {
     locale: string;
@@ -34,7 +43,7 @@ export default async function WorkspaceUsersPage({
 
   const { data, count } = await getData(wsId, searchParams);
   // const { data: posts } = await getGroupPosts(groupId);
-  const { data: extraFields } = await getUserFields(wsId);
+  const { data: extraFields } = await getUserFields();
 
   const users = data.map((u) => ({
     ...u,
@@ -49,13 +58,12 @@ export default async function WorkspaceUsersPage({
         description={t('description')}
         createTitle={t('create')}
         createDescription={t('create_description')}
-        // form={<UserForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
         data={users}
         namespace="user-data-table"
-        columnGenerator={getUserColumns}
+        columnGenerator={getEmailColumns}
         extraColumns={extraFields}
         extraData={{ locale }}
         count={count}
@@ -96,25 +104,7 @@ async function getData(
 ) {
   const supabase = createClient();
 
-  const queryBuilder = supabase
-    .rpc(
-      'get_workspace_users',
-      {
-        _ws_id: wsId,
-        included_groups: Array.isArray(includedGroups)
-          ? includedGroups
-          : [includedGroups],
-        excluded_groups: Array.isArray(excludedGroups)
-          ? excludedGroups
-          : [excludedGroups],
-        search_query: q || '',
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('*')
-    .order('full_name', { ascending: true, nullsFirst: false });
+  const queryBuilder = supabase.from('send_emails').select('*');
 
   if (page && pageSize) {
     const parsedPage = Number.parseInt(page);
@@ -131,19 +121,13 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+  return { data, count } as unknown as { data: sentEmail[]; count: number };
 }
 
-async function getUserFields(wsId: string) {
+async function getUserFields() {
   const supabase = createClient();
 
-  const queryBuilder = supabase
-    .from('workspace_user_fields')
-    .select('*', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
+  const queryBuilder = supabase.from('send_emails').select('*');
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
