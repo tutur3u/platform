@@ -1347,5 +1347,10 @@
   },
   "dworkspace-mailbox": {
     "destination-addresses": "Destination Addresses"
+  },
+  "ws-emails": {
+    "plural": "Emails",
+    "singular": "Email",
+    "description": "View mailing history that belongs to your workspace."
   }
 }

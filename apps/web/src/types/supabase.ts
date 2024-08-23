@@ -18,9 +18,11 @@ export type Database = {
           creator_id: string | null;
           finish_reason: string | null;
           id: string;
+          metadata: Json | null;
           model: string | null;
           prompt_tokens: number;
           role: Database['public']['Enums']['chat_role'];
+          type: Database['public']['Enums']['ai_message_type'];
         };
         Insert: {
           chat_id: string;
@@ -30,9 +32,11 @@ export type Database = {
           creator_id?: string | null;
           finish_reason?: string | null;
           id?: string;
+          metadata?: Json | null;
           model?: string | null;
           prompt_tokens?: number;
           role: Database['public']['Enums']['chat_role'];
+          type?: Database['public']['Enums']['ai_message_type'];
         };
         Update: {
           chat_id?: string;
@@ -42,9 +46,11 @@ export type Database = {
           creator_id?: string | null;
           finish_reason?: string | null;
           id?: string;
+          metadata?: Json | null;
           model?: string | null;
           prompt_tokens?: number;
           role?: Database['public']['Enums']['chat_role'];
+          type?: Database['public']['Enums']['ai_message_type'];
         };
         Relationships: [
           {
@@ -1722,82 +1728,74 @@ export type Database = {
           },
         ];
       };
-      send_emails: {
+      sent_emails: {
         Row: {
-          content: string | null;
+          content: string;
           created_at: string;
-          email: string | null;
+          email: string;
           id: string;
           post_id: string | null;
           receiver_id: string;
           sender_id: string;
+          source_email: string;
+          source_name: string;
         };
         Insert: {
-          content?: string | null;
+          content: string;
           created_at?: string;
-          email?: string | null;
+          email: string;
           id?: string;
           post_id?: string | null;
           receiver_id: string;
           sender_id: string;
+          source_email: string;
+          source_name: string;
         };
         Update: {
-          content?: string | null;
+          content?: string;
           created_at?: string;
-          email?: string | null;
+          email?: string;
           id?: string;
           post_id?: string | null;
           receiver_id?: string;
           sender_id?: string;
+          source_email?: string;
+          source_name?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'send_emails_post_id_fkey';
+            foreignKeyName: 'sent_emails_post_id_fkey';
             columns: ['post_id'];
             isOneToOne: false;
             referencedRelation: 'user_group_posts';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'send_emails_receiver_id_fkey';
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
             columns: ['receiver_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'send_emails_receiver_id_fkey';
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
             columns: ['receiver_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'send_emails_receiver_id_fkey';
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
             columns: ['receiver_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'send_emails_sender_id_fkey';
+            foreignKeyName: 'sent_emails_sender_id_fkey1';
             columns: ['sender_id'];
             isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'send_emails_sender_id_fkey';
-            columns: ['sender_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'send_emails_sender_id_fkey';
-            columns: ['sender_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -4714,6 +4712,14 @@ export type Database = {
       };
     };
     Enums: {
+      ai_message_type:
+        | 'message'
+        | 'file'
+        | 'summary'
+        | 'notes'
+        | 'multi_choice_quiz'
+        | 'paragraph_quiz'
+        | 'flashcards';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       workspace_role_permission:
         | 'view_infrastructure'
