@@ -86,3 +86,5 @@ to authenticated
 using ((EXISTS ( SELECT 1
    FROM user_group_posts ugp
   WHERE (ugp.id = sent_emails.post_id))));
+
+alter table "public"."sent_emails" add column "subject" text not null;

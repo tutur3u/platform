@@ -491,6 +491,16 @@
     "applying": "Applying...",
     "selected": "Selected"
   },
+  "email-data-table": {
+    "id": "ID",
+    "recipient": "Recipient",
+    "sender": "Sender",
+    "email": "Email",
+    "subject": "Subject",
+    "source_name": "Source Name",
+    "source_email": "Source Email",
+    "created_at": "Created At"
+  },
   "user-group-data-table": {
     "id": "ID",
     "name": "Name",

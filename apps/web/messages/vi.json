@@ -491,6 +491,16 @@
     "applying": "Đang áp dụng...",
     "selected": "nhóm"
   },
+  "email-data-table": {
+    "id": "Mã số",
+    "recipient": "Người nhận",
+    "sender": "Người gửi",
+    "email": "Email",
+    "subject": "Chủ đề",
+    "source_name": "Tên nguồn",
+    "source_email": "Email nguồn",
+    "created_at": "Ngày tạo"
+  },
   "user-group-data-table": {
     "id": "Mã số",
     "name": "Tên",

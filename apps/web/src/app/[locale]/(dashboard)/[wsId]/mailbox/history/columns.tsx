@@ -26,6 +26,28 @@ export const getEmailColumns = (
     ),
   },
   {
+    accessorKey: 'recipient',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.recipient`)}
+      />
+    ),
+    cell: ({ row }) => <div>{row.getValue('recipient') || '-'}</div>,
+  },
+  {
+    accessorKey: 'sender',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.sender`)}
+      />
+    ),
+    cell: ({ row }) => <div>{row.getValue('sender') || '-'}</div>,
+  },
+  {
     accessorKey: 'email',
     header: ({ column }) => (
       <DataTableColumnHeader
@@ -35,6 +57,39 @@ export const getEmailColumns = (
       />
     ),
     cell: ({ row }) => <div>{row.getValue('email') || '-'}</div>,
+  },
+  {
+    accessorKey: 'subject',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.subject`)}
+      />
+    ),
+    cell: ({ row }) => <div>{row.getValue('subject') || '-'}</div>,
+  },
+  {
+    accessorKey: 'source_name',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.source_name`)}
+      />
+    ),
+    cell: ({ row }) => <div>{row.getValue('source_name') || '-'}</div>,
+  },
+  {
+    accessorKey: 'source_email',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.source_email`)}
+      />
+    ),
+    cell: ({ row }) => <div>{row.getValue('source_email') || '-'}</div>,
   },
   {
     accessorKey: 'created_at',

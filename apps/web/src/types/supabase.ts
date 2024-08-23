@@ -1739,6 +1739,7 @@ export type Database = {
           sender_id: string;
           source_email: string;
           source_name: string;
+          subject: string;
         };
         Insert: {
           content: string;
@@ -1750,6 +1751,7 @@ export type Database = {
           sender_id: string;
           source_email: string;
           source_name: string;
+          subject: string;
         };
         Update: {
           content?: string;
@@ -1761,6 +1763,7 @@ export type Database = {
           sender_id?: string;
           source_email?: string;
           source_name?: string;
+          subject?: string;
         };
         Relationships: [
           {

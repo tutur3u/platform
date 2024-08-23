@@ -39,7 +39,7 @@ export default async function WorkspaceUsersPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={emails}
-        namespace="user-data-table"
+        namespace="email-data-table"
         columnGenerator={getEmailColumns}
         extraData={{ locale }}
         count={count}
