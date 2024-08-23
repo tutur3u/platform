@@ -34,7 +34,7 @@ export interface DataTableProps<TData, TValue> {
   editContent?: ReactNode;
   namespace?: string;
   data?: TData[];
-  count?: number;
+  count?: number | null;
   pageIndex?: number;
   pageSize?: number;
   defaultQuery?: string;
@@ -106,9 +106,7 @@ export function DataTable<TData, TValue>({
       },
     },
     pageCount:
-      count !== undefined
-        ? Math.max(Math.ceil(count / pageSize), 1)
-        : undefined,
+      count != undefined ? Math.max(Math.ceil(count / pageSize), 1) : undefined,
     enableRowSelection: true,
     autoResetPageIndex: true,
     onRowSelectionChange: setRowSelection,

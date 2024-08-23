@@ -1728,6 +1728,88 @@ export type Database = {
           },
         ];
       };
+      sent_emails: {
+        Row: {
+          content: string;
+          created_at: string;
+          email: string;
+          id: string;
+          post_id: string | null;
+          receiver_id: string;
+          sender_id: string;
+          source_email: string;
+          source_name: string;
+          subject: string;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          email: string;
+          id?: string;
+          post_id?: string | null;
+          receiver_id: string;
+          sender_id: string;
+          source_email: string;
+          source_name: string;
+          subject: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          email?: string;
+          id?: string;
+          post_id?: string | null;
+          receiver_id?: string;
+          sender_id?: string;
+          source_email?: string;
+          source_name?: string;
+          subject?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sent_emails_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
+            columns: ['receiver_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
+            columns: ['receiver_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
+            columns: ['receiver_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_sender_id_fkey1';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_assignees: {
         Row: {
           created_at: string | null;

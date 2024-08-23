@@ -491,6 +491,16 @@
     "applying": "Đang áp dụng...",
     "selected": "nhóm"
   },
+  "email-data-table": {
+    "id": "Mã số",
+    "recipient": "Người nhận",
+    "sender": "Người gửi",
+    "email": "Email",
+    "subject": "Chủ đề",
+    "source_name": "Tên nguồn",
+    "source_email": "Email nguồn",
+    "created_at": "Ngày tạo"
+  },
   "user-group-data-table": {
     "id": "Mã số",
     "name": "Tên",
@@ -1347,5 +1357,10 @@
   },
   "dworkspace-mailbox": {
     "destination-addresses": "Địa chỉ đích"
+  },
+  "ws-emails": {
+    "plural": "Email",
+    "singular": "E-mail",
+    "description": "Xem lịch sử gửi thư thuộc không gian làm việc của bạn."
   }
 }
