@@ -1,7 +1,7 @@
 'use client';
 
+import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import GroupTagForm from './form';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
@@ -18,17 +18,17 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface ApiKeyRowActionsProps {
-  row: Row<WorkspaceApiKey>;
+interface GroupTagRowActionsProps {
+  row: Row<UserGroupTag>;
 }
 
-export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
+export function GroupTagRowActions({ row }: GroupTagRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
   const data = row.original;
 
-  const deleteApiKey = async () => {
+  const deleteGroupTag = async () => {
     const res = await fetch(
       `/api/v1/workspaces/${data.ws_id}/group-tags/${data.id}`,
       {
@@ -41,7 +41,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
     } else {
       const data = await res.json();
       toast({
-        title: 'Failed to delete workspace user group tag',
+        title: 'Failed to delete user group tag',
         description: data.message,
       });
     }
@@ -68,7 +68,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteApiKey}>
+          <DropdownMenuItem onClick={deleteGroupTag}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>

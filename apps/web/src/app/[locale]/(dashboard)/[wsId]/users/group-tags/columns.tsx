@@ -1,11 +1,12 @@
 'use client';
 
-import { ApiKeyRowActions } from './row-actions';
+import { GroupTagRowActions } from './row-actions';
+import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import { ColorPicker } from '@repo/ui/components/ui/color-picker';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import { UserGroupTag } from '@/types/primitives/UserGroupTag';
+import Link from 'next/link';
 
 export const groupTagColumns = (
   t: any,
@@ -58,11 +59,13 @@ export const groupTagColumns = (
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
-        <ColorPicker
-          text={row.getValue('name')}
-          value={row.getValue('color') || '#000000'}
-          className="line-clamp-1 w-full cursor-default"
-        />
+        <Link className="cursor-pointer" href={``}>
+          <ColorPicker
+            text={row.getValue('name')}
+            value={row.getValue('color') || '#000000'}
+            className="line-clamp-1 w-full"
+          ></ColorPicker>
+        </Link>
       </div>
     ),
   },
@@ -101,6 +104,6 @@ export const groupTagColumns = (
   {
     id: 'actions',
     header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
-    cell: ({ row }) => <ApiKeyRowActions row={row} />,
+    cell: ({ row }) => <GroupTagRowActions row={row} />,
   },
 ];

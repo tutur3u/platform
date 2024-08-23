@@ -6,4 +6,5 @@ export interface UserGroupTag {
   group_ids?: string[];
   created_at?: string;
   amount?: number;
+  href?: string;
 }
