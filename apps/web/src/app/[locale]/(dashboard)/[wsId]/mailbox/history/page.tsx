@@ -62,7 +62,11 @@ async function getData(
 ) {
   const supabase = createClient();
 
-  const queryBuilder = supabase.from('sent_emails').select('*');
+  const queryBuilder = supabase
+    .from('sent_emails')
+    .select(
+      '*, ...users(sender:display_name), recipient:workspace_users(display_name, full_name)'
+    );
 
   if (page && pageSize) {
     const parsedPage = Number.parseInt(page);
@@ -79,5 +83,11 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count };
+  return {
+    data: data.map(({ recipient, ...rest }) => ({
+      ...rest,
+      recipient: recipient?.full_name || recipient?.display_name,
+    })),
+    count,
+  };
 }

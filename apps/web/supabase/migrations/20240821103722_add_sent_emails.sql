@@ -88,3 +88,20 @@ using ((EXISTS ( SELECT 1
   WHERE (ugp.id = sent_emails.post_id))));
 
 alter table "public"."sent_emails" add column "subject" text not null;
+
+drop policy "Enable read access for workspace members" on "public"."sent_emails";
+
+create policy "Enable read access for workspace members"
+on "public"."sent_emails"
+as permissive
+for select
+to authenticated
+using (((post_id IS NULL) OR (EXISTS ( SELECT 1
+   FROM user_group_posts ugp
+  WHERE (ugp.id = sent_emails.post_id))) OR (EXISTS ( SELECT 1
+   FROM workspace_users wu
+  WHERE (wu.id = sent_emails.receiver_id)))));
+
+alter table "public"."sent_emails" add constraint "sent_emails_sender_id_fkey" FOREIGN KEY (sender_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET DEFAULT not valid;
+
+alter table "public"."sent_emails" validate constraint "sent_emails_sender_id_fkey";

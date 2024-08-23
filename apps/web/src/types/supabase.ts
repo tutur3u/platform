@@ -1795,6 +1795,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'sent_emails_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'sent_emails_sender_id_fkey1';
             columns: ['sender_id'];
             isOneToOne: false;
