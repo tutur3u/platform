@@ -10,7 +10,7 @@
     "coming_soon": "Coming Soon",
     "get-started": "Get Started",
     "get-started-desc": "Sign up for free and start using our platform today.",
-    "copyright": "Copyright © 2024 Tuturuuu LLC – All rights reserved.",
+    "copyright": "Copyright © 2024 RMIT Neo Culture Tech – All rights reserved.",
     "legal": "Legal",
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",
@@ -20,6 +20,8 @@
     "unsaved-changes": "You have unsaved changes.",
     "back-to-home": "Go back to home",
     "home": "Home",
+    "about": "About",
+    "projects": "Projects",
     "docs": "Docs",
     "dashboard": "Dashboard",
     "local_database": "Local Database",
@@ -150,7 +152,7 @@
     "headline-p1": "Take control of your workflow,",
     "headline-p2": "supercharged by AI",
     "get-started": "Get Started",
-    "features-lead": "What can you do with Tuturuuu?",
+    "features-lead": "What can you do with NCT Hub?",
     "features-1-title": "Powered by AI",
     "features-1-subtitle": "Brainstorm and organize your ideas at the speed of thought, with our smart AI-powered tools.",
     "features-2-title": "Fully-featured chat",
@@ -162,7 +164,7 @@
     "features-5-title": "Robust finance tracker",
     "features-5-subtitle": "Track your finances, and keep your team in the loop, so you can focus on what matters.",
     "features-6-title": "Open-source",
-    "features-6-subtitle": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone."
+    "features-6-subtitle": "NCT Hub is open-source, so you can contribute to the project, and make it better for everyone."
   },
   "branding": {
     "branding": "Branding",
@@ -197,7 +199,7 @@
     "something_went_wrong": "Something went wrong",
     "cant_create_plan_right_now": "We can't create your plan right now. Please try again later.",
     "local_time": "Local time",
-    "login_to_save_plans": "Sign up or login into Tuturuuu to save your created plans.",
+    "login_to_save_plans": "Sign up or login into NCT Hub to save your created plans.",
     "untitled_plan": "Untitled plan"
   },
   "meet-together-plan-details": {
@@ -215,11 +217,11 @@
     "identity_protection": "Identity protection",
     "identity_protection_desc": "Use a guest account and optionally set a password for this plan to protect your identity.",
     "account_switcher": "Account switcher",
-    "account_switcher_desc": "Interact with this plan using a guest account, or use a Tuturuuu account with more advanced features.",
+    "account_switcher_desc": "Interact with this plan using a guest account, or use a NCT Hub account with more advanced features.",
     "use_guest_account": "Use guest account",
     "use_other_guest_account": "Use other guest account",
-    "use_tuturuuu_account": "Use Tuturuuu account",
-    "using_tuturuuu_account": "Using Tuturuuu account",
+    "use_tuturuuu_account": "Use NCT Hub account",
+    "using_tuturuuu_account": "Using NCT Hub account",
     "your_name": "Your name",
     "your_name_desc": "This is how others will see you in this plan.",
     "password": "Password (optional)",
@@ -229,7 +231,7 @@
     "interacting_as": "Interacting as",
     "guest": "Guest",
     "guest_account": "Guest account",
-    "tuturuuu_account": "Tuturuuu account",
+    "tuturuuu_account": "NCT Hub account",
     "switch_account": "Switch account",
     "plan_users": "Plan users",
     "timeblocks": "Timeblocks",
@@ -244,7 +246,7 @@
     "cant_delete_plan_right_now": "We can't delete your plan right now. Please try again later.",
     "no_users_yet": "No users yet",
     "are_you_absolutely_sure": "Are you absolutely sure?",
-    "delete_plan_warning": "This action cannot be undone. The plan and all related information will be permanently deleted from Tuturuuu.",
+    "delete_plan_warning": "This action cannot be undone. The plan and all related information will be permanently deleted from NCT Hub.",
     "select_users_to_filter": "Select users to filter",
     "show_qr_code": "Show QR Code",
     "qr_code_description": "Scan this QR code to quickly access the meet together plan details."
@@ -264,7 +266,7 @@
   },
   "auth": {
     "password": "Password",
-    "notice-p1": "By continuing, you agree to Tuturuuu's",
+    "notice-p1": "By continuing, you agree to NCT Hub's",
     "notice-p2": " to receive periodic emails with updates",
     "tos": "Terms of Service",
     "privacy": "Privacy Policy"
@@ -280,7 +282,7 @@
   },
   "login": {
     "email_placeholder": "username@example.com",
-    "email_description": "Enter your email address to get started with Tuturuuu.",
+    "email_description": "Enter your email address to get started with NCT Hub.",
     "otp_code": "Verification code",
     "otp_description": "Enter the verification code sent to your email address.",
     "open_inbucket": "Open Inbucket",
@@ -307,7 +309,7 @@
     "login": "Login",
     "already-have-account": "Already have an account?",
     "notice-p1": "By continuing, you agree to the",
-    "notice-p2": "of Tuturuuu and receive periodic emails with new updates",
+    "notice-p2": "of NCT Hub and receive periodic emails with new updates",
     "tos": "Terms of Service",
     "privacy": "Privacy Policy"
   },
@@ -653,10 +655,10 @@
     "latest_announcement": "Latest Announcement",
     "ai_chat_playground_experiment": "AI Chat Playground Experiment (Mira AI)",
     "ai_chat_playground_discontinued_p1": "Hi there,\n\nWe are sorry to announce that",
-    "ai_chat_playground_discontinued_p2": "has been temporarily disabled for improvement and further testing. Don't worry! We are working on exciting features to bring you a better experience. Stay tuned for a comeback with more features and functionalities. Thank you for your patience and understanding.\n\nBest regards,\nTuturuuu"
+    "ai_chat_playground_discontinued_p2": "has been temporarily disabled for improvement and further testing. Don't worry! We are working on exciting features to bring you a better experience. Stay tuned for a comeback with more features and functionalities. Thank you for your patience and understanding.\n\nBest regards,\nNCT Hub"
   },
   "ws-storage-objects": {
-    "module": "Tuturuuu Drive",
+    "module": "NCT Hub Drive",
     "description": "Store workspace files securely, and access them from anywhere.",
     "total_files": "Total Files",
     "total_size": "Total Size",
@@ -715,7 +717,7 @@
   "ws-api-keys": {
     "api_key": "API Key",
     "api_keys": "API Keys",
-    "description": "Secret keys to access your workspace data externally via Tuturuuu Platform API in a secure and confidental way.",
+    "description": "Secret keys to access your workspace data externally via NCT Hub Platform API in a secure and confidental way.",
     "name": "Name",
     "value": "Value",
     "create_key": "Create API Key",
@@ -1213,7 +1215,7 @@
     "example_4_prompt": "Summarize the following article for a 2nd grader: \n\n",
     "example_5": "Draft an email",
     "example_5_prompt": "Draft an email to my boss about the following: \n\n",
-    "prompt": "Enter a prompt to start chatting with Tuturuuu AI.",
+    "prompt": "Enter a prompt to start chatting with NCT Hub AI.",
     "prompt_placeholder": "Type your prompt here...",
     "chats": "Chats",
     "no_chats": "Start a new chat by sending a prompt.",
@@ -1283,7 +1285,7 @@
     "preview": "Preview",
     "display-name": "Display name",
     "display-name-description": "Enter your name as you would like it to be displayed on your profile.",
-    "handle-description": "This is your custom URL namespace within Tuturuuu.",
+    "handle-description": "This is your custom URL namespace within NCT Hub.",
     "birthday": "Birthday",
     "birthday-description": "Your birthday will only be used for social features.",
     "birthday-placeholder": "Your birthday",
@@ -1307,7 +1309,7 @@
   },
   "settings-appearance": {
     "appearance": "Appearance",
-    "appearance-description": "Customize the look and feel of Tuturuuu.",
+    "appearance-description": "Customize the look and feel of NCT Hub.",
     "light-mode": "Light mode",
     "dark-mode": "Dark mode"
   },

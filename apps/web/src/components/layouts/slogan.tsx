@@ -15,7 +15,7 @@ export default function Slogan() {
   const stress = t('stress');
 
   return (
-    <div className="text-foreground/50 text-2xl font-semibold md:text-4xl">
+    <div className="text-foreground/50 text-2xl font-semibold 2xl:text-4xl">
       <span
         className={
           isDark ? 'text-green-300' : 'text-green-500 dark:text-green-300'

@@ -95,7 +95,7 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
                 <FormControl>
                   <InputField
                     id="email"
-                    placeholder="example@tuturuuu.com"
+                    placeholder="example@rmit.edu.vn"
                     label={
                       newEmail
                         ? oldEmail === email

@@ -28,6 +28,9 @@ export const SHOW_TAILWIND_INDICATOR =
 
 export const PUBLIC_PATHS = [
   '/login',
+  '/about',
+  '/projects',
+  '/neo-crush',
   '/terms',
   '/privacy',
   '/branding',

@@ -178,7 +178,7 @@ export default function PlanLogin({
                       {t('meet-together-plan-details.your_name')}
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Tuturuuu" autoFocus {...field} />
+                      <Input placeholder="NCT Hub" autoFocus {...field} />
                     </FormControl>
                     <FormDescription>
                       {t('meet-together-plan-details.your_name_desc')}

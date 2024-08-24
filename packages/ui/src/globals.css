@@ -6,34 +6,45 @@
   :root {
     color-scheme: light;
 
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* Brand Colors */
+    --brand-light-blue: 193 41% 48%;
+    --brand-dark-blue: 201 90% 12%;
+    --brand-light-yellow: 42 100% 45%;
+    --brand-dark-yellow: 42 95% 45%;
+    --brand-light-red: 0 100% 65%;
+    --brand-dark-red: 0 100% 30%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    /* Default Colors */
+    --background: 195 65% 97%;
+    --lighter-background: 195 65% 98%;
+    --foreground: 195 10% 3.9%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --card: 195 0% 100%;
+    --card-foreground: 195 10% 3.9%;
 
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    --popover: 195 0% 100%;
+    --popover-foreground: 195 10% 3.9%;
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --primary: 195 5.9% 10%;
+    --primary-foreground: 195 0% 98%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --secondary: 195 4.8% 95.9%;
+    --secondary-foreground: 195 5.9% 10%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --muted: 195 4.8% 95.9%;
+    --muted-foreground: 195 3.8% 46.1%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --accent: 195 4.8% 95.9%;
+    --accent-foreground: 195 5.9% 10%;
 
-    --border: 240 30% 80%;
-    --input: 240 30% 80%;
-    --ring: 240 10% 3.9%;
+    --destructive: 195 84.2% 60.2%;
+    --destructive-foreground: 195 0% 98%;
 
+    --border: 195 39% 86%;
+    --input: 195 39% 86%;
+    --ring: 195 10% 3.9%;
+
+    --pink: 344 50% 40%;
     --purple: 270 50% 40%;
     --blue: 220 50% 40%;
     --green: 160 50% 40%;
@@ -239,34 +250,45 @@
   .dark {
     color-scheme: dark;
 
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Brand Colors */
+    --brand-light-blue: 211 47% 90%;
+    --brand-dark-blue: 194 67% 60%;
+    --brand-light-yellow: 42 95% 65%;
+    --brand-dark-yellow: 42 95% 55%;
+    --brand-light-red: 0 100% 80%;
+    --brand-dark-red: 0 100% 70%;
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    /* Default Colors */
+    --background: 240 23% 12%;
+    --lighter-background: 240 23% 18%;
+    --foreground: 240 0% 98%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --card: 240 23% 10%;
+    --card-foreground: 240 0% 98%;
 
-    --primary: 0 0% 98%;
+    --popover: 240 23% 10%;
+    --popover-foreground: 240 0% 98%;
+
+    --primary: 240 0% 98%;
     --primary-foreground: 240 5.9% 10%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 240 15% 25%;
+    --secondary-foreground: 240 0% 98%;
 
-    --muted: 240 3.7% 15.9%;
+    --muted: 240 15% 25%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 240 15% 25%;
+    --accent-foreground: 240 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 240 62.8% 30.6%;
+    --destructive-foreground: 240 0% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 70%;
+    --border: 240 15% 25%;
+    --input: 240 15% 25%;
+    --ring: 240 4.9% 83.9%;
 
+    --pink: 344 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --green: 160 50% 70%;
@@ -306,6 +328,7 @@
     --input: 344 20% 20%;
     --ring: 344 20% 70%;
 
+    --pink: 344 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --green: 160 50% 70%;
@@ -345,6 +368,7 @@
     --input: 270 20% 20%;
     --ring: 270 20% 70%;
 
+    --pink: 344 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --green: 160 50% 70%;
@@ -384,6 +408,7 @@
     --input: 40 20% 20%;
     --ring: 40 20% 70%;
 
+    --pink: 344 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --green: 160 50% 70%;
@@ -423,6 +448,7 @@
     --input: 25 20% 20%;
     --ring: 25 20% 70%;
 
+    --pink: 344 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --green: 160 50% 70%;
@@ -462,6 +488,7 @@
     --input: 140 20% 20%;
     --ring: 140 20% 70%;
 
+    --pink: 344 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --green: 160 50% 70%;
@@ -501,6 +528,7 @@
     --input: 220 20% 20%;
     --ring: 220 20% 70%;
 
+    --pink: 344 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --green: 160 50% 70%;
