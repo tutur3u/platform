@@ -171,8 +171,8 @@ importers:
         specifier: ^1.11.13
         version: 1.11.13
       framer-motion:
-        specifier: ^11.3.29
-        version: 11.3.29(@emotion/is-prop-valid@0.8.8)(react-dom@19.0.0-rc-1eaccd82-20240816(react@19.0.0-rc-1eaccd82-20240816))(react@19.0.0-rc-1eaccd82-20240816)
+        specifier: ^11.3.30
+        version: 11.3.30(@emotion/is-prop-valid@0.8.8)(react-dom@19.0.0-rc-1eaccd82-20240816(react@19.0.0-rc-1eaccd82-20240816))(react@19.0.0-rc-1eaccd82-20240816)
       juice:
         specifier: ^11.0.0
         version: 11.0.0
@@ -6122,8 +6122,8 @@ packages:
       react-dom:
         optional: true
 
-  framer-motion@11.3.29:
-    resolution: {integrity: sha512-uyDuUOeOElJEA3kbkbyoTNEf75Jih1EUg0ouLKYMlGDdt/LaJPmO+FyOGAGxM2HwKhHcAoKFNveR5A8peb7yhw==}
+  framer-motion@11.3.30:
+    resolution: {integrity: sha512-9VmqGe9OIjfMoCcs+ZsKXlv6JaG5QagKX2F1uSbkG3Z33wgjnz60Kw+CngC1M49rDYau+Y9aL+8jGagAwrbVyw==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0
@@ -16787,7 +16787,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  framer-motion@11.3.29(@emotion/is-prop-valid@0.8.8)(react-dom@19.0.0-rc-1eaccd82-20240816(react@19.0.0-rc-1eaccd82-20240816))(react@19.0.0-rc-1eaccd82-20240816):
+  framer-motion@11.3.30(@emotion/is-prop-valid@0.8.8)(react-dom@19.0.0-rc-1eaccd82-20240816(react@19.0.0-rc-1eaccd82-20240816))(react@19.0.0-rc-1eaccd82-20240816):
     dependencies:
       tslib: 2.6.3
     optionalDependencies:

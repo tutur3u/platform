@@ -74,7 +74,7 @@
     "babel-plugin-react-compiler": "0.0.0-experimental-7d62301-20240822",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.13",
-    "framer-motion": "^11.3.29",
+    "framer-motion": "^11.3.30",
     "juice": "^11.0.0",
     "react-pdftotext": "^1.3.0",
     "lodash": "^4.17.21",
