@@ -11,6 +11,8 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
+import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
 import moment from 'moment';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -19,7 +21,8 @@ import { Fragment } from 'react';
 export const getUserColumns = (
   t: any,
   namespace: string,
-  extraFields?: WorkspaceUserField[]
+  extraFields?: WorkspaceUserField[],
+  extraData?: any
 ): ColumnDef<WorkspaceUser>[] => [
   // {
   //   id: 'select',
@@ -230,7 +233,11 @@ export const getUserColumns = (
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
         {row.getValue('birthday')
-          ? moment(row.getValue('birthday')).format('DD/MM/YYYY')
+          ? dayjs(row.getValue('birthday'))
+              .locale(extraData?.locale)
+              .format(
+                extraData?.locale === 'vi' ? 'D MMMM, YYYY' : 'MMMM D, YYYY'
+              )
           : '-'}
       </div>
     ),
@@ -441,6 +448,12 @@ export const getUserColumns = (
   })) || []) as ColumnDef<WorkspaceUser>[]),
   {
     id: 'actions',
-    cell: ({ row }) => <UserRowActions row={row} href={row.original.href} />,
+    cell: ({ row }) => (
+      <UserRowActions
+        row={row}
+        href={row.original.href}
+        extraData={extraData}
+      />
+    ),
   },
 ];

@@ -1,6 +1,6 @@
 import Chat from '../chat';
 import { getChats } from '../helper';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import { Message } from 'ai';
@@ -21,6 +21,13 @@ export default async function AIPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_CHAT'], `/${wsId}`);
+  const { permissions } = await getPermissions({
+    wsId,
+    requiredPermissions: ['ai_chat'],
+  });
+
+  if (!permissions.includes('ai_chat')) notFound();
+
   if (!chatId) notFound();
 
   const { lang: locale } = searchParams;

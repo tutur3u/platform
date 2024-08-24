@@ -20,13 +20,14 @@ interface SearchParams {
 
 interface Props {
   params: {
+    locale: string;
     wsId: string;
   };
   searchParams: SearchParams;
 }
 
 export default async function WorkspaceUsersPage({
-  params: { wsId },
+  params: { locale, wsId },
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
@@ -56,6 +57,7 @@ export default async function WorkspaceUsersPage({
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
+        extraData={{ locale }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={searchParams} />}
         defaultVisibility={{

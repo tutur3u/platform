@@ -63,7 +63,11 @@ export default async function NotificationPopover() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="hidden md:flex">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden flex-none md:flex"
+        >
           <div className="relative">
             <Bell className="h-5 w-5" />
             {notifications.length > 0 && (
@@ -72,7 +76,7 @@ export default async function NotificationPopover() {
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="end">
+      <PopoverContent className="w-72 p-0" align="start">
         <div className="px-4 py-2 font-semibold">
           {t('notifications')}
           {notifications.length > 0 && ` (${notifications.length})`}

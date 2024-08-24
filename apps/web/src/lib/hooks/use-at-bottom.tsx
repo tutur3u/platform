@@ -2,41 +2,63 @@ import * as React from 'react';
 
 export function useAtBottom(offset = 0) {
   const [isAtBottom, setIsAtBottom] = React.useState(false);
+  const [element, setElement] = React.useState<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    const el = document.getElementById('main-content');
+    setElement(el);
+    return () => {
+      setElement(null);
+    };
+  }, []);
 
   React.useEffect(() => {
     const handleScroll = () => {
+      if (!element) return;
       const scrolledToBottom =
-        Math.ceil(window.scrollY + window.innerHeight) >=
-        document.documentElement.scrollHeight - offset;
+        Math.ceil(element.scrollTop + element.clientHeight) >=
+        element.scrollHeight - offset;
+
       setIsAtBottom(scrolledToBottom);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    element?.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      element?.removeEventListener('scroll', handleScroll);
     };
-  }, [offset]);
+  }, [element, offset]);
 
   return isAtBottom;
 }
 
 export function useAtTop(offset = 0) {
   const [isAtTop, setIsAtTop] = React.useState(false);
+  const [element, setElement] = React.useState<HTMLElement | null>(null);
 
   React.useEffect(() => {
+    const el = document.getElementById('main-content');
+    setElement(el);
+    return () => {
+      setElement(null);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!element) return;
+
     const handleScroll = () => {
-      setIsAtTop(window.scrollY <= offset);
+      setIsAtTop(element.scrollTop <= offset);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    element.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      element.removeEventListener('scroll', handleScroll);
     };
-  }, [offset]);
+  }, [element, offset]);
 
   return isAtTop;
 }

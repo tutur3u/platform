@@ -20,7 +20,7 @@ import { Table } from '@tanstack/react-table';
 
 interface DataTablePaginationProps<TData> {
   table?: Table<TData>;
-  count?: number;
+  count?: number | null;
   className?: string;
   pageIndex?: number;
   pageCount?: number;
@@ -71,7 +71,7 @@ export function DataTablePagination<TData>({
         className
       )}
     >
-      {count !== undefined && count > 0 ? (
+      {count != undefined && count > 0 ? (
         <div className="text-muted-foreground flex-none text-sm">
           {/* {locale === 'vi' || locale === 'vi-VN' ? t('common.selected') : null}{' '} */}
           {/* <span className="text-primary font-semibold">
