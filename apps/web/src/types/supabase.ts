@@ -18,9 +18,11 @@ export type Database = {
           creator_id: string | null;
           finish_reason: string | null;
           id: string;
+          metadata: Json | null;
           model: string | null;
           prompt_tokens: number;
           role: Database['public']['Enums']['chat_role'];
+          type: Database['public']['Enums']['ai_message_type'];
         };
         Insert: {
           chat_id: string;
@@ -30,9 +32,11 @@ export type Database = {
           creator_id?: string | null;
           finish_reason?: string | null;
           id?: string;
+          metadata?: Json | null;
           model?: string | null;
           prompt_tokens?: number;
           role: Database['public']['Enums']['chat_role'];
+          type?: Database['public']['Enums']['ai_message_type'];
         };
         Update: {
           chat_id?: string;
@@ -42,9 +46,11 @@ export type Database = {
           creator_id?: string | null;
           finish_reason?: string | null;
           id?: string;
+          metadata?: Json | null;
           model?: string | null;
           prompt_tokens?: number;
           role?: Database['public']['Enums']['chat_role'];
+          type?: Database['public']['Enums']['ai_message_type'];
         };
         Relationships: [
           {
@@ -1722,6 +1728,88 @@ export type Database = {
           },
         ];
       };
+      sent_emails: {
+        Row: {
+          content: string;
+          created_at: string;
+          email: string;
+          id: string;
+          post_id: string | null;
+          receiver_id: string;
+          sender_id: string;
+          source_email: string;
+          source_name: string;
+          subject: string;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          email: string;
+          id?: string;
+          post_id?: string | null;
+          receiver_id: string;
+          sender_id: string;
+          source_email: string;
+          source_name: string;
+          subject: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          email?: string;
+          id?: string;
+          post_id?: string | null;
+          receiver_id?: string;
+          sender_id?: string;
+          source_email?: string;
+          source_name?: string;
+          subject?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sent_emails_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
+            columns: ['receiver_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
+            columns: ['receiver_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
+            columns: ['receiver_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_sender_id_fkey1';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_assignees: {
         Row: {
           created_at: string | null;
@@ -2191,6 +2279,59 @@ export type Database = {
             columns: ['unit_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_group_post_checks: {
+        Row: {
+          created_at: string;
+          is_completed: boolean;
+          notes: string | null;
+          post_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          is_completed: boolean;
+          notes?: string | null;
+          post_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          is_completed?: boolean;
+          notes?: string | null;
+          post_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_post_checks_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
           },
         ];
@@ -4581,6 +4722,14 @@ export type Database = {
       };
     };
     Enums: {
+      ai_message_type:
+        | 'message'
+        | 'file'
+        | 'summary'
+        | 'notes'
+        | 'multi_choice_quiz'
+        | 'paragraph_quiz'
+        | 'flashcards';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       workspace_role_permission:
         | 'view_infrastructure'

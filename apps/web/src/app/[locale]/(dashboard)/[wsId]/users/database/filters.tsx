@@ -15,9 +15,13 @@ interface SearchParams {
 export default async function Filters({
   wsId,
   searchParams,
+  noInclude = false,
+  noExclude = false,
 }: {
   wsId: string;
   searchParams: SearchParams;
+  noInclude?: boolean;
+  noExclude?: boolean;
 }) {
   const t = await getTranslations('user-data-table');
 
@@ -29,28 +33,32 @@ export default async function Filters({
 
   return (
     <>
-      <UserDatabaseFilter
-        key="included-user-groups-filter"
-        tag="includedGroups"
-        title={t('included_groups')}
-        icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
-        options={userGroups.map((group) => ({
-          label: group.name || 'No name',
-          value: group.id,
-          count: group.amount,
-        }))}
-      />
-      <UserDatabaseFilter
-        key="excluded-user-groups-filter"
-        tag="excludedGroups"
-        title={t('excluded_groups')}
-        icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
-        options={excludedUserGroups.map((group) => ({
-          label: group.name || 'No name',
-          value: group.id,
-          count: group.amount,
-        }))}
-      />
+      {noInclude || (
+        <UserDatabaseFilter
+          key="included-user-groups-filter"
+          tag="includedGroups"
+          title={t('included_groups')}
+          icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+          options={userGroups.map((group) => ({
+            label: group.name || 'No name',
+            value: group.id,
+            count: group.amount,
+          }))}
+        />
+      )}
+      {noExclude || (
+        <UserDatabaseFilter
+          key="excluded-user-groups-filter"
+          tag="excludedGroups"
+          title={t('excluded_groups')}
+          icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
+          options={excludedUserGroups.map((group) => ({
+            label: group.name || 'No name',
+            value: group.id,
+            count: group.amount,
+          }))}
+        />
+      )}
     </>
   );
 }

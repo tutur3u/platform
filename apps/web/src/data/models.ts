@@ -7,14 +7,6 @@ export const models: {
   disabled?: boolean;
 }[] = [
   {
-    value: 'gemini-1.0-pro',
-    label: 'gemini-1.0-pro',
-    provider: 'Google',
-    description:
-      "Gemini 1.0 Pro is the first api-ready model of the Gemini family. It's a small multimodal model that supports up to 30k tokens and excels at short-context tasks.",
-    context: 30720,
-  },
-  {
     value: 'gemini-1.5-flash',
     label: 'gemini-1.5-flash',
     provider: 'Google',
@@ -32,58 +24,36 @@ export const models: {
   },
 
   {
-    value: 'claude-instant-1.2',
-    label: 'claude-instant-1.2',
+    value: 'claude-3-5-sonnet-20240620',
+    label: 'claude-3.5-sonnet (2024-06-20)',
     provider: 'Anthropic',
     description:
-      'A faster, cheaper yet still very capable version of Claude, which can handle a range of tasks including casual dialogue, text analysis, summarization, and document comprehension.',
-    context: 100000,
-    disabled: true,
+      'Claude 3.5 Sonnet strikes the ideal balance between intelligence and speed—particularly for enterprise workloads. It delivers strong performance at a lower cost compared to its peers, and is engineered for high endurance in large-scale AI deployments.',
+    context: 200000,
   },
   {
-    value: 'claude-1',
-    label: 'claude-1',
-    provider: 'Anthropic',
-    description:
-      "An older version of Anthropic's Claude model that excels at a wide range of tasks from sophisticated dialogue and creative content generation to detailed instruction. It is good for complex reasoning, creativity, thoughtful dialogue, coding, and detailed content creation.",
-    context: 100000,
-    disabled: true,
-  },
-  {
-    value: 'claude-2',
-    label: 'claude-2',
-    provider: 'Anthropic',
-    description:
-      "Anthropic's most powerful model that excels at a wide range of tasks from sophisticated dialogue and creative content generation to detailed instruction. It is good for complex reasoning, creativity, thoughtful dialogue, coding,and detailed content creation.",
-    context: 100000,
-    disabled: true,
-  },
-  {
-    value: 'claude-3-opus',
-    label: 'claude-3-opus',
+    value: 'claude-3-opus-20240229',
+    label: 'claude-3-opus (2024-02-29)',
     provider: 'Anthropic',
     description:
       "Claude 3 Opus is Anthropic's most intelligent model, with best-in-market performance on highly complex tasks. It can navigate open-ended prompts and sight-unseen scenarios with remarkable fluency and human-like understanding. Opus shows us the outer limits of what’s possible with generative AI.",
     context: 200000,
-    disabled: true,
   },
   {
-    value: 'claude-3-sonnet',
-    label: 'claude-3-sonnet',
+    value: 'claude-3-sonnet-20240229',
+    label: 'claude-3-sonnet (2024-02-29)',
     provider: 'Anthropic',
     description:
       'Claude 3 Sonnet strikes the ideal balance between intelligence and speed—particularly for enterprise workloads. It delivers strong performance at a lower cost compared to its peers, and is engineered for high endurance in large-scale AI deployments.',
     context: 200000,
-    disabled: true,
   },
   {
-    value: 'claude-3-haiku',
-    label: 'claude-3-haiku',
+    value: 'claude-3-haiku-20240307',
+    label: 'claude-3-haiku (2024-03-07)',
     provider: 'Anthropic',
     description:
       "Claude 3 Haiku is Anthropic's fastest model yet, designed for enterprise workloads which often involve longer prompts. Haiku to quickly analyze large volumes of documents, such as quarterly filings, contracts, or legal cases, for half the cost of other models in its performance tier.",
     context: 200000,
-    disabled: true,
   },
 
   {

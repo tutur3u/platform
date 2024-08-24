@@ -27,6 +27,15 @@ import remarkMath from 'remark-math';
 
 export interface ChatMessageProps {
   message: Message & {
+    metadata?: {
+      response_types?: (
+        | 'summary'
+        | 'notes'
+        | 'multi_choice_quiz'
+        | 'paragraph_quiz'
+        | 'flashcards'
+      )[];
+    };
     chat_id?: string;
     model?: string;
     prompt_tokens?: number;
@@ -133,6 +142,27 @@ export function ChatMessage({
         </div>
 
         <ChatMessageActions message={message} />
+      </div>
+
+      <div className="mb-2 flex items-center gap-1">
+        {message.metadata?.['response_types']
+          ?.filter((responseType) =>
+            [
+              'summary',
+              'notes',
+              'multi_choice_quiz',
+              'paragraph_quiz',
+              'flashcards',
+            ].includes(responseType)
+          )
+          ?.map((responseType, index) => (
+            <span
+              key={index}
+              className="bg-foreground/5 text-foreground/80 border-foreground/20 inline-block rounded border px-2 py-1 text-xs font-semibold"
+            >
+              {t(responseType)}
+            </span>
+          ))}
       </div>
 
       <div className="flex-1 space-y-2">
