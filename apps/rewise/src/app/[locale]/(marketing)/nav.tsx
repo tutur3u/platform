@@ -1,7 +1,7 @@
 'use client';
 
 import { NavLink } from '@/components/navigation';
-import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import { PROD_MODE } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@repo/ui/components/ui/button';
@@ -15,24 +15,16 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface NavProps {
-  wsId: string;
   currentUser: WorkspaceUser | null;
   isCollapsed: boolean;
   links: NavLink[];
   onClick?: () => void;
 }
 
-export function Nav({
-  wsId,
-  currentUser,
-  links,
-  isCollapsed,
-  onClick,
-}: NavProps) {
+export function Nav({ currentUser, links, isCollapsed, onClick }: NavProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
@@ -58,9 +50,6 @@ export function Nav({
             !currentUser?.email?.endsWith('@tuturuuu.com')
           )
             return null;
-
-          // If the link requires the root workspace, check if the current workspace is the root workspace
-          if (link?.requireRootWorkspace && !isRootWorkspace) return null;
 
           // If the link is only allowed for certain roles, check if the current role is allowed
           if (link?.allowedRoles && link.allowedRoles.length > 0) return null;
@@ -89,7 +78,7 @@ export function Nav({
                       variant: isActive ? 'default' : 'ghost',
                       size: 'icon',
                     }),
-                    'h-9 w-9',
+                    'h-9 w-9 whitespace-normal',
                     urlToLoad === link.href &&
                       'bg-accent text-accent-foreground animate-pulse'
                   )}
@@ -122,24 +111,24 @@ export function Nav({
                 }),
                 urlToLoad === link.href &&
                   'bg-accent text-accent-foreground animate-pulse',
-                'justify-start'
+                'w-full justify-start whitespace-normal'
               )}
               onClick={() => {
                 setUrlToLoad(link.href);
                 onClick?.();
               }}
             >
-              {link.icon && (
+              {/* {link.icon && (
                 <>
                   {link.icon}
-                  <span className="w-2" />
+                  <span className="mr-2" />
                 </>
-              )}
-              {link.title}
+              )} */}
+              <span className="line-clamp-1 break-all">{link.title}</span>
               {link.trailing && (
                 <span
                   className={cn(
-                    'ml-auto',
+                    'ml-auto flex-none',
                     isActive && 'text-background dark:text-white'
                   )}
                 >

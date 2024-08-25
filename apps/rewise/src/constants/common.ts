@@ -6,12 +6,17 @@ export const PROD_MODE = process.env.NODE_ENV === 'production';
 export const BASE_URL =
   process.env.BASE_URL || PROD_MODE
     ? 'https://rewise.me'
-    : 'http://localhost:7803';
+    : 'http://localhost:7804';
 
 export const API_URL =
   process.env.API_URL || PROD_MODE
     ? 'https://rewise.me/api'
-    : 'http://localhost:7803/api';
+    : 'http://localhost:7804/api';
+
+export const TTR_URL =
+  process.env.TTR_URL || PROD_MODE
+    ? 'https://tuturuuu.com'
+    : 'http://localhost:7803';
 
 export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 

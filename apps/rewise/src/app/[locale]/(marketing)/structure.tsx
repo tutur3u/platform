@@ -1,6 +1,6 @@
 'use client';
 
-import LogoTitle from '../../logo-title';
+import LogoTitle from '../logo-title';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { cn } from '@/lib/utils';
@@ -16,11 +16,9 @@ import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
 import { Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 
 interface MailProps {
-  wsId: string;
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
@@ -32,8 +30,7 @@ interface MailProps {
 }
 
 export function Structure({
-  wsId,
-  defaultLayout = [20, 32, 48],
+  defaultLayout = [20, 32],
   defaultCollapsed = false,
   navCollapsedSize,
   user,
@@ -42,8 +39,8 @@ export function Structure({
   userPopover,
   children,
 }: MailProps) {
-  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  if (!user) return null;
 
   return (
     <>
@@ -56,20 +53,13 @@ export function Structure({
             <Link href="/" className="flex flex-none items-center gap-2">
               <Image
                 src="/media/logos/transparent.png"
-                className="h-8 w-8"
+                className="h-9 w-9"
                 width={32}
                 height={32}
                 alt="logo"
               />
+              <LogoTitle />
             </Link>
-          </div>
-          <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
-          <div className="line-clamp-1 break-all text-lg font-semibold">
-            {
-              links
-                .filter((link) => pathname.startsWith(link.href))
-                .sort((a, b) => b.href.length - a.href.length)[0]?.title
-            }
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -119,8 +109,8 @@ export function Structure({
               'flex-col justify-between backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
-            <div>
-              <div className="py-2 md:p-0">
+            <div className="flex h-full flex-1 flex-col">
+              <div className="flex-none py-2 md:p-0">
                 <div
                   className={cn(
                     'flex h-[52px] items-center justify-center',
@@ -129,50 +119,56 @@ export function Structure({
                 >
                   <div
                     className={cn(
-                      isCollapsed ? 'px-2' : 'px-2 md:px-0',
+                      isCollapsed
+                        ? 'justify-between md:justify-center md:px-2'
+                        : 'px-2 md:px-0',
                       'flex w-full items-center gap-2'
                     )}
                   >
-                    {isCollapsed || (
-                      <Link
-                        href="/"
-                        className="flex flex-none items-center gap-2"
-                      >
-                        <Image
-                          src="/media/logos/transparent.png"
-                          className="h-8 w-8"
-                          width={32}
-                          height={32}
-                          alt="logo"
-                        />
-                        <LogoTitle />
-                      </Link>
-                    )}
+                    <Link
+                      href="/"
+                      className="flex flex-none items-center justify-center gap-2"
+                    >
+                      <Image
+                        src="/media/logos/transparent.png"
+                        className="h-9 w-9"
+                        width={32}
+                        height={32}
+                        alt="logo"
+                      />
+                      {isCollapsed || <LogoTitle />}
+                    </Link>
 
-                    {isCollapsed || (
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
-                        onClick={() => setIsCollapsed((prev) => !prev)}
-                      >
-                        <X className="h-5 w-5" />
-                      </Button>
-                    )}
+                    <div className="w-full md:hidden" />
+
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className={cn(
+                        isCollapsed && 'md:hidden',
+                        'h-auto w-auto flex-none rounded-lg p-2 md:hidden'
+                      )}
+                      onClick={() => setIsCollapsed((prev) => !prev)}
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
                   </div>
                 </div>
+                <Separator />
               </div>
-              <Separator />
-              <Nav
-                wsId={wsId}
-                currentUser={user}
-                isCollapsed={isCollapsed}
-                links={links}
-                onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
-              />
-            </div>
-            <div className="border-foreground/10 border-t p-2">
-              {isCollapsed ? userPopover : actions}
+              <div className="scrollbar-none flex flex-1 flex-col gap-1 overflow-y-scroll">
+                <Nav
+                  currentUser={user}
+                  isCollapsed={isCollapsed}
+                  links={links}
+                  onClick={() =>
+                    window.innerWidth < 768 && setIsCollapsed(true)
+                  }
+                />
+              </div>
+              <div className="border-foreground/10 flex-none border-t p-2">
+                {isCollapsed ? userPopover : actions}
+              </div>
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle className="hidden md:flex" />

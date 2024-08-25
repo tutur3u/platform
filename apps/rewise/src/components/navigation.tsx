@@ -1,6 +1,6 @@
 'use client';
 
-import { DEV_MODE, PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import { DEV_MODE, PROD_MODE } from '@/constants/common';
 import { User } from '@/types/primitives/User';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -17,7 +17,6 @@ export interface NavLink {
   disabled?: boolean;
   disableOnProduction?: boolean;
   requireRootMember?: boolean;
-  requireRootWorkspace?: boolean;
   allowedRoles?: string[];
   disabledRoles?: string[];
 }
@@ -36,7 +35,6 @@ export function Navigation({
   navLinks,
 }: Props) {
   const pathname = usePathname();
-  const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
 
   const scrollActiveLinksIntoView = () => {
     const activeWorkspaceLink = document.getElementById('active-ws-navlink');
@@ -84,9 +82,6 @@ export function Navigation({
         )
           return null;
 
-        // If the link requires the root workspace, check if the current workspace is the root workspace
-        if (link?.requireRootWorkspace && !isRootWorkspace) return null;
-
         // If the link is only allowed for certain roles, check if the current role is allowed
         if (
           currentRole &&
@@ -110,10 +105,9 @@ export function Navigation({
             .filter(Boolean).length > 0;
 
         const isDevOnly = link.disableOnProduction;
-        const isRootOnly = link.requireRootWorkspace;
 
         const enableUnderline = false;
-        const notPublic = DEV_MODE && (isDevOnly || isRootOnly);
+        const notPublic = DEV_MODE && isDevOnly;
 
         return (
           <Link

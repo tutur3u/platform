@@ -2,8 +2,7 @@ import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
 import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
 import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
-import DashboardMenuItem from './dashboard-menu-item';
-import MeetTogetherMenuItem from './meet-together-menu-item';
+import { TTR_URL } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/utils/name-helper';
@@ -28,7 +27,6 @@ import {
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
-import { Suspense } from 'react';
 
 export async function UserNav({
   hideMetadata = false,
@@ -92,10 +90,6 @@ export async function UserNav({
             </p>
           </div>
         </DropdownMenuLabel>
-        <Suspense fallback={null}>
-          <DashboardMenuItem />
-        </Suspense>
-        <MeetTogetherMenuItem />
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuSub>
@@ -123,7 +117,11 @@ export async function UserNav({
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
-          <Link href="/settings/account">
+          <Link
+            target="_blank"
+            rel="noopener noreferrer"
+            href={`${TTR_URL}/settings/account`}
+          >
             <DropdownMenuItem className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
               <span>{t('common.settings')}</span>

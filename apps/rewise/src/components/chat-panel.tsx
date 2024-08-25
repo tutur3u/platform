@@ -140,10 +140,13 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="fixed inset-x-0 bottom-0">
+      <div className="fixed inset-x-0 bottom-0 md:sticky md:-bottom-64 lg:-bottom-96">
         <div
           className={cn(
-            'absolute right-2 z-10 flex items-end gap-2 md:right-4 md:flex-col'
+            'absolute z-10 -mb-4 flex items-end gap-2 md:-mb-1 md:flex-col lg:mb-4',
+            !!chats
+              ? 'right-2 md:right-4 lg:-right-4 xl:-right-12'
+              : 'right-2 md:right-4'
           )}
           style={{
             bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',
