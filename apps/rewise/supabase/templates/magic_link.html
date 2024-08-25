@@ -1,0 +1,30 @@
+<div
+  style="background-color: #FFFFFF; font-family:Helvetica,serif; font-size:14px; line-height:1; text-align:left; color:#191919; padding: 20px;">
+  <h2>Login with OTP</h2>
+
+  <p>Use the following temporary verification code to log in:</p>
+  <div
+    style="background:#EEEEEE;margin:0;border-radius:8px;text-align:center;width: fit-content;">
+    <table style="background: #EEEEEE;width:100%;border-radius:8px;" role="presentation"
+           cellspacing="0" cellpadding="0" border="0" align="center">
+      <tbody>
+      <tr>
+        <td
+          style="direction:ltr;font-size:0;padding: 16px;text-align:center;">
+          <!--[if mso | IE]>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="left" class="" style=""><![endif]-->
+          <div
+            style="font-family:Helvetica,serif;font-size:14px;line-height:1;text-align:left;color:#191919;font-weight: bold;">
+            {{ .Token }}
+          </div>
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin: 32px 0 12px">If you didn't try to sign in, you can safely ignore this email.</p>
+</div>

@@ -59,7 +59,6 @@
     "@react-email/components": "0.0.23",
     "@react-email/tailwind": "0.1.0",
     "@react-three/fiber": "^8.17.5",
-    "@remixicon/react": "^4.2.0",
     "@repo/ui": "workspace:*",
     "@supabase/ssr": "^0.5.0",
     "@supabase/supabase-js": "2.45.2",
