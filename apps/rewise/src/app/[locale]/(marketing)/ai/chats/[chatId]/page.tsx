@@ -1,4 +1,4 @@
-import Chat from '@/app/[locale]/(dashboard)/[wsId]/chat/chat';
+import Chat from '../../../chat';
 import { AIChat } from '@/types/db';
 import { createAdminClient } from '@/utils/supabase/server';
 import { Message } from 'ai';
@@ -6,7 +6,6 @@ import { notFound } from 'next/navigation';
 
 interface Props {
   params: {
-    wsId: string;
     chatId?: string;
   };
   searchParams: {
@@ -15,7 +14,7 @@ interface Props {
 }
 
 export default async function AIPage({
-  params: { wsId, chatId },
+  params: { chatId },
   searchParams,
 }: Props) {
   if (!chatId) notFound();
@@ -25,29 +24,12 @@ export default async function AIPage({
   const chat = await getChat(chatId);
   const messages = await getMessages(chatId);
 
-  const hasKeys = {
-    openAI: hasKey('OPENAI_API_KEY'),
-    anthropic: hasKey('ANTHROPIC_API_KEY'),
-    google: hasKey('GOOGLE_GENERATIVE_AI_API_KEY'),
-  };
-
   return (
     <div className="h-full p-4 lg:p-0">
-      <Chat
-        wsId={wsId}
-        hasKeys={hasKeys}
-        initialMessages={messages}
-        defaultChat={chat}
-        locale={locale}
-      />
+      <Chat initialMessages={messages} defaultChat={chat} locale={locale} />
     </div>
   );
 }
-
-const hasKey = (key: string) => {
-  const keyEnv = process.env[key];
-  return !!keyEnv && keyEnv.length > 0;
-};
 
 const getMessages = async (chatId: string) => {
   const supabase = createAdminClient();

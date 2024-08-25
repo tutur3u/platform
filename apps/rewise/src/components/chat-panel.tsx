@@ -49,7 +49,6 @@ export interface ChatPanelProps
     | 'setInput'
   > {
   id?: string;
-  wsId: string;
   chat: Partial<AIChat> | undefined;
   chats?: AIChat[];
   count?: number | null;
@@ -67,7 +66,6 @@ export interface ChatPanelProps
 
 export function ChatPanel({
   id,
-  wsId,
   chat,
   chats,
   count,
@@ -122,7 +120,7 @@ export function ChatPanel({
 
       const { data: _, error } = await supabase.storage
         .from('workspaces')
-        .upload(`${wsId}/${file.name}_${generateRandomUUID()}`, file);
+        .upload(`test/${file.name}_${generateRandomUUID()}`, file);
 
       if (error) {
         setFileProgresses((prev) => ({
@@ -142,7 +140,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="fixed inset-x-0 bottom-0 md:sticky md:-bottom-64 lg:-bottom-96">
+      <div className="fixed inset-x-0 bottom-0">
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',

@@ -15,14 +15,12 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
 export function EmptyScreen({
-  wsId,
   chats,
   count,
   setInput,
   previousMessages,
   locale,
 }: Pick<UseChatHelpers, 'setInput'> & {
-  wsId?: string;
   chats?: AIChat[];
   count?: number | null;
   previousMessages?: Message[];
@@ -105,7 +103,7 @@ export function EmptyScreen({
                     <MessageCircle className="text-foreground/80 shrink-0" />
                     <div className="flex w-full flex-col items-start">
                       <Link
-                        href={`/${wsId}/chat/${chat.id}`}
+                        href={`/c/${chat.id}`}
                         className="text-sm hover:underline md:text-base"
                       >
                         {chat.title}
@@ -185,7 +183,7 @@ export function EmptyScreen({
                   return message;
                 })}
                 setInput={setInput}
-                embeddedUrl={`/${wsId}/chat`}
+                embeddedUrl={`/c`}
                 locale={locale}
               />
             </div>
@@ -215,7 +213,7 @@ export function EmptyScreen({
                   <MessageCircle className="text-foreground/80 shrink-0" />
                   <div className="flex w-full flex-col items-start">
                     <Link
-                      href={`/${wsId}/chat/${chat.id}`}
+                      href={`/c/${chat.id}`}
                       className="text-sm hover:underline md:text-base"
                     >
                       {chat.title}

@@ -1,6 +1,4 @@
-import Chat from '../chat';
-import { getChats } from '../helper';
-import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
+import Chat from '../../chat';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import { Message } from 'ai';
@@ -8,7 +6,6 @@ import { notFound } from 'next/navigation';
 
 interface Props {
   params: {
-    wsId: string;
     chatId?: string;
   };
   searchParams: {
@@ -17,36 +14,19 @@ interface Props {
 }
 
 export default async function AIPage({
-  params: { wsId, chatId },
+  params: { chatId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_CHAT'], `/${wsId}`);
-  const { permissions } = await getPermissions({
-    wsId,
-    requiredPermissions: ['ai_chat'],
-  });
-
-  if (!permissions.includes('ai_chat')) notFound();
-
   if (!chatId) notFound();
 
   const { lang: locale } = searchParams;
-
   const messages = await getMessages(chatId);
 
   const chat = await getChat(chatId);
   const { data: chats, count } = await getChats();
 
-  const hasKeys = {
-    openAI: hasKey('OPENAI_API_KEY'),
-    anthropic: hasKey('ANTHROPIC_API_KEY'),
-    google: hasKey('GOOGLE_GENERATIVE_AI_API_KEY'),
-  };
-
   return (
     <Chat
-      wsId={wsId}
-      hasKeys={hasKeys}
       initialMessages={messages}
       defaultChat={chat}
       chats={chats}
@@ -56,9 +36,20 @@ export default async function AIPage({
   );
 }
 
-const hasKey = (key: string) => {
-  const keyEnv = process.env[key];
-  return !!keyEnv && keyEnv.length > 0;
+const getChats = async () => {
+  const supabase = createClient();
+
+  const { data, count, error } = await supabase
+    .from('ai_chats')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return { data: [], count: 0 };
+  }
+
+  return { data, count };
 };
 
 const getMessages = async (chatId: string) => {

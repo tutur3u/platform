@@ -23,15 +23,7 @@ export const THEME_COOKIE_NAME = 'NEXT_THEME';
 export const SHOW_TAILWIND_INDICATOR =
   process.env.SHOW_TAILWIND_INDICATOR === 'true';
 
-export const PUBLIC_PATHS = [
-  '/login',
-  '/terms',
-  '/privacy',
-  '/branding',
-  '/ai/chats',
-  '/qr-generator',
-  '/calendar/meet-together',
-].reduce((acc: string[], path) => {
+export const PUBLIC_PATHS = ['/ai/chats'].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);
 

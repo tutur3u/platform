@@ -1,6 +1,5 @@
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
-import FleetingNavigator from './fleeting-navigator';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
@@ -234,10 +233,6 @@ export default async function Layout({
       >
         {children}
       </Structure>
-
-      {verifySecret('ENABLE_CHAT', 'true', secrets) && (
-        <FleetingNavigator wsId={wsId} />
-      )}
     </>
   );
 }

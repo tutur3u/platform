@@ -2,7 +2,6 @@ import LogoTitle from './logo-title';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import ServerMenu from './server-menu';
-import WorkspaceSelect from './workspace-select';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -33,14 +32,6 @@ export default function Navbar({
               />
               <LogoTitle />
             </Link>
-
-            <Suspense
-              fallback={
-                <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
-              }
-            >
-              <WorkspaceSelect />
-            </Suspense>
           </div>
 
           <div className="flex w-full flex-row-reverse items-center gap-2 md:flex-row md:justify-between">

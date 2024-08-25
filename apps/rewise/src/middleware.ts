@@ -1,5 +1,5 @@
 import { Locales, defaultLocale, locales } from './config';
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
+import { LOCALE_COOKIE_NAME } from './constants/common';
 import { updateSession } from './utils/supabase/middleware';
 import { match } from '@formatjs/intl-localematcher';
 import { User } from '@supabase/supabase-js';
@@ -62,22 +62,17 @@ const handleRedirect = ({
   // If current path ends with /login and user is logged in, redirect to onboarding page
   if (req.nextUrl.pathname.endsWith('/login') && user) {
     const nextRes = NextResponse.redirect(
-      req.nextUrl.href.replace('/login', '/onboarding')
+      req.nextUrl.href.replace('/login', '/')
     );
 
     return { res: nextRes, redirect: true };
   }
 
-  // If current path ends with /onboarding and user is not logged in, redirect to login page
-  if (
-    req.nextUrl.pathname !== '/' &&
-    !req.nextUrl.pathname.endsWith('/login') &&
-    !PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path)) &&
-    !user
-  ) {
+  // If current path isn't /login and user is not logged in, redirect to login page
+  if (!req.nextUrl.pathname.endsWith('/login') && !user) {
     const nextRes = NextResponse.redirect(
-      req.nextUrl.href.replace(req.nextUrl.pathname, '/login') +
-        `?nextUrl=${req.nextUrl.pathname}`
+      `${req.nextUrl.protocol}//${req.nextUrl.host}` +
+        `/login?nextUrl=${req.nextUrl.pathname}`
     );
 
     return { res: nextRes, redirect: true };

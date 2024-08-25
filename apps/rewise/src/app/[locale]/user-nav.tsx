@@ -3,9 +3,7 @@ import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-it
 import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
 import DashboardMenuItem from './dashboard-menu-item';
-import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
-import UserPresenceIndicator from './user-presence-indicator';
 import { getCurrentUser } from '@/lib/user-helper';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/utils/name-helper';
@@ -63,7 +61,6 @@ export async function UserNav({
                 <User className="h-5 w-5" />
               )}
             </AvatarFallback>
-            <UserPresenceIndicator className="h-3 w-3 border-2" />
           </Avatar>
           {hideMetadata || (
             <div className="grid w-full">
@@ -133,7 +130,6 @@ export async function UserNav({
             </DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>
-        <InviteMembersMenuItem />
         <DropdownMenuSeparator />
         <LogoutDropdownItem />
       </DropdownMenuContent>

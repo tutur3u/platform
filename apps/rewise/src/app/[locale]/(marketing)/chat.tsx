@@ -8,17 +8,6 @@ import { Model, defaultModel } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
 import { useChat } from '@ai-sdk/react';
-import { useLocalStorage } from '@mantine/hooks';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
@@ -28,44 +17,26 @@ import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
-  wsId?: string;
   initialMessages?: Message[];
   previousMessages?: Message[];
   chats?: AIChat[];
   count?: number | null;
-  hasKeys: { openAI: boolean; anthropic: boolean; google: boolean };
   locale: string;
 }
 
 const Chat = ({
   defaultChat,
-  wsId,
   initialMessages,
   previousMessages,
   chats,
   count,
   className,
-  hasKeys,
   locale,
 }: ChatProps) => {
   const t = useTranslations('ai_chat');
 
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const [previewToken, setPreviewToken] = useLocalStorage({
-    key: 'ai-token',
-    defaultValue: '',
-  });
-
-  const [previewTokenDialog, setPreviewTokenDialog] = useState(false);
-  const [previewTokenInput, setPreviewTokenInput] = useState(previewToken);
-
-  useEffect(() => {
-    // Don't show the dialog if the key is configured
-    // on the server or the preview token is set
-    setPreviewTokenDialog(!hasKeys && !previewToken);
-  }, [hasKeys, previewToken]);
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(defaultModel);
@@ -77,9 +48,7 @@ const Chat = ({
       api: model ? `/api/ai/chat/${model.provider.toLowerCase()}` : undefined,
       body: {
         id: chat?.id,
-        wsId,
         model: chat?.model || model?.value,
-        previewToken,
       },
       onResponse(response) {
         if (!response.ok)
@@ -107,11 +76,10 @@ const Chat = ({
   }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
 
   useEffect(() => {
-    if (!chat || (!hasKeys && !previewToken) || isLoading) return;
+    if (!chat || isLoading) return;
 
     const generateSummary = async (messages: Message[] = []) => {
       if (
-        !wsId ||
         summarizing ||
         !model ||
         !chat?.id ||
@@ -130,7 +98,6 @@ const Chat = ({
           body: JSON.stringify({
             id: chat.id,
             model: chat.model,
-            previewToken,
           }),
         }
       );
@@ -150,7 +117,6 @@ const Chat = ({
     // Generate the chat summary if the chat's latest summarized message id
     // is not the same as the last message id in the chat
     if (
-      wsId &&
       !isLoading &&
       chat.latest_summarized_message_id !== messages[messages.length - 1]?.id &&
       messages[messages.length - 1]?.role !== 'user'
@@ -162,14 +128,14 @@ const Chat = ({
     // Reload the chat if the user sends a message
     // but the AI did not respond yet after 1 second
     const reloadTimeout = setTimeout(() => {
-      if (!wsId || messages[messages.length - 1]?.role !== 'user') return;
+      if (messages[messages.length - 1]?.role !== 'user') return;
       reload();
     }, 1000);
 
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [wsId, chat, hasKeys, previewToken, isLoading, messages, reload]);
+  }, [chat, isLoading, messages, reload]);
 
   const [initialScroll, setInitialScroll] = useState(true);
 
@@ -200,23 +166,14 @@ const Chat = ({
 
     if (chat?.id && input) {
       setInput(input.toString());
-      router.replace(`/${wsId}/chat/${chat.id}`);
+      router.replace(`/c/${chat.id}`);
     }
 
     if (refresh) {
       clearChat();
-      router.replace(`/${wsId}/chat?`);
+      router.replace(`/c?`);
     }
-  }, [
-    chat?.id,
-    searchParams,
-    router,
-    setInput,
-    wsId,
-    chats,
-    count,
-    initialScroll,
-  ]);
+  }, [chat?.id, searchParams, router, setInput, chats, count, initialScroll]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -239,7 +196,6 @@ const Chat = ({
         body: JSON.stringify({
           model: model.value,
           message: input,
-          previewToken,
         }),
       }
     );
@@ -256,7 +212,7 @@ const Chat = ({
     if (id) {
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
-      router.replace(`/${wsId}/chat?id=${id}`);
+      router.replace(`/c?id=${id}`);
     }
   };
 
@@ -294,18 +250,18 @@ const Chat = ({
   };
 
   useEffect(() => {
-    if (!pendingPrompt || !chat?.id || !wsId) return;
+    if (!pendingPrompt || !chat?.id) return;
     append({
       id: chat?.id,
       content: pendingPrompt,
       role: 'user',
     });
     setPendingPrompt(null);
-  }, [wsId, pendingPrompt, chat?.id, append]);
+  }, [pendingPrompt, chat?.id, append]);
 
   return (
     <div className="relative">
-      <div className={cn('md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
+      <div className={cn('pb-32 md:pt-10', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
@@ -351,7 +307,6 @@ const Chat = ({
           </>
         ) : (
           <EmptyScreen
-            wsId={wsId}
             chats={chats}
             count={count}
             setInput={setInput}
@@ -361,67 +316,28 @@ const Chat = ({
         )}
       </div>
 
-      {wsId && (
-        <ChatPanel
-          id={chat?.id}
-          wsId={wsId}
-          chat={chat}
-          chats={chats}
-          count={count}
-          isLoading={isLoading}
-          stop={stop}
-          append={append}
-          reload={reload}
-          input={input}
-          inputRef={inputRef}
-          setInput={setInput}
-          model={model}
-          setModel={setModel}
-          messages={messages}
-          collapsed={collapsed}
-          createChat={createChat}
-          updateChat={updateChat}
-          clearChat={clearChat}
-          setCollapsed={setCollapsed}
-          defaultRoute={`/${wsId}/chat`}
-        />
-      )}
-
-      <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter your Anthropic Key</DialogTitle>
-            <DialogDescription>
-              If you have not obtained your Anthropic API key, you can do so by{' '}
-              <a
-                href="https://console.anthropic.com/account/keys"
-                className="underline"
-              >
-                generating an API key
-              </a>{' '}
-              on the Anthropic website. This is only necessary for preview
-              environments so that the open source community can test the app.
-              The token will be saved to your browser&apos;s local storage under
-              the name <code className="font-mono">ai-token</code>.
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={previewTokenInput}
-            placeholder="Anthropic API key"
-            onChange={(e) => setPreviewTokenInput(e.target.value)}
-          />
-          <DialogFooter className="items-center">
-            <Button
-              onClick={() => {
-                setPreviewToken(previewTokenInput);
-                setPreviewTokenDialog(false);
-              }}
-            >
-              Save Token
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ChatPanel
+        id={chat?.id}
+        chat={chat}
+        chats={chats}
+        count={count}
+        isLoading={isLoading}
+        stop={stop}
+        append={append}
+        reload={reload}
+        input={input}
+        inputRef={inputRef}
+        setInput={setInput}
+        model={model}
+        setModel={setModel}
+        messages={messages}
+        collapsed={collapsed}
+        createChat={createChat}
+        updateChat={updateChat}
+        clearChat={clearChat}
+        setCollapsed={setCollapsed}
+        defaultRoute="/"
+      />
     </div>
   );
 };

@@ -1,8 +1,7 @@
 'use client';
 
 import LogoTitle from '../../logo-title';
-import WorkspaceSelect from '../../workspace-select';
-import { Nav } from './_components/nav';
+import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -18,7 +17,7 @@ import { Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, Suspense, useState } from 'react';
+import { ReactNode, useState } from 'react';
 
 interface MailProps {
   wsId: string;
@@ -150,13 +149,6 @@ export function Structure({
                       </Link>
                     )}
 
-                    <Suspense
-                      fallback={
-                        <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
-                      }
-                    >
-                      <WorkspaceSelect hideLeading={isCollapsed} />
-                    </Suspense>
                     {isCollapsed || (
                       <Button
                         size="icon"

@@ -1,5 +1,4 @@
 import { LanguageWrapper } from './language-wrapper';
-import NotificationPopover from './notification-popover';
 import { ThemeToggle } from './theme-toggle';
 import { UserNavWrapper } from './user-nav-wrapper';
 import GetStartedButton from '@/components/layouts/GetStartedButton';
@@ -22,7 +21,6 @@ export default async function NavbarActions({
         {sbUser ? (
           <>
             <UserNavWrapper hideMetadata={hideMetadata} />
-            <NotificationPopover />
           </>
         ) : (
           <>
