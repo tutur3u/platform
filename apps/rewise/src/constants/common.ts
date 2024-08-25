@@ -5,12 +5,12 @@ export const PROD_MODE = process.env.NODE_ENV === 'production';
 
 export const BASE_URL =
   process.env.BASE_URL || PROD_MODE
-    ? 'https://tuturuuu.com'
+    ? 'https://rewise.me'
     : 'http://localhost:7803';
 
 export const API_URL =
   process.env.API_URL || PROD_MODE
-    ? 'https://tuturuuu.com/api'
+    ? 'https://rewise.me/api'
     : 'http://localhost:7803/api';
 
 export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
@@ -23,7 +23,7 @@ export const THEME_COOKIE_NAME = 'NEXT_THEME';
 export const SHOW_TAILWIND_INDICATOR =
   process.env.SHOW_TAILWIND_INDICATOR === 'true';
 
-export const PUBLIC_PATHS = ['/login', '/ai/chats'].reduce(
+export const PUBLIC_PATHS = ['/login', '/chats'].reduce(
   (acc: string[], path) => {
     // Add the original path
     acc.push(path);

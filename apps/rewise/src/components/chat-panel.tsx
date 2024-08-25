@@ -413,7 +413,7 @@ export function ChatPanel({
 
                   <div className="flex items-center justify-center">
                     <QRCode
-                      value={`${BASE_URL}/ai/chats/${id}`}
+                      value={`${BASE_URL}/chats/${id}`}
                       size={256}
                       style={{
                         borderRadius: '0.5rem',
@@ -431,7 +431,7 @@ export function ChatPanel({
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${BASE_URL}/ai/chats/${id}`);
+                    navigator.clipboard.writeText(`${BASE_URL}/chats/${id}`);
                     setCopiedLink(true);
                     setTimeout(() => setCopiedLink(false), 2000);
                   }}
@@ -447,7 +447,7 @@ export function ChatPanel({
                 <Button
                   type="button"
                   className="w-full"
-                  onClick={() => window.open(`${BASE_URL}/ai/chats/${id}`)}
+                  onClick={() => window.open(`${BASE_URL}/chats/${id}`)}
                   disabled={disablePublicLink}
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
