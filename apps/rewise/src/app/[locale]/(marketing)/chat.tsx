@@ -18,7 +18,6 @@ import React, { useEffect, useRef, useState } from 'react';
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
   initialMessages?: Message[];
-  previousMessages?: Message[];
   chats?: AIChat[];
   count?: number | null;
   locale: string;
@@ -27,7 +26,6 @@ export interface ChatProps extends React.ComponentProps<'div'> {
 const Chat = ({
   defaultChat,
   initialMessages,
-  previousMessages,
   chats,
   count,
   className,
@@ -306,13 +304,7 @@ const Chat = ({
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
-          <EmptyScreen
-            chats={chats}
-            count={count}
-            setInput={setInput}
-            previousMessages={previousMessages}
-            locale={locale}
-          />
+          <EmptyScreen chats={chats} setInput={setInput} locale={locale} />
         )}
       </div>
 

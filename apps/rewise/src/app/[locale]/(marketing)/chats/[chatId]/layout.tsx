@@ -33,9 +33,6 @@ const getChat = async (chatId: string) => {
 export const generateMetadata = async ({
   params: { locale, chatId },
 }: Props): Promise<Metadata> => {
-  const viTitle = 'Trò chuyện AI';
-  const enTitle = 'AI Chat';
-
   const enDefaultDescription =
     'Discuss with AI about anything, anytime, anywhere.';
   const viDefaultDescription =
@@ -50,7 +47,7 @@ export const generateMetadata = async ({
   const chatTitle = chat.title || untitled;
   const chatSummary = chat.summary || defaultDescription;
 
-  const title = `${chatTitle} - ${locale === 'vi' ? viTitle : enTitle}`;
+  const title = chatTitle;
   const description = chatSummary;
 
   return {

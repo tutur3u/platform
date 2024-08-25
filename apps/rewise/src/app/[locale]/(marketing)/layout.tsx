@@ -31,10 +31,7 @@ export default async function Layout({ children }: LayoutProps) {
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
 
   return (
-    <div
-      id="main-content"
-      className="flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto"
-    >
+    <div className="flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto">
       <Structure
         user={user}
         defaultLayout={defaultLayout}
@@ -60,7 +57,7 @@ export default async function Layout({ children }: LayoutProps) {
           </Suspense>
         }
       >
-        {children}
+        <div id="main-content">{children}</div>
       </Structure>
     </div>
   );

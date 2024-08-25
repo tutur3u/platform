@@ -1,37 +1,28 @@
-import { ChatList } from './chat-list';
 import { capitalize, cn } from '@/lib/utils';
 import { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { IconArrowRight } from '@repo/ui/components/ui/icons';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Message } from 'ai';
 import { UseChatHelpers } from 'ai/react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Box, Globe, Lock, MessageCircle, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
 export function EmptyScreen({
   chats,
-  count,
   setInput,
-  previousMessages,
   locale,
 }: Pick<UseChatHelpers, 'setInput'> & {
   chats?: AIChat[];
-  count?: number | null;
-  previousMessages?: Message[];
   locale: string;
 }) {
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
 
   const t = useTranslations('ai_chat');
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme?.includes('dark');
 
   const exampleMessages = [
     {
@@ -61,16 +52,10 @@ export function EmptyScreen({
       <div className="bg-background rounded-lg border p-4 md:p-8">
         <h1 className="mb-2 text-lg font-semibold">
           {t('welcome_to')}{' '}
-          <span
-            className={`overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent ${
-              isDark
-                ? 'from-pink-300 via-amber-300 to-blue-300'
-                : 'from-pink-600 via-yellow-500 to-sky-600'
-            }`}
-          >
-            Tuturuuu AI
-          </span>{' '}
-          Chat.
+          <span className="from-dynamic-red via-dynamic-purple to-dynamic-sky overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent">
+            Rewise
+          </span>
+          .
         </h1>
         <p className="text-foreground/90 text-sm leading-normal md:text-base">
           {t('welcome_msg')}
@@ -98,7 +83,7 @@ export function EmptyScreen({
                 {t('recent_conversations')}
               </h2>
               <div className="mt-4 flex flex-col items-start space-y-2">
-                {chats.slice(0, 5).map((chat) => (
+                {chats.slice(0, 3).map((chat) => (
                   <div key={chat.id} className="flex w-full items-center gap-2">
                     <MessageCircle className="text-foreground/80 shrink-0" />
                     <div className="flex w-full flex-col items-start">
@@ -155,115 +140,6 @@ export function EmptyScreen({
           </>
         )}
       </div>
-
-      {previousMessages && previousMessages.length > 0 && (
-        <div className="bg-background rounded-lg border p-4 md:p-8">
-          <div>
-            <h2 className="line-clamp-1 text-lg font-semibold">
-              {t('latest_messages')}
-            </h2>
-            <Separator className="mb-8 mt-4" />
-            <div className="flex flex-col items-start space-y-2">
-              <ChatList
-                messages={previousMessages.map((message) => {
-                  // If there is 2 repeated substring in the
-                  // message, we will merge them into one
-                  const content = message.content;
-                  const contentLength = content.length;
-                  const contentHalfLength = Math.floor(contentLength / 2);
-
-                  const firstHalf = content.substring(0, contentHalfLength);
-
-                  const secondHalf = content.substring(
-                    contentHalfLength,
-                    contentLength
-                  );
-
-                  if (firstHalf === secondHalf) message.content = firstHalf;
-                  return message;
-                })}
-                setInput={setInput}
-                embeddedUrl={`/c`}
-                locale={locale}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {chats && chats.length > 5 && (
-        <div className="bg-background rounded-lg border p-4 md:p-8">
-          <div className="flex flex-col">
-            <h2 className="text-lg font-semibold">
-              {t('all_conversations')}{' '}
-              {count ? (
-                <span className="bg-foreground/10 text-foreground rounded-full border px-2 py-0.5 text-sm">
-                  {count}
-                </span>
-              ) : (
-                ''
-              )}
-            </h2>
-
-            <Separator className="mb-8 mt-4" />
-
-            <div className="flex flex-col items-start space-y-2">
-              {chats.map((chat) => (
-                <div key={chat.id} className="flex w-full items-center gap-2">
-                  <MessageCircle className="text-foreground/80 shrink-0" />
-                  <div className="flex w-full flex-col items-start">
-                    <Link
-                      href={`/c/${chat.id}`}
-                      className="text-sm hover:underline md:text-base"
-                    >
-                      {chat.title}
-                    </Link>
-
-                    <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase',
-                          chat.is_public
-                            ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
-                            : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
-                        )}
-                      >
-                        {chat.is_public ? (
-                          <>
-                            <Globe className="h-3 w-3" />
-                            {t('public')}
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="h-3 w-3" />
-                            {t('only_me')}
-                          </>
-                        )}
-                      </span>
-                      {chat.model && (
-                        <span className="bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
-                          <Sparkle className="h-3 w-3" />
-                          {chat.model}
-                        </span>
-                      )}
-                      {chat.summary && (
-                        <span className="bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
-                          <Box className="h-3 w-3" />
-                          {t('summarized')}
-                        </span>
-                      )}
-                      <span className="opacity-70">
-                        {chat.model && <span className="mr-1">•</span>}
-                        {capitalize(dayjs(chat?.created_at).fromNow())}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
