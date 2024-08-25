@@ -171,7 +171,7 @@ const Chat = ({
 
     if (refresh) {
       clearChat();
-      router.replace(`/c?`);
+      router.replace('/');
     }
   }, [chat?.id, searchParams, router, setInput, chats, count, initialScroll]);
 
@@ -212,7 +212,7 @@ const Chat = ({
     if (id) {
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
-      router.replace(`/c?id=${id}`);
+      router.replace(`/?id=${id}`);
     }
   };
 

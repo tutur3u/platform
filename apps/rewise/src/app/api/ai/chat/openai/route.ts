@@ -13,13 +13,11 @@ export async function POST(req: Request) {
 
   const {
     id,
-    wsId,
     model = DEFAULT_MODEL_NAME,
     messages,
     previewToken,
   } = (await req.json()) as {
     id?: string;
-    wsId?: string;
     model?: string;
     messages?: CoreMessage[];
     previewToken?: string;
@@ -27,7 +25,6 @@ export async function POST(req: Request) {
 
   try {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
-    if (!wsId) return new Response('Missing workspace ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
     const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -40,19 +37,6 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) return new Response('Unauthorized', { status: 401 });
-
-    const { count, error } = await sbAdmin
-      .from('workspace_secrets')
-      .select('*', { count: 'exact', head: true })
-      .eq('ws_id', wsId)
-      .eq('name', 'ENABLE_CHAT')
-      .eq('value', 'true');
-
-    if (error) return new Response(error.message, { status: 500 });
-    if (count === 0)
-      return new Response('You are not allowed to use this feature.', {
-        status: 401,
-      });
 
     let chatId = id;
 
