@@ -36,15 +36,9 @@ interface NavItem {
   external?: boolean;
 }
 
-const navItems = (t: any) => {
+const navItems = (_: any) => {
   return [
-    { href: '/', label: t('common.home') },
-    { href: '/calendar/meet-together', label: t('common.meet-together') },
-    // {
-    //   href: 'https://docs.tuturuuu.com',
-    //   label: t('common.docs'),
-    //   external: true,
-    // },
+    // { href: '/', label: t('common.home') },
   ] as NavItem[];
 };
 

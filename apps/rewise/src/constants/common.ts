@@ -23,13 +23,16 @@ export const THEME_COOKIE_NAME = 'NEXT_THEME';
 export const SHOW_TAILWIND_INDICATOR =
   process.env.SHOW_TAILWIND_INDICATOR === 'true';
 
-export const PUBLIC_PATHS = ['/ai/chats'].reduce((acc: string[], path) => {
-  // Add the original path
-  acc.push(path);
+export const PUBLIC_PATHS = ['/login', '/ai/chats'].reduce(
+  (acc: string[], path) => {
+    // Add the original path
+    acc.push(path);
 
-  // Add localized paths
-  const localizedPaths = locales.map((locale) => `/${locale}${path}`);
-  acc.push(...localizedPaths);
+    // Add localized paths
+    const localizedPaths = locales.map((locale) => `/${locale}${path}`);
+    acc.push(...localizedPaths);
 
-  return acc;
-}, []);
+    return acc;
+  },
+  []
+);

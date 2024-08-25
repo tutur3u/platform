@@ -143,8 +143,7 @@ export function ChatPanel({
       <div className="fixed inset-x-0 bottom-0">
         <div
           className={cn(
-            'absolute z-10 flex items-end gap-2 md:flex-col',
-            !!chats ? 'right-2 md:-right-2 lg:-right-6' : 'right-2 md:right-4'
+            'absolute right-2 z-10 flex items-end gap-2 md:right-4 md:flex-col'
           )}
           style={{
             bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',

@@ -1,7 +1,6 @@
 import { LanguageWrapper } from './language-wrapper';
 import { ThemeToggle } from './theme-toggle';
 import { UserNavWrapper } from './user-nav-wrapper';
-import GetStartedButton from '@/components/layouts/GetStartedButton';
 import { createClient } from '@/utils/supabase/server';
 
 export default async function NavbarActions({
@@ -24,7 +23,6 @@ export default async function NavbarActions({
           </>
         ) : (
           <>
-            <GetStartedButton />
             <LanguageWrapper />
             <ThemeToggle />
           </>
