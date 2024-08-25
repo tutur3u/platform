@@ -1,6 +1,6 @@
 import Navbar from '../navbar';
 import NavbarPadding from '../navbar-padding';
-import Footer from '@/components/layouts/Footer';
+import Footer from './footer';
 import React from 'react';
 
 interface LayoutProps {

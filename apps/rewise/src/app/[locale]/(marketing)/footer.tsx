@@ -1,4 +1,4 @@
-import Slogan from './slogan';
+import Slogan from '../../../components/layouts/slogan';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
@@ -18,7 +18,7 @@ export default async function Footer() {
         </div>
 
         <Link
-          href="/login"
+          href="https://tuturuuu.com/login?nextUrl=/rewise/callback"
           className="bg-foreground/5 text-foreground hover:bg-foreground/10 mt-4 w-full max-w-xs rounded border px-8 py-2 font-semibold transition duration-300"
         >
           {t('common.get-started')}
@@ -41,7 +41,7 @@ export default async function Footer() {
               alt="logo"
               className="h-12 w-12"
             />
-            <div className="text-4xl font-semibold">Tuturuuu</div>
+            <div className="text-4xl font-semibold">Rewise</div>
           </Link>
 
           <div className="flex gap-8">
@@ -116,14 +116,14 @@ export default async function Footer() {
               {t('common.legal')}
             </div>
             <Link
-              href="/terms"
+              href="https://tuturuuu.com/terms"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.terms')}
             </Link>
             <Link
-              href="/privacy"
+              href="https://tuturuuu.com/privacy"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
@@ -136,19 +136,19 @@ export default async function Footer() {
               {t('common.resources')}
             </div>
             <Link
-              href="/calendar/meet-together"
+              href="https://tuturuuu.com/calendar/meet-together"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.meet-together')}
             </Link>
             <Link
-              href="/qr-generator"
+              href="https://tuturuuu.com/qr-generator"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.qr_generator')}
             </Link>
             <Link
-              href="/branding"
+              href="https://tuturuuu.com/branding"
               target="_blank"
               className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
