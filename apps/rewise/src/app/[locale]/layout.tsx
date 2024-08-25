@@ -21,8 +21,9 @@ interface Props {
 }
 
 export function generateMetadata({ params: { locale } }: Props): Metadata {
-  const enDescription = 'Take control of your workflow, supercharged by AI.';
-  const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
+  const enDescription = 'Life’s easier with Rewise, supercharged by AI.';
+  const viDescription =
+    'Cuộc sống dễ dàng hơn với Rewise, siêu tốc độ cùng AI.';
 
   const description = locale === 'vi' ? viDescription : enDescription;
 
