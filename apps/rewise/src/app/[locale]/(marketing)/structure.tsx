@@ -50,7 +50,10 @@ export function Structure({
       >
         <div className="flex items-center gap-2">
           <div className="flex flex-none items-center gap-2">
-            <Link href="/" className="flex flex-none items-center gap-2">
+            <Link
+              href="/?refresh=true"
+              className="flex flex-none items-center gap-2"
+            >
               <Image
                 src="/media/logos/transparent.png"
                 className="h-9 w-9"
@@ -126,7 +129,7 @@ export function Structure({
                     )}
                   >
                     <Link
-                      href="/"
+                      href="/?refresh=true"
                       className="flex flex-none items-center justify-center gap-2"
                     >
                       <Image
