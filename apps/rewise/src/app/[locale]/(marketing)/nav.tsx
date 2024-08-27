@@ -75,7 +75,7 @@ export function Nav({ currentUser, links, isCollapsed, onClick }: NavProps) {
                   }
                   className={cn(
                     buttonVariants({
-                      variant: isActive ? 'default' : 'ghost',
+                      variant: isActive ? 'secondary' : 'ghost',
                       size: 'icon',
                     }),
                     'h-9 w-9 whitespace-normal',
@@ -106,7 +106,7 @@ export function Nav({ currentUser, links, isCollapsed, onClick }: NavProps) {
               href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
               className={cn(
                 buttonVariants({
-                  variant: isActive ? 'default' : 'ghost',
+                  variant: isActive ? 'secondary' : 'ghost',
                   size: 'sm',
                 }),
                 urlToLoad === link.href &&

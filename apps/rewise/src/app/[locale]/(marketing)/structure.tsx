@@ -159,7 +159,12 @@ export function Structure({
                 </div>
                 <Separator />
               </div>
-              <div className="scrollbar-none flex flex-1 flex-col gap-1 overflow-y-scroll">
+              <div
+                className={cn(
+                  'scrollbar-none flex flex-1 flex-col gap-1 overflow-y-scroll transition duration-300',
+                  isCollapsed && 'hover:opacity-100 md:opacity-0'
+                )}
+              >
                 <Nav
                   currentUser={user}
                   isCollapsed={isCollapsed}
