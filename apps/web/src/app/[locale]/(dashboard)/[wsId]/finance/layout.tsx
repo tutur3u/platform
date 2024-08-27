@@ -31,7 +31,6 @@ export default async function Layout({
     {
       title: t('transactions'),
       href: `/${wsId}/finance/transactions`,
-      matchExact: true,
     },
     {
       title: t('wallets'),
@@ -40,6 +39,7 @@ export default async function Layout({
     {
       title: t('categories'),
       href: `/${wsId}/finance/transactions/categories`,
+      matchExact: true,
     },
     {
       title: t('invoices'),
