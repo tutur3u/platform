@@ -14,11 +14,13 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
 import { Menu, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode, useState } from 'react';
 
 interface MailProps {
+  locale: string;
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
@@ -30,6 +32,7 @@ interface MailProps {
 }
 
 export function Structure({
+  locale,
   defaultLayout = [20, 32],
   defaultCollapsed = false,
   navCollapsedSize,
@@ -39,6 +42,7 @@ export function Structure({
   userPopover,
   children,
 }: MailProps) {
+  const t = useTranslations();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   if (!user) return null;
 
@@ -166,6 +170,8 @@ export function Structure({
                 )}
               >
                 <Nav
+                  t={t}
+                  locale={locale}
                   currentUser={user}
                   isCollapsed={isCollapsed}
                   links={links}

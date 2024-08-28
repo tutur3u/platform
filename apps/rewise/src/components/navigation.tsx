@@ -19,6 +19,7 @@ export interface NavLink {
   requireRootMember?: boolean;
   allowedRoles?: string[];
   disabledRoles?: string[];
+  createdAt?: string;
 }
 
 interface Props {

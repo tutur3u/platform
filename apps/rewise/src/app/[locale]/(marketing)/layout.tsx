@@ -11,9 +11,13 @@ import React, { Suspense } from 'react';
 
 interface LayoutProps {
   children: React.ReactNode;
+  params: { locale: string };
 }
 
-export default async function Layout({ children }: LayoutProps) {
+export default async function Layout({
+  children,
+  params: { locale },
+}: LayoutProps) {
   const t = await getTranslations();
   const user = await getCurrentUser();
   const { data: chats } = await getChats();
@@ -22,6 +26,7 @@ export default async function Layout({ children }: LayoutProps) {
     title: chat.title || t('common.untitled'),
     icon: <MessageSquare className="flex-none" />,
     href: `/c/${chat.id}`,
+    createdAt: chat.created_at,
   })) satisfies NavLink[];
 
   const layout = cookies().get('react-resizable-panels:layout:mail');
@@ -33,6 +38,7 @@ export default async function Layout({ children }: LayoutProps) {
   return (
     <div className="flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto">
       <Structure
+        locale={locale}
         user={user}
         defaultLayout={defaultLayout}
         defaultCollapsed={defaultCollapsed}
