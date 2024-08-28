@@ -30,6 +30,7 @@ const config = {
 
         'dynamic-purple': 'hsl(var(--purple))',
         'dynamic-blue': 'hsl(var(--blue))',
+        'dynamic-sky': 'hsl(var(--sky))',
         'dynamic-green': 'hsl(var(--green))',
         'dynamic-yellow': 'hsl(var(--yellow))',
         'dynamic-orange': 'hsl(var(--orange))',

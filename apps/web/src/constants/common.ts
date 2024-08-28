@@ -1,7 +1,4 @@
 import { locales } from '@/config';
-import { version } from '@/core/version';
-
-export const APP_VERSION = version;
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';

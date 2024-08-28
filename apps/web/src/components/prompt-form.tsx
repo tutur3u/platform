@@ -191,6 +191,8 @@ export function PromptForm({
     flashcards?: boolean;
   }>({});
 
+  const ENABLE_NEW_UI = false;
+
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
       <form
@@ -221,7 +223,7 @@ export function PromptForm({
                   summary: !types.summary,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <ArrowDownWideNarrow className="mr-1 h-4 w-4" />
               Chat Summary
@@ -242,7 +244,7 @@ export function PromptForm({
                   notes: !types.notes,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <NotebookPen className="mr-1 h-4 w-4" />
               Chat Notes
@@ -263,7 +265,7 @@ export function PromptForm({
                   multiChoiceQuiz: !types.multiChoiceQuiz,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <SquareStack className="mr-1 h-4 w-4" />
               Multiple Choice
@@ -284,7 +286,7 @@ export function PromptForm({
                   paragraphQuiz: !types.paragraphQuiz,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <PencilLine className="mr-1 h-4 w-4" />
               Paragraph Answers
@@ -305,12 +307,13 @@ export function PromptForm({
                   flashcards: !types.flashcards,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <NotebookTabs className="mr-1 h-4 w-4" />
               Flashcards
             </Button>
           </div>
+
           <div className="flex items-center">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -319,7 +322,7 @@ export function PromptForm({
                   size="icon"
                   variant="ghost"
                   className={cn('mr-1 transition duration-300')}
-                  disabled
+                  disabled={!ENABLE_NEW_UI}
                 >
                   <Languages />
                 </Button>
@@ -335,7 +338,7 @@ export function PromptForm({
                   variant="ghost"
                   className={cn('transition duration-300')}
                   onClick={toggleChatFileUpload}
-                  disabled
+                  disabled={!ENABLE_NEW_UI}
                 >
                   <Paperclip />
                 </Button>
