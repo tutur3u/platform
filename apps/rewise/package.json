@@ -27,7 +27,7 @@
     "@ai-sdk/mistral": "^0.0.38",
     "@ai-sdk/openai": "^0.0.54",
     "@ai-sdk/react": "^0.0.52",
-    "@anthropic-ai/sdk": "^0.27.0",
+    "@anthropic-ai/sdk": "^0.27.1",
     "@aws-sdk/client-ses": "^3.637.0",
     "@deepgram/sdk": "^3.5.1",
     "@emotion/react": "^11.13.3",
