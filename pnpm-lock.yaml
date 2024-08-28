@@ -189,8 +189,8 @@ importers:
         specifier: 15.0.0-canary.131
         version: 15.0.0-canary.131(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-9e9694c-20240827)(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822)
       next-intl:
-        specifier: ^3.17.6
-        version: 3.17.6(next@15.0.0-canary.131(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-9e9694c-20240827)(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822)
+        specifier: ^3.18.0
+        version: 3.18.0(next@15.0.0-canary.131(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-9e9694c-20240827)(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822)
       next-themes:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822)
@@ -502,8 +502,8 @@ importers:
         specifier: 15.0.0-canary.131
         version: 15.0.0-canary.131(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-9e9694c-20240827)(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822)
       next-intl:
-        specifier: ^3.17.6
-        version: 3.17.6(next@15.0.0-canary.131(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-9e9694c-20240827)(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822)
+        specifier: ^3.18.0
+        version: 3.18.0(next@15.0.0-canary.131(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-9e9694c-20240827)(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822)
       next-themes:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822)
@@ -7325,8 +7325,8 @@ packages:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
 
-  next-intl@3.17.6:
-    resolution: {integrity: sha512-giPh2Us/C7B5P/60qdfHZMj9YPg5yXp6c9msFxv6Ua4zJt1IueNrKivInowN8FAwwSqEyC7TNYXBkXuG6oToTQ==}
+  next-intl@3.18.0:
+    resolution: {integrity: sha512-TpSwnBEHA+hEQH/bJJnDL/BkDdkSxABJv8f0rpAV6yPEw7zq/+tH84SHWzKLZYewfBBgI3yTtuGZYIIPk792pw==}
     peerDependencies:
       next: ^10.0.0 || ^11.0.0 || ^12.0.0 || ^13.0.0 || ^14.0.0
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
@@ -9274,8 +9274,8 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
-  use-intl@3.17.6:
-    resolution: {integrity: sha512-07wyVHSFSfI6M6TjhX/buZUFXnFymSz5LCimIMutTnBY11Vc/ym18j3HpZoQoWH+JYRKCCa4Jfm7NNyVKmgVww==}
+  use-intl@3.18.0:
+    resolution: {integrity: sha512-38A07Lyu4VapNOckenvL0PhQYetOPz5s7qoAs2wvM4yLCiye+pX8352Jhjr9mxA430zYhrLTK4pilX9VdXlX3g==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
@@ -17546,13 +17546,13 @@ snapshots:
 
   negotiator@0.6.3: {}
 
-  next-intl@3.17.6(next@15.0.0-canary.131(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-9e9694c-20240827)(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822):
+  next-intl@3.18.0(next@15.0.0-canary.131(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-9e9694c-20240827)(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822):
     dependencies:
       '@formatjs/intl-localematcher': 0.5.4
       negotiator: 0.6.3
       next: 15.0.0-canary.131(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-9e9694c-20240827)(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822)
       react: 19.0.0-rc-eb3ad065-20240822
-      use-intl: 3.17.6(react@19.0.0-rc-eb3ad065-20240822)
+      use-intl: 3.18.0(react@19.0.0-rc-eb3ad065-20240822)
 
   next-themes@0.3.0(react-dom@19.0.0-rc-eb3ad065-20240822(react@19.0.0-rc-eb3ad065-20240822))(react@19.0.0-rc-eb3ad065-20240822):
     dependencies:
@@ -19881,7 +19881,7 @@ snapshots:
     dependencies:
       react: 19.0.0-rc-eb3ad065-20240822
 
-  use-intl@3.17.6(react@19.0.0-rc-eb3ad065-20240822):
+  use-intl@3.18.0(react@19.0.0-rc-eb3ad065-20240822):
     dependencies:
       '@formatjs/fast-memoize': 2.2.0
       intl-messageformat: 10.5.14
