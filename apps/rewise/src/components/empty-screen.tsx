@@ -118,14 +118,17 @@ export function EmptyScreen({
               <h2 className="line-clamp-1 text-lg font-semibold">
                 {t('recent_conversations')}
               </h2>
-              <div className="mt-4 flex flex-col items-start space-y-2">
-                {chats.slice(0, 3).map((chat) => (
-                  <div key={chat.id} className="flex w-full items-center gap-2">
+              <div className="mt-2 grid items-start gap-2 lg:grid-cols-2">
+                {chats.slice(0, 4).map((chat) => (
+                  <div
+                    key={chat.id}
+                    className="bg-foreground/5 flex w-full items-center gap-2 rounded border p-2"
+                  >
                     <MessageCircle className="text-foreground/80 shrink-0" />
                     <div className="flex w-full flex-col items-start">
                       <Link
                         href={`/c/${chat.id}`}
-                        className="text-sm hover:underline md:text-base"
+                        className="line-clamp-1 text-sm hover:underline md:text-base"
                       >
                         {chat.title}
                       </Link>
