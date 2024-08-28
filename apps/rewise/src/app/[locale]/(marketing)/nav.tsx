@@ -4,12 +4,13 @@ import { NavLink } from '@/components/navigation';
 import { PROD_MODE } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { buttonVariants } from '@repo/ui/components/ui/button';
+import { Button, buttonVariants } from '@repo/ui/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
+import { CirclePlus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -175,21 +176,74 @@ export function Nav({
           isCollapsed ? 'gap-1' : 'gap-4'
         )}
       >
-        {Object.entries(groupedLinks).map(([dateTag, dateLinks]) => (
-          <div key={dateTag}>
-            {!isCollapsed && (
-              <div className="text-muted-foreground mb-2 text-sm font-semibold">
-                {
-                  // Upper case the first letter of the date tag
-                  dateTag.charAt(0).toUpperCase() + dateTag.slice(1)
+        {isCollapsed ? (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Link
+                href={
+                  pathname === '/' && !searchParams.get('id')
+                    ? '/'
+                    : '/?refresh=true'
                 }
+                className="flex items-center justify-start"
+              >
+                <Button
+                  size={isCollapsed ? 'icon' : undefined}
+                  variant="secondary"
+                  onClick={onClick}
+                  className={cn(isCollapsed || 'w-full')}
+                  disabled={pathname === '/' && !searchParams.get('id')}
+                >
+                  <CirclePlus className="h-6 w-6" />
+                  {isCollapsed || (
+                    <span className="ml-2">{t('ai_chat.new_chat')}</span>
+                  )}
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <div className="font-semibold">{t('ai_chat.new_chat')}</div>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Link
+            href={
+              pathname === '/' && !searchParams.get('id')
+                ? '/'
+                : '/?refresh=true'
+            }
+            className="flex items-center justify-start"
+          >
+            <Button
+              size={isCollapsed ? 'icon' : undefined}
+              variant="secondary"
+              onClick={onClick}
+              className={cn(isCollapsed || 'w-full')}
+              disabled={pathname === '/' && !searchParams.get('id')}
+            >
+              <CirclePlus className="h-6 w-6" />
+              {isCollapsed || (
+                <span className="ml-2">{t('ai_chat.new_chat')}</span>
+              )}
+            </Button>
+          </Link>
+        )}
+        {!isCollapsed &&
+          Object.entries(groupedLinks).map(([dateTag, dateLinks]) => (
+            <div key={dateTag}>
+              {!isCollapsed && (
+                <div className="text-muted-foreground mb-2 text-sm font-semibold">
+                  {
+                    // Upper case the first letter of the date tag
+                    dateTag.charAt(0).toUpperCase() + dateTag.slice(1)
+                  }
+                </div>
+              )}
+              <div className="grid gap-1">
+                {dateLinks.map((link, index) => renderLink(link, index))}
               </div>
-            )}
-            <div className="grid gap-1">
-              {dateLinks.map((link, index) => renderLink(link, index))}
             </div>
-          </div>
-        ))}
+          ))}
       </nav>
     </div>
   );
