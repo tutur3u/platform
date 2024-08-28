@@ -1,4 +1,3 @@
-import { generateRandomUUID } from '@/utils/uuid-helper';
 import { Button } from '@repo/ui/components/ui/button';
 import { FileUploader } from '@repo/ui/components/ui/custom/file-uploader';
 import {
@@ -15,7 +14,7 @@ interface Props {
   wsId: string;
   transactionId: string;
 }
-export function Bill({ wsId, transactionId }: Props) {
+export function Bill({ wsId }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const [fileProgresses, setFileProgresses] = useState<
     Record<string, 'uploading' | 'uploaded' | 'error'>
