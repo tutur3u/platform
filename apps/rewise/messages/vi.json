@@ -1214,6 +1214,8 @@
     "example_4_prompt": "Tóm tắt bài viết sau cho học sinh lớp 2: \n\n",
     "example_5": "Viết một email",
     "example_5_prompt": "Viết một email cho sếp tôi về vấn đề sau: \n\n",
+    "example_6": "Tạo một bài thơ",
+    "example_6_prompt": "Tạo một bài thơ về vấn đề sau: \n\n",
     "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
     "prompt_placeholder": "Nhập yêu cầu của bạn...",
     "chats": "Các cuộc trò chuyện",
@@ -1263,7 +1265,11 @@
     "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
     "upload_files": "Tải lên tập tin",
     "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
-    "response_language": "Ngôn ngữ phản hồi"
+    "response_language": "Ngôn ngữ phản hồi",
+    "chat_summary": "Tóm tắt",
+    "chat_notes": "Ghi chú",
+    "multiple_choice": "Bộ trắc nghiệm",
+    "paragraph_answers": "Câu hỏi đoạn văn"
   },
   "crud-ops": {
     "ops": "Thao tác",

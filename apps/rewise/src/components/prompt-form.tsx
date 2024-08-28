@@ -226,7 +226,7 @@ export function PromptForm({
               disabled={!ENABLE_NEW_UI}
             >
               <ArrowDownWideNarrow className="mr-1 h-4 w-4" />
-              Chat Summary
+              {t('ai_chat.chat_summary')}
             </Button>
             <Button
               size="xs"
@@ -247,7 +247,7 @@ export function PromptForm({
               disabled={!ENABLE_NEW_UI}
             >
               <NotebookPen className="mr-1 h-4 w-4" />
-              Chat Notes
+              {t('ai_chat.chat_notes')}
             </Button>
             <Button
               size="xs"
@@ -268,7 +268,7 @@ export function PromptForm({
               disabled={!ENABLE_NEW_UI}
             >
               <SquareStack className="mr-1 h-4 w-4" />
-              Multiple Choice
+              {t('ai_chat.multiple_choice')}
             </Button>
             <Button
               size="xs"
@@ -289,7 +289,7 @@ export function PromptForm({
               disabled={!ENABLE_NEW_UI}
             >
               <PencilLine className="mr-1 h-4 w-4" />
-              Paragraph Answers
+              {t('ai_chat.paragraph_answers')}
             </Button>
             <Button
               size="xs"
@@ -310,7 +310,7 @@ export function PromptForm({
               disabled={!ENABLE_NEW_UI}
             >
               <NotebookTabs className="mr-1 h-4 w-4" />
-              Flashcards
+              {t('ai_chat.flashcards')}
             </Button>
           </div>
 
