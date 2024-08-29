@@ -202,7 +202,7 @@ export function PromptForm({
 
   if (!element) return null;
 
-  const ENABLE_NEW_UI = true;
+  const ENABLE_NEW_UI = DEV_MODE;
 
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
