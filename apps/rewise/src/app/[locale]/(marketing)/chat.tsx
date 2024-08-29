@@ -211,6 +211,7 @@ const Chat = ({
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
       router.replace(`/?id=${id}`);
+      router.refresh();
     }
   };
 

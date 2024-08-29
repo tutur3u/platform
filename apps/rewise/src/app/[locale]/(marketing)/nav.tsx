@@ -91,13 +91,21 @@ export function Nav({
     // If the link is only allowed for certain roles, check if the current role is allowed
     if (link?.allowedRoles && link.allowedRoles.length > 0) return null;
 
+    const chatId = searchParams.get('id');
+
     const isActive = link.aliases
       ? [...link.aliases, link.href].some((href) =>
-          link.matchExact ? pathname === href : pathname?.startsWith(href)
+          chatId
+            ? href.endsWith(chatId)
+            : link.matchExact
+              ? pathname === href
+              : pathname?.startsWith(href)
         )
-      : link.matchExact
-        ? pathname === link.href
-        : pathname?.startsWith(link.href);
+      : chatId
+        ? link.href.endsWith(chatId)
+        : link.matchExact
+          ? pathname === link.href
+          : pathname?.startsWith(link.href);
 
     const linkContent = (
       <Link
