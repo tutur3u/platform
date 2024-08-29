@@ -16,7 +16,6 @@ import {
   ChartArea,
   CheckCheck,
   Cog,
-  Gamepad,
   HardDrive,
   HeartPulse,
   Mail,
@@ -100,12 +99,6 @@ export default async function Layout({
       disabled:
         !verifySecret('ENABLE_AI', 'true', secrets) ||
         !permissions.includes('ai_lab'),
-    },
-    {
-      title: t('sidebar_tabs.blackbox'),
-      href: `/${wsId}/blackbox`,
-      icon: <Gamepad className="h-4 w-4" />,
-      disabled: true,
     },
     {
       title: t('sidebar_tabs.slides'),
