@@ -191,7 +191,18 @@ export function PromptForm({
     flashcards?: boolean;
   }>({});
 
-  const ENABLE_NEW_UI = false;
+  const [element, setElement] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setElement(document.getElementById('main-content'));
+    return () => {
+      setElement(null);
+    };
+  }, []);
+
+  if (!element) return null;
+
+  const ENABLE_NEW_UI = true;
 
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
@@ -200,6 +211,10 @@ export function PromptForm({
           e.preventDefault();
           if (!input?.trim()) return;
           setInput('');
+          element.scrollTo({
+            top: element.scrollHeight,
+            behavior: 'smooth',
+          });
           await onSubmit(input);
         }}
         ref={formRef}
