@@ -14,5 +14,11 @@ export default function LogoTitle({
   const hasWorkspace = !!params.wsId;
 
   if (!forceShow && hasWorkspace) return null;
-  return <div className={cn('text-2xl font-bold', className)}>Rewise</div>;
+  return (
+    <div
+      className={cn('text-4xl font-bold md:text-3xl lg:text-4xl', className)}
+    >
+      Rewise
+    </div>
+  );
 }

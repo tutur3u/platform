@@ -105,13 +105,16 @@ export function Nav({
         href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
         className={cn(
           buttonVariants({
-            variant: isActive ? 'secondary' : 'ghost',
+            variant: 'ghost',
             size: isCollapsed ? 'icon' : 'sm',
           }),
           isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
           'whitespace-normal',
-          urlToLoad === link.href &&
-            'bg-accent text-accent-foreground animate-pulse'
+          isActive
+            ? 'from-dynamic-red/20 via-dynamic-purple/20 to-dynamic-sky/20 hover:from-dynamic-red/20 hover:via-dynamic-purple/20 hover:to-dynamic-sky/20 bg-gradient-to-br'
+            : urlToLoad === link.href
+              ? 'from-dynamic-red/30 via-dynamic-purple/30 to-dynamic-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
+              : 'bg-foreground/5 hover:bg-foreground/10'
         )}
         onClick={() => {
           setUrlToLoad(link.href);
@@ -216,7 +219,6 @@ export function Nav({
           >
             <Button
               size={isCollapsed ? 'icon' : undefined}
-              variant="secondary"
               onClick={onClick}
               className={cn(isCollapsed || 'w-full')}
               disabled={pathname === '/' && !searchParams.get('id')}

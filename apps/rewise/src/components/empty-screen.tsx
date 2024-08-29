@@ -119,7 +119,7 @@ export function EmptyScreen({
                 {t('recent_conversations')}
               </h2>
               <div className="mt-2 grid items-start gap-2 lg:grid-cols-2">
-                {chats.slice(0, 4).map((chat) => (
+                {chats.slice(0, 2).map((chat) => (
                   <div
                     key={chat.id}
                     className="bg-foreground/5 flex w-full items-center gap-2 rounded border p-2"
