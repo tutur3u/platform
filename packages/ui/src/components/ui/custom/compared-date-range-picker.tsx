@@ -19,9 +19,9 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from '@radix-ui/react-icons';
-import { type FC, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-export interface DateRangePickerProps {
+interface ComparedDateRangePickerProps {
   /** Click handler for applying the updates from DateRangePicker. */
   // eslint-disable-next-line no-unused-vars
   onUpdate?: (values: { range: DateRange; rangeCompare?: DateRange }) => void;
@@ -87,9 +87,7 @@ const PRESETS: Preset[] = [
 ];
 
 /** The DateRangePicker component allows a user to select a range of dates */
-export const DateRangePicker: FC<DateRangePickerProps> & {
-  filePath: string;
-} = ({
+export const ComparedDateRangePicker = ({
   initialDateFrom = new Date(new Date().setHours(0, 0, 0, 0)),
   initialDateTo,
   initialCompareFrom,
@@ -98,7 +96,7 @@ export const DateRangePicker: FC<DateRangePickerProps> & {
   align = 'end',
   locale = 'en-US',
   showCompare = true,
-}): JSX.Element => {
+}: ComparedDateRangePickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const [range, setRange] = useState<DateRange>({
@@ -569,7 +567,3 @@ export const DateRangePicker: FC<DateRangePickerProps> & {
     </Popover>
   );
 };
-
-DateRangePicker.displayName = 'DateRangePicker';
-DateRangePicker.filePath =
-  'libs/shared/ui-kit/src/lib/date-range-picker/date-range-picker.tsx';
