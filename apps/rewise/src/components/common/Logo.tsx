@@ -17,11 +17,7 @@ export default function Logo({
   const label = 'Tuturuuu';
 
   return (
-    <Link
-      href="/onboarding?nextUrl=/&withWorkspace=true"
-      onClick={onClick}
-      className="flex items-center gap-2"
-    >
+    <Link href="/" onClick={onClick} className="flex items-center gap-2">
       {showLogo && (
         <div className="flex-none">
           <Image

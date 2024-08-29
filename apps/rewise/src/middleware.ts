@@ -59,7 +59,7 @@ const handleRedirect = ({
   res: NextResponse;
   redirect: boolean;
 } => {
-  // If current path ends with /login and user is logged in, redirect to onboarding page
+  // If current path ends with /login and user is logged in, redirect to home page
   if (req.nextUrl.pathname.endsWith('/login') && user) {
     const nextRes = NextResponse.redirect(
       req.nextUrl.href.replace('/login', '/')
