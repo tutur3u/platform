@@ -1,3 +1,4 @@
+import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import type { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
