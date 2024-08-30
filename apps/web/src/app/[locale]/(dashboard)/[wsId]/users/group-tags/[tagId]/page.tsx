@@ -5,7 +5,6 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { UserGroupTag } from '@/types/primitives/UserGroupTag';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon } from '@radix-ui/react-icons';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -169,23 +168,6 @@ async function getGroupData(
   }
 
   return { data, count } as unknown as { data: UserGroup[]; count: number };
-}
-
-async function getUserFields(wsId: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_fields')
-    .select('*', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: WorkspaceUserField[]; count: number };
 }
 
 async function getExcludedGroupTags(wsId: string, tagId: string) {
