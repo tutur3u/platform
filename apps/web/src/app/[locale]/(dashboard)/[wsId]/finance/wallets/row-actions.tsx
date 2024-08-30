@@ -14,19 +14,22 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface WalletRowActionsProps {
   row: Row<Wallet>;
+  href?: string;
 }
 
-export function WalletRowActions(props: WalletRowActionsProps) {
+export function WalletRowActions({ row, href }: WalletRowActionsProps) {
   const t = useTranslations();
 
   const router = useRouter();
-  const data = props.row.original;
+  const data = row.original;
 
   const deleteWallet = async () => {
     const res = await fetch(
@@ -53,6 +56,15 @@ export function WalletRowActions(props: WalletRowActionsProps) {
 
   return (
     <div className="flex items-center justify-end gap-2">
+      {href && (
+        <Link href={href}>
+          <Button>
+            <Eye className="mr-1 h-5 w-5" />
+            {t('common.view')}
+          </Button>
+        </Link>
+      )}
+
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -64,14 +76,6 @@ export function WalletRowActions(props: WalletRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem
-            onClick={() =>
-              router.push(`/${data.ws_id}/finance/wallets/${data.id}`)
-            }
-          >
-            {t('common.view')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             {t('common.edit')}
           </DropdownMenuItem>

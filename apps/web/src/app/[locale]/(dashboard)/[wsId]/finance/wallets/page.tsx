@@ -27,7 +27,7 @@ export default async function WorkspaceWalletsPage({
 
   const data = rawData.map((d) => ({
     ...d,
-    // href: `/${wsId}/finance/transactions/${d.id}`,
+    href: `/${wsId}/finance/wallets/${d.id}`,
     ws_id: wsId,
   }));
 

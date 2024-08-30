@@ -27,7 +27,7 @@ export default async function WorkspaceTransactionsPage({
 
   const data = rawData.map((d) => ({
     ...d,
-    // href: `/${wsId}/finance/transactions/${d.id}`,
+    href: `/${wsId}/finance/transactions/${d.id}`,
     ws_id: wsId,
   }));
 

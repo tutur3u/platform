@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@repo/ui/components/ui/button';
 import { FileUploader } from '@repo/ui/components/ui/custom/file-uploader';
 import {
@@ -7,7 +9,6 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { FileText, ImageIcon, Package, X } from 'lucide-react';
-import type React from 'react';
 import { useState } from 'react';
 
 interface Props {

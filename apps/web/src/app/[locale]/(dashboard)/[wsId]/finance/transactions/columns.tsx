@@ -156,7 +156,9 @@ export const transactionColumns = (
     },
     {
       id: 'actions',
-      cell: ({ row }) => <TransactionRowActions row={row} />,
+      cell: ({ row }) => (
+        <TransactionRowActions row={row} href={row.original.href} />
+      ),
     },
   ];
 };
