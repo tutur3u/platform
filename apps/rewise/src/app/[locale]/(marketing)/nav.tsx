@@ -71,7 +71,7 @@ export function Nav({
   const groupedLinks = groupLinksByDate(locale, t, links);
 
   useEffect(() => {
-    if (urlToLoad) setUrlToLoad(undefined);
+    if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
   }, [pathname, searchParams]);
 
   const renderLink = (link: NavLink, index: number) => {

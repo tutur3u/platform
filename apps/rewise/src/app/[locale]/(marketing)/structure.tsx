@@ -177,9 +177,9 @@ export function Structure({
                   currentUser={user}
                   isCollapsed={isCollapsed}
                   links={links}
-                  onClick={() =>
-                    window.innerWidth < 768 && setIsCollapsed(true)
-                  }
+                  onClick={() => {
+                    if (window.innerWidth < 768) setIsCollapsed(true);
+                  }}
                 />
               </div>
               <div className="border-foreground/10 flex-none border-t p-2">

@@ -329,7 +329,6 @@ const Chat = ({
         updateChat={updateChat}
         clearChat={clearChat}
         setCollapsed={setCollapsed}
-        defaultRoute="/"
       />
     </div>
   );

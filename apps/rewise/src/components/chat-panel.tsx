@@ -52,7 +52,7 @@ export interface ChatPanelProps
   chat: Partial<AIChat> | undefined;
   chats?: AIChat[];
   count?: number | null;
-  defaultRoute: string;
+  defaultRoute?: string;
   inputRef: React.RefObject<HTMLTextAreaElement>;
   model?: Model;
   setModel: (model: Model) => void;
@@ -69,7 +69,7 @@ export function ChatPanel({
   chat,
   chats,
   count,
-  defaultRoute,
+  defaultRoute = '',
   isLoading,
   append,
   input,
@@ -257,7 +257,7 @@ export function ChatPanel({
                         <ArrowDownToLine className="h-5 w-5" />
                       </Button>
                       <Link
-                        href={defaultRoute}
+                        href={defaultRoute || '/'}
                         className={`w-full ${
                           collapsed
                             ? 'pointer-events-none opacity-0'
