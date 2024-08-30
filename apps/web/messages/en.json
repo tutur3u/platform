@@ -778,7 +778,9 @@
     "edit": "Edit Tag",
     "create_description": "Create a new group tag",
     "edit_description": "Edit an existing group tag",
-    "enable_custom_color": "Enable custom color"
+    "enable_custom_color": "Enable custom color",
+    "add_group": "Add groups",
+    "add_group_description": "Add a user group to this tag"
   },
   "ws-user-reports": {
     "singular": "User Report",

@@ -1,4 +1,6 @@
 import { UserDatabaseFilter } from '../../filters';
+import { getUserGroupColumns } from '../../groups/columns';
+import UserGroupForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
@@ -10,7 +12,6 @@ import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { getUserGroupColumns } from '../../groups/columns';
 
 interface SearchParams {
   q?: string;
@@ -42,8 +43,6 @@ export default async function GroupTagDetailsPage({
     searchParams
   );
 
-  const { data: extraFields } = await getUserFields(wsId);
-
   const { data: excludedUserGroups } = await getExcludedGroupTags(wsId, tagId);
 
   const userGroups = rawUserGroups.map((g) => ({
@@ -57,9 +56,9 @@ export default async function GroupTagDetailsPage({
         pluralTitle={tag.name || t('ws-user-groups.plural')}
         singularTitle={tag.name || t('ws-user-groups.singular')}
         description={t('ws-user-groups.description')}
-        createTitle={t('ws-user-groups.add_user')}
-        createDescription={t('ws-user-groups.add_user_description')}
-        // form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
+        createTitle={t('ws-user-group-tags.add_group')}
+        createDescription={t('ws-user-group-tags.add_group_description')}
+        form={<UserGroupForm tagId={tagId} wsId={wsId} />}
       />
       <Separator className="my-4" />
 
@@ -96,9 +95,6 @@ export default async function GroupTagDetailsPage({
           group_count: false,
           created_at: false,
           updated_at: false,
-
-          // Extra columns
-          ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
         }}
       />
     </>

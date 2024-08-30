@@ -778,7 +778,9 @@
     "create": "Tạo gắn thẻ",
     "edit": "Sửa gắn thẻ",
     "create_description": "Thêm một gắn thẻ nhóm mới",
-    "edit_description": "Sửa gắn thẻ nhóm"
+    "edit_description": "Sửa gắn thẻ nhóm",
+    "add_group": "Thêm nhóm",
+    "add_group_description": "Thêm nhóm vào gắn thẻ"
   },
   "ws-user-reports": {
     "singular": "Báo cáo người dùng",
