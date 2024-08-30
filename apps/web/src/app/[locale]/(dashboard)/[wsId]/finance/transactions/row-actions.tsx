@@ -75,6 +75,14 @@ export function TransactionRowActions(props: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
+          <DropdownMenuItem
+            onClick={() =>
+              router.push(`/${data.ws_id}/finance/transactions/${data.id}`)
+            }
+          >
+            {t('common.view')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             {t('common.edit')}
           </DropdownMenuItem>

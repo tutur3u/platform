@@ -139,7 +139,7 @@
     "this-week": "Tuần này",
     "last-week": "Tuần trước",
     "next-week": "Tuần sau",
-    "this-month": "Tháng này",
+    "this_month": "Tháng này",
     "last-month": "Tháng trước",
     "next-month": "Tháng sau",
     "this-year": "Năm nay",
@@ -334,7 +334,6 @@
     "home": "Trang chủ",
     "refresh": "Làm mới",
     "chat": "Trò chuyện",
-    "blackbox": "Thí nghiệm",
     "calendar": "Lịch",
     "projects": "Dự án",
     "documents": "Tài liệu",
@@ -490,6 +489,16 @@
     "apply_changes": "Áp dụng",
     "applying": "Đang áp dụng...",
     "selected": "nhóm"
+  },
+  "email-data-table": {
+    "id": "Mã số",
+    "recipient": "Người nhận",
+    "sender": "Người gửi",
+    "email": "Email",
+    "subject": "Chủ đề",
+    "source_name": "Tên nguồn",
+    "source_email": "Email nguồn",
+    "created_at": "Ngày tạo"
   },
   "user-group-data-table": {
     "id": "Mã số",
@@ -1234,6 +1243,10 @@
     "copy_public_link": "Sao chép liên kết công khai",
     "open_public_link": "Mở liên kết công khai",
     "summary": "Tóm tắt",
+    "notes": "Ghi chú",
+    "multi_choice_quiz": "Câu hỏi nhiều lựa chọn",
+    "paragraph_quiz": "Câu hỏi đoạn văn",
+    "flashcards": "Thẻ ghi nhớ",
     "correct_answer_is_highlighed": "Câu trả lời đúng đã được đánh dấu",
     "you_selected": "Bạn đã chọn",
     "which_is": "đó là một câu trả lời",
@@ -1247,7 +1260,10 @@
     "send_message": "Gửi tin nhắn",
     "extra_options": "Tùy chọn khác",
     "permission_denied": "Quyền truy cập bị từ chối",
-    "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này."
+    "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
+    "upload_files": "Tải lên tập tin",
+    "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
+    "response_language": "Ngôn ngữ phản hồi"
   },
   "crud-ops": {
     "ops": "Thao tác",
@@ -1333,5 +1349,19 @@
     "monthly_total_from_12_recent_months": "Tổng số token sử dụng hàng tháng trong 12 tháng gần đây",
     "prompt_tokens": "Token lệnh nhắc",
     "completion_tokens": "Token hoàn thành"
+  },
+  "workspace-mailbox": {
+    "overview": "Tổng quan",
+    "emails": "Lịch sử gửi thư",
+    "history": "Lịch sử",
+    "send": "Gửi thư"
+  },
+  "dworkspace-mailbox": {
+    "destination-addresses": "Địa chỉ đích"
+  },
+  "ws-emails": {
+    "plural": "Email",
+    "singular": "E-mail",
+    "description": "Xem lịch sử gửi thư thuộc không gian làm việc của bạn."
   }
 }

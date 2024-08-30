@@ -139,7 +139,7 @@
     "this-week": "This week",
     "last-week": "Last week",
     "next-week": "Next week",
-    "this-month": "This month",
+    "this_month": "This month",
     "last-month": "Last month",
     "next-month": "Next month",
     "this-year": "This year",
@@ -334,7 +334,6 @@
     "home": "Home",
     "refresh": "Refresh",
     "chat": "Chat",
-    "blackbox": "Blackbox",
     "calendar": "Calendar",
     "projects": "Projects",
     "documents": "Documents",
@@ -490,6 +489,16 @@
     "apply_changes": "Apply Changes",
     "applying": "Applying...",
     "selected": "Selected"
+  },
+  "email-data-table": {
+    "id": "ID",
+    "recipient": "Recipient",
+    "sender": "Sender",
+    "email": "Email",
+    "subject": "Subject",
+    "source_name": "Source Name",
+    "source_email": "Source Email",
+    "created_at": "Created At"
   },
   "user-group-data-table": {
     "id": "ID",
@@ -1234,6 +1243,10 @@
     "copy_public_link": "Copy public link",
     "open_public_link": "Open public link",
     "summary": "Summary",
+    "notes": "Notes",
+    "multi_choice_quiz": "Multiple Choice",
+    "paragraph_quiz": "Paragraph Answers",
+    "flashcards": "Flashcards",
     "correct_answer_is_highlighed": "The correct answer is highlighted",
     "you_selected": "You selected",
     "which_is": "which is",
@@ -1247,7 +1260,10 @@
     "send_message": "Send message",
     "extra_options": "Extra options",
     "permission_denied": "Permission denied",
-    "microphone_permission_denied": "You have denied microphone permissions. Please enable microphone permissions in your browser settings to use this feature."
+    "microphone_permission_denied": "You have denied microphone permissions. Please enable microphone permissions in your browser settings to use this feature.",
+    "upload_files": "Upload Files",
+    "upload_file_description": "Choose files you want to upload to this chat.",
+    "response_language": "Response language"
   },
   "crud-ops": {
     "ops": "Operations",
@@ -1333,5 +1349,19 @@
     "monthly_total_from_12_recent_months": "Monthly total token from 12 most recent months",
     "prompt_tokens": "Prompt tokens",
     "completion_tokens": "Completion tokens"
+  },
+  "workspace-mailbox": {
+    "overview": "Overview",
+    "emails": "Emails",
+    "history": "History",
+    "send": "Send email"
+  },
+  "dworkspace-mailbox": {
+    "destination-addresses": "Destination Addresses"
+  },
+  "ws-emails": {
+    "plural": "Emails",
+    "singular": "Email",
+    "description": "View mailing history that belongs to your workspace."
   }
 }

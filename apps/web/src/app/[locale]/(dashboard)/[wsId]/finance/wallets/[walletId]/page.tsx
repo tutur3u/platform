@@ -1,9 +1,9 @@
 'use client';
 
-import MiniPlusButton from '../../../../../../../components/common/MiniPlusButton';
 import { Transaction } from '@/types/primitives/Transaction';
 import { Wallet } from '@/types/primitives/Wallet';
-import { Divider } from '@mantine/core';
+import { fetcher } from '@/utils/fetcher';
+import { Separator } from '@repo/ui/components/ui/separator';
 import moment from 'moment';
 import { useLocale } from 'next-intl';
 import useSWR from 'swr';
@@ -22,25 +22,22 @@ export default function WalletDetailsPage({
   const t = (key: string) => key;
 
   const apiPath =
-    wsId && walletId
-      ? `/api/workspaces/${wsId}/finance/wallets/${walletId}`
-      : null;
+    wsId && walletId ? `/api/workspaces/${wsId}/wallets/${walletId}` : null;
 
-  const { data: wallet } = useSWR<Wallet>(apiPath);
+  const { data: wallet } = useSWR<Wallet>(apiPath, fetcher);
 
   const activePage = 1;
   const itemsPerPage = 100;
 
-  const transactionsApiPath = wsId
-    ? `/api/workspaces/${wsId}/finance/transactions?walletIds=${walletId}&page=${activePage}&itemsPerPage=${itemsPerPage}`
-    : null;
+  const transactionsApiPath =
+    wsId && walletId
+      ? `/api/workspaces/${wsId}/transactions?walletIds=${walletId}&page=${activePage}&itemsPerPage=${itemsPerPage}`
+      : null;
 
-  // const countApi = wsId
-  //   ? `/api/workspaces/${wsId}/finance/transactions/count`
-  //   : null;
-
-  const { data: transactions } = useSWR<Transaction[]>(transactionsApiPath);
-  // const { data: count } = useSWR<number>(countApi);
+  const { data: transactions } = useSWR<Transaction[]>(
+    transactionsApiPath,
+    fetcher
+  );
 
   const transactionsByDate = transactions?.reduce(
     (acc, cur) => {
@@ -69,11 +66,11 @@ export default function WalletDetailsPage({
 
     const dateObj = new Date(date);
 
-    if (dateObj.toDateString() === today.toDateString()) return t('today');
     if (dateObj.toDateString() === yesterday.toDateString())
-      return t('yesterday');
+      return t('Yesterday');
+    if (dateObj.toDateString() === today.toDateString()) return t('Today');
     if (dateObj.toDateString() === tomorrow.toDateString())
-      return t('tomorrow');
+      return t('Tomorrow');
 
     // Capitalize the first letter of the day
     return moment(date)
@@ -91,7 +88,7 @@ export default function WalletDetailsPage({
           }`}
         >
           <div className="line-clamp-1 text-2xl font-semibold">
-            {t('wallet-name')}
+            {t('wallet')}
           </div>
 
           <div className="line-clamp-1 text-orange-600/70 dark:text-orange-300/70">
@@ -159,7 +156,7 @@ export default function WalletDetailsPage({
         ) : null}
       </div>
 
-      <Divider className="my-4" />
+      <Separator className="my-4" />
 
       <div className="mt-8 grid gap-8">
         {transactionsByDate &&
@@ -172,10 +169,6 @@ export default function WalletDetailsPage({
               <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-zinc-700 md:flex-row dark:text-zinc-300">
                 <div className="flex gap-2">
                   <div>{getRelativeDate(date)}</div>
-                  <MiniPlusButton
-                    href={`/${wsId}/finance/transactions/new?date=${date}`}
-                    className="opacity-0 group-hover:opacity-100"
-                  />
                 </div>
 
                 <div className="flex gap-2">
@@ -198,7 +191,33 @@ export default function WalletDetailsPage({
                 </div>
               </h3>
 
-              <Divider variant="dashed" className="mb-4 mt-2" />
+              <Separator className="mb-4 mt-2" />
+
+              <div className="flex flex-col flex-wrap gap-4">
+                <div className="flex justify-between gap-4">
+                  <div className="text-lg font-semibold">
+                    {t('Description')}
+                  </div>
+                  <div className="text-lg font-semibold">{t('Amount')}</div>
+                </div>
+
+                {data.transactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex justify-between gap-4"
+                  >
+                    <div className="text-lg text-zinc-700 dark:text-zinc-300">
+                      {transaction.description}
+                    </div>
+                    <div className="text-lg text-zinc-700 dark:text-zinc-300">
+                      {Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND',
+                      }).format(transaction.amount as number)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
       </div>

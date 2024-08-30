@@ -4,10 +4,12 @@ import { DEV_MODE, PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { User } from '@/types/primitives/User';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 
 export interface NavLink {
-  name: string;
+  title: string;
+  trailing?: string;
+  icon?: ReactNode;
   href: string;
   forceRefresh?: boolean;
   matchExact?: boolean;
@@ -67,7 +69,7 @@ export function Navigation({
   }, [pathname]);
 
   return (
-    <>
+    <div className="scrollbar-none mb-4 flex flex-none gap-1 overflow-x-auto font-semibold">
       {navLinks.map((link) => {
         // If the link is disabled, don't render it
         if (link?.disabled) return null;
@@ -115,7 +117,7 @@ export function Navigation({
 
         return (
           <Link
-            key={`${link.name}-${link.href}`}
+            key={`${link.title}-${link.href}`}
             id={
               isActive && currentWsId
                 ? 'active-ws-navlink'
@@ -133,17 +135,17 @@ export function Navigation({
               enableUnderline && notPublic
                 ? 'underline decoration-dashed underline-offset-4'
                 : ''
-            } flex-none rounded-full border px-3 py-1 transition`}
+            } flex-none rounded-lg border px-3 py-1 transition`}
             onClick={() => {
               setUrlToLoad(link.href);
               if (isActive) scrollActiveLinksIntoView();
             }}
             href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
           >
-            {link.name}
+            {link.title}
           </Link>
         );
       })}
-    </>
+    </div>
   );
 }

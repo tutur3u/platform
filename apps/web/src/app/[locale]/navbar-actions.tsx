@@ -1,12 +1,15 @@
 import { LanguageWrapper } from './language-wrapper';
-import LogoTitle from './logo-title';
 import NotificationPopover from './notification-popover';
 import { ThemeToggle } from './theme-toggle';
 import { UserNavWrapper } from './user-nav-wrapper';
 import GetStartedButton from '@/components/layouts/GetStartedButton';
 import { createClient } from '@/utils/supabase/server';
 
-export default async function NavbarActions() {
+export default async function NavbarActions({
+  hideMetadata = false,
+}: {
+  hideMetadata?: boolean;
+}) {
   const supabase = createClient();
 
   const {
@@ -15,11 +18,11 @@ export default async function NavbarActions() {
 
   return (
     <div className="relative">
-      <div className="absolute inset-y-0 right-0 flex items-center gap-1">
+      <div className="flex items-center gap-1">
         {sbUser ? (
           <>
+            <UserNavWrapper hideMetadata={hideMetadata} />
             <NotificationPopover />
-            <UserNavWrapper />
           </>
         ) : (
           <>
@@ -28,10 +31,6 @@ export default async function NavbarActions() {
             <ThemeToggle />
           </>
         )}
-      </div>
-      <div className="pointer-events-none hidden flex-none items-center gap-2 text-transparent md:flex">
-        <div className="h-8 w-8" />
-        <LogoTitle />
       </div>
     </div>
   );

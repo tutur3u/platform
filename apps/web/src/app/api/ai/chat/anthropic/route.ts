@@ -1,5 +1,5 @@
 import { createAdminClient, createClient } from '@/utils/supabase/server';
-import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { CoreMessage, streamText } from 'ai';
 
 export const runtime = 'edge';
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     }
 
     const result = await streamText({
-      model: openai(model),
+      model: anthropic(model),
       messages,
       system: systemInstruction,
       onFinish: async (response) => {
