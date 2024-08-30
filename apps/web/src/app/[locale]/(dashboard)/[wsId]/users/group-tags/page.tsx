@@ -22,8 +22,13 @@ export default async function WorkspaceUserGroupTagsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: tags, count } = await getGroupTags(wsId, searchParams);
+  const { data, count } = await getGroupTags(wsId, searchParams);
   const t = await getTranslations('ws-user-group-tags');
+
+  const tags = data.map((tag) => ({
+    ...tag,
+    href: `/${wsId}/users/group-tags/${tag.id}`,
+  }));
 
   return (
     <>

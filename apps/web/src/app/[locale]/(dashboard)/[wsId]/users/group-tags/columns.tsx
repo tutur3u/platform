@@ -59,7 +59,7 @@ export const groupTagColumns = (
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-[8rem] break-all">
-        <Link className="cursor-pointer" href={``}>
+        <Link className="cursor-pointer" href={row.original.href || '#'}>
           <ColorPicker
             text={row.getValue('name')}
             value={row.getValue('color') || '#000000'}
