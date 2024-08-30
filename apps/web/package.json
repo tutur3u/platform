@@ -60,7 +60,7 @@
     "@react-email/tailwind": "0.1.0",
     "@repo/ui": "workspace:*",
     "@supabase/ssr": "^0.5.1",
-    "@supabase/supabase-js": "2.45.2",
+    "@supabase/supabase-js": "2.45.3",
     "@tabler/icons-react": "^3.14.0",
     "@tanstack/react-query": "^5.53.1",
     "@tanstack/react-table": "^8.20.5",
