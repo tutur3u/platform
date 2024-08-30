@@ -1,17 +1,19 @@
 'use client';
 
-import { GroupTagRowActions } from './row-actions';
-import { UserGroupTag } from '@/types/primitives/UserGroupTag';
-import { ColorPicker } from '@repo/ui/components/ui/color-picker';
+import { UserGroupRowActions } from './row-actions';
+import { UserGroup } from '@/types/primitives/UserGroup';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
-export const groupTagColumns = (
+export const getUserGroupColumns = (
   t: any,
-  namespace: string
-): ColumnDef<UserGroupTag>[] => [
+  namespace: string,
+  _?: any[],
+  extraData?: any
+): ColumnDef<UserGroup>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -42,11 +44,7 @@ export const groupTagColumns = (
         title={t(`${namespace}.id`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
-        {row.getValue('id')}
-      </div>
-    ),
+    cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
@@ -58,31 +56,32 @@ export const groupTagColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
-        <Link className="cursor-pointer" href={row.original.href || '#'}>
-          <ColorPicker
-            text={row.getValue('name')}
-            value={row.getValue('color') || '#000000'}
-            className="line-clamp-1 w-full"
-          ></ColorPicker>
-        </Link>
-      </div>
+      <Link href={row.original.href || '#'} className="min-w-[8rem]">
+        {row.getValue('name') || '-'}
+      </Link>
     ),
   },
   {
-    accessorKey: 'color',
+    accessorKey: 'amount',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.color`)}
+        title={t(`${namespace}.amount`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-[8rem] break-all">
-        {row.getValue('color') ? `#${row.getValue('color')}` : '-'}
-      </div>
+    cell: ({ row }) => <div>{row.getValue('amount')}</div>,
+  },
+  {
+    accessorKey: 'locked',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.locked`)}
+      />
     ),
+    cell: ({ row }) => <div>{row.getValue('locked') ? <Check /> : <X />}</div>,
   },
   {
     accessorKey: 'created_at',
@@ -94,7 +93,7 @@ export const groupTagColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 max-w-[8rem] break-all">
+      <div>
         {row.getValue('created_at')
           ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
           : '-'}
@@ -103,7 +102,6 @@ export const groupTagColumns = (
   },
   {
     id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
-    cell: ({ row }) => <GroupTagRowActions row={row} />,
+    cell: ({ row }) => <UserGroupRowActions row={row} extraData={extraData} />,
   },
 ];
