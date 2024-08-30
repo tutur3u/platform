@@ -20,6 +20,7 @@ const useEmail = () => {
     postId: string;
     post: UserGroupPost;
     users: {
+      id: string;
       email: string;
       username: string;
       notes: string;

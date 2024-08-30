@@ -143,6 +143,7 @@ function UserCard({ user, wsId, post }: Props) {
         post,
         users: [
           {
+            id: user.id,
             email: user.email,
             username:
               user.full_name ||
