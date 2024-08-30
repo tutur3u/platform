@@ -22,26 +22,26 @@ export default async function Layout({
 
   const navLinks: NavLink[] = [
     {
-      name: t('overview'),
+      title: t('overview'),
       href: `/${wsId}/ai`,
       matchExact: true,
     },
     {
-      name: t('prompts'),
+      title: t('prompts'),
       href: `/${wsId}/ai/prompts`,
     },
     {
-      name: t('workflows'),
+      title: t('workflows'),
       href: `/${wsId}/ai/workflows`,
       disabled: true,
     },
     {
-      name: t('pipelines'),
+      title: t('pipelines'),
       href: `/${wsId}/ai/pipelines`,
       disabled: true,
     },
     {
-      name: t('test_generation'),
+      title: t('test_generation'),
       href: `/${wsId}/ai/test-generation`,
       disabled: true,
     },
@@ -49,14 +49,12 @@ export default async function Layout({
 
   return (
     <div>
-      <div className="scrollbar-none mb-4 flex gap-1 overflow-x-auto font-semibold">
-        <Navigation
-          currentWsId={wsId}
-          currentRole={workspace?.role}
-          currentUser={user}
-          navLinks={navLinks}
-        />
-      </div>
+      <Navigation
+        currentWsId={wsId}
+        currentRole={workspace?.role}
+        currentUser={user}
+        navLinks={navLinks}
+      />
       {children}
     </div>
   );

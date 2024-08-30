@@ -187,10 +187,15 @@ const Chat = ({
       count !== undefined
     ) {
       setInitialScroll(false);
-      window.scrollTo({
-        top: chat?.id ? document.body.scrollHeight : 0,
-        behavior: 'smooth',
-      });
+      const mainChatContent = document.getElementById('main-chat-content');
+
+      if (mainChatContent) {
+        const scrollTop = chat?.id ? mainChatContent.scrollTop : 0;
+        mainChatContent.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth',
+        });
+      }
     }
 
     if (chat?.id && input) {
@@ -299,8 +304,8 @@ const Chat = ({
   }, [wsId, pendingPrompt, chat?.id, append]);
 
   return (
-    <>
-      <div className={cn('pt-4 md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
+    <div className="relative">
+      <div className={cn('md:pt-10', wsId ? 'pb-32' : 'pb-4', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
@@ -356,28 +361,31 @@ const Chat = ({
         )}
       </div>
 
-      <ChatPanel
-        id={chat?.id}
-        chat={chat}
-        chats={chats}
-        count={count}
-        isLoading={isLoading}
-        stop={stop}
-        append={append}
-        reload={reload}
-        input={input}
-        inputRef={inputRef}
-        setInput={setInput}
-        model={model}
-        setModel={setModel}
-        messages={messages}
-        collapsed={collapsed}
-        createChat={createChat}
-        updateChat={updateChat}
-        clearChat={clearChat}
-        setCollapsed={setCollapsed}
-        defaultRoute={`/${wsId}/chat`}
-      />
+      {wsId && (
+        <ChatPanel
+          id={chat?.id}
+          wsId={wsId}
+          chat={chat}
+          chats={chats}
+          count={count}
+          isLoading={isLoading}
+          stop={stop}
+          append={append}
+          reload={reload}
+          input={input}
+          inputRef={inputRef}
+          setInput={setInput}
+          model={model}
+          setModel={setModel}
+          messages={messages}
+          collapsed={collapsed}
+          createChat={createChat}
+          updateChat={updateChat}
+          clearChat={clearChat}
+          setCollapsed={setCollapsed}
+          defaultRoute={`/${wsId}/chat`}
+        />
+      )}
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
         <DialogContent>
@@ -414,7 +422,7 @@ const Chat = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 

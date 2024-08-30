@@ -22,7 +22,7 @@ export async function GET(_: Request, { params: { wsId } }: Params) {
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching transaction categories' },
+      { message: 'Error fetching transaction wallets' },
       { status: 500 }
     );
   }

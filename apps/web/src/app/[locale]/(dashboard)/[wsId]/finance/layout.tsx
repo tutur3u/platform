@@ -24,30 +24,30 @@ export default async function Layout({
 
   const navLinks: NavLink[] = [
     {
-      name: t('overview'),
+      title: t('overview'),
       href: `/${wsId}/finance`,
       matchExact: true,
     },
     {
-      name: t('transactions'),
+      title: t('transactions'),
       href: `/${wsId}/finance/transactions`,
-      matchExact: true,
     },
     {
-      name: t('wallets'),
+      title: t('wallets'),
       href: `/${wsId}/finance/wallets`,
     },
     {
-      name: t('categories'),
+      title: t('categories'),
       href: `/${wsId}/finance/transactions/categories`,
+      matchExact: true,
     },
     {
-      name: t('invoices'),
+      title: t('invoices'),
       href: `/${wsId}/finance/invoices`,
       disabled: !verifySecret('ENABLE_INVOICES', 'true', secrets),
     },
     {
-      name: t('settings'),
+      title: t('settings'),
       href: `/${wsId}/finance/settings`,
       disabled: true,
     },
@@ -55,9 +55,7 @@ export default async function Layout({
 
   return (
     <>
-      <div className="scrollbar-none mb-4 flex gap-1 overflow-x-auto font-semibold">
-        <Navigation navLinks={navLinks} />
-      </div>
+      <Navigation navLinks={navLinks} />
       {children}
     </>
   );

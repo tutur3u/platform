@@ -1,6 +1,7 @@
 import { getUserColumns } from '../../database/columns';
 import { UserDatabaseFilter } from '../../filters';
 import GroupMemberForm from './form';
+import PostsClient from './posts-client';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
@@ -22,6 +23,7 @@ interface SearchParams {
 
 interface Props {
   params: {
+    locale: string;
     wsId: string;
     groupId: string;
   };
@@ -29,7 +31,7 @@ interface Props {
 }
 
 export default async function UserGroupDetailsPage({
-  params: { wsId, groupId },
+  params: { locale, wsId, groupId },
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
@@ -44,6 +46,7 @@ export default async function UserGroupDetailsPage({
   );
 
   const { data: extraFields } = await getUserFields(wsId);
+  const { data: posts } = await getGroupPosts(groupId);
 
   const { data: excludedUserGroups } = await getExcludedUserGroups(
     wsId,
@@ -66,13 +69,21 @@ export default async function UserGroupDetailsPage({
         form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
       <Separator className="my-4" />
-
+      <div className="grid w-full grid-cols-1 gap-2 lg:grid-cols-2">
+        <div className="border-border bg-foreground/5 grid rounded-lg border p-4 pb-0">
+          <PostsClient wsId={wsId} groupId={groupId} posts={posts} />
+        </div>
+        <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start">
+          {/* <div className="text-xl font-semibold">Attendance Calendar</div> */}
+        </div>
+      </div>
+      <Separator className="my-4" />
       <CustomDataTable
         data={users}
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
-        extraData={{ wsId, groupId }}
+        extraData={{ locale, wsId, groupId }}
         count={usersCount}
         filters={[
           <UserDatabaseFilter
@@ -195,6 +206,23 @@ async function getUserFields(wsId: string) {
   if (error) throw error;
 
   return { data, count } as { data: WorkspaceUserField[]; count: number };
+}
+
+async function getGroupPosts(groupId: string) {
+  const supabase = createClient();
+
+  const queryBuilder = supabase
+    .from('user_group_posts')
+    .select('*', {
+      count: 'exact',
+    })
+    .eq('group_id', groupId)
+    .order('created_at', { ascending: false });
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count };
 }
 
 async function getExcludedUserGroups(wsId: string, groupId: string) {

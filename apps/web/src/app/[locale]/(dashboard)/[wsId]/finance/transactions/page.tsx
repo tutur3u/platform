@@ -76,6 +76,7 @@ async function getData(
       }
     )
     .eq('workspace_wallets.ws_id', wsId)
+    .order('taken_at', { ascending: false })
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
