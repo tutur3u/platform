@@ -23,12 +23,18 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
 
   const [query, setQuery] = useState('');
 
+  const workspaceGroupsQuery = useQuery({
+    queryKey: ['workspaces', wsId, 'group-tags', 'user-groups', { query }],
+    queryFn: () => getWorkspaceUserGroups(wsId),
+  });
+
   const userGroupsQuery = useQuery({
     queryKey: ['workspaces', wsId, 'groups', 'tags', tagId, { query }],
     queryFn: tagId ? () => getUserGroups(tagId, query) : undefined,
     enabled: !!tagId,
   });
 
+  const groups = workspaceGroupsQuery.data?.data || [];
   const userGroups = userGroupsQuery.data?.data || [];
 
   const handleNewGroups = async (groupIds: string[]) => {
@@ -70,7 +76,7 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
         <UserDatabaseFilter
           title={t('ws-user-group-tags.add_group')}
           icon={<Users className="mr-2 h-4 w-4" />}
-          options={userGroups.map((group) => ({
+          options={groups.map((group) => ({
             label: group.name || 'No name',
             value: group.id,
             // checked: userGroups.some((u) => u.id === user.id),
@@ -117,6 +123,21 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
       )}
     </>
   );
+}
+
+async function getWorkspaceUserGroups(wsId: string) {
+  const supabase = createClient();
+
+  const queryBuilder = supabase
+    .from('workspace_user_groups')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('id');
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: UserGroup[]; count: number };
 }
 
 async function getUserGroups(tagId: string, query?: string) {
