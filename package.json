@@ -30,13 +30,13 @@
     "ui:diff": "pnpm --filter ui ui:diff"
   },
   "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "eslint": "8.57.0",
-    "@repo/eslint-config": "workspace:*",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.6",
-    "@repo/typescript-config": "workspace:*",
-    "turbo": "^2.1.0",
+    "turbo": "^2.1.1",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
   },
