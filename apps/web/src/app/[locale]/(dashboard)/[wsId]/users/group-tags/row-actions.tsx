@@ -1,7 +1,7 @@
 'use client';
 
-import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import GroupTagForm from './form';
+import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
