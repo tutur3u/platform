@@ -1,63 +1,109 @@
+import Tile from './piece';
 import React from 'react';
 
 const horizontal = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const vertical = [1, 2, 3, 4, 5, 6, 7, 8];
 
+interface Piece {
+    image: string;
+    x: number;
+    y: number;
+}
+
+const pieces: Piece[] = [];
+
+for (let i = 1; i <= 2; i++) {
+    const type = i === 1 ? 'b' : 'w';
+    const y = i === 1 ? 1 : 8;
+
+    pieces.push({ image: `neo-chess/${type}_rook.png`, x: 1, y});
+    pieces.push({ image: `neo-chess/${type}_rook.png`, x: 8, y});
+    pieces.push({ image: `neo-chess/${type}_knight.png`, x: 2, y});
+    pieces.push({ image: `neo-chess/${type}_knight.png`, x: 7, y});
+    pieces.push({ image: `neo-chess/${type}_bishop.png`, x: 3, y});
+    pieces.push({ image: `neo-chess/${type}_bishop.png`, x: 6, y});
+    pieces.push({ image: `neo-chess/${type}_queen.png`, x: 4, y});
+    pieces.push({ image: `neo-chess/${type}_king.png`, x: 5, y});
+}
+
+for (let i = 1; i <= horizontal.length; i++) {
+    pieces.push({ image: 'neo-chess/b_pawn.png', x: i, y: 2 });
+}
+for (let i = 1; i <= horizontal.length; i++) {
+    pieces.push({ image: 'neo-chess/w_pawn.png', x: i, y: 7 });
+}
+
 export default function ChessBoard() {
     let board: React.ReactNode[] = [];
-    
+
+    // Create the board
     for (let i = 0; i <= horizontal.length + 1; i++) {
         const row: React.ReactNode[] = [];
+
         for (let j = 0; j <= vertical.length + 1; j++) {
-            if (i === 0 || i === horizontal.length + 1) {
-                if (j === 0 || j === vertical.length + 1) {
-                    row.push(
-                        <div key={null} className='relative flex h-8 aspect-square items-center justify-center md:h-9 md:w-9 lg:h-10 lg:w-10'></div>
-                    )
-                } else {
-                    row.push(
-                        <div key={j-1} className='relative flex h-8 aspect-square items-center justify-center md:h-9 md:w-9 lg:h-10 lg:w-10'>
-                            {`${horizontal[j-1]}`}
-                        </div>
-                    )
-                }                
-            } else {
-                if (j === 0 || j === vertical.length + 1) {
-                    row.push(
-                        <div key={i-1} className='relative flex h-8 aspect-square items-center justify-center md:h-9 md:w-9 lg:h-10 lg:w-10'>
-                            {`${vertical[vertical.length - i]}`}
-                        </div>
-                    )
-                } else {
-                    row.push(
-                        (i%2!==0 && j%2!==0 || i%2===0 && j%2===0) ? (
-                            <div className='relative flex h-8 aspect-square items-center justify-center md:h-9 md:w-9 lg:h-10 lg:w-10'>
-                                x
-                            </div>
-                        ) : (
-                            <div className='relative bg-blue-200 flex h-8 aspect-square items-center justify-center md:h-9 md:w-9 lg:h-10 lg:w-10'>
-                                y
-                            </div>
-                        )
-                    );
+            const number = j + i + 2;
+            let image = undefined;
+
+            pieces.forEach((piece) => {
+                if (piece.x === j && piece.y === i) {
+                image = piece.image;
                 }
             }
-        }
-
-        board.push(
-            <div className='mx-auto grid w-fit grid-cols-10'>
-                {row}
-            </div>
         );
+
+        if (i === 0 || i === horizontal.length + 1) {
+            if (j === 0 || j === vertical.length + 1) {
+            row.push(
+                <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12"></div>
+            );
+            } else {
+            row.push(
+                <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12">
+                    {`${horizontal[j - 1]}`}
+                </div>
+            );
+            }
+        } else {
+            if (j === 0 || j === vertical.length + 1) {
+                row.push(
+                    <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12">
+                        {`${vertical[vertical.length - i]}`}
+                    </div>
+                );
+            } else {
+                row.push(
+                    (i % 2 !== 0 && j % 2 !== 0) || (i % 2 === 0 && j % 2 === 0) ? (
+                        <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12">
+                            {image && <Tile image={image} number={number} />}
+                        </div>
+                    ) : (
+                        <div className="relative flex aspect-square h-8 items-center justify-center bg-blue-200 md:h-9 lg:h-12">
+                            {image && <Tile image={image} number={number} />}
+                        </div>
+                    )
+                );
+            }
+        }
     }
 
+    board.push(
+        <div className="mx-auto grid w-fit grid-cols-10 divide-x">{row}</div>
+    );
+}
+
     return (
-        <div className="m-auto left-[50%] top-[50%] grid w-full p-6 sm:rounded-lg max-w-sm md:max-w-4xl lg:max-w-6xl">
-            <div className='grid grid-cols-1 md:grid-cols-2'>
-                <div className='bg-card text-card-foreground rounded-lg border shadow-sm w-full p-2 md:p-4'>
-                    <div className='relative'>
-                        {board}
-                    </div>
+        <div className="left-[50%] top-[50%] m-auto grid w-full max-w-sm p-6 sm:rounded-lg md:max-w-4xl lg:max-w-6xl">
+            <div className="m-auto flex grid grid-cols-1 items-center justify-center">
+                <div className="bg-card text-card-foreground w-full rounded-lg border p-4 shadow-sm md:max-w-fit">
+                <div className="relative divide-y">{board}</div>
+                <div
+                    data-orientation="horizontal"
+                    role="none"
+                    className="bg-border my-2 h-[1px] w-full shrink-0 md:my-4"
+                ></div>
+                <button className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-10 w-full items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
+                    Restart
+                </button>
                 </div>
             </div>
         </div>
