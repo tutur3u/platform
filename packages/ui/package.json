@@ -44,7 +44,7 @@
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.2.0",
-    "eslint": "8.57.0",
+    "eslint": "9.9.1",
     "input-otp": "^1.2.4",
     "lodash": "^4.17.21",
     "lucide-react": "^0.436.0",
