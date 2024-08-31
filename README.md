@@ -3,6 +3,8 @@
 [![Tests](https://github.com/tutur3u/platform/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/test.yaml)
 [![Supabase](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml)
 
+![Tuturuuu Cover](/public/cover.png)
+
 This monorepo contains multiple applications and services that make up the Tuturuuu ecosystem. It's powered by Turborepo for efficient management of multiple packages. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
 
 ## Project Structure
