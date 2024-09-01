@@ -66,11 +66,12 @@ export async function POST(req: Request) {
         throw new Error('No message found');
       }
 
-      const { error: insertMsgError } = await sbAdmin.rpc(
+      const { error: insertMsgError } = await supabase.rpc(
         'insert_ai_chat_message',
         {
           message: message as string,
           chat_id: chatId,
+          source: 'Rise',
         }
       );
 
@@ -116,12 +117,14 @@ export async function POST(req: Request) {
 
         const { error } = await sbAdmin.from('ai_chat_messages').insert({
           chat_id: chatId,
+          creator_id: user.id,
           content: response.text,
           role: 'ASSISTANT',
           model: model.toLowerCase(),
           finish_reason: response.finishReason,
           prompt_tokens: response.usage.promptTokens,
           completion_tokens: response.usage.completionTokens,
+          metadata: { source: 'Rise' },
         });
 
         if (error) {
@@ -134,7 +137,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toAIStreamResponse();
+    return result.toDataStreamResponse();
   } catch (error: any) {
     console.log(error);
     return new Response(
