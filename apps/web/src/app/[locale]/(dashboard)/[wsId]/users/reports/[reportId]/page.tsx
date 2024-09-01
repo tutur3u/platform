@@ -37,6 +37,7 @@ export default async function WorkspaceUserDetailsPage({
       ? {
           user_id: userId,
           group_id: groupId,
+          group_name: undefined,
           created_at: new Date().toISOString(),
         }
       : await getData({ wsId, reportId });
@@ -127,7 +128,13 @@ export default async function WorkspaceUserDetailsPage({
 
       <EditableReportPreview
         wsId={wsId}
-        report={report}
+        report={{
+          ...report,
+          group_name:
+            report.group_name ||
+            userGroups?.find((group) => group.id === report.group_id)?.name ||
+            'No group',
+        }}
         configs={configs}
         isNew={reportId === 'new'}
       />
@@ -141,7 +148,7 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
     .select(
-      '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)',
+      '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
       {
         count: 'exact',
       }
@@ -176,7 +183,7 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   delete data.user;
   delete data.creator;
 
-  return data as WorkspaceUserReport;
+  return data as WorkspaceUserReport & { group_name: string };
 }
 
 async function getUserGroups(wsId: string) {
