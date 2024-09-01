@@ -32,7 +32,7 @@ export default async function WorkspaceReportsSettingsPage({
 
   const { data } = await getConfigs(wsId, searchParams);
   const locale = await getLocale();
-  const t = await getTranslations('ws-reports');
+  const t = await getTranslations();
 
   const configs = data.map((config) => ({
     ...config,
@@ -72,8 +72,8 @@ export default async function WorkspaceReportsSettingsPage({
     <>
       <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-2xl font-bold">{t('reports')}</h1>
-          <p className="text-foreground/80">{t('description')}</p>
+          <h1 className="text-2xl font-bold">{t('ws-reports.reports')}</h1>
+          <p className="text-foreground/80">{t('ws-reports.description')}</p>
         </div>
       </div>
       <Separator className="my-4" />

@@ -5,7 +5,6 @@ export default function ReportPreview({
   t,
   lang,
   data,
-  showImage,
   parseDynamicText,
   getConfig,
 }: {
@@ -16,7 +15,6 @@ export default function ReportPreview({
     score: string;
     feedback: string;
   };
-  showImage?: boolean;
   // eslint-disable-next-line no-unused-vars
   t: any;
   // eslint-disable-next-line no-unused-vars
@@ -32,7 +30,7 @@ export default function ReportPreview({
       >
         <div className="text-foreground h-full rounded-lg border p-4 md:p-12">
           <div className="flex flex-wrap items-center justify-between gap-8">
-            {showImage && (
+            {getConfig('BRAND_LOGO_URL') && (
               <img
                 src={getConfig('BRAND_LOGO_URL')!}
                 alt="logo"
