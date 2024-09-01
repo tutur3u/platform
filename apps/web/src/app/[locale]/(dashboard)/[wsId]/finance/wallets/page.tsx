@@ -22,8 +22,8 @@ export default async function WorkspaceWalletsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  const { data: rawData, count } = await getData(wsId, searchParams);
   const t = await getTranslations();
+  const { data: rawData, count } = await getData(wsId, searchParams);
 
   const data = rawData.map((d) => ({
     ...d,

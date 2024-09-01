@@ -2,6 +2,9 @@ import { invoiceColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { Invoice } from '@/types/primitives/Invoice';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -18,22 +21,33 @@ export default async function WorkspaceInvoicesPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  const t = await getTranslations();
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <CustomDataTable
-      data={data}
-      columnGenerator={invoiceColumns}
-      namespace="invoice-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        customer_id: false,
-        price: false,
-        total_diff: false,
-        note: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-invoices.plural')}
+        singularTitle={t('ws-invoices.singular')}
+        description={t('ws-invoices.description')}
+        createTitle={t('ws-invoices.create')}
+        createDescription={t('ws-invoices.create_description')}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={data}
+        columnGenerator={invoiceColumns}
+        namespace="invoice-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          customer_id: false,
+          price: false,
+          total_diff: false,
+          note: false,
+        }}
+      />
+    </>
   );
 }
 

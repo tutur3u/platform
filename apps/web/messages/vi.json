@@ -1363,5 +1363,12 @@
     "plural": "Email",
     "singular": "E-mail",
     "description": "Xem lịch sử gửi thư thuộc không gian làm việc của bạn."
+  },
+  "ws-invoices": {
+    "singular": "Hóa đơn",
+    "plural": "Hóa đơn",
+    "description": "Hóa đơn được sử dụng để liên kết các giao dịch tài chính và sản phẩm đã mua với các chương trình khuyến mãi được áp dụng từ kho hàng trong không gian làm việc của bạn.",
+    "create": "Tạo hóa đơn",
+    "create_description": "Tạo hóa đơn mới"
   }
 }

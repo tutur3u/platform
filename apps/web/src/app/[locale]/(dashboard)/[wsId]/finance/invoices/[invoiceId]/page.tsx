@@ -37,11 +37,11 @@ export default async function InvoiceDetailsPage({
   return (
     <div className="flex min-h-full w-full flex-col">
       <FeatureSummary
-        pluralTitle={t('invoices.plural')}
-        singularTitle={t('invoices.singular')}
-        description={t('invoices.description')}
-        createTitle={t('invoices.create')}
-        createDescription={t('invoices.create_description')}
+        pluralTitle={t('ws-invoices.plural')}
+        singularTitle={t('ws-invoices.singular')}
+        description={t('ws-invoices.description')}
+        createTitle={t('ws-invoices.create')}
+        createDescription={t('ws-invoices.create_description')}
       />
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">

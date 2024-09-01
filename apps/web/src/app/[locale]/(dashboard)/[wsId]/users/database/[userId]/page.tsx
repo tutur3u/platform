@@ -1,6 +1,6 @@
+import { invoiceColumns } from '../../../finance/invoices/columns';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { invoiceColumns } from '@/data/columns/invoices';
 import { WorkspaceUserReport } from '@/types/db';
 import { Invoice } from '@/types/primitives/Invoice';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
