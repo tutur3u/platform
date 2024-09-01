@@ -2,7 +2,6 @@ import { getUserGroupColumns } from './columns';
 import Filters from './filters';
 import UserGroupForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -28,7 +27,6 @@ export default async function WorkspaceUserGroupsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations('ws-user-groups');
 
   const { data, count } = await getData(wsId, searchParams);

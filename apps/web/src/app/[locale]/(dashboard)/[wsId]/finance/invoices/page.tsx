@@ -1,6 +1,5 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { Invoice } from '@/types/primitives/Invoice';
 import { createClient } from '@/utils/supabase/server';
 
@@ -19,7 +18,6 @@ export default async function WorkspaceInvoicesPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_INVOICES'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return (

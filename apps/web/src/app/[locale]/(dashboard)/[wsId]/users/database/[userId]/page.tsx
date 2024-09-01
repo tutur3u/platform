@@ -1,7 +1,6 @@
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { invoiceColumns } from '@/data/columns/invoices';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserReport } from '@/types/db';
 import { Invoice } from '@/types/primitives/Invoice';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -31,8 +30,6 @@ export default async function WorkspaceUserDetailsPage({
   params: { wsId, userId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-
   const t = await getTranslations('user-data-table');
 
   const data = await getData({ wsId, userId });

@@ -3,7 +3,6 @@ import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
 import { CustomMonthPicker } from '@/components/custom-month-picker';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
@@ -33,7 +32,6 @@ export default async function WorkspaceUserAttendancePage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const locale = await getLocale();
   const t = await getTranslations();
 

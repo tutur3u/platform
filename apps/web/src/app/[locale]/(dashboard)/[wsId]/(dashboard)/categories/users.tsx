@@ -1,4 +1,4 @@
-import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
+import { getPermissions } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 export default async function UsersCategoryStatistics({
@@ -7,10 +7,7 @@ export default async function UsersCategoryStatistics({
   wsId: string;
 }) {
   const t = await getTranslations();
-
-  const forceEnable = false;
-  const enabled =
-    forceEnable || (await verifyHasSecrets(wsId, ['ENABLE_USERS']));
+  const enabled = true;
 
   const { permissions } = await getPermissions({
     wsId,

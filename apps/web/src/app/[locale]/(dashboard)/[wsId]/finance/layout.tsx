@@ -1,5 +1,4 @@
 import { NavLink, Navigation } from '@/components/navigation';
-import { getSecrets, verifySecret } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import React from 'react';
 
@@ -15,12 +14,6 @@ export default async function Layout({
   params: { wsId },
 }: LayoutProps) {
   const t = await getTranslations('workspace-finance-tabs');
-
-  const secrets = await getSecrets({
-    wsId,
-    requiredSecrets: ['ENABLE_INVOICES'],
-    forceAdmin: true,
-  });
 
   const navLinks: NavLink[] = [
     {
@@ -44,7 +37,6 @@ export default async function Layout({
     {
       title: t('invoices'),
       href: `/${wsId}/finance/invoices`,
-      disabled: !verifySecret('ENABLE_INVOICES', 'true', secrets),
     },
     {
       title: t('settings'),

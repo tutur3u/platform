@@ -2,7 +2,6 @@ import { getUserColumns } from '../../users/database/columns';
 import Filters from '../../users/database/filters';
 import MailboxPosts from './posts';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
@@ -30,7 +29,6 @@ export default async function WorkspaceUsersPage({
   params: { locale, wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations('ws-users');
 
   const { data, count } = await getData(wsId, searchParams);

@@ -1,7 +1,6 @@
 import ProjectEditDialog from './_components/project-edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { projectColumns } from '@/data/columns/projects';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
@@ -24,8 +23,6 @@ export default async function WorkspaceProjectsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_PROJECTS'], `/${wsId}`);
-
   const { data: projects, count } = await getProjects(wsId, searchParams);
   const t = await getTranslations('ws-projects');
 

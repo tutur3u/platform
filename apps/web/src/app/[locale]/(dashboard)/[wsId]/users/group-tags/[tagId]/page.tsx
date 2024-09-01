@@ -1,7 +1,6 @@
 import { getUserGroupColumns } from './columns';
 import UserGroupForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import { createClient } from '@/utils/supabase/server';
@@ -30,7 +29,6 @@ export default async function GroupTagDetailsPage({
   params: { locale, wsId, tagId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations();
 
   const tag = await getData(wsId, tagId);

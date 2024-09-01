@@ -3,7 +3,6 @@ import { UserDatabaseFilter } from '../../filters';
 import GroupMemberForm from './form';
 import PostsClient from './posts-client';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
@@ -34,7 +33,6 @@ export default async function UserGroupDetailsPage({
   params: { locale, wsId, groupId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations();
 
   const group = await getData(wsId, groupId);

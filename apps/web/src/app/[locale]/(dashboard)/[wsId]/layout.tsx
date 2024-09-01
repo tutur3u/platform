@@ -49,10 +49,6 @@ export default async function Layout({
       'ENABLE_AI',
       'ENABLE_CHAT',
       'ENABLE_SLIDES',
-      'ENABLE_MAILBOX',
-      'ENABLE_CALENDAR',
-      'ENABLE_USERS',
-      'ENABLE_PROJECTS',
       'ENABLE_DOCS',
       'ENABLE_DRIVE',
       'ENABLE_INVENTORY',
@@ -110,23 +106,18 @@ export default async function Layout({
       title: t('sidebar_tabs.mailbox'),
       href: `/${wsId}/mailbox/history`,
       icon: <Mail className="h-4 w-4" />,
-      disabled: !verifySecret('ENABLE_MAILBOX', 'true', secrets),
     },
     {
       title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
       icon: <Calendar className="h-4 w-4" />,
-      disabled:
-        !verifySecret('ENABLE_CALENDAR', 'true', secrets) ||
-        !permissions.includes('manage_calendar'),
+      disabled: !permissions.includes('manage_calendar'),
     },
     {
       title: t('sidebar_tabs.projects'),
       href: `/${wsId}/projects`,
       icon: <CheckCheck className="h-4 w-4" />,
-      disabled:
-        !verifySecret('ENABLE_PROJECTS', 'true', secrets) ||
-        !permissions.includes('manage_projects'),
+      disabled: !permissions.includes('manage_projects'),
     },
     {
       title: t('sidebar_tabs.documents'),
@@ -149,9 +140,7 @@ export default async function Layout({
       aliases: [`/${wsId}/users`],
       href: `/${wsId}/users/database`,
       icon: <Users className="h-4 w-4" />,
-      disabled:
-        !verifySecret('ENABLE_USERS', 'true', secrets) ||
-        !permissions.includes('manage_users'),
+      disabled: !permissions.includes('manage_users'),
     },
     {
       title: t('sidebar_tabs.inventory'),

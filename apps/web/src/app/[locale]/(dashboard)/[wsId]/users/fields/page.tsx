@@ -1,7 +1,6 @@
 import { userFieldColumns } from './columns';
 import UserFieldEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
@@ -24,8 +23,6 @@ export default async function WorkspaceUserFieldsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-
   const { data: userFields, count } = await getUserFields(wsId, searchParams);
   const t = await getTranslations('ws-user-fields');
 

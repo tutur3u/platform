@@ -1,6 +1,5 @@
 import { getEmailColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -24,7 +23,6 @@ export default async function WorkspaceUsersPage({
   params: { locale, wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations();
 
   const { data: emails, count } = await getData(wsId, searchParams);

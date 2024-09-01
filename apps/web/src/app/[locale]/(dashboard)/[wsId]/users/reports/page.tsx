@@ -1,7 +1,6 @@
 import { UserDatabaseFilter } from '../filters';
 import { getUserReportColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserReport } from '@/types/db';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -32,7 +31,6 @@ export default async function WorkspaceUserReportsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations();
 
   const { data, count } = await getData(wsId, searchParams);

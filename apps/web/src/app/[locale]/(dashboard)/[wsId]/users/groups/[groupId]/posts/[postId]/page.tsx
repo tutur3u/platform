@@ -1,6 +1,5 @@
 import UserCard from './card';
 import { EmailList } from './email-list';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -30,7 +29,6 @@ export default async function HomeworkCheck({
   params: { wsId, groupId, postId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   // const t = await getTranslations();
 
   const post = await getPostData(postId);
