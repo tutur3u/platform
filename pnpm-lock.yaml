@@ -34,7 +34,7 @@ importers:
         version: 5.5.4
       vitest:
         specifier: ^2.0.5
-        version: 2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
+        version: 2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
 
   apps/rewise:
     dependencies:
@@ -142,624 +142,16 @@ importers:
         version: 8.20.5(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       '@upstash/qstash':
         specifier: ^2.6.5
-        version: 2.6.5(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(rollup@4.21.2)(solid-js@1.8.17)(svelte@4.2.19)(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
-      '@vercel/analytics':
-        specifier: ^1.3.1
-        version: 1.3.1(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@vercel/speed-insights':
-        specifier: ^1.0.12
-        version: 1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))
-      '@vercel/toolbar':
-        specifier: ^0.1.18
-        version: 0.1.18(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
-      ai:
-        specifier: ^3.3.21
-        version: 3.3.21(openai@4.57.0(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.17)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
-      babel-plugin-react-compiler:
-        specifier: 0.0.0-experimental-4e0eccf-20240830
-        version: 0.0.0-experimental-4e0eccf-20240830
-      date-fns:
-        specifier: ^3.6.0
-        version: 3.6.0
-      dayjs:
-        specifier: ^1.11.13
-        version: 1.11.13
-      framer-motion:
-        specifier: ^11.3.31
-        version: 11.3.31(@emotion/is-prop-valid@0.8.8)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      juice:
-        specifier: ^11.0.0
-        version: 11.0.0
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
-      lucide-react:
-        specifier: ^0.437.0
-        version: 0.437.0(react@19.0.0-rc-7771d3a7-20240827)
-      moment:
-        specifier: ^2.30.1
-        version: 2.30.1
-      negotiator:
-        specifier: ^0.6.3
-        version: 0.6.3
-      next:
-        specifier: 15.0.0-canary.137
-        version: 15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      next-intl:
-        specifier: ^3.19.0
-        version: 3.19.0(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      next-themes:
-        specifier: ^0.3.0
-        version: 0.3.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      openai:
-        specifier: ^4.57.0
-        version: 4.57.0(zod@3.23.8)
-      pptxgenjs:
-        specifier: ^3.12.0
-        version: 3.12.0
-      react:
-        specifier: 19.0.0-rc-7771d3a7-20240827
-        version: 19.0.0-rc-7771d3a7-20240827
-      react-beautiful-dnd:
-        specifier: ^13.1.1
-        version: 13.1.1(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-csv-reader:
-        specifier: ^4.0.0
-        version: 4.0.0(prop-types@15.8.1)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-dom:
-        specifier: 19.0.0-rc-7771d3a7-20240827
-        version: 19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827)
-      react-email:
-        specifier: 3.0.1
-        version: 3.0.1(@opentelemetry/api@1.9.0)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-hook-form:
-        specifier: ^7.53.0
-        version: 7.53.0(react@19.0.0-rc-7771d3a7-20240827)
-      react-intersection-observer:
-        specifier: ^9.13.0
-        version: 9.13.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-markdown:
-        specifier: ^9.0.1
-        version: 9.0.1(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
-      react-pdftotext:
-        specifier: ^1.3.0
-        version: 1.3.0(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-qrcode-logo:
-        specifier: ^3.0.0
-        version: 3.0.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-textarea-autosize:
-        specifier: ^8.5.3
-        version: 8.5.3(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
-      recharts:
-        specifier: 2.13.0-alpha.4
-        version: 2.13.0-alpha.4(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      rehype-katex:
-        specifier: ^7.0.1
-        version: 7.0.1
-      remark-gfm:
-        specifier: ^4.0.0
-        version: 4.0.0
-      remark-math:
-        specifier: ^6.0.0
-        version: 6.0.0
-      sharp:
-        specifier: ^0.33.5
-        version: 0.33.5
-      swr:
-        specifier: ^2.2.5
-        version: 2.2.5(react@19.0.0-rc-7771d3a7-20240827)
-      tailwindcss:
-        specifier: ^3.4.10
-        version: 3.4.10
-      uuid:
-        specifier: ^10.0.0
-        version: 10.0.0
-      zod:
-        specifier: ^3.23.8
-        version: 3.23.8
-    devDependencies:
-      '@next/bundle-analyzer':
-        specifier: 15.0.0-canary.137
-        version: 15.0.0-canary.137
-      '@next/eslint-plugin-next':
-        specifier: 15.0.0-canary.137
-        version: 15.0.0-canary.137
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
-      '@tanstack/eslint-plugin-query':
-        specifier: ^5.53.0
-        version: 5.53.0(eslint@8.57.0)(typescript@5.5.4)
-      '@tanstack/react-query-devtools':
-        specifier: ^5.53.1
-        version: 5.53.1(@tanstack/react-query@5.53.1(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@testing-library/react':
-        specifier: ^16.0.1
-        version: 16.0.1(@testing-library/dom@10.4.0)(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@types/cookie':
-        specifier: ^0.6.0
-        version: 0.6.0
-      '@types/js-cookie':
-        specifier: ^3.0.6
-        version: 3.0.6
-      '@types/lodash':
-        specifier: ^4.17.7
-        version: 4.17.7
-      '@types/negotiator':
-        specifier: ^0.6.3
-        version: 0.6.3
-      '@types/node':
-        specifier: ^22.5.1
-        version: 22.5.1
-      '@types/react':
-        specifier: ^18.3.5
-        version: 18.3.5
-      '@types/react-beautiful-dnd':
-        specifier: ^13.1.8
-        version: 13.1.8
-      '@types/react-dom':
-        specifier: ^18.3.0
-        version: 18.3.0
-      '@types/uuid':
-        specifier: ^10.0.0
-        version: 10.0.0
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^8.3.0
-        version: 8.3.0(@typescript-eslint/parser@8.3.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
-      '@typescript-eslint/parser':
-        specifier: ^8.3.0
-        version: 8.3.0(eslint@8.57.0)(typescript@5.5.4)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.1
-        version: 4.3.1(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.4.20(postcss@8.4.42)
-      eslint:
-        specifier: 8.57.0
-        version: 8.57.0
-      jsdom:
-        specifier: ^25.0.0
-        version: 25.0.0(canvas@2.11.2)
-      lint-staged:
-        specifier: ^15.2.9
-        version: 15.2.9
-      postcss:
-        specifier: ^8.4.42
-        version: 8.4.42
-      supabase:
-        specifier: ^1.191.3
-        version: 1.191.3
-      typescript:
-        specifier: ^5.5.4
-        version: 5.5.4
-      vitest:
-        specifier: ^2.0.5
-        version: 2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
-
-  apps/rise:
-    dependencies:
-      '@ai-sdk/amazon-bedrock':
-        specifier: ^0.0.22
-        version: 0.0.22(zod@3.23.8)
-      '@ai-sdk/anthropic':
-        specifier: ^0.0.48
-        version: 0.0.48(zod@3.23.8)
-      '@ai-sdk/azure':
-        specifier: ^0.0.32
-        version: 0.0.32(zod@3.23.8)
-      '@ai-sdk/cohere':
-        specifier: ^0.0.22
-        version: 0.0.22(zod@3.23.8)
-      '@ai-sdk/google':
-        specifier: ^0.0.46
-        version: 0.0.46(zod@3.23.8)
-      '@ai-sdk/google-vertex':
-        specifier: ^0.0.35
-        version: 0.0.35(@google-cloud/vertexai@1.3.1)(zod@3.23.8)
-      '@ai-sdk/mistral':
-        specifier: ^0.0.38
-        version: 0.0.38(zod@3.23.8)
-      '@ai-sdk/openai':
-        specifier: ^0.0.54
-        version: 0.0.54(zod@3.23.8)
-      '@ai-sdk/react':
-        specifier: ^0.0.53
-        version: 0.0.53(react@19.0.0-rc-7771d3a7-20240827)(zod@3.23.8)
-      '@anthropic-ai/sdk':
-        specifier: ^0.27.1
-        version: 0.27.1
-      '@aws-sdk/client-ses':
-        specifier: ^3.637.0
-        version: 3.637.0
-      '@deepgram/sdk':
-        specifier: ^3.6.0
-        version: 3.6.0
-      '@emotion/react':
-        specifier: ^11.13.3
-        version: 11.13.3(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
-      '@emotion/server':
-        specifier: ^11.11.0
-        version: 11.11.0
-      '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
-      '@formatjs/intl-localematcher':
-        specifier: ^0.5.4
-        version: 0.5.4
-      '@google/generative-ai':
-        specifier: ^0.17.1
-        version: 0.17.1
-      '@heroicons/react':
-        specifier: ^2.1.5
-        version: 2.1.5(react@19.0.0-rc-7771d3a7-20240827)
-      '@hookform/resolvers':
-        specifier: ^3.9.0
-        version: 3.9.0(react-hook-form@7.53.0(react@19.0.0-rc-7771d3a7-20240827))
-      '@mantine/core':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/dates':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(dayjs@1.11.13)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/hooks':
-        specifier: ^7.12.2
-        version: 7.12.2(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/modals':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/notifications':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/tiptap':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@tiptap/extension-link@2.6.6(@tiptap/core@2.6.6(@tiptap/pm@2.6.6))(@tiptap/pm@2.6.6))(@tiptap/react@2.4.0(@tiptap/core@2.6.6(@tiptap/pm@2.6.6))(@tiptap/pm@2.6.6)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@radix-ui/react-icons':
-        specifier: ^1.3.0
-        version: 1.3.0(react@19.0.0-rc-7771d3a7-20240827)
-      '@react-email/components':
-        specifier: 0.0.24
-        version: 0.0.24(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@react-email/tailwind':
-        specifier: 0.1.0
-        version: 0.1.0(react@19.0.0-rc-7771d3a7-20240827)
-      '@repo/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      '@supabase/ssr':
-        specifier: ^0.5.1
-        version: 0.5.1(@supabase/supabase-js@2.45.3)
-      '@supabase/supabase-js':
-        specifier: 2.45.3
-        version: 2.45.3
-      '@tabler/icons-react':
-        specifier: ^3.14.0
-        version: 3.14.0(react@19.0.0-rc-7771d3a7-20240827)
-      '@tanstack/react-query':
-        specifier: ^5.53.1
-        version: 5.53.1(react@19.0.0-rc-7771d3a7-20240827)
-      '@tanstack/react-table':
-        specifier: ^8.20.5
-        version: 8.20.5(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@upstash/qstash':
-        specifier: ^2.6.5
-        version: 2.6.5(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(rollup@4.21.2)(solid-js@1.8.17)(svelte@4.2.19)(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
-      '@vercel/analytics':
-        specifier: ^1.3.1
-        version: 1.3.1(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@vercel/speed-insights':
-        specifier: ^1.0.12
-        version: 1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))
-      '@vercel/toolbar':
-        specifier: ^0.1.18
-        version: 0.1.18(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
-      ai:
-        specifier: ^3.3.21
-        version: 3.3.21(openai@4.57.0(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.17)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
-      babel-plugin-react-compiler:
-        specifier: 0.0.0-experimental-4e0eccf-20240830
-        version: 0.0.0-experimental-4e0eccf-20240830
-      date-fns:
-        specifier: ^3.6.0
-        version: 3.6.0
-      dayjs:
-        specifier: ^1.11.13
-        version: 1.11.13
-      framer-motion:
-        specifier: ^11.3.31
-        version: 11.3.31(@emotion/is-prop-valid@0.8.8)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      juice:
-        specifier: ^11.0.0
-        version: 11.0.0
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
-      lucide-react:
-        specifier: ^0.437.0
-        version: 0.437.0(react@19.0.0-rc-7771d3a7-20240827)
-      moment:
-        specifier: ^2.30.1
-        version: 2.30.1
-      negotiator:
-        specifier: ^0.6.3
-        version: 0.6.3
-      next:
-        specifier: 15.0.0-canary.137
-        version: 15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      next-intl:
-        specifier: ^3.19.0
-        version: 3.19.0(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      next-themes:
-        specifier: ^0.3.0
-        version: 0.3.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      openai:
-        specifier: ^4.57.0
-        version: 4.57.0(zod@3.23.8)
-      pptxgenjs:
-        specifier: ^3.12.0
-        version: 3.12.0
-      react:
-        specifier: 19.0.0-rc-7771d3a7-20240827
-        version: 19.0.0-rc-7771d3a7-20240827
-      react-beautiful-dnd:
-        specifier: ^13.1.1
-        version: 13.1.1(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-csv-reader:
-        specifier: ^4.0.0
-        version: 4.0.0(prop-types@15.8.1)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-dom:
-        specifier: 19.0.0-rc-7771d3a7-20240827
-        version: 19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827)
-      react-email:
-        specifier: 3.0.1
-        version: 3.0.1(@opentelemetry/api@1.9.0)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-hook-form:
-        specifier: ^7.53.0
-        version: 7.53.0(react@19.0.0-rc-7771d3a7-20240827)
-      react-intersection-observer:
-        specifier: ^9.13.0
-        version: 9.13.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-markdown:
-        specifier: ^9.0.1
-        version: 9.0.1(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
-      react-pdftotext:
-        specifier: ^1.3.0
-        version: 1.3.0(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-qrcode-logo:
-        specifier: ^3.0.0
-        version: 3.0.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      react-textarea-autosize:
-        specifier: ^8.5.3
-        version: 8.5.3(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
-      recharts:
-        specifier: 2.13.0-alpha.4
-        version: 2.13.0-alpha.4(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      rehype-katex:
-        specifier: ^7.0.1
-        version: 7.0.1
-      remark-gfm:
-        specifier: ^4.0.0
-        version: 4.0.0
-      remark-math:
-        specifier: ^6.0.0
-        version: 6.0.0
-      sharp:
-        specifier: ^0.33.5
-        version: 0.33.5
-      swr:
-        specifier: ^2.2.5
-        version: 2.2.5(react@19.0.0-rc-7771d3a7-20240827)
-      tailwindcss:
-        specifier: ^3.4.10
-        version: 3.4.10
-      uuid:
-        specifier: ^10.0.0
-        version: 10.0.0
-      zod:
-        specifier: ^3.23.8
-        version: 3.23.8
-    devDependencies:
-      '@next/bundle-analyzer':
-        specifier: 15.0.0-canary.137
-        version: 15.0.0-canary.137
-      '@next/eslint-plugin-next':
-        specifier: 15.0.0-canary.137
-        version: 15.0.0-canary.137
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
-      '@tanstack/eslint-plugin-query':
-        specifier: ^5.53.0
-        version: 5.53.0(eslint@8.57.0)(typescript@5.5.4)
-      '@tanstack/react-query-devtools':
-        specifier: ^5.53.1
-        version: 5.53.1(@tanstack/react-query@5.53.1(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@testing-library/react':
-        specifier: ^16.0.1
-        version: 16.0.1(@testing-library/dom@10.4.0)(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@types/cookie':
-        specifier: ^0.6.0
-        version: 0.6.0
-      '@types/js-cookie':
-        specifier: ^3.0.6
-        version: 3.0.6
-      '@types/lodash':
-        specifier: ^4.17.7
-        version: 4.17.7
-      '@types/negotiator':
-        specifier: ^0.6.3
-        version: 0.6.3
-      '@types/node':
-        specifier: ^22.5.1
-        version: 22.5.1
-      '@types/react':
-        specifier: ^18.3.5
-        version: 18.3.5
-      '@types/react-beautiful-dnd':
-        specifier: ^13.1.8
-        version: 13.1.8
-      '@types/react-dom':
-        specifier: ^18.3.0
-        version: 18.3.0
-      '@types/uuid':
-        specifier: ^10.0.0
-        version: 10.0.0
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^8.3.0
-        version: 8.3.0(@typescript-eslint/parser@8.3.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
-      '@typescript-eslint/parser':
-        specifier: ^8.3.0
-        version: 8.3.0(eslint@8.57.0)(typescript@5.5.4)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.1
-        version: 4.3.1(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.4.20(postcss@8.4.42)
-      eslint:
-        specifier: 8.57.0
-        version: 8.57.0
-      jsdom:
-        specifier: ^25.0.0
-        version: 25.0.0(canvas@2.11.2)
-      lint-staged:
-        specifier: ^15.2.9
-        version: 15.2.9
-      postcss:
-        specifier: ^8.4.42
-        version: 8.4.42
-      supabase:
-        specifier: ^1.191.3
-        version: 1.191.3
-      typescript:
-        specifier: ^5.5.4
-        version: 5.5.4
-      vitest:
-        specifier: ^2.0.5
-        version: 2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
-
-  apps/web:
-    dependencies:
-      '@ai-sdk/amazon-bedrock':
-        specifier: ^0.0.22
-        version: 0.0.22(zod@3.23.8)
-      '@ai-sdk/anthropic':
-        specifier: ^0.0.48
-        version: 0.0.48(zod@3.23.8)
-      '@ai-sdk/azure':
-        specifier: ^0.0.32
-        version: 0.0.32(zod@3.23.8)
-      '@ai-sdk/cohere':
-        specifier: ^0.0.22
-        version: 0.0.22(zod@3.23.8)
-      '@ai-sdk/google':
-        specifier: ^0.0.46
-        version: 0.0.46(zod@3.23.8)
-      '@ai-sdk/google-vertex':
-        specifier: ^0.0.35
-        version: 0.0.35(@google-cloud/vertexai@1.3.1)(zod@3.23.8)
-      '@ai-sdk/mistral':
-        specifier: ^0.0.38
-        version: 0.0.38(zod@3.23.8)
-      '@ai-sdk/openai':
-        specifier: ^0.0.54
-        version: 0.0.54(zod@3.23.8)
-      '@ai-sdk/react':
-        specifier: ^0.0.53
-        version: 0.0.53(react@19.0.0-rc-7771d3a7-20240827)(zod@3.23.8)
-      '@anthropic-ai/sdk':
-        specifier: ^0.27.1
-        version: 0.27.1
-      '@aws-sdk/client-ses':
-        specifier: ^3.637.0
-        version: 3.637.0
-      '@deepgram/sdk':
-        specifier: ^3.6.0
-        version: 3.6.0
-      '@emotion/react':
-        specifier: ^11.13.3
-        version: 11.13.3(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
-      '@emotion/server':
-        specifier: ^11.11.0
-        version: 11.11.0
-      '@faker-js/faker':
-        specifier: ^8.4.1
-        version: 8.4.1
-      '@formatjs/intl-localematcher':
-        specifier: ^0.5.4
-        version: 0.5.4
-      '@google/generative-ai':
-        specifier: ^0.17.1
-        version: 0.17.1
-      '@heroicons/react':
-        specifier: ^2.1.5
-        version: 2.1.5(react@19.0.0-rc-7771d3a7-20240827)
-      '@hookform/resolvers':
-        specifier: ^3.9.0
-        version: 3.9.0(react-hook-form@7.53.0(react@19.0.0-rc-7771d3a7-20240827))
-      '@mantine/core':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/dates':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(dayjs@1.11.13)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/hooks':
-        specifier: ^7.12.2
-        version: 7.12.2(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/modals':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/notifications':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@mantine/tiptap':
-        specifier: ^7.12.2
-        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@tiptap/extension-link@2.6.6(@tiptap/core@2.6.6(@tiptap/pm@2.6.6))(@tiptap/pm@2.6.6))(@tiptap/react@2.4.0(@tiptap/core@2.6.6(@tiptap/pm@2.6.6))(@tiptap/pm@2.6.6)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@radix-ui/react-icons':
-        specifier: ^1.3.0
-        version: 1.3.0(react@19.0.0-rc-7771d3a7-20240827)
-      '@react-email/components':
-        specifier: 0.0.24
-        version: 0.0.24(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@react-email/tailwind':
-        specifier: 0.1.0
-        version: 0.1.0(react@19.0.0-rc-7771d3a7-20240827)
-      '@repo/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      '@supabase/ssr':
-        specifier: ^0.5.1
-        version: 0.5.1(@supabase/supabase-js@2.45.3)
-      '@supabase/supabase-js':
-        specifier: 2.45.3
-        version: 2.45.3
-      '@tabler/icons-react':
-        specifier: ^3.14.0
-        version: 3.14.0(react@19.0.0-rc-7771d3a7-20240827)
-      '@tanstack/react-query':
-        specifier: ^5.53.1
-        version: 5.53.1(react@19.0.0-rc-7771d3a7-20240827)
-      '@tanstack/react-table':
-        specifier: ^8.20.5
-        version: 8.20.5(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      '@upstash/qstash':
-        specifier: ^2.6.5
-        version: 2.6.5(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(rollup@4.21.2)(solid-js@1.8.17)(svelte@4.2.19)(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+        version: 2.6.5(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(rollup@4.21.2)(solid-js@1.8.17)(svelte@4.2.19)(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
       '@vercel/analytics':
         specifier: ^1.3.1
         version: 1.3.1(next@15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       '@vercel/speed-insights':
         specifier: ^1.0.12
-        version: 1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))
+        version: 1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))
       '@vercel/toolbar':
         specifier: ^0.1.18
-        version: 0.1.18(next@15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+        version: 0.1.18(next@15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
       ai:
         specifier: ^3.3.21
         version: 3.3.21(openai@4.57.0(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.17)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
@@ -775,9 +167,6 @@ importers:
       framer-motion:
         specifier: ^11.3.31
         version: 11.3.31(@emotion/is-prop-valid@0.8.8)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
-      html2canvas:
-        specifier: ^1.4.1
-        version: 1.4.1
       juice:
         specifier: ^11.0.0
         version: 11.0.0
@@ -904,7 +293,7 @@ importers:
         version: 0.6.3
       '@types/node':
         specifier: ^22.5.1
-        version: 22.5.1
+        version: 22.5.2
       '@types/react':
         specifier: ^18.3.5
         version: 18.3.5
@@ -925,7 +314,7 @@ importers:
         version: 8.3.0(eslint@8.57.0)(typescript@5.5.4)
       '@vitejs/plugin-react':
         specifier: ^4.3.1
-        version: 4.3.1(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+        version: 4.3.1(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.4.42)
@@ -949,7 +338,618 @@ importers:
         version: 5.5.4
       vitest:
         specifier: ^2.0.5
-        version: 2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
+        version: 2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
+
+  apps/rise:
+    dependencies:
+      '@ai-sdk/amazon-bedrock':
+        specifier: ^0.0.22
+        version: 0.0.22(zod@3.23.8)
+      '@ai-sdk/anthropic':
+        specifier: ^0.0.48
+        version: 0.0.48(zod@3.23.8)
+      '@ai-sdk/azure':
+        specifier: ^0.0.32
+        version: 0.0.32(zod@3.23.8)
+      '@ai-sdk/cohere':
+        specifier: ^0.0.22
+        version: 0.0.22(zod@3.23.8)
+      '@ai-sdk/google':
+        specifier: ^0.0.46
+        version: 0.0.46(zod@3.23.8)
+      '@ai-sdk/google-vertex':
+        specifier: ^0.0.35
+        version: 0.0.35(@google-cloud/vertexai@1.3.1)(zod@3.23.8)
+      '@ai-sdk/mistral':
+        specifier: ^0.0.38
+        version: 0.0.38(zod@3.23.8)
+      '@ai-sdk/openai':
+        specifier: ^0.0.54
+        version: 0.0.54(zod@3.23.8)
+      '@ai-sdk/react':
+        specifier: ^0.0.53
+        version: 0.0.53(react@19.0.0-rc-7771d3a7-20240827)(zod@3.23.8)
+      '@anthropic-ai/sdk':
+        specifier: ^0.27.1
+        version: 0.27.1
+      '@aws-sdk/client-ses':
+        specifier: ^3.637.0
+        version: 3.637.0
+      '@deepgram/sdk':
+        specifier: ^3.6.0
+        version: 3.6.0
+      '@emotion/react':
+        specifier: ^11.13.3
+        version: 11.13.3(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
+      '@emotion/server':
+        specifier: ^11.11.0
+        version: 11.11.0
+      '@faker-js/faker':
+        specifier: ^8.4.1
+        version: 8.4.1
+      '@formatjs/intl-localematcher':
+        specifier: ^0.5.4
+        version: 0.5.4
+      '@google/generative-ai':
+        specifier: ^0.17.1
+        version: 0.17.1
+      '@heroicons/react':
+        specifier: ^2.1.5
+        version: 2.1.5(react@19.0.0-rc-7771d3a7-20240827)
+      '@hookform/resolvers':
+        specifier: ^3.9.0
+        version: 3.9.0(react-hook-form@7.53.0(react@19.0.0-rc-7771d3a7-20240827))
+      '@mantine/core':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/dates':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(dayjs@1.11.13)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/hooks':
+        specifier: ^7.12.2
+        version: 7.12.2(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/modals':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/notifications':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/tiptap':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@tiptap/extension-link@2.6.6(@tiptap/core@2.6.6(@tiptap/pm@2.6.6))(@tiptap/pm@2.6.6))(@tiptap/react@2.4.0(@tiptap/core@2.6.6(@tiptap/pm@2.6.6))(@tiptap/pm@2.6.6)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@radix-ui/react-icons':
+        specifier: ^1.3.0
+        version: 1.3.0(react@19.0.0-rc-7771d3a7-20240827)
+      '@react-email/components':
+        specifier: 0.0.24
+        version: 0.0.24(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@react-email/tailwind':
+        specifier: 0.1.0
+        version: 0.1.0(react@19.0.0-rc-7771d3a7-20240827)
+      '@repo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@supabase/ssr':
+        specifier: ^0.5.1
+        version: 0.5.1(@supabase/supabase-js@2.45.3)
+      '@supabase/supabase-js':
+        specifier: 2.45.3
+        version: 2.45.3
+      '@tabler/icons-react':
+        specifier: ^3.14.0
+        version: 3.14.0(react@19.0.0-rc-7771d3a7-20240827)
+      '@tanstack/react-query':
+        specifier: ^5.53.1
+        version: 5.53.1(react@19.0.0-rc-7771d3a7-20240827)
+      '@tanstack/react-table':
+        specifier: ^8.20.5
+        version: 8.20.5(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@upstash/qstash':
+        specifier: ^2.6.5
+        version: 2.6.5(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(rollup@4.21.2)(solid-js@1.8.17)(svelte@4.2.19)(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
+      '@vercel/analytics':
+        specifier: ^1.3.1
+        version: 1.3.1(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@vercel/speed-insights':
+        specifier: ^1.0.12
+        version: 1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))
+      '@vercel/toolbar':
+        specifier: ^0.1.18
+        version: 0.1.18(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
+      ai:
+        specifier: ^3.3.21
+        version: 3.3.21(openai@4.57.0(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.17)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
+      babel-plugin-react-compiler:
+        specifier: 0.0.0-experimental-4e0eccf-20240830
+        version: 0.0.0-experimental-4e0eccf-20240830
+      date-fns:
+        specifier: ^3.6.0
+        version: 3.6.0
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.13
+      framer-motion:
+        specifier: ^11.3.31
+        version: 11.3.31(@emotion/is-prop-valid@0.8.8)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      juice:
+        specifier: ^11.0.0
+        version: 11.0.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      lucide-react:
+        specifier: ^0.437.0
+        version: 0.437.0(react@19.0.0-rc-7771d3a7-20240827)
+      moment:
+        specifier: ^2.30.1
+        version: 2.30.1
+      negotiator:
+        specifier: ^0.6.3
+        version: 0.6.3
+      next:
+        specifier: 15.0.0-canary.137
+        version: 15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      next-intl:
+        specifier: ^3.19.0
+        version: 3.19.0(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      next-themes:
+        specifier: ^0.3.0
+        version: 0.3.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      openai:
+        specifier: ^4.57.0
+        version: 4.57.0(zod@3.23.8)
+      pptxgenjs:
+        specifier: ^3.12.0
+        version: 3.12.0
+      react:
+        specifier: 19.0.0-rc-7771d3a7-20240827
+        version: 19.0.0-rc-7771d3a7-20240827
+      react-beautiful-dnd:
+        specifier: ^13.1.1
+        version: 13.1.1(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-csv-reader:
+        specifier: ^4.0.0
+        version: 4.0.0(prop-types@15.8.1)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-dom:
+        specifier: 19.0.0-rc-7771d3a7-20240827
+        version: 19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827)
+      react-email:
+        specifier: 3.0.1
+        version: 3.0.1(@opentelemetry/api@1.9.0)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-hook-form:
+        specifier: ^7.53.0
+        version: 7.53.0(react@19.0.0-rc-7771d3a7-20240827)
+      react-intersection-observer:
+        specifier: ^9.13.0
+        version: 9.13.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-markdown:
+        specifier: ^9.0.1
+        version: 9.0.1(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
+      react-pdftotext:
+        specifier: ^1.3.0
+        version: 1.3.0(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-qrcode-logo:
+        specifier: ^3.0.0
+        version: 3.0.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-textarea-autosize:
+        specifier: ^8.5.3
+        version: 8.5.3(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
+      recharts:
+        specifier: 2.13.0-alpha.4
+        version: 2.13.0-alpha.4(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      rehype-katex:
+        specifier: ^7.0.1
+        version: 7.0.1
+      remark-gfm:
+        specifier: ^4.0.0
+        version: 4.0.0
+      remark-math:
+        specifier: ^6.0.0
+        version: 6.0.0
+      sharp:
+        specifier: ^0.33.5
+        version: 0.33.5
+      swr:
+        specifier: ^2.2.5
+        version: 2.2.5(react@19.0.0-rc-7771d3a7-20240827)
+      tailwindcss:
+        specifier: ^3.4.10
+        version: 3.4.10
+      uuid:
+        specifier: ^10.0.0
+        version: 10.0.0
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
+    devDependencies:
+      '@next/bundle-analyzer':
+        specifier: 15.0.0-canary.137
+        version: 15.0.0-canary.137
+      '@next/eslint-plugin-next':
+        specifier: 15.0.0-canary.137
+        version: 15.0.0-canary.137
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@tanstack/eslint-plugin-query':
+        specifier: ^5.53.0
+        version: 5.53.0(eslint@8.57.0)(typescript@5.5.4)
+      '@tanstack/react-query-devtools':
+        specifier: ^5.53.1
+        version: 5.53.1(@tanstack/react-query@5.53.1(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@testing-library/react':
+        specifier: ^16.0.1
+        version: 16.0.1(@testing-library/dom@10.4.0)(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@types/cookie':
+        specifier: ^0.6.0
+        version: 0.6.0
+      '@types/js-cookie':
+        specifier: ^3.0.6
+        version: 3.0.6
+      '@types/lodash':
+        specifier: ^4.17.7
+        version: 4.17.7
+      '@types/negotiator':
+        specifier: ^0.6.3
+        version: 0.6.3
+      '@types/node':
+        specifier: ^22.5.1
+        version: 22.5.2
+      '@types/react':
+        specifier: ^18.3.5
+        version: 18.3.5
+      '@types/react-beautiful-dnd':
+        specifier: ^13.1.8
+        version: 13.1.8
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.0
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.3.0
+        version: 8.3.0(@typescript-eslint/parser@8.3.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser':
+        specifier: ^8.3.0
+        version: 8.3.0(eslint@8.57.0)(typescript@5.5.4)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.1
+        version: 4.3.1(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.4.20(postcss@8.4.42)
+      eslint:
+        specifier: 8.57.0
+        version: 8.57.0
+      jsdom:
+        specifier: ^25.0.0
+        version: 25.0.0(canvas@2.11.2)
+      lint-staged:
+        specifier: ^15.2.9
+        version: 15.2.9
+      postcss:
+        specifier: ^8.4.42
+        version: 8.4.42
+      supabase:
+        specifier: ^1.191.3
+        version: 1.191.3
+      typescript:
+        specifier: ^5.5.4
+        version: 5.5.4
+      vitest:
+        specifier: ^2.0.5
+        version: 2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
+
+  apps/web:
+    dependencies:
+      '@ai-sdk/amazon-bedrock':
+        specifier: ^0.0.22
+        version: 0.0.22(zod@3.23.8)
+      '@ai-sdk/anthropic':
+        specifier: ^0.0.48
+        version: 0.0.48(zod@3.23.8)
+      '@ai-sdk/azure':
+        specifier: ^0.0.32
+        version: 0.0.32(zod@3.23.8)
+      '@ai-sdk/cohere':
+        specifier: ^0.0.22
+        version: 0.0.22(zod@3.23.8)
+      '@ai-sdk/google':
+        specifier: ^0.0.46
+        version: 0.0.46(zod@3.23.8)
+      '@ai-sdk/google-vertex':
+        specifier: ^0.0.35
+        version: 0.0.35(@google-cloud/vertexai@1.3.1)(zod@3.23.8)
+      '@ai-sdk/mistral':
+        specifier: ^0.0.38
+        version: 0.0.38(zod@3.23.8)
+      '@ai-sdk/openai':
+        specifier: ^0.0.54
+        version: 0.0.54(zod@3.23.8)
+      '@ai-sdk/react':
+        specifier: ^0.0.53
+        version: 0.0.53(react@19.0.0-rc-7771d3a7-20240827)(zod@3.23.8)
+      '@anthropic-ai/sdk':
+        specifier: ^0.27.1
+        version: 0.27.1
+      '@aws-sdk/client-ses':
+        specifier: ^3.637.0
+        version: 3.637.0
+      '@deepgram/sdk':
+        specifier: ^3.6.0
+        version: 3.6.0
+      '@emotion/react':
+        specifier: ^11.13.3
+        version: 11.13.3(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
+      '@emotion/server':
+        specifier: ^11.11.0
+        version: 11.11.0
+      '@faker-js/faker':
+        specifier: ^8.4.1
+        version: 8.4.1
+      '@formatjs/intl-localematcher':
+        specifier: ^0.5.4
+        version: 0.5.4
+      '@google/generative-ai':
+        specifier: ^0.17.1
+        version: 0.17.1
+      '@heroicons/react':
+        specifier: ^2.1.5
+        version: 2.1.5(react@19.0.0-rc-7771d3a7-20240827)
+      '@hookform/resolvers':
+        specifier: ^3.9.0
+        version: 3.9.0(react-hook-form@7.53.0(react@19.0.0-rc-7771d3a7-20240827))
+      '@mantine/core':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/dates':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(dayjs@1.11.13)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/hooks':
+        specifier: ^7.12.2
+        version: 7.12.2(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/modals':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/notifications':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@mantine/tiptap':
+        specifier: ^7.12.2
+        version: 7.12.2(@mantine/core@7.12.2(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(@mantine/hooks@7.12.2(react@19.0.0-rc-7771d3a7-20240827))(@tiptap/extension-link@2.6.6(@tiptap/core@2.6.6(@tiptap/pm@2.6.6))(@tiptap/pm@2.6.6))(@tiptap/react@2.4.0(@tiptap/core@2.6.6(@tiptap/pm@2.6.6))(@tiptap/pm@2.6.6)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@radix-ui/react-icons':
+        specifier: ^1.3.0
+        version: 1.3.0(react@19.0.0-rc-7771d3a7-20240827)
+      '@react-email/components':
+        specifier: 0.0.24
+        version: 0.0.24(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@react-email/tailwind':
+        specifier: 0.1.0
+        version: 0.1.0(react@19.0.0-rc-7771d3a7-20240827)
+      '@repo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@supabase/ssr':
+        specifier: ^0.5.1
+        version: 0.5.1(@supabase/supabase-js@2.45.3)
+      '@supabase/supabase-js':
+        specifier: 2.45.3
+        version: 2.45.3
+      '@tabler/icons-react':
+        specifier: ^3.14.0
+        version: 3.14.0(react@19.0.0-rc-7771d3a7-20240827)
+      '@tanstack/react-query':
+        specifier: ^5.53.1
+        version: 5.53.1(react@19.0.0-rc-7771d3a7-20240827)
+      '@tanstack/react-table':
+        specifier: ^8.20.5
+        version: 8.20.5(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@upstash/qstash':
+        specifier: ^2.6.5
+        version: 2.6.5(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(rollup@4.21.2)(solid-js@1.8.17)(svelte@4.2.19)(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
+      '@vercel/analytics':
+        specifier: ^1.3.1
+        version: 1.3.1(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@vercel/speed-insights':
+        specifier: ^1.0.12
+        version: 1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))
+      '@vercel/toolbar':
+        specifier: ^0.1.18
+        version: 0.1.18(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
+      ai:
+        specifier: ^3.3.21
+        version: 3.3.21(openai@4.57.0(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.17)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
+      babel-plugin-react-compiler:
+        specifier: 0.0.0-experimental-4e0eccf-20240830
+        version: 0.0.0-experimental-4e0eccf-20240830
+      date-fns:
+        specifier: ^3.6.0
+        version: 3.6.0
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.13
+      framer-motion:
+        specifier: ^11.3.31
+        version: 11.3.31(@emotion/is-prop-valid@0.8.8)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      html2canvas:
+        specifier: ^1.4.1
+        version: 1.4.1
+      juice:
+        specifier: ^11.0.0
+        version: 11.0.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      lucide-react:
+        specifier: ^0.437.0
+        version: 0.437.0(react@19.0.0-rc-7771d3a7-20240827)
+      moment:
+        specifier: ^2.30.1
+        version: 2.30.1
+      negotiator:
+        specifier: ^0.6.3
+        version: 0.6.3
+      next:
+        specifier: 15.0.0-canary.137
+        version: 15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      next-intl:
+        specifier: ^3.19.0
+        version: 3.19.0(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      next-themes:
+        specifier: ^0.3.0
+        version: 0.3.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      openai:
+        specifier: ^4.57.0
+        version: 4.57.0(zod@3.23.8)
+      pptxgenjs:
+        specifier: ^3.12.0
+        version: 3.12.0
+      react:
+        specifier: 19.0.0-rc-7771d3a7-20240827
+        version: 19.0.0-rc-7771d3a7-20240827
+      react-beautiful-dnd:
+        specifier: ^13.1.1
+        version: 13.1.1(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-csv-reader:
+        specifier: ^4.0.0
+        version: 4.0.0(prop-types@15.8.1)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-dom:
+        specifier: 19.0.0-rc-7771d3a7-20240827
+        version: 19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827)
+      react-email:
+        specifier: 3.0.1
+        version: 3.0.1(@opentelemetry/api@1.9.0)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-hook-form:
+        specifier: ^7.53.0
+        version: 7.53.0(react@19.0.0-rc-7771d3a7-20240827)
+      react-intersection-observer:
+        specifier: ^9.13.0
+        version: 9.13.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-markdown:
+        specifier: ^9.0.1
+        version: 9.0.1(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
+      react-pdftotext:
+        specifier: ^1.3.0
+        version: 1.3.0(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-qrcode-logo:
+        specifier: ^3.0.0
+        version: 3.0.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      react-textarea-autosize:
+        specifier: ^8.5.3
+        version: 8.5.3(@types/react@18.3.5)(react@19.0.0-rc-7771d3a7-20240827)
+      recharts:
+        specifier: 2.13.0-alpha.4
+        version: 2.13.0-alpha.4(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      rehype-katex:
+        specifier: ^7.0.1
+        version: 7.0.1
+      remark-gfm:
+        specifier: ^4.0.0
+        version: 4.0.0
+      remark-math:
+        specifier: ^6.0.0
+        version: 6.0.0
+      sharp:
+        specifier: ^0.33.5
+        version: 0.33.5
+      swr:
+        specifier: ^2.2.5
+        version: 2.2.5(react@19.0.0-rc-7771d3a7-20240827)
+      tailwindcss:
+        specifier: ^3.4.10
+        version: 3.4.10
+      uuid:
+        specifier: ^10.0.0
+        version: 10.0.0
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
+    devDependencies:
+      '@next/bundle-analyzer':
+        specifier: 15.0.0-canary.137
+        version: 15.0.0-canary.137
+      '@next/eslint-plugin-next':
+        specifier: 15.0.0-canary.137
+        version: 15.0.0-canary.137
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@tanstack/eslint-plugin-query':
+        specifier: ^5.53.0
+        version: 5.53.0(eslint@8.57.0)(typescript@5.5.4)
+      '@tanstack/react-query-devtools':
+        specifier: ^5.53.1
+        version: 5.53.1(@tanstack/react-query@5.53.1(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@testing-library/react':
+        specifier: ^16.0.1
+        version: 16.0.1(@testing-library/dom@10.4.0)(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+      '@types/cookie':
+        specifier: ^0.6.0
+        version: 0.6.0
+      '@types/js-cookie':
+        specifier: ^3.0.6
+        version: 3.0.6
+      '@types/lodash':
+        specifier: ^4.17.7
+        version: 4.17.7
+      '@types/negotiator':
+        specifier: ^0.6.3
+        version: 0.6.3
+      '@types/node':
+        specifier: ^22.5.1
+        version: 22.5.2
+      '@types/react':
+        specifier: ^18.3.5
+        version: 18.3.5
+      '@types/react-beautiful-dnd':
+        specifier: ^13.1.8
+        version: 13.1.8
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.0
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.3.0
+        version: 8.3.0(@typescript-eslint/parser@8.3.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
+      '@typescript-eslint/parser':
+        specifier: ^8.3.0
+        version: 8.3.0(eslint@8.57.0)(typescript@5.5.4)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.1
+        version: 4.3.1(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.4.20(postcss@8.4.42)
+      eslint:
+        specifier: 8.57.0
+        version: 8.57.0
+      jsdom:
+        specifier: ^25.0.0
+        version: 25.0.0(canvas@2.11.2)
+      lint-staged:
+        specifier: ^15.2.9
+        version: 15.2.9
+      postcss:
+        specifier: ^8.4.42
+        version: 8.4.42
+      supabase:
+        specifier: ^1.191.3
+        version: 1.191.3
+      typescript:
+        specifier: ^5.5.4
+        version: 5.5.4
+      vitest:
+        specifier: ^2.0.5
+        version: 2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
 
   packages/eslint-config:
     devDependencies:
@@ -961,7 +961,7 @@ importers:
         version: 8.3.0(eslint@8.57.0)(typescript@5.5.4)
       '@vercel/style-guide':
         specifier: ^6.0.0
-        version: 6.0.0(eslint@8.57.0)(prettier@3.3.3)(typescript@5.5.4)(vitest@2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6))
+        version: 6.0.0(eslint@8.57.0)(prettier@3.3.3)(typescript@5.5.4)(vitest@2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6))
       eslint-config-turbo:
         specifier: ^2.1.1
         version: 2.1.1(eslint@8.57.0)
@@ -986,7 +986,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^22.5.1
-        version: 22.5.1
+        version: 22.5.2
       '@types/react':
         specifier: ^18.3.5
         version: 18.3.5
@@ -1175,7 +1175,7 @@ importers:
         version: 4.17.7
       '@types/node':
         specifier: ^22.5.1
-        version: 22.5.1
+        version: 22.5.2
       '@types/react':
         specifier: ^18.3.5
         version: 18.3.5
@@ -4362,11 +4362,11 @@ packages:
   '@types/node-fetch@2.6.11':
     resolution: {integrity: sha512-24xFj9R5+rfQJLRyM56qh+wnVSYhyXC2tkoBndtY0U+vubqNsYXGjufB2nn8Q6gt0LrARwL6UBtMCSVCwl4B1g==}
 
-  '@types/node@18.19.47':
-    resolution: {integrity: sha512-1f7dB3BL/bpd9tnDJrrHb66Y+cVrhxSOTGorRNdHwYTUlTay3HuTDPKo9a/4vX9pMQkhYBcAbL4jQdNlhCFP9A==}
+  '@types/node@18.19.48':
+    resolution: {integrity: sha512-7WevbG4ekUcRQSZzOwxWgi5dZmTak7FaxXDoW7xVxPBmKx1rTzfmRLkeCgJzcbBnOV2dkhAPc8cCeT6agocpjg==}
 
-  '@types/node@22.5.1':
-    resolution: {integrity: sha512-KkHsxej0j9IW1KKOOAA/XBA0z08UFSrRQHErzEfA3Vgq57eXIMYboIlHJuYIfd+lwCQjtKqUu3UnmKbtUc9yRw==}
+  '@types/node@22.5.2':
+    resolution: {integrity: sha512-acJsPTEqYqulZS/Yp/S3GgeE6GZ0qYODUR8aVr/DkhHQ8l9nd4j5x1/ZJy9/gHrRlFMqkO6i0I3E27Alu4jjPg==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -10061,7 +10061,7 @@ snapshots:
 
   '@anthropic-ai/sdk@0.27.1':
     dependencies:
-      '@types/node': 18.19.47
+      '@types/node': 18.19.48
       '@types/node-fetch': 2.6.11
       abort-controller: 3.0.0
       agentkeepalive: 4.5.0
@@ -13323,11 +13323,11 @@ snapshots:
 
   '@socket.io/component-emitter@3.1.2': {}
 
-  '@solidjs/start@1.0.6(rollup@4.21.2)(solid-js@1.8.17)(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))':
+  '@solidjs/start@1.0.6(rollup@4.21.2)(solid-js@1.8.17)(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))':
     dependencies:
-      '@vinxi/plugin-directives': 0.4.2(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))
-      '@vinxi/server-components': 0.4.2(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))
-      '@vinxi/server-functions': 0.4.2(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))
+      '@vinxi/plugin-directives': 0.4.2(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))
+      '@vinxi/server-components': 0.4.2(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))
+      '@vinxi/server-functions': 0.4.2(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))
       defu: 6.1.4
       error-stack-parser: 2.1.4
       glob: 10.4.5
@@ -13338,8 +13338,8 @@ snapshots:
       shikiji: 0.9.19
       source-map-js: 1.2.0
       terracotta: 1.0.5(solid-js@1.8.17)
-      vite-plugin-inspect: 0.7.42(rollup@4.21.2)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
-      vite-plugin-solid: 2.10.2(solid-js@1.8.17)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+      vite-plugin-inspect: 0.7.42(rollup@4.21.2)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
+      vite-plugin-solid: 2.10.2(solid-js@1.8.17)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
     transitivePeerDependencies:
       - '@nuxt/kit'
       - '@testing-library/jest-dom'
@@ -13396,9 +13396,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))':
+  '@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+      '@sveltejs/vite-plugin-svelte': 3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
       '@types/cookie': 0.6.0
       cookie: 0.6.0
       devalue: 5.0.0
@@ -13412,28 +13412,28 @@ snapshots:
       sirv: 2.0.4
       svelte: 4.2.19
       tiny-glob: 0.2.9
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
 
-  '@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))':
+  '@sveltejs/vite-plugin-svelte-inspector@2.1.0(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+      '@sveltejs/vite-plugin-svelte': 3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
       debug: 4.3.6
       svelte: 4.2.19
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
     transitivePeerDependencies:
       - supports-color
 
-  '@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))':
+  '@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))':
     dependencies:
-      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+      '@sveltejs/vite-plugin-svelte-inspector': 2.1.0(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
       debug: 4.3.6
       deepmerge: 4.3.1
       kleur: 4.1.5
       magic-string: 0.30.11
       svelte: 4.2.19
       svelte-hmr: 0.16.0(svelte@4.2.19)
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
-      vitefu: 0.2.5(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
+      vitefu: 0.2.5(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
     transitivePeerDependencies:
       - supports-color
 
@@ -13678,7 +13678,7 @@ snapshots:
 
   '@types/cors@2.8.17':
     dependencies:
-      '@types/node': 22.5.1
+      '@types/node': 22.5.2
 
   '@types/d3-array@3.2.1': {}
 
@@ -13731,7 +13731,7 @@ snapshots:
 
   '@types/http-proxy@1.17.15':
     dependencies:
-      '@types/node': 22.5.1
+      '@types/node': 22.5.2
 
   '@types/istanbul-lib-coverage@2.0.6': {}
 
@@ -13768,14 +13768,14 @@ snapshots:
 
   '@types/node-fetch@2.6.11':
     dependencies:
-      '@types/node': 22.5.1
+      '@types/node': 22.5.2
       form-data: 4.0.0
 
-  '@types/node@18.19.47':
+  '@types/node@18.19.48':
     dependencies:
       undici-types: 5.26.5
 
-  '@types/node@22.5.1':
+  '@types/node@22.5.2':
     dependencies:
       undici-types: 6.19.8
 
@@ -13829,7 +13829,7 @@ snapshots:
 
   '@types/ws@8.5.12':
     dependencies:
-      '@types/node': 22.5.1
+      '@types/node': 22.5.2
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -14042,10 +14042,10 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@upstash/qstash@2.6.5(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(rollup@4.21.2)(solid-js@1.8.17)(svelte@4.2.19)(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))':
+  '@upstash/qstash@2.6.5(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(rollup@4.21.2)(solid-js@1.8.17)(svelte@4.2.19)(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))':
     dependencies:
-      '@solidjs/start': 1.0.6(rollup@4.21.2)(solid-js@1.8.17)(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
-      '@sveltejs/kit': 2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+      '@solidjs/start': 1.0.6(rollup@4.21.2)(solid-js@1.8.17)(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
+      '@sveltejs/kit': 2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
       crypto-js: 4.2.0
       h3: 1.12.0
       jose: 5.8.0
@@ -14093,23 +14093,23 @@ snapshots:
       - encoding
       - supports-color
 
-  '@vercel/speed-insights@1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))':
+  '@vercel/speed-insights@1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))':
     optionalDependencies:
-      '@sveltejs/kit': 2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+      '@sveltejs/kit': 2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
       next: 15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       react: 19.0.0-rc-7771d3a7-20240827
       svelte: 4.2.19
       vue: 3.4.38(typescript@5.5.4)
 
-  '@vercel/speed-insights@1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))':
+  '@vercel/speed-insights@1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))':
     optionalDependencies:
-      '@sveltejs/kit': 2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+      '@sveltejs/kit': 2.5.25(@sveltejs/vite-plugin-svelte@3.1.1(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
       next: 15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       react: 19.0.0-rc-7771d3a7-20240827
       svelte: 4.2.19
       vue: 3.4.38(typescript@5.5.4)
 
-  '@vercel/style-guide@6.0.0(eslint@8.57.0)(prettier@3.3.3)(typescript@5.5.4)(vitest@2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6))':
+  '@vercel/style-guide@6.0.0(eslint@8.57.0)(prettier@3.3.3)(typescript@5.5.4)(vitest@2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6))':
     dependencies:
       '@babel/core': 7.25.2
       '@babel/eslint-parser': 7.25.1(@babel/core@7.25.2)(eslint@8.57.0)
@@ -14129,7 +14129,7 @@ snapshots:
       eslint-plugin-testing-library: 6.3.0(eslint@8.57.0)(typescript@5.5.4)
       eslint-plugin-tsdoc: 0.2.17
       eslint-plugin-unicorn: 51.0.1(eslint@8.57.0)
-      eslint-plugin-vitest: 0.3.26(@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)(vitest@2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6))
+      eslint-plugin-vitest: 0.3.26(@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)(vitest@2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6))
       prettier-plugin-packagejson: 2.5.2(prettier@3.3.3)
     optionalDependencies:
       eslint: 8.57.0
@@ -14143,7 +14143,7 @@ snapshots:
       - supports-color
       - vitest
 
-  '@vercel/toolbar@0.1.18(next@15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))':
+  '@vercel/toolbar@0.1.18(next@15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))':
     dependencies:
       '@tinyhttp/app': 1.3.0
       chokidar: 3.6.0
@@ -14154,9 +14154,9 @@ snapshots:
     optionalDependencies:
       next: 15.0.0-canary.137(@babel/core@7.24.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       react: 19.0.0-rc-7771d3a7-20240827
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
 
-  '@vercel/toolbar@0.1.18(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))':
+  '@vercel/toolbar@0.1.18(next@15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))':
     dependencies:
       '@tinyhttp/app': 1.3.0
       chokidar: 3.6.0
@@ -14167,7 +14167,7 @@ snapshots:
     optionalDependencies:
       next: 15.0.0-canary.137(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240830)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       react: 19.0.0-rc-7771d3a7-20240827
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
 
   '@vinxi/listhen@1.5.6':
     dependencies:
@@ -14178,7 +14178,7 @@ snapshots:
       consola: 3.2.3
       defu: 6.1.4
       get-port-please: 3.1.2
-      h3: 1.12.0
+      h3: 1.11.1
       http-shutdown: 1.2.2
       jiti: 1.21.6
       mlly: 1.7.1
@@ -14191,7 +14191,7 @@ snapshots:
     transitivePeerDependencies:
       - uWebSockets.js
 
-  '@vinxi/plugin-directives@0.4.2(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))':
+  '@vinxi/plugin-directives@0.4.2(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))':
     dependencies:
       '@babel/parser': 7.25.6
       acorn: 8.12.1
@@ -14202,38 +14202,38 @@ snapshots:
       magicast: 0.2.11
       recast: 0.23.9
       tslib: 2.7.0
-      vinxi: 0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6)
+      vinxi: 0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6)
 
-  '@vinxi/server-components@0.4.2(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))':
+  '@vinxi/server-components@0.4.2(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))':
     dependencies:
-      '@vinxi/plugin-directives': 0.4.2(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))
+      '@vinxi/plugin-directives': 0.4.2(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))
       acorn: 8.12.1
       acorn-loose: 8.4.0
       acorn-typescript: 1.4.13(acorn@8.12.1)
       astring: 1.9.0
       magicast: 0.2.11
       recast: 0.23.9
-      vinxi: 0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6)
+      vinxi: 0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6)
 
-  '@vinxi/server-functions@0.4.2(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))':
+  '@vinxi/server-functions@0.4.2(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))':
     dependencies:
-      '@vinxi/plugin-directives': 0.4.2(vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6))
+      '@vinxi/plugin-directives': 0.4.2(vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6))
       acorn: 8.12.1
       acorn-loose: 8.4.0
       acorn-typescript: 1.4.13(acorn@8.12.1)
       astring: 1.9.0
       magicast: 0.2.11
       recast: 0.23.9
-      vinxi: 0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6)
+      vinxi: 0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6)
 
-  '@vitejs/plugin-react@4.3.1(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))':
+  '@vitejs/plugin-react@4.3.1(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))':
     dependencies:
       '@babel/core': 7.25.2
       '@babel/plugin-transform-react-jsx-self': 7.24.7(@babel/core@7.25.2)
       '@babel/plugin-transform-react-jsx-source': 7.24.7(@babel/core@7.25.2)
       '@types/babel__core': 7.20.5
       react-refresh: 0.14.2
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -15403,7 +15403,7 @@ snapshots:
     dependencies:
       '@types/cookie': 0.4.1
       '@types/cors': 2.8.17
-      '@types/node': 22.5.1
+      '@types/node': 22.5.2
       accepts: 1.3.8
       base64id: 2.0.0
       cookie: 0.4.2
@@ -15840,13 +15840,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-vitest@0.3.26(@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)(vitest@2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)):
+  eslint-plugin-vitest@0.3.26(@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)(vitest@2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)):
     dependencies:
       '@typescript-eslint/utils': 7.18.0(eslint@8.57.0)(typescript@5.5.4)
       eslint: 8.57.0
     optionalDependencies:
       '@typescript-eslint/eslint-plugin': 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.0)(typescript@5.5.4))(eslint@8.57.0)(typescript@5.5.4)
-      vitest: 2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
+      vitest: 2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6)
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -17099,7 +17099,7 @@ snapshots:
       crossws: 0.2.4
       defu: 6.1.4
       get-port-please: 3.1.2
-      h3: 1.12.0
+      h3: 1.11.1
       http-shutdown: 1.2.2
       jiti: 1.21.6
       mlly: 1.7.1
@@ -18112,7 +18112,7 @@ snapshots:
 
   openai@4.57.0(zod@3.23.8):
     dependencies:
-      '@types/node': 18.19.47
+      '@types/node': 18.19.48
       '@types/node-fetch': 2.6.11
       '@types/qs': 6.9.15
       abort-controller: 3.0.0
@@ -18359,7 +18359,7 @@ snapshots:
 
   pptxgenjs@3.12.0:
     dependencies:
-      '@types/node': 18.19.47
+      '@types/node': 18.19.48
       https: 1.0.0
       image-size: 1.1.1
       jszip: 3.10.1
@@ -20045,7 +20045,7 @@ snapshots:
       anymatch: 3.1.3
       chokidar: 3.6.0
       destr: 2.0.3
-      h3: 1.12.0
+      h3: 1.11.1
       listhen: 1.7.2
       lru-cache: 10.4.3
       mri: 1.2.0
@@ -20201,7 +20201,7 @@ snapshots:
       d3-time: 3.1.0
       d3-timer: 3.0.1
 
-  vinxi@0.4.1(@types/node@22.5.1)(ioredis@5.4.1)(terser@5.31.6):
+  vinxi@0.4.1(@types/node@22.5.2)(ioredis@5.4.1)(terser@5.31.6):
     dependencies:
       '@babel/core': 7.25.2
       '@babel/plugin-syntax-jsx': 7.24.7(@babel/core@7.25.2)
@@ -20235,7 +20235,7 @@ snapshots:
       unctx: 2.3.1
       unenv: 1.10.0
       unstorage: 1.10.2(ioredis@5.4.1)
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
       zod: 3.23.8
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -20269,13 +20269,13 @@ snapshots:
       - uWebSockets.js
       - xml2js
 
-  vite-node@2.0.5(@types/node@22.5.1)(terser@5.31.6):
+  vite-node@2.0.5(@types/node@22.5.2)(terser@5.31.6):
     dependencies:
       cac: 6.7.14
       debug: 4.3.6
       pathe: 1.1.2
       tinyrainbow: 1.2.0
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -20287,7 +20287,7 @@ snapshots:
       - supports-color
       - terser
 
-  vite-plugin-inspect@0.7.42(rollup@4.21.2)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)):
+  vite-plugin-inspect@0.7.42(rollup@4.21.2)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)):
     dependencies:
       '@antfu/utils': 0.7.10
       '@rollup/pluginutils': 5.1.0(rollup@4.21.2)
@@ -20297,12 +20297,12 @@ snapshots:
       open: 9.1.0
       picocolors: 1.0.1
       sirv: 2.0.4
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
     transitivePeerDependencies:
       - rollup
       - supports-color
 
-  vite-plugin-solid@2.10.2(solid-js@1.8.17)(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)):
+  vite-plugin-solid@2.10.2(solid-js@1.8.17)(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)):
     dependencies:
       '@babel/core': 7.25.2
       '@types/babel__core': 7.20.5
@@ -20310,26 +20310,26 @@ snapshots:
       merge-anything: 5.1.7
       solid-js: 1.8.17
       solid-refresh: 0.6.3(solid-js@1.8.17)
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
-      vitefu: 0.2.5(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6))
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
+      vitefu: 0.2.5(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6))
     transitivePeerDependencies:
       - supports-color
 
-  vite@5.4.2(@types/node@22.5.1)(terser@5.31.6):
+  vite@5.4.2(@types/node@22.5.2)(terser@5.31.6):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.4.42
       rollup: 4.21.2
     optionalDependencies:
-      '@types/node': 22.5.1
+      '@types/node': 22.5.2
       fsevents: 2.3.3
       terser: 5.31.6
 
-  vitefu@0.2.5(vite@5.4.2(@types/node@22.5.1)(terser@5.31.6)):
+  vitefu@0.2.5(vite@5.4.2(@types/node@22.5.2)(terser@5.31.6)):
     optionalDependencies:
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
 
-  vitest@2.0.5(@types/node@22.5.1)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6):
+  vitest@2.0.5(@types/node@22.5.2)(jsdom@25.0.0(canvas@2.11.2))(terser@5.31.6):
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@vitest/expect': 2.0.5
@@ -20347,11 +20347,11 @@ snapshots:
       tinybench: 2.9.0
       tinypool: 1.0.1
       tinyrainbow: 1.2.0
-      vite: 5.4.2(@types/node@22.5.1)(terser@5.31.6)
-      vite-node: 2.0.5(@types/node@22.5.1)(terser@5.31.6)
+      vite: 5.4.2(@types/node@22.5.2)(terser@5.31.6)
+      vite-node: 2.0.5(@types/node@22.5.2)(terser@5.31.6)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 22.5.1
+      '@types/node': 22.5.2
       jsdom: 25.0.0(canvas@2.11.2)
     transitivePeerDependencies:
       - less
