@@ -1209,7 +1209,9 @@
     "promotions": "Promotions",
     "subtotal": "Subtotal",
     "discounts": "Discounts",
-    "rounding": "Rounding"
+    "rounding": "Rounding",
+    "print": "Print",
+    "download_image": "Download image"
   },
   "ai_chat": {
     "welcome_to": "Welcome to",

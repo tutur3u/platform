@@ -73,6 +73,7 @@
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.13",
     "framer-motion": "^11.3.31",
+    "html2canvas": "^1.4.1",
     "juice": "^11.0.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.437.0",

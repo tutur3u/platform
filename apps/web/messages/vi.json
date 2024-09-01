@@ -1209,7 +1209,9 @@
     "promotions": "Khuyến mãi",
     "subtotal": "Tạm tính",
     "discounts": "Giảm giá",
-    "rounding": "Làm tròn"
+    "rounding": "Làm tròn",
+    "print": "In",
+    "download_image": "Tải hình ảnh xuống"
   },
   "ai_chat": {
     "welcome_to": "Chào mừng đến với",

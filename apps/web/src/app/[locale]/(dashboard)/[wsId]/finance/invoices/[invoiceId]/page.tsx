@@ -35,8 +35,6 @@ export default async function InvoiceDetailsPage({
   const promotions = await getPromotions(invoiceId);
   const { data: configs } = await getConfigs(wsId);
 
-  const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
-
   if (!invoice) notFound();
 
   return (
@@ -92,12 +90,11 @@ export default async function InvoiceDetailsPage({
           </div>
 
           <InvoiceCard
-            t={t}
             lang={locale}
+            configs={configs}
             invoice={invoice}
             products={products}
             promotions={promotions}
-            getConfig={getConfig}
           />
         </div>
 
