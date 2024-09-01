@@ -23,7 +23,7 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
 import { useTranslations } from 'next-intl';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
@@ -51,6 +51,7 @@ const Chat = ({
   const t = useTranslations('ai_chat');
 
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [previewToken, setPreviewToken] = useLocalStorage({
@@ -302,6 +303,13 @@ const Chat = ({
     });
     setPendingPrompt(null);
   }, [wsId, pendingPrompt, chat?.id, append]);
+
+  useEffect(() => {
+    console.log(pathname);
+    if (!pathname.includes('/chat/') && messages.length === 1) {
+      window.history.replaceState({}, '', `/${wsId}/chat/${chat?.id}`);
+    }
+  }, [chat?.id, pathname, messages]);
 
   return (
     <div className="relative">
