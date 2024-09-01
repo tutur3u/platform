@@ -1,5 +1,5 @@
+import { invoiceColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { invoiceColumns } from '@/data/columns/invoices';
 
 export default function Loading() {
   return (

@@ -1,5 +1,5 @@
+import { invoiceColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { invoiceColumns } from '@/data/columns/invoices';
 import { Invoice } from '@/types/primitives/Invoice';
 import { createClient } from '@/utils/supabase/server';
 
