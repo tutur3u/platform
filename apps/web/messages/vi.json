@@ -1369,6 +1369,8 @@
     "plural": "Hóa đơn",
     "description": "Hóa đơn được sử dụng để liên kết các giao dịch tài chính và sản phẩm đã mua với các chương trình khuyến mãi được áp dụng từ kho hàng trong không gian làm việc của bạn.",
     "create": "Tạo hóa đơn",
-    "create_description": "Tạo hóa đơn mới"
+    "create_description": "Tạo hóa đơn mới",
+    "edit": "Chỉnh sửa hóa đơn",
+    "edit_description": "Chỉnh sửa hóa đơn hiện có"
   }
 }

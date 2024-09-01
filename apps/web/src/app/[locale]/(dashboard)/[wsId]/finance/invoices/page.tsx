@@ -22,7 +22,13 @@ export default async function WorkspaceInvoicesPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { data, count } = await getData(wsId, searchParams);
+  const { data: rawData, count } = await getData(wsId, searchParams);
+
+  const data = rawData.map((d) => ({
+    ...d,
+    href: `/${wsId}/finance/invoices/${d.id}`,
+    ws_id: wsId,
+  }));
 
   return (
     <>

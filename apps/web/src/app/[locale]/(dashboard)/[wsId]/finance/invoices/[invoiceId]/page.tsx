@@ -59,10 +59,16 @@ export default async function InvoiceDetailsPage({
             <DetailItem
               icon={<DollarSign className="h-5 w-5" />}
               label={t('invoice-data-table.final_price')}
-              value={Intl.NumberFormat(locale, {
+              value={`${Intl.NumberFormat(locale, {
                 style: 'currency',
                 currency: 'VND',
-              }).format(invoice.price + invoice.total_diff)}
+              }).format(invoice.price)} + ${Intl.NumberFormat(locale, {
+                style: 'currency',
+                currency: 'VND',
+              }).format(invoice.total_diff)} = ${Intl.NumberFormat(locale, {
+                style: 'currency',
+                currency: 'VND',
+              }).format(invoice.price + invoice.total_diff)}`}
             />
             <DetailItem
               icon={<ShoppingCart className="h-5 w-5" />}
