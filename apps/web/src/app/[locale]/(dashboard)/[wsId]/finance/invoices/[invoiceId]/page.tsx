@@ -1,3 +1,6 @@
+import InvoiceCard from './invoice-card';
+import { availableConfigs } from '@/constants/configs/reports';
+import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -23,22 +26,24 @@ interface Props {
 }
 
 export default async function InvoiceDetailsPage({
-  params: { invoiceId, locale },
+  params: { wsId, invoiceId, locale },
 }: Props) {
   const t = await getTranslations();
-  const [invoice, products, promotions] = await Promise.all([
-    getInvoice(invoiceId),
-    getProducts(invoiceId),
-    getPromotions(invoiceId),
-  ]);
+
+  const invoice = await getInvoice(invoiceId);
+  const products = await getProducts(invoiceId);
+  const promotions = await getPromotions(invoiceId);
+  const { data: configs } = await getConfigs(wsId);
+
+  const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
 
   if (!invoice) notFound();
 
   return (
-    <div className="flex min-h-full w-full flex-col">
+    <>
       <FeatureSummary
-        pluralTitle={t('ws-invoices.plural')}
-        singularTitle={t('ws-invoices.singular')}
+        pluralTitle={invoice.notice || t('ws-invoices.plural')}
+        singularTitle={invoice.notice || t('ws-invoices.singular')}
         description={t('ws-invoices.description')}
         createTitle={t('ws-invoices.create')}
         createDescription={t('ws-invoices.create_description')}
@@ -71,11 +76,6 @@ export default async function InvoiceDetailsPage({
               }).format(invoice.price + invoice.total_diff)}`}
             />
             <DetailItem
-              icon={<ShoppingCart className="h-5 w-5" />}
-              label={t('invoices.products')}
-              value={products.length}
-            />
-            <DetailItem
               icon={<Calendar className="h-5 w-5" />}
               label={t('invoice-data-table.created_at')}
               value={
@@ -84,21 +84,24 @@ export default async function InvoiceDetailsPage({
                   : '-'
               }
             />
+            <DetailItem
+              icon={<ShoppingCart className="h-5 w-5" />}
+              label={t('invoices.products')}
+              value={products.reduce((acc, product) => acc + product.amount, 0)}
+            />
           </div>
 
-          <div className="h-full rounded-lg border p-4"></div>
+          <InvoiceCard
+            t={t}
+            lang={locale}
+            invoice={invoice}
+            products={products}
+            promotions={promotions}
+            getConfig={getConfig}
+          />
         </div>
 
-        <div className="grid gap-4">
-          <div className="h-full rounded-lg border p-4">
-            <div className="grid h-full content-start gap-2">
-              <div className="text-lg font-semibold">
-                {t('invoices.notice')}
-              </div>
-              <Separator />
-              <p>{invoice.notice || t('common.empty')}</p>
-            </div>
-          </div>
+        <div className="flex h-full flex-col gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
             <div className="text-lg font-semibold">
               {t('invoices.products')}
@@ -150,8 +153,8 @@ export default async function InvoiceDetailsPage({
               )}
             </div>
           </div>
-          <div className="h-full rounded-lg border p-4">
-            <div className="grid h-full content-start gap-2">
+          <div className="h-fit rounded-lg border p-4">
+            <div className="grid h-fit content-start gap-2">
               <div className="text-lg font-semibold">{t('invoices.note')}</div>
               <Separator />
               <p>{invoice.note || t('common.empty')}</p>
@@ -159,7 +162,7 @@ export default async function InvoiceDetailsPage({
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -186,7 +189,9 @@ async function getInvoice(invoiceId: string) {
 
   const { data: invoice, error: invoiceError } = await supabase
     .from('finance_invoices')
-    .select('*')
+    .select(
+      '*, ...workspace_users!customer_id(customer_display_name:display_name, customer_full_name:full_name)'
+    )
     .eq('id', invoiceId)
     .single();
 
@@ -200,7 +205,7 @@ async function getProducts(invoiceId: string) {
 
   const { data: products, error: productsError } = await supabase
     .from('finance_invoice_products')
-    .select('amount, price, product_name, product_unit, warehouse')
+    .select('*')
     .eq('invoice_id', invoiceId);
 
   if (productsError) throw productsError;
@@ -213,10 +218,57 @@ async function getPromotions(invoiceId: string) {
 
   const { data: promotions, error: promotionsError } = await supabase
     .from('finance_invoice_promotions')
-    .select('code, name, use_ratio, value')
+    .select('*')
     .eq('invoice_id', invoiceId);
 
   if (promotionsError) throw promotionsError;
 
   return promotions;
+}
+
+async function getConfigs(wsId: string) {
+  const supabase = createClient();
+
+  const queryBuilder = supabase
+    .from('workspace_configs')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  queryBuilder.in(
+    'id',
+    availableConfigs.map(({ id }) => id)
+  );
+
+  const { data: rawData, error } = await queryBuilder;
+  if (error) throw error;
+
+  // Create a copy of availableConfigs to include in the response
+  let configs = [
+    ...availableConfigs.map(({ defaultValue, ...rest }) => ({
+      ...rest,
+      value: defaultValue,
+    })),
+  ];
+
+  // If rawData is not empty, merge it with availableConfigs
+  if (rawData && rawData.length) {
+    rawData.forEach((config) => {
+      const index = configs.findIndex((c) => c.id === config.id);
+      if (index !== -1) {
+        // Replace the default config with the one from the database
+        configs[index] = { ...configs[index], ...config };
+      } else {
+        // If the config does not exist in availableConfigs, add it
+        configs.push(config);
+      }
+    });
+  }
+
+  const count = configs.length;
+
+  return { data: configs, count } as {
+    data: WorkspaceConfig[];
+    count: number;
+  };
 }
