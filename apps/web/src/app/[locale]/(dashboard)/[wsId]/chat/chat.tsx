@@ -8,17 +8,6 @@ import { Model, defaultModel } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
 import { useChat } from '@ai-sdk/react';
-import { useLocalStorage } from '@mantine/hooks';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
@@ -54,19 +43,7 @@ const Chat = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [previewToken, setPreviewToken] = useLocalStorage({
-    key: 'ai-token',
-    defaultValue: '',
-  });
-
-  const [previewTokenDialog, setPreviewTokenDialog] = useState(false);
-  const [previewTokenInput, setPreviewTokenInput] = useState(previewToken);
-
-  useEffect(() => {
-    // Don't show the dialog if the key is configured
-    // on the server or the preview token is set
-    setPreviewTokenDialog(!hasKeys && !previewToken);
-  }, [hasKeys, previewToken]);
+  // const [messages] = useUIState()
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(defaultModel);
@@ -80,7 +57,6 @@ const Chat = ({
         id: chat?.id,
         wsId,
         model: chat?.model || model?.value,
-        previewToken,
       },
       onResponse(response) {
         if (!response.ok)
@@ -108,7 +84,7 @@ const Chat = ({
   }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
 
   useEffect(() => {
-    if (!chat || (!hasKeys && !previewToken) || isLoading) return;
+    if (!chat || !hasKeys || isLoading) return;
 
     const generateSummary = async (messages: Message[] = []) => {
       if (
@@ -131,7 +107,6 @@ const Chat = ({
           body: JSON.stringify({
             id: chat.id,
             model: chat.model,
-            previewToken,
           }),
         }
       );
@@ -170,7 +145,7 @@ const Chat = ({
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [wsId, chat, hasKeys, previewToken, isLoading, messages, reload]);
+  }, [wsId, chat, hasKeys, isLoading, messages, reload]);
 
   const [initialScroll, setInitialScroll] = useState(true);
 
@@ -240,7 +215,6 @@ const Chat = ({
         body: JSON.stringify({
           model: model.value,
           message: input,
-          previewToken,
         }),
       }
     );
@@ -394,42 +368,6 @@ const Chat = ({
           defaultRoute={`/${wsId}/chat`}
         />
       )}
-
-      <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter your Anthropic Key</DialogTitle>
-            <DialogDescription>
-              If you have not obtained your Anthropic API key, you can do so by{' '}
-              <a
-                href="https://console.anthropic.com/account/keys"
-                className="underline"
-              >
-                generating an API key
-              </a>{' '}
-              on the Anthropic website. This is only necessary for preview
-              environments so that the open source community can test the app.
-              The token will be saved to your browser&apos;s local storage under
-              the name <code className="font-mono">ai-token</code>.
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={previewTokenInput}
-            placeholder="Anthropic API key"
-            onChange={(e) => setPreviewTokenInput(e.target.value)}
-          />
-          <DialogFooter className="items-center">
-            <Button
-              onClick={() => {
-                setPreviewToken(previewTokenInput);
-                setPreviewTokenDialog(false);
-              }}
-            >
-              Save Token
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
