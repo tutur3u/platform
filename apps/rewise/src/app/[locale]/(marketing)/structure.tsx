@@ -5,6 +5,12 @@ import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@repo/ui/components/ui/accordion';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   ResizableHandle,
@@ -13,7 +19,18 @@ import {
 } from '@repo/ui/components/ui/resizable';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
-import { Menu, X } from 'lucide-react';
+import {
+  Box,
+  Captions,
+  ChevronDown,
+  Crown,
+  Home,
+  Menu,
+  MessageCircle,
+  NotebookPen,
+  SquareStack,
+  X,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -45,6 +62,55 @@ export function Structure({
   const t = useTranslations();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   if (!user) return null;
+
+  const rootLinks: NavLink[] = [
+    {
+      href: '/',
+      title: t('common.home'),
+      icon: <Home className="h-5 w-5 flex-none" />,
+      matchExact: true,
+    },
+    {
+      href: '/models',
+      title: t('ai_chat.ai_models'),
+      icon: <Box className="h-5 w-5 flex-none" />,
+      trailing: '9',
+      disabled: true,
+      showDisabled: true,
+    },
+    {
+      href: '/documents',
+      title: t('documents.documents'),
+      icon: <NotebookPen className="h-5 w-5 flex-none" />,
+      trailing: '0',
+      disabled: true,
+      showDisabled: true,
+    },
+    {
+      href: '/quizzes',
+      title: t('ai_chat.quizzes'),
+      icon: <SquareStack className="h-5 w-5 flex-none" />,
+      trailing: '0',
+      disabled: true,
+      showDisabled: true,
+    },
+    {
+      href: '/flashcards',
+      title: t('ai_chat.flashcards'),
+      icon: <Captions className="h-5 w-5 flex-none" />,
+      trailing: '0',
+      disabled: true,
+      showDisabled: true,
+    },
+    {
+      href: '/plans',
+      title: t('common.current_plan'),
+      icon: <Crown className="h-5 w-5 flex-none" />,
+      trailing: t('common.free'),
+      disabled: true,
+      showDisabled: true,
+    },
+  ];
 
   return (
     <>
@@ -167,7 +233,7 @@ export function Structure({
               </div>
               <div
                 className={cn(
-                  'scrollbar-none flex flex-1 flex-col gap-1 overflow-y-scroll transition duration-300'
+                  'scrollbar-none flex flex-1 flex-col gap-2 overflow-y-scroll transition duration-300'
                   // isCollapsed && 'hover:opacity-100 md:opacity-0'
                 )}
               >
@@ -176,11 +242,48 @@ export function Structure({
                   locale={locale}
                   currentUser={user}
                   isCollapsed={isCollapsed}
-                  links={links}
+                  links={rootLinks}
                   onClick={() => {
                     if (window.innerWidth < 768) setIsCollapsed(true);
                   }}
+                  className="pb-0"
+                  single
                 />
+                {isCollapsed || <Separator />}
+                <Accordion
+                  type="single"
+                  className={cn('w-full', isCollapsed && 'hidden')}
+                  collapsible
+                >
+                  <AccordionItem value="item-1" className="border-none p-0">
+                    <AccordionTrigger
+                      showChevron={false}
+                      className="hover:bg-foreground/10 bg-foreground/5 mx-2 rounded-md px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="h-5 w-5 flex-none" />
+                        <span className="line-clamp-1 text-start">
+                          {t('ai_chat.chats')}
+                        </span>
+                      </div>
+                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <Nav
+                        t={t}
+                        locale={locale}
+                        currentUser={user}
+                        isCollapsed={isCollapsed}
+                        links={links}
+                        onClick={() => {
+                          if (window.innerWidth < 768) setIsCollapsed(true);
+                        }}
+                        single={false}
+                        className="pt-0"
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
               <div className="border-foreground/10 flex-none border-t p-2">
                 {isCollapsed ? userPopover : actions}

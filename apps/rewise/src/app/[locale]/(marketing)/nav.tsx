@@ -21,6 +21,8 @@ interface NavProps {
   currentUser: WorkspaceUser | null;
   isCollapsed: boolean;
   links: NavLink[];
+  single: boolean;
+  className?: string;
   onClick?: () => void;
 }
 
@@ -63,6 +65,8 @@ export function Nav({
   currentUser,
   links,
   isCollapsed,
+  single,
+  className,
   onClick,
 }: NavProps) {
   const pathname = usePathname();
@@ -76,7 +80,7 @@ export function Nav({
 
   const renderLink = (link: NavLink, index: number) => {
     // If the link is disabled, don't render it
-    if (link?.disabled) return null;
+    if (link?.disabled && !link.showDisabled) return null;
 
     // If the link is disabled on production, don't render it
     if (link?.disableOnProduction && PROD_MODE) return null;
@@ -110,7 +114,13 @@ export function Nav({
     const linkContent = (
       <Link
         key={index}
-        href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
+        href={
+          link.disabled
+            ? '#'
+            : link.forceRefresh
+              ? `${link.href}?refresh=true`
+              : link.href
+        }
         className={cn(
           buttonVariants({
             variant: 'ghost',
@@ -122,9 +132,13 @@ export function Nav({
             ? 'from-dynamic-red/20 via-dynamic-purple/20 to-dynamic-sky/20 hover:from-dynamic-red/20 hover:via-dynamic-purple/20 hover:to-dynamic-sky/20 bg-gradient-to-br'
             : urlToLoad === link.href
               ? 'from-dynamic-red/30 via-dynamic-purple/30 to-dynamic-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
-              : 'bg-foreground/5 hover:bg-foreground/10'
+              : 'bg-foreground/5 hover:bg-foreground/10',
+          link.disabled &&
+            link.showDisabled &&
+            'cursor-not-allowed bg-transparent opacity-50 hover:bg-transparent'
         )}
         onClick={() => {
+          if (link.disabled) return;
           setUrlToLoad(link.href);
           onClick?.();
         }}
@@ -133,6 +147,7 @@ export function Nav({
           link.icon
         ) : (
           <>
+            {single && link.icon && <span className="mr-2">{link.icon}</span>}
             <span className="line-clamp-1 break-all">
               {link.title.replaceAll(/(\*\*)|(^")|("$)/g, '')}
             </span>
@@ -179,7 +194,10 @@ export function Nav({
   return (
     <div
       data-collapsed={isCollapsed}
-      className="group flex flex-col gap-4 py-2 data-[collapsed=true]:py-2"
+      className={cn(
+        'group flex flex-col gap-4 py-2 data-[collapsed=true]:py-2',
+        className
+      )}
     >
       <nav
         className={cn(
@@ -187,7 +205,7 @@ export function Nav({
           isCollapsed ? 'gap-1' : 'gap-4'
         )}
       >
-        {isCollapsed ? (
+        {single ? undefined : isCollapsed ? (
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Link
@@ -238,7 +256,11 @@ export function Nav({
             </Button>
           </Link>
         )}
-        {!isCollapsed &&
+        {single ? (
+          <div className="grid gap-1">
+            {links.map((link, index) => renderLink(link, index))}
+          </div>
+        ) : (
           Object.entries(groupedLinks).map(([dateTag, dateLinks]) => (
             <div key={dateTag}>
               {!isCollapsed && (
@@ -253,7 +275,8 @@ export function Nav({
                 {dateLinks.map((link, index) => renderLink(link, index))}
               </div>
             </div>
-          ))}
+          ))
+        )}
       </nav>
     </div>
   );

@@ -15,6 +15,7 @@ export interface NavLink {
   matchExact?: boolean;
   aliases?: string[];
   disabled?: boolean;
+  showDisabled?: boolean;
   disableOnProduction?: boolean;
   requireRootMember?: boolean;
   allowedRoles?: string[];

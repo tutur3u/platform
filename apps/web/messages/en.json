@@ -120,7 +120,8 @@
     "foreground": "Foreground",
     "background": "Background",
     "scan_me": "Scan me",
-    "qr_code": "QR Code"
+    "qr_code": "QR Code",
+    "current_plan": "Current plan"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1275,7 +1276,9 @@
     "microphone_permission_denied": "You have denied microphone permissions. Please enable microphone permissions in your browser settings to use this feature.",
     "upload_files": "Upload Files",
     "upload_file_description": "Choose files you want to upload to this chat.",
-    "response_language": "Response language"
+    "response_language": "Response language",
+    "ai_models": "AI Models",
+    "quizzes": "Quizzes"
   },
   "crud-ops": {
     "ops": "Operations",

@@ -120,7 +120,8 @@
     "foreground": "Màu chi tiết",
     "background": "Màu nền",
     "scan_me": "Quét mã QR",
-    "qr_code": "Mã QR"
+    "qr_code": "Mã QR",
+    "current_plan": "Gói hiện tại"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1275,7 +1276,9 @@
     "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
     "upload_files": "Tải lên tập tin",
     "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
-    "response_language": "Ngôn ngữ phản hồi"
+    "response_language": "Ngôn ngữ phản hồi",
+    "ai_models": "Mô hình AI",
+    "quizzes": "Bộ câu hỏi"
   },
   "crud-ops": {
     "ops": "Thao tác",

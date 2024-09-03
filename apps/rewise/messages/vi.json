@@ -120,7 +120,8 @@
     "foreground": "Màu chi tiết",
     "background": "Màu nền",
     "scan_me": "Quét mã QR",
-    "qr_code": "Mã QR"
+    "qr_code": "Mã QR",
+    "current_plan": "Gói hiện tại"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -151,7 +152,7 @@
     "headline-p1": "Cuộc sống dễ dàng hơn với Rewise,",
     "headline-p2": "siêu tốc độ cùng AI",
     "get-started": "Bắt đầu ngay",
-    "features-lead": "Bạn có thể làm gì với Tuturuuu?",
+    "features-lead": "Bạn có thể làm gì với Rewise?",
     "features-1-title": "Tăng cường bởi AI",
     "features-1-subtitle": "Tư duy và tổ chức ý tưởng của bạn với tốc độ tia chớp, với các công cụ thông minh được tăng cường bởi AI.",
     "features-2-title": "Trò chuyện mượt mà",
@@ -788,7 +789,9 @@
     "create": "Tạo gắn thẻ",
     "edit": "Sửa gắn thẻ",
     "create_description": "Thêm một gắn thẻ nhóm mới",
-    "edit_description": "Sửa gắn thẻ nhóm"
+    "edit_description": "Sửa gắn thẻ nhóm",
+    "add_group": "Thêm nhóm",
+    "add_group_description": "Thêm nhóm vào gắn thẻ"
   },
   "ws-user-reports": {
     "singular": "Báo cáo người dùng",
@@ -1166,6 +1169,7 @@
     "finance": "Tài chính",
     "unnamed-ws": "Không gian làm việc không tên",
     "invoices": "Hóa đơn",
+    "invoice": "Hóa đơn",
     "show-phone": "Hiển thị số điện thoại",
     "show-gender": "Hiển thị giới tính",
     "show-address": "Hiển thị địa chỉ",
@@ -1185,7 +1189,7 @@
     "note": "Ghi chú",
     "note-placeholder": "Nhập ghi chú cho hoá đơn này",
     "add-note": "Thêm ghi chú",
-    "total": "Số tiền khách cần đưa",
+    "total": "Tổng cộng",
     "total-placeholder": "Nhập số tiền khách cần đưa",
     "reset": "Đặt lại",
     "discount": "Khách hàng sẽ được giảm",
@@ -1198,7 +1202,18 @@
     "reopen-invoice": "Mở lại hoá đơn",
     "close-invoice": "Đóng hoá đơn",
     "save-changes": "Lưu thay đổi",
-    "checkup": "Khám bệnh"
+    "checkup": "Khám bệnh",
+    "bill_to": "Thanh toán cho",
+    "invoice_date": "Ngày tạo hóa đơn",
+    "description": "Mô tả",
+    "quantity": "Số lượng",
+    "price": "Giá",
+    "promotions": "Khuyến mãi",
+    "subtotal": "Tạm tính",
+    "discounts": "Giảm giá",
+    "rounding": "Làm tròn",
+    "print": "In",
+    "download_image": "Tải hình ảnh xuống"
   },
   "ai_chat": {
     "welcome_to": "Chào mừng đến với",
@@ -1268,7 +1283,9 @@
     "chat_summary": "Tóm tắt",
     "chat_notes": "Ghi chú",
     "multiple_choice": "Bộ trắc nghiệm",
-    "paragraph_answers": "Câu hỏi đoạn văn"
+    "paragraph_answers": "Câu hỏi đoạn văn",
+    "ai_models": "Mô hình AI",
+    "quizzes": "Bộ câu hỏi"
   },
   "crud-ops": {
     "ops": "Thao tác",
@@ -1368,5 +1385,14 @@
     "plural": "Email",
     "singular": "E-mail",
     "description": "Xem lịch sử gửi thư thuộc không gian làm việc của bạn."
+  },
+  "ws-invoices": {
+    "singular": "Hóa đơn",
+    "plural": "Hóa đơn",
+    "description": "Hóa đơn được sử dụng để liên kết các giao dịch tài chính và sản phẩm đã mua với các chương trình khuyến mãi được áp dụng từ kho hàng trong không gian làm việc của bạn.",
+    "create": "Tạo hóa đơn",
+    "create_description": "Tạo hóa đơn mới",
+    "edit": "Chỉnh sửa hóa đơn",
+    "edit_description": "Chỉnh sửa hóa đơn hiện có"
   }
 }

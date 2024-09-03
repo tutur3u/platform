@@ -120,7 +120,8 @@
     "foreground": "Foreground",
     "background": "Background",
     "scan_me": "Scan me",
-    "qr_code": "QR Code"
+    "qr_code": "QR Code",
+    "current_plan": "Current plan"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -788,7 +789,9 @@
     "edit": "Edit Tag",
     "create_description": "Create a new group tag",
     "edit_description": "Edit an existing group tag",
-    "enable_custom_color": "Enable custom color"
+    "enable_custom_color": "Enable custom color",
+    "add_group": "Add groups",
+    "add_group_description": "Add a user group to this tag"
   },
   "ws-user-reports": {
     "singular": "User Report",
@@ -1166,6 +1169,7 @@
     "finance": "Finance",
     "unnamed-ws": "Untitled workspace",
     "invoices": "Invoices",
+    "invoice": "Invoice",
     "show-phone": "Show phone",
     "show-gender": "Show gender",
     "show-address": "Show address",
@@ -1185,7 +1189,7 @@
     "note": "Note",
     "note-placeholder": "Enter note for this invoice",
     "add-note": "Add note",
-    "total": "The amount customer needs to pay",
+    "total": "Total",
     "total-placeholder": "Enter the amount customer needs to pay",
     "reset": "Reset",
     "discount": "Customer will receive a discount of",
@@ -1198,7 +1202,18 @@
     "reopen-invoice": "Reopen invoice",
     "close-invoice": "Close invoice",
     "save-changes": "Save changes",
-    "checkup": "Checkup"
+    "checkup": "Checkup",
+    "bill_to": "Bill to",
+    "invoice_date": "Invoice date",
+    "description": "Description",
+    "quantity": "Quantity",
+    "price": "Price",
+    "promotions": "Promotions",
+    "subtotal": "Subtotal",
+    "discounts": "Discounts",
+    "rounding": "Rounding",
+    "print": "Print",
+    "download_image": "Download image"
   },
   "ai_chat": {
     "welcome_to": "Welcome to",
@@ -1268,7 +1283,9 @@
     "chat_summary": "Chat summary",
     "chat_notes": "Chat notes",
     "multiple_choice": "Multiple choice",
-    "paragraph_answers": "Paragraph answers"
+    "paragraph_answers": "Paragraph answers",
+    "ai_models": "AI Models",
+    "quizzes": "Quizzes"
   },
   "crud-ops": {
     "ops": "Operations",
@@ -1368,5 +1385,14 @@
     "plural": "Emails",
     "singular": "Email",
     "description": "View mailing history that belongs to your workspace."
+  },
+  "ws-invoices": {
+    "plural": "Invoices",
+    "singular": "Invoice",
+    "description": "Invoices are used to link finance transactions and purchased products with applied promotions from your workspace's inventory.",
+    "create": "Create invoice",
+    "create_description": "Create a new invoice",
+    "edit": "Edit invoice",
+    "edit_description": "Edit an existing invoice"
   }
 }
