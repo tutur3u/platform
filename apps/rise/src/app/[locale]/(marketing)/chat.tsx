@@ -4,7 +4,7 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
-import { Model, defaultModel } from '@/data/models';
+import { Model, defaultModel, models } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
 import { useChat } from '@ai-sdk/react';
@@ -43,7 +43,16 @@ const Chat = ({
     useChat({
       id: chat?.id,
       initialMessages,
-      api: model ? `/api/ai/chat/${model.provider.toLowerCase()}` : undefined,
+      api:
+        chat?.model || model?.value
+          ? `/api/ai/chat/${
+              chat?.model
+                ? models
+                    .find((m) => m.value === chat.model)
+                    ?.provider.toLowerCase() || model?.provider.toLowerCase()
+                : model?.provider.toLowerCase()
+            }`
+          : undefined,
       body: {
         id: chat?.id,
         model: chat?.model || model?.value,
