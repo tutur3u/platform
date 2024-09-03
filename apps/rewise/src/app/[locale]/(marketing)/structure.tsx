@@ -26,7 +26,7 @@ import {
   Crown,
   Home,
   Menu,
-  MessageCircle,
+  MessagesSquare,
   NotebookPen,
   SquareStack,
   X,
@@ -258,11 +258,11 @@ export function Structure({
                   <AccordionItem value="item-1" className="border-none p-0">
                     <AccordionTrigger
                       showChevron={false}
-                      className="hover:bg-foreground/10 bg-foreground/5 mx-2 rounded-md px-3 py-2"
+                      className="hover:bg-foreground/10 bg-foreground/5 mx-2 mb-0 rounded-md px-3 py-2"
                     >
                       <div className="flex items-center gap-2">
-                        <MessageCircle className="h-5 w-5 flex-none" />
-                        <span className="line-clamp-1 text-start">
+                        <MessagesSquare className="h-5 w-5 flex-none" />
+                        <span className="line-clamp-1 text-start text-sm">
                           {t('ai_chat.chats')}
                         </span>
                       </div>
