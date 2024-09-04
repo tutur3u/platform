@@ -13,7 +13,7 @@ interface SearchParams {
 }
 
 const DEFAULT_PAGE = '1';
-const DEFAULT_PAGE_SIZE = '6';
+const DEFAULT_PAGE_SIZE = '24';
 
 export default async function UserAttendances({
   wsId,
