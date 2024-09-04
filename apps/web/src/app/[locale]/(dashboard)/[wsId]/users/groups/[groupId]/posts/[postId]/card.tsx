@@ -1,5 +1,6 @@
 'use client';
 
+import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
 import { cn } from '@/lib/utils';
 import type { GroupPostCheck } from '@/types/db';
@@ -19,6 +20,7 @@ interface Props {
   user: WorkspaceUser;
   wsId: string;
   post: UserGroupPost;
+  disableEmailSending: boolean;
 }
 
 export interface UserGroupPost {
@@ -33,7 +35,7 @@ export interface UserGroupPost {
   group_name?: string;
 }
 
-function UserCard({ user, wsId, post }: Props) {
+function UserCard({ user, wsId, post, disableEmailSending }: Props) {
   const router = useRouter();
 
   const [check, setCheck] = useState<Partial<GroupPostCheck>>();
@@ -41,6 +43,10 @@ function UserCard({ user, wsId, post }: Props) {
   const [saving, setSaving] = useState(false);
 
   const { sendEmail, loading, error, success } = useEmail();
+
+  useEffect(() => {
+    if (success) router.refresh();
+  }, [success]);
 
   const supabase = createClient();
 
@@ -198,6 +204,8 @@ function UserCard({ user, wsId, post }: Props) {
           <Button
             onClick={handleSendEmail}
             disabled={
+              disableEmailSending ||
+              success ||
               loading ||
               !user.email ||
               user.email.endsWith('@easy.com' || !isEmail(user.email)) ||
@@ -206,10 +214,22 @@ function UserCard({ user, wsId, post }: Props) {
               !check ||
               (check?.notes != null && check?.notes !== notes)
             }
-            variant="secondary"
+            variant={
+              loading || disableEmailSending || success
+                ? 'secondary'
+                : undefined
+            }
           >
             <Mail className="mr-2" />
-            <span className="opacity-70">Send email</span>
+            <span className="flex items-center justify-center opacity-70">
+              {loading ? (
+                <LoadingIndicator />
+              ) : disableEmailSending || success ? (
+                'Email sent'
+              ) : (
+                'Send email'
+              )}
+            </span>
             {user.email && (
               <>
                 <MoveRight className="mx-2 hidden h-4 w-4 opacity-70 md:inline-block" />
@@ -220,7 +240,6 @@ function UserCard({ user, wsId, post }: Props) {
             )}
           </Button>
           {error && <p>Error: {error}</p>}
-          {success && <p>Email sent successfully!</p>}
         </div>
 
         <div className="flex items-center gap-2">

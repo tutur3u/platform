@@ -64,7 +64,7 @@ export default async function HomeworkCheck({
           </div>
           <Separator className="bg-dynamic-purple/15 my-1" />
           <div className="text-xl font-semibold md:text-3xl">
-            {status.sent}
+            {status.sent?.length}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
@@ -114,6 +114,7 @@ export default async function HomeworkCheck({
               group_id: groupId,
               group_name: group.name,
             }}
+            disableEmailSending={status.sent?.includes(user.id)}
           />
         ))}
       </div>
@@ -166,8 +167,15 @@ async function getPostStatus(groupId: string, postId: string) {
     .eq('group_id', groupId)
     .eq('workspace_users.user_group_post_checks.post_id', postId);
 
+  const { data: sentEmails } = await supabase
+    .from('sent_emails')
+    .select('receiver_id', {
+      count: 'exact',
+    })
+    .eq('post_id', postId);
+
   return {
-    sent: 0,
+    sent: sentEmails?.map((email) => email.receiver_id) || [],
     checked: users?.filter((user) =>
       user?.user_group_post_checks?.find((check) => check?.is_completed)
     ).length,

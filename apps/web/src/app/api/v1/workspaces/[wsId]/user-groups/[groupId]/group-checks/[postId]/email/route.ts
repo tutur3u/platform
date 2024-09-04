@@ -83,6 +83,20 @@ const sendEmail = async ({
   postId: string;
 }) => {
   try {
+    const supabase = createClient();
+
+    const { data } = await supabase
+      .from('sent_emails')
+      .select('*')
+      .eq('receiver_id', receiverId)
+      .eq('post_id', postId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (data && data.length > 0) {
+      return false;
+    }
+
     const inlinedHtmlContent = juice(content);
 
     const params = {
@@ -100,8 +114,6 @@ const sendEmail = async ({
 
     const command = new SendEmailCommand(params);
     await sesClient.send(command);
-
-    const supabase = createClient();
 
     const {
       data: { user },
