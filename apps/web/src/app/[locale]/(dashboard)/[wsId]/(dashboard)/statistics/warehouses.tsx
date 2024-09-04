@@ -1,23 +1,13 @@
 import StatisticCard from '@/components/cards/StatisticCard';
-import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
+import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import { getTranslations } from 'next-intl/server';
 
-export default async function WarehousesStatistics({
-  wsId,
-  redirect = false,
-}: {
-  wsId: string;
-  redirect?: boolean;
-}) {
+export default async function WarehousesStatistics({ wsId }: { wsId: string }) {
   const supabase = createClient();
   const t = await getTranslations();
 
-  const enabled = await verifyHasSecrets(
-    wsId,
-    ['ENABLE_INVENTORY'],
-    redirect ? `/${wsId}` : undefined
-  );
+  const enabled = true;
 
   const { count: warehouses } = enabled
     ? await supabase

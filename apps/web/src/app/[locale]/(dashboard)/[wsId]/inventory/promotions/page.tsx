@@ -1,6 +1,5 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { promotionColumns } from '@/data/columns/promotions';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductPromotion } from '@/types/primitives/ProductPromotion';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -23,7 +22,6 @@ export default async function WorkspacePromotionsPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   const promotions = data.map(({ value, use_ratio, ...rest }) => ({

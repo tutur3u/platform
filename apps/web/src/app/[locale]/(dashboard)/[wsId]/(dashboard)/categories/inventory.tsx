@@ -1,4 +1,4 @@
-import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
+import { getPermissions } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 export default async function InventoryCategoryStatistics({
@@ -8,9 +8,7 @@ export default async function InventoryCategoryStatistics({
 }) {
   const t = await getTranslations();
 
-  const forceEnable = false;
-  const enabled =
-    forceEnable || (await verifyHasSecrets(wsId, ['ENABLE_INVENTORY']));
+  const enabled = true;
 
   const { permissions } = await getPermissions({
     wsId,

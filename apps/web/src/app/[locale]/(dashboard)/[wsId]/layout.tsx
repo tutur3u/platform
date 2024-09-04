@@ -51,7 +51,6 @@ export default async function Layout({
       'ENABLE_SLIDES',
       'ENABLE_DOCS',
       'ENABLE_DRIVE',
-      'ENABLE_INVENTORY',
       'ENABLE_HEALTHCARE',
     ],
     forceAdmin: true,
@@ -146,9 +145,7 @@ export default async function Layout({
       title: t('sidebar_tabs.inventory'),
       href: `/${wsId}/inventory`,
       icon: <Archive className="h-4 w-4" />,
-      disabled:
-        !verifySecret('ENABLE_INVENTORY', 'true', secrets) ||
-        !permissions.includes('manage_inventory'),
+      disabled: !permissions.includes('manage_inventory'),
     },
     {
       title: t('sidebar_tabs.healthcare'),

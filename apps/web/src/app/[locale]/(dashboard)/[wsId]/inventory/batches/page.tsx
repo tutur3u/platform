@@ -1,6 +1,5 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { batchColumns } from '@/data/columns/batches';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductBatch } from '@/types/primitives/ProductBatch';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -23,7 +22,6 @@ export default async function WorkspaceBatchesPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return (
