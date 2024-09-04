@@ -26,7 +26,7 @@ import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { format } from 'date-fns';
-import { BookPlus, Clock, Pencil, Trash2 } from 'lucide-react';
+import { BookPlus, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -197,17 +197,12 @@ export default function UserGroupPosts({
 
         {posts.length > 0 ? (
           posts.map((post) => (
-            <Link
-              href={
-                groupId
-                  ? `/${wsId}/users/groups/${groupId}/posts/${post.id}`
-                  : '#'
-              }
+            <div
               key={post.id}
               className={cn(
-                'hover:border-foreground hover:bg-foreground/10 flex flex-col gap-2 rounded border p-2 transition duration-300',
+                'hover:border-foreground hover:bg-foreground/5 flex flex-col gap-2 rounded border p-2 transition duration-300',
                 selectedPostId === post.id &&
-                  'border-foreground bg-foreground/10',
+                  'border-foreground bg-foreground/5',
                 groupId || 'cursor-pointer'
               )}
               onClick={() => post.id && onClick && onClick(post.id)}
@@ -231,6 +226,17 @@ export default function UserGroupPosts({
                 </div>
                 {groupId && (
                   <div className="flex gap-2">
+                    <Link
+                      href={
+                        groupId
+                          ? `/${wsId}/users/groups/${groupId}/posts/${post.id}`
+                          : '#'
+                      }
+                    >
+                      <Button size="sm" variant="outline">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
                     <Button
                       size="sm"
                       variant="outline"
@@ -276,7 +282,7 @@ export default function UserGroupPosts({
               {groupId && post.id && (
                 <PostEmailStatus groupId={groupId} postId={post.id} />
               )}
-            </Link>
+            </div>
           ))
         ) : (
           <div className="text-center text-sm opacity-50">
