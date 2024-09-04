@@ -504,6 +504,10 @@
   "user-group-data-table": {
     "id": "ID",
     "name": "Name",
+    "attendance_stats": "Attendance Stats",
+    "completed": "Completed",
+    "incomplete": "Incomplete",
+    "no_attendance_today": "No attendance today",
     "amount": "Amount",
     "locked": "Locked",
     "created_at": "Created At",

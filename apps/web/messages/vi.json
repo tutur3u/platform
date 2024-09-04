@@ -504,6 +504,10 @@
   "user-group-data-table": {
     "id": "Mã số",
     "name": "Tên",
+    "attendance_stats": "Thống kê điểm danh",
+    "completed": "Đã hoàn thành",
+    "incomplete": "Chưa hoàn thành",
+    "no_attendance_today": "Không cần điểm danh hôm nay",
     "amount": "Số thành viên",
     "locked": "Bị khoá",
     "created_at": "Tạo lúc",
