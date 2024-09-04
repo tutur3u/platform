@@ -3,6 +3,9 @@ import { basicColumns } from '@/data/columns/basic';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductUnit } from '@/types/primitives/ProductUnit';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -19,20 +22,32 @@ export default async function WorkspaceUnitsPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  const t = await getTranslations();
   await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <CustomDataTable
-      data={data}
-      columnGenerator={basicColumns}
-      namespace="basic-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        created_at: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-inventory-units.plural')}
+        singularTitle={t('ws-inventory-units.singular')}
+        description={t('ws-inventory-units.description')}
+        createTitle={t('ws-inventory-units.create')}
+        createDescription={t('ws-inventory-units.create_description')}
+        // form={<UnitForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={data}
+        columnGenerator={basicColumns}
+        namespace="basic-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
   );
 }
 

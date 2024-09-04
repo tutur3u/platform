@@ -1387,5 +1387,54 @@
     "create_description": "Create a new invoice",
     "edit": "Edit invoice",
     "edit_description": "Edit an existing invoice"
+  },
+  "ws-inventory-products": {
+    "plural": "Products",
+    "singular": "Product",
+    "description": "Products are used as individual type of item that you have in your inventory and could be used to link with invoices.",
+    "create": "Create product",
+    "create_description": "Create a new product"
+  },
+  "ws-inventory-categories": {
+    "plural": "Categories",
+    "singular": "Category",
+    "description": "Categories are used to group similar inventory products together.",
+    "create": "Create category",
+    "create_description": "Create a new category"
+  },
+  "ws-inventory-units": {
+    "plural": "Units",
+    "singular": "Unit",
+    "description": "Units are used to measure inventory products.",
+    "create": "Create unit",
+    "create_description": "Create a new unit"
+  },
+  "ws-inventory-suppliers": {
+    "plural": "Suppliers",
+    "singular": "Supplier",
+    "description": "Suppliers are used to link inventory products with their suppliers.",
+    "create": "Create supplier",
+    "create_description": "Create a new supplier"
+  },
+  "ws-inventory-warehouses": {
+    "plural": "Warehouses",
+    "singular": "Warehouse",
+    "description": "Warehouses are used to store inventory products.",
+    "create": "Create warehouse",
+    "create_description": "Create a new warehouse"
+  },
+  "ws-inventory-batches": {
+    "plural": "Batches",
+    "singular": "Batch",
+    "description": "Batches are used to manage product imports and exports.",
+    "create": "Create batch",
+    "create_description": "Create a new batch"
+  },
+  "ws-inventory-promotions": {
+    "plural": "Promotions",
+    "singular": "Promotion",
+    "description": "Promotions are used to manage product discounts and promotions.",
+    "create": "Create promotion",
+    "create_description": "Create a new promotion"
   }
 }

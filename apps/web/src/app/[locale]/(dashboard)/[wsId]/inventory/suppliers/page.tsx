@@ -3,6 +3,9 @@ import { basicColumns } from '@/data/columns/basic';
 import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductSupplier } from '@/types/primitives/ProductSupplier';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -19,20 +22,32 @@ export default async function WorkspaceSuppliersPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  const t = await getTranslations();
   await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <CustomDataTable
-      data={data}
-      columnGenerator={basicColumns}
-      namespace="basic-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        created_at: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-inventory-suppliers.plural')}
+        singularTitle={t('ws-inventory-suppliers.singular')}
+        description={t('ws-inventory-suppliers.description')}
+        createTitle={t('ws-inventory-suppliers.create')}
+        createDescription={t('ws-inventory-suppliers.create_description')}
+        // form={<SupplierForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={data}
+        columnGenerator={basicColumns}
+        namespace="basic-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
   );
 }
 
