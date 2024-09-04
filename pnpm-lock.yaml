@@ -45,8 +45,8 @@ importers:
         specifier: ^0.0.48
         version: 0.0.48(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.32
-        version: 0.0.32(zod@3.23.8)
+        specifier: ^0.0.33
+        version: 0.0.33(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.22
         version: 0.0.22(zod@3.23.8)
@@ -349,8 +349,8 @@ importers:
         specifier: ^0.0.48
         version: 0.0.48(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.32
-        version: 0.0.32(zod@3.23.8)
+        specifier: ^0.0.33
+        version: 0.0.33(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.22
         version: 0.0.22(zod@3.23.8)
@@ -653,8 +653,8 @@ importers:
         specifier: ^0.0.48
         version: 0.0.48(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.32
-        version: 0.0.32(zod@3.23.8)
+        specifier: ^0.0.33
+        version: 0.0.33(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.22
         version: 0.0.22(zod@3.23.8)
@@ -1218,8 +1218,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/azure@0.0.32':
-    resolution: {integrity: sha512-4wYFZhKvLoa4CnydQR2anv4NQeKfX0cab/YVk2xvd0bVC5qMWI1QCiJ8+T7M9S17VFOJ3HY03M8QMtr6DD5Zww==}
+  '@ai-sdk/azure@0.0.33':
+    resolution: {integrity: sha512-MHcBiRGtXftcFOJiQb6tBIWsVydHFoCQBmNuPVu0IKCFs5EP7mYUuI/Xu6Q88l+x5Jgpf+RRAwCg/dIk1I22VQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -8736,9 +8736,9 @@ snapshots:
       '@ai-sdk/provider-utils': 1.0.17(zod@3.23.8)
       zod: 3.23.8
 
-  '@ai-sdk/azure@0.0.32(zod@3.23.8)':
+  '@ai-sdk/azure@0.0.33(zod@3.23.8)':
     dependencies:
-      '@ai-sdk/openai': 0.0.54(zod@3.23.8)
+      '@ai-sdk/openai': 0.0.55(zod@3.23.8)
       '@ai-sdk/provider': 0.0.22
       '@ai-sdk/provider-utils': 1.0.17(zod@3.23.8)
       zod: 3.23.8
