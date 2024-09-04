@@ -1,5 +1,5 @@
+import { productColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { productColumns } from '@/data/columns/products';
 import { Product } from '@/types/primitives/Product';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -42,6 +42,8 @@ export default async function WorkspaceProductsPage({
         count={count}
         defaultVisibility={{
           id: false,
+          manufacturer: false,
+          usage: false,
           created_at: false,
         }}
       />

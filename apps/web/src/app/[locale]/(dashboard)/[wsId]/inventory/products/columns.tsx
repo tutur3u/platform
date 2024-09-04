@@ -113,8 +113,8 @@ export const productColumns = (
       </div>
     ),
   },
-  //   {
-  //     id: 'actions',
-  //     cell: ({ row }) => <SecretRowActions row={row} />,
-  //   },
+  // {
+  //   id: 'actions',
+  //   cell: ({ row }) => <ProductRowActions row={row} />,
+  // },
 ];

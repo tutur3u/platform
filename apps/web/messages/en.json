@@ -606,6 +606,9 @@
     "category": "Category",
     "description": "Description",
     "manufacturer": "Manufacturer",
+    "stock": "Stock",
+    "unit": "Unit",
+    "warehouse": "Warehouse",
     "usage": "Usage",
     "created_at": "Created at"
   },

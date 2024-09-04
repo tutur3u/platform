@@ -606,6 +606,9 @@
     "category": "Danh mục",
     "description": "Mô tả",
     "manufacturer": "Nhà sản xuất",
+    "stock": "Tồn kho",
+    "unit": "Đơn vị",
+    "warehouse": "Kho",
     "usage": "Cách dùng",
     "created_at": "Tạo lúc"
   },
