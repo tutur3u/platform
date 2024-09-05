@@ -165,8 +165,8 @@ importers:
         specifier: ^1.11.13
         version: 1.11.13
       framer-motion:
-        specifier: ^11.4.0
-        version: 11.4.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+        specifier: ^11.5.2
+        version: 11.5.2(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       juice:
         specifier: ^11.0.0
         version: 11.0.0
@@ -469,8 +469,8 @@ importers:
         specifier: ^1.11.13
         version: 1.11.13
       framer-motion:
-        specifier: ^11.4.0
-        version: 11.4.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+        specifier: ^11.5.2
+        version: 11.5.2(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       juice:
         specifier: ^11.0.0
         version: 11.0.0
@@ -773,8 +773,8 @@ importers:
         specifier: ^1.11.13
         version: 1.11.13
       framer-motion:
-        specifier: ^11.4.0
-        version: 11.4.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+        specifier: ^11.5.2
+        version: 11.5.2(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       html2canvas:
         specifier: ^1.4.1
         version: 1.4.1
@@ -5605,8 +5605,8 @@ packages:
   fraction.js@4.3.7:
     resolution: {integrity: sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==}
 
-  framer-motion@11.4.0:
-    resolution: {integrity: sha512-gHKUZr88OTMFubkIPkaIZxxX18PhQ6IbYxBoXUVdBLQQKZ3teH2BtxMVVRUsuzIfKs259MlL0elgAiZf82fiHg==}
+  framer-motion@11.5.2:
+    resolution: {integrity: sha512-dZLb7F+orjs+y2ggdl3tL5wuIDsHV1p28gloOSrDWH+nwmt0RTC7myq9FdfWZcQZ47qzv4RrqHEtHoeaBK57dg==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0
@@ -14221,7 +14221,7 @@ snapshots:
 
   fraction.js@4.3.7: {}
 
-  framer-motion@11.4.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827):
+  framer-motion@11.5.2(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827):
     dependencies:
       tslib: 2.7.0
     optionalDependencies:
