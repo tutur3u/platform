@@ -1,6 +1,5 @@
 'use client';
 
-import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
 import { createClient } from '@/utils/supabase/client';
@@ -53,6 +52,7 @@ import {
 } from '@repo/ui/components/ui/select';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 import { CheckIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
@@ -71,13 +71,19 @@ export default function WorkspaceSelect({
   hideLeading?: boolean;
 }) {
   const t = useTranslations();
-
-  const [user, setUser] = useState<User | undefined>();
-  const [workspaces, setWorkspaces] = useState<Workspace[] | undefined>();
-
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+
+  const wsId = params.wsId as string | undefined;
+
+  const workspacesQuery = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: fetchWorkspaces,
+    enabled: !!wsId,
+  });
+
+  const workspaces = workspacesQuery.data;
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -124,17 +130,17 @@ export default function WorkspaceSelect({
   }
 
   const groups = [
-    {
-      id: 'personal',
-      label: t('common.personal_account'),
-      teams: [
-        {
-          label:
-            user?.display_name || user?.handle || user?.email || 'Personal',
-          value: user?.id,
-        },
-      ],
-    },
+    // {
+    //   id: 'personal',
+    //   label: t('common.personal_account'),
+    //   teams: [
+    //     {
+    //       label:
+    //         user?.display_name || user?.handle || user?.email || 'Personal',
+    //       value: user?.id,
+    //     },
+    //   ],
+    // },
     {
       id: 'workspaces',
       label: t('common.workspaces'),
@@ -159,54 +165,7 @@ export default function WorkspaceSelect({
     }
   };
 
-  const wsId = params.wsId as string | undefined;
   const workspace = workspaces?.find((ws) => ws.id === wsId);
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    async function fetchData() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select(
-          'id, display_name, avatar_url, handle, created_at, user_private_details(email, new_email, birthday)'
-        )
-        .eq('id', user.id)
-        .single();
-
-      if (userError) return;
-
-      const { user_private_details, ...userRest } = userData;
-      setUser({ ...userRest, ...user_private_details } as User);
-
-      const { data: wsData, error: wsError } = await supabase
-        .from('workspaces')
-        .select(
-          'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
-        )
-        .eq('workspace_members.user_id', user.id);
-
-      if (wsError) return;
-
-      setWorkspaces(wsData as Workspace[]);
-    }
-
-    supabase.auth.onAuthStateChange((event) => {
-      if (
-        event === 'INITIAL_SESSION' ||
-        event === 'TOKEN_REFRESHED' ||
-        event === 'SIGNED_IN' ||
-        event === 'SIGNED_OUT'
-      )
-        fetchData();
-    });
-  }, [wsId]);
 
   // Toggle the menu when ⌘K is pressed
   useEffect(() => {
@@ -593,4 +552,24 @@ export default function WorkspaceSelect({
       </Popover> */}
     </>
   );
+}
+
+async function fetchWorkspaces() {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data: workspaces, error: error } = await supabase
+    .from('workspaces')
+    .select(
+      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+    )
+    .eq('workspace_members.user_id', user.id);
+
+  if (error) return;
+  return workspaces as Workspace[];
 }
