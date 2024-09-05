@@ -1443,5 +1443,8 @@
     "description": "Promotions are used to manage product discounts and promotions.",
     "create": "Create promotion",
     "create_description": "Create a new promotion"
+  },
+  "ws_post_details": {
+    "check_all": "Check all"
   }
 }

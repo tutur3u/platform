@@ -1,10 +1,12 @@
 import UserCard from './card';
+import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Check, CircleHelp, Send, X } from 'lucide-react';
+import { Check, CheckCheck, CircleHelp, Send, X } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -29,7 +31,7 @@ export default async function HomeworkCheck({
   params: { wsId, groupId, postId },
   searchParams,
 }: Props) {
-  // const t = await getTranslations();
+  const t = await getTranslations();
 
   const post = await getPostData(postId);
   const group = await getGroupData(wsId, groupId);
@@ -53,7 +55,21 @@ export default async function HomeworkCheck({
           </Link>
         }
         description={`${post.title}\n\n${post.content}`.trim()}
+        secondaryTriggerTitle={`${t('ws_post_details.check_all')}`}
+        secondaryTriggerIcon={<CheckCheck className="mr-1 h-5 w-5" />}
+        secondaryTitle={t('ws_post_details.check_all')}
+        form={
+          <CheckAll
+            wsId={wsId}
+            groupId={groupId}
+            postId={postId}
+            users={users}
+            completed={status.checked === status.count}
+          />
+        }
+        disableSecondaryTrigger={status.checked === status.count}
         action={<EmailList users={users} />}
+        showSecondaryTrigger
       />
       <Separator className="my-4" />
       <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
@@ -106,7 +122,7 @@ export default async function HomeworkCheck({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {users.map((user) => (
           <UserCard
-            key={user.id}
+            key={`post-${postId}-${user.id}-${status.checked === status.count}`}
             user={user}
             wsId={wsId}
             post={{

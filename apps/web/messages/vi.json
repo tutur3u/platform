@@ -1443,5 +1443,8 @@
     "description": "Khuyến mãi được sử dụng để quản lý các sản phẩm khuyến mãi.",
     "create": "Tạo khuyến mãi",
     "create_description": "Tạo một khuyến mãi mới"
+  },
+  "ws_post_details": {
+    "check_all": "Đã kiểm tra tất cả"
   }
 }
