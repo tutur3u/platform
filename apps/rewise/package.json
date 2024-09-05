@@ -57,7 +57,7 @@
     "@vercel/speed-insights": "^1.0.12",
     "@vercel/toolbar": "^0.1.18",
     "ai": "^3.3.27",
-    "babel-plugin-react-compiler": "0.0.0-experimental-4e0eccf-20240903",
+    "babel-plugin-react-compiler": "0.0.0-experimental-7449567-20240904",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.13",
     "framer-motion": "^11.5.4",
