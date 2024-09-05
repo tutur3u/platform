@@ -1,10 +1,11 @@
 import StorageObjectsTable from './table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { StorageObject } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
 import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: {
@@ -22,6 +23,12 @@ export default async function WorkspaceStorageObjectsPage({
   searchParams,
 }: Props) {
   const t = await getTranslations('ws-storage-objects');
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('manage_drive')) redirect(`/${wsId}`);
 
   await verifyHasSecrets(wsId, ['ENABLE_DRIVE'], `/${wsId}`);
   const { data, count } = await getData(wsId, searchParams);

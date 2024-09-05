@@ -8,6 +8,7 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: {
@@ -24,11 +25,12 @@ export default async function WorkspaceApiKeysPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['manage_workspace_security'],
-    redirectTo: `/${wsId}/settings`,
   });
+
+  if (withoutPermission('manage_workspace_security'))
+    redirect(`/${wsId}/settings`);
 
   const { data: apiKeys, count } = await getApiKeys(wsId, searchParams);
   const t = await getTranslations('ws-api-keys');

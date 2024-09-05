@@ -201,12 +201,10 @@ export function verifySecret(
 
 export async function getPermissions({
   wsId,
-  requiredPermissions,
   redirectTo,
   enableNotFound,
 }: {
   wsId: string;
-  requiredPermissions: PermissionId[];
   redirectTo?: string;
   enableNotFound?: boolean;
 }) {
@@ -218,33 +216,11 @@ export async function getPermissions({
 
   if (!user) throw new Error('User not found');
 
-  if (
-    !requiredPermissions.every((p) =>
-      rolePermissions({ wsId: ROOT_WORKSPACE_ID, user }).some(
-        (rp) => rp.id === p
-      )
-    )
-  ) {
-    throw new Error(
-      `Invalid permissions provided: ${requiredPermissions
-        .filter(
-          (p) =>
-            !rolePermissions({ wsId: ROOT_WORKSPACE_ID, user }).some(
-              (rp) => rp.id === p
-            )
-        )
-        .join(', ')}`
-    );
-  }
-
-  if (!user) throw new Error('User not found');
-
   const permissionsQuery = supabase
     .from('workspace_role_permissions')
     .select('permission, role_id')
     .eq('ws_id', wsId)
-    .eq('enabled', true)
-    .in('permission', requiredPermissions);
+    .eq('enabled', true);
 
   const workspaceQuery = supabase
     .from('workspaces')
@@ -256,8 +232,7 @@ export async function getPermissions({
     .from('workspace_default_permissions')
     .select('permission')
     .eq('ws_id', wsId)
-    .eq('enabled', true)
-    .in('permission', requiredPermissions);
+    .eq('enabled', true);
 
   const [permissionsRes, workspaceRes, defaultRes] = await Promise.all([
     permissionsQuery,
@@ -280,7 +255,6 @@ export async function getPermissions({
   // if (DEV_MODE) {
   //   console.log('--------------------');
   //   console.log('Is creator', isCreator);
-  //   console.log('Required permissions', requiredPermissions);
   //   console.log('Workspace permissions', permissionsData);
   //   console.log('Default permissions', defaultData);
   //   console.log('Has permissions', hasPermissions);

@@ -11,6 +11,7 @@ import { User } from '@/types/primitives/User';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: {
@@ -26,11 +27,12 @@ export default async function WorkspaceMembersPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['manage_workspace_members'],
-    redirectTo: `/${wsId}/settings`,
   });
+
+  if (withoutPermission('manage_workspace_members'))
+    redirect(`/${wsId}/settings`);
 
   const ws = await getWorkspace(wsId);
   const user = await getCurrentUser();

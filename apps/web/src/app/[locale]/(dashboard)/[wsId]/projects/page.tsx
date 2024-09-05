@@ -1,12 +1,14 @@
 import ProjectEditDialog from './_components/project-edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { projectColumns } from '@/data/columns/projects';
+import { getPermissions } from '@/lib/workspace-helper';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: {
@@ -23,6 +25,12 @@ export default async function WorkspaceProjectsPage({
   params: { wsId },
   searchParams,
 }: Props) {
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
+
   const { data: projects, count } = await getProjects(wsId, searchParams);
   const t = await getTranslations('ws-projects');
 

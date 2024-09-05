@@ -26,9 +26,8 @@ interface Props {
 export default async function WorkspaceSettingsPage({
   params: { wsId },
 }: Props) {
-  const { permissions } = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['manage_workspace_members'],
   });
 
   const t = await getTranslations();
@@ -63,7 +62,7 @@ export default async function WorkspaceSettingsPage({
         pluralTitle={t('common.settings')}
         description={t('ws-settings.description')}
         action={
-          permissions.length > 0 ? (
+          containsPermission('manage_workspace_members') ? (
             <Link href={`/${wsId}/members`}>
               <Button className="cursor-pointer">
                 <UserPlus className="mr-2 h-4 w-4" />

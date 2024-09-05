@@ -58,17 +58,6 @@ export default async function Layout({
 
   const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: [
-      'ai_chat',
-      'ai_lab',
-      'manage_calendar',
-      'manage_projects',
-      'manage_documents',
-      'manage_drive',
-      'manage_users',
-      'manage_inventory',
-      'manage_finance',
-    ],
   });
 
   const navLinks: NavLink[] = [
