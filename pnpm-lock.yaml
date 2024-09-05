@@ -154,7 +154,7 @@ importers:
         version: 0.1.18(next@15.0.0-canary.140(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240903)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.3(@types/node@22.5.3)(terser@5.31.6))
       ai:
         specifier: ^3.3.26
-        version: 3.3.26(openai@4.57.2(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
+        version: 3.3.26(openai@4.57.3(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
       babel-plugin-react-compiler:
         specifier: 0.0.0-experimental-4e0eccf-20240903
         version: 0.0.0-experimental-4e0eccf-20240903
@@ -192,8 +192,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       openai:
-        specifier: ^4.57.2
-        version: 4.57.2(zod@3.23.8)
+        specifier: ^4.57.3
+        version: 4.57.3(zod@3.23.8)
       pptxgenjs:
         specifier: ^3.12.0
         version: 3.12.0
@@ -458,7 +458,7 @@ importers:
         version: 0.1.18(next@15.0.0-canary.140(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240903)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.3(@types/node@22.5.3)(terser@5.31.6))
       ai:
         specifier: ^3.3.26
-        version: 3.3.26(openai@4.57.2(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
+        version: 3.3.26(openai@4.57.3(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
       babel-plugin-react-compiler:
         specifier: 0.0.0-experimental-4e0eccf-20240903
         version: 0.0.0-experimental-4e0eccf-20240903
@@ -496,8 +496,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       openai:
-        specifier: ^4.57.2
-        version: 4.57.2(zod@3.23.8)
+        specifier: ^4.57.3
+        version: 4.57.3(zod@3.23.8)
       pptxgenjs:
         specifier: ^3.12.0
         version: 3.12.0
@@ -762,7 +762,7 @@ importers:
         version: 0.1.18(next@15.0.0-canary.140(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-4e0eccf-20240903)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)(vite@5.4.3(@types/node@22.5.3)(terser@5.31.6))
       ai:
         specifier: ^3.3.26
-        version: 3.3.26(openai@4.57.2(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
+        version: 3.3.26(openai@4.57.3(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8)
       babel-plugin-react-compiler:
         specifier: 0.0.0-experimental-4e0eccf-20240903
         version: 0.0.0-experimental-4e0eccf-20240903
@@ -803,8 +803,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       openai:
-        specifier: ^4.57.2
-        version: 4.57.2(zod@3.23.8)
+        specifier: ^4.57.3
+        version: 4.57.3(zod@3.23.8)
       pptxgenjs:
         specifier: ^3.12.0
         version: 3.12.0
@@ -6893,8 +6893,8 @@ packages:
     resolution: {integrity: sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ==}
     engines: {node: '>=18'}
 
-  openai@4.57.2:
-    resolution: {integrity: sha512-IgIxNjo9tfgnfx6gmwNMg3tdF9giK/2lbwG5DY7zs4TP9Gz+h6h2hBOMoalLPFUVOO5HLOgMI/PFV5VDAUvvMg==}
+  openai@4.57.3:
+    resolution: {integrity: sha512-mTz5/SmulkkeSpqbSr6WNLRU6krkyhnbfRUC8XfaXbj1T6xUorKEELjZvbRSzI714JLOk1MeFkqYS9H4WHhqDQ==}
     hasBin: true
     peerDependencies:
       zod: ^3.23.8
@@ -12734,7 +12734,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.3.26(openai@4.57.2(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8):
+  ai@3.3.26(openai@4.57.3(zod@3.23.8))(react@19.0.0-rc-7771d3a7-20240827)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.5.4))(zod@3.23.8):
     dependencies:
       '@ai-sdk/provider': 0.0.22
       '@ai-sdk/provider-utils': 1.0.17(zod@3.23.8)
@@ -12751,7 +12751,7 @@ snapshots:
       secure-json-parse: 2.7.0
       zod-to-json-schema: 3.23.2(zod@3.23.8)
     optionalDependencies:
-      openai: 4.57.2(zod@3.23.8)
+      openai: 4.57.3(zod@3.23.8)
       react: 19.0.0-rc-7771d3a7-20240827
       sswr: 2.1.0(svelte@4.2.19)
       svelte: 4.2.19
@@ -15848,7 +15848,7 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  openai@4.57.2(zod@3.23.8):
+  openai@4.57.3(zod@3.23.8):
     dependencies:
       '@types/node': 18.19.49
       '@types/node-fetch': 2.6.11
