@@ -11,7 +11,6 @@ This monorepo contains multiple applications and services that make up the Tutur
 
 - `apps/web`: Main application (tuturuuu.com)
 - `apps/rewise`: AI-powered chatbot assistant (similar to claude.ai and chatgpt.com)
-- `apps/rise`: Upcoming product
 - `apps/docs`: Documentation website powered by Mintlify
 
 ## Features
