@@ -1,3 +1,4 @@
+import { DEV_MODE } from '../../../rewise/src/constants/common';
 import { permissions as rolePermissions } from './permissions';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { PermissionId } from '@/types/db';
@@ -268,7 +269,7 @@ export async function getPermissions({
   const { data: workspaceData, error: workspaceError } = workspaceRes;
   const { data: defaultData, error: defaultError } = defaultRes;
 
-  if (!workspaceData) throw new Error('Workspace not found');
+  if (!workspaceData) notFound();
   if (permissionsError) throw permissionsError;
   if (workspaceError) throw workspaceError;
   if (defaultError) throw defaultError;
@@ -276,22 +277,24 @@ export async function getPermissions({
   const hasPermissions = permissionsData.length > 0 || defaultData.length > 0;
   const isCreator = workspaceData.creator_id === user.id;
 
-  // console.log();
-  // console.log('Is creator', isCreator);
-  // console.log('Required permissions', requiredPermissions);
-  // console.log('Workspace permissions', permissionsData);
-  // console.log('Default permissions', defaultData);
-  // console.log('Has permissions', hasPermissions);
-  // console.log();
+  // if (DEV_MODE) {
+  //   console.log('--------------------');
+  //   console.log('Is creator', isCreator);
+  //   console.log('Required permissions', requiredPermissions);
+  //   console.log('Workspace permissions', permissionsData);
+  //   console.log('Default permissions', defaultData);
+  //   console.log('Has permissions', hasPermissions);
+  //   console.log('--------------------');
+  // }
 
   if (!isCreator && !hasPermissions) {
     if (redirectTo) {
-      // console.log('Redirecting to', redirectTo);
+      if (DEV_MODE) console.log('Redirecting to', redirectTo);
       redirect(redirectTo);
     }
 
     if (enableNotFound) {
-      // console.log('Not found');
+      if (DEV_MODE) console.log('Not found');
       notFound();
     }
   }
