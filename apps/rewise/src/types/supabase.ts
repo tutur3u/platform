@@ -1763,6 +1763,24 @@ export type Database = {
           },
         ];
       };
+      quizzes: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string | null;
+        };
+        Relationships: [];
+      };
       sent_emails: {
         Row: {
           content: string;
