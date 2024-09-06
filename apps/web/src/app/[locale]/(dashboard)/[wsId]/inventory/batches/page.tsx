@@ -1,8 +1,10 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { batchColumns } from '@/data/columns/batches';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductBatch } from '@/types/primitives/ProductBatch';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -19,20 +21,31 @@ export default async function WorkspaceBatchesPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
+  const t = await getTranslations();
   const { data, count } = await getData(wsId, searchParams);
 
   return (
-    <CustomDataTable
-      data={data}
-      columnGenerator={batchColumns}
-      namespace="batch-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        created_at: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-inventory-batches.plural')}
+        singularTitle={t('ws-inventory-batches.singular')}
+        description={t('ws-inventory-batches.description')}
+        createTitle={t('ws-inventory-batches.create')}
+        createDescription={t('ws-inventory-batches.create_description')}
+        // form={<BatchForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={data}
+        columnGenerator={batchColumns}
+        namespace="batch-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
   );
 }
 

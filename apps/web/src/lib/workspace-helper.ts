@@ -1,3 +1,4 @@
+import { DEV_MODE } from '../../../rewise/src/constants/common';
 import { permissions as rolePermissions } from './permissions';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { PermissionId } from '@/types/db';
@@ -200,12 +201,10 @@ export function verifySecret(
 
 export async function getPermissions({
   wsId,
-  requiredPermissions,
   redirectTo,
   enableNotFound,
 }: {
   wsId: string;
-  requiredPermissions: PermissionId[];
   redirectTo?: string;
   enableNotFound?: boolean;
 }) {
@@ -217,33 +216,11 @@ export async function getPermissions({
 
   if (!user) throw new Error('User not found');
 
-  if (
-    !requiredPermissions.every((p) =>
-      rolePermissions({ wsId: ROOT_WORKSPACE_ID, user }).some(
-        (rp) => rp.id === p
-      )
-    )
-  ) {
-    throw new Error(
-      `Invalid permissions provided: ${requiredPermissions
-        .filter(
-          (p) =>
-            !rolePermissions({ wsId: ROOT_WORKSPACE_ID, user }).some(
-              (rp) => rp.id === p
-            )
-        )
-        .join(', ')}`
-    );
-  }
-
-  if (!user) throw new Error('User not found');
-
   const permissionsQuery = supabase
     .from('workspace_role_permissions')
     .select('permission, role_id')
     .eq('ws_id', wsId)
-    .eq('enabled', true)
-    .in('permission', requiredPermissions);
+    .eq('enabled', true);
 
   const workspaceQuery = supabase
     .from('workspaces')
@@ -255,8 +232,7 @@ export async function getPermissions({
     .from('workspace_default_permissions')
     .select('permission')
     .eq('ws_id', wsId)
-    .eq('enabled', true)
-    .in('permission', requiredPermissions);
+    .eq('enabled', true);
 
   const [permissionsRes, workspaceRes, defaultRes] = await Promise.all([
     permissionsQuery,
@@ -268,7 +244,7 @@ export async function getPermissions({
   const { data: workspaceData, error: workspaceError } = workspaceRes;
   const { data: defaultData, error: defaultError } = defaultRes;
 
-  if (!workspaceData) throw new Error('Workspace not found');
+  if (!workspaceData) notFound();
   if (permissionsError) throw permissionsError;
   if (workspaceError) throw workspaceError;
   if (defaultError) throw defaultError;
@@ -276,32 +252,38 @@ export async function getPermissions({
   const hasPermissions = permissionsData.length > 0 || defaultData.length > 0;
   const isCreator = workspaceData.creator_id === user.id;
 
-  // console.log();
-  // console.log('Is creator', isCreator);
-  // console.log('Required permissions', requiredPermissions);
-  // console.log('Workspace permissions', permissionsData);
-  // console.log('Default permissions', defaultData);
-  // console.log('Has permissions', hasPermissions);
-  // console.log();
+  // if (DEV_MODE) {
+  //   console.log('--------------------');
+  //   console.log('Is creator', isCreator);
+  //   console.log('Workspace permissions', permissionsData);
+  //   console.log('Default permissions', defaultData);
+  //   console.log('Has permissions', hasPermissions);
+  //   console.log('--------------------');
+  // }
 
   if (!isCreator && !hasPermissions) {
     if (redirectTo) {
-      // console.log('Redirecting to', redirectTo);
+      if (DEV_MODE) console.log('Redirecting to', redirectTo);
       redirect(redirectTo);
     }
 
     if (enableNotFound) {
-      // console.log('Not found');
+      if (DEV_MODE) console.log('Not found');
       notFound();
     }
   }
 
-  const permissions =
-    workspaceData.creator_id === user.id
-      ? rolePermissions({ wsId, user }).map(({ id }) => id)
-      : [...permissionsData, ...defaultData]
-          .map(({ permission }) => permission)
-          .filter((value, index, self) => self.indexOf(value) === index);
+  const permissions = isCreator
+    ? rolePermissions({ wsId, user }).map(({ id }) => id)
+    : [...permissionsData, ...defaultData]
+        .map(({ permission }) => permission)
+        .filter((value, index, self) => self.indexOf(value) === index);
 
-  return { permissions };
+  const containsPermission = (permission: PermissionId) =>
+    permissions.includes(permission);
+
+  const withoutPermission = (permission: PermissionId) =>
+    !containsPermission(permission);
+
+  return { permissions, containsPermission, withoutPermission };
 }

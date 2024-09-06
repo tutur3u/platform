@@ -1,9 +1,10 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: {
@@ -14,6 +15,12 @@ interface Props {
 export default async function DocumentsPage({ params: { wsId } }: Props) {
   const ws = await getWorkspace(wsId);
   const documents = await getDocuments(wsId);
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('manage_documents')) redirect(`/${wsId}`);
 
   const t = await getTranslations('documents');
 

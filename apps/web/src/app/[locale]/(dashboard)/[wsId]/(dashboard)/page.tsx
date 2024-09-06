@@ -32,7 +32,7 @@ import {
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createAdminClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -49,6 +49,11 @@ interface Props {
 export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
   const t = await getTranslations();
   const workspace = await getWorkspace(wsId);
+
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
   if (!workspace) notFound();
 
   const { data: dailyData } = await getDailyData(wsId);
@@ -175,18 +180,21 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         </Suspense>
       </div>
 
-      {wsId === ROOT_WORKSPACE_ID && (
-        <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
-          <div className="col-span-full mb-32">
-            <Separator className="my-4" />
-            <HourlyTotalChart data={hourlyData} />
-            <Separator className="my-4" />
-            <DailyTotalChart data={dailyData} />
-            <Separator className="my-4" />
-            <MonthlyTotalChart data={monthlyData} />
-          </div>
-        </Suspense>
-      )}
+      {containsPermission('manage_workspace_roles') &&
+        wsId === ROOT_WORKSPACE_ID && (
+          <Suspense
+            fallback={<LoadingStatisticCard className="col-span-full" />}
+          >
+            <div className="col-span-full mb-32">
+              <Separator className="my-4" />
+              <HourlyTotalChart data={hourlyData} />
+              <Separator className="my-4" />
+              <DailyTotalChart data={dailyData} />
+              <Separator className="my-4" />
+              <MonthlyTotalChart data={monthlyData} />
+            </div>
+          </Suspense>
+        )}
     </>
   );
 }

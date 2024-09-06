@@ -11,7 +11,6 @@ import {
   AvatarImage,
 } from '@repo/ui/components/ui/avatar';
 import { Button } from '@repo/ui/components/ui/button';
-import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
@@ -30,7 +29,6 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { User as UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -227,7 +225,7 @@ export function MemberSettingsButton({
                 (currentUser.role === 'ADMIN' && user.role === 'OWNER')
               }
             />
-            <Separator />
+            {/* <Separator />
             <FormField
               control={form.control}
               name="accessLevel"
@@ -270,7 +268,7 @@ export function MemberSettingsButton({
                 </FormItem>
               )}
               disabled={currentUser.role === 'MEMBER'}
-            />
+            /> */}
             {(currentUser.role === 'ADMIN' && user.role === 'OWNER') ||
               ((currentUser.role !== 'MEMBER' ||
                 currentUser.id === user.id) && (

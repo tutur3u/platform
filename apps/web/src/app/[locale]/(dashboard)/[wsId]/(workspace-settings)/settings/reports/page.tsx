@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/server';
 import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
 interface SearchParams {
@@ -24,11 +25,13 @@ export default async function WorkspaceReportsSettingsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['manage_user_report_templates'],
     redirectTo: `/${wsId}/settings`,
   });
+
+  if (withoutPermission('manage_user_report_templates'))
+    redirect(`/${wsId}/settings`);
 
   const { data } = await getConfigs(wsId, searchParams);
   const locale = await getLocale();

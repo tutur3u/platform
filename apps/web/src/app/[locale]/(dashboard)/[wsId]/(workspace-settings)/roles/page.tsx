@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: {
@@ -26,11 +27,12 @@ export default async function WorkspaceRolesPage({
 }: Props) {
   const supabase = createClient();
 
-  await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['manage_workspace_roles'],
-    redirectTo: `/${wsId}/settings`,
   });
+
+  if (withoutPermission('manage_workspace_roles'))
+    redirect(`/${wsId}/settings`);
 
   const {
     data: rawData,

@@ -1,8 +1,10 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { promotionColumns } from '@/data/columns/promotions';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductPromotion } from '@/types/primitives/ProductPromotion';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: {
@@ -19,7 +21,7 @@ export default async function WorkspacePromotionsPage({
   params: { wsId },
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
+  const t = await getTranslations();
   const { data, count } = await getData(wsId, searchParams);
 
   const promotions = data.map(({ value, use_ratio, ...rest }) => ({
@@ -34,16 +36,27 @@ export default async function WorkspacePromotionsPage({
   }));
 
   return (
-    <CustomDataTable
-      data={promotions}
-      columnGenerator={promotionColumns}
-      namespace="promotion-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        created_at: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-inventory-promotions.plural')}
+        singularTitle={t('ws-inventory-promotions.singular')}
+        description={t('ws-inventory-promotions.description')}
+        createTitle={t('ws-inventory-promotions.create')}
+        createDescription={t('ws-inventory-promotions.create_description')}
+        // form={<PromotionForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={promotions}
+        columnGenerator={promotionColumns}
+        namespace="promotion-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
   );
 }
 

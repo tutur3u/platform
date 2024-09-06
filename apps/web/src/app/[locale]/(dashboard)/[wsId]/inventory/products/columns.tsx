@@ -1,17 +1,14 @@
 'use client';
 
-import { UserGroupRowActions } from './row-actions';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { Product } from '@/types/primitives/Product';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from 'lucide-react';
 import moment from 'moment';
-import Link from 'next/link';
 
-export const getUserGroupColumns = (
+export const productColumns = (
   t: any,
   namespace: string
-): ColumnDef<UserGroup>[] => [
+): ColumnDef<Product>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -53,49 +50,51 @@ export const getUserGroupColumns = (
         title={t(`${namespace}.name`)}
       />
     ),
-    cell: ({ row }) => (
-      <Link href={row.original.href || '#'} className="min-w-[8rem]">
-        {row.getValue('name') || '-'}
-      </Link>
-    ),
+    cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
-  // {
-  //   accessorKey: 'attendance_stats',
-  //   header: ({ column }) => (
-  //     <DataTableColumnHeader
-  //       t={t}
-  //       column={column}
-  //       title={t(`${namespace}.attendance_stats`)}
-  //     />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <GroupAttendanceStats
-  //       groupId={row.original.id}
-  //       count={row.original.amount || 0}
-  //     />
-  //   ),
-  // },
   {
-    accessorKey: 'amount',
+    accessorKey: 'category',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.amount`)}
+        title={t(`${namespace}.category`)}
       />
     ),
-    cell: ({ row }) => <div>{row.getValue('amount')}</div>,
+    cell: ({ row }) => <div>{row.getValue('category') || '-'}</div>,
   },
   {
-    accessorKey: 'locked',
+    accessorKey: 'description',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.locked`)}
+        title={t(`${namespace}.description`)}
       />
     ),
-    cell: ({ row }) => <div>{row.getValue('locked') ? <Check /> : <X />}</div>,
+    cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
+  },
+  {
+    accessorKey: 'manufacturer',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.manufacturer`)}
+      />
+    ),
+    cell: ({ row }) => <div>{row.getValue('manufacturer') || '-'}</div>,
+  },
+  {
+    accessorKey: 'usage',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.usage`)}
+      />
+    ),
+    cell: ({ row }) => <div>{row.getValue('usage') || '-'}</div>,
   },
   {
     accessorKey: 'created_at',
@@ -114,8 +113,8 @@ export const getUserGroupColumns = (
       </div>
     ),
   },
-  {
-    id: 'actions',
-    cell: ({ row }) => <UserGroupRowActions row={row} />,
-  },
+  // {
+  //   id: 'actions',
+  //   cell: ({ row }) => <ProductRowActions row={row} />,
+  // },
 ];

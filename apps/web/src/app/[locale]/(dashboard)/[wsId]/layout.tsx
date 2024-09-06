@@ -51,25 +51,13 @@ export default async function Layout({
       'ENABLE_SLIDES',
       'ENABLE_DOCS',
       'ENABLE_DRIVE',
-      'ENABLE_INVENTORY',
       'ENABLE_HEALTHCARE',
     ],
     forceAdmin: true,
   });
 
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: [
-      'ai_chat',
-      'ai_lab',
-      'manage_calendar',
-      'manage_projects',
-      'manage_documents',
-      'manage_drive',
-      'manage_users',
-      'manage_inventory',
-      'manage_finance',
-    ],
   });
 
   const navLinks: NavLink[] = [
@@ -80,7 +68,7 @@ export default async function Layout({
       forceRefresh: true,
       disabled:
         !verifySecret('ENABLE_CHAT', 'true', secrets) ||
-        !permissions.includes('ai_chat'),
+        withoutPermission('ai_chat'),
     },
     {
       title: t('common.dashboard'),
@@ -94,7 +82,7 @@ export default async function Layout({
       icon: <Sparkles className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_AI', 'true', secrets) ||
-        !permissions.includes('ai_lab'),
+        withoutPermission('ai_lab'),
     },
     {
       title: t('sidebar_tabs.slides'),
@@ -111,13 +99,13 @@ export default async function Layout({
       title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
       icon: <Calendar className="h-4 w-4" />,
-      disabled: !permissions.includes('manage_calendar'),
+      disabled: withoutPermission('manage_calendar'),
     },
     {
       title: t('sidebar_tabs.projects'),
       href: `/${wsId}/projects`,
       icon: <CheckCheck className="h-4 w-4" />,
-      disabled: !permissions.includes('manage_projects'),
+      disabled: withoutPermission('manage_projects'),
     },
     {
       title: t('sidebar_tabs.documents'),
@@ -125,7 +113,7 @@ export default async function Layout({
       icon: <NotebookPen className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_DOCS', 'true', secrets) ||
-        !permissions.includes('manage_documents'),
+        withoutPermission('manage_documents'),
     },
     {
       title: t('sidebar_tabs.drive'),
@@ -133,22 +121,20 @@ export default async function Layout({
       icon: <HardDrive className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_DRIVE', 'true', secrets) ||
-        !permissions.includes('manage_drive'),
+        withoutPermission('manage_drive'),
     },
     {
       title: t('sidebar_tabs.users'),
       aliases: [`/${wsId}/users`],
       href: `/${wsId}/users/database`,
       icon: <Users className="h-4 w-4" />,
-      disabled: !permissions.includes('manage_users'),
+      disabled: withoutPermission('manage_users'),
     },
     {
       title: t('sidebar_tabs.inventory'),
       href: `/${wsId}/inventory`,
       icon: <Archive className="h-4 w-4" />,
-      disabled:
-        !verifySecret('ENABLE_INVENTORY', 'true', secrets) ||
-        !permissions.includes('manage_inventory'),
+      disabled: withoutPermission('manage_inventory'),
     },
     {
       title: t('sidebar_tabs.healthcare'),
@@ -161,7 +147,7 @@ export default async function Layout({
       aliases: [`/${wsId}/finance`],
       href: `/${wsId}/finance/transactions`,
       icon: <Banknote className="h-4 w-4" />,
-      disabled: !permissions.includes('manage_finance'),
+      disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('common.settings'),

@@ -43,6 +43,9 @@ export default async function WorkspaceUsersPage({
         count={count}
         defaultVisibility={{
           id: false,
+          sender: false,
+          source_name: false,
+          source_email: false,
         }}
       />
     </>
@@ -74,7 +77,9 @@ async function getData(
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data, error, count } = await queryBuilder;
+  const { data, error, count } = await queryBuilder.order('created_at', {
+    ascending: false,
+  });
 
   if (error) {
     if (!retry) throw error;

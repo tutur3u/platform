@@ -15,18 +15,8 @@ export default async function Layout({
   children,
   params: { wsId },
 }: LayoutProps) {
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: [
-      'manage_workspace_members',
-      'manage_workspace_roles',
-      'manage_user_report_templates',
-      'manage_workspace_security',
-      'manage_workspace_secrets',
-      'view_infrastructure',
-      'manage_external_migrations',
-      'manage_workspace_audit_logs',
-    ],
   });
 
   const t = await getTranslations();
@@ -43,45 +33,45 @@ export default async function Layout({
     {
       title: t('workspace-settings-layout.members'),
       href: `/${wsId}/members`,
-      disabled: !permissions.includes('manage_workspace_members'),
+      disabled: withoutPermission('manage_workspace_members'),
     },
     {
       title: t('workspace-settings-layout.roles'),
       href: `/${wsId}/roles`,
-      disabled: !permissions.includes('manage_workspace_roles'),
+      disabled: withoutPermission('manage_workspace_roles'),
     },
     {
       title: t('workspace-settings-layout.reports'),
       href: `/${wsId}/settings/reports`,
-      disabled: !permissions.includes('manage_user_report_templates'),
+      disabled: withoutPermission('manage_user_report_templates'),
     },
     {
       title: t('workspace-settings-layout.api_keys'),
       href: `/${wsId}/api-keys`,
-      disabled: !permissions.includes('manage_workspace_security'),
+      disabled: withoutPermission('manage_workspace_security'),
     },
     {
       title: t('workspace-settings-layout.secrets'),
       href: `/${wsId}/secrets`,
-      disabled: !permissions.includes('manage_workspace_secrets'),
+      disabled: withoutPermission('manage_workspace_secrets'),
       requireRootMember: true,
     },
     {
       title: t('workspace-settings-layout.infrastructure'),
       href: `/${wsId}/infrastructure`,
-      disabled: !permissions.includes('view_infrastructure'),
+      disabled: withoutPermission('view_infrastructure'),
       requireRootWorkspace: true,
     },
     {
       title: t('workspace-settings-layout.migrations'),
       href: `/${wsId}/migrations`,
-      disabled: !permissions.includes('manage_external_migrations'),
+      disabled: withoutPermission('manage_external_migrations'),
       requireRootWorkspace: true,
     },
     {
       title: t('workspace-settings-layout.activities'),
       href: `/${wsId}/activities`,
-      disabled: !permissions.includes('manage_workspace_audit_logs'),
+      disabled: withoutPermission('manage_workspace_audit_logs'),
       requireRootWorkspace: true,
     },
   ];

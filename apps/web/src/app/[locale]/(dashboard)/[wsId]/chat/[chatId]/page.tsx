@@ -21,12 +21,11 @@ export default async function AIPage({
   searchParams,
 }: Props) {
   await verifyHasSecrets(wsId, ['ENABLE_CHAT'], `/${wsId}`);
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['ai_chat'],
   });
 
-  if (!permissions.includes('ai_chat')) notFound();
+  if (withoutPermission('ai_chat')) notFound();
 
   if (!chatId) notFound();
 

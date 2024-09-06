@@ -1,7 +1,8 @@
 import { NavLink, Navigation } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import React from 'react';
 
 interface LayoutProps {
@@ -16,6 +17,12 @@ export default async function Layout({
   params: { wsId },
 }: LayoutProps) {
   const t = await getTranslations('workspace-ai-layout');
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('ai_lab')) redirect(`/${wsId}`);
 
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
