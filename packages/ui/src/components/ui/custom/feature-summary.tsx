@@ -82,7 +82,6 @@ export default function FeatureSummary<T>({
         {title || <h1 className="text-2xl font-bold">{pluralTitle}</h1>}
         <p className="text-foreground/80 whitespace-pre-wrap">{description}</p>
       </div>
-
       <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
         {showDefaultFormAsSecondary ||
         (showSecondaryTrigger && !showCustomSecondaryTrigger) ? (
