@@ -45,8 +45,8 @@ importers:
         specifier: ^0.0.49
         version: 0.0.49(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.34
-        version: 0.0.34(zod@3.23.8)
+        specifier: ^0.0.36
+        version: 0.0.36(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.23
         version: 0.0.23(zod@3.23.8)
@@ -349,8 +349,8 @@ importers:
         specifier: ^0.0.49
         version: 0.0.49(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.34
-        version: 0.0.34(zod@3.23.8)
+        specifier: ^0.0.36
+        version: 0.0.36(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.23
         version: 0.0.23(zod@3.23.8)
@@ -914,8 +914,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/azure@0.0.34':
-    resolution: {integrity: sha512-kwutGdWHQUrHeQUkyexHnlJNqQL/faPOF1uhtQLOODvuDq7IDzRzEdK18EVy5mj++jLpnD9gEhPIPQGJrCbNHw==}
+  '@ai-sdk/azure@0.0.36':
+    resolution: {integrity: sha512-k8wcJDOQAK9qp8KjzB1E5gfGe2UkSat7RaKaObfxWee8Ec5vFpyI9mT3KewkDaS0iNtcpz3uZxkbLEw60WFbEA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -946,6 +946,12 @@ packages:
 
   '@ai-sdk/openai@0.0.56':
     resolution: {integrity: sha512-+S98OBeLMwDqGlPr2FEo/61wNxlwVdB1x7lZg5bfZArht1psVDhT5P5jrDMeQUXlRR7T2H29VyUjbSr5yarmhQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+
+  '@ai-sdk/openai@0.0.58':
+    resolution: {integrity: sha512-Eao1L0vzfXdymgvc5FDHwV2g2A7BCWml1cShNA+wliY1RL7NNREGcuQvBDNoggB9PM24fawzZyk0ZJ5jlo9Q0w==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -8411,9 +8417,9 @@ snapshots:
       '@ai-sdk/provider-utils': 1.0.18(zod@3.23.8)
       zod: 3.23.8
 
-  '@ai-sdk/azure@0.0.34(zod@3.23.8)':
+  '@ai-sdk/azure@0.0.36(zod@3.23.8)':
     dependencies:
-      '@ai-sdk/openai': 0.0.56(zod@3.23.8)
+      '@ai-sdk/openai': 0.0.58(zod@3.23.8)
       '@ai-sdk/provider': 0.0.23
       '@ai-sdk/provider-utils': 1.0.18(zod@3.23.8)
       zod: 3.23.8
@@ -8447,6 +8453,12 @@ snapshots:
       zod: 3.23.8
 
   '@ai-sdk/openai@0.0.56(zod@3.23.8)':
+    dependencies:
+      '@ai-sdk/provider': 0.0.23
+      '@ai-sdk/provider-utils': 1.0.18(zod@3.23.8)
+      zod: 3.23.8
+
+  '@ai-sdk/openai@0.0.58(zod@3.23.8)':
     dependencies:
       '@ai-sdk/provider': 0.0.23
       '@ai-sdk/provider-utils': 1.0.18(zod@3.23.8)
