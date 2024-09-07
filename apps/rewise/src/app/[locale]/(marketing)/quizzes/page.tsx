@@ -1,9 +1,12 @@
-import Quizzes from '../quizzes';
+import Quizzes from './quizzes';
 import { Quiz } from '@/types/db';
 import { createAdminClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 
 export default async function QuizzesPage() {
+  // temporary, remove when quizzes are available
+  notFound();
+
   const quizzes = await getQuizzes();
 
   return (
