@@ -88,13 +88,13 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
     <>
       {/* {scrollPosition ? <div className="m-2 h-14" /> : null} */}
       {scrollPosition ? <div className="" /> : null}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex items-center justify-center">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 hidden items-center justify-center md:flex">
         <div
           ref={ref}
           className={`bg-secondary/10 pointer-events-auto backdrop-blur-lg md:m-4 ${
             currentView
               ? 'h-[32rem] w-[32rem] rounded-t-lg border-t md:rounded-lg md:border'
-              : 'mb-4 h-14 w-40 rounded-lg border'
+              : 'mb-4 h-14 rounded-lg border p-2'
           } transition-all duration-300`}
         >
           {currentView === 'assistant' ? (

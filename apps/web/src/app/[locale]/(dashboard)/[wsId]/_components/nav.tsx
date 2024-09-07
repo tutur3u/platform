@@ -89,7 +89,7 @@ export function Nav({
                       variant: isActive ? 'default' : 'ghost',
                       size: 'icon',
                     }),
-                    'h-9 w-9',
+                    'h-9 w-9 max-sm:hover:bg-transparent',
                     urlToLoad === link.href &&
                       'bg-accent text-accent-foreground animate-pulse'
                   )}
@@ -122,7 +122,7 @@ export function Nav({
                 }),
                 urlToLoad === link.href &&
                   'bg-accent text-accent-foreground animate-pulse',
-                'justify-start'
+                'justify-start max-sm:hover:bg-transparent'
               )}
               onClick={() => {
                 setUrlToLoad(link.href);

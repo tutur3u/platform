@@ -50,7 +50,7 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="bg-background/70 fixed z-40 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
+        className="bg-background/70 fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
       >
         <div className="flex h-[52px] items-center gap-2">
           <div className="flex flex-none items-center gap-2">
@@ -94,7 +94,10 @@ export function Structure({
               sizes
             )}`;
           }}
-          className="fixed h-screen max-h-screen items-stretch"
+          className={cn(
+            'fixed h-screen max-h-screen items-stretch',
+            isCollapsed ? 'z-0' : 'z-20'
+          )}
         >
           <ResizablePanel
             defaultSize={defaultLayout[0]}
@@ -117,7 +120,7 @@ export function Structure({
             className={cn(
               isCollapsed
                 ? 'hidden min-w-[50px] md:flex'
-                : 'bg-foreground/5 absolute inset-0 z-40 flex md:static md:bg-transparent',
+                : 'bg-background/70 absolute inset-0 z-40 flex md:static md:bg-transparent',
               'flex-col justify-between backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
