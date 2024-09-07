@@ -66,10 +66,10 @@
     "lucide-react": "^0.439.0",
     "moment": "^2.30.1",
     "negotiator": "^0.6.3",
-    "next": "15.0.0-canary.143",
+    "next": "15.0.0-canary.144",
     "next-intl": "^3.19.1",
     "next-themes": "^0.3.0",
-    "openai": "^4.58.0",
+    "openai": "^4.58.1",
     "pptxgenjs": "^3.12.0",
     "react": "19.0.0-rc-7771d3a7-20240827",
     "react-beautiful-dnd": "^13.1.1",
@@ -93,8 +93,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "15.0.0-canary.143",
-    "@next/eslint-plugin-next": "15.0.0-canary.143",
+    "@next/bundle-analyzer": "15.0.0-canary.144",
+    "@next/eslint-plugin-next": "15.0.0-canary.144",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.53.0",
