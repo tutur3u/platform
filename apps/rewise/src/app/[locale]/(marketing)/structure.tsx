@@ -207,7 +207,7 @@ export function Structure({
                     >
                       <Image
                         src="/media/logos/transparent.png"
-                        className="h-9 w-9"
+                        className="h-8 w-8"
                         width={32}
                         height={32}
                         alt="logo"
@@ -295,7 +295,7 @@ export function Structure({
           <ResizablePanel defaultSize={defaultLayout[1]}>
             <main
               id="main-content"
-              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-48 md:pb-64 lg:px-8 lg:pb-96 xl:px-16"
+              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-48 pt-20 md:pb-64 md:pt-4 lg:px-8 lg:pb-96 xl:px-16"
             >
               {children}
             </main>
