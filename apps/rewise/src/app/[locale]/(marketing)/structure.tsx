@@ -116,9 +116,9 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="flex flex-none items-center justify-between gap-2 border-b px-4 py-2 md:hidden"
+        className="bg-background/70 fixed z-40 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex h-[52px] items-center gap-2">
           <div className="flex flex-none items-center gap-2">
             <Link
               href="/?refresh=true"
@@ -126,7 +126,7 @@ export function Structure({
             >
               <Image
                 src="/media/logos/transparent.png"
-                className="h-9 w-9"
+                className="h-8 w-8"
                 width={32}
                 height={32}
                 alt="logo"
@@ -135,7 +135,7 @@ export function Structure({
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex h-[52px] items-center gap-2">
           {userPopover}
           <Button
             size="icon"
@@ -147,6 +147,7 @@ export function Structure({
           </Button>
         </div>
       </nav>
+
       <TooltipProvider delayDuration={0}>
         <ResizablePanelGroup
           direction="horizontal"
