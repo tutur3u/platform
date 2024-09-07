@@ -245,6 +245,7 @@ export function Bill({ wsId }: Props) {
         maxSize={50 * 1024 * 1024}
         progresses={fileProgresses}
         onUpload={onUpload}
+        disabled
       />
     </>
   );
