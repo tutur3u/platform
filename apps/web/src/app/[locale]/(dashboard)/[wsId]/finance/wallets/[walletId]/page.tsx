@@ -24,12 +24,21 @@ interface Props {
 }
 
 export default async function WalletDetailsPage({
-  params: { wsId: _, walletId, locale },
+  params: { wsId, walletId, locale },
   searchParams,
 }: Props) {
   const t = await getTranslations();
   const { wallet } = await getData(walletId);
-  const { data, count } = await getTransaction(_, searchParams);
+  const { data: rawData, count } = await getTransactions(
+    walletId,
+    searchParams
+  );
+
+  const transactions = rawData.map((d) => ({
+    ...d,
+    href: `/${wsId}/finance/transactions/${d.id}`,
+    ws_id: wsId,
+  }));
 
   if (!wallet) notFound();
 
@@ -96,12 +105,13 @@ export default async function WalletDetailsPage({
       </div>
       <Separator className="my-4" />
       <CustomDataTable
-        data={data}
+        data={transactions}
         columnGenerator={transactionColumns}
         namespace="transaction-data-table"
         count={count}
         defaultVisibility={{
           id: false,
+          wallet: false,
           report_opt_in: false,
           created_at: false,
         }}
@@ -142,8 +152,8 @@ async function getData(walletId: string) {
   return { wallet };
 }
 
-async function getTransaction(
-  wsId: string,
+async function getTransactions(
+  walletId: string,
   {
     q,
     page = '1',
@@ -160,11 +170,11 @@ async function getTransaction(
         count: 'exact',
       }
     )
-    .eq('workspace_wallets.ws_id', wsId)
+    .eq('wallet_id', walletId)
     .order('taken_at', { ascending: false })
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('description', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
