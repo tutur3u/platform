@@ -6,6 +6,7 @@ import 'dayjs/locale/vi';
 import { CalendarIcon, DollarSign, Wallet } from 'lucide-react';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 interface Props {
@@ -47,6 +48,7 @@ export default async function TransactionDetailsPage({
               icon={<Wallet className="h-5 w-5" />}
               label={t('transaction-data-table.wallet')}
               value={transaction?.wallet_name}
+              href={`/${wsId}/finance/wallets/${transaction?.wallet_id}`}
             />
             <DetailItem
               icon={<DollarSign className="h-5 w-5" />}
@@ -90,12 +92,22 @@ function DetailItem({
   icon,
   label,
   value,
+  href,
 }: {
   icon: React.ReactNode;
   label: string;
   value: React.ReactNode;
+  href?: string;
 }) {
   if (!value) return undefined;
+  if (href)
+    return (
+      <Link href={href} className="flex items-center gap-1 hover:underline">
+        {icon}
+        <span className="font-semibold">{label}:</span> {value}
+      </Link>
+    );
+
   return (
     <div className="flex items-center gap-1">
       {icon}

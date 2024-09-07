@@ -1,3 +1,6 @@
+import { transactionColumns } from '../../transactions/columns';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { Transaction } from '@/types/primitives/Transaction';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -13,13 +16,29 @@ interface Props {
     walletId: string;
     locale: string;
   };
+  searchParams: {
+    q: string;
+    page: string;
+    pageSize: string;
+  };
 }
 
 export default async function WalletDetailsPage({
-  params: { wsId: _, walletId, locale },
+  params: { wsId, walletId, locale },
+  searchParams,
 }: Props) {
   const t = await getTranslations();
   const { wallet } = await getData(walletId);
+  const { data: rawData, count } = await getTransactions(
+    walletId,
+    searchParams
+  );
+
+  const transactions = rawData.map((d) => ({
+    ...d,
+    href: `/${wsId}/finance/transactions/${d.id}`,
+    ws_id: wsId,
+  }));
 
   if (!wallet) notFound();
 
@@ -84,6 +103,19 @@ export default async function WalletDetailsPage({
           </div>
         </div>
       </div>
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={transactions}
+        columnGenerator={transactionColumns}
+        namespace="transaction-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          wallet: false,
+          report_opt_in: false,
+          created_at: false,
+        }}
+      />
     </div>
   );
 }
@@ -118,4 +150,53 @@ async function getData(walletId: string) {
   if (walletError) throw walletError;
 
   return { wallet };
+}
+
+async function getTransactions(
+  walletId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
+  const supabase = createClient();
+
+  const queryBuilder = supabase
+    .from('wallet_transactions')
+    .select(
+      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('wallet_id', walletId)
+    .order('taken_at', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (q) queryBuilder.ilike('description', `%${q}%`);
+
+  if (page && pageSize) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data: rawData, error, count } = await queryBuilder;
+
+  const data = rawData?.map(
+    ({ workspace_wallets, transaction_categories, ...rest }) => ({
+      ...rest,
+      wallet: workspace_wallets?.name,
+      category: transaction_categories?.name,
+    })
+  );
+  if (error) throw error;
+
+  return { data, count } as {
+    data: Transaction[];
+    count: number;
+  };
 }
