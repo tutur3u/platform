@@ -94,7 +94,7 @@ export function Structure({
               sizes
             )}`;
           }}
-          className="h-screen max-h-screen items-stretch"
+          className="fixed h-screen max-h-screen items-stretch"
         >
           <ResizablePanel
             defaultSize={defaultLayout[0]}
