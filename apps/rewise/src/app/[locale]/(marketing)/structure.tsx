@@ -50,7 +50,7 @@ interface MailProps {
 
 export function Structure({
   locale,
-  defaultLayout = [20, 32],
+  defaultLayout = [20, 48],
   defaultCollapsed = false,
   navCollapsedSize,
   user,

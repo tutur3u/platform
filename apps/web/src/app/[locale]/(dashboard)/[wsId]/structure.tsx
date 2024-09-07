@@ -34,7 +34,7 @@ interface MailProps {
 
 export function Structure({
   wsId,
-  defaultLayout = [20, 32, 48],
+  defaultLayout = [20, 48],
   defaultCollapsed = false,
   navCollapsedSize,
   user,
@@ -50,9 +50,9 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="flex flex-none items-center justify-between gap-2 border-b px-4 py-2 md:hidden"
+        className="bg-background/70 fixed z-40 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex h-[52px] items-center gap-2">
           <div className="flex flex-none items-center gap-2">
             <Link href="/" className="flex flex-none items-center gap-2">
               <Image
@@ -73,7 +73,7 @@ export function Structure({
             }
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex h-[52px] items-center gap-2">
           {userPopover}
           <Button
             size="icon"
@@ -85,6 +85,7 @@ export function Structure({
           </Button>
         </div>
       </nav>
+
       <TooltipProvider delayDuration={0}>
         <ResizablePanelGroup
           direction="horizontal"
@@ -187,7 +188,7 @@ export function Structure({
           <ResizablePanel defaultSize={defaultLayout[1]}>
             <main
               id="main-content"
-              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-48 md:pb-64 lg:px-8 lg:pb-96 xl:px-16"
+              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-48 pt-20 md:pb-64 md:pt-4 lg:px-8 lg:pb-96 xl:px-16"
             >
               {children}
             </main>
