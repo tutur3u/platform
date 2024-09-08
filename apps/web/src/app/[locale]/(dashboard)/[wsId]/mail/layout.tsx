@@ -17,10 +17,10 @@ export default async function Layout({
 
   const navLinks: NavLink[] = [
     {
-      title: t('workspace-mail.overview'),
+      title: t('sidebar_tabs.mail'),
       href: `/${wsId}/mail`,
       matchExact: true,
-      disabled: true,
+      requireRootWorkspace: true,
     },
     {
       title: t('workspace-mail.send'),
@@ -41,7 +41,7 @@ export default async function Layout({
 
   return (
     <div>
-      <Navigation navLinks={navLinks} />
+      <Navigation navLinks={navLinks} currentWsId={wsId} />
       {children}
     </div>
   );

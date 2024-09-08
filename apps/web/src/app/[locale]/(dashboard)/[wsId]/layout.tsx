@@ -3,6 +3,7 @@ import { UserNav } from '../../user-nav';
 import FleetingNavigator from './fleeting-navigator';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
@@ -92,7 +93,8 @@ export default async function Layout({
     },
     {
       title: t('sidebar_tabs.mail'),
-      href: `/${wsId}/mail/history`,
+      href:
+        wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/history`,
       icon: <Mail className="h-4 w-4" />,
     },
     {
