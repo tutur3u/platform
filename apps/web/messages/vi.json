@@ -361,7 +361,7 @@
     "collapse-sidebar": "Đóng thanh bên",
     "expand-sidebar": "Mở thanh bên",
     "slides": "Trang trình bày",
-    "mailbox": "Hộp thư"
+    "mail": "Hộp thư"
   },
   "team-tabs": {
     "overview": "Tổng quan",
@@ -1372,13 +1372,13 @@
     "prompt_tokens": "Token lệnh nhắc",
     "completion_tokens": "Token hoàn thành"
   },
-  "workspace-mailbox": {
+  "workspace-mail": {
     "overview": "Tổng quan",
     "emails": "Lịch sử gửi thư",
     "history": "Lịch sử",
     "send": "Gửi thư"
   },
-  "dworkspace-mailbox": {
+  "dworkspace-mail": {
     "destination-addresses": "Địa chỉ đích"
   },
   "ws-emails": {

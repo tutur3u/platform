@@ -91,8 +91,8 @@ export default async function Layout({
       disabled: !verifySecret('ENABLE_SLIDES', 'true', secrets),
     },
     {
-      title: t('sidebar_tabs.mailbox'),
-      href: `/${wsId}/mailbox/history`,
+      title: t('sidebar_tabs.mail'),
+      href: `/${wsId}/mail/history`,
       icon: <Mail className="h-4 w-4" />,
     },
     {
