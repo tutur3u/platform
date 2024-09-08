@@ -17,31 +17,31 @@ export default async function Layout({
 
   const navLinks: NavLink[] = [
     {
-      title: t('workspace-mailbox.overview'),
-      href: `/${wsId}/mailbox`,
+      title: t('sidebar_tabs.mail'),
+      href: `/${wsId}/mail`,
       matchExact: true,
+      requireRootWorkspace: true,
+    },
+    {
+      title: t('workspace-mail.send'),
+      href: `/${wsId}/mail/send`,
       disabled: true,
     },
     {
-      title: t('workspace-mailbox.send'),
-      href: `/${wsId}/mailbox/send`,
-      disabled: true,
-    },
-    {
-      title: t('workspace-mailbox.history'),
-      href: `/${wsId}/mailbox/history`,
+      title: t('workspace-mail.history'),
+      href: `/${wsId}/mail/history`,
       // disabled: true,
     },
     {
-      title: t('dworkspace-mailbox.destination-addresses'),
-      href: `/${wsId}/mailbox/destination-addresses`,
+      title: t('dworkspace-mail.destination-addresses'),
+      href: `/${wsId}/mail/destination-addresses`,
       disabled: true,
     },
   ];
 
   return (
     <div>
-      <Navigation navLinks={navLinks} />
+      <Navigation navLinks={navLinks} currentWsId={wsId} />
       {children}
     </div>
   );

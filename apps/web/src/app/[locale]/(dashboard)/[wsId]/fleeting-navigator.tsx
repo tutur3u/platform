@@ -11,7 +11,11 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function FleetingNavigator({ wsId }: { wsId: string }) {
-  const disabledPaths = [`/${wsId}/chat`, `/${wsId}/ai/playground`];
+  const disabledPaths = [
+    `/${wsId}/chat`,
+    `/${wsId}/ai/playground`,
+    `/${wsId}/mail`,
+  ];
 
   const t = useTranslations();
   const pathname = usePathname();

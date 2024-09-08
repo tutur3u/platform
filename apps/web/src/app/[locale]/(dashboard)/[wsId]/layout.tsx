@@ -3,6 +3,7 @@ import { UserNav } from '../../user-nav';
 import FleetingNavigator from './fleeting-navigator';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
@@ -91,8 +92,9 @@ export default async function Layout({
       disabled: !verifySecret('ENABLE_SLIDES', 'true', secrets),
     },
     {
-      title: t('sidebar_tabs.mailbox'),
-      href: `/${wsId}/mailbox/history`,
+      title: t('sidebar_tabs.mail'),
+      href:
+        wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/history`,
       icon: <Mail className="h-4 w-4" />,
     },
     {
@@ -166,7 +168,7 @@ export default async function Layout({
 
   const user = await getCurrentUser();
 
-  const layout = cookies().get('react-resizable-panels:layout:mail');
+  const layout = cookies().get('react-resizable-panels:layout:default');
   const collapsed = cookies().get('react-resizable-panels:collapsed');
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined;

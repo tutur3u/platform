@@ -8,7 +8,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function MailboxPosts({
+export default function MailPosts({
   wsId,
   emails,
 }: {

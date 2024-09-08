@@ -1,6 +1,6 @@
 import { getUserColumns } from '../../users/database/columns';
 import Filters from '../../users/database/filters';
-import MailboxPosts from './posts';
+import MailPosts from './posts';
 import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
@@ -78,7 +78,7 @@ export default async function WorkspaceUsersPage({
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
         }}
       />
-      <MailboxPosts
+      <MailPosts
         wsId={wsId}
         emails={
           users

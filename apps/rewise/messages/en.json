@@ -362,7 +362,7 @@
     "collapse-sidebar": "Collapse Sidebar",
     "expand-sidebar": "Expand Sidebar",
     "slides": "Slides",
-    "mailbox": "Mailbox"
+    "mail": "Mail"
   },
   "team-tabs": {
     "overview": "Overview",
@@ -1372,13 +1372,13 @@
     "prompt_tokens": "Prompt tokens",
     "completion_tokens": "Completion tokens"
   },
-  "workspace-mailbox": {
+  "workspace-mail": {
     "overview": "Overview",
     "emails": "Emails",
     "history": "History",
     "send": "Send email"
   },
-  "dworkspace-mailbox": {
+  "dworkspace-mail": {
     "destination-addresses": "Destination Addresses"
   },
   "ws-emails": {

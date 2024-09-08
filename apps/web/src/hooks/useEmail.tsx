@@ -1,4 +1,4 @@
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mailbox/send/post-template';
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/send/post-template';
 import { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 import { useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
