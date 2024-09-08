@@ -90,7 +90,7 @@ export function Structure({
         <ResizablePanelGroup
           direction="horizontal"
           onLayout={(sizes: number[]) => {
-            document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
+            document.cookie = `react-resizable-panels:layout:default=${JSON.stringify(
               sizes
             )}`;
           }}

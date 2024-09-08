@@ -166,7 +166,7 @@ export default async function Layout({
 
   const user = await getCurrentUser();
 
-  const layout = cookies().get('react-resizable-panels:layout:mail');
+  const layout = cookies().get('react-resizable-panels:layout:default');
   const collapsed = cookies().get('react-resizable-panels:collapsed');
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined;

@@ -29,7 +29,7 @@ export default async function Layout({
     createdAt: chat.created_at,
   })) satisfies NavLink[];
 
-  const layout = cookies().get('react-resizable-panels:layout:mail');
+  const layout = cookies().get('react-resizable-panels:layout:rewise');
   const collapsed = cookies().get('react-resizable-panels:collapsed');
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined;
