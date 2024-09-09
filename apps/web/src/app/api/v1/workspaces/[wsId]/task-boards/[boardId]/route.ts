@@ -3,11 +3,11 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: {
-    tagId: string;
+    boardId: string;
   };
 }
 
-export async function PUT(req: Request, { params: { tagId: id } }: Params) {
+export async function PUT(req: Request, { params: { boardId: id } }: Params) {
   const supabase = createClient();
 
   const data = (await req.json()) as {
@@ -34,7 +34,7 @@ export async function PUT(req: Request, { params: { tagId: id } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params: { tagId: id } }: Params) {
+export async function DELETE(_: Request, { params: { boardId: id } }: Params) {
   const supabase = createClient();
 
   const { error } = await supabase

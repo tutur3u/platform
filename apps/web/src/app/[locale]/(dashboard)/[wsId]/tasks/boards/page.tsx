@@ -1,5 +1,5 @@
 import { projectColumns } from './columns';
-import ProjectForm from './form';
+import { TaskBoardForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPermissions } from '@/lib/workspace-helper';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
@@ -41,7 +41,7 @@ export default async function WorkspaceProjectsPage({
         description={t('ws-task-boards.description')}
         createTitle={t('ws-task-boards.create')}
         createDescription={t('ws-task-boards.create_description')}
-        form={<ProjectForm wsId={wsId} />}
+        form={<TaskBoardForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable

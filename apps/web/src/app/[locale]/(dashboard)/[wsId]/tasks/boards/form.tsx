@@ -1,6 +1,6 @@
 'use client';
 
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -20,7 +20,7 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  data?: UserGroup;
+  data?: TaskBoard;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -29,7 +29,7 @@ const FormSchema = z.object({
   name: z.string().min(1),
 });
 
-export default function UserGroupForm({ wsId, data, onFinish }: Props) {
+export function TaskBoardForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
 
