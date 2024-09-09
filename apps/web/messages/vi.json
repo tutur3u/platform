@@ -1446,5 +1446,12 @@
   },
   "ws_post_details": {
     "check_all": "Đã kiểm tra tất cả"
+  },
+  "ws-documents": {
+    "plural": "Tài liệu",
+    "singular": "Tài liệu",
+    "create_description": "Tạo một tài liệu mới",
+    "create": "Tạo tài liệu",
+    "description": "Tài liệu được sử dụng để hỗ trợ việc chia sẻ thông tin trong không gian làm việc của bạn."
   }
 }

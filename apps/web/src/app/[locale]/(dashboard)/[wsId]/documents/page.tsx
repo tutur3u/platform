@@ -3,6 +3,7 @@ import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Button } from '@repo/ui/components/ui/button';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -23,10 +24,10 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
 
   if (withoutPermission('manage_documents')) redirect(`/${wsId}`);
 
-  const t = await getTranslations('documents');
+  const t = await getTranslations();
 
-  const newDocumentLabel = t('new-document');
-  const noDocumentsLabel = t('no-documents');
+  const newDocumentLabel = t('documents.new-document');
+  const noDocumentsLabel = t('documents.no-documents');
   // const createDocumentErrorLabel = t('create-document-error');
   // const createNewDocumentLabel = t('create-new-document');
 
@@ -76,15 +77,21 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
 
   return (
     <>
-      <div className="flex flex-col items-center gap-4 md:flex-row">
-        <Button
-        // onClick={showDocumentEditForm}
-        >
-          <DocumentPlusIcon className="h-4 w-4" />
-          {newDocumentLabel}
-        </Button>
-      </div>
-
+      <FeatureSummary
+        pluralTitle={t('ws-documents.plural')}
+        singularTitle={t('ws-documents.singular')}
+        description={t('ws-documents.description')}
+        createTitle={t('ws-documents.create')}
+        createDescription={t('ws-documents.create_description')}
+        action={
+          <Button
+          // onClick={showDocumentEditForm}
+          >
+            <DocumentPlusIcon className="mr-2 h-4 w-4" />
+            {newDocumentLabel}
+          </Button>
+        }
+      />
       <Separator className="my-4" />
 
       <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

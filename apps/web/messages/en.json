@@ -1446,5 +1446,12 @@
   },
   "ws_post_details": {
     "check_all": "Check all"
+  },
+  "ws-documents": {
+    "plural": "Documents",
+    "singular": "Document",
+    "create": "Create document",
+    "create_description": "Create a new document",
+    "description": "Documents are used to facilitate the sharing of information in your workspace."
   }
 }
