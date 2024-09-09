@@ -30,7 +30,7 @@ export default async function WorkspaceProjectsPage({
 
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  const { data: projects, count } = await getProjects(wsId, searchParams);
+  const { data, count } = await getData(wsId, searchParams);
   const t = await getTranslations();
 
   return (
@@ -47,7 +47,7 @@ export default async function WorkspaceProjectsPage({
       <CustomDataTable
         columnGenerator={projectColumns}
         namespace="basic-data-table"
-        data={projects}
+        data={data}
         count={count}
         defaultVisibility={{
           id: false,
@@ -58,7 +58,7 @@ export default async function WorkspaceProjectsPage({
   );
 }
 
-async function getProjects(
+async function getData(
   wsId: string,
   {
     q,
@@ -74,6 +74,7 @@ async function getProjects(
       count: 'exact',
     })
     .eq('ws_id', wsId)
+    .order('name', { ascending: true })
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
