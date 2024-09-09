@@ -2,6 +2,7 @@ import DocumentCard from '../../../../../components/document/DocumentCard';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import { DocumentPlusIcon } from '@heroicons/react/24/solid';
+import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -76,12 +77,12 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
   return (
     <>
       <div className="flex flex-col items-center gap-4 md:flex-row">
-        <button
-          // onClick={showDocumentEditForm}
-          className="flex flex-none items-center gap-1 rounded bg-blue-500/10 p-4 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:bg-blue-300/20 dark:text-blue-300 dark:hover:bg-blue-300/10"
+        <Button
+        // onClick={showDocumentEditForm}
         >
-          {newDocumentLabel} <DocumentPlusIcon className="h-4 w-4" />
-        </button>
+          <DocumentPlusIcon className="h-4 w-4" />
+          {newDocumentLabel}
+        </Button>
       </div>
 
       <Separator className="my-4" />

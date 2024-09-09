@@ -13,8 +13,10 @@ import { useEffect, useState } from 'react';
 export default function FleetingNavigator({ wsId }: { wsId: string }) {
   const disabledPaths = [
     `/${wsId}/chat`,
-    `/${wsId}/ai/playground`,
     `/${wsId}/mail`,
+    `/${wsId}/calendar`,
+    `/${wsId}/documents`,
+    `/${wsId}/ai/playground`,
   ];
 
   const t = useTranslations();
