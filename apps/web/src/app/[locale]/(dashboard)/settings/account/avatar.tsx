@@ -1,6 +1,6 @@
 'use client';
 
-import AvatarCard from '@/components/settings/AvatarCard';
+import AvatarCard from './avatar-card';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
