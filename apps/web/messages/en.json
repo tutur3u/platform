@@ -1363,5 +1363,6 @@
     "plural": "Emails",
     "singular": "Email",
     "description": "View mailing history that belongs to your workspace."
-  }
+  },
+  "avatar": "Avatar"
 }

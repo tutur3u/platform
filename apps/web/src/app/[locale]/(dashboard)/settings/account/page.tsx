@@ -1,4 +1,5 @@
 import SettingItemTab from '../../../../../components/settings/SettingItemTab';
+import Avatar from './avatar';
 import DisplayNameInput from './display-name-input';
 import EmailInput from './email-input';
 import { getCurrentUser } from '@/lib/user-helper';
@@ -9,17 +10,17 @@ export default async function AccountSettingsPage() {
   const t = await getTranslations('settings-account');
   const user = await getCurrentUser();
 
-  // const avatarLabel = t('avatar');
-  // const avatarDescription = t('avatar-description');
+  const avatarLabel = t('avatar');
+  const avatarDescription = t('avatar-description');
   const displayNameLabel = t('display-name');
   const displayNameDescription = t('display-name-description');
   const emailDescription = t('email-description');
 
   return (
     <div className="grid gap-1 md:min-w-max md:max-w-lg">
-      {/* <SettingItemTab title={avatarLabel} description={avatarDescription}>
-        <Avatar user={user} />
-      </SettingItemTab> */}
+      <SettingItemTab title={avatarLabel} description={avatarDescription}>
+        {user && <Avatar user={user} />}
+      </SettingItemTab>
 
       <Suspense
         fallback={
