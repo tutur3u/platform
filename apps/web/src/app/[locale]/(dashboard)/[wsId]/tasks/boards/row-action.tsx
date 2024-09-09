@@ -1,6 +1,5 @@
 'use client';
 
-import ProjectEditDialog from '@/app/[locale]/(dashboard)/[wsId]/projects/_components/project-edit-dialog';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
@@ -8,14 +7,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 interface ProjectRowActionsProps {
   row: Row<TaskBoard>;
@@ -46,7 +43,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
     }
   };
 
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  // const [showEditDialog, setShowEditDialog] = useState(false);
 
   if (!project.id || !project.ws_id) return null;
 
@@ -63,21 +60,17 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+          {/* <DropdownMenuItem
+          onClick={() => setShowEditDialog(true)}
+          >
             {t('common.edit')}
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator /> */}
           <DropdownMenuItem onClick={deleteProject}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ProjectEditDialog
-        data={project}
-        open={showEditDialog}
-        setOpen={setShowEditDialog}
-        submitLabel={t('ws-projects.edit_project')}
-      />
     </>
   );
 }

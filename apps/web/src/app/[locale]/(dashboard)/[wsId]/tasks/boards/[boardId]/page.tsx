@@ -1,8 +1,8 @@
 'use client';
 
-import BoardEditForm from '../../../../../../components/forms/BoardEditForm';
-import TaskListEditForm from '../../../../../../components/forms/TaskListEditForm';
-import TaskListWrapper from '../../../../../../components/tasks/lists/TaskListWrapper';
+import BoardEditForm from '../../../../../../../components/forms/BoardEditForm';
+import TaskListEditForm from '../../../../../../../components/forms/TaskListEditForm';
+import TaskListWrapper from '../../../../../../../components/tasks/lists/TaskListWrapper';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { Task } from '@/types/primitives/Task';
 import { TaskBoard } from '@/types/primitives/TaskBoard';

@@ -673,16 +673,6 @@
     "add_new": "Add a new workflow to this workspace.",
     "edit_existing": "Edit an existing workflow in this workspace."
   },
-  "ws-projects": {
-    "projects": "Projects",
-    "workspace_project": "Workspace Project",
-    "description": "Manage all of your workspace tasks through projects.",
-    "name": "Name",
-    "create_project": "Create Project",
-    "edit_project": "Edit Project",
-    "add_new_workspace_project": "Add a new project to this workspace.",
-    "edit_existing_workspace_project": "Edit an existing project in this workspace."
-  },
   "ws-settings": {
     "description": "Manage the settings of your workspace.",
     "basic_info": "Basic Information",

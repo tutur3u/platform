@@ -361,7 +361,8 @@
     "collapse-sidebar": "Đóng thanh bên",
     "expand-sidebar": "Mở thanh bên",
     "slides": "Trang trình bày",
-    "mail": "Hộp thư"
+    "mail": "Hộp thư",
+    "tasks": "Nhiệm vụ"
   },
   "team-tabs": {
     "overview": "Tổng quan",
@@ -679,15 +680,13 @@
     "add_new": "Thêm Quy trình mới vào không gian làm việc này.",
     "edit_existing": "Sửa Quy trình đã tồn tại trong không gian làm việc này."
   },
-  "ws-projects": {
-    "projects": "Dự án",
-    "workspace_project": "Dự án",
-    "description": "Quản lý tất cả công việc của không gian làm việc thông qua các dự án.",
-    "name": "Tên",
-    "create_project": "Tạo dự án",
-    "edit_project": "Chỉnh sửa dự án",
-    "add_new_workspace_project": "Thêm dự án mới",
-    "edit_existing_workspace_project": "Chỉnh sửa dự án hiện có cho không gian làm việc này."
+  "ws-task-boards": {
+    "name": "Tên bảng",
+    "plural": "Bảng nhiệm vụ",
+    "singular": "Bảng nhiệm vụ",
+    "create": "Tạo bảng",
+    "create_description": "Tạo bảng nhiệm vụ",
+    "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể."
   },
   "ws-settings": {
     "description": "Quản lý các thiết lập không gian làm việc.",

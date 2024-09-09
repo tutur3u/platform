@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectRowActions } from '@/components/row-actions/projects';
+import { ProjectRowActions } from './row-action';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
