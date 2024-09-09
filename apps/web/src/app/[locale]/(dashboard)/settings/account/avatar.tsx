@@ -8,7 +8,6 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Form } from '@repo/ui/components/ui/form';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Check, Loader2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -24,7 +23,6 @@ const FormSchema = z.object({
 
 export default function Avatar({ user }: AvatarProps) {
   const router = useRouter();
-  const t = useTranslations('settings-account');
 
   const [saving, setSaving] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -68,7 +66,7 @@ export default function Avatar({ user }: AvatarProps) {
 
     const res = await fetch('/api/auth/avatar', {
       method: 'PATCH',
-      body: JSON.stringify({ avatarUrl: null }),
+      body: JSON.stringify({ avatar_url: null }),
     });
 
     if (res.ok) {
