@@ -58,15 +58,11 @@ const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
         <DropdownMenu open={opened} onOpenChange={setOpened}>
           <DropdownMenuTrigger asChild>
             <Button size="sm">
-              <Cog6ToothIcon className="h-5 w-5 text-zinc-800 dark:text-zinc-300" />
+              <Cog6ToothIcon className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent
-            align="end"
-            sideOffset={4}
-            className="rounded-md bg-white p-2 shadow-lg dark:bg-zinc-800"
-          >
+          <DropdownMenuContent align="end" sideOffset={4}>
             <DropdownMenuItem asChild>
               <>
                 <input
