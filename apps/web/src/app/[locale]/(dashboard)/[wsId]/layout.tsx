@@ -49,6 +49,7 @@ export default async function Layout({
       'ENABLE_X',
       'ENABLE_AI',
       'ENABLE_CHAT',
+      'ENABLE_TASKS',
       'ENABLE_SLIDES',
       'ENABLE_DOCS',
       'ENABLE_DRIVE',
@@ -107,7 +108,9 @@ export default async function Layout({
       title: t('sidebar_tabs.tasks'),
       href: `/${wsId}/tasks/boards`,
       icon: <CheckCheck className="h-4 w-4" />,
-      disabled: withoutPermission('manage_projects'),
+      disabled:
+        !verifySecret('ENABLE_TASKS', 'true', secrets) ||
+        withoutPermission('manage_projects'),
     },
     {
       title: t('sidebar_tabs.documents'),
