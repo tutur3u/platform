@@ -49,7 +49,7 @@
     "@repo/ui": "workspace:*",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "2.45.3",
-    "@tabler/icons-react": "^3.15.0",
+    "@tabler/icons-react": "^3.16.0",
     "@tanstack/react-query": "^5.55.4",
     "@tanstack/react-table": "^8.20.5",
     "@upstash/qstash": "^2.7.6",
