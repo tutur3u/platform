@@ -208,7 +208,8 @@ function UserCard({ user, wsId, post, disableEmailSending }: Props) {
               success ||
               loading ||
               !user.email ||
-              user.email.endsWith('@easy.com' || !isEmail(user.email)) ||
+              !isEmail(user.email) ||
+              user.email.endsWith('@easy.com') ||
               check?.is_completed == null ||
               saving ||
               !check ||
