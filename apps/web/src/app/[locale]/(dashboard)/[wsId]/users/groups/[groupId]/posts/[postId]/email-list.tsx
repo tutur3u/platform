@@ -46,7 +46,7 @@ export function EmailList({ users }: { users: WorkspaceUser[] }) {
             {users
               // sort disabled users to the end
               .sort((a) =>
-                !a.email || a.email.endsWith('@easy.com' || !isEmail(a.email))
+                !a.email || !isEmail(a.email) || a.email.endsWith('@easy.com')
                   ? 1
                   : -1
               )
@@ -64,7 +64,8 @@ export function EmailList({ users }: { users: WorkspaceUser[] }) {
                     }
                     disabled={
                       !user.email ||
-                      user.email.endsWith('@easy.com' || !isEmail(user.email))
+                      !isEmail(user.email) ||
+                      user.email.endsWith('@easy.com')
                     }
                   />
                   <label

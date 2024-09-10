@@ -104,8 +104,8 @@ export default async function Layout({
       disabled: withoutPermission('manage_calendar'),
     },
     {
-      title: t('sidebar_tabs.projects'),
-      href: `/${wsId}/projects`,
+      title: t('sidebar_tabs.tasks'),
+      href: `/${wsId}/tasks/boards`,
       icon: <CheckCheck className="h-4 w-4" />,
       disabled: withoutPermission('manage_projects'),
     },

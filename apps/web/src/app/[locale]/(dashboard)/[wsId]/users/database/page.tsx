@@ -29,7 +29,7 @@ export default async function WorkspaceUsersPage({
   params: { locale, wsId },
   searchParams,
 }: Props) {
-  const t = await getTranslations('ws-users');
+  const t = await getTranslations();
 
   const { data, count } = await getData(wsId, searchParams);
   const { data: extraFields } = await getUserFields(wsId);
@@ -42,11 +42,11 @@ export default async function WorkspaceUsersPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('plural')}
-        singularTitle={t('singular')}
-        description={t('description')}
-        createTitle={t('create')}
-        createDescription={t('create_description')}
+        pluralTitle={t('ws-users.plural')}
+        singularTitle={t('ws-users.singular')}
+        description={t('ws-users.description')}
+        createTitle={t('ws-users.create')}
+        createDescription={t('ws-users.create_description')}
         form={<UserForm wsId={wsId} />}
       />
       <Separator className="my-4" />

@@ -1,9 +1,10 @@
 'use client';
 
-import ProjectEditDialog from '@/app/[locale]/(dashboard)/[wsId]/projects/_components/project-edit-dialog';
+import { TaskBoardForm } from './form';
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
+import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +14,9 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -25,11 +28,11 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
-  const project = row.original;
+  const data = row.original;
 
-  const deleteProject = async () => {
+  const deleteData = async () => {
     const res = await fetch(
-      `/api/workspaces/${project.ws_id}/projects/${project.id}`,
+      `/api/v1/workspaces/${data.ws_id}/task-boards/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -48,10 +51,19 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!project.id || !project.ws_id) return null;
+  if (!data.id || !data.ws_id) return null;
 
   return (
-    <>
+    <div className="flex items-center justify-end gap-2">
+      {data.href && (
+        <Link href={data.href}>
+          <Button>
+            <Eye className="mr-1 h-5 w-5" />
+            {t('common.view')}
+          </Button>
+        </Link>
+      )}
+
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -67,17 +79,20 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteProject}>
+          <DropdownMenuItem onClick={deleteData}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ProjectEditDialog
-        data={project}
+
+      <ModifiableDialogTrigger
+        data={data}
         open={showEditDialog}
+        title={t('ws-user-group-tags.edit')}
+        editDescription={t('ws-user-group-tags.edit_description')}
         setOpen={setShowEditDialog}
-        submitLabel={t('ws-projects.edit_project')}
+        form={<TaskBoardForm wsId={data.ws_id} data={data} />}
       />
-    </>
+    </div>
   );
 }

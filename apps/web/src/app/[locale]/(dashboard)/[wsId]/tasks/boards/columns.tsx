@@ -1,7 +1,7 @@
 'use client';
 
-import { ProjectRowActions } from '@/components/row-actions/projects';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { ProjectRowActions } from './row-action';
+import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
@@ -9,7 +9,7 @@ import moment from 'moment';
 export const projectColumns = (
   t: any,
   namespace: string
-): ColumnDef<WorkspaceSecret>[] => [
+): ColumnDef<TaskBoard>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (

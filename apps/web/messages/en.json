@@ -361,7 +361,8 @@
     "collapse-sidebar": "Collapse Sidebar",
     "expand-sidebar": "Expand Sidebar",
     "slides": "Slides",
-    "mail": "Mail"
+    "mail": "Mail",
+    "tasks": "Tasks"
   },
   "team-tabs": {
     "overview": "Overview",
@@ -679,15 +680,13 @@
     "add_new": "Add a new workflow to this workspace.",
     "edit_existing": "Edit an existing workflow in this workspace."
   },
-  "ws-projects": {
-    "projects": "Projects",
-    "workspace_project": "Workspace Project",
-    "description": "Manage all of your workspace tasks through projects.",
-    "name": "Name",
-    "create_project": "Create Project",
-    "edit_project": "Edit Project",
-    "add_new_workspace_project": "Add a new project to this workspace.",
-    "edit_existing_workspace_project": "Edit an existing project in this workspace."
+  "ws-task-boards": {
+    "name": "Board name",
+    "plural": "Task boards",
+    "singular": "Task board",
+    "create": "Create board",
+    "create_description": "Create a task board",
+    "description": "Task boards are used to manage tasks that are related to a specific project or goal."
   },
   "ws-settings": {
     "description": "Manage the settings of your workspace.",
@@ -1446,5 +1445,12 @@
   },
   "ws_post_details": {
     "check_all": "Check all"
+  },
+  "ws-documents": {
+    "plural": "Documents",
+    "singular": "Document",
+    "create": "Create document",
+    "create_description": "Create a new document",
+    "description": "Documents are used to facilitate the sharing of information in your workspace."
   }
 }
