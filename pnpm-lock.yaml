@@ -135,8 +135,8 @@ importers:
         specifier: ^3.15.0
         version: 3.15.0(react@19.0.0-rc-7771d3a7-20240827)
       '@tanstack/react-query':
-        specifier: ^5.55.2
-        version: 5.55.2(react@19.0.0-rc-7771d3a7-20240827)
+        specifier: ^5.55.4
+        version: 5.55.4(react@19.0.0-rc-7771d3a7-20240827)
       '@tanstack/react-table':
         specifier: ^8.20.5
         version: 8.20.5(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
@@ -275,7 +275,7 @@ importers:
         version: 5.53.0(eslint@8.57.0)(typescript@5.5.4)
       '@tanstack/react-query-devtools':
         specifier: ^5.55.2
-        version: 5.55.2(@tanstack/react-query@5.55.2(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+        version: 5.55.2(@tanstack/react-query@5.55.4(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       '@testing-library/react':
         specifier: ^16.0.1
         version: 16.0.1(@testing-library/dom@10.4.0)(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
@@ -439,8 +439,8 @@ importers:
         specifier: ^3.15.0
         version: 3.15.0(react@19.0.0-rc-7771d3a7-20240827)
       '@tanstack/react-query':
-        specifier: ^5.55.2
-        version: 5.55.2(react@19.0.0-rc-7771d3a7-20240827)
+        specifier: ^5.55.4
+        version: 5.55.4(react@19.0.0-rc-7771d3a7-20240827)
       '@tanstack/react-table':
         specifier: ^8.20.5
         version: 8.20.5(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
@@ -585,7 +585,7 @@ importers:
         version: 5.53.0(eslint@8.57.0)(typescript@5.5.4)
       '@tanstack/react-query-devtools':
         specifier: ^5.55.2
-        version: 5.55.2(@tanstack/react-query@5.55.2(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
+        version: 5.55.2(@tanstack/react-query@5.55.4(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
       '@testing-library/react':
         specifier: ^16.0.1
         version: 16.0.1(@testing-library/dom@10.4.0)(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)
@@ -3434,8 +3434,8 @@ packages:
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0
 
-  '@tanstack/query-core@5.55.2':
-    resolution: {integrity: sha512-WfuUx06sw/V3R2tRRQf4KZj0g4Q5EHrTdwJmCUovMFuHWVzDvLd5U+B7d5Pk8ni5w5SGpUuzGuQv3nN8xo1QbQ==}
+  '@tanstack/query-core@5.55.4':
+    resolution: {integrity: sha512-uoRqNnRfzOH4OMIoxj8E2+Us89UIGXfau981qYJWsNMkFS1GXR4UIyzUTVGq4N7SDLHgFPpo6IOazqUV5gkMZA==}
 
   '@tanstack/query-devtools@5.55.1':
     resolution: {integrity: sha512-2g0TWQGlkyHs9maHIU5A7lRunG4Rj3Y5lOEenE+fydE4zk7GqRs7rKJBp7F74iqRo/cA9V6t1YYQWqd6YRBmcQ==}
@@ -3446,8 +3446,8 @@ packages:
       '@tanstack/react-query': ^5.55.2
       react: ^18 || ^19
 
-  '@tanstack/react-query@5.55.2':
-    resolution: {integrity: sha512-PkbEmO64nphWPhufkE9aJ+iEScg8tNNCykYlH7vDwb2R6G8uJC+HTJgXc2n8cRaJe6ETVIeQLFFESVd+2N/tww==}
+  '@tanstack/react-query@5.55.4':
+    resolution: {integrity: sha512-e3uX5XkLD9oTV66/VsVpkYz3Ds/ps/Yk+V5d89xthAbtNIKKBEm4FdNb9yISFzGEGezUzVO68qmfmiSrtScvsg==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -11699,19 +11699,19 @@ snapshots:
       - supports-color
       - typescript
 
-  '@tanstack/query-core@5.55.2': {}
+  '@tanstack/query-core@5.55.4': {}
 
   '@tanstack/query-devtools@5.55.1': {}
 
-  '@tanstack/react-query-devtools@5.55.2(@tanstack/react-query@5.55.2(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)':
+  '@tanstack/react-query-devtools@5.55.2(@tanstack/react-query@5.55.4(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)':
     dependencies:
       '@tanstack/query-devtools': 5.55.1
-      '@tanstack/react-query': 5.55.2(react@19.0.0-rc-7771d3a7-20240827)
+      '@tanstack/react-query': 5.55.4(react@19.0.0-rc-7771d3a7-20240827)
       react: 19.0.0-rc-7771d3a7-20240827
 
-  '@tanstack/react-query@5.55.2(react@19.0.0-rc-7771d3a7-20240827)':
+  '@tanstack/react-query@5.55.4(react@19.0.0-rc-7771d3a7-20240827)':
     dependencies:
-      '@tanstack/query-core': 5.55.2
+      '@tanstack/query-core': 5.55.4
       react: 19.0.0-rc-7771d3a7-20240827
 
   '@tanstack/react-table@8.20.5(react-dom@19.0.0-rc-7771d3a7-20240827(react@19.0.0-rc-7771d3a7-20240827))(react@19.0.0-rc-7771d3a7-20240827)':
