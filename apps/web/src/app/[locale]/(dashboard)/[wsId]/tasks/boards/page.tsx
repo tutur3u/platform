@@ -30,8 +30,13 @@ export default async function WorkspaceProjectsPage({
 
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  const { data, count } = await getData(wsId, searchParams);
+  const { data: rawData, count } = await getData(wsId, searchParams);
   const t = await getTranslations();
+
+  const data = rawData.map((board) => ({
+    ...board,
+    href: `/${wsId}/tasks/boards/${board.id}`,
+  }));
 
   return (
     <>

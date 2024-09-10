@@ -14,7 +14,9 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -53,6 +55,15 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
   return (
     <div className="flex items-center justify-end gap-2">
+      {data.href && (
+        <Link href={data.href}>
+          <Button>
+            <Eye className="mr-1 h-5 w-5" />
+            {t('common.view')}
+          </Button>
+        </Link>
+      )}
+
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
