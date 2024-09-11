@@ -65,7 +65,7 @@ async function getData(
   const queryBuilder = supabase
     .from('user_group_post_checks')
     .select(
-      'email_id, is_completed, user:workspace_users(email, display_name, full_name, ws_id), ...user_group_posts(post_id:id, post_title:title, post_content:content, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)'
+      'notes, user_id, email_id, is_completed, user:workspace_users(email, display_name, full_name, ws_id), ...user_group_posts(post_id:id, post_title:title, post_content:content, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)'
     );
 
   if (page && pageSize) {

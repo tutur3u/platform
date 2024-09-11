@@ -1,6 +1,7 @@
 export interface PostEmail {
   id?: string | null;
   subject?: string | null;
+  user_id?: string | null;
   recipient?: string | null;
   email?: string | null;
   email_id?: string | null;
@@ -11,5 +12,6 @@ export interface PostEmail {
   post_content?: string | null;
   is_completed?: boolean | null;
   ws_id?: string | null;
+  notes?: string | null;
   created_at?: Date | null;
 }

@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
 import { Textarea } from '@repo/ui/components/ui/textarea';
-import { Check, Mail, MoveRight, Save, X } from 'lucide-react';
+import { Check, Mail, MailCheck, MoveRight, Save, Send, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -214,7 +214,17 @@ function UserCard({
           hideEmailSending && 'justify-end'
         )}
       >
-        {hideEmailSending || (
+        {hideEmailSending ? (
+          <div>
+            <Button variant="secondary" disabled>
+              {disableEmailSending || success ? (
+                <MailCheck className="h-6 w-6" />
+              ) : (
+                <Send className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
+        ) : (
           <div>
             <Button
               onClick={handleSendEmail}

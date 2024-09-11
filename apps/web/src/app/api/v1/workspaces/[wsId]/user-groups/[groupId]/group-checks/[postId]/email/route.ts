@@ -31,8 +31,6 @@ export async function POST(
           .eq('name', 'ENABLE_EMAIL_SENDING')
           .maybeSingle();
 
-  console.log('workspaceSecret', workspaceSecret);
-
   const isWSIDAllowed = workspaceSecret?.value === 'true';
 
   if (!isWSIDAllowed) {
@@ -127,8 +125,7 @@ const sendEmail = async ({
     };
 
     const command = new SendEmailCommand(params);
-    const res = await sesClient.send(command);
-    console.log('res', res);
+    await sesClient.send(command);
 
     const {
       data: { user },

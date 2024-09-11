@@ -43,7 +43,7 @@ export default async function HomeworkCheck({
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
-  const hasEmailSendingPermission = false;
+  const hasEmailSendingPermission = true;
 
   return (
     <div>
@@ -70,8 +70,20 @@ export default async function HomeworkCheck({
           />
         }
         disableSecondaryTrigger={status.checked === status.count}
-        action={<EmailList users={users} />}
-        showSecondaryTrigger
+        action={
+          hasEmailSendingPermission ? (
+            <EmailList wsId={wsId} />
+          ) : (
+            <CheckAll
+              wsId={wsId}
+              groupId={groupId}
+              postId={postId}
+              users={users}
+              completed={status.checked === status.count}
+            />
+          )
+        }
+        showSecondaryTrigger={hasEmailSendingPermission}
       />
       <Separator className="my-4" />
       <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
@@ -132,8 +144,9 @@ export default async function HomeworkCheck({
               group_id: groupId,
               group_name: group.name,
             }}
-            hideEmailSending={!hasEmailSendingPermission}
             disableEmailSending={status.sent?.includes(user.id)}
+            // hideEmailSending={!hasEmailSendingPermission}
+            hideEmailSending
           />
         ))}
       </div>

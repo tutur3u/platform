@@ -1,11 +1,11 @@
 'use client';
 
+import RowActions from './row-actions';
 import { PostEmail } from '@/types/primitives/post-email';
-import { Button } from '@repo/ui/components/ui/button';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import 'dayjs/locale/vi';
-import { Check, Eye, MailCheck, Send, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -124,30 +124,6 @@ export const getPostEmailColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <div className="flex flex-none items-center justify-end gap-2">
-        <Button
-          size="xs"
-          variant={
-            row.original.email && !row.original.email_id ? undefined : 'outline'
-          }
-          // disabled={!row.original.email || !!row.original.email_id}
-          disabled
-        >
-          {row.original.email_id ? (
-            <MailCheck className="h-4 w-4" />
-          ) : (
-            <>
-              <Send className="mr-1.5 h-4 w-4" />
-              {t(`${namespace}.send_email`)}
-            </>
-          )}
-        </Button>
-        <Button size="xs" variant="outline" disabled>
-          <Eye className="mr-1.5 h-4 w-4" />
-          {t(`${namespace}.preview`)}
-        </Button>
-      </div>
-    ),
+    cell: ({ row }) => <RowActions data={row.original} />,
   },
 ];
