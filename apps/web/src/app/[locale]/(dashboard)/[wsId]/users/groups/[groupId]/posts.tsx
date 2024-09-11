@@ -27,6 +27,7 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { format } from 'date-fns';
 import { BookPlus, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -53,7 +54,9 @@ export default function UserGroupPosts({
   posts: UserGroupPost[];
   onClick?: (id: string) => void;
 }) {
+  const t = useTranslations();
   const router = useRouter();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPost, setCurrentPost] = useState<UserGroupPost | undefined>();
 
@@ -130,11 +133,11 @@ export default function UserGroupPosts({
   return (
     <>
       <div className="flex items-center justify-between">
-        <div className="text-xl font-semibold">Posts</div>
+        <div className="text-xl font-semibold">{t('ws-user-groups.posts')}</div>
         {groupId && (
           <Button onClick={() => handleOpenDialog()}>
             <BookPlus className="mr-1 h-5 w-5" />
-            Add Post
+            {t('ws-user-groups.add_post')}
           </Button>
         )}
       </div>

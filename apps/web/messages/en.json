@@ -781,7 +781,9 @@
     "create_description": "Create a new user group",
     "edit_description": "Edit an existing user group",
     "add_user": "Add users",
-    "add_user_description": "Add users to this group"
+    "add_user_description": "Add users to this group",
+    "posts": "Posts",
+    "add_post": "Add post"
   },
   "ws-user-group-tags": {
     "singular": "Group Tag",

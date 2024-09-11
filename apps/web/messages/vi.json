@@ -781,7 +781,9 @@
     "create_description": "Thêm nhóm mới",
     "edit_description": "Sửa nhóm hiện có",
     "add_user": "Thêm người dùng",
-    "add_user_description": "Thêm người dùng vào nhóm"
+    "add_user_description": "Thêm người dùng vào nhóm",
+    "posts": "bài viết",
+    "add_post": "Thêm bài viết"
   },
   "ws-user-group-tags": {
     "singular": "Gắn thẻ nhóm",
