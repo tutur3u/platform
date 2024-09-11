@@ -19,7 +19,21 @@ export async function POST(
     params: { wsId: string; postId: string };
   }
 ) {
-  const isWSIDAllowed = wsId === process.env.MAILBOX_ALLOWED_WS_ID;
+  const supabase = createClient();
+
+  const { data: workspaceSecret } =
+    wsId === process.env.MAILBOX_ALLOWED_WS_ID
+      ? { data: { id: wsId, value: 'true' } }
+      : await supabase
+          .from('workspace_secrets')
+          .select('*')
+          .eq('ws_id', wsId)
+          .eq('name', 'ENABLE_EMAIL_SENDING')
+          .maybeSingle();
+
+  console.log('workspaceSecret', workspaceSecret);
+
+  const isWSIDAllowed = workspaceSecret?.value === 'true';
 
   if (!isWSIDAllowed) {
     return NextResponse.json(
