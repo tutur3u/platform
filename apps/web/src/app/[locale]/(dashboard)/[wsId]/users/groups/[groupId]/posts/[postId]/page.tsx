@@ -43,6 +43,8 @@ export default async function HomeworkCheck({
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
+  const hasEmailSendingPermission = false;
+
   return (
     <div>
       <FeatureSummary
@@ -130,6 +132,7 @@ export default async function HomeworkCheck({
               group_id: groupId,
               group_name: group.name,
             }}
+            hideEmailSending={!hasEmailSendingPermission}
             disableEmailSending={status.sent?.includes(user.id)}
           />
         ))}

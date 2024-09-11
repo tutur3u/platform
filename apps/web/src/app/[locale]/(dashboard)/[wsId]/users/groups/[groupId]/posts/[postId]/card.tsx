@@ -20,6 +20,7 @@ interface Props {
   user: WorkspaceUser;
   wsId: string;
   post: UserGroupPost;
+  hideEmailSending: boolean;
   disableEmailSending: boolean;
 }
 
@@ -35,7 +36,13 @@ export interface UserGroupPost {
   group_name?: string;
 }
 
-function UserCard({ user, wsId, post, disableEmailSending }: Props) {
+function UserCard({
+  user,
+  wsId,
+  post,
+  hideEmailSending,
+  disableEmailSending,
+}: Props) {
   const router = useRouter();
 
   const [check, setCheck] = useState<Partial<GroupPostCheck>>();
@@ -186,9 +193,11 @@ function UserCard({ user, wsId, post, disableEmailSending }: Props) {
           <h3 className="text-foreground text-lg font-semibold">
             {user.full_name}
           </h3>
-          <p className="text-foreground text-sm">
-            {user.phone ? user.phone : 'No phone'}
-          </p>
+          {(user.email || user.phone) && (
+            <p className="text-foreground text-sm">
+              {user.email || user.phone}
+            </p>
+          )}
         </div>
       </div>
 
@@ -199,51 +208,58 @@ function UserCard({ user, wsId, post, disableEmailSending }: Props) {
         disabled={saving || !check}
       />
 
-      <div className="mt-4 flex justify-between">
-        <div>
-          <Button
-            onClick={handleSendEmail}
-            disabled={
-              disableEmailSending ||
-              success ||
-              loading ||
-              !user.email ||
-              !isEmail(user.email) ||
-              user.email.endsWith('@easy.com') ||
-              check?.is_completed == null ||
-              saving ||
-              !check ||
-              (check?.notes != null && check?.notes !== notes)
-            }
-            variant={
-              loading || disableEmailSending || success
-                ? 'secondary'
-                : undefined
-            }
-          >
-            <Mail className="mr-2" />
-            <span className="flex items-center justify-center opacity-70">
-              {loading ? (
-                <LoadingIndicator />
-              ) : disableEmailSending || success ? (
-                'Email sent'
-              ) : (
-                'Send email'
+      <div
+        className={cn(
+          'mt-4 flex flex-wrap justify-between gap-2',
+          hideEmailSending && 'justify-end'
+        )}
+      >
+        {hideEmailSending || (
+          <div>
+            <Button
+              onClick={handleSendEmail}
+              disabled={
+                disableEmailSending ||
+                success ||
+                loading ||
+                !user.email ||
+                !isEmail(user.email) ||
+                user.email.endsWith('@easy.com') ||
+                check?.is_completed == null ||
+                saving ||
+                !check ||
+                (check?.notes != null && check?.notes !== notes)
+              }
+              variant={
+                loading || disableEmailSending || success
+                  ? 'secondary'
+                  : undefined
+              }
+            >
+              <Mail className="mr-2" />
+              <span className="flex items-center justify-center opacity-70">
+                {loading ? (
+                  <LoadingIndicator />
+                ) : disableEmailSending || success ? (
+                  'Email sent'
+                ) : (
+                  'Send email'
+                )}
+              </span>
+              {user.email && (
+                <>
+                  <MoveRight className="mx-2 hidden h-4 w-4 opacity-70 md:inline-block" />
+                  <span className="hidden underline md:inline-block">
+                    {user.email}
+                  </span>
+                </>
               )}
-            </span>
-            {user.email && (
-              <>
-                <MoveRight className="mx-2 hidden h-4 w-4 opacity-70 md:inline-block" />
-                <span className="hidden underline md:inline-block">
-                  {user.email}
-                </span>
-              </>
-            )}
-          </Button>
-          {error && <p>Error: {error}</p>}
-        </div>
+            </Button>
+            {error && <p>Error: {error}</p>}
+          </div>
+        )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           {check && check.notes !== notes ? (
             <Button
               onClick={() =>
@@ -271,7 +287,7 @@ function UserCard({ user, wsId, post, disableEmailSending }: Props) {
                 }
                 className={cn(
                   check?.is_completed != null && !check.is_completed
-                    ? 'bg-dynamic-red/10 border-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/20'
+                    ? 'bg-dynamic-red/10 border-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
                     : '',
                   'border'
                 )}
@@ -288,7 +304,7 @@ function UserCard({ user, wsId, post, disableEmailSending }: Props) {
                 onClick={() => handleSaveStatus({ isCompleted: true, notes })}
                 className={cn(
                   check?.is_completed != null && check.is_completed
-                    ? 'bg-dynamic-green/10 border-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/20'
+                    ? 'bg-dynamic-green/10 border-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
                     : '',
                   'border'
                 )}

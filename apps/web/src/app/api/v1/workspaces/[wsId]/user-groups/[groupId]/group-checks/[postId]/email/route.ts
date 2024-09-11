@@ -127,7 +127,8 @@ const sendEmail = async ({
     };
 
     const command = new SendEmailCommand(params);
-    await sesClient.send(command);
+    const res = await sesClient.send(command);
+    console.log('res', res);
 
     const {
       data: { user },
@@ -141,8 +142,9 @@ const sendEmail = async ({
       return false;
     }
 
-    const { error } = await supabase.from('sent_emails').insert([
-      {
+    const { data: sentEmail, error } = await supabase
+      .from('sent_emails')
+      .insert({
         post_id: postId,
         sender_id: user.id,
         receiver_id: receiverId,
@@ -151,11 +153,30 @@ const sendEmail = async ({
         content: inlinedHtmlContent,
         source_name: process.env.SOURCE_NAME,
         source_email: process.env.SOURCE_EMAIL,
-      },
-    ]);
+      })
+      .select('id')
+      .single();
+
+    if (!sentEmail) {
+      console.error('Error logging sent email:', error);
+      return false;
+    }
 
     if (error) {
       console.error('Error logging sent email:', error);
+      return false;
+    }
+
+    const { error: checkUpdateError } = await supabase
+      .from('user_group_post_checks')
+      .update({
+        email_id: sentEmail.id,
+      })
+      .eq('post_id', postId)
+      .eq('user_id', receiverId);
+
+    if (checkUpdateError) {
+      console.error('Error updating check:', checkUpdateError);
       return false;
     }
 

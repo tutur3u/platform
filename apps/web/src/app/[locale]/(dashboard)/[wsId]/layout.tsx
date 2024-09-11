@@ -95,7 +95,7 @@ export default async function Layout({
     {
       title: t('sidebar_tabs.mail'),
       href:
-        wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/history`,
+        wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/posts`,
       icon: <Mail className="h-4 w-4" />,
     },
     {

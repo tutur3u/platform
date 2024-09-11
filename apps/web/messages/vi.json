@@ -502,6 +502,18 @@
     "source_email": "Email nguồn",
     "created_at": "Ngày tạo"
   },
+  "post-email-data-table": {
+    "id": "Mã số",
+    "recipient": "Người nhận",
+    "group_name": "Tên nhóm",
+    "post_title": "Tiêu đề bài viết",
+    "email": "Email",
+    "subject": "Chủ đề",
+    "is_completed": "Làm xong",
+    "send_email": "Gửi email",
+    "preview": "Xem trước",
+    "created_at": "Ngày tạo"
+  },
   "user-group-data-table": {
     "id": "Mã số",
     "name": "Tên",
@@ -1377,7 +1389,8 @@
     "overview": "Tổng quan",
     "emails": "Lịch sử gửi thư",
     "history": "Lịch sử",
-    "send": "Gửi thư"
+    "send": "Gửi thư",
+    "posts": "Bài viết"
   },
   "dworkspace-mail": {
     "destination-addresses": "Địa chỉ đích"
@@ -1454,5 +1467,10 @@
     "create_description": "Tạo một tài liệu mới",
     "create": "Tạo tài liệu",
     "description": "Tài liệu được sử dụng để hỗ trợ việc chia sẻ thông tin trong không gian làm việc của bạn."
+  },
+  "ws-post-emails": {
+    "plural": "Bài viết",
+    "singular": "Bài viết",
+    "description": "Gửi email cho người dùng mà nhân viên có thẩm quyền đã kiểm tra công việc của họ trong các bài đăng của nhóm người dùng cụ thể."
   }
 }

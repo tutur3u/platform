@@ -23,6 +23,10 @@ export default async function Layout({
       requireRootWorkspace: true,
     },
     {
+      title: t('workspace-mail.posts'),
+      href: `/${wsId}/mail/posts`,
+    },
+    {
       title: t('workspace-mail.send'),
       href: `/${wsId}/mail/send`,
       disabled: true,

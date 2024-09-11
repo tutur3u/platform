@@ -502,6 +502,18 @@
     "source_email": "Source Email",
     "created_at": "Created At"
   },
+  "post-email-data-table": {
+    "id": "ID",
+    "recipient": "Recipient",
+    "group_name": "Group Name",
+    "post_title": "Post Title",
+    "email": "Email",
+    "subject": "Subject",
+    "is_completed": "Work Completed",
+    "send_email": "Send Email",
+    "preview": "Preview",
+    "created_at": "Created At"
+  },
   "user-group-data-table": {
     "id": "ID",
     "name": "Name",
@@ -1377,7 +1389,8 @@
     "overview": "Overview",
     "emails": "Emails",
     "history": "History",
-    "send": "Send email"
+    "send": "Send email",
+    "posts": "Posts"
   },
   "dworkspace-mail": {
     "destination-addresses": "Destination Addresses"
@@ -1454,5 +1467,10 @@
     "create": "Create document",
     "create_description": "Create a new document",
     "description": "Documents are used to facilitate the sharing of information in your workspace."
+  },
+  "ws-post-emails": {
+    "plural": "Posts",
+    "singular": "Post",
+    "description": "Send emails to users that have their work checked by authorized staff in specific user group posts."
   }
 }
