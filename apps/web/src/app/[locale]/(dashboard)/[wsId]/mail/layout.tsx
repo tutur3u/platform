@@ -1,10 +1,12 @@
 import { type NavLink, Navigation } from '@/components/navigation';
+import { getPermissions, getSecrets } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import type React from 'react';
 
 interface LayoutProps {
   params: {
-    wsId?: string;
+    wsId: string;
   };
   children: React.ReactNode;
 }
@@ -14,6 +16,22 @@ export default async function Layout({
   params: { wsId },
 }: LayoutProps) {
   const t = await getTranslations();
+
+  const secrets = await getSecrets({
+    wsId,
+    requiredSecrets: ['ENABLE_EMAIL_SENDING'],
+    forceAdmin: true,
+  });
+
+  if (!secrets.find((secret) => secret.value === 'true')) {
+    redirect(`/${wsId}`);
+  }
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('send_user_group_post_emails')) redirect(`/${wsId}`);
 
   const navLinks: NavLink[] = [
     {

@@ -1,3 +1,4 @@
+import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import juice from 'juice';
@@ -20,6 +21,14 @@ export async function POST(
   }
 ) {
   const supabase = createClient();
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('send_user_group_post_emails')) {
+    return NextResponse.json({ message: 'Permission denied' }, { status: 403 });
+  }
 
   const { data: workspaceSecret } =
     wsId === process.env.MAILBOX_ALLOWED_WS_ID

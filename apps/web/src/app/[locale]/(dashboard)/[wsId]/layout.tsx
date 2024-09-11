@@ -54,6 +54,7 @@ export default async function Layout({
       'ENABLE_DOCS',
       'ENABLE_DRIVE',
       'ENABLE_HEALTHCARE',
+      'ENABLE_EMAIL_SENDING',
     ],
     forceAdmin: true,
   });
@@ -97,6 +98,9 @@ export default async function Layout({
       href:
         wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/posts`,
       icon: <Mail className="h-4 w-4" />,
+      disabled:
+        !verifySecret('ENABLE_EMAIL_SENDING', 'true', secrets) ||
+        withoutPermission('send_user_group_post_emails'),
     },
     {
       title: t('sidebar_tabs.calendar'),

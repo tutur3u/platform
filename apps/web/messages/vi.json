@@ -978,7 +978,9 @@
     "manage_finance": "Quản lý tài chính",
     "manage_finance_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa giao dịch tài chính trong không gian làm việc.",
     "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",
-    "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng."
+    "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng.",
+    "send_user_group_post_emails": "Gửi nội dung bài viết qua email",
+    "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài đăng của nhóm người dùng cụ thể."
   },
   "ws-activities": {
     "description": "Xem tất cả các hoạt động trong không gian làm việc của bạn",

@@ -4950,7 +4950,8 @@ export type Database = {
         | 'manage_inventory'
         | 'manage_finance'
         | 'ai_chat'
-        | 'ai_lab';
+        | 'ai_lab'
+        | 'send_user_group_post_emails';
     };
     CompositeTypes: {
       [_ in never]: never;
