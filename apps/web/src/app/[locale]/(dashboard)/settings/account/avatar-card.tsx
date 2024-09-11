@@ -1,5 +1,4 @@
 import { getInitials } from '@/utils/name-helper';
-import { Cog6ToothIcon } from '@heroicons/react/24/solid';
 import {
   Avatar,
   AvatarFallback,
@@ -12,9 +11,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
-import { UserIcon } from 'lucide-react';
+import { SettingsIcon, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Props {
   src: string | null;
@@ -26,79 +25,100 @@ interface Props {
 
 const AvatarCard = ({ src, label, file, setFile, onRemove }: Props) => {
   const t = useTranslations();
-
   const [opened, setOpened] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const updateFile = (file: File | null) => {
-    setFile(file);
+  const updatePreviewUrl = useCallback(
+    (file: File | null) => {
+      if (file) {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+      } else if (src) {
+        setPreviewUrl(src);
+        return;
+      } else {
+        setPreviewUrl(null);
+        return;
+      }
+    },
+    [src]
+  );
+
+  useEffect(() => {
+    const cleanup = updatePreviewUrl(file);
+    return cleanup;
+  }, [file, updatePreviewUrl]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newFile = event.target.files?.[0] || null;
+    setFile(newFile);
+    updatePreviewUrl(newFile);
     setOpened(false);
   };
 
   const removeFile = () => {
     onRemove();
+    setFile(null);
+    setPreviewUrl(null);
     setOpened(false);
   };
 
-  const hasAvatar = !!src || !!file;
+  const hasAvatar = !!previewUrl;
   const isPreview = !!file;
 
   return (
     <div className="flex items-center justify-center">
-      <div className="relative w-fit">
-        <Avatar className="relative cursor-pointer overflow-visible font-semibold">
+      <div className="relative">
+        <Avatar className="h-32 w-32 cursor-pointer overflow-visible text-3xl font-semibold">
           <AvatarImage
-            src={file ? URL.createObjectURL(file) : src || undefined}
-            className="overflow-clip rounded-full"
+            src={previewUrl || undefined}
+            alt="Avatar"
+            className="object-cover"
           />
           <AvatarFallback className="font-semibold">
-            {label ? getInitials(label) : <UserIcon className="h-5 w-5" />}
+            {label ? getInitials(label) : <UserIcon className="h-12 w-12" />}
           </AvatarFallback>
         </Avatar>
 
         <DropdownMenu open={opened} onOpenChange={setOpened}>
           <DropdownMenuTrigger asChild>
-            <Button size="sm">
-              <Cog6ToothIcon className="h-5 w-5" />
+            <Button
+              size="icon"
+              variant="outline"
+              className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full shadow-md"
+            >
+              <SettingsIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end" sideOffset={4}>
-            <DropdownMenuItem asChild>
-              <>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg"
-                  onChange={(e) => updateFile(e.target.files?.[0] || null)}
-                  style={{ display: 'none' }}
-                  id="file-upload"
-                />
-                <label htmlFor="file-upload">
-                  <Button>{t('common.edit')}</Button>
-                </label>
-              </>
+            <DropdownMenuItem>
+              <label htmlFor="file-upload" className="w-full cursor-pointer">
+                {t('common.edit')}
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept="image/png,image/jpeg"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </DropdownMenuItem>
 
-            {hasAvatar ? (
-              isPreview ? (
-                <DropdownMenuItem asChild>
-                  <Button onClick={() => updateFile(null)}>
-                    {t('settings-account.revert_changes')}
-                  </Button>
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem asChild>
-                  <Button onClick={removeFile}>{t('common.remove')}</Button>
-                </DropdownMenuItem>
-              )
-            ) : null}
+            {hasAvatar && (
+              <DropdownMenuItem onClick={removeFile}>
+                {t('common.remove')}
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
         {isPreview && (
-          <div className="absolute -bottom-2 left-0 right-0 mx-auto flex w-fit transform items-center justify-center rounded-full bg-clip-text backdrop-blur-xl">
-            <div className="w-full rounded-full border-2 border-zinc-700/30 bg-zinc-100/50 bg-clip-padding px-4 py-1 text-center font-semibold text-black dark:border-zinc-300/30 dark:bg-transparent dark:text-zinc-300">
+          <div className="absolute -bottom-8 left-0 right-0 mx-auto w-full text-center">
+            <span className="rounded-full bg-zinc-100/90 px-3 py-1 text-xs font-semibold text-black dark:bg-zinc-800/90 dark:text-zinc-200">
               {t('settings-account.preview')}
-            </div>
+            </span>
           </div>
         )}
       </div>
