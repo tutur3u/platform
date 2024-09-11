@@ -507,11 +507,13 @@
     "recipient": "Recipient",
     "group_name": "Group Name",
     "post_title": "Post Title",
+    "post_content": "Post Content",
     "email": "Email",
     "subject": "Subject",
     "is_completed": "Work Completed",
     "send_email": "Send Email",
     "preview": "Preview",
+    "notes": "Notes",
     "created_at": "Created At"
   },
   "user-group-data-table": {

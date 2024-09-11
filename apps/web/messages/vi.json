@@ -507,11 +507,13 @@
     "recipient": "Người nhận",
     "group_name": "Tên nhóm",
     "post_title": "Tiêu đề bài viết",
+    "post_content": "Nội dung bài viết",
     "email": "Email",
     "subject": "Chủ đề",
     "is_completed": "Làm xong",
     "send_email": "Gửi email",
     "preview": "Xem trước",
+    "notes": "Ghi chú",
     "created_at": "Ngày tạo"
   },
   "user-group-data-table": {

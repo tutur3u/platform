@@ -97,6 +97,21 @@ export const getPostEmailColumns = (
     cell: ({ row }) => <div>{row.getValue('subject') || '-'}</div>,
   },
   {
+    accessorKey: 'post_content',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.post_content`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="line-clamp-3 max-w-[10rem] whitespace-pre-line">
+        {row.getValue('post_content') || '-'}
+      </div>
+    ),
+  },
+  {
     accessorKey: 'is_completed',
     header: ({ column }) => (
       <DataTableColumnHeader
@@ -106,6 +121,21 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (row.getValue('is_completed') ? <Check /> : <X />),
+  },
+  {
+    accessorKey: 'notes',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.notes`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="line-clamp-1 min-w-[8rem]">
+        {row.getValue('notes') || '-'}
+      </div>
+    ),
   },
   {
     accessorKey: 'created_at',

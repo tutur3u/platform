@@ -44,7 +44,9 @@ export default async function WorkspacePostEmailsPage({
         count={count}
         defaultVisibility={{
           id: false,
+          email: false,
           subject: false,
+          created_at: false,
         }}
       />
     </>
