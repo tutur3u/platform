@@ -80,6 +80,7 @@ export async function getWorkspaceInvites() {
     ? supabase
         .from('workspace_email_invites')
         .select('...workspaces(id, name), created_at')
+        .ilike('email', `%${user.email}%`)
     : null;
 
   // use promise.all to run both queries in parallel
