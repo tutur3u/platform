@@ -874,6 +874,15 @@
     "create_description": "Tạo một danh mục sản phẩm mới",
     "edit_description": "Sửa danh mục sản phẩm hiện có"
   },
+  "ws-product-units": {
+    "singular": "Đơn vị sản phẩm",
+    "plural": "Đơn vị sản phẩm",
+    "description": "Đơn vị sản phẩm giúp bạn quản lý tất cả các đơn vị sản phẩm trong không gian làm việc của bạn.",
+    "create": "Tạo đơn vị",
+    "edit": "Sửa đơn vị",
+    "create_description": "Tạo một đơn vị sản phẩm mới",
+    "edit_description": "Sửa đơn vị sản phẩm hiện có"
+  },
   "ws-user-fields": {
     "module": "Trường thông tin người dùng",
     "module_description": "Trường thông tin người dùng được sử dụng để lưu trữ thông tin bổ sung về người dùng trong không gian làm việc của bạn.",

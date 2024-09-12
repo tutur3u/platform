@@ -1,5 +1,6 @@
+import { productUnitColumns } from './columns';
+import { ProductUnitForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { basicColumns } from '@/data/columns/basic';
 import { ProductUnit } from '@/types/primitives/ProductUnit';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -32,12 +33,12 @@ export default async function WorkspaceUnitsPage({
         description={t('ws-inventory-units.description')}
         createTitle={t('ws-inventory-units.create')}
         createDescription={t('ws-inventory-units.create_description')}
-        // form={<UnitForm wsId={wsId} />}
+        form={<ProductUnitForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
-        columnGenerator={basicColumns}
+        columnGenerator={productUnitColumns}
         namespace="basic-data-table"
         count={count}
         defaultVisibility={{

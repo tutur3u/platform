@@ -874,6 +874,15 @@
     "create_description": "Create a new product category",
     "edit_description": "Edit an existing product category"
   },
+  "ws-product-units": {
+    "singular": "Product Unit",
+    "plural": "Product Units",
+    "description": "Product units are used to define the units of measurement for the products in your workspace.",
+    "create": "Create unit",
+    "edit": "Edit unit",
+    "create_description": "Create a new product unit",
+    "edit_description": "Edit an existing product unit"
+  },
   "ws-user-fields": {
     "module": "User Fields",
     "module_description": "User fields are used to store additional information about users in your workspace.",
