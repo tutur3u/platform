@@ -11,6 +11,7 @@ import {
   AlertDialogTrigger,
 } from '@repo/ui/components/ui/alert-dialog';
 import { Button } from '@repo/ui/components/ui/button';
+import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,11 @@ export default function UserGroupPosts({
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPost, setCurrentPost] = useState<UserGroupPost | undefined>();
+
+  const [configs, setConfigs] = useState({
+    showContent: true,
+    showStatus: true,
+  });
 
   const handleOpenDialog = (post?: UserGroupPost) => {
     setCurrentPost(
@@ -133,7 +139,47 @@ export default function UserGroupPosts({
   return (
     <>
       <div className="flex items-center justify-between">
-        <div className="text-xl font-semibold">{t('ws-user-groups.posts')}</div>
+        <div className="flex flex-col gap-1">
+          <div className="text-xl font-semibold">
+            {t('ws-user-groups.posts')}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="show-post-content"
+              checked={configs.showContent}
+              onCheckedChange={(checked) =>
+                setConfigs((prev) => ({
+                  ...prev,
+                  showContent: Boolean(checked),
+                }))
+              }
+            />
+            <label
+              htmlFor="show-post-content"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              {t('ws-user-groups.show_post_content')}
+            </label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="show-post-status"
+              checked={configs.showStatus}
+              onCheckedChange={(checked) =>
+                setConfigs((prev) => ({
+                  ...prev,
+                  showStatus: Boolean(checked),
+                }))
+              }
+            />
+            <label
+              htmlFor="show-post-status"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              {t('ws-user-groups.show_post_status')}
+            </label>
+          </div>
+        </div>
         {groupId && (
           <Button onClick={() => handleOpenDialog()}>
             <BookPlus className="mr-1 h-5 w-5" />
@@ -285,12 +331,12 @@ export default function UserGroupPosts({
                   </div>
                 )}
               </div>
-              {post.content && (
+              {configs.showContent && post.content && (
                 <div className="whitespace-pre-line text-sm opacity-70">
                   {post.content}
                 </div>
               )}
-              {groupId && post.id && (
+              {configs.showStatus && groupId && post.id && (
                 <PostEmailStatus groupId={groupId} postId={post.id} />
               )}
             </div>

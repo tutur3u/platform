@@ -800,7 +800,9 @@
     "add_post": "Add post",
     "edit_post": "Edit post",
     "edit_post_description": "Make changes to your post here.",
-    "add_post_description": "Add a new post."
+    "add_post_description": "Add a new post.",
+    "show_post_content": "Show post content",
+    "show_post_status": "Show post status"
   },
   "ws-user-group-tags": {
     "singular": "Group Tag",

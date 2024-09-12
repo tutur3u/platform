@@ -800,7 +800,9 @@
     "add_post": "Thêm bài viết",
     "edit_post": "Chỉnh sửa bài viết",
     "edit_post_description": "Thực hiện thay đổi cho bài viết của bạn ở đây.",
-    "add_post_description": "Thêm một bài viết mới."
+    "add_post_description": "Thêm một bài viết mới.",
+    "show_post_content": "Hiển thị nội dung bài viết",
+    "show_post_status": "Hiển thị trạng thái bài viết"
   },
   "ws-user-group-tags": {
     "singular": "Gắn thẻ nhóm",
