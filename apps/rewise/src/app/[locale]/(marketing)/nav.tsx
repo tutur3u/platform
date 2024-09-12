@@ -1,10 +1,11 @@
 'use client';
 
+import ChatLink from './chat-link';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { Button, buttonVariants } from '@repo/ui/components/ui/button';
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
@@ -48,7 +49,12 @@ function groupLinksByDate(
   links: NavLink[]
 ): GroupedLinks {
   return links.reduce((acc: GroupedLinks, link) => {
-    if (link.createdAt) {
+    if (link.pinned) {
+      if (!acc['Favorites']) {
+        acc['Favorites'] = [];
+      }
+      acc['Favorites'].push(link);
+    } else if (link.createdAt) {
       const dateTag = getDateTag(locale, t, new Date(link.createdAt));
       if (!acc[dateTag]) {
         acc[dateTag] = [];
@@ -72,6 +78,7 @@ export function Nav({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [urlToLoad, setUrlToLoad] = useState<string>();
+
   const groupedLinks = groupLinksByDate(locale, t, links);
 
   useEffect(() => {
@@ -111,64 +118,23 @@ export function Nav({
           ? pathname === link.href
           : pathname?.startsWith(link.href);
 
-    const linkContent = (
-      <Link
-        key={index}
-        href={
-          link.disabled
-            ? '#'
-            : link.forceRefresh
-              ? `${link.href}?refresh=true`
-              : link.href
-        }
-        className={cn(
-          buttonVariants({
-            variant: 'ghost',
-            size: isCollapsed ? 'icon' : 'sm',
-          }),
-          isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
-          'whitespace-normal',
-          isActive
-            ? 'from-dynamic-red/20 via-dynamic-purple/20 to-dynamic-sky/20 hover:from-dynamic-red/20 hover:via-dynamic-purple/20 hover:to-dynamic-sky/20 bg-gradient-to-br'
-            : urlToLoad === link.href
-              ? 'from-dynamic-red/30 via-dynamic-purple/30 to-dynamic-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
-              : 'bg-foreground/5 hover:bg-foreground/10',
-          link.disabled &&
-            link.showDisabled &&
-            'cursor-not-allowed bg-transparent opacity-50 hover:bg-transparent'
-        )}
-        onClick={() => {
-          if (link.disabled) return;
-          setUrlToLoad(link.href.split('?')[0]);
-          onClick?.();
-        }}
-      >
-        {isCollapsed ? (
-          link.icon
-        ) : (
-          <>
-            {single && link.icon && <span className="mr-2">{link.icon}</span>}
-            <span className="line-clamp-1 break-all">
-              {link.title.replaceAll(/(\*\*)|(^")|("$)/g, '')}
-            </span>
-            {link.trailing && (
-              <span
-                className={cn(
-                  'ml-auto flex-none',
-                  isActive && 'text-background dark:text-white'
-                )}
-              >
-                {link.trailing}
-              </span>
-            )}
-          </>
-        )}
-      </Link>
-    );
-
     return isCollapsed ? (
       <Tooltip key={index} delayDuration={0}>
-        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+        <TooltipTrigger asChild>
+          <ChatLink
+            key={index}
+            single={single}
+            isActive={isActive}
+            isCollapsed={isCollapsed}
+            link={link}
+            urlToLoad={urlToLoad}
+            onClick={() => {
+              if (link.disabled) return;
+              setUrlToLoad(link.href.split('?')[0]);
+              onClick?.();
+            }}
+          />
+        </TooltipTrigger>
         <TooltipContent side="right" className="flex items-center gap-4">
           <div>
             <div className="font-semibold">
@@ -187,7 +153,19 @@ export function Nav({
         </TooltipContent>
       </Tooltip>
     ) : (
-      linkContent
+      <ChatLink
+        key={index}
+        single={single}
+        isActive={isActive}
+        isCollapsed={isCollapsed}
+        link={link}
+        urlToLoad={urlToLoad}
+        onClick={() => {
+          if (link.disabled) return;
+          setUrlToLoad(link.href.split('?')[0]);
+          onClick?.();
+        }}
+      />
     );
   };
 
@@ -256,26 +234,46 @@ export function Nav({
             </Button>
           </Link>
         )}
+
         {single ? (
           <div className="grid gap-1">
             {links.map((link, index) => renderLink(link, index))}
           </div>
         ) : (
-          Object.entries(groupedLinks).map(([dateTag, dateLinks]) => (
-            <div key={dateTag}>
-              {!isCollapsed && (
-                <div className="text-muted-foreground mb-2 text-sm font-semibold">
-                  {
-                    // Upper case the first letter of the date tag
-                    dateTag.charAt(0).toUpperCase() + dateTag.slice(1)
-                  }
-                </div>
-              )}
-              <div className="grid gap-1">
-                {dateLinks.map((link, index) => renderLink(link, index))}
-              </div>
-            </div>
-          ))
+          <>
+            {Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
+              if (dateTag === 'Favorites') {
+                return (
+                  <div key={dateTag}>
+                    {!isCollapsed && (
+                      <div className="text-muted-foreground mb-2 text-sm font-semibold">
+                        {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
+                      </div>
+                    )}
+                    <div className="grid gap-1">
+                      {dateLinks.map((link, index) => renderLink(link, index))}
+                    </div>
+                  </div>
+                );
+              }
+            })}
+            {Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
+              if (dateTag !== 'Favorites') {
+                return (
+                  <div key={dateTag}>
+                    {!isCollapsed && (
+                      <div className="text-muted-foreground mb-2 text-sm font-semibold">
+                        {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
+                      </div>
+                    )}
+                    <div className="grid gap-1">
+                      {dateLinks.map((link, index) => renderLink(link, index))}
+                    </div>
+                  </div>
+                );
+              }
+            })}
+          </>
         )}
       </nav>
     </div>

@@ -20,6 +20,7 @@ export interface NavLink {
   requireRootMember?: boolean;
   allowedRoles?: string[];
   disabledRoles?: string[];
+  pinned?: boolean;
   createdAt?: string;
 }
 

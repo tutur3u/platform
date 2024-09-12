@@ -84,6 +84,7 @@ export type Database = {
           is_public: boolean;
           latest_summarized_message_id: string | null;
           model: string | null;
+          pinned: boolean;
           summary: string | null;
           title: string | null;
         };
@@ -94,6 +95,7 @@ export type Database = {
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;
+          pinned?: boolean;
           summary?: string | null;
           title?: string | null;
         };
@@ -104,6 +106,7 @@ export type Database = {
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;
+          pinned?: boolean;
           summary?: string | null;
           title?: string | null;
         };
@@ -2367,6 +2370,7 @@ export type Database = {
       user_group_post_checks: {
         Row: {
           created_at: string;
+          email_id: string | null;
           is_completed: boolean;
           notes: string | null;
           post_id: string;
@@ -2374,6 +2378,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          email_id?: string | null;
           is_completed: boolean;
           notes?: string | null;
           post_id: string;
@@ -2381,12 +2386,20 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          email_id?: string | null;
           is_completed?: boolean;
           notes?: string | null;
           post_id?: string;
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'user_group_post_checks_email_id_fkey';
+            columns: ['email_id'];
+            isOneToOne: true;
+            referencedRelation: 'sent_emails';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'user_group_post_checks_post_id_fkey';
             columns: ['post_id'];
@@ -4940,7 +4953,8 @@ export type Database = {
         | 'manage_inventory'
         | 'manage_finance'
         | 'ai_chat'
-        | 'ai_lab';
+        | 'ai_lab'
+        | 'send_user_group_post_emails';
     };
     CompositeTypes: {
       [_ in never]: never;

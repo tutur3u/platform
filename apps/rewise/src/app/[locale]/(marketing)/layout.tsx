@@ -26,6 +26,7 @@ export default async function Layout({
     title: chat.title || t('common.untitled'),
     icon: <MessageSquare className="flex-none" />,
     href: `/c/${chat.id}`,
+    pinned: chat.pinned,
     createdAt: chat.created_at,
   })) satisfies NavLink[];
 

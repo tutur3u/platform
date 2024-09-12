@@ -84,6 +84,7 @@ export type Database = {
           is_public: boolean;
           latest_summarized_message_id: string | null;
           model: string | null;
+          pinned: boolean;
           summary: string | null;
           title: string | null;
         };
@@ -94,6 +95,7 @@ export type Database = {
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;
+          pinned?: boolean;
           summary?: string | null;
           title?: string | null;
         };
@@ -104,6 +106,7 @@ export type Database = {
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;
+          pinned?: boolean;
           summary?: string | null;
           title?: string | null;
         };
