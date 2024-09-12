@@ -88,11 +88,14 @@ const Chat = ({
 
     const generateSummary = async (messages: Message[] = []) => {
       if (
+        summary ||
         summarizing ||
         !model ||
         !chat?.id ||
         !chat?.model ||
         !messages?.length ||
+        chat.summary ||
+        chat.latest_summarized_message_id ||
         chat.latest_summarized_message_id === messages[messages.length - 1]?.id
       )
         return;
@@ -126,6 +129,8 @@ const Chat = ({
     // is not the same as the last message id in the chat
     if (
       !isLoading &&
+      !summary &&
+      !chat.latest_summarized_message_id &&
       chat.latest_summarized_message_id !== messages[messages.length - 1]?.id &&
       messages[messages.length - 1]?.role !== 'user'
     )
@@ -143,7 +148,7 @@ const Chat = ({
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [chat, isLoading, messages, reload]);
+  }, [summary, chat, isLoading, messages, reload]);
 
   const [initialScroll, setInitialScroll] = useState(true);
 
