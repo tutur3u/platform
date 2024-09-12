@@ -191,6 +191,7 @@ const Chat = ({
     if (refresh) {
       clearChat();
       router.replace(`/${wsId}/chat?`);
+      router.refresh();
     }
   }, [
     chat?.id,

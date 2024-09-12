@@ -65,7 +65,7 @@ export function Structure({
 
   const rootLinks: NavLink[] = [
     {
-      href: '/',
+      href: '/?refresh=true',
       title: t('common.home'),
       icon: <Home className="h-5 w-5 flex-none" />,
       matchExact: true,

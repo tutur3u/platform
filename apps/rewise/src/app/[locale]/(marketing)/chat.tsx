@@ -180,6 +180,7 @@ const Chat = ({
     if (refresh) {
       clearChat();
       router.replace('/');
+      router.refresh();
     }
   }, [chat?.id, searchParams, router, setInput, chats, count, initialScroll]);
 

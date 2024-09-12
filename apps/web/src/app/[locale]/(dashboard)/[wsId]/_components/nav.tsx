@@ -94,7 +94,7 @@ export function Nav({
                       'bg-accent text-accent-foreground animate-pulse'
                   )}
                   onClick={() => {
-                    setUrlToLoad(link.href);
+                    setUrlToLoad(link.href.split('?')[0]);
                     onClick?.();
                   }}
                 >
@@ -125,7 +125,7 @@ export function Nav({
                 'justify-start max-sm:hover:bg-transparent'
               )}
               onClick={() => {
-                setUrlToLoad(link.href);
+                setUrlToLoad(link.href.split('?')[0]);
                 onClick?.();
               }}
             >
