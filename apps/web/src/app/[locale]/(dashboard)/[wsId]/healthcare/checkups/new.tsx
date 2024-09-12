@@ -36,8 +36,8 @@ export default function NewCheckupPage() {
   const [userId] = useState<string>('');
   const [diagnosis] = useState<Diagnosis | null>(null);
 
-  const [checkupAt, setCheckupAt] = useState<Date | null>(new Date());
-  const [nextCheckupAt, setNextCheckupAt] = useState<Date | null>(null);
+  const [,] = useState<Date | null>(new Date());
+  const [nextCheckupAt] = useState<Date | null>(null);
 
   const [checked, setChecked] = useState<boolean>(false);
   const [nextChecked, setNextChecked] = useState<boolean>(false);
