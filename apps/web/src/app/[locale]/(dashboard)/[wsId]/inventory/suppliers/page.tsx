@@ -1,5 +1,6 @@
+import { productSupplierColumns } from './columns';
+import { ProductSupplierForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { basicColumns } from '@/data/columns/basic';
 import { ProductSupplier } from '@/types/primitives/ProductSupplier';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -32,12 +33,12 @@ export default async function WorkspaceSuppliersPage({
         description={t('ws-inventory-suppliers.description')}
         createTitle={t('ws-inventory-suppliers.create')}
         createDescription={t('ws-inventory-suppliers.create_description')}
-        // form={<SupplierForm wsId={wsId} />}
+        form={<ProductSupplierForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
-        columnGenerator={basicColumns}
+        columnGenerator={productSupplierColumns}
         namespace="basic-data-table"
         count={count}
         defaultVisibility={{

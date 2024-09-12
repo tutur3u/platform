@@ -883,6 +883,15 @@
     "create_description": "Create a new product unit",
     "edit_description": "Edit an existing product unit"
   },
+  "ws-product-suppliers": {
+    "singular": "Product Supplier",
+    "plural": "Product Suppliers",
+    "description": "Product suppliers are used to manage the suppliers of the products in your workspace.",
+    "create": "Create supplier",
+    "edit": "Edit supplier",
+    "create_description": "Create a new product supplier",
+    "edit_description": "Edit an existing product supplier"
+  },
   "ws-user-fields": {
     "module": "User Fields",
     "module_description": "User fields are used to store additional information about users in your workspace.",

@@ -1,6 +1,6 @@
 'use client';
 
-import { ProductUnit } from '@/types/primitives/ProductUnit';
+import { ProductSupplier } from '@/types/primitives/ProductSupplier';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -21,7 +21,7 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  data?: ProductUnit;
+  data?: ProductSupplier;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -30,7 +30,7 @@ const FormSchema = z.object({
   name: z.string().min(1).max(255),
 });
 
-export function ProductUnitForm({ wsId, data, onFinish }: Props) {
+export function ProductSupplierForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
@@ -49,8 +49,8 @@ export function ProductUnitForm({ wsId, data, onFinish }: Props) {
 
     const res = await fetch(
       data?.id
-        ? `/api/v1/workspaces/${wsId}/product-units/${data.id}`
-        : `/api/v1/workspaces/${wsId}/product-units`,
+        ? `/api/v1/workspaces/${wsId}/product-suppliers/${data.id}`
+        : `/api/v1/workspaces/${wsId}/product-suppliers`,
       {
         method: data?.id ? 'PUT' : 'POST',
         headers: {

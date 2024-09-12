@@ -883,6 +883,15 @@
     "create_description": "Tạo một đơn vị sản phẩm mới",
     "edit_description": "Sửa đơn vị sản phẩm hiện có"
   },
+  "ws-product-suppliers": {
+    "singular": "Nhà cung cấp",
+    "plural": "Nhà cung cấp",
+    "description": "Nhà cung cấp giúp bạn quản lý tất cả các nhà cung cấp trong không gian làm việc của bạn.",
+    "create": "Tạo nhà cung cấp",
+    "edit": "Sửa nhà cung cấp",
+    "create_description": "Tạo một nhà cung cấp mới",
+    "edit_description": "Sửa nhà cung cấp hiện có"
+  },
   "ws-user-fields": {
     "module": "Trường thông tin người dùng",
     "module_description": "Trường thông tin người dùng được sử dụng để lưu trữ thông tin bổ sung về người dùng trong không gian làm việc của bạn.",
