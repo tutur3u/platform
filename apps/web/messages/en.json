@@ -865,6 +865,15 @@
     "create_description": "Create a new transaction category",
     "edit_description": "Edit an existing transaction category"
   },
+  "ws-product-categories": {
+    "singular": "Product Category",
+    "plural": "Product Categories",
+    "description": "Product categories are used to categorize the products in your workspace.",
+    "create": "Create category",
+    "edit": "Edit category",
+    "create_description": "Create a new product category",
+    "edit_description": "Edit an existing product category"
+  },
   "ws-user-fields": {
     "module": "User Fields",
     "module_description": "User fields are used to store additional information about users in your workspace.",

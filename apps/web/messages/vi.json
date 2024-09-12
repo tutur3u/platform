@@ -865,6 +865,15 @@
     "create_description": "Tạo một danh mục giao dịch mới",
     "edit_description": "Sửa danh mục giao dịch hiện có"
   },
+  "ws-product-categories": {
+    "singular": "Danh mục sản phẩm",
+    "plural": "Danh mục sản phẩm",
+    "description": "Danh mục sản phẩm giúp bạn phân loại tất cả các sản phẩm trong không gian làm việc của bạn.",
+    "create": "Tạo danh mục",
+    "edit": "Sửa danh mục",
+    "create_description": "Tạo một danh mục sản phẩm mới",
+    "edit_description": "Sửa danh mục sản phẩm hiện có"
+  },
   "ws-user-fields": {
     "module": "Trường thông tin người dùng",
     "module_description": "Trường thông tin người dùng được sử dụng để lưu trữ thông tin bổ sung về người dùng trong không gian làm việc của bạn.",

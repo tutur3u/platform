@@ -1,6 +1,7 @@
+import { productCategoryColumns } from './columns';
+import { ProductCategoryForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { basicColumns } from '@/data/columns/basic';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { ProductCategory } from '@/types/primitives/ProductCategory';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -32,13 +33,13 @@ export default async function WorkspaceProductCategoriesPage({
         description={t('ws-inventory-categories.description')}
         createTitle={t('ws-inventory-categories.create')}
         createDescription={t('ws-inventory-categories.create_description')}
-        // form={<CategoryForm wsId={wsId} />}
+        form={<ProductCategoryForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
-        columnGenerator={basicColumns}
-        namespace="basic-data-table"
+        columnGenerator={productCategoryColumns}
+        namespace="transaction-category-data-table"
         count={count}
         defaultVisibility={{
           id: false,
@@ -79,5 +80,5 @@ async function getData(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data, count } as { data: ProductCategory[]; count: number };
 }
