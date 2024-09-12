@@ -240,15 +240,15 @@ async function getWorkspaceUsers(wsId: string) {
   const supabase = createClient();
 
   const queryBuilder = supabase
-    .from('workspace_user_linked_users')
+    .from('workspace_members')
     .select(
-      'id:platform_user_id, ...workspace_users!inner(full_name, display_name), ...users(...user_private_details(email))',
+      'id:user_id, ...users(display_name, ...user_private_details(email))',
       {
         count: 'exact',
       }
     )
     .eq('ws_id', wsId)
-    .order('platform_user_id');
+    .order('user_id');
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
