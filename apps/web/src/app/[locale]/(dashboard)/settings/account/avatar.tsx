@@ -1,4 +1,3 @@
-// avatar.tsx
 'use client';
 
 import AvatarCard from './avatar-card';
@@ -34,13 +33,13 @@ export default function Avatar({ user }: AvatarProps) {
   const supabase = createClient();
 
   const [saving, setSaving] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
   });
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
+    console.log('onSubmit called', data);
     if (!data.file) return;
 
     setSaving(true);
@@ -48,9 +47,9 @@ export default function Avatar({ user }: AvatarProps) {
     const fileName = `${generateRandomUUID()}_${data.file.name}`;
     const filePath = `${user.id}/${fileName}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: _, error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(filePath, data.file); // Changed 'file' to 'data.file'
+      .upload(filePath, data.file);
 
     if (uploadError) {
       toast({
@@ -67,74 +66,66 @@ export default function Avatar({ user }: AvatarProps) {
       .from('avatars')
       .getPublicUrl(filePath);
 
-    const res = await fetch('/api/users/me', {
-      method: 'PATCH',
-      body: JSON.stringify({ avatar_url: urlData.publicUrl }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ avatar_url: urlData.publicUrl })
+      .eq('id', user.id);
 
-    if (res.ok) {
+    if (updateError) {
+      toast({
+        title: 'Update failed',
+        description:
+          'There was an error updating your avatar. Please try again.',
+        variant: 'destructive',
+      });
+    } else {
       toast({
         title: 'Avatar updated',
         description: 'Your avatar has been successfully updated.',
       });
       router.refresh();
-    } else {
-      toast({
-        title: 'An error occurred',
-        description: 'Please try again.',
-      });
     }
 
     form.reset();
-    setAvatarFile(null);
     setSaving(false);
   }
 
   const removeAvatar = async () => {
     setSaving(true);
 
-    const res = await fetch('/api/users/me', {
-      method: 'PATCH',
-      body: JSON.stringify({ avatar_url: null }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ avatar_url: null })
+      .eq('id', user.id);
 
-    if (res.ok) {
+    if (updateError) {
+      toast({
+        title: 'Remove failed',
+        description:
+          'There was an error removing your avatar. Please try again.',
+        variant: 'destructive',
+      });
+    } else {
       toast({
         title: 'Avatar removed',
         description: 'Your avatar has been successfully removed.',
       });
       router.refresh();
-    } else {
-      toast({
-        title: 'An error occurred',
-        description: 'Please try again.',
-      });
     }
 
-    setAvatarFile(null);
     setSaving(false);
+  };
+
+  const handleFileSelect = (file: File) => {
+    form.setValue('file', file);
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
         <AvatarCard
-          src={user?.avatar_url ?? null}
-          file={avatarFile}
-          setFile={(file) => {
-            setAvatarFile(file);
-            if (file) {
-              form.setValue('file', file);
-            } else {
-              form.clearErrors('file');
-            }
-          }}
+          src={user?.avatar_url || null}
+          onFileSelect={handleFileSelect}
           onRemove={removeAvatar}
           label={getInitials(user?.display_name || user?.email)}
         />
@@ -142,8 +133,7 @@ export default function Avatar({ user }: AvatarProps) {
         <Button
           type="submit"
           size="icon"
-          onClick={form.handleSubmit(onSubmit)}
-          disabled={saving || !avatarFile}
+          disabled={saving || !form.getValues('file')}
         >
           {saving ? (
             <Loader2 className="h-5 w-5 animate-spin" />
