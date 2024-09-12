@@ -66,7 +66,7 @@ const checkIfUserExists = async ({ email }: { email: string }) => {
   const { data, error } = await sbAdmin
     .from('user_private_details')
     .select('id:user_id')
-    .eq('email', email)
+    .eq('email', email.toLowerCase())
     .maybeSingle();
 
   if (error) throw error.message;
