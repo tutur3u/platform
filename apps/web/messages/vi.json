@@ -1342,6 +1342,10 @@
     "upload_files": "Tải lên tập tin",
     "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
     "response_language": "Ngôn ngữ phản hồi",
+    "chat_summary": "Tóm tắt",
+    "chat_notes": "Ghi chú",
+    "multiple_choice": "Bộ trắc nghiệm",
+    "paragraph_answers": "Câu hỏi đoạn văn",
     "ai_models": "Mô hình AI",
     "quizzes": "Bộ câu hỏi"
   },

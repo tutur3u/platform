@@ -1342,6 +1342,10 @@
     "upload_files": "Upload Files",
     "upload_file_description": "Choose files you want to upload to this chat.",
     "response_language": "Response language",
+    "chat_summary": "Chat summary",
+    "chat_notes": "Chat notes",
+    "multiple_choice": "Multiple choice",
+    "paragraph_answers": "Paragraph answers",
     "ai_models": "AI Models",
     "quizzes": "Quizzes"
   },

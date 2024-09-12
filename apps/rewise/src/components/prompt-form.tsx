@@ -230,8 +230,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.summary
-                  ? 'border-pink-500/20 bg-pink-500/10 text-pink-700 hover:bg-pink-500/20 dark:border-pink-300/20 dark:bg-pink-300/20 dark:text-pink-300 dark:hover:bg-pink-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -251,8 +251,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.notes
-                  ? 'border-purple-500/20 bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 dark:border-purple-300/20 dark:bg-purple-300/20 dark:text-purple-300 dark:hover:bg-purple-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -272,8 +272,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.multiChoiceQuiz
-                  ? 'border-green-500/20 bg-green-500/10 text-green-700 hover:bg-green-500/20 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300 dark:hover:bg-green-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -293,8 +293,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.paragraphQuiz
-                  ? 'border-orange-500/20 bg-orange-500/10 text-orange-700 hover:bg-orange-500/20 dark:border-orange-300/20 dark:bg-orange-300/20 dark:text-orange-300 dark:hover:bg-orange-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -314,8 +314,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.flashcards
-                  ? 'border-blue-500/20 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/20 dark:text-blue-300 dark:hover:bg-blue-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
