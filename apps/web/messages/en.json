@@ -797,7 +797,10 @@
     "add_user": "Add users",
     "add_user_description": "Add users to this group",
     "posts": "Posts",
-    "add_post": "Add post"
+    "add_post": "Add post",
+    "edit_post": "Edit post",
+    "edit_post_description": "Make changes to your post here.",
+    "add_post_description": "Add a new post."
   },
   "ws-user-group-tags": {
     "singular": "Group Tag",

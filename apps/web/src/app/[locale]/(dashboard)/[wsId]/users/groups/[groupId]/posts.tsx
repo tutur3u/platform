@@ -147,17 +147,21 @@ export default function UserGroupPosts({
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>
-                {currentPost?.id ? 'Edit Post' : 'Add New Post'}
+                {currentPost?.id
+                  ? t('ws-user-groups.edit_post')
+                  : t('ws-user-groups.add_post')}
               </DialogTitle>
               <DialogDescription>
                 {currentPost?.id
-                  ? 'Make changes to your post here.'
-                  : 'Create a new post.'}
+                  ? t('ws-user-groups.edit_post_description')
+                  : t('ws-user-groups.add_post_description')}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid items-center gap-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">
+                  {t('post-email-data-table.post_title')}
+                </Label>
                 <Input
                   id="title"
                   name="title"
@@ -168,7 +172,9 @@ export default function UserGroupPosts({
                 />
               </div>
               <div className="grid items-center gap-2">
-                <Label htmlFor="content">Content</Label>
+                <Label htmlFor="content">
+                  {t('post-email-data-table.post_content')}
+                </Label>
                 <Textarea
                   id="content"
                   name="content"
@@ -179,7 +185,9 @@ export default function UserGroupPosts({
                 />
               </div>
               <div className="grid items-center gap-2">
-                <Label htmlFor="created_at">Notes</Label>
+                <Label htmlFor="created_at">
+                  {t('post-email-data-table.notes')}
+                </Label>
                 <Textarea
                   id="notes"
                   name="notes"
@@ -192,7 +200,7 @@ export default function UserGroupPosts({
             </div>
             <DialogFooter>
               <Button type="submit" onClick={submitPost}>
-                {currentPost?.id ? 'Save changes' : 'Create post'}
+                {currentPost?.id ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </DialogContent>

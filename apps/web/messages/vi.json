@@ -796,8 +796,11 @@
     "edit_description": "Sửa nhóm hiện có",
     "add_user": "Thêm người dùng",
     "add_user_description": "Thêm người dùng vào nhóm",
-    "posts": "bài viết",
-    "add_post": "Thêm bài viết"
+    "posts": "Bài viết",
+    "add_post": "Thêm bài viết",
+    "edit_post": "Chỉnh sửa bài viết",
+    "edit_post_description": "Thực hiện thay đổi cho bài viết của bạn ở đây.",
+    "add_post_description": "Thêm một bài viết mới."
   },
   "ws-user-group-tags": {
     "singular": "Gắn thẻ nhóm",
@@ -982,7 +985,7 @@
     "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",
     "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng.",
     "send_user_group_post_emails": "Gửi nội dung bài viết qua email",
-    "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài đăng của nhóm người dùng cụ thể."
+    "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể."
   },
   "ws-activities": {
     "description": "Xem tất cả các hoạt động trong không gian làm việc của bạn",
@@ -1475,6 +1478,6 @@
   "ws-post-emails": {
     "plural": "Bài viết",
     "singular": "Bài viết",
-    "description": "Gửi email cho người dùng mà nhân viên có thẩm quyền đã kiểm tra công việc của họ trong các bài đăng của nhóm người dùng cụ thể."
+    "description": "Gửi email cho người dùng mà nhân viên có thẩm quyền đã kiểm tra công việc của họ trong các bài viết của nhóm người dùng cụ thể."
   }
 }
