@@ -1,5 +1,6 @@
+import { productWarehouseColumns } from './columns';
+import { ProductWarehouseForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { basicColumns } from '@/data/columns/basic';
 import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -32,12 +33,12 @@ export default async function WorkspaceWarehousesPage({
         description={t('ws-inventory-warehouses.description')}
         createTitle={t('ws-inventory-warehouses.create')}
         createDescription={t('ws-inventory-warehouses.create_description')}
-        // form={<WarehouseForm wsId={wsId} />}
+        form={<ProductWarehouseForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
-        columnGenerator={basicColumns}
+        columnGenerator={productWarehouseColumns}
         namespace="basic-data-table"
         count={count}
         defaultVisibility={{

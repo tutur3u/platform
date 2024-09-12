@@ -892,6 +892,15 @@
     "create_description": "Create a new product supplier",
     "edit_description": "Edit an existing product supplier"
   },
+  "ws-product-warehouses": {
+    "singular": "Product Warehouse",
+    "plural": "Product Warehouses",
+    "description": "Product warehouses are used to manage the storage locations of the products in your workspace.",
+    "create": "Create warehouse",
+    "edit": "Edit warehouse",
+    "create_description": "Create a new product warehouse",
+    "edit_description": "Edit an existing product warehouse"
+  },
   "ws-user-fields": {
     "module": "User Fields",
     "module_description": "User fields are used to store additional information about users in your workspace.",

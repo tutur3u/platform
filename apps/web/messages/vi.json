@@ -892,6 +892,15 @@
     "create_description": "Tạo một nhà cung cấp mới",
     "edit_description": "Sửa nhà cung cấp hiện có"
   },
+  "ws-product-warehouses": {
+    "singular": "Kho hàng",
+    "plural": "Kho hàng",
+    "description": "Kho hàng giúp bạn quản lý vị trí lưu trữ của các sản phẩm trong không gian làm việc của bạn.",
+    "create": "Tạo kho hàng",
+    "edit": "Sửa kho hàng",
+    "create_description": "Tạo một kho hàng mới",
+    "edit_description": "Sửa kho hàng hiện có"
+  },
   "ws-user-fields": {
     "module": "Trường thông tin người dùng",
     "module_description": "Trường thông tin người dùng được sử dụng để lưu trữ thông tin bổ sung về người dùng trong không gian làm việc của bạn.",
