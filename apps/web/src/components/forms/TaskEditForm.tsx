@@ -21,7 +21,6 @@ import {
   TextInput,
   Textarea,
 } from '@mantine/core';
-import { DateTimePicker } from '@mantine/dates';
 import { useDebouncedValue } from '@mantine/hooks';
 import { closeAllModals } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
@@ -42,11 +41,11 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
   const [name, setName] = useState(task?.name || '');
   const [description, setDescription] = useState(task?.description || '');
 
-  const [startDate, setStartDate] = useState<Date | null>(
+  const [startDate] = useState<Date | null>(
     task?.start_date ? moment(task?.start_date).toDate() : null
   );
 
-  const [endDate, setEndDate] = useState<Date | null>(
+  const [endDate] = useState<Date | null>(
     task?.end_date ? moment(task?.end_date).toDate() : null
   );
 
@@ -338,7 +337,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
         <Tabs.Panel value="datetime">
           <div className="grid gap-4 md:grid-cols-2">
-            <DateTimePicker
+            {/* <DateTimePicker
               label="Start date"
               placeholder="When should the task start?"
               value={startDate}
@@ -353,7 +352,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
               onChange={setEndDate}
               minDate={startDate ?? undefined}
               popoverProps={{ withinPortal: true }}
-            />
+            /> */}
           </div>
         </Tabs.Panel>
 
