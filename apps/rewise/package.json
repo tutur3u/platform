@@ -54,7 +54,7 @@
     "@upstash/qstash": "^2.7.6",
     "@vercel/analytics": "^1.3.1",
     "@vercel/speed-insights": "^1.0.12",
-    "@vercel/toolbar": "^0.1.19",
+    "@vercel/toolbar": "^0.1.20",
     "ai": "^3.3.35",
     "babel-plugin-react-compiler": "0.0.0-experimental-fe484b5-20240912",
     "date-fns": "^3.6.0",

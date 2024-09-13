@@ -147,8 +147,8 @@ importers:
         specifier: ^1.0.12
         version: 1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.19)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6)))(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))
       '@vercel/toolbar':
-        specifier: ^0.1.19
-        version: 0.1.19(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6))
+        specifier: ^0.1.20
+        version: 0.1.20(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6))
       ai:
         specifier: ^3.3.35
         version: 3.3.35(openai@4.60.0(zod@3.23.8))(react@19.0.0-rc-94e652d5-20240912)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))(zod@3.23.8)
@@ -457,8 +457,8 @@ importers:
         specifier: ^1.0.12
         version: 1.0.12(@sveltejs/kit@2.5.25(@sveltejs/vite-plugin-svelte@3.1.2(svelte@4.2.19)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6)))(svelte@4.2.19)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6)))(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))
       '@vercel/toolbar':
-        specifier: ^0.1.19
-        version: 0.1.19(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6))
+        specifier: ^0.1.20
+        version: 0.1.20(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6))
       ai:
         specifier: ^3.3.35
         version: 3.3.35(openai@4.60.0(zod@3.23.8))(react@19.0.0-rc-94e652d5-20240912)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))(zod@3.23.8)
@@ -3974,8 +3974,8 @@ packages:
       typescript:
         optional: true
 
-  '@vercel/toolbar@0.1.19':
-    resolution: {integrity: sha512-Dz1Pw4Gq3Z0eczArHjTmF1d1nd+IkRDXns+K1hRPm6sJuQiY9Z2p1ec0Fjd4Cs95KnVgDI1ZwjF+rQrjjNAvPw==}
+  '@vercel/toolbar@0.1.20':
+    resolution: {integrity: sha512-+TUF4XV4xwP/A5r2Vf4qMF3oSO6wqNjE2wt6rVYSXgdnaqkmNBTSATD/pgi2DcCYt0ppwHuMjCQli1+jb6gIBA==}
     peerDependencies:
       next: '>=11.0.0'
       react: '>=17'
@@ -12338,7 +12338,7 @@ snapshots:
       - supports-color
       - vitest
 
-  '@vercel/toolbar@0.1.19(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6))':
+  '@vercel/toolbar@0.1.20(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6))':
     dependencies:
       '@tinyhttp/app': 1.3.0
       chokidar: 3.6.0
