@@ -151,7 +151,7 @@ importers:
         version: 0.1.19(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6))
       ai:
         specifier: ^3.3.35
-        version: 3.3.35(openai@4.60.0(zod@3.23.8))(react@19.0.0-rc-94e652d5-20240912)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))(zod@3.23.8)
+        version: 3.3.35(openai@4.60.1(zod@3.23.8))(react@19.0.0-rc-94e652d5-20240912)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))(zod@3.23.8)
       babel-plugin-react-compiler:
         specifier: 0.0.0-experimental-fe484b5-20240912
         version: 0.0.0-experimental-fe484b5-20240912
@@ -189,8 +189,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)
       openai:
-        specifier: ^4.60.0
-        version: 4.60.0(zod@3.23.8)
+        specifier: ^4.60.1
+        version: 4.60.1(zod@3.23.8)
       pptxgenjs:
         specifier: ^3.12.0
         version: 3.12.0
@@ -461,7 +461,7 @@ importers:
         version: 0.1.19(next@15.0.0-canary.153(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-fe484b5-20240912)(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)(vite@5.4.4(@types/node@22.5.4)(terser@5.31.6))
       ai:
         specifier: ^3.3.35
-        version: 3.3.35(openai@4.60.0(zod@3.23.8))(react@19.0.0-rc-94e652d5-20240912)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))(zod@3.23.8)
+        version: 3.3.35(openai@4.60.1(zod@3.23.8))(react@19.0.0-rc-94e652d5-20240912)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))(zod@3.23.8)
       babel-plugin-react-compiler:
         specifier: 0.0.0-experimental-fe484b5-20240912
         version: 0.0.0-experimental-fe484b5-20240912
@@ -508,8 +508,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-94e652d5-20240912(react@19.0.0-rc-94e652d5-20240912))(react@19.0.0-rc-94e652d5-20240912)
       openai:
-        specifier: ^4.60.0
-        version: 4.60.0(zod@3.23.8)
+        specifier: ^4.60.1
+        version: 4.60.1(zod@3.23.8)
       pptxgenjs:
         specifier: ^3.12.0
         version: 3.12.0
@@ -6633,8 +6633,8 @@ packages:
     resolution: {integrity: sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ==}
     engines: {node: '>=18'}
 
-  openai@4.60.0:
-    resolution: {integrity: sha512-U/wNmrUPdfsvU1GrKRP5mY5YHR3ev6vtdfNID6Sauz+oquWD8r+cXPL1xiUlYniosPKajy33muVHhGS/9/t6KA==}
+  openai@4.60.1:
+    resolution: {integrity: sha512-j7aZOpgN0MtflPgNaBlSnOyok4jwto0GVOxVC5g0jCfa0lvywYx+LhlFim/dXzPtyi8MjKozyLshSj93617vNQ==}
     hasBin: true
     peerDependencies:
       zod: ^3.23.8
@@ -12497,7 +12497,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.3.35(openai@4.60.0(zod@3.23.8))(react@19.0.0-rc-94e652d5-20240912)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))(zod@3.23.8):
+  ai@3.3.35(openai@4.60.1(zod@3.23.8))(react@19.0.0-rc-94e652d5-20240912)(solid-js@1.8.22)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.4.38(typescript@5.6.2))(zod@3.23.8):
     dependencies:
       '@ai-sdk/provider': 0.0.23
       '@ai-sdk/provider-utils': 1.0.18(zod@3.23.8)
@@ -12514,7 +12514,7 @@ snapshots:
       secure-json-parse: 2.7.0
       zod-to-json-schema: 3.23.2(zod@3.23.8)
     optionalDependencies:
-      openai: 4.60.0(zod@3.23.8)
+      openai: 4.60.1(zod@3.23.8)
       react: 19.0.0-rc-94e652d5-20240912
       sswr: 2.1.0(svelte@4.2.19)
       svelte: 4.2.19
@@ -15612,7 +15612,7 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  openai@4.60.0(zod@3.23.8):
+  openai@4.60.1(zod@3.23.8):
     dependencies:
       '@types/node': 18.19.50
       '@types/node-fetch': 2.6.11
