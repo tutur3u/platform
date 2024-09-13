@@ -40,7 +40,7 @@ const Chat = ({
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(defaultModel);
-  const [mode, setMode] = useState<ResponseMode>('short');
+  const [mode, setMode] = useState<ResponseMode>('medium');
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
