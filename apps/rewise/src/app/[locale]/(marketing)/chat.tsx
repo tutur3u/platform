@@ -4,6 +4,7 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
+import { ResponseMode } from '@/components/prompt-form';
 import { Model, defaultModel, models } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
@@ -39,6 +40,7 @@ const Chat = ({
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(defaultModel);
+  const [mode, setMode] = useState<ResponseMode>('short');
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
@@ -57,6 +59,7 @@ const Chat = ({
       body: {
         id: chat?.id,
         model: chat?.model || model?.value,
+        mode,
       },
       onResponse(response) {
         if (!response.ok)
@@ -349,6 +352,8 @@ const Chat = ({
         updateChat={updateChat}
         clearChat={clearChat}
         setCollapsed={setCollapsed}
+        mode={mode}
+        setMode={setMode}
       />
     </div>
   );

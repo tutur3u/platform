@@ -1279,7 +1279,10 @@
     "quizzes": "Quizzes",
     "show_chat_name": "Show chat name",
     "show_favorites": "Show favorites",
-    "chat_name_hidden": "Chat name hidden"
+    "chat_name_hidden": "Chat name hidden",
+    "short_and_concise": "Short and concise",
+    "medium_and_informative": "Medium and informative",
+    "long_and_detailed": "Long and detailed"
   },
   "crud-ops": {
     "ops": "Operations",

@@ -13,20 +13,18 @@ import {
 import { cn } from '@repo/ui/lib/utils';
 import type { UseChatHelpers } from 'ai/react';
 import {
-  ArrowDownWideNarrow,
   Bolt,
+  Cat,
   FileText,
   Globe,
   ImageIcon,
   Languages,
   Lock,
-  NotebookPen,
-  NotebookTabs,
+  Origami,
   Package,
   Paperclip,
-  PencilLine,
+  Rabbit,
   RefreshCw,
-  SquareStack,
   X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -34,6 +32,8 @@ import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
+
+export type ResponseMode = 'short' | 'medium' | 'long';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
@@ -48,6 +48,8 @@ export interface PromptProps
   setShowExtraOptions: React.Dispatch<React.SetStateAction<boolean>>;
   toggleChatFileUpload: () => void;
   toggleChatVisibility: () => void;
+  mode: ResponseMode;
+  setMode: (mode: ResponseMode) => void;
 }
 
 export function PromptForm({
@@ -64,6 +66,8 @@ export function PromptForm({
   setShowExtraOptions,
   toggleChatFileUpload,
   toggleChatVisibility,
+  mode,
+  setMode,
 }: PromptProps) {
   const t = useTranslations();
 
@@ -184,13 +188,13 @@ export function PromptForm({
   //   };
   // }, [microphoneState, connectionState]);
 
-  const [responseTypes, setResponseTypes] = useState<{
-    summary?: boolean;
-    notes?: boolean;
-    multiChoiceQuiz?: boolean;
-    paragraphQuiz?: boolean;
-    flashcards?: boolean;
-  }>({});
+  // const [responseTypes, setResponseTypes] = useState<{
+  //   summary?: boolean;
+  //   notes?: boolean;
+  //   multiChoiceQuiz?: boolean;
+  //   paragraphQuiz?: boolean;
+  //   flashcards?: boolean;
+  // }>({});
 
   const [element, setElement] = useState<HTMLElement | null>(null);
 
@@ -224,6 +228,51 @@ export function PromptForm({
         <div className="mb-2 flex items-center justify-between gap-2">
           <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
             <Button
+              size="xs"
+              type="button"
+              variant={mode === 'short' ? undefined : 'secondary'}
+              className={cn(
+                'border text-xs',
+                mode === 'short'
+                  ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
+              )}
+              onClick={() => setMode('short')}
+            >
+              <Rabbit className="mr-1 h-4 w-4" />
+              {t('ai_chat.short_and_concise')}
+            </Button>
+            <Button
+              size="xs"
+              type="button"
+              variant={mode === 'medium' ? undefined : 'secondary'}
+              className={cn(
+                'border text-xs',
+                mode === 'medium'
+                  ? 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
+              )}
+              onClick={() => setMode('medium')}
+            >
+              <Cat className="mr-1 h-4 w-4" />
+              {t('ai_chat.medium_and_informative')}
+            </Button>
+            <Button
+              size="xs"
+              type="button"
+              variant={mode === 'long' ? undefined : 'secondary'}
+              className={cn(
+                'border text-xs',
+                mode === 'long'
+                  ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
+              )}
+              onClick={() => setMode('long')}
+            >
+              <Origami className="mr-1 h-4 w-4" />
+              {t('ai_chat.long_and_detailed')}
+            </Button>
+            {/* <Button
               size="xs"
               type="button"
               variant={responseTypes.summary ? undefined : 'secondary'}
@@ -327,7 +376,7 @@ export function PromptForm({
             >
               <NotebookTabs className="mr-1 h-4 w-4" />
               {t('ai_chat.flashcards')}
-            </Button>
+            </Button> */}
           </div>
 
           <div className="flex items-center">

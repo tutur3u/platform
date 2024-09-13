@@ -1,6 +1,6 @@
 import { ChatModelSelector } from './chat-model-selector';
 import LoadingIndicator from './common/LoadingIndicator';
-import { PromptForm } from './prompt-form';
+import { PromptForm, ResponseMode } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
@@ -61,6 +61,8 @@ export interface ChatPanelProps
   initialMessages?: Message[];
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
+  mode: ResponseMode;
+  setMode: (mode: ResponseMode) => void;
 }
 
 export function ChatPanel({
@@ -80,6 +82,8 @@ export function ChatPanel({
   clearChat,
   collapsed,
   setCollapsed,
+  mode,
+  setMode,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
   const supabase = createClient();
@@ -328,6 +332,8 @@ export function ChatPanel({
                   setDialogType('visibility');
                   setShowDialog((prev) => !prev);
                 }}
+                mode={mode}
+                setMode={setMode}
               />
             </div>
           </div>

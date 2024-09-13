@@ -1,3 +1,4 @@
+import { ResponseMode } from '@/components/prompt-form';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { anthropic } from '@ai-sdk/anthropic';
 import { CoreMessage, streamText } from 'ai';
@@ -16,12 +17,18 @@ export async function POST(req: Request) {
     model = DEFAULT_MODEL_NAME,
     messages,
     previewToken,
+    mode,
   } = (await req.json()) as {
     id?: string;
     model?: string;
     messages?: CoreMessage[];
     previewToken?: string;
+    mode?: ResponseMode;
   };
+
+  if (!mode || !['short', 'medium', 'long'].includes(mode)) {
+    return new Response('Invalid mode', { status: 400 });
+  }
 
   try {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
@@ -87,7 +94,13 @@ export async function POST(req: Request) {
     const result = await streamText({
       model: anthropic(model),
       messages,
-      system: systemInstruction,
+      system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${
+        mode === 'short'
+          ? 'extremely short, concise, and to the point. No flashcards or quizzes are included'
+          : mode === 'medium'
+            ? 'medium in length, informative, and provides a good chunk of helpful insights'
+            : 'long, detailed, comprehensive and look into all possible aspects for a perfect answer. Be as long and comprehensive as possible'
+      }.`,
       onFinish: async (response) => {
         console.log('AI Response:', response);
 

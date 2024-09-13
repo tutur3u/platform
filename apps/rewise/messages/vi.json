@@ -1279,7 +1279,10 @@
     "quizzes": "Bộ câu hỏi",
     "show_chat_name": "Hiển thị tên trò chuyện",
     "show_favorites": "Hiển thị yêu thích",
-    "chat_name_hidden": "Tên trò chuyện đã được ẩn"
+    "chat_name_hidden": "Tên trò chuyện đã được ẩn",
+    "short_and_concise": "Ngắn gọn và súc tích",
+    "medium_and_informative": "Vừa đủ thông tin",
+    "long_and_detailed": "Dài và chi tiết"
   },
   "crud-ops": {
     "ops": "Thao tác",
