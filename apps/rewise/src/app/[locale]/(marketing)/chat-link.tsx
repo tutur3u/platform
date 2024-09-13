@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
 import { Button, buttonVariants } from '@repo/ui/components/ui/button';
 import { Star, StarOff } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -14,6 +15,7 @@ export default function ChatLink({
   isCollapsed,
   link,
   urlToLoad,
+  configs,
   onClick,
 }: {
   single: boolean;
@@ -21,9 +23,14 @@ export default function ChatLink({
   isCollapsed: boolean;
   link: NavLink;
   urlToLoad: string | undefined;
+  configs?: {
+    showChatName: boolean;
+    showFavorites: boolean;
+  };
   onClick?: () => void;
 }) {
   const router = useRouter();
+  const t = useTranslations();
   const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
@@ -81,10 +88,17 @@ export default function ChatLink({
         ) : (
           <>
             {single && link.icon && <span className="mr-2">{link.icon}</span>}
-            <span className="line-clamp-1 break-all">
-              {link.title.replaceAll(/(\*\*)|(^")|("$)/g, '')}
+            <span
+              className={cn(
+                'line-clamp-1 break-all',
+                !configs?.showChatName && 'opacity-50'
+              )}
+            >
+              {configs?.showChatName
+                ? link.title.replaceAll(/(\*\*)|(^")|("$)/g, '')
+                : `${t('ai_chat.chat_name_hidden')}.`}
             </span>
-            {link.trailing && (
+            {configs?.showChatName && link.trailing && (
               <span
                 className={cn(
                   'ml-auto flex-none',
@@ -97,10 +111,10 @@ export default function ChatLink({
           </>
         )}
       </Link>
-      {single || (
+      {configs?.showFavorites && !single && (
         <Button
           size="xs"
-          variant={loading ? 'secondary' : link.pinned ? undefined : 'ghost'}
+          variant={loading ? 'secondary' : link.pinned ? 'ghost' : 'ghost'}
           className="transition-all duration-300 group-hover:w-auto group-hover:p-2 md:w-0 md:p-0"
           onClick={handlePin}
           disabled={loading}

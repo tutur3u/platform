@@ -1224,6 +1224,7 @@
     "prompt_placeholder": "Nhập yêu cầu của bạn...",
     "chats": "Các cuộc trò chuyện",
     "no_chats": "Bắt đầu trò chuyện mới bằng cách gửi một yêu cầu.",
+    "no_chats_yet": "Chưa có cuộc trò chuyện nào.",
     "new_chat": "Trò chuyện mới",
     "reset_chat": "Đặt lại",
     "creating_chat": "Đang tạo cuộc trò chuyện...",
@@ -1275,7 +1276,10 @@
     "multiple_choice": "Bộ trắc nghiệm",
     "paragraph_answers": "Câu hỏi đoạn văn",
     "ai_models": "Mô hình AI",
-    "quizzes": "Bộ câu hỏi"
+    "quizzes": "Bộ câu hỏi",
+    "show_chat_name": "Hiển thị tên trò chuyện",
+    "show_favorites": "Hiển thị yêu thích",
+    "chat_name_hidden": "Tên trò chuyện đã được ẩn"
   },
   "crud-ops": {
     "ops": "Thao tác",

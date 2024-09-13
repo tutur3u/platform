@@ -179,7 +179,6 @@ const Chat = ({
 
     if (chat?.id && input) {
       setInput(input.toString());
-      router.replace(`/c/${chat.id}`);
     }
 
     if (refresh) {
@@ -226,7 +225,6 @@ const Chat = ({
     if (id) {
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
-      router.replace(`/?id=${id}`);
       router.refresh();
     }
   };

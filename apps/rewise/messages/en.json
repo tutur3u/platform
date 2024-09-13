@@ -1224,6 +1224,7 @@
     "prompt_placeholder": "Type your prompt here...",
     "chats": "Chats",
     "no_chats": "Start a new chat by sending a prompt.",
+    "no_chats_yet": "No chats yet.",
     "new_chat": "New chat",
     "reset_chat": "Reset chat",
     "creating_chat": "Creating chat...",
@@ -1275,7 +1276,10 @@
     "multiple_choice": "Multiple choice",
     "paragraph_answers": "Paragraph answers",
     "ai_models": "AI Models",
-    "quizzes": "Quizzes"
+    "quizzes": "Quizzes",
+    "show_chat_name": "Show chat name",
+    "show_favorites": "Show favorites",
+    "chat_name_hidden": "Chat name hidden"
   },
   "crud-ops": {
     "ops": "Operations",

@@ -6,6 +6,8 @@ import { PROD_MODE } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { Button } from '@repo/ui/components/ui/button';
+import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { Separator } from '@repo/ui/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
@@ -46,10 +48,14 @@ function getDateTag(locale: string, t: any, date: Date): string {
 function groupLinksByDate(
   locale: string,
   t: any,
-  links: NavLink[]
+  links: NavLink[],
+  configs: {
+    showChatName: boolean;
+    showFavorites: boolean;
+  }
 ): GroupedLinks {
   return links.reduce((acc: GroupedLinks, link) => {
-    if (link.pinned) {
+    if (configs.showFavorites && link.pinned) {
       if (!acc['Favorites']) {
         acc['Favorites'] = [];
       }
@@ -79,13 +85,25 @@ export function Nav({
   const searchParams = useSearchParams();
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
-  const groupedLinks = groupLinksByDate(locale, t, links);
+  const [configs, setConfigs] = useState({
+    showChatName: true,
+    showFavorites: true,
+  });
+
+  const groupedLinks = groupLinksByDate(locale, t, links, configs);
 
   useEffect(() => {
     if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
   }, [pathname, searchParams]);
 
-  const renderLink = (link: NavLink, index: number) => {
+  const renderLink = (
+    link: NavLink,
+    index: number,
+    configs: {
+      showChatName: boolean;
+      showFavorites: boolean;
+    }
+  ) => {
     // If the link is disabled, don't render it
     if (link?.disabled && !link.showDisabled) return null;
 
@@ -138,7 +156,9 @@ export function Nav({
         <TooltipContent side="right" className="flex items-center gap-4">
           <div>
             <div className="font-semibold">
-              {link.title.replaceAll(/(\*\*)|(^")|("$)/g, '')}
+              {configs.showChatName
+                ? link.title.replaceAll(/(\*\*)|(^")|("$)/g, '')
+                : t('ai_chat.anonymous')}
             </div>
             {link.createdAt && (
               <span className="text-muted-foreground text-sm">
@@ -165,6 +185,7 @@ export function Nav({
           setUrlToLoad(link.href.split('?')[0]);
           onClick?.();
         }}
+        configs={configs}
       />
     );
   };
@@ -237,42 +258,100 @@ export function Nav({
 
         {single ? (
           <div className="grid gap-1">
-            {links.map((link, index) => renderLink(link, index))}
+            {links.map((link, index) => renderLink(link, index, configs))}
           </div>
         ) : (
           <>
-            {Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
-              if (dateTag === 'Favorites') {
-                return (
-                  <div key={dateTag}>
-                    {!isCollapsed && (
-                      <div className="text-muted-foreground mb-2 text-sm font-semibold">
-                        {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
+            {links.length === 0 || (
+              <>
+                <Separator />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-chat-name"
+                    checked={configs.showChatName}
+                    onCheckedChange={(checked) =>
+                      setConfigs((prev) => ({
+                        ...prev,
+                        showChatName: Boolean(checked),
+                      }))
+                    }
+                  />
+                  <label
+                    htmlFor="show-chat-name"
+                    className="line-clamp-1 break-all text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {t('ai_chat.show_chat_name')}
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="show-favorites"
+                    checked={configs.showFavorites}
+                    onCheckedChange={(checked) =>
+                      setConfigs((prev) => ({
+                        ...prev,
+                        showFavorites: Boolean(checked),
+                      }))
+                    }
+                  />
+                  <label
+                    htmlFor="show-favorites"
+                    className="line-clamp-1 break-all text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {t('ai_chat.show_favorites')}
+                  </label>
+                </div>
+              </>
+            )}
+
+            <Separator />
+
+            {configs.showFavorites &&
+              Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
+                if (dateTag === 'Favorites') {
+                  return (
+                    <>
+                      <div key={dateTag}>
+                        {!isCollapsed && (
+                          <div className="text-muted-foreground mb-2 text-sm font-semibold">
+                            {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
+                          </div>
+                        )}
+                        <div className="grid gap-1">
+                          {dateLinks.map((link, index) =>
+                            renderLink(link, index, configs)
+                          )}
+                        </div>
                       </div>
-                    )}
-                    <div className="grid gap-1">
-                      {dateLinks.map((link, index) => renderLink(link, index))}
-                    </div>
-                  </div>
-                );
-              }
-            })}
-            {Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
-              if (dateTag !== 'Favorites') {
-                return (
-                  <div key={dateTag}>
-                    {!isCollapsed && (
-                      <div className="text-muted-foreground mb-2 text-sm font-semibold">
-                        {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
+                      <Separator />
+                    </>
+                  );
+                }
+              })}
+            {links.length === 0 ? (
+              <div className="flex items-center justify-center text-center opacity-50">
+                {t('ai_chat.no_chats_yet')}
+              </div>
+            ) : (
+              Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
+                if (!configs.showFavorites || dateTag !== 'Favorites') {
+                  return (
+                    <div key={dateTag}>
+                      {!isCollapsed && (
+                        <div className="text-muted-foreground mb-2 text-sm font-semibold">
+                          {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
+                        </div>
+                      )}
+                      <div className="grid gap-1">
+                        {dateLinks.map((link, index) =>
+                          renderLink(link, index, configs)
+                        )}
                       </div>
-                    )}
-                    <div className="grid gap-1">
-                      {dateLinks.map((link, index) => renderLink(link, index))}
                     </div>
-                  </div>
-                );
-              }
-            })}
+                  );
+                }
+              })
+            )}
           </>
         )}
       </nav>
