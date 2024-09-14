@@ -1304,7 +1304,11 @@
     "change-password-description": "Đổi mật khẩu của bạn.",
     "delete-account": "Xóa tài khoản",
     "delete-account-description": "Xóa tài khoản của bạn.",
-    "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản."
+    "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
+    "new_avatar": "Hình đại diện mới",
+    "upload_avatar": "Hình đại diện mới",
+    "remove_avatar": "Xóa hình đại diện",
+    "save_avatar": "Lưu hình đại diện"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",

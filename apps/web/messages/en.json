@@ -1304,7 +1304,11 @@
     "change-password-description": "Change your pasword",
     "delete-account": "Delete account",
     "delete-account-description": "Delete your account",
-    "delete-account-message": "This will permanently delete your account and cannot be undone. Type your email address to confirm deletion."
+    "delete-account-message": "This will permanently delete your account and cannot be undone. Type your email address to confirm deletion.",
+    "new_avatar": "New avatar",
+    "upload_avatar": "Upload avatar",
+    "remove_avatar": "Remove avatar",
+    "save_avatar": "Save avatar"
   },
   "settings-appearance": {
     "appearance": "Appearance",
