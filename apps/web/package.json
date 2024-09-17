@@ -72,7 +72,7 @@
     "ai": "^3.3.37",
     "babel-plugin-react-compiler": "0.0.0-experimental-fe484b5-20240912",
     "class-variance-authority": "^0.7.0",
-    "date-fns": "^3.6.0",
+    "date-fns": "^4.0.0",
     "dayjs": "^1.11.13",
     "framer-motion": "^11.5.4",
     "html2canvas": "^1.4.1",
