@@ -34,7 +34,7 @@ interface MailProps {
 
 export function Structure({
   wsId,
-  defaultLayout = [20, 48],
+  defaultLayout = [20, 80],
   defaultCollapsed = false,
   navCollapsedSize,
   user,
@@ -104,7 +104,7 @@ export function Structure({
             collapsedSize={navCollapsedSize}
             collapsible={true}
             minSize={15}
-            maxSize={20}
+            maxSize={40}
             onCollapse={() => {
               setIsCollapsed(true);
               document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
