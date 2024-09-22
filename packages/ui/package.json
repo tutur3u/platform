@@ -7,7 +7,7 @@
     "ui:add": "pnpm dlx shadcn-ui@latest add",
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@9.10.0",
+  "packageManager": "pnpm@9.11.0",
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -47,12 +47,12 @@
     "eslint": "8.57.1",
     "input-otp": "^1.2.4",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.441.0",
+    "lucide-react": "^0.445.0",
     "next-themes": "^0.3.0",
-    "react": "19.0.0-rc-206df66e-20240912",
+    "react": "19.0.0-rc-e740d4b1-20240919",
     "react-colorful": "^5.6.1",
     "react-day-picker": "8.10.1",
-    "react-dom": "19.0.0-rc-206df66e-20240912",
+    "react-dom": "19.0.0-rc-e740d4b1-20240919",
     "react-dropzone": "^14.2.3",
     "react-hook-form": "^7.53.0",
     "react-resizable": "^3.0.5",
@@ -62,7 +62,7 @@
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
-    "vaul": "^0.9.3",
+    "vaul": "^0.9.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -71,7 +71,7 @@
     "@tailwindcss/typography": "^0.5.15",
     "@types/lodash": "^4.17.7",
     "@types/node": "^22.5.5",
-    "@types/react": "^18.3.7",
+    "@types/react": "^18.3.8",
     "@types/react-resizable": "^3.0.8",
     "@types/react-syntax-highlighter": "^15.5.13",
     "autoprefixer": "^10.4.20",
