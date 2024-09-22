@@ -105,6 +105,7 @@
     "workspace_name": "Tên không gian làm việc",
     "subscription_plan": "Gói đăng ký",
     "free": "Miễn phí",
+    "premium": "Cao cấp",
     "pro": "Chuyên nghiệp",
     "enterprise": "Doanh nghiệp",
     "month": "Tháng",
@@ -121,7 +122,8 @@
     "background": "Màu nền",
     "scan_me": "Quét mã QR",
     "qr_code": "Mã QR",
-    "current_plan": "Gói hiện tại"
+    "current_plan": "Gói hiện tại",
+    "go_to_tuturuuu": "Tới Tuturuu"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

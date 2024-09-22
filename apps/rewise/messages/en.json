@@ -105,6 +105,7 @@
     "workspace_name": "Workspace Name",
     "subscription_plan": "Subscription Plan",
     "free": "Free",
+    "premium": "Premium",
     "pro": "Pro",
     "enterprise": "Enterprise",
     "month": "Month",
@@ -121,7 +122,8 @@
     "background": "Background",
     "scan_me": "Scan me",
     "qr_code": "QR Code",
-    "current_plan": "Current plan"
+    "current_plan": "Current plan",
+    "go_to_tuturuuu": "Go to Tuturuuu"
   },
   "date_helper": {
     "time-unit": "Time unit",

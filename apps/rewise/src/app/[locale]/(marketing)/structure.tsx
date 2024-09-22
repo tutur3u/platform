@@ -25,6 +25,7 @@ import {
   Home,
   Menu,
   MessagesSquare,
+  SquareArrowOutUpRight,
   X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -66,6 +67,13 @@ export function Structure({
       icon: <Home className="h-5 w-5 flex-none" />,
       matchExact: true,
     },
+    {
+      href: 'https://tuturuuu.com/onboarding',
+      title: t('common.go_to_tuturuuu'),
+      icon: <SquareArrowOutUpRight className="h-5 w-5 flex-none" />,
+      matchExact: true,
+      newTab: true,
+    },
     // {
     //   href: '/models',
     //   title: t('ai_chat.ai_models'),
@@ -102,7 +110,7 @@ export function Structure({
       href: '/plans',
       title: t('common.current_plan'),
       icon: <Crown className="h-5 w-5 flex-none" />,
-      trailing: t('common.free'),
+      trailing: t('common.premium'),
       disabled: true,
       showDisabled: true,
     },

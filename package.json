@@ -7,7 +7,7 @@
     "preview": "cd apps/web && pnpm preview",
     "dev": "turbo run dev --parallel",
     "bdevx": "cd apps/web && pnpm bdevx",
-    "devx": "cd apps/web && pnpm devx",
+    "devx": "cd apps/web && pnpm supabase stop && pnpm i && pnpm supabase start && cd ../.. && pnpm turbo run dev --parallel",
     "bdevrs": "cd apps/web && pnpm bdevrs",
     "devrs": "cd apps/web && pnpm devrs",
     "lint": "turbo run lint",

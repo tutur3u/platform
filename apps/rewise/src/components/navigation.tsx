@@ -11,6 +11,7 @@ export interface NavLink {
   trailing?: string;
   icon?: ReactNode;
   href: string;
+  newTab?: boolean;
   forceRefresh?: boolean;
   matchExact?: boolean;
   aliases?: string[];

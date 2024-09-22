@@ -58,6 +58,7 @@ export default function ChatLink({
   return (
     <div className="flex items-center gap-2 group-hover:gap-2 md:gap-0">
       <Link
+        target={link.newTab ? '_blank' : undefined}
         href={
           link.disabled
             ? '#'
