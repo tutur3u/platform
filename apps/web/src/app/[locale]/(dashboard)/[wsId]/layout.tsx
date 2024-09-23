@@ -8,6 +8,7 @@ import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getSecrets,
+  getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
 import {
@@ -187,6 +188,7 @@ export default async function Layout({
     },
   ];
 
+  const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
   const layout = cookies().get('react-resizable-panels:layout:default');
@@ -200,6 +202,7 @@ export default async function Layout({
       <Structure
         wsId={wsId}
         user={user}
+        workspace={workspace}
         defaultLayout={defaultLayout}
         defaultCollapsed={defaultCollapsed}
         navCollapsedSize={4}

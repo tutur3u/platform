@@ -4,9 +4,26 @@ import LogoTitle from '../../logo-title';
 import WorkspaceSelect from '../../workspace-select';
 import { Nav } from './_components/nav';
 import { NavLink } from '@/components/navigation';
+import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { cn } from '@/lib/utils';
+import { Workspace } from '@/types/primitives/Workspace';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@repo/ui/components/ui/breadcrumb';
 import { Button } from '@repo/ui/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@repo/ui/components/ui/dropdown-menu';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -15,6 +32,7 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
 import { Menu, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -22,6 +40,7 @@ import { ReactNode, Suspense, useState } from 'react';
 
 interface MailProps {
   wsId: string;
+  workspace: Workspace | null;
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
@@ -34,6 +53,7 @@ interface MailProps {
 
 export function Structure({
   wsId,
+  workspace,
   defaultLayout = [20, 80],
   defaultCollapsed = false,
   navCollapsedSize,
@@ -43,8 +63,31 @@ export function Structure({
   userPopover,
   children,
 }: MailProps) {
+  const t = useTranslations();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
+
+  const filteredLinks = links.filter((link) => {
+    // If the link is disabled, don't render it
+    if (link?.disabled) return null;
+
+    // If the link is disabled on production, don't render it
+    if (link?.disableOnProduction && PROD_MODE) return null;
+
+    // If the link requires root membership, check if user email ends with @tuturuuu.com
+    if (link?.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
+      return null;
+
+    // If the link requires the root workspace, check if the current workspace is the root workspace
+    if (link?.requireRootWorkspace && !isRootWorkspace) return null;
+
+    // If the link is only allowed for certain roles, check if the current role is allowed
+    if (link?.allowedRoles && link.allowedRoles.length > 0) return null;
+
+    return link;
+  });
 
   return (
     <>
@@ -193,6 +236,67 @@ export function Structure({
               id="main-content"
               className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 md:pt-4 lg:px-8 xl:px-16"
             >
+              <Breadcrumb className="mb-4">
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink
+                      href={pathname === `/${wsId}` ? '#' : `/${wsId}`}
+                    >
+                      {workspace?.name || t('common.unnamed-workspace')}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="flex items-center gap-1">
+                        <BreadcrumbEllipsis className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {filteredLinks.map((link, index) => (
+                          <Link
+                            key={index}
+                            href={link.href === pathname ? '#' : link.href}
+                            className={cn(
+                              link.disabled || link.href === pathname
+                                ? 'pointer-events-none'
+                                : ''
+                            )}
+                            passHref
+                            replace
+                          >
+                            <DropdownMenuItem
+                              className="flex items-center gap-2"
+                              disabled={link.disabled || link.href === pathname}
+                            >
+                              {link.icon}
+                              {link.title}
+                            </DropdownMenuItem>
+                          </Link>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="flex items-center gap-2">
+                      {
+                        filteredLinks
+                          .filter((link) => pathname.startsWith(link.href))
+                          .sort((a, b) => b.href.length - a.href.length)[0]
+                          ?.icon
+                      }
+                      {
+                        filteredLinks
+                          .filter((link) => pathname.startsWith(link.href))
+                          .sort((a, b) => b.href.length - a.href.length)[0]
+                          ?.title
+                      }
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+
               {children}
             </main>
           </ResizablePanel>
