@@ -72,12 +72,14 @@ export default async function Layout({
       disabled:
         !verifySecret('ENABLE_CHAT', 'true', secrets) ||
         withoutPermission('ai_chat'),
+      shortcut: 'X',
     },
     {
       title: t('common.dashboard'),
       href: `/${wsId}`,
       icon: <ChartArea className="h-4 w-4" />,
       matchExact: true,
+      shortcut: 'D',
     },
     {
       title: t('sidebar_tabs.ai'),
@@ -86,12 +88,14 @@ export default async function Layout({
       disabled:
         !verifySecret('ENABLE_AI', 'true', secrets) ||
         withoutPermission('ai_lab'),
+      shortcut: 'A',
     },
     {
       title: t('sidebar_tabs.slides'),
       href: `/${wsId}/slides`,
       icon: <Presentation className="h-4 w-4" />,
       disabled: !verifySecret('ENABLE_SLIDES', 'true', secrets),
+      shortcut: 'S',
     },
     {
       title: t('sidebar_tabs.mail'),
@@ -101,12 +105,14 @@ export default async function Layout({
       disabled:
         !verifySecret('ENABLE_EMAIL_SENDING', 'true', secrets) ||
         withoutPermission('send_user_group_post_emails'),
+      shortcut: 'M',
     },
     {
       title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
       icon: <Calendar className="h-4 w-4" />,
       disabled: withoutPermission('manage_calendar'),
+      shortcut: 'C',
     },
     {
       title: t('sidebar_tabs.tasks'),
@@ -115,6 +121,7 @@ export default async function Layout({
       disabled:
         !verifySecret('ENABLE_TASKS', 'true', secrets) ||
         withoutPermission('manage_projects'),
+      shortcut: 'T',
     },
     {
       title: t('sidebar_tabs.documents'),
@@ -123,6 +130,7 @@ export default async function Layout({
       disabled:
         !verifySecret('ENABLE_DOCS', 'true', secrets) ||
         withoutPermission('manage_documents'),
+      shortcut: 'O',
     },
     {
       title: t('sidebar_tabs.drive'),
@@ -131,6 +139,7 @@ export default async function Layout({
       disabled:
         !verifySecret('ENABLE_DRIVE', 'true', secrets) ||
         withoutPermission('manage_drive'),
+      shortcut: 'R',
     },
     {
       title: t('sidebar_tabs.users'),
@@ -138,18 +147,21 @@ export default async function Layout({
       href: `/${wsId}/users/database`,
       icon: <Users className="h-4 w-4" />,
       disabled: withoutPermission('manage_users'),
+      shortcut: 'U',
     },
     {
       title: t('sidebar_tabs.inventory'),
       href: `/${wsId}/inventory`,
       icon: <Archive className="h-4 w-4" />,
       disabled: withoutPermission('manage_inventory'),
+      shortcut: 'I',
     },
     {
       title: t('sidebar_tabs.healthcare'),
       href: `/${wsId}/healthcare`,
       icon: <HeartPulse className="h-4 w-4" />,
       disabled: !verifySecret('ENABLE_HEALTHCARE', 'true', secrets),
+      shortcut: 'H',
     },
     {
       title: t('sidebar_tabs.finance'),
@@ -157,6 +169,7 @@ export default async function Layout({
       href: `/${wsId}/finance/transactions`,
       icon: <Banknote className="h-4 w-4" />,
       disabled: withoutPermission('manage_finance'),
+      shortcut: 'F',
     },
     {
       title: t('common.settings'),
@@ -170,6 +183,7 @@ export default async function Layout({
         `/${wsId}/migrations`,
         `/${wsId}/activities`,
       ],
+      shortcut: ',',
     },
   ];
 
