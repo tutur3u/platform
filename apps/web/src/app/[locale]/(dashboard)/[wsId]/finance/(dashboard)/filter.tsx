@@ -22,10 +22,15 @@ export function Filter({ className }: { className: string }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [view, setView] = useState('date');
+  const [view, setView] = useState('month');
 
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const defaultStartDate = dayjs().startOf('month').toDate();
+  const defaultEndDate = dayjs().endOf('month').toDate();
+
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    defaultStartDate
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(defaultEndDate);
 
   useEffect(() => {
     // If choosing start date but end date is not chosen
@@ -38,9 +43,9 @@ export function Filter({ className }: { className: string }) {
     // to display current month data
     if (searchParams.toString() === '')
       router.push(
-        `${pathname}?view=month&startDate=${format(dayjs().startOf('month').toDate(), 'yyyy-MM-dd')}&endDate=${format(dayjs().endOf('month').toDate(), 'yyyy-MM-dd')}`
+        `${pathname}?view=month&startDate=${format(defaultStartDate, 'yyyy-MM-dd')}&endDate=${format(defaultEndDate, 'yyyy-MM-dd')}`
       );
-  }, [pathname, router, searchParams]);
+  }, [pathname]);
 
   useEffect(() => {
     const viewParam = searchParams.get('view');
@@ -53,13 +58,22 @@ export function Filter({ className }: { className: string }) {
   }, [searchParams.get('view')]);
 
   useEffect(() => {
+    if (searchParams.toString() === '') return;
+
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
-    setStartDate(startDateParam ? new Date(startDateParam) : undefined);
-    setEndDate(endDateParam ? new Date(endDateParam) : undefined);
+
+    if (startDateParam !== dayjs(startDate).format('yyyy-MM-dd'))
+      setStartDate(startDateParam ? new Date(startDateParam) : undefined);
+
+    if (endDateParam !== dayjs(endDate).format('yyyy-MM-dd'))
+      setEndDate(endDateParam ? new Date(endDateParam) : undefined);
   }, [searchParams]);
 
   const resetFilter = () => {
+    setView('date');
+    setStartDate(undefined);
+    setEndDate(undefined);
     router.push(pathname);
   };
 
