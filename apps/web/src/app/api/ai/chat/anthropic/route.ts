@@ -101,7 +101,9 @@ export async function POST(req: Request) {
     }
 
     const result = await streamText({
-      model: anthropic(model),
+      model: anthropic(model, {
+        cacheControl: true,
+      }),
       messages,
       system: systemInstruction,
       onFinish: async (response) => {

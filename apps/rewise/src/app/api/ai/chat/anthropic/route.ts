@@ -92,7 +92,9 @@ export async function POST(req: Request) {
     }
 
     const result = await streamText({
-      model: anthropic(model),
+      model: anthropic(model, {
+        cacheControl: true,
+      }),
       messages,
       system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${
         mode === 'short'
