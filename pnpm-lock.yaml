@@ -60,8 +60,8 @@ importers:
         specifier: ^0.0.41
         version: 0.0.41(zod@3.23.8)
       '@ai-sdk/openai':
-        specifier: ^0.0.60
-        version: 0.0.60(zod@3.23.8)
+        specifier: ^0.0.61
+        version: 0.0.61(zod@3.23.8)
       '@ai-sdk/react':
         specifier: ^0.0.59
         version: 0.0.59(react@19.0.0-rc-e740d4b1-20240919)(zod@3.23.8)
