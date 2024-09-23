@@ -28,6 +28,21 @@ export function Filter({ className }: { className: string }) {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
+    // If choosing start date but end date is not chosen
+    // set end date to the same date as start date
+    if (startDate && !endDate) setEndDate(startDate);
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    // If searchParams is empty, reset the filter
+    // to display current month data
+    if (searchParams.toString() === '')
+      router.push(
+        `${pathname}?view=month&startDate=${format(dayjs().startOf('month').toDate(), 'yyyy-MM-dd')}&endDate=${format(dayjs().endOf('month').toDate(), 'yyyy-MM-dd')}`
+      );
+  }, [pathname, router, searchParams]);
+
+  useEffect(() => {
     const viewParam = searchParams.get('view');
     const view =
       viewParam === 'date' || viewParam === 'month' || viewParam === 'year'
