@@ -11,26 +11,26 @@ interface Piece {
 }
 
 const pieces: Piece[] = [];
+const initialPositions = [
+    { type: 'rook', positions: [1, 8] },
+    { type: 'knight', positions: [2, 7] },
+    { type: 'bishop', positions: [3, 6] },
+    { type: 'queen', positions: [4] },
+    { type: 'king', positions: [5] },
+    { type: 'pawn', positions: [1, 2, 3, 4, 5, 6, 7, 8] }
+];
 
 for (let i = 1; i <= 2; i++) {
     const type = i === 1 ? 'b' : 'w';
     const y = i === 1 ? 1 : 8;
+    const pawnY = i === 1 ? 2 : 7;
 
-    pieces.push({ image: `neo-chess/${type}_rook.png`, x: 1, y});
-    pieces.push({ image: `neo-chess/${type}_rook.png`, x: 8, y});
-    pieces.push({ image: `neo-chess/${type}_knight.png`, x: 2, y});
-    pieces.push({ image: `neo-chess/${type}_knight.png`, x: 7, y});
-    pieces.push({ image: `neo-chess/${type}_bishop.png`, x: 3, y});
-    pieces.push({ image: `neo-chess/${type}_bishop.png`, x: 6, y});
-    pieces.push({ image: `neo-chess/${type}_queen.png`, x: 4, y});
-    pieces.push({ image: `neo-chess/${type}_king.png`, x: 5, y});
-}
-
-for (let i = 1; i <= horizontal.length; i++) {
-    pieces.push({ image: 'neo-chess/b_pawn.png', x: i, y: 2 });
-}
-for (let i = 1; i <= horizontal.length; i++) {
-    pieces.push({ image: 'neo-chess/w_pawn.png', x: i, y: 7 });
+    initialPositions.forEach(piece => {
+        piece.positions.forEach(x => {
+            const pieceY = piece.type === 'pawn' ? pawnY : y;
+            pieces.push({ image: `neo-chess/${type}_${piece.type}.png`, x, y: pieceY});
+        });
+    });
 }
 
 export default function ChessBoard() {
@@ -46,22 +46,22 @@ export default function ChessBoard() {
 
             pieces.forEach((piece) => {
                 if (piece.x === j && piece.y === i) {
-                image = piece.image;
+                    image = piece.image;
                 }
             }
         );
 
         if (i === 0 || i === horizontal.length + 1) {
             if (j === 0 || j === vertical.length + 1) {
-            row.push(
-                <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12"></div>
-            );
+                row.push(
+                    <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12"></div>
+                );
             } else {
-            row.push(
-                <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12">
-                    {`${horizontal[j - 1]}`}
-                </div>
-            );
+                row.push(
+                    <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12">
+                        {`${horizontal[j - 1]}`}
+                    </div>
+                );
             }
         } else {
             if (j === 0 || j === vertical.length + 1) {
@@ -95,15 +95,15 @@ export default function ChessBoard() {
         <div className="left-[50%] top-[50%] m-auto grid w-full max-w-sm p-6 sm:rounded-lg md:max-w-4xl lg:max-w-6xl">
             <div className="m-auto flex grid grid-cols-1 items-center justify-center">
                 <div className="bg-card text-card-foreground w-full rounded-lg border p-4 shadow-sm md:max-w-fit">
-                <div className="relative divide-y">{board}</div>
-                <div
-                    data-orientation="horizontal"
-                    role="none"
-                    className="bg-border my-2 h-[1px] w-full shrink-0 md:my-4"
-                ></div>
-                <button className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-10 w-full items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
-                    Restart
-                </button>
+                    <div className="relative divide-y">{board}</div>
+                    <div
+                        data-orientation="horizontal"
+                        role="none"
+                        className="bg-border my-2 h-[1px] w-full shrink-0 md:my-4"
+                    ></div>
+                    <button className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-10 w-full items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
+                        Restart
+                    </button>
                 </div>
             </div>
         </div>
