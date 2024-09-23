@@ -236,7 +236,7 @@ export function Structure({
               id="main-content"
               className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 md:pt-4 lg:px-8 xl:px-16"
             >
-              <Breadcrumb className="mb-4">
+              <Breadcrumb className="mb-4 hidden md:block">
                 <BreadcrumbList>
                   <BreadcrumbItem>
                     <BreadcrumbLink

@@ -205,7 +205,7 @@ export function Nav({
                     'text-muted-foreground',
                     isActive && 'bg-background text-foreground',
                     link.shortcut
-                      ? 'bg-foreground/5 rounded-lg border px-2 py-0.5'
+                      ? 'bg-foreground/5 hidden rounded-lg border px-2 py-0.5 md:block'
                       : 'ml-auto'
                   )}
                 >
