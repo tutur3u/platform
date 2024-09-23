@@ -45,8 +45,8 @@ importers:
         specifier: ^0.0.50
         version: 0.0.50(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.38
-        version: 0.0.38(zod@3.23.8)
+        specifier: ^0.0.39
+        version: 0.0.39(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.24
         version: 0.0.24(zod@3.23.8)
@@ -913,12 +913,6 @@ packages:
 
   '@ai-sdk/anthropic@0.0.50':
     resolution: {integrity: sha512-++mqmFcUoQgjoCchAU6eVG3QfKdwkeJVNdMZ+jUiNdawn8diA6BlARlu7xFT4F7W3bcStfYv4hK1jwRyzAQtCg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.0.0
-
-  '@ai-sdk/azure@0.0.38':
-    resolution: {integrity: sha512-8l6aZLmCenLkENTkNUpzGKhiBNa9zB9DW0l0WeIh9400OPko4LLoVhKdwjuatqI7ILf/XzkJawIirI0+/pUWOw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -8423,13 +8417,6 @@ snapshots:
 
   '@ai-sdk/anthropic@0.0.50(zod@3.23.8)':
     dependencies:
-      '@ai-sdk/provider': 0.0.23
-      '@ai-sdk/provider-utils': 1.0.19(zod@3.23.8)
-      zod: 3.23.8
-
-  '@ai-sdk/azure@0.0.38(zod@3.23.8)':
-    dependencies:
-      '@ai-sdk/openai': 0.0.60(zod@3.23.8)
       '@ai-sdk/provider': 0.0.23
       '@ai-sdk/provider-utils': 1.0.19(zod@3.23.8)
       zod: 3.23.8
