@@ -415,8 +415,8 @@ importers:
         specifier: 0.0.25
         version: 0.0.25(react-dom@19.0.0-rc-e740d4b1-20240919(react@19.0.0-rc-e740d4b1-20240919))(react@19.0.0-rc-e740d4b1-20240919)
       '@react-email/tailwind':
-        specifier: 0.1.0
-        version: 0.1.0(react@19.0.0-rc-e740d4b1-20240919)
+        specifier: 1.0.0-canary.1
+        version: 1.0.0-canary.1(react@19.0.0-rc-e740d4b1-20240919)
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -668,8 +668,8 @@ importers:
         specifier: 0.0.25
         version: 0.0.25(react-dom@19.0.0-rc-e740d4b1-20240919(react@18.3.1))(react@18.3.1)
       '@react-email/tailwind':
-        specifier: 1.0.0-canary.0
-        version: 1.0.0-canary.0(react@18.3.1)
+        specifier: 1.0.0-canary.1
+        version: 1.0.0-canary.1(react@18.3.1)
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -3060,8 +3060,8 @@ packages:
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
 
-  '@react-email/tailwind@1.0.0-canary.0':
-    resolution: {integrity: sha512-XbifyzW9HMnaQfsEy578nDSzFE49S9r3F9tJHaZc8av9H0XfCOvFXMlp7O1g4WGSh/wXONOtYvSz1PtcOY8Ztg==}
+  '@react-email/tailwind@1.0.0-canary.1':
+    resolution: {integrity: sha512-59P8x7y2dtSxwg2XPguVE6EiR0/4C37tSCKYhGeYplBUR04azBZGV5jPw8HO3o6XvwngAs1QxT2Yn2+b3Hre3g==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
@@ -11135,9 +11135,13 @@ snapshots:
     dependencies:
       react: 19.0.0-rc-e740d4b1-20240919
 
-  '@react-email/tailwind@1.0.0-canary.0(react@18.3.1)':
+  '@react-email/tailwind@1.0.0-canary.1(react@18.3.1)':
     dependencies:
       react: 18.3.1
+
+  '@react-email/tailwind@1.0.0-canary.1(react@19.0.0-rc-e740d4b1-20240919)':
+    dependencies:
+      react: 19.0.0-rc-e740d4b1-20240919
 
   '@react-email/text@0.0.10(react@18.3.1)':
     dependencies:
