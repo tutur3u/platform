@@ -40,7 +40,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
-import { Eye, User as UserIcon } from 'lucide-react';
+import { Eye, X as UserIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -145,6 +145,11 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   });
 
   const [open, setOpen] = useState(false);
+
+  const removeBirthday = () => {
+    form.setValue('birthday', undefined);
+    form.resetField('birthday');
+  };
 
   const updateMember = async (data: z.infer<typeof FormSchema>) => {
     const response = await fetch(
@@ -360,25 +365,38 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="birthday"
-                render={({ field }) => (
-                  <FormItem className="grid w-full">
-                    <FormLabel>Birthday</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        defaultValue={
-                          field.value ? dayjs(field.value).toDate() : undefined
-                        }
-                        onValueChange={field.onChange}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="flex items-end justify-between gap-2">
+                <FormField
+                  control={form.control}
+                  name="birthday"
+                  render={({ field }) => (
+                    <FormItem className="grid w-full">
+                      <FormLabel>Birthday</FormLabel>
+                      <FormControl className="flex">
+                        <DatePicker
+                          defaultValue={
+                            field.value
+                              ? dayjs(field.value).toDate()
+                              : undefined
+                          }
+                          onValueChange={field.onChange}
+                          className="w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  className="m-0 w-10 p-0"
+                  onClick={() => {
+                    removeBirthday();
+                  }}
+                  type="button"
+                >
+                  <XIcon className="h-7 w-7"></XIcon>{' '}
+                </Button>
+              </div>
 
               <Separator />
 
