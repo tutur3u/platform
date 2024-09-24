@@ -35,7 +35,10 @@ export default async function Layout({ children }: LayoutProps) {
       <Navbar hideMetadata />
       <NavbarPadding>
         <Separator />
-        <div className="flex items-center justify-center p-4 md:px-8 lg:px-16 xl:px-32">
+        <div
+          id="main-content"
+          className="flex items-center justify-center p-4 md:px-8 lg:px-16 xl:px-32"
+        >
           {children}
         </div>
       </NavbarPadding>

@@ -16,7 +16,6 @@ export default async function CalendarPage({ params: { wsId } }: PageProps) {
   });
 
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
-
   if (!workspace) return null;
 
   return <Calendar workspace={workspace} />;
