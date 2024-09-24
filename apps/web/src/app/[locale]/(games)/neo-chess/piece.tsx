@@ -5,14 +5,8 @@ interface Piece {
   number: number;
 }
 
-export default function Tile({number, image}: Piece) {
-  if (number % 2 === 0) {
-    return (
-        <img src={image}/>
-    );
-  } else {
-    return (
-      <img src={image}/>
-    );
-  }
+export default function Tile({image, number}: Piece) {
+  return (
+    <img className="hover:cursor-grab active:cursor-grabbing" style={{backgroundImage: `url(${image})`}} src={image}/>
+  );
 }
