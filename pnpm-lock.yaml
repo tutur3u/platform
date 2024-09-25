@@ -51,8 +51,8 @@ importers:
         specifier: ^0.0.24
         version: 0.0.24(zod@3.23.8)
       '@ai-sdk/google':
-        specifier: ^0.0.48
-        version: 0.0.48(zod@3.23.8)
+        specifier: ^0.0.49
+        version: 0.0.49(zod@3.23.8)
       '@ai-sdk/google-vertex':
         specifier: ^0.0.37
         version: 0.0.37(@google-cloud/vertexai@1.7.0)(zod@3.23.8)
@@ -343,8 +343,8 @@ importers:
         specifier: ^0.0.24
         version: 0.0.24(zod@3.23.8)
       '@ai-sdk/google':
-        specifier: ^0.0.48
-        version: 0.0.48(zod@3.23.8)
+        specifier: ^0.0.49
+        version: 0.0.49(zod@3.23.8)
       '@ai-sdk/google-vertex':
         specifier: ^0.0.37
         version: 0.0.37(@google-cloud/vertexai@1.7.0)(zod@3.23.8)
@@ -929,8 +929,8 @@ packages:
     peerDependencies:
       '@google-cloud/vertexai': ^1.4.0
 
-  '@ai-sdk/google@0.0.48':
-    resolution: {integrity: sha512-8L7a5WVuTZjeU7Q0rPn+mL5VvqkN1zDe5WQgzmu6ppXAJ4KULO4ca5sueJSJj01etJyFhcqnY3g7UNLNn5iP6A==}
+  '@ai-sdk/google@0.0.49':
+    resolution: {integrity: sha512-3/MtjpjowHziNUbo/gcOqJvS734stGwJKLA3LouU5KmfIyLXyTlNCYjA3SIlrGZDleApefbtYAYFwBgwdMuYAQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -6464,6 +6464,7 @@ packages:
   next@15.0.0-canary.167:
     resolution: {integrity: sha512-IifSWU8gNQ8kTXRf2QnEGvUUpnkZk8WKLKWX6rypnEDDmn38sXaWpemjMUIM98UrT/y9sXBIiBA84X2MvignIA==}
     engines: {node: '>=18.18.0'}
+    deprecated: Faulty release. Use 15.0.0-canary.168 instead.
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
@@ -8431,7 +8432,7 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
-  '@ai-sdk/google@0.0.48(zod@3.23.8)':
+  '@ai-sdk/google@0.0.49(zod@3.23.8)':
     dependencies:
       '@ai-sdk/provider': 0.0.23
       '@ai-sdk/provider-utils': 1.0.19(zod@3.23.8)
