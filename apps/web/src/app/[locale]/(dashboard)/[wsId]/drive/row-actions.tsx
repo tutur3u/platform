@@ -120,6 +120,7 @@ export function StorageObjectRowActions(props: Props) {
           <DropdownMenuItem onClick={renameStorageObject}>
             {t('common.rename')}
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={downloadStorageObject}>
             {t('common.download')}
           </DropdownMenuItem>

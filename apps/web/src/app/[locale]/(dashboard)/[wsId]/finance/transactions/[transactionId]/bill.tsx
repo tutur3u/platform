@@ -1,7 +1,10 @@
 'use client';
 
 import { Button } from '@repo/ui/components/ui/button';
-import { FileUploader } from '@repo/ui/components/ui/custom/file-uploader';
+import {
+  FileUploader,
+  StatedFile,
+} from '@repo/ui/components/ui/custom/file-uploader';
 import {
   Tooltip,
   TooltipContent,
@@ -16,46 +19,43 @@ interface Props {
   transactionId: string;
 }
 export function Bill({ wsId }: Props) {
-  const [files, setFiles] = useState<File[]>([]);
-  const [fileProgresses, setFileProgresses] = useState<
-    Record<string, 'uploading' | 'uploaded' | 'error'>
-  >({});
-  const onUpload = async (files: File[]) => {
-    files.forEach(async (file) => {
-      // if the file is already uploaded, skip it
-      if (fileProgresses[file.name] === 'uploaded') return;
+  const [files, setFiles] = useState<StatedFile[]>([]);
 
-      // Set the status of the file to uploading
-      setFileProgresses((prev) => ({
-        ...prev,
-        [file.name]: 'uploading',
-      }));
+  const onUpload = async (files: StatedFile[]) => {
+    await Promise.all(
+      files.map(async (file) => {
+        if (file.status === 'uploaded') return;
 
-      const formData = new FormData();
-      formData.append('file', file);
+        // Update the status to 'uploading'
+        file.status = 'uploading';
 
-      const res = await fetch(
-        `/api/workspaces/${wsId}/upload?filename=${file.name}`,
-        {
-          method: 'POST',
-          body: formData,
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          const res = await fetch(
+            `/api/workspaces/${wsId}/upload?filename=${file.name}`,
+            {
+              method: 'POST',
+              body: formData,
+            }
+          );
+
+          if (res.status !== 200) {
+            throw new Error('Upload failed');
+          }
+
+          // Update the status to 'uploaded'
+          file.status = 'uploaded';
+        } catch (error) {
+          console.log(`Error uploading file ${file.name}:`, error);
+
+          // Update the status to 'error'
+          file.status = 'error';
         }
-      );
-
-      if (res.status !== 200) {
-        setFileProgresses((prev) => ({
-          ...prev,
-          [file.name]: 'error',
-        }));
-        return;
-      }
-
-      // Set the status of the file to uploaded
-      setFileProgresses((prev) => ({
-        ...prev,
-        [file.name]: 'uploaded',
-      }));
-    });
+      })
+    );
+    console.log(files);
   };
   return (
     <>
@@ -76,7 +76,7 @@ export function Bill({ wsId }: Props) {
                       .filter((f) => f.name.endsWith('.pdf'))
                       .map((f) => (
                         <div
-                          key={f.name}
+                          key={f.preview}
                           className="group flex items-center gap-2 rounded"
                         >
                           <FileText className="h-4 w-4" />
@@ -137,7 +137,7 @@ export function Bill({ wsId }: Props) {
                       )
                       .map((f) => (
                         <div
-                          key={f.name}
+                          key={f.preview}
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
@@ -208,7 +208,7 @@ export function Bill({ wsId }: Props) {
                       )
                       .map((f) => (
                         <div
-                          key={f.name}
+                          key={f.preview}
                           className="group flex items-center gap-2 rounded"
                         >
                           <Package className="h-4 w-4" />
@@ -243,9 +243,7 @@ export function Bill({ wsId }: Props) {
         onValueChange={setFiles}
         maxFileCount={10}
         maxSize={50 * 1024 * 1024}
-        progresses={fileProgresses}
         onUpload={onUpload}
-        disabled
       />
     </>
   );
