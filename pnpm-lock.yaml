@@ -45,8 +45,8 @@ importers:
         specifier: ^0.0.50
         version: 0.0.50(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.39
-        version: 0.0.39(zod@3.23.8)
+        specifier: ^0.0.40
+        version: 0.0.40(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.24
         version: 0.0.24(zod@3.23.8)
@@ -337,8 +337,8 @@ importers:
         specifier: ^0.0.50
         version: 0.0.50(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.39
-        version: 0.0.39(zod@3.23.8)
+        specifier: ^0.0.40
+        version: 0.0.40(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.24
         version: 0.0.24(zod@3.23.8)
@@ -911,8 +911,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/azure@0.0.39':
-    resolution: {integrity: sha512-P6CdIwLfkvkhf2hHkbnhqLOkVMQLu7XlksJ2YvzS4yx2Iwl8fsKLVnaCWMX9SBlYfamT/oea+rpyF60JhkdMZg==}
+  '@ai-sdk/azure@0.0.40':
+    resolution: {integrity: sha512-ADK98ww3Q/7T4c0bPJc5uVo7pKmMxtRni6XaOMyq5YoYHOTBvf4tv27NdA+tfo1OpOWj8Q8deHoaMpn1calI7A==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -937,12 +937,6 @@ packages:
 
   '@ai-sdk/mistral@0.0.41':
     resolution: {integrity: sha512-UTVtdC61AF4KQWnM3VAoo6/gi7G1frL3qVlKyW5toiRAUjCdeqLJUF2ho2iO8yqf+qIT6j57jWT3o6pqREy3Wg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.0.0
-
-  '@ai-sdk/openai@0.0.61':
-    resolution: {integrity: sha512-yIJ70xU9sbDjVAaNoq+W+0jnAgIUsx4e9VTnoNPXNTIQRpgpLvQ7iG8GYNgujO4oX4sLiHsWpOEMzrSwD0mNmw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -6464,6 +6458,7 @@ packages:
   next@15.0.0-canary.167:
     resolution: {integrity: sha512-IifSWU8gNQ8kTXRf2QnEGvUUpnkZk8WKLKWX6rypnEDDmn38sXaWpemjMUIM98UrT/y9sXBIiBA84X2MvignIA==}
     engines: {node: '>=18.18.0'}
+    deprecated: Faulty release. Use 15.0.0-canary.168 instead.
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
@@ -8409,9 +8404,9 @@ snapshots:
       '@ai-sdk/provider-utils': 1.0.19(zod@3.23.8)
       zod: 3.23.8
 
-  '@ai-sdk/azure@0.0.39(zod@3.23.8)':
+  '@ai-sdk/azure@0.0.40(zod@3.23.8)':
     dependencies:
-      '@ai-sdk/openai': 0.0.61(zod@3.23.8)
+      '@ai-sdk/openai': 0.0.62(zod@3.23.8)
       '@ai-sdk/provider': 0.0.23
       '@ai-sdk/provider-utils': 1.0.19(zod@3.23.8)
       zod: 3.23.8
@@ -8439,12 +8434,6 @@ snapshots:
       zod: 3.23.8
 
   '@ai-sdk/mistral@0.0.41(zod@3.23.8)':
-    dependencies:
-      '@ai-sdk/provider': 0.0.23
-      '@ai-sdk/provider-utils': 1.0.19(zod@3.23.8)
-      zod: 3.23.8
-
-  '@ai-sdk/openai@0.0.61(zod@3.23.8)':
     dependencies:
       '@ai-sdk/provider': 0.0.23
       '@ai-sdk/provider-utils': 1.0.19(zod@3.23.8)
