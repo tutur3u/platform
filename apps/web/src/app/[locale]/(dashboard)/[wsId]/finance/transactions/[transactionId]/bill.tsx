@@ -55,8 +55,8 @@ export function Bill({ wsId }: Props) {
         }
       })
     );
-    console.log(files);
   };
+
   return (
     <>
       {files && files.length > 0 && (

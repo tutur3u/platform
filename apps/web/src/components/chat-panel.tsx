@@ -6,10 +6,11 @@ import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
-import { createClient } from '@/utils/supabase/client';
-import { generateRandomUUID } from '@/utils/uuid-helper';
 import { Button } from '@repo/ui/components/ui/button';
-import { FileUploader } from '@repo/ui/components/ui/custom/file-uploader';
+import {
+  FileUploader,
+  StatedFile,
+} from '@repo/ui/components/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
@@ -86,7 +87,6 @@ export function ChatPanel({
   setCollapsed,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
-  const supabase = createClient();
 
   const [updating, setUpdating] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -104,40 +104,42 @@ export function ChatPanel({
     if (chatInput) setChatInputHeight(chatInput.clientHeight);
   }, [input]);
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [fileProgresses, setFileProgresses] = useState<
-    Record<string, 'uploading' | 'uploaded' | 'error'>
-  >({});
+  const [files, setFiles] = useState<StatedFile[]>([]);
 
-  const onUpload = async (files: File[]) => {
-    files.forEach(async (file) => {
-      // if the file is already uploaded, skip it
-      if (fileProgresses[file.name] === 'uploaded') return;
+  const onUpload = async (files: StatedFile[]) => {
+    await Promise.all(
+      files.map(async (file) => {
+        if (file.status === 'uploaded') return;
 
-      // Set the status of the file to uploading
-      setFileProgresses((prev) => ({
-        ...prev,
-        [file.name]: 'uploading',
-      }));
+        // Update the status to 'uploading'
+        file.status = 'uploading';
 
-      const { data: _, error } = await supabase.storage
-        .from('workspaces')
-        .upload(`${wsId}/${file.name}_${generateRandomUUID()}`, file);
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
 
-      if (error) {
-        setFileProgresses((prev) => ({
-          ...prev,
-          [file.name]: 'error',
-        }));
-        return;
-      }
+          const res = await fetch(
+            `/api/workspaces/${wsId}/upload?filename=${file.name}`,
+            {
+              method: 'POST',
+              body: formData,
+            }
+          );
 
-      // Set the status of the file to uploaded
-      setFileProgresses((prev) => ({
-        ...prev,
-        [file.name]: 'uploaded',
-      }));
-    });
+          if (res.status !== 200) {
+            throw new Error('Upload failed');
+          }
+
+          // Update the status to 'uploaded'
+          file.status = 'uploaded';
+        } catch (error) {
+          console.log(`Error uploading file ${file.name}:`, error);
+
+          // Update the status to 'error'
+          file.status = 'error';
+        }
+      })
+    );
   };
 
   return (
@@ -358,9 +360,7 @@ export function ChatPanel({
                 onValueChange={setFiles}
                 maxFileCount={10}
                 maxSize={50 * 1024 * 1024}
-                progresses={fileProgresses}
                 onUpload={onUpload}
-                // disabled={isUploading}
               />
             </div>
           ) : (

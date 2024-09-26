@@ -9,7 +9,10 @@ import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { Button } from '@repo/ui/components/ui/button';
-import { FileUploader } from '@repo/ui/components/ui/custom/file-uploader';
+import {
+  FileUploader,
+  StatedFile,
+} from '@repo/ui/components/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
@@ -104,40 +107,28 @@ export function ChatPanel({
     if (chatInput) setChatInputHeight(chatInput.clientHeight);
   }, [input]);
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [fileProgresses, setFileProgresses] = useState<
-    Record<string, 'uploading' | 'uploaded' | 'error'>
-  >({});
+  const [files, setFiles] = useState<StatedFile[]>([]);
 
-  const onUpload = async (files: File[]) => {
-    files.forEach(async (file) => {
-      // if the file is already uploaded, skip it
-      if (fileProgresses[file.name] === 'uploaded') return;
+  const onUpload = async (files: StatedFile[]) => {
+    await Promise.all(
+      files.map(async (file) => {
+        if (file.status === 'uploaded') return;
 
-      // Set the status of the file to uploading
-      setFileProgresses((prev) => ({
-        ...prev,
-        [file.name]: 'uploading',
-      }));
+        // Update the status to 'uploading'
+        file.status = 'uploading';
 
-      const { data: _, error } = await supabase.storage
-        .from('workspaces')
-        .upload(`test/${file.name}_${generateRandomUUID()}`, file);
+        const { data: _, error } = await supabase.storage
+          .from('workspaces')
+          .upload(`test/${generateRandomUUID()}_${file.name}`, file);
 
-      if (error) {
-        setFileProgresses((prev) => ({
-          ...prev,
-          [file.name]: 'error',
-        }));
-        return;
-      }
+        if (error) {
+          file.status = 'error';
+          return;
+        }
 
-      // Set the status of the file to uploaded
-      setFileProgresses((prev) => ({
-        ...prev,
-        [file.name]: 'uploaded',
-      }));
-    });
+        file.status = 'uploaded';
+      })
+    );
   };
 
   return (
@@ -362,9 +353,7 @@ export function ChatPanel({
                 onValueChange={setFiles}
                 maxFileCount={10}
                 maxSize={50 * 1024 * 1024}
-                progresses={fileProgresses}
                 onUpload={onUpload}
-                // disabled={isUploading}
               />
             </div>
           ) : (

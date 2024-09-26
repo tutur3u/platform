@@ -2,6 +2,7 @@ import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import type { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
+import { StatedFile } from '@repo/ui/components/ui/custom/file-uploader';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { IconArrowElbow } from '@repo/ui/components/ui/icons';
 import {
@@ -39,8 +40,8 @@ export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
   id: string | undefined;
   chat: Partial<AIChat> | undefined;
-  files: File[];
-  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  files: StatedFile[];
+  setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
   inputRef: React.RefObject<HTMLTextAreaElement>;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;

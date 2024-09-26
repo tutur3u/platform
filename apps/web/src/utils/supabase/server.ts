@@ -16,6 +16,14 @@ function createCookieHandler(cookieStore: ReturnType<typeof cookies>) {
   };
 }
 
+export function createDynamicClient() {
+  const { url, key } = checkEnvVariables({ useServiceKey: false });
+  const cookieStore = cookies();
+  return createServerClient(url, key, {
+    cookies: createCookieHandler(cookieStore),
+  });
+}
+
 function createGenericClient(isAdmin: boolean) {
   const { url, key } = checkEnvVariables({ useServiceKey: isAdmin });
   const cookieStore = cookies();
@@ -37,12 +45,4 @@ export const createAdminClient = () => {
 
 export function createClient() {
   return createGenericClient(false);
-}
-
-export function createDynamicClient() {
-  const { url, key } = checkEnvVariables({ useServiceKey: false });
-  const cookieStore = cookies();
-  return createServerClient(url, key, {
-    cookies: createCookieHandler(cookieStore),
-  });
 }
