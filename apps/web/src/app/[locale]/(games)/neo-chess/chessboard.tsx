@@ -7,7 +7,7 @@ import { horizontal, vertical, pieces } from './pieceSetup';
 
 
 export default function ChessBoard() {
-    const { grabPiece, movePiece, dropPiece } = useDragAndDrop();
+    const { grabPiece, movePiece, dropPiece, chessboardRef } = useDragAndDrop();
 
     // Create the board
     let board: React.ReactNode[] = [];
@@ -70,8 +70,9 @@ export default function ChessBoard() {
             <div className="m-auto flex grid grid-cols-1 items-center justify-center">
                 <div className="bg-card text-card-foreground w-full rounded-lg border p-4 shadow-sm md:max-w-fit">
                     <div className="relative divide-y"
-                         onMouseMove={movePiece}
+                         ref={chessboardRef}
                          onMouseDown={grabPiece}
+                         onMouseMove={movePiece}
                          onMouseUp={dropPiece}
                     >
                         {board}
