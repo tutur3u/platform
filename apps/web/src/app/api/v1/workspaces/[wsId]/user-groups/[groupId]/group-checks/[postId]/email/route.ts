@@ -1,8 +1,12 @@
+import { DEV_MODE } from '@/constants/common';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import juice from 'juice';
 import { NextRequest, NextResponse } from 'next/server';
+
+const forceEnableEmailSending = false;
+const disableEmailSending = DEV_MODE && !forceEnableEmailSending;
 
 const sesClient = new SESClient({
   region: process.env.AWS_REGION as string,
@@ -20,7 +24,7 @@ export async function POST(
     params: { wsId: string; postId: string };
   }
 ) {
-  const supabase = createClient();
+  const sbAdmin = createAdminClient();
 
   const { withoutPermission } = await getPermissions({
     wsId,
@@ -33,7 +37,7 @@ export async function POST(
   const { data: workspaceSecret } =
     wsId === process.env.MAILBOX_ALLOWED_WS_ID
       ? { data: { id: wsId, value: 'true' } }
-      : await supabase
+      : await sbAdmin
           .from('workspace_secrets')
           .select('*')
           .eq('ws_id', wsId)
@@ -133,8 +137,10 @@ const sendEmail = async ({
       },
     };
 
-    const command = new SendEmailCommand(params);
-    await sesClient.send(command);
+    if (!disableEmailSending) {
+      const command = new SendEmailCommand(params);
+      await sesClient.send(command);
+    }
 
     const {
       data: { user },
