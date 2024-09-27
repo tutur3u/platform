@@ -321,23 +321,7 @@ const Chat = ({
                         role: 'user',
                       },
                     ]
-                  : messages.map((message) => {
-                      // If there is 2 repeated substring in the
-                      // message, we will merge them into one
-                      const content = message.content;
-                      const contentLength = content.length;
-                      const contentHalfLength = Math.floor(contentLength / 2);
-
-                      const firstHalf = content.substring(0, contentHalfLength);
-
-                      const secondHalf = content.substring(
-                        contentHalfLength,
-                        contentLength
-                      );
-
-                      if (firstHalf === secondHalf) message.content = firstHalf;
-                      return message;
-                    })
+                  : messages
               }
               setInput={setInput}
               locale={locale}
