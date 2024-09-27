@@ -28,11 +28,11 @@ export default function ChessBoard() {
             if (i === 0 || i === horizontal.length + 1) {
                 if (j === 0 || j === vertical.length + 1) {
                     row.push(
-                        <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12"></div>
+                        <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12"></div>
                     );
                 } else {
                     row.push(
-                        <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12">
+                        <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
                             {`${horizontal[j - 1]}`}
                         </div>
                     );
@@ -40,19 +40,19 @@ export default function ChessBoard() {
             } else {
                 if (j === 0 || j === vertical.length + 1) {
                     row.push(
-                        <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12">
+                        <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
                             {`${vertical[vertical.length - i]}`}
                         </div>
                     );
                 } else {
                     row.push(
                         (i % 2 !== 0 && j % 2 !== 0) || (i % 2 === 0 && j % 2 === 0) ? (
-                            <div className="relative flex aspect-square h-8 items-center justify-center md:h-9 lg:h-12">
-                                {image && <Tile key={`${j}, ${i}`} image={image} number={number} />}
+                            <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
+                                {image && <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} number={number} />}
                             </div>
                         ) : (
-                            <div className="relative flex aspect-square h-8 items-center justify-center bg-blue-200 md:h-9 lg:h-12">
-                                {image && <Tile key={`${j}, ${i}`} image={image} number={number} />}
+                            <div className="relative flex aspect-square h-6 items-center justify-center bg-blue-200 md:h-9 lg:h-12">
+                                {image && <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} number={number} />}
                             </div>
                         )
                     );
