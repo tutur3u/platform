@@ -70,7 +70,7 @@
     "@vercel/speed-insights": "^1.0.12",
     "@vercel/toolbar": "^0.1.22",
     "ai": "^3.4.7",
-    "babel-plugin-react-compiler": "0.0.0",
+    "babel-plugin-react-compiler": "0.0.0-experimental-b12479e-20240926",
     "class-variance-authority": "^0.7.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
