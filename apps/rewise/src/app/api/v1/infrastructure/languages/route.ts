@@ -4,7 +4,7 @@ import { cookies as c } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const cookies = c();
+  const cookies = await c();
 
   const { locale } = await req.json();
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE() {
-  const cookies = c();
+  const cookies = await c();
 
   cookies.delete(LOCALE_COOKIE_NAME);
   return NextResponse.json({ message: 'Success' });

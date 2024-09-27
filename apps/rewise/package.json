@@ -45,7 +45,7 @@
     "@repo/ui": "workspace:*",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "2.45.4",
-    "@tabler/icons-react": "^3.18.0",
+    "@tabler/icons-react": "^3.19.0",
     "@tanstack/react-query": "^5.56.2",
     "@tanstack/react-table": "^8.20.5",
     "@upstash/qstash": "^2.7.10",
@@ -62,7 +62,7 @@
     "lucide-react": "^0.446.0",
     "moment": "^2.30.1",
     "negotiator": "^0.6.3",
-    "next": "15.0.0-canary.170",
+    "next": "15.0.0-canary.171",
     "next-intl": "^3.20.0",
     "next-themes": "^0.3.0",
     "openai": "^4.65.0",
@@ -89,8 +89,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "15.0.0-canary.170",
-    "@next/eslint-plugin-next": "15.0.0-canary.170",
+    "@next/bundle-analyzer": "15.0.0-canary.171",
+    "@next/eslint-plugin-next": "15.0.0-canary.171",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.58.1",

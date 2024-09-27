@@ -6,18 +6,17 @@ import { NavLink } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
 import { MessageSquare } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { cookies } from 'next/headers';
+import { cookies as c } from 'next/headers';
 import React, { Suspense } from 'react';
 
 interface LayoutProps {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }
 
-export default async function Layout({
-  children,
-  params: { locale },
-}: LayoutProps) {
+export default async function Layout({ children, params }: LayoutProps) {
+  const { locale } = await params;
+
   const t = await getTranslations();
   const user = await getCurrentUser();
   const { data: chats } = await getChats();
@@ -30,8 +29,10 @@ export default async function Layout({
     createdAt: chat.created_at,
   })) satisfies NavLink[];
 
-  const layout = cookies().get('react-resizable-panels:layout:rewise');
-  const collapsed = cookies().get('react-resizable-panels:collapsed');
+  const cookies = await c();
+
+  const layout = cookies.get('react-resizable-panels:layout:rewise');
+  const collapsed = cookies.get('react-resizable-panels:collapsed');
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined;
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
