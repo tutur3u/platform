@@ -1,7 +1,11 @@
 'use client';
 
 import { NavLink } from '@/components/navigation';
-import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import {
+  ENABLE_KEYBOARD_SHORTCUTS,
+  PROD_MODE,
+  ROOT_WORKSPACE_ID,
+} from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@repo/ui/components/ui/button';
@@ -73,10 +77,11 @@ export function Nav({
       });
     }
 
-    document.addEventListener('keydown', down);
+    if (ENABLE_KEYBOARD_SHORTCUTS) document.addEventListener('keydown', down);
 
     return () => {
-      document.removeEventListener('keydown', down);
+      if (ENABLE_KEYBOARD_SHORTCUTS)
+        document.removeEventListener('keydown', down);
     };
   }, [links]);
 
@@ -147,20 +152,23 @@ export function Nav({
                 side="right"
                 className={cn(
                   'flex items-center gap-4',
-                  link.shortcut && 'flex-col items-start gap-1'
+                  ENABLE_KEYBOARD_SHORTCUTS &&
+                    link.shortcut &&
+                    'flex-col items-start gap-1'
                 )}
               >
                 {link.title}
-                {(link.shortcut || link.trailing) && (
+                {((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
+                  link.trailing) && (
                   <span
                     className={cn(
                       'text-muted-foreground',
-                      link.shortcut
+                      ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
                         ? 'bg-foreground/5 rounded-lg border px-2 py-0.5'
                         : 'ml-auto'
                     )}
                   >
-                    {link.shortcut
+                    {ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
                       ? // replaces 'CTRL' with '⌘' and 'SHIFT' with '⇧'
                         // removes all '+' characters
                         link.shortcut
@@ -199,17 +207,18 @@ export function Nav({
                 )}
                 {link.title}
               </div>
-              {(link.shortcut || link.trailing) && (
+              {((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
+                link.trailing) && (
                 <span
                   className={cn(
                     'text-muted-foreground',
                     isActive && 'bg-background text-foreground',
-                    link.shortcut
+                    ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
                       ? 'bg-foreground/5 hidden rounded-lg border px-2 py-0.5 md:block'
                       : 'ml-auto'
                   )}
                 >
-                  {link.shortcut
+                  {ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
                     ? // replaces 'CTRL' with '⌘' and 'SHIFT' with '⇧'
                       // removes all '+' characters
                       link.shortcut
