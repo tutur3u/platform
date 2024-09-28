@@ -2,17 +2,17 @@
   "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
     "baseUrl": "./src",
-    "paths": {
-      "@/*": [
-        "*"
-      ]
-    },
     "module": "ESNext",
     "plugins": [
       {
         "name": "next"
       }
     ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
@@ -22,7 +22,9 @@
     "**/*.tsx",
     "global.d.ts",
     "next-env.d.ts",
-    ".next/types/**/*.ts"
+    "postcss.config.mjs",
+    ".next/types/**/*.ts",
+    "next.config.mjs"
   ],
   "exclude": [
     "node_modules"

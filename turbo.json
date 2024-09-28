@@ -45,11 +45,6 @@
       "cache": false,
       "persistent": true
     },
-    "check-types": {
-      "dependsOn": [
-        "^check-types"
-      ]
-    },
     "test": {},
     "test:watch": {
       "cache": false

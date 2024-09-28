@@ -8,14 +8,11 @@
     "bdevx": "bun i && next dev -p 7804",
     "build": "next build",
     "start": "next start",
-    "preview": "next build && next start -p 7804",
     "lint": "next lint",
-    "check-types": "tsc --noEmit",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ui:add": "pnpm dlx shadcn-ui@latest add",
-    "ui:diff": "pnpm dlx shadcn-ui@latest diff"
+    "preview": "next build && next start -p 7804",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^0.0.28",
