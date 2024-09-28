@@ -10,9 +10,8 @@ import {
 } from '../../dropdown-menu';
 import { ScrollArea } from '../../scroll-area';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
-import { MixerHorizontalIcon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
-import { UserCog } from 'lucide-react';
+import { Settings2, UserCog } from 'lucide-react';
 import { Fragment } from 'react';
 
 interface DataTableViewOptionsProps<TData> {
@@ -40,7 +39,7 @@ export function DataTableViewOptions<TData>({
           size="sm"
           className="ml-auto h-8 w-full md:w-fit"
         >
-          <MixerHorizontalIcon className="mr-2 h-4 w-4" />
+          <Settings2 className="mr-2 h-4 w-4" />
           {t?.('common.view-options') || 'View Options'}
         </Button>
       </DropdownMenuTrigger>

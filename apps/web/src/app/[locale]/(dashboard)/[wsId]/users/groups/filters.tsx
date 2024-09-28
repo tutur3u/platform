@@ -1,7 +1,7 @@
 import { UserDatabaseFilter } from '../filters';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
-import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { MinusCircle, PlusCircle } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -30,7 +30,7 @@ export default async function Filters({
         key="included-user-tags-filter"
         tag="includedTags"
         title={t('included_tags')}
-        icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+        icon={<PlusCircle className="mr-2 h-4 w-4" />}
         options={tags.map((tag) => ({
           label: tag.name || 'No name',
           value: tag.id,
@@ -42,7 +42,7 @@ export default async function Filters({
         key="excluded-user-tags-filter"
         tag="excludedTags"
         title={t('excluded_tags')}
-        icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
+        icon={<MinusCircle className="mr-2 h-4 w-4" />}
         options={excludedTags.map((tag) => ({
           label: tag.name || 'No name',
           value: tag.id,

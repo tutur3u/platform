@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 
 export const getChats = async () => {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, count, error } = await supabase
     .from('ai_chats')

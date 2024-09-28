@@ -1,6 +1,6 @@
 import { WorkspaceDocument } from '@/types/db';
-import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { FilePlus } from 'lucide-react';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
@@ -46,7 +46,7 @@ const DocumentCard = ({ wsId: _, document }: Props) => {
 
       <div className="flex flex-wrap items-center gap-2 justify-self-start text-sm font-semibold">
         <div className="bg-dynamic-blue/5 border-dynamic-blue/20 text-dynamic-blue flex w-full max-w-full items-center gap-1 rounded-lg border px-2 py-1.5">
-          <DocumentPlusIcon className="w-5 flex-none" />
+          <FilePlus className="w-5 flex-none" />
           <div className="line-clamp-1">{creationDate}</div>
         </div>
       </div>

@@ -5,11 +5,10 @@ import { WorkspaceUserReport } from '@/types/db';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
-import { PlusCircledIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Plus, User } from 'lucide-react';
+import { Plus, PlusCircle, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -76,7 +75,7 @@ export default async function WorkspaceUserReportsPage({
             key="group-filter"
             tag="groupId"
             title={t('user-data-table.group')}
-            icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+            icon={<PlusCircle className="mr-2 h-4 w-4" />}
             defaultValues={searchParams.groupId ? [searchParams.groupId] : []}
             extraQueryOnSet={{ userId: undefined }}
             options={userGroups.map((group) => ({

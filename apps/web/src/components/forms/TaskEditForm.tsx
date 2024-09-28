@@ -3,12 +3,6 @@ import { Task } from '@/types/primitives/Task';
 import { User } from '@/types/primitives/User';
 import { getInitials } from '@/utils/name-helper';
 import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  TrashIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/solid';
-import {
   ActionIcon,
   Autocomplete,
   Avatar,
@@ -23,7 +17,7 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { closeAllModals } from '@mantine/modals';
-import { showNotification } from '@mantine/notifications';
+import { Check, Trash, TriangleAlert, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 import { ChangeEvent, useEffect, useState } from 'react';
@@ -131,12 +125,12 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       setSearchQuery('');
       setSuggestions([]);
     } else {
-      const res = await response.json();
-      showNotification({
-        title: 'Could not assign user',
-        message: res?.error?.message || 'Something went wrong',
-        color: 'red',
-      });
+      // const res = await response.json();
+      // showNotification({
+      //   title: 'Could not assign user',
+      //   message: res?.error?.message || 'Something went wrong',
+      //   color: 'red',
+      // });
     }
   };
 
@@ -156,12 +150,12 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
     if (response.ok) {
       await mutate(`/api/tasks/${task.id}/assignees`);
     } else {
-      const res = await response.json();
-      showNotification({
-        title: 'Could not unassign user',
-        message: res?.error?.message || 'Something went wrong',
-        color: 'red',
-      });
+      // const res = await response.json();
+      // showNotification({
+      //   title: 'Could not unassign user',
+      //   message: res?.error?.message || 'Something went wrong',
+      //   color: 'red',
+      // });
     }
   };
 
@@ -260,12 +254,12 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
       onUpdated();
       closeAllModals();
     } else {
-      const res = await response.json();
-      showNotification({
-        title: 'Could not delete task',
-        message: res?.error?.message || 'Something went wrong',
-        color: 'red',
-      });
+      // const res = await response.json();
+      // showNotification({
+      //   title: 'Could not delete task',
+      //   message: res?.error?.message || 'Something went wrong',
+      //   color: 'red',
+      // });
     }
   };
 
@@ -462,7 +456,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
               </div>
 
               <div className="mt-8 flex items-center gap-2 rounded-lg bg-red-300/10 p-4 text-lg font-semibold text-red-300">
-                <ExclamationTriangleIcon className="h-6 w-6" />
+                <TriangleAlert className="h-6 w-6" />
                 <div className="border-l-2 border-red-300/50 pl-2">
                   Other activities are not tracked yet. More activities will be
                   added soon.
@@ -541,7 +535,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                           className="absolute right-1 top-1"
                           onClick={() => handleUnassignUser(assignee.id!)}
                         >
-                          <XMarkIcon className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
+                          <X className="h-6 w-6 text-blue-200 transition hover:text-red-300" />
                         </button>
                       </Group>
                     ) : null
@@ -563,7 +557,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                 size="lg"
                 className="bg-green-300/10"
               >
-                <CheckCircleIcon className="h-6 w-6" />
+                <Check className="h-6 w-6" />
               </ActionIcon>
             </>
           )}
@@ -593,7 +587,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                 size="lg"
                 className="bg-red-300/10"
               >
-                <TrashIcon className="h-6 w-6" />
+                <Trash className="h-6 w-6" />
               </ActionIcon>
             </>
           )}

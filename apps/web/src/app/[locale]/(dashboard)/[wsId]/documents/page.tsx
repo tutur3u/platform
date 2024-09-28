@@ -1,10 +1,10 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
-import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { FilePlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -87,7 +87,7 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
           <Button
           // onClick={showDocumentEditForm}
           >
-            <DocumentPlusIcon className="mr-2 h-4 w-4" />
+            <FilePlus className="mr-2 h-4 w-4" />
             {newDocumentLabel}
           </Button>
         }

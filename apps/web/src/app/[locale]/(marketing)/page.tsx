@@ -23,12 +23,10 @@ export default async function MarketingPage() {
               priority
             />
           </div>
-
           <h1 className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
             {t('home.headline-p1')} <br />
             <GradientHeadline title={t('home.headline-p2')} />.
           </h1>
-
           <GetStartedButton href="/login" />
         </div>
 

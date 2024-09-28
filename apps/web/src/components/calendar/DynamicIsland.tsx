@@ -1,8 +1,7 @@
 import { useCalendar } from '@/hooks/useCalendar';
 import { getCardColor } from '@/utils/color-helper';
-import { PlayIcon, StopIcon } from '@heroicons/react/24/solid';
 import { Divider } from '@mantine/core';
-import { showNotification } from '@mantine/notifications';
+import { Play, StopCircle } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 
@@ -117,18 +116,18 @@ const DynamicIsland = () => {
 
       // If the current cycle is equal to the pomodoro cycles, stop the timer
       if (currentCycle === pomodoroCycles) {
-        showNotification({
-          title: 'Focus completed!',
-          message: `You have completed ${pomodoroCycles} ${
-            pomodoroCycles > 1 ? 'cycles' : 'cycle'
-          } of focus! (${formatDuration(
-            getTimeDuration(startAt, endAt),
-            false,
-            false
-          )})`,
-          color: 'teal',
-          autoClose: false,
-        });
+        // showNotification({
+        //   title: 'Focus completed!',
+        //   message: `You have completed ${pomodoroCycles} ${
+        //     pomodoroCycles > 1 ? 'cycles' : 'cycle'
+        //   } of focus! (${formatDuration(
+        //     getTimeDuration(startAt, endAt),
+        //     false,
+        //     false
+        //   )})`,
+        //   color: 'teal',
+        //   autoClose: false,
+        // });
 
         setStartAt(null);
         setEndAt(null);
@@ -240,9 +239,9 @@ const DynamicIsland = () => {
             )} transition hover:border-opacity-30`}
           >
             {startAt ? (
-              <StopIcon className="h-6 w-6" />
+              <StopCircle className="h-6 w-6" />
             ) : (
-              <PlayIcon className="h-6 w-6" />
+              <Play className="h-6 w-6" />
             )}
           </button>
         )}

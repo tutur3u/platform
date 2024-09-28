@@ -1,7 +1,6 @@
 'use client';
 
 import { UserGroup } from '@/types/primitives/UserGroup';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,
@@ -11,7 +10,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
-import { Eye } from 'lucide-react';
+import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -77,7 +76,7 @@ export function UserGroupRowActions({
             variant="ghost"
             className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
           >
-            <DotsHorizontalIcon className="h-4 w-4" />
+            <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
