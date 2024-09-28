@@ -14,11 +14,7 @@ import {
 } from '../select';
 import { Switch } from '../switch';
 import { DateInput } from './date-input';
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '@radix-ui/react-icons';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface ComparedDateRangePickerProps {
@@ -307,7 +303,7 @@ export const ComparedDateRangePicker = ({
     >
       <>
         <span className={cn('pr-2 opacity-0', isSelected && 'opacity-70')}>
-          <CheckIcon width={18} height={18} />
+          <Check width={18} height={18} />
         </span>
         {label}
       </>
@@ -361,11 +357,7 @@ export const ComparedDateRangePicker = ({
             )}
           </div>
           <div className="-mr-2 scale-125 pl-1 opacity-60">
-            {isOpen ? (
-              <ChevronUpIcon width={24} />
-            ) : (
-              <ChevronDownIcon width={24} />
-            )}
+            {isOpen ? <ChevronUp width={24} /> : <ChevronDown width={24} />}
           </div>
         </Button>
       </PopoverTrigger>

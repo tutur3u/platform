@@ -4,7 +4,6 @@ import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
 import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CaretSortIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import {
   Avatar,
   AvatarFallback,
@@ -53,7 +52,7 @@ import {
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { CheckIcon } from 'lucide-react';
+import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -234,7 +233,7 @@ export default function WorkspaceSelect({
                 </span>
               </div>
               {hideLeading || (
-                <CaretSortIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
               )}
             </Button>
           </PopoverTrigger>
@@ -291,7 +290,7 @@ export default function WorkspaceSelect({
                       setShowNewWorkspaceDialog(true);
                     }}
                   >
-                    <PlusCircledIcon className="mr-2 h-5 w-5" />
+                    <PlusCircle className="mr-2 h-5 w-5" />
                     {t('common.create_new_workspace')}
                   </CommandItem>
                 </CommandGroup>

@@ -7,9 +7,9 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
-import { MinusCircledIcon } from '@radix-ui/react-icons';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { MinusCircle } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -88,7 +88,7 @@ export default async function UserGroupDetailsPage({
             key="excluded-user-groups-filter"
             tag="excludedGroups"
             title={t('user-data-table.excluded_groups')}
-            icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
+            icon={<MinusCircle className="mr-2 h-4 w-4" />}
             options={excludedUserGroups.map((group) => ({
               label: group.name || 'No name',
               value: group.id,

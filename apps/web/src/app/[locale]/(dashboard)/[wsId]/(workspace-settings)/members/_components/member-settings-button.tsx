@@ -3,7 +3,6 @@
 import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
-import { Cog6ToothIcon } from '@heroicons/react/24/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Avatar,
@@ -30,7 +29,7 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { User as UserIcon } from 'lucide-react';
+import { Settings, User as UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -151,7 +150,7 @@ export function MemberSettingsButton({
     >
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Cog6ToothIcon className="text-foreground/70 h-6 w-6" />
+          <Settings className="text-foreground/70 h-6 w-6" />
         </Button>
       </DialogTrigger>
       <DialogContent

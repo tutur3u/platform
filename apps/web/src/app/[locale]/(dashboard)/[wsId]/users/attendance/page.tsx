@@ -5,9 +5,9 @@ import { CustomMonthPicker } from '@/components/custom-month-picker';
 import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
-import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { MinusCircle, PlusCircle } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
@@ -62,7 +62,7 @@ export default async function WorkspaceUserAttendancePage({
           key="included-user-groups-filter"
           tag="includedGroups"
           title={t('user-data-table.included_groups')}
-          icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+          icon={<PlusCircle className="mr-2 h-4 w-4" />}
           options={userGroups.map((group) => ({
             label: group.name || 'No name',
             value: group.id,
@@ -73,7 +73,7 @@ export default async function WorkspaceUserAttendancePage({
           key="excluded-user-groups-filter"
           tag="excludedGroups"
           title={t('user-data-table.excluded_groups')}
-          icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
+          icon={<MinusCircle className="mr-2 h-4 w-4" />}
           options={excludedUserGroups.map((group) => ({
             label: group.name || 'No name',
             value: group.id,
