@@ -119,7 +119,7 @@ export function ChatPanel({
           formData.append('file', file);
 
           const res = await fetch(
-            `/api/workspaces/${wsId}/upload?filename=${file.name}`,
+            `/api/workspaces/${wsId}/upload?filename=${encodeURIComponent(file.name)}`,
             {
               method: 'POST',
               body: formData,
