@@ -1,5 +1,5 @@
-import { SparklesIcon } from '@heroicons/react/20/solid';
 import { Button } from '@repo/ui/components/ui/button';
+import { Sparkles } from 'lucide-react';
 
 export default function FleetingNavigatorMenu({
   setCurrentView,
@@ -15,7 +15,7 @@ export default function FleetingNavigatorMenu({
         size="icon"
         onClick={() => setCurrentView('assistant')}
       >
-        <SparklesIcon className="h-5 w-5" />
+        <Sparkles className="h-5 w-5" />
       </Button>
 
       {/* <Separator orientation="vertical" className="mx-1 h-6" />

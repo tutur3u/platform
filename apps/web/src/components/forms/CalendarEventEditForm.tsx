@@ -1,9 +1,9 @@
 import ColorPallete from '../../../../web/src/components/color/ColorPallete';
 import { useCalendar } from '@/hooks/useCalendar';
 import { SupportedColor } from '@/types/primitives/SupportedColors';
-import { TrashIcon } from '@heroicons/react/24/solid';
 import { Button, Divider, TextInput, Textarea } from '@mantine/core';
 import 'dayjs/locale/vi';
+import { Trash } from 'lucide-react';
 import moment from 'moment';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -311,7 +311,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
           color="red"
           onClick={() => deleteEvent(event?.id || '')}
         >
-          <TrashIcon className="h-5 w-5" />
+          <Trash className="h-5 w-5" />
         </Button>
       </div>
     </div>

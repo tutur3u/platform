@@ -5,7 +5,7 @@ import { useControllableState } from '../../../hooks/use-controllable-state';
 import { Button } from '../button';
 import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
-import { Cross2Icon, FileTextIcon, UploadIcon } from '@radix-ui/react-icons';
+import { FileText, Upload, X } from 'lucide-react';
 import { HTMLAttributes, useCallback, useEffect, useState } from 'react';
 import Dropzone, {
   type DropzoneProps,
@@ -223,7 +223,7 @@ export function FileUploader(props: FileUploaderProps) {
             {isDragActive ? (
               <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
                 <div className="rounded-full border border-dashed p-3">
-                  <UploadIcon
+                  <Upload
                     className="text-muted-foreground size-7"
                     aria-hidden="true"
                   />
@@ -235,7 +235,7 @@ export function FileUploader(props: FileUploaderProps) {
             ) : (
               <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
                 <div className="rounded-full border border-dashed p-3">
-                  <UploadIcon
+                  <Upload
                     className="text-muted-foreground size-7"
                     aria-hidden="true"
                   />
@@ -361,7 +361,7 @@ function FileCard({ file, progress, onRemove }: FileCardProps) {
           className="size-7"
           onClick={onRemove}
         >
-          <Cross2Icon className="size-4" aria-hidden="true" />
+          <X className="size-4" aria-hidden="true" />
           <span className="sr-only">Remove file</span>
         </Button>
       </div>
@@ -392,9 +392,6 @@ function FilePreview({ file }: FilePreviewProps) {
   }
 
   return (
-    <FileTextIcon
-      className="text-muted-foreground size-10"
-      aria-hidden="true"
-    />
+    <FileText className="text-muted-foreground size-10" aria-hidden="true" />
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { EmailHistoryEntry } from '@/types/db';
 // import { UserRowActions } from './row-actions';
+import { EmailHistoryEntry } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import 'dayjs/locale/vi';
