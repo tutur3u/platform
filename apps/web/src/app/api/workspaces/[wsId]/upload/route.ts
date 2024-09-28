@@ -13,8 +13,10 @@ export async function POST(req: Request, { params: { wsId } }: Props) {
 
   // Extract query parameters
   const fileName = url.searchParams.get('filename') || '';
-  const baseName = fileName.substring(0, fileName.lastIndexOf('.'));
-  const fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
+  const fileName = url.searchParams.get('filename') || '';
+  const hasExtension = fileName.lastIndexOf('.') !== -1;
+  const baseName = hasExtension ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+  const fileExtension = hasExtension ? fileName.substring(fileName.lastIndexOf('.') + 1) : '';
   let newFileName = fileName;
 
   const formData = await req.formData();
