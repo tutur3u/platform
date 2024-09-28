@@ -27,6 +27,10 @@
       "dependsOn": [
         "^build"
       ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
       "outputs": [
         ".next/**",
         "!.next/cache/**"
@@ -37,6 +41,10 @@
         "^lint"
       ]
     },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
     "check-types": {
       "dependsOn": [
         "^check-types"
@@ -45,10 +53,6 @@
     "test": {},
     "test:watch": {
       "cache": false
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
     }
   }
 }

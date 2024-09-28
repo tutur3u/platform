@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "check-types": "tsc --noEmit",
-    "ui:add": "pnpm dlx shadcn-ui@latest add",
+    "ui": "pnpm dlx shadcn-ui@latest",
     "lint": "eslint ."
   },
   "packageManager": "pnpm@9.11.0",
@@ -86,7 +86,7 @@
     "./postcss.config": "./postcss.config.mjs",
     "./tailwind.config": "./tailwind.config.ts",
     "./lib/*": "./src/lib/*.ts",
-    "./components/*": "./src/components/*.tsx",
-    "./hooks/*": "./src/hooks/*.ts"
+    "./hooks/*": "./src/hooks/*.ts",
+    "./components/*": "./src/components/*.tsx"
   }
 }

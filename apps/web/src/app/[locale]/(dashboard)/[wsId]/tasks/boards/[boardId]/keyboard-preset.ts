@@ -1,10 +1,10 @@
 import {
+  DroppableContainer,
+  KeyboardCode,
+  KeyboardCoordinateGetter,
   closestCorners,
   getFirstCollision,
-  KeyboardCode,
-  DroppableContainer,
-  KeyboardCoordinateGetter,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 
 const directions: string[] = [
   KeyboardCode.Down,
@@ -42,8 +42,8 @@ export const coordinateGetter: KeyboardCoordinateGetter = (
       if (data) {
         const { type, children } = data;
 
-        if (type === "Column" && children?.length > 0) {
-          if (active.data.current?.type !== "Column") {
+        if (type === 'Column' && children?.length > 0) {
+          if (active.data.current?.type !== 'Column') {
             return;
           }
         }
@@ -51,7 +51,7 @@ export const coordinateGetter: KeyboardCoordinateGetter = (
 
       switch (event.code) {
         case KeyboardCode.Down:
-          if (active.data.current?.type === "Column") {
+          if (active.data.current?.type === 'Column') {
             return;
           }
           if (collisionRect.top < rect.top) {
@@ -60,7 +60,7 @@ export const coordinateGetter: KeyboardCoordinateGetter = (
           }
           break;
         case KeyboardCode.Up:
-          if (active.data.current?.type === "Column") {
+          if (active.data.current?.type === 'Column') {
             return;
           }
           if (collisionRect.top > rect.top) {
@@ -89,7 +89,7 @@ export const coordinateGetter: KeyboardCoordinateGetter = (
       droppableContainers: filteredContainers,
       pointerCoordinates: null,
     });
-    const closestId = getFirstCollision(collisions, "id");
+    const closestId = getFirstCollision(collisions, 'id');
 
     if (closestId != null) {
       const newDroppable = droppableContainers.get(closestId);
