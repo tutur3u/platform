@@ -29,7 +29,7 @@ export async function POST(req: Request, { params: { wsId } }: Props) {
     return NextResponse.json({ message: 'No file found' }, { status: 400 });
   }
 
-  const supabase = createDynamicClient();
+  const supabase = await createDynamicClient();
 
   // Check if a file with the same name already exists
   const { data: existingFileName } = await supabase

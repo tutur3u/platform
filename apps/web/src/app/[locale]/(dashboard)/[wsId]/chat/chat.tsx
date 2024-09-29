@@ -43,8 +43,6 @@ const Chat = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // const [messages] = useUIState()
-
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(defaultModel);
 

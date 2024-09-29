@@ -1,5 +1,6 @@
 'use client';
 
+import { createDynamicClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   FileUploader,
@@ -18,43 +19,37 @@ interface Props {
   wsId: string;
   transactionId: string;
 }
-export function Bill({ wsId }: Props) {
+
+export function Bill({ wsId, transactionId }: Props) {
   const [files, setFiles] = useState<StatedFile[]>([]);
 
   const onUpload = async (files: StatedFile[]) => {
-    await Promise.all(
-      files.map(async (file) => {
-        if (file.status === 'uploaded') return;
+    files.forEach(async (file) => {
+      if (file.status === 'uploaded') return;
 
-        // Update the status to 'uploading'
-        file.status = 'uploading';
+      setFiles((prevFiles) =>
+        prevFiles.map((f) =>
+          f.url === file.url ? { ...file, status: 'uploading' } : f
+        )
+      );
 
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
+      const { error } = await uploadBill(wsId, transactionId, file);
 
-          const res = await fetch(
-            `/api/workspaces/${wsId}/upload?filename=${file.name}`,
-            {
-              method: 'POST',
-              body: formData,
-            }
-          );
+      if (error) {
+        setFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.url === file.url ? { ...file, status: 'error' } : f
+          )
+        );
+        return;
+      }
 
-          if (res.status !== 200) {
-            throw new Error('Upload failed');
-          }
-
-          // Update the status to 'uploaded'
-          file.status = 'uploaded';
-        } catch (error) {
-          console.log(`Error uploading file ${file.name}:`, error);
-
-          // Update the status to 'error'
-          file.status = 'error';
-        }
-      })
-    );
+      setFiles((prevFiles) =>
+        prevFiles.map((f) =>
+          f.url === file.url ? { ...file, status: 'uploaded' } : f
+        )
+      );
+    });
   };
 
   return (
@@ -62,26 +57,31 @@ export function Bill({ wsId }: Props) {
       {files && files.length > 0 && (
         <TooltipProvider>
           <div className="mb-2 flex items-center gap-1 text-xs">
-            {files.filter((f) => f.name.endsWith('.pdf')).length > 0 && (
+            {files.filter((f) => f.rawFile.name.endsWith('.pdf')).length >
+              0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
                     <FileText className="h-4 w-4" />
-                    {files.filter((f) => f.name.endsWith('.pdf')).length} PDFs
+                    {
+                      files.filter((f) => f.rawFile.name.endsWith('.pdf'))
+                        .length
+                    }{' '}
+                    PDFs
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
                   <div className="grid gap-1">
                     {files
-                      .filter((f) => f.name.endsWith('.pdf'))
+                      .filter((f) => f.rawFile.name.endsWith('.pdf'))
                       .map((f) => (
                         <div
-                          key={f.preview}
+                          key={f.url}
                           className="group flex items-center gap-2 rounded"
                         >
                           <FileText className="h-4 w-4" />
                           <span className="line-clamp-1 w-full max-w-xs">
-                            {f.name}
+                            {f.rawFile.name}
                           </span>
                           <Button
                             size="xs"
@@ -89,7 +89,7 @@ export function Bill({ wsId }: Props) {
                             variant="ghost"
                             onClick={() => {
                               const newFiles = files.filter((file) => {
-                                return file.name !== f.name;
+                                return file.url !== f.url;
                               });
                               setFiles(newFiles);
                             }}
@@ -105,9 +105,9 @@ export function Bill({ wsId }: Props) {
             )}
             {files.filter(
               (f) =>
-                f.name.endsWith('.png') ||
-                f.name.endsWith('.jpg') ||
-                f.name.endsWith('.jpeg')
+                f.rawFile.name.endsWith('.png') ||
+                f.rawFile.name.endsWith('.jpg') ||
+                f.rawFile.name.endsWith('.jpeg')
             ).length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
@@ -116,10 +116,10 @@ export function Bill({ wsId }: Props) {
                     {
                       files.filter(
                         (f) =>
-                          f.name.endsWith('.png') ||
-                          f.name.endsWith('.jpg') ||
-                          f.name.endsWith('.jpeg') ||
-                          f.name.endsWith('.webp')
+                          f.rawFile.name.endsWith('.png') ||
+                          f.rawFile.name.endsWith('.jpg') ||
+                          f.rawFile.name.endsWith('.jpeg') ||
+                          f.rawFile.name.endsWith('.webp')
                       ).length
                     }{' '}
                     Images
@@ -130,25 +130,25 @@ export function Bill({ wsId }: Props) {
                     {files
                       .filter(
                         (f) =>
-                          f.name.endsWith('.png') ||
-                          f.name.endsWith('.jpg') ||
-                          f.name.endsWith('.jpeg') ||
-                          f.name.endsWith('.webp')
+                          f.rawFile.name.endsWith('.png') ||
+                          f.rawFile.name.endsWith('.jpg') ||
+                          f.rawFile.name.endsWith('.jpeg') ||
+                          f.rawFile.name.endsWith('.webp')
                       )
                       .map((f) => (
                         <div
-                          key={f.preview}
+                          key={f.url}
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
                             <img
-                              src={URL.createObjectURL(f)}
-                              alt={f.name}
+                              src={URL.createObjectURL(f.rawFile)}
+                              alt={f.rawFile.name}
                               className="h-8 w-8 rounded object-cover"
                             />
                           </div>
                           <span className="line-clamp-1 w-full max-w-xs">
-                            {f.name}
+                            {f.rawFile.name}
                           </span>
                           <Button
                             size="xs"
@@ -156,7 +156,7 @@ export function Bill({ wsId }: Props) {
                             variant="ghost"
                             onClick={() => {
                               const newFiles = files.filter((file) => {
-                                return file.name !== f.name;
+                                return file.url !== f.url;
                               });
                               setFiles(newFiles);
                             }}
@@ -172,11 +172,11 @@ export function Bill({ wsId }: Props) {
             )}
             {files.filter(
               (f) =>
-                !f.name.endsWith('.pdf') &&
-                !f.name.endsWith('.png') &&
-                !f.name.endsWith('.jpg') &&
-                !f.name.endsWith('.jpeg') &&
-                !f.name.endsWith('.webp')
+                !f.rawFile.name.endsWith('.pdf') &&
+                !f.rawFile.name.endsWith('.png') &&
+                !f.rawFile.name.endsWith('.jpg') &&
+                !f.rawFile.name.endsWith('.jpeg') &&
+                !f.rawFile.name.endsWith('.webp')
             ).length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
@@ -185,11 +185,11 @@ export function Bill({ wsId }: Props) {
                     {
                       files.filter(
                         (f) =>
-                          !f.name.endsWith('.pdf') &&
-                          !f.name.endsWith('.png') &&
-                          !f.name.endsWith('.jpg') &&
-                          !f.name.endsWith('.jpeg') &&
-                          !f.name.endsWith('.webp')
+                          !f.rawFile.name.endsWith('.pdf') &&
+                          !f.rawFile.name.endsWith('.png') &&
+                          !f.rawFile.name.endsWith('.jpg') &&
+                          !f.rawFile.name.endsWith('.jpeg') &&
+                          !f.rawFile.name.endsWith('.webp')
                       ).length
                     }{' '}
                     Files
@@ -200,20 +200,20 @@ export function Bill({ wsId }: Props) {
                     {files
                       .filter(
                         (f) =>
-                          !f.name.endsWith('.pdf') &&
-                          !f.name.endsWith('.png') &&
-                          !f.name.endsWith('.jpg') &&
-                          !f.name.endsWith('.jpeg') &&
-                          !f.name.endsWith('.webp')
+                          !f.rawFile.name.endsWith('.pdf') &&
+                          !f.rawFile.name.endsWith('.png') &&
+                          !f.rawFile.name.endsWith('.jpg') &&
+                          !f.rawFile.name.endsWith('.jpeg') &&
+                          !f.rawFile.name.endsWith('.webp')
                       )
                       .map((f) => (
                         <div
-                          key={f.preview}
+                          key={f.url}
                           className="group flex items-center gap-2 rounded"
                         >
                           <Package className="h-4 w-4" />
                           <span className="line-clamp-1 w-full max-w-xs">
-                            {f.name}
+                            {f.rawFile.name}
                           </span>
                           <Button
                             size="xs"
@@ -221,7 +221,7 @@ export function Bill({ wsId }: Props) {
                             variant="ghost"
                             onClick={() => {
                               const newFiles = files.filter((file) => {
-                                return file.name !== f.name;
+                                return file.url !== f.url;
                               });
                               setFiles(newFiles);
                             }}
@@ -247,4 +247,68 @@ export function Bill({ wsId }: Props) {
       />
     </>
   );
+}
+
+export async function uploadBill(
+  wsId: string,
+  transactionId: string,
+  file: StatedFile
+): Promise<{ data: any; error: any }> {
+  const fileName = file.rawFile.name;
+  const hasExtension = fileName.lastIndexOf('.') !== -1;
+  const baseName = hasExtension
+    ? fileName.substring(0, fileName.lastIndexOf('.'))
+    : fileName;
+  const fileExtension = hasExtension
+    ? fileName.substring(fileName.lastIndexOf('.') + 1)
+    : '';
+  let newFileName = fileName;
+
+  const supabase = createDynamicClient();
+
+  // Check if a file with the same name already exists
+  const { data: existingFileName } = await supabase
+    .schema('storage')
+    .from('objects')
+    .select('*')
+    .eq('bucket_id', 'workspaces')
+    .not('owner', 'is', null)
+    .eq('name', `${wsId}/finance/transactions/${transactionId}/${fileName}`)
+    .order('name', { ascending: true });
+
+  const { data: existingFileNames } = await supabase
+    .schema('storage')
+    .from('objects')
+    .select('*')
+    .eq('bucket_id', 'workspaces')
+    .not('owner', 'is', null)
+    .ilike(
+      'name',
+      `${wsId}/finance/transactions/${transactionId}/${baseName}(%).${fileExtension}`
+    )
+    .order('name', { ascending: true });
+
+  if (existingFileName && existingFileName.length > 0) {
+    if (existingFileNames && existingFileNames.length > 0) {
+      const lastFileName = existingFileNames[existingFileNames.length - 1].name;
+      const lastFileNameIndex = parseInt(
+        lastFileName.substring(
+          lastFileName.lastIndexOf('(') + 1,
+          lastFileName.lastIndexOf(')')
+        )
+      );
+      newFileName = `${baseName}(${lastFileNameIndex + 1}).${fileExtension}`;
+    } else {
+      newFileName = `${baseName}(1).${fileExtension}`;
+    }
+  }
+
+  const { data, error } = await supabase.storage
+    .from('workspaces')
+    .upload(
+      `${wsId}/finance/transactions/${transactionId}/${newFileName}`,
+      file.rawFile
+    );
+
+  return { data, error };
 }

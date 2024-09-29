@@ -537,26 +537,31 @@ export function PromptForm({
         {files && files.length > 0 && (
           <TooltipProvider>
             <div className="mb-2 flex items-center gap-1 text-xs">
-              {files.filter((f) => f.name.endsWith('.pdf')).length > 0 && (
+              {files.filter((f) => f.rawFile.name.endsWith('.pdf')).length >
+                0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
                     <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
                       <FileText className="h-4 w-4" />
-                      {files.filter((f) => f.name.endsWith('.pdf')).length} PDFs
+                      {
+                        files.filter((f) => f.rawFile.name.endsWith('.pdf'))
+                          .length
+                      }{' '}
+                      PDFs
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <div className="grid gap-1">
                       {files
-                        .filter((f) => f.name.endsWith('.pdf'))
+                        .filter((f) => f.rawFile.name.endsWith('.pdf'))
                         .map((f) => (
                           <div
-                            key={f.name}
+                            key={f.rawFile.name}
                             className="group flex items-center gap-2 rounded"
                           >
                             <FileText className="h-4 w-4" />
                             <span className="line-clamp-1 w-full max-w-xs">
-                              {f.name}
+                              {f.rawFile.name}
                             </span>
                             <Button
                               size="xs"
@@ -564,7 +569,7 @@ export function PromptForm({
                               variant="ghost"
                               onClick={() => {
                                 const newFiles = files.filter((file) => {
-                                  return file.name !== f.name;
+                                  return file.rawFile.name !== f.rawFile.name;
                                 });
                                 setFiles(newFiles);
                               }}
@@ -580,9 +585,9 @@ export function PromptForm({
               )}
               {files.filter(
                 (f) =>
-                  f.name.endsWith('.png') ||
-                  f.name.endsWith('.jpg') ||
-                  f.name.endsWith('.jpeg')
+                  f.rawFile.name.endsWith('.png') ||
+                  f.rawFile.name.endsWith('.jpg') ||
+                  f.rawFile.name.endsWith('.jpeg')
               ).length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
@@ -591,10 +596,10 @@ export function PromptForm({
                       {
                         files.filter(
                           (f) =>
-                            f.name.endsWith('.png') ||
-                            f.name.endsWith('.jpg') ||
-                            f.name.endsWith('.jpeg') ||
-                            f.name.endsWith('.webp')
+                            f.rawFile.name.endsWith('.png') ||
+                            f.rawFile.name.endsWith('.jpg') ||
+                            f.rawFile.name.endsWith('.jpeg') ||
+                            f.rawFile.name.endsWith('.webp')
                         ).length
                       }{' '}
                       Images
@@ -605,25 +610,25 @@ export function PromptForm({
                       {files
                         .filter(
                           (f) =>
-                            f.name.endsWith('.png') ||
-                            f.name.endsWith('.jpg') ||
-                            f.name.endsWith('.jpeg') ||
-                            f.name.endsWith('.webp')
+                            f.rawFile.name.endsWith('.png') ||
+                            f.rawFile.name.endsWith('.jpg') ||
+                            f.rawFile.name.endsWith('.jpeg') ||
+                            f.rawFile.name.endsWith('.webp')
                         )
                         .map((f) => (
                           <div
-                            key={f.name}
+                            key={f.rawFile.name}
                             className="group flex items-center gap-2 rounded"
                           >
                             <div className="size-8">
                               <img
-                                src={URL.createObjectURL(f)}
-                                alt={f.name}
+                                src={URL.createObjectURL(f.rawFile)}
+                                alt={f.rawFile.name}
                                 className="h-8 w-8 rounded object-cover"
                               />
                             </div>
                             <span className="line-clamp-1 w-full max-w-xs">
-                              {f.name}
+                              {f.rawFile.name}
                             </span>
                             <Button
                               size="xs"
@@ -631,7 +636,7 @@ export function PromptForm({
                               variant="ghost"
                               onClick={() => {
                                 const newFiles = files.filter((file) => {
-                                  return file.name !== f.name;
+                                  return file.rawFile.name !== f.rawFile.name;
                                 });
                                 setFiles(newFiles);
                               }}
@@ -647,11 +652,11 @@ export function PromptForm({
               )}
               {files.filter(
                 (f) =>
-                  !f.name.endsWith('.pdf') &&
-                  !f.name.endsWith('.png') &&
-                  !f.name.endsWith('.jpg') &&
-                  !f.name.endsWith('.jpeg') &&
-                  !f.name.endsWith('.webp')
+                  !f.rawFile.name.endsWith('.pdf') &&
+                  !f.rawFile.name.endsWith('.png') &&
+                  !f.rawFile.name.endsWith('.jpg') &&
+                  !f.rawFile.name.endsWith('.jpeg') &&
+                  !f.rawFile.name.endsWith('.webp')
               ).length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
@@ -660,11 +665,11 @@ export function PromptForm({
                       {
                         files.filter(
                           (f) =>
-                            !f.name.endsWith('.pdf') &&
-                            !f.name.endsWith('.png') &&
-                            !f.name.endsWith('.jpg') &&
-                            !f.name.endsWith('.jpeg') &&
-                            !f.name.endsWith('.webp')
+                            !f.rawFile.name.endsWith('.pdf') &&
+                            !f.rawFile.name.endsWith('.png') &&
+                            !f.rawFile.name.endsWith('.jpg') &&
+                            !f.rawFile.name.endsWith('.jpeg') &&
+                            !f.rawFile.name.endsWith('.webp')
                         ).length
                       }{' '}
                       Files
@@ -675,20 +680,20 @@ export function PromptForm({
                       {files
                         .filter(
                           (f) =>
-                            !f.name.endsWith('.pdf') &&
-                            !f.name.endsWith('.png') &&
-                            !f.name.endsWith('.jpg') &&
-                            !f.name.endsWith('.jpeg') &&
-                            !f.name.endsWith('.webp')
+                            !f.rawFile.name.endsWith('.pdf') &&
+                            !f.rawFile.name.endsWith('.png') &&
+                            !f.rawFile.name.endsWith('.jpg') &&
+                            !f.rawFile.name.endsWith('.jpeg') &&
+                            !f.rawFile.name.endsWith('.webp')
                         )
                         .map((f) => (
                           <div
-                            key={f.name}
+                            key={f.rawFile.name}
                             className="group flex items-center gap-2 rounded"
                           >
                             <Package className="h-4 w-4" />
                             <span className="line-clamp-1 w-full max-w-xs">
-                              {f.name}
+                              {f.rawFile.name}
                             </span>
                             <Button
                               size="xs"
@@ -696,7 +701,7 @@ export function PromptForm({
                               variant="ghost"
                               onClick={() => {
                                 const newFiles = files.filter((file) => {
-                                  return file.name !== f.name;
+                                  return file.rawFile.name !== f.rawFile.name;
                                 });
                                 setFiles(newFiles);
                               }}

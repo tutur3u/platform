@@ -6,15 +6,16 @@ import { Button } from '../button';
 import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
 import { FileText, Upload, X } from 'lucide-react';
-import { HTMLAttributes, useCallback, useEffect, useState } from 'react';
+import { HTMLAttributes, useCallback, useState } from 'react';
 import Dropzone, {
   type DropzoneProps,
   type FileRejection,
 } from 'react-dropzone';
 import { toast } from 'sonner';
 
-export interface StatedFile extends File {
-  preview: string;
+export interface StatedFile {
+  rawFile: File;
+  url: string;
   status: 'pending' | 'uploading' | 'uploaded' | 'error';
 }
 
@@ -120,12 +121,11 @@ export function FileUploader(props: FileUploaderProps) {
         return;
       }
 
-      const newFiles: StatedFile[] = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-          status: 'pending' as const,
-        })
-      );
+      const newFiles: StatedFile[] = acceptedFiles.map((file) => ({
+        rawFile: file,
+        url: URL.createObjectURL(file),
+        status: 'pending',
+      }));
 
       const updatedFiles = files ? [...files, ...newFiles] : newFiles;
       setFiles(updatedFiles);
@@ -135,55 +135,28 @@ export function FileUploader(props: FileUploaderProps) {
           toast.error(`File ${file.name} was rejected`);
         });
       }
-
-      // if (
-      //   onUpload &&
-      //   updatedFiles.length > 0 &&
-      //   updatedFiles.length <= maxFileCount
-      // ) {
-      //   const target =
-      //     updatedFiles.length > 0 ? `${updatedFiles.length} files` : `file`;
-
-      //   toast.promise(onUpload(updatedFiles), {
-      //     loading: `Uploading ${target}...`,
-      //     success: () => {
-      //       setFiles([]);
-      //       return `${target} uploaded`;
-      //     },
-      //     error: `Failed to upload ${target}`,
-      //   });
-      // }
     },
     [files, maxFileCount, multiple, onUpload, setFiles]
   );
 
   function onRemove(index: number) {
-    if (files?.[index]?.preview) {
-      URL.revokeObjectURL(files[index].preview);
+    if (files?.[index]?.url) {
+      URL.revokeObjectURL(files[index].url);
     }
 
     const newFiles = files?.filter((_, i) => i !== index);
     setFiles(newFiles);
   }
 
-  useEffect(() => {
-    return () => {
-      if (!files) return;
-      files.forEach((file) => {
-        URL.revokeObjectURL(file.preview);
-      });
-    };
-  }, []);
-
   const isDisabled = disabled || (files?.length ?? 0) >= maxFileCount;
 
-  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   async function onSubmit() {
-    if (loading || !files || !files.length) return;
-    setLoading(true);
+    if (uploading || !files || !files.length) return;
+    setUploading(true);
     await onUpload?.(files);
-    setLoading(false);
+    setUploading(false);
   }
 
   return (
@@ -272,7 +245,7 @@ export function FileUploader(props: FileUploaderProps) {
           }}
           variant="ghost"
           disabled={
-            loading ||
+            uploading ||
             (files?.length ?? 0) === 0 ||
             ((files?.length ?? 0) > 0 &&
               files?.every((file) => file.status === 'uploaded'))
@@ -285,7 +258,7 @@ export function FileUploader(props: FileUploaderProps) {
           className="w-full"
           onClick={onSubmit}
           disabled={
-            loading ||
+            uploading ||
             (files?.length ?? 0) === 0 ||
             ((files?.length ?? 0) > 0 &&
               files?.every((file) => file.status === 'uploaded'))
@@ -313,7 +286,7 @@ function FileCard({ file, onRemove }: FileCardProps) {
         <div className="flex w-full flex-col items-start gap-2 text-start">
           <div className="flex flex-col gap-px">
             <p className="text-foreground/80 line-clamp-1 text-sm font-semibold">
-              {file.name}
+              {file.rawFile.name}
             </p>
             <div className="text-muted-foreground text-xs font-semibold">
               {file.status === 'uploading' ? (
@@ -323,7 +296,7 @@ function FileCard({ file, onRemove }: FileCardProps) {
               ) : file.status === 'error' ? (
                 <span className="text-destructive">Error</span>
               ) : (
-                <span> {formatBytes(file.size)}</span>
+                <span> {formatBytes(file.rawFile.size)}</span>
               )}
             </div>
           </div>
@@ -346,11 +319,11 @@ function FileCard({ file, onRemove }: FileCardProps) {
 }
 
 function FilePreview({ file }: { file: StatedFile }) {
-  if (file.type.startsWith('image/')) {
+  if (file.rawFile.type.startsWith('image/')) {
     return (
       <img
-        src={file.preview}
-        alt={file.name}
+        src={file.url}
+        alt={file.rawFile.name}
         width={48}
         height={48}
         loading="lazy"

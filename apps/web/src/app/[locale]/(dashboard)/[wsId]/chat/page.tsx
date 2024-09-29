@@ -61,7 +61,7 @@ const hasKey = (key: string) => {
 };
 
 const getMessages = async () => {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('ai_chat_messages')
