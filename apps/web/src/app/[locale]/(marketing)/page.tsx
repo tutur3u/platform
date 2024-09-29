@@ -1,3 +1,4 @@
+import AboutUs from './about';
 import GetStartedButton from './get-started-button';
 import Members from './members';
 import {
@@ -11,12 +12,13 @@ import {
 
 export default function MarketingPage() {
   return (
-    <div className="flex w-full flex-col items-center">
-      <div className="text-foreground mt-8 flex max-w-6xl flex-col items-center justify-center gap-6 px-3 py-16 pb-0">
+    <div className="relative flex w-full flex-col items-center px-8">
+      <div className="z-20 m-8 h-screen w-full rounded-3xl bg-zinc-300/10 backdrop-blur-xl">
         <div className="flex flex-col items-center justify-center">
-          <h1 className="relative text-center text-4xl font-bold lg:text-7xl">
-            <span className="sr-only">RMIT Neo Culture Tech</span>
-            <div className="h-64 w-64">
+          {/* <h1 className="relative text-center text-4xl font-bold lg:text-7xl">
+            <span className="sr-only">RMIT Neo Culture Tech</span> */}
+
+          {/* <div className="h-64 w-64">
               <svg
                 width="100%"
                 height="100%"
@@ -41,10 +43,10 @@ export default function MarketingPage() {
                   fill="#F8B51D"
                 />
               </svg>
-            </div>
-          </h1>
+            </div> */}
+          {/* </h1> */}
 
-          <p className="mx-auto my-4 max-w-4xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
+          {/* <p className="mx-auto my-4 max-w-4xl text-center text-lg font-semibold !leading-tight md:mb-8 md:text-2xl lg:text-3xl">
             The{' '}
             <span className="text-blue-600 underline decoration-dashed underline-offset-4 dark:text-blue-300">
               best club for SSET students
@@ -57,12 +59,12 @@ export default function MarketingPage() {
               </span>
             </span>
             .
-          </p>
+          </p> */}
 
-          <GetStartedButton href="/onboarding" />
+          {/* <GetStartedButton href="/onboarding" /> */}
         </div>
 
-        <div>
+        {/* <div>
           <div className="bg-brand-light-blue/5 border-brand-light-blue/10 text-brand-light-blue relative mx-auto mb-4 mt-32 max-w-4xl rounded-lg border p-4 text-center text-lg font-semibold tracking-wide md:text-xl lg:text-2xl">
             <Sparkles className="text-brand-light-yellow absolute -right-3 -top-3 h-8 w-8" />
             <Sparkles className="text-brand-light-yellow absolute -bottom-3 -left-3 h-8 w-8" />
@@ -84,8 +86,13 @@ export default function MarketingPage() {
               to enhance your skills and gain valuable experience.
             </div>
           </div>
-        </div>
-
+        </div> */}
+      </div>
+      <div className="absolute inset-0 z-10 flex h-screen items-center justify-center">
+        <div className="aspect-square h-32 w-32 rounded-full bg-[radial-gradient(circle,_rgba(217,180,48,0.8)_0%,_rgba(113,113,122,0.1)_80%)] md:h-64 md:w-64 lg:h-[36rem] lg:w-[36rem]"></div>
+      </div>
+      <AboutUs />
+      {/* <div className="text-foreground z-30 mt-8 flex max-w-6xl flex-col items-center justify-center gap-6 px-3 py-16 pb-0">
         <div className="via-foreground/10 w-full bg-gradient-to-r from-transparent to-transparent p-[1px]" />
 
         <Members />
@@ -133,7 +140,7 @@ export default function MarketingPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

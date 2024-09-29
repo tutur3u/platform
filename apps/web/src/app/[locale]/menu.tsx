@@ -79,7 +79,7 @@ const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
     return null;
 
   return (
-    <div className="hidden gap-8 font-semibold md:flex">
+    <div className="hidden w-full gap-12 rounded-2xl border-[0.5px] border-white bg-black bg-opacity-50 px-6 py-3 font-semibold md:flex">
       {navItems(t).map((item) => (
         <NavLink key={item.href} item={item} />
       ))}
@@ -91,7 +91,7 @@ const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   <NavLink
     item={item}
     onClick={onClick}
-    className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition"
+    className="border-brand-lighzt-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition"
   />
 );
 
