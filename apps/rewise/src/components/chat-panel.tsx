@@ -111,20 +111,31 @@ export function ChatPanel({
     await Promise.all(
       files.map(async (file) => {
         // If the file is already uploaded, skip it
-        if (file.status === 'uploaded') return;
+        if (file.status === 'uploaded') return file;
 
         // Update the status to 'uploading'
-        file.status = 'uploading';
+        setFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.url === file.url ? { ...file, status: 'uploading' } : f
+          )
+        );
 
-        const { data: _, error } = await uploadFile(file, id);
+        const { error } = await uploadFile(file, id);
 
         if (error) {
-          file.status = 'error';
-          return;
+          console.error('File upload error:', error);
         }
 
-        // Update the status to 'uploaded'
-        file.status = 'uploaded';
+        // Update the status to 'uploaded' or 'error'
+        setFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.url === file.url
+              ? { ...file, status: error ? 'error' : 'uploaded' }
+              : f
+          )
+        );
+
+        return { file, error };
       })
     );
   };

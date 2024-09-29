@@ -5,7 +5,7 @@ import { useControllableState } from '../../../hooks/use-controllable-state';
 import { Button } from '../button';
 import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
-import { FileText, Upload, X } from 'lucide-react';
+import { File, FileText, Upload, X } from 'lucide-react';
 import { HTMLAttributes, useCallback, useState } from 'react';
 import Dropzone, {
   type DropzoneProps,
@@ -289,14 +289,15 @@ function FileCard({ file, onRemove }: FileCardProps) {
               {file.rawFile.name}
             </p>
             <div className="text-muted-foreground text-xs font-semibold">
-              {file.status === 'uploading' ? (
+              {file.status === 'pending' && (
+                <span>{formatBytes(file.rawFile.size)}</span>
+              )}
+              {file.status === 'uploading' && (
                 <span className="opacity-70">Uploading...</span>
-              ) : file.status === 'uploaded' ? (
-                <span>Uploaded</span>
-              ) : file.status === 'error' ? (
+              )}
+              {file.status === 'uploaded' && <span>Uploaded</span>}
+              {file.status === 'error' && (
                 <span className="text-destructive">Error</span>
-              ) : (
-                <span> {formatBytes(file.rawFile.size)}</span>
               )}
             </div>
           </div>
@@ -319,20 +320,30 @@ function FileCard({ file, onRemove }: FileCardProps) {
 }
 
 function FilePreview({ file }: { file: StatedFile }) {
-  if (file.rawFile.type.startsWith('image/')) {
-    return (
-      <img
-        src={file.url}
-        alt={file.rawFile.name}
-        width={48}
-        height={48}
-        loading="lazy"
-        className="rounded-md object-cover"
-      />
-    );
-  }
+  const isImage = file.rawFile.type.startsWith('image/');
+  const isPdf = file.rawFile.type.startsWith('application/pdf');
+  const isOther = !isImage && !isPdf;
 
   return (
-    <FileText className="text-muted-foreground size-10" aria-hidden="true" />
+    <>
+      {isImage && (
+        <a href={file.url} target="_blank" rel="noopener noreferrer">
+          <img
+            src={file.url}
+            alt={file.rawFile.name}
+            width={48}
+            height={48}
+            loading="lazy"
+            className="rounded-md object-cover"
+          />
+        </a>
+      )}
+      {isPdf && (
+        <a href={file.url} target="_blank" rel="noopener noreferrer">
+          <FileText className="size-10" aria-hidden="true" />
+        </a>
+      )}
+      {isOther && <File className="size-10" aria-hidden="true" />}
+    </>
   );
 }

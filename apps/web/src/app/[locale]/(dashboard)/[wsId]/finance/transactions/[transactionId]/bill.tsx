@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
-import { FileText, ImageIcon, Package, X } from 'lucide-react';
+import { File, FileText, ImageIcon, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -23,214 +23,169 @@ interface Props {
 export function Bill({ wsId, transactionId }: Props) {
   const [files, setFiles] = useState<StatedFile[]>([]);
 
+  const pdfs = files.filter((f) =>
+    f.rawFile.type.startsWith('application/pdf')
+  );
+  const images = files.filter((f) => f.rawFile.type.startsWith('image/'));
+  const others = files.filter((f) => !pdfs.includes(f) && !images.includes(f));
+
   const onUpload = async (files: StatedFile[]) => {
-    files.forEach(async (file) => {
-      if (file.status === 'uploaded') return;
+    await Promise.all(
+      files.map(async (file) => {
+        // If the file is already uploaded, skip it
+        if (file.status === 'uploaded') return file;
 
-      setFiles((prevFiles) =>
-        prevFiles.map((f) =>
-          f.url === file.url ? { ...file, status: 'uploading' } : f
-        )
-      );
-
-      const { error } = await uploadBill(wsId, transactionId, file);
-
-      if (error) {
+        // Update the status to 'uploading'
         setFiles((prevFiles) =>
           prevFiles.map((f) =>
-            f.url === file.url ? { ...file, status: 'error' } : f
+            f.url === file.url ? { ...file, status: 'uploading' } : f
           )
         );
-        return;
-      }
 
-      setFiles((prevFiles) =>
-        prevFiles.map((f) =>
-          f.url === file.url ? { ...file, status: 'uploaded' } : f
-        )
-      );
-    });
+        const { error } = await uploadBill(wsId, transactionId, file);
+
+        if (error) {
+          console.error('File upload error:', error);
+        }
+
+        // Update the status to 'uploaded' or 'error'
+        setFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.url === file.url
+              ? { ...file, status: error ? 'error' : 'uploaded' }
+              : f
+          )
+        );
+
+        return { file, error };
+      })
+    );
   };
 
   return (
     <>
-      {files && files.length > 0 && (
+      {files.length > 0 && (
         <TooltipProvider>
           <div className="mb-2 flex items-center gap-1 text-xs">
-            {files.filter((f) => f.rawFile.name.endsWith('.pdf')).length >
-              0 && (
+            {pdfs.length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
                     <FileText className="h-4 w-4" />
-                    {
-                      files.filter((f) => f.rawFile.name.endsWith('.pdf'))
-                        .length
-                    }{' '}
-                    PDFs
+                    {pdfs.length} PDFs
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
                   <div className="grid gap-1">
-                    {files
-                      .filter((f) => f.rawFile.name.endsWith('.pdf'))
-                      .map((f) => (
-                        <div
-                          key={f.url}
-                          className="group flex items-center gap-2 rounded"
+                    {pdfs.map((f) => (
+                      <div
+                        key={f.url}
+                        className="group flex items-center gap-2 rounded"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span className="line-clamp-1 w-full max-w-xs">
+                          {f.rawFile.name}
+                        </span>
+                        <Button
+                          size="xs"
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            const newFiles = files.filter((file) => {
+                              return file.url !== f.url;
+                            });
+                            setFiles(newFiles);
+                          }}
+                          className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                         >
-                          <FileText className="h-4 w-4" />
-                          <span className="line-clamp-1 w-full max-w-xs">
-                            {f.rawFile.name}
-                          </span>
-                          <Button
-                            size="xs"
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              const newFiles = files.filter((file) => {
-                                return file.url !== f.url;
-                              });
-                              setFiles(newFiles);
-                            }}
-                            className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                          >
-                            <X />
-                          </Button>
-                        </div>
-                      ))}
+                          <X />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </TooltipContent>
               </Tooltip>
             )}
-            {files.filter(
-              (f) =>
-                f.rawFile.name.endsWith('.png') ||
-                f.rawFile.name.endsWith('.jpg') ||
-                f.rawFile.name.endsWith('.jpeg')
-            ).length > 0 && (
+            {images.length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
                     <ImageIcon className="h-4 w-4" />
-                    {
-                      files.filter(
-                        (f) =>
-                          f.rawFile.name.endsWith('.png') ||
-                          f.rawFile.name.endsWith('.jpg') ||
-                          f.rawFile.name.endsWith('.jpeg') ||
-                          f.rawFile.name.endsWith('.webp')
-                      ).length
-                    }{' '}
-                    Images
+                    {images.length} Images
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
                   <div className="grid gap-1">
-                    {files
-                      .filter(
-                        (f) =>
-                          f.rawFile.name.endsWith('.png') ||
-                          f.rawFile.name.endsWith('.jpg') ||
-                          f.rawFile.name.endsWith('.jpeg') ||
-                          f.rawFile.name.endsWith('.webp')
-                      )
-                      .map((f) => (
-                        <div
-                          key={f.url}
-                          className="group flex items-center gap-2 rounded"
-                        >
-                          <div className="size-8">
-                            <img
-                              src={URL.createObjectURL(f.rawFile)}
-                              alt={f.rawFile.name}
-                              className="h-8 w-8 rounded object-cover"
-                            />
-                          </div>
-                          <span className="line-clamp-1 w-full max-w-xs">
-                            {f.rawFile.name}
-                          </span>
-                          <Button
-                            size="xs"
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              const newFiles = files.filter((file) => {
-                                return file.url !== f.url;
-                              });
-                              setFiles(newFiles);
-                            }}
-                            className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                          >
-                            <X />
-                          </Button>
+                    {images.map((f) => (
+                      <div
+                        key={f.url}
+                        className="group flex items-center gap-2 rounded"
+                      >
+                        <div className="size-8">
+                          <img
+                            src={URL.createObjectURL(f.rawFile)}
+                            alt={f.rawFile.name}
+                            className="h-8 w-8 rounded object-cover"
+                          />
                         </div>
-                      ))}
+                        <span className="line-clamp-1 w-full max-w-xs">
+                          {f.rawFile.name}
+                        </span>
+                        <Button
+                          size="xs"
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            const newFiles = files.filter((file) => {
+                              return file.url !== f.url;
+                            });
+                            setFiles(newFiles);
+                          }}
+                          className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                        >
+                          <X />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </TooltipContent>
               </Tooltip>
             )}
-            {files.filter(
-              (f) =>
-                !f.rawFile.name.endsWith('.pdf') &&
-                !f.rawFile.name.endsWith('.png') &&
-                !f.rawFile.name.endsWith('.jpg') &&
-                !f.rawFile.name.endsWith('.jpeg') &&
-                !f.rawFile.name.endsWith('.webp')
-            ).length > 0 && (
+            {others.length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
-                    <Package className="h-4 w-4" />
-                    {
-                      files.filter(
-                        (f) =>
-                          !f.rawFile.name.endsWith('.pdf') &&
-                          !f.rawFile.name.endsWith('.png') &&
-                          !f.rawFile.name.endsWith('.jpg') &&
-                          !f.rawFile.name.endsWith('.jpeg') &&
-                          !f.rawFile.name.endsWith('.webp')
-                      ).length
-                    }{' '}
-                    Files
+                    <File className="h-4 w-4" />
+                    {others.length} Files
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
                   <div className="grid gap-1">
-                    {files
-                      .filter(
-                        (f) =>
-                          !f.rawFile.name.endsWith('.pdf') &&
-                          !f.rawFile.name.endsWith('.png') &&
-                          !f.rawFile.name.endsWith('.jpg') &&
-                          !f.rawFile.name.endsWith('.jpeg') &&
-                          !f.rawFile.name.endsWith('.webp')
-                      )
-                      .map((f) => (
-                        <div
-                          key={f.url}
-                          className="group flex items-center gap-2 rounded"
+                    {others.map((f) => (
+                      <div
+                        key={f.url}
+                        className="group flex items-center gap-2 rounded"
+                      >
+                        <File className="h-4 w-4" />
+                        <span className="line-clamp-1 w-full max-w-xs">
+                          {f.rawFile.name}
+                        </span>
+                        <Button
+                          size="xs"
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            const newFiles = files.filter((file) => {
+                              return file.url !== f.url;
+                            });
+                            setFiles(newFiles);
+                          }}
+                          className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                         >
-                          <Package className="h-4 w-4" />
-                          <span className="line-clamp-1 w-full max-w-xs">
-                            {f.rawFile.name}
-                          </span>
-                          <Button
-                            size="xs"
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              const newFiles = files.filter((file) => {
-                                return file.url !== f.url;
-                              });
-                              setFiles(newFiles);
-                            }}
-                            className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                          >
-                            <X />
-                          </Button>
-                        </div>
-                      ))}
+                          <X />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -238,6 +193,7 @@ export function Bill({ wsId, transactionId }: Props) {
           </div>
         </TooltipProvider>
       )}
+
       <FileUploader
         value={files}
         onValueChange={setFiles}
