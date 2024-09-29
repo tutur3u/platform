@@ -1,9 +1,9 @@
 "use client";
 
 import Tile from './piece';
-import React, { useRef } from 'react';
+import React from 'react';
 import { useDragAndDrop } from './use-dnd';
-import { horizontal, vertical, pieces } from './pieceSetup';
+import { horizontal, vertical, pieces, PieceType, TeamType } from './pieceSetup';
 
 
 export default function ChessBoard() {
@@ -18,10 +18,15 @@ export default function ChessBoard() {
         for (let j = 0; j <= vertical.length + 1; j++) {
             const number = j + i + 2;
             let image = undefined;
+            let type: PieceType | undefined = undefined;
+            let team: TeamType | undefined = undefined;
+            let firstMove = false;
 
             pieces.forEach((piece) => {
                 if (piece.x === j && piece.y === i) {
                     image = piece.image;
+                    type = piece.type;
+                    team = piece.team;
                 }
             });
 
@@ -48,11 +53,15 @@ export default function ChessBoard() {
                     row.push(
                         (i % 2 !== 0 && j % 2 !== 0) || (i % 2 === 0 && j % 2 === 0) ? (
                             <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
-                                {image && <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} number={number} />}
+                                { image && type && team && (
+                                    <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} number={number} type={type} team={team} firstMove={firstMove} />
+                                )}
                             </div>
                         ) : (
                             <div className="relative flex aspect-square h-6 items-center justify-center bg-blue-200 md:h-9 lg:h-12">
-                                {image && <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} number={number} />}
+                                { image && type && team && (
+                                    <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} number={number} type={type} team={team} firstMove={firstMove} />
+                                )}
                             </div>
                         )
                     );

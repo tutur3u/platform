@@ -7,29 +7,54 @@ interface Piece {
     image: string;
     x: number;
     y: number;
+    type: PieceType;
+    team: TeamType;
+    firstMove: boolean;
+}
+
+enum TeamType {
+    OPPONENT = "OPPONENT",
+    OURS = "OURS"
+}
+
+enum PieceType {
+    PAWN = "PAWN",
+    ROOK = "ROOK",
+    KNIGHT = "KNIGHT",
+    BISHOP = "BISHOP",
+    QUEEN = "QUEEN",
+    KING = "KING"
 }
 
 const pieces: Piece[] = [];
 const initialPositions = [
-    { type: 'rook', positions: [1, 8] },
-    { type: 'knight', positions: [2, 7] },
-    { type: 'bishop', positions: [3, 6] },
-    { type: 'queen', positions: [4] },
-    { type: 'king', positions: [5] },
-    { type: 'pawn', positions: [1, 2, 3, 4, 5, 6, 7, 8] }
+    { type: PieceType.ROOK, positions: [1, 8] },
+    { type: PieceType.KNIGHT, positions: [2, 7] },
+    { type: PieceType.BISHOP, positions: [3, 6] },
+    { type: PieceType.QUEEN, positions: [4] },
+    { type: PieceType.KING, positions: [5] },
+    { type: PieceType.PAWN, positions: [1, 2, 3, 4, 5, 6, 7, 8] }
 ];
 
 for (let i = 1; i <= 2; i++) {
-    const type = i === 1 ? 'b' : 'w';
-    const y = i === 1 ? 1 : 8;
-    const pawnY = i === 1 ? 2 : 7;
+    const teamType = i === 1 ? TeamType.OPPONENT : TeamType.OURS;
+    const colour = (teamType === TeamType.OPPONENT) ? 'b' : 'w';
+    const y = (teamType === TeamType.OPPONENT) ? 1 : 8;
+    const pawnY = (teamType === TeamType.OPPONENT) ? 2 : 7;
 
     initialPositions.forEach(piece => {
         piece.positions.forEach(x => {
-            const pieceY = piece.type === 'pawn' ? pawnY : y;
-            pieces.push({ image: `neo-chess/${type}_${piece.type}.png`, x, y: pieceY});
+            const pieceY = piece.type === PieceType.PAWN ? pawnY : y;
+            pieces.push({
+                image: `neo-chess/${colour}_${PieceType[piece.type].toLowerCase()}.png`,
+                x,
+                y: pieceY,
+                type: piece.type,
+                team: teamType,
+                firstMove: false
+            });
         });
     });
 }
 
-export { horizontal, vertical, pieces, initialPositions };
+export { horizontal, vertical, pieces, initialPositions, PieceType, TeamType };

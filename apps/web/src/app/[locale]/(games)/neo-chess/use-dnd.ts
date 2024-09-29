@@ -2,16 +2,20 @@
 "use client";
 
 import React, { useRef } from 'react';
+import Referee from './referee';
+import { PieceType, TeamType } from './pieceSetup';
 
 
 export function useDragAndDrop() {
     const chessboardRef = useRef<HTMLDivElement>(null);
     let activePiece: HTMLElement | null = null;
     let hasMoved = useRef(false);
+    const referee = new Referee();
 
     const touchStartPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-    const cellCenter = useRef<{ nextX?: number; nextY?: number; }>({});
-    const fixPosition = useRef<Record<string, { x: number; y: number }>>({});
+    const fixPosition = useRef<Record<string, { column: number, row: number, x: number, y: number, firstMove: boolean }>>({});
+    const lastValidPosition = useRef<Record<string, { x: number; y: number }>>({});
+    const cellCenter = useRef<{ nextColumn?: number; nextRow?: number; nextX?: number; nextY?: number; }>({});
 
 
     function grabPiece(e: React.MouseEvent) {
@@ -41,8 +45,10 @@ export function useDragAndDrop() {
                 // Store the position
                 if (!fixPosition.current[activePiece.id]) {
                     fixPosition.current[activePiece.id] = {
+                        column, row,
                         x: initCellCenterX,
-                        y: initCellCenterY
+                        y: initCellCenterY,
+                        firstMove: true
                     };
                 }
             }
@@ -102,6 +108,8 @@ export function useDragAndDrop() {
 
                 // Store the cell center position
                 cellCenter.current = {
+                    nextColumn: column,
+                    nextRow: row,
                     nextX: nextCellCenterX,
                     nextY: nextCellCenterY,
                 };
@@ -114,19 +122,73 @@ export function useDragAndDrop() {
     
     function dropPiece(e: React.MouseEvent) {
         const chessboard = chessboardRef.current;
+
         /** THIS BLOCK OF CODE UPDATES THE ACTIVE PIECE TO THE CENTER OF THE CELL IF MOVED **/
         if (activePiece && chessboard && hasMoved.current) {
             const pieceId = activePiece.id;
 
-            if (cellCenter.current.nextX !== undefined) {
-                if (fixPosition.current[pieceId] && typeof fixPosition.current[pieceId].x === 'number') {
-                    activePiece.style.left = `${cellCenter.current.nextX! - fixPosition.current[pieceId].x}px`;
+            // Get the chessboard's bounding box and size of 1 cell
+            const chessboardRect = chessboard.getBoundingClientRect();
+            const cellSize = chessboardRect.width / 10;
+
+            // Check Piece Type and Team
+            const imageSrc = (activePiece as HTMLImageElement).src;
+            const pieceMatch = imageSrc.match(/([bw])_(\w+)\.png$/);
+            let pieceTeam: TeamType | null = null;
+            let pieceType: PieceType | null = null;
+
+            if (pieceMatch) {
+                if (pieceMatch[1]) {
+                    const pieceTeamString = pieceMatch[1] === "w" ? TeamType.OURS : TeamType.OPPONENT;
+                    pieceTeam = TeamType[pieceTeamString as keyof typeof TeamType];
+                }
+                if (pieceMatch[2]) {
+                    const pieceTypeString = pieceMatch[2].toUpperCase();
+                    pieceType = PieceType[pieceTypeString as keyof typeof PieceType];
                 }
             }
-            if (cellCenter.current.nextY !== undefined) {
-                if (fixPosition.current[pieceId] && typeof fixPosition.current[pieceId].y === 'number') {
-                    activePiece.style.top = `${cellCenter.current.nextY! - fixPosition.current[pieceId].y}px`;
+
+            if (fixPosition.current[pieceId]
+                && cellCenter.current.nextX && cellCenter.current.nextY
+                && cellCenter.current.nextColumn && cellCenter.current.nextRow
+                && pieceType && pieceTeam
+            ) {
+                const validMove = referee.isValidMove(
+                                    pieceId,
+                                    fixPosition.current[pieceId].x, fixPosition.current[pieceId].y,
+                                    cellCenter.current.nextX, cellCenter.current.nextY,
+                                    cellSize, pieceType, pieceTeam,
+                                    fixPosition.current[pieceId].firstMove
+                                );
+
+                // Update the position of the piece to the center of the cell
+                if (validMove) {
+                    if (fixPosition.current[pieceId] && typeof fixPosition.current[pieceId].x === 'number') {
+                        activePiece.style.left = `${cellCenter.current.nextX! - fixPosition.current[pieceId].x}px`;
+                    }
+                
+                    if (fixPosition.current[pieceId] && typeof fixPosition.current[pieceId].y === 'number') {
+                        activePiece.style.top = `${cellCenter.current.nextY! - fixPosition.current[pieceId].y}px`;
+                    }
+
+                    fixPosition.current[pieceId].firstMove = false;
+                } else {
+                    // Not move the piece if the move is invalid
+                    if (lastValidPosition.current[pieceId]) {
+                        activePiece.style.left = `${lastValidPosition.current[pieceId].x}px`;
+                        activePiece.style.top = `${lastValidPosition.current[pieceId].y}px`;
+                    } else {
+                        activePiece.style.left = `${0}px`;
+                        activePiece.style.top = `${0}px`;
+                    }
                 }
+
+
+                // Store the last valid position when the piece is grabbed
+                lastValidPosition.current[pieceId] = {
+                    x: parseFloat(activePiece.style.left),
+                    y: parseFloat(activePiece.style.top),
+                };
             }
         }
         /** ------------------------------------------------------------------------------ **/
