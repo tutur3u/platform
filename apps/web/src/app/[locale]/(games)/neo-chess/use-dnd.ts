@@ -120,7 +120,7 @@ export function useDragAndDrop() {
         }
     }
     
-    function dropPiece(e: React.MouseEvent) {
+    function dropPiece(_e: React.MouseEvent) {
         const chessboard = chessboardRef.current;
 
         /** THIS BLOCK OF CODE UPDATES THE ACTIVE PIECE TO THE CENTER OF THE CELL IF MOVED **/

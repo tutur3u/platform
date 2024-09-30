@@ -16,7 +16,6 @@ export default function ChessBoard() {
         const row: React.ReactNode[] = [];
 
         for (let j = 0; j <= vertical.length + 1; j++) {
-            const number = j + i + 2;
             let image = undefined;
             let type: PieceType | undefined = undefined;
             let team: TeamType | undefined = undefined;
@@ -54,13 +53,13 @@ export default function ChessBoard() {
                         (i % 2 !== 0 && j % 2 !== 0) || (i % 2 === 0 && j % 2 === 0) ? (
                             <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
                                 { image && type && team && (
-                                    <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} number={number} type={type} team={team} firstMove={firstMove} />
+                                    <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} type={type} team={team} firstMove={firstMove} />
                                 )}
                             </div>
                         ) : (
                             <div className="relative flex aspect-square h-6 items-center justify-center bg-blue-200 md:h-9 lg:h-12">
                                 { image && type && team && (
-                                    <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} number={number} type={type} team={team} firstMove={firstMove} />
+                                    <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} type={type} team={team} firstMove={firstMove} />
                                 )}
                             </div>
                         )
