@@ -1,5 +1,3 @@
-import Navbar from './navbar';
-import NavbarPadding from './navbar-padding';
 import { StaffToolbar } from './staff-toolbar';
 import { Providers } from '@/components/providers';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
@@ -112,7 +110,7 @@ export default async function RootLayout({
     <html lang={locale}>
       <body
         className={cn(
-          'bg-background min-h-screen font-sans antialiased',
+          'bg-background overflow-hidden font-sans antialiased',
           inter.className
         )}
       >
@@ -144,8 +142,7 @@ export default async function RootLayout({
           enableSystem
         >
           <NextIntlClientProvider messages={messages}>
-            <Navbar />
-            <NavbarPadding>{children}</NavbarPadding>
+            {children}
           </NextIntlClientProvider>
         </Providers>
         <TailwindIndicator />

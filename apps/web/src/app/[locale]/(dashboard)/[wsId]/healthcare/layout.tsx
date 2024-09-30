@@ -14,33 +14,31 @@ export default async function Layout({
 }: LayoutProps) {
   const navLinks: NavLink[] = [
     {
-      name: 'Overview',
+      title: 'Overview',
       href: `/${wsId}/healthcare`,
       matchExact: true,
     },
     {
-      name: 'Checkups',
+      title: 'Checkups',
       href: `/${wsId}/healthcare/checkups`,
     },
     {
-      name: 'Diagnoses',
+      title: 'Diagnoses',
       href: `/${wsId}/healthcare/diagnoses`,
     },
     {
-      name: 'Vitals',
+      title: 'Vitals',
       href: `/${wsId}/healthcare/vitals`,
     },
     {
-      name: 'Vital groups',
+      title: 'Vital groups',
       href: `/${wsId}/healthcare/vital-groups`,
     },
   ];
 
   return (
     <div>
-      <div className="mb-4 flex gap-1 overflow-x-auto font-semibold">
-        <Navigation navLinks={navLinks} />
-      </div>
+      <Navigation navLinks={navLinks} />
       {children}
     </div>
   );
