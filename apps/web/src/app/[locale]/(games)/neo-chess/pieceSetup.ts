@@ -4,6 +4,7 @@ const horizontal = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const vertical = [1, 2, 3, 4, 5, 6, 7, 8];
 
 interface Piece {
+    id: string;
     image: string;
     x: number;
     y: number;
@@ -46,6 +47,7 @@ for (let i = 1; i <= 2; i++) {
         piece.positions.forEach(x => {
             const pieceY = piece.type === PieceType.PAWN ? pawnY : y;
             pieces.push({
+                id: `${x}, ${pieceY}`,
                 image: `neo-chess/${colour}_${PieceType[piece.type].toLowerCase()}.png`,
                 x,
                 y: pieceY,
@@ -58,3 +60,4 @@ for (let i = 1; i <= 2; i++) {
 }
 
 export { horizontal, vertical, pieces, initialPositions, PieceType, TeamType };
+export type { Piece };

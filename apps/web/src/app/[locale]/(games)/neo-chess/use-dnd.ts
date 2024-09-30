@@ -3,7 +3,7 @@
 
 import React, { useRef } from 'react';
 import Referee from './referee';
-import { PieceType, TeamType } from './pieceSetup';
+import { PieceType, TeamType, pieces } from './pieceSetup';
 
 
 export function useDragAndDrop() {
@@ -155,20 +155,29 @@ export function useDragAndDrop() {
             ) {
                 const validMove = referee.isValidMove(
                                     pieceId,
+                                    cellCenter.current.nextColumn, cellCenter.current.nextRow,
                                     fixPosition.current[pieceId].x, fixPosition.current[pieceId].y,
                                     cellCenter.current.nextX, cellCenter.current.nextY,
                                     cellSize, pieceType, pieceTeam,
-                                    fixPosition.current[pieceId].firstMove
+                                    fixPosition.current[pieceId].firstMove,
+                                    pieces
                                 );
 
                 // Update the position of the piece to the center of the cell
                 if (validMove) {
-                    if (fixPosition.current[pieceId] && typeof fixPosition.current[pieceId].x === 'number') {
+                    if (fixPosition.current[pieceId] && fixPosition.current[pieceId].x) {
                         activePiece.style.left = `${cellCenter.current.nextX! - fixPosition.current[pieceId].x}px`;
                     }
                 
-                    if (fixPosition.current[pieceId] && typeof fixPosition.current[pieceId].y === 'number') {
+                    if (fixPosition.current[pieceId] && fixPosition.current[pieceId].y) {
                         activePiece.style.top = `${cellCenter.current.nextY! - fixPosition.current[pieceId].y}px`;
+                    }
+
+                    // Update the pieces array with the new position
+                    const pieceIndex = pieces.findIndex(piece => piece.id === pieceId);
+                    if (pieces[pieceIndex]) {
+                        pieces[pieceIndex].x = cellCenter.current.nextColumn;
+                        pieces[pieceIndex].y = cellCenter.current.nextRow;
                     }
 
                     fixPosition.current[pieceId].firstMove = false;
