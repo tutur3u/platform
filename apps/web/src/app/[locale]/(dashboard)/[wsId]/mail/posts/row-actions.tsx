@@ -2,6 +2,7 @@ import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
 import { PostEmail } from '@/types/primitives/post-email';
 import { Button } from '@repo/ui/components/ui/button';
+import dayjs from 'dayjs';
 import { CircleAlert, MailCheck, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -30,7 +31,9 @@ export default function RowActions({ data }: { data: PostEmail }) {
           content: data.post_content!,
           notes: data.notes || '',
           group_name: data.group_name!,
-          created_at: data.created_at?.toISOString() || undefined,
+          created_at:
+            dayjs(data.post_created_at || data.created_at)?.toISOString() ||
+            undefined,
         },
         users: [
           {

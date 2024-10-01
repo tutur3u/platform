@@ -52,6 +52,7 @@ const useEmail = () => {
         },
         body: JSON.stringify({
           users,
+          date: post.created_at,
         }),
       }
     );

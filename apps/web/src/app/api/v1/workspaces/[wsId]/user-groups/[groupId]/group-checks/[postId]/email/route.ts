@@ -2,6 +2,7 @@ import { DEV_MODE } from '@/constants/common';
 import { getPermissions } from '@/lib/workspace-helper';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import dayjs from 'dayjs';
 import juice from 'juice';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -62,6 +63,7 @@ export async function POST(
       notes: string;
       is_completed: boolean;
     }[];
+    date: string;
   };
 
   if (!data.users) {
@@ -73,7 +75,7 @@ export async function POST(
 
   const results = await Promise.all(
     data.users.map(async (user) => {
-      const subject = `Easy Center | Báo cáo tiến độ ngày ${new Date().toLocaleDateString()} của ${user.username}`;
+      const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(data.date).format('DD/MM/YYYY')} của ${user.username}`;
       return sendEmail({
         receiverId: user.id,
         recipient: user.email,
@@ -138,8 +140,10 @@ const sendEmail = async ({
     };
 
     if (!disableEmailSending) {
+      console.log('Sending email:', params);
       const command = new SendEmailCommand(params);
       await sesClient.send(command);
+      console.log('Email sent:', params);
     }
 
     const {
