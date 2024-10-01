@@ -1,3 +1,6 @@
+import Navbar from '../../navbar';
+import NavbarPadding from '../../navbar-padding';
+import { Separator } from '@repo/ui/components/ui/separator';
 import React from 'react';
 
 interface LayoutProps {
@@ -29,17 +32,13 @@ export default async function Layout({ children }: LayoutProps) {
 
   return (
     <>
-      <div className="p-4 pb-2 font-semibold md:px-8 lg:px-16 xl:px-32">
-        {/* <div className="flex gap-1 overflow-x-auto">
-          <Navigation navLinks={navLinks} />
-        </div> */}
-      </div>
-
-      {/* <Separator /> */}
-
-      <div className="flex items-center justify-center p-4 md:px-8 lg:px-16 xl:px-32">
-        {children}
-      </div>
+      <Navbar hideMetadata />
+      <NavbarPadding>
+        <Separator />
+        <div className="flex items-center justify-center p-4 md:px-8 lg:px-16 xl:px-32">
+          {children}
+        </div>
+      </NavbarPadding>
     </>
   );
 }
