@@ -8,12 +8,22 @@ export default async function Footer() {
 
   return (
     <div className="w-full text-center">
-      <Separator className="bg-foreground/5 mt-8 mb-5" />
+      <Separator className="bg-foreground/5 mb-5 mt-8" />
 
-      <div className="gap-4 mb-5 px-4 py-0 md:gap-8 md:px-32 lg:flex-row lg:gap-14 xl:px-64">
-        <Link href="/" className="flex md:flex-col transition dark:hover:text-blue-200 justify-center md:justify-start items-center md:items-start" aria-label="Neo Culture Tech">
+      <div className="mb-5 gap-4 px-0 py-0 md:gap-8 md:px-32 lg:flex-row lg:gap-14 xl:px-64">
+        <Link
+          href="/"
+          className="flex items-center justify-center transition md:flex-col md:items-start md:justify-start dark:hover:text-blue-200"
+          aria-label="Neo Culture Tech"
+        >
           <div className="aspect-square w-16 items-start md:mb-4">
-            <svg width="100%" height="100%" viewBox="0 0 890 787" fill="none" xmlns="http://www.w3.org/2000/svg" >
+            <svg
+              width="100%"
+              height="100%"
+              viewBox="0 0 890 787"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path
                 d="M508.595 785.779C503.749 788.982 501.241 784.992 498.445 783.274C467.518 764.277 436.72 745.07 405.883 725.927C384.949 712.932 364.116 699.767 342.997 687.08C337.258 683.632 334.751 679.526 334.03 672.857C329.06 626.897 323.674 580.982 318.433 535.052C315.306 507.642 312.197 480.232 308.487 452.236C300.644 443.971 303.86 433.919 302.634 425.122C300.085 406.832 297.809 388.432 296.373 369.085C294.62 337.343 289.769 306.816 286.708 276.106C283.48 243.728 279.316 211.458 275.848 179.109C272.417 147.091 268.208 115.156 265.016 83.115C263.912 72.028 260.151 60.892 264.326 48.748C281.213 42.42 298.461 39.067 315.46 34.771C343.763 27.618 372.199 20.989 401.372 14.052C409.134 14.597 414.447 18.775 420.097 22.269C438.514 33.656 456.631 45.538 475.281 56.532C485.017 62.271 490.256 70.086 491.393 81.278C494.486 111.737 498.783 142.063 501.887 172.52C505.664 209.6 510.455 246.557 514.744 283.574C518.497 315.96 521.761 348.401 525.895 381.627C526.421 405.83 530.415 428.815 532.925 451.939C536.439 484.323 540.575 516.636 544.165 549.014C547.609 580.072 551.019 611.134 554.884 642.146C557.268 661.276 559.652 680.415 560.896 700.493C561.133 706.6 558.65 710.982 555.982 715.182C542.628 736.207 529.305 757.251 516.097 778.368C514.305 781.233 512.277 783.802 508.595 785.778V785.779Z"
                 fill="#032639"
@@ -41,7 +51,7 @@ export default async function Footer() {
             </svg>
           </div>
 
-          <div className="font-roboto text-3xl 2xl:text-5xl font-bold text-left mx-2 md:mx-0">
+          <div className="font-roboto mx-2 text-left text-3xl font-bold md:mx-0 2xl:text-5xl">
             Neo Culture Tech
           </div>
         </Link>
@@ -50,34 +60,62 @@ export default async function Footer() {
       <div className="flex flex-col justify-between gap-4 px-4 py-0 md:gap-8 md:px-32 lg:flex-row lg:gap-16 xl:px-64">
         <div className="flex flex-col gap-5">
           <div>
-            <div className="text-left mb-4 text-center md:text-start">
-              Feel free to reach out if you want to collaborate with us, or simply have a chat.
+            <div className="mb-4 text-center text-white/50 md:text-start">
+              Feel free to reach out if you want to collaborate with us, or
+              simply have a chat.
             </div>
 
-            <div className="flex items-center gap-2 justify-center md:justify-normal">
+            <div className="flex items-center justify-center gap-2 md:justify-normal">
               <Mail size={16} />
 
-              <Link href="mailto:neoculturetechclub.sgs@rmit.edu.vn" className="text-brand-light-red font-semibold underline">
+              <Link
+                href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
+                className="text-brand-light-red font-semibold underline"
+              >
                 neoculturetechclub.sgs@rmit.edu.vn
               </Link>
             </div>
           </div>
 
-          <div className="flex gap-5 mt-1 justify-center md:justify-normal">
-            <Link href="https://www.facebook.com/rmit.nct" className="fill-foreground/50 hover:fill-foreground transition duration-300" aria-label="Facebook">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-6">
+          <div className="mt-1 flex justify-center gap-5">
+            <Link
+              href="https://www.facebook.com/rmit.nct"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
+              aria-label="Facebook"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                className="w-6"
+              >
                 <path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z" />
               </svg>
             </Link>
 
-            <Link href="https://github.com/rmit-nct" className="fill-foreground/50 hover:fill-foreground transition duration-300" aria-label="Github">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-6">
+            <Link
+              href="https://github.com/rmit-nct"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
+              aria-label="Github"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                className="w-6"
+              >
                 <path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z" />
               </svg>
             </Link>
 
-            <Link href="https://www.linkedin.com/company/rmit-nct/" className="fill-foreground/50 hover:fill-foreground transition duration-300" aria-label="LinkedIn">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-6">
+            <Link
+              href="https://www.linkedin.com/company/rmit-nct/"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
+              aria-label="LinkedIn"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                className="w-6"
+              >
                 <path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z" />
               </svg>
             </Link>
@@ -89,60 +127,83 @@ export default async function Footer() {
         <div className="flex flex-none flex-col items-center gap-4 md:items-start md:gap-8">
           <div className="flex flex-row items-center gap-4 md:items-start md:gap-16 lg:gap-32">
             <div className="grid gap-1 md:items-start">
-              <div className="text-lg font-bold md:w-fit md:text-xl uppercase">
+              <div className="text-lg font-semibold uppercase md:w-fit md:text-xl">
                 {t('common.legal')}
               </div>
 
-              <Link href="/terms" target="_blank" className="text-foreground/80 hover:text-foreground hover:underline md:w-fit">
+              <Link
+                href="/terms"
+                target="_blank"
+                className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              >
                 {t('common.terms')}
               </Link>
 
-              <Link href="/privacy" target="_blank" className="text-foreground/80 hover:text-foreground hover:underline md:w-fit">
+              <Link
+                href="/privacy"
+                target="_blank"
+                className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              >
                 {t('common.privacy')}
               </Link>
             </div>
 
             <div className="grid gap-1 md:items-start">
-              <div className="text-lg font-bold md:w-fit md:text-xl uppercase">
+              <div className="text-lg font-semibold uppercase md:w-fit md:text-xl">
                 {t('common.resources')}
               </div>
 
-              <Link href="/calendar/meet-together" className="text-foreground/80 hover:text-foreground hover:underline md:w-fit">
+              <Link
+                href="/calendar/meet-together"
+                className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              >
                 {t('common.meet-together')}
               </Link>
 
-              <Link href="/qr-generator" className="text-foreground/80 hover:text-foreground hover:underline md:w-fit">
+              <Link
+                href="/qr-generator"
+                className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              >
                 {t('common.qr_generator')}
               </Link>
-              {/* <Link href="/branding" target="_blank" className="text-foreground/80 hover:text-foreground hover:underline md:w-fit">
+              {/* <Link href="/branding" target="_blank" className="text-foreground/50 hover:text-foreground hover:underline md:w-fit">
                 {t('common.branding')}
               </Link> */}
             </div>
 
             <div className="grid gap-1 md:items-start">
-              <div className="text-lg font-bold md:w-fit md:text-xl uppercase">
+              <div className="text-lg font-semibold uppercase md:w-fit md:text-xl">
                 {t('common.developers')}
               </div>
-              {/* <Link href="https://docs.tuturuuu.com" target="_blank" className="text-foreground/80 hover:text-foreground hover:underline md:w-fit">
+              {/* <Link href="https://docs.tuturuuu.com" target="_blank" className="text-foreground/50 hover:text-foreground hover:underline md:w-fit">
                 {t('common.documentation')}
               </Link> */}
-              <Link href="https://github.com/rmit-nct/hub" target="_blank" className="text-foreground/80 hover:text-foreground hover:underline md:w-fit">
+              <Link
+                href="https://github.com/rmit-nct/hub"
+                target="_blank"
+                className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              >
                 {t('common.open-source')}
               </Link>
 
-              <Link href="https://tuturuuu.com" target="_blank" className="text-foreground/80 hover:text-foreground hover:underline md:w-fit">
+              <Link
+                href="https://tuturuuu.com"
+                target="_blank"
+                className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              >
                 Tuturuuu
               </Link>
             </div>
           </div>
 
           <div className="grid gap-1 md:items-start">
-            <div className="text-lg font-bold md:w-fit md:text-xl uppercase">
+            <div className="text-lg font-semibold uppercase md:w-fit md:text-xl">
               Our Address:
             </div>
 
             <div className="text-foreground/80 hover:text-foreground hover:underline md:w-fit md:text-left">
-              702 Nguyen Van Linh, Tan Hung ward, District 7, Ho Chi Minh City, Vietnam
+              702 Nguyen Van Linh, Tan Hung ward, District 7, Ho Chi Minh City,
+              Vietnam
             </div>
           </div>
         </div>
