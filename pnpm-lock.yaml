@@ -304,8 +304,8 @@ importers:
         specifier: ^8.4.47
         version: 8.4.47
       supabase:
-        specifier: ^1.202.2
-        version: 1.202.2
+        specifier: ^1.202.3
+        version: 1.202.3
       typescript:
         specifier: ^5.6.2
         version: 5.6.2
@@ -611,8 +611,8 @@ importers:
         specifier: ^8.4.47
         version: 8.4.47
       supabase:
-        specifier: ^1.202.2
-        version: 1.202.2
+        specifier: ^1.202.3
+        version: 1.202.3
       typescript:
         specifier: ^5.6.2
         version: 5.6.2
@@ -7579,8 +7579,8 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     hasBin: true
 
-  supabase@1.202.2:
-    resolution: {integrity: sha512-bMzT3Pd5zwZLOeUZyWPZX6TnfuPZMRBXN4lJG17HlrBAeKUqqJLTbRApYrkn4l2OJCs2GK27K+vJTHvv3dFqkg==}
+  supabase@1.202.3:
+    resolution: {integrity: sha512-NqZkHchCKLz8WtyYMt9pNKmPWXekchRsiRcqiHLTMFlHrT3Y1xWVBo/YH1NPbGkWqJl4U7mGSZZH9BODRIRf4g==}
     engines: {npm: '>=8'}
     hasBin: true
 
@@ -16583,7 +16583,7 @@ snapshots:
       pirates: 4.0.6
       ts-interface-checker: 0.1.13
 
-  supabase@1.202.2:
+  supabase@1.202.3:
     dependencies:
       bin-links: 4.0.4
       https-proxy-agent: 7.0.5
