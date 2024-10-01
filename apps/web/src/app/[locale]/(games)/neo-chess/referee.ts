@@ -29,72 +29,39 @@ export default class Referee {
         */
         const lastPosition = this.lastPositions.get(pieceId);
 
-        /** CONSUMING OUR TEAM IS WHITE **/
-        if (team === TeamType.OURS) {
-            if (type === PieceType.PAWN) {
-                if (!lastPosition && !firstMove) {
-                    console.log("Error: No last position for non-first move");
-                    return false;
-                }
-                
-                if (currX - prevX === 0 && currY - prevY < 0) {
-                    if (firstMove) {
-                        if (Math.round(currY - prevY) === - Math.round(cellSize)) {
-                            if (!this.tileIsOccupied(column, row, boardState)) {
-                                this.lastPositions.set(pieceId, { x: currX, y: currY });
-                                return true;
-                            }
-                        } else if (Math.round(currY - prevY) === - Math.round(cellSize * 2)) {
-                            if (!this.tileIsOccupied(column, row, boardState) && !this.tileIsOccupied(column, row + 1, boardState)) {
-                                this.lastPositions.set(pieceId, { x: currX, y: currY });
-                                return true;
-                            }
+        if (type === PieceType.PAWN) {
+            const isOurTeam = team === TeamType.OURS;
+            const pawnDirection = isOurTeam ? -1 : 1;
+            const moveDistance = Math.round(currY - prevY);
+        
+            if (currX - prevX === 0 && moveDistance * pawnDirection > 0) {
+                if (firstMove) {
+                    if (Math.abs(moveDistance) === Math.round(cellSize)) {
+                        if (!this.tileIsOccupied(column, row, boardState)) {
+                            this.lastPositions.set(pieceId, { x: currX, y: currY });
+                            return true;
                         }
-                    } else {
-                        if (lastPosition && currY < lastPosition.y && Math.round(currY - lastPosition.y) === - Math.round(cellSize)) {
-                            if (!this.tileIsOccupied(column, row, boardState)) {
-                                this.lastPositions.set(pieceId, { x: currX, y: currY });
-                                return true;
-                            }
-                        } else {
-                            return false;
+                    } else if (Math.abs(moveDistance) === Math.round(cellSize * 2)) {
+                        const intermediateRow = isOurTeam ? row + 1 : row - 1;
+                        if (!this.tileIsOccupied(column, row, boardState) && 
+                            !this.tileIsOccupied(column, intermediateRow, boardState)) {
+                            this.lastPositions.set(pieceId, { x: currX, y: currY });
+                            return true;
                         }
                     }
-                }
-            }
-        } else {
-            if (type === PieceType.PAWN) {
-                if (!lastPosition && !firstMove) {
-                    console.log("Error: No last position for non-first move");
-                    return false;
-                }
-                
-                if (currX - prevX === 0 && currY - prevY > 0) {
-                    if (firstMove) {
-                        if (Math.round(currY - prevY) === Math.round(cellSize)) {
+                } else {
+                    if (lastPosition) {
+                        const lastMoveDistance = Math.round(currY - lastPosition.y);
+                        if (lastMoveDistance * pawnDirection > 0 && 
+                            Math.abs(lastMoveDistance) === Math.round(cellSize)) {
                             if (!this.tileIsOccupied(column, row, boardState)) {
                                 this.lastPositions.set(pieceId, { x: currX, y: currY });
                                 return true;
                             }
-                        } else if (Math.round(currY - prevY) === Math.round(cellSize * 2)) {
-                            if (!this.tileIsOccupied(column, row, boardState) && !this.tileIsOccupied(column, row - 1, boardState)) {
-                                this.lastPositions.set(pieceId, { x: currX, y: currY });
-                                return true;
-                            }
-                        }
-                    } else {
-                        if (lastPosition && currY > lastPosition.y && Math.round(currY - lastPosition.y) === Math.round(cellSize)) {
-                            if (!this.tileIsOccupied(column, row, boardState)) {
-                                this.lastPositions.set(pieceId, { x: currX, y: currY });
-                                return true;
-                            }
-                        } else {
-                            return false;
                         }
                     }
                 }
             }
         }
-        /** ----------------------------------------------------------------------------- **/
     }
 }
