@@ -43,8 +43,6 @@ const Chat = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // const [messages] = useUIState()
-
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(defaultModel);
 
@@ -254,7 +252,7 @@ const Chat = ({
     if (!chat?.id) return;
 
     const { is_public } = newData;
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { error } = await supabase
       .from('ai_chats')
@@ -321,23 +319,7 @@ const Chat = ({
                         role: 'user',
                       },
                     ]
-                  : messages.map((message) => {
-                      // If there is 2 repeated substring in the
-                      // message, we will merge them into one
-                      const content = message.content;
-                      const contentLength = content.length;
-                      const contentHalfLength = Math.floor(contentLength / 2);
-
-                      const firstHalf = content.substring(0, contentHalfLength);
-
-                      const secondHalf = content.substring(
-                        contentHalfLength,
-                        contentLength
-                      );
-
-                      if (firstHalf === secondHalf) message.content = firstHalf;
-                      return message;
-                    })
+                  : messages
               }
               setInput={setInput}
               locale={locale}

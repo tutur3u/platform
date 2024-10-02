@@ -6,17 +6,15 @@ import { redirect } from 'next/navigation';
 import React from 'react';
 
 interface LayoutProps {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
   children: React.ReactNode;
 }
 
-export default async function Layout({
-  children,
-  params: { wsId },
-}: LayoutProps) {
+export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations('workspace-ai-layout');
+  const { wsId } = await params;
 
   const { withoutPermission } = await getPermissions({
     wsId,

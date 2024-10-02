@@ -346,7 +346,7 @@ export default function UserMonthAttendance({
 }
 
 async function getData(wsId: string, userId: string, month: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const startDate = new Date(month);
   const endDate = new Date(

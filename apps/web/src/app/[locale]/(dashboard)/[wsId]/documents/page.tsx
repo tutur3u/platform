@@ -1,20 +1,21 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
-import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { FilePlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function DocumentsPage({ params: { wsId } }: Props) {
+export default async function DocumentsPage({ params }: Props) {
+  const { wsId } = await params;
   const ws = await getWorkspace(wsId);
   const documents = await getDocuments(wsId);
 
@@ -87,7 +88,7 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
           <Button
           // onClick={showDocumentEditForm}
           >
-            <DocumentPlusIcon className="mr-2 h-4 w-4" />
+            <FilePlus className="mr-2 h-4 w-4" />
             {newDocumentLabel}
           </Button>
         }
@@ -112,7 +113,7 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
 }
 
 async function getDocuments(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data } = await supabase
     .from('workspace_documents')

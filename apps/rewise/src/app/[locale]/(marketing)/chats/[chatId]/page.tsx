@@ -5,21 +5,19 @@ import { Message } from 'ai';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     chatId?: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     lang: string;
-  };
+  }>;
 }
 
-export default async function AIPage({
-  params: { chatId },
-  searchParams,
-}: Props) {
+export default async function AIPage({ params, searchParams }: Props) {
+  const chatId = (await params).chatId;
   if (!chatId) notFound();
 
-  const { lang: locale } = searchParams;
+  const { lang: locale } = await searchParams;
 
   const chat = await getChat(chatId);
   const messages = await getMessages(chatId);
@@ -32,7 +30,7 @@ export default async function AIPage({
 }
 
 const getMessages = async (chatId: string) => {
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('ai_chat_messages')
@@ -53,7 +51,7 @@ const getMessages = async (chatId: string) => {
 };
 
 const getChat = async (chatId: string) => {
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('ai_chats')

@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server';
 
 export async function PUT(
   req: Request,
-  { params: { postId } }: { params: { postId: string } }
+  { params }: { params: Promise<{ postId: string }> }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const data = await req.json();
+  const { postId } = await params;
 
   const multiple = Array.isArray(data);
 

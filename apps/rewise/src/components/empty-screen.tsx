@@ -91,13 +91,13 @@ export function EmptyScreen({
             {t('welcome_msg')}
           </p>
 
-          <div className="mt-4 grid w-fit gap-2 md:grid-cols-2">
+          <div className="mt-4 grid w-full gap-2 md:grid-cols-2 xl:grid-cols-3">
             {exampleMessages.map((message, index) => (
               <Button
                 key={index}
                 variant="link"
                 className={cn(
-                  'w-full justify-start gap-2 border p-2 text-left text-sm',
+                  'w-full items-center justify-center gap-2 border p-2 text-left text-sm',
                   message.color
                 )}
                 onClick={() => setInput(message.message)}

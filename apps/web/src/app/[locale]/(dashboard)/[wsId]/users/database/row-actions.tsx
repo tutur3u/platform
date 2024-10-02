@@ -3,7 +3,6 @@
 import { DatePicker } from '../../../../../../components/row-actions/users/date-picker';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
-import { EllipsisHorizontalIcon } from '@heroicons/react/20/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Avatar,
@@ -489,7 +488,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
             variant="ghost"
             className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
           >
-            <EllipsisHorizontalIcon className="h-4 w-4" />
+            <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>

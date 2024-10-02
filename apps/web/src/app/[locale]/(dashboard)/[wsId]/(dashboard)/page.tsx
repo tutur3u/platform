@@ -41,13 +41,14 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
+export default async function WorkspaceHomePage({ params }: Props) {
   const t = await getTranslations();
+  const { wsId } = await params;
   const workspace = await getWorkspace(wsId);
 
   const { containsPermission } = await getPermissions({
@@ -201,7 +202,7 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
 
 async function getHourlyData(wsId: string) {
   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase.rpc('get_hourly_prompt_completion_tokens', {
     past_hours: 24,
@@ -215,7 +216,7 @@ async function getHourlyData(wsId: string) {
 
 async function getDailyData(wsId: string) {
   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase.rpc('get_daily_prompt_completion_tokens');
 
@@ -227,7 +228,7 @@ async function getDailyData(wsId: string) {
 
 async function getMonthlyData(wsId: string) {
   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase.rpc('get_monthly_prompt_completion_tokens');
 

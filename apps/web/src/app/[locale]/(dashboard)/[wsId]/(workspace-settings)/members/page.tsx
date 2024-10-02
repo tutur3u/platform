@@ -14,19 +14,21 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     status: string;
     roles: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceMembersPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
+  const { wsId } = await params;
+  const { status } = await searchParams;
   const { withoutPermission } = await getPermissions({
     wsId,
   });
@@ -36,7 +38,7 @@ export default async function WorkspaceMembersPage({
 
   const ws = await getWorkspace(wsId);
   const user = await getCurrentUser();
-  const members = await getMembers(wsId, searchParams);
+  const members = await getMembers(wsId, await searchParams);
 
   const t = await getTranslations();
   const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
@@ -52,7 +54,7 @@ export default async function WorkspaceMembersPage({
         </div>
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <MemberTabs value={searchParams?.status || 'all'} />
+          <MemberTabs value={status || 'all'} />
           <InviteMemberButton
             wsId={wsId}
             currentUser={{
@@ -75,7 +77,7 @@ export default async function WorkspaceMembersPage({
           <MemberList
             workspace={ws}
             members={members}
-            invited={searchParams?.status === 'invited'}
+            invited={status === 'invited'}
           />
         </div>
       </div>
@@ -87,8 +89,8 @@ const getMembers = async (
   wsId: string,
   { status, roles }: { status: string; roles: string }
 ) => {
-  const supabase = createClient();
-  const sbAdmin = createAdminClient();
+  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   const { data: secretData, error: secretError } = await sbAdmin
     .from('workspace_secrets')

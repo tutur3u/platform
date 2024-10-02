@@ -10,16 +10,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     transactionId: string;
     locale: string;
-  };
+  }>;
 }
 
-export default async function TransactionDetailsPage({
-  params: { wsId, transactionId, locale },
-}: Props) {
+export default async function TransactionDetailsPage({ params }: Props) {
+  const { wsId, transactionId, locale } = await params;
   const t = await getTranslations();
   const { transaction } = await getData(transactionId);
 
@@ -78,7 +77,7 @@ export default async function TransactionDetailsPage({
               <div className="text-lg font-semibold">
                 {t('ai_chat.upload_files')}
               </div>
-              <Separator />
+              <Separator className="mb-2" />
               <Bill wsId={wsId} transactionId={transactionId} />
             </div>
           </div>
@@ -117,7 +116,7 @@ function DetailItem({
 }
 
 async function getData(transactionId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: transaction, error: transactionError } = await supabase
     .from('wallet_transactions')

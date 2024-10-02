@@ -18,6 +18,8 @@ export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';
 
+export const ENABLE_KEYBOARD_SHORTCUTS = false;
+
 // The following option only works in development mode.
 // Defaults to true when not specified.
 export const SHOW_TAILWIND_INDICATOR =

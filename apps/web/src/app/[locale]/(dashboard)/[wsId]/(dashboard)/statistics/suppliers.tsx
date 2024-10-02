@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { getTranslations } from 'next-intl/server';
 
 export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const t = await getTranslations();
 
   const enabled = true;

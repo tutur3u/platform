@@ -165,7 +165,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')

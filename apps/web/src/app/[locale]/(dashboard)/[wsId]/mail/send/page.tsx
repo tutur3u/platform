@@ -18,20 +18,21 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     wsId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function WorkspaceUsersPage({
-  params: { locale, wsId },
+  params,
   searchParams,
 }: Props) {
   const t = await getTranslations('ws-users');
+  const { locale, wsId } = await params;
 
-  const { data, count } = await getData(wsId, searchParams);
+  const { data, count } = await getData(wsId, await searchParams);
   // const { data: posts } = await getGroupPosts(groupId);
   const { data: extraFields } = await getUserFields(wsId);
 
@@ -58,7 +59,9 @@ export default async function WorkspaceUsersPage({
         extraColumns={extraFields}
         extraData={{ locale }}
         count={count}
-        filters={<Filters wsId={wsId} searchParams={searchParams} noExclude />}
+        filters={
+          <Filters wsId={wsId} searchParams={await searchParams} noExclude />
+        }
         defaultVisibility={{
           id: false,
           gender: false,
@@ -102,7 +105,7 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -143,7 +146,7 @@ async function getData(
 }
 
 async function getUserFields(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_fields')

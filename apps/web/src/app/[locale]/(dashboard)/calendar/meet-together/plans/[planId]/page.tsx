@@ -13,14 +13,14 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     planId: string;
-  };
+  }>;
 }
 
-export default async function MeetTogetherPlanDetailsPage({
-  params: { planId },
-}: Props) {
+export default async function MeetTogetherPlanDetailsPage({ params }: Props) {
+  const { planId } = await params;
+
   const platformUser = await getCurrentUser(true);
   const plan = await getPlan(planId);
   const users = await getUsers(planId);
@@ -69,7 +69,7 @@ export default async function MeetTogetherPlanDetailsPage({
 }
 
 async function getUsers(planId: string) {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin
     .from('meet_together_users')
@@ -85,7 +85,7 @@ async function getUsers(planId: string) {
 }
 
 async function getTimeBlocks(planId: string) {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const guestQueryBuilder = sbAdmin
     .from('meet_together_guest_timeblocks')

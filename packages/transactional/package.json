@@ -12,12 +12,12 @@
   "packageManager": "pnpm@9.11.0",
   "dependencies": {
     "@react-email/components": "0.0.25",
-    "@react-email/tailwind": "1.0.0-canary.0",
+    "@react-email/tailwind": "1.0.0-canary.1",
     "react": "18.3.1",
     "react-email": "3.0.1"
   },
   "devDependencies": {
-    "@types/node": "^22.5.5",
-    "@types/react": "^18.3.8"
+    "@types/node": "^22.7.4",
+    "@types/react": "^18.3.10"
   }
 }

@@ -17,26 +17,27 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     wsId: string;
     tagId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function GroupTagDetailsPage({
-  params: { locale, wsId, tagId },
+  params,
   searchParams,
 }: Props) {
   const t = await getTranslations();
+  const { locale, wsId, tagId } = await params;
 
   const tag = await getData(wsId, tagId);
 
   const { data: rawUserGroups, count: userGroupsCount } = await getGroupData(
     wsId,
     tagId,
-    searchParams
+    await searchParams
   );
 
   const userGroups = rawUserGroups.map((g) => ({
@@ -72,7 +73,7 @@ export default async function GroupTagDetailsPage({
 }
 
 async function getData(wsId: string, tagId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('workspace_user_group_tags')
@@ -98,7 +99,7 @@ async function getGroupData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_group_tag_groups')

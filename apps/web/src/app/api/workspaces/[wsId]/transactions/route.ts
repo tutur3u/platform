@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   const activePage = url.searchParams.get('page');
   const itemsPerPage = url.searchParams.get('itemsPerPage');
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('wallet_transactions')
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const data =
     // : Transaction & {

@@ -10,7 +10,7 @@ export default async function NavbarActions({
 }: {
   hideMetadata?: boolean;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user: sbUser },

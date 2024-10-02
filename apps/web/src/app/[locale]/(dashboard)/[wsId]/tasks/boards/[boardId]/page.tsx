@@ -1,10 +1,10 @@
 import { KanbanBoard } from './kanban';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId?: string;
     boardId?: string;
-  };
+  }>;
 }
 
 export default function WorkspaceBoardEditor(

@@ -2,18 +2,19 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     categoryId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { categoryId: id } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { categoryId } = await params;
 
   const { data, error } = await supabase
     .from('transaction_categories')
     .select('*')
-    .eq('id', id)
+    .eq('id', categoryId)
     .single();
 
   if (error) {

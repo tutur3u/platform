@@ -2,17 +2,15 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     tagId: string;
     groupId: string;
-  };
+  }>;
 }
 
-export async function DELETE(
-  _: Request,
-  { params: { tagId, groupId } }: Params
-) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { tagId, groupId } = await params;
 
   const { error } = await supabase
     .from('workspace_user_group_tag_groups')

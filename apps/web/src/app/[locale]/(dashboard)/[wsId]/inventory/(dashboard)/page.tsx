@@ -12,12 +12,13 @@ import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { Suspense } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function InventoryPage({ params: { wsId } }: Props) {
+export default async function InventoryPage({ params }: Props) {
+  const { wsId } = await params;
   return (
     <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
       <Suspense fallback={<LoadingStatisticCard />}>

@@ -6,31 +6,32 @@ import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
-import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { User } from 'lucide-react';
+import { PlusCircle, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     reportId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
     groupId?: string;
     userId?: string;
     reportId?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceUserDetailsPage({
-  params: { wsId, reportId },
-  searchParams: { groupId, userId },
+  params,
+  searchParams,
 }: Props) {
   const t = await getTranslations('user-data-table');
+  const { wsId, reportId } = await params;
+  const { groupId, userId } = await searchParams;
 
   const report =
     reportId === 'new'
@@ -69,7 +70,7 @@ export default async function WorkspaceUserDetailsPage({
           key="group-filter"
           tag="groupId"
           title={t('group')}
-          icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+          icon={<PlusCircle className="mr-2 h-4 w-4" />}
           defaultValues={[groupId || report.group_id!]}
           extraQueryOnSet={{ userId: undefined }}
           options={userGroups.map((group) => ({
@@ -143,7 +144,7 @@ export default async function WorkspaceUserDetailsPage({
 }
 
 async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -187,7 +188,7 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -204,7 +205,7 @@ async function getUserGroups(wsId: string) {
 }
 
 async function getUsers(wsId: string, groupId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -234,7 +235,7 @@ async function getReports(
   userId: string,
   forceRedirect = false
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -269,7 +270,7 @@ async function getReports(
 }
 
 async function getConfigs(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_configs')

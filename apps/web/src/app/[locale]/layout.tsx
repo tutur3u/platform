@@ -16,12 +16,14 @@ import { ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
-  params: {
+  params: Promise<{
     locale: string;
-  };
+  }>;
 }
 
-export function generateMetadata({ params: { locale } }: Props): Metadata {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+
   const enDescription = 'Take control of your workflow, supercharged by AI.';
   const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
 
@@ -97,10 +99,8 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export default async function RootLayout({
-  children,
-  params: { locale },
-}: Props) {
+export default async function RootLayout({ children, params }: Props) {
+  const { locale } = await params;
   unstable_setRequestLocale(locale);
   const messages = await getMessages();
 
