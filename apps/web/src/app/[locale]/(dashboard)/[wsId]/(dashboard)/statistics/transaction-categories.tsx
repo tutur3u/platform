@@ -10,7 +10,7 @@ export default async function TransactionCategoriesStatistics({
 }: {
   wsId: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const t = await getTranslations();
 
   const { count: categoriesCount } = enabled

@@ -13,5 +13,6 @@ export interface PostEmail {
   is_completed?: boolean | null;
   ws_id?: string | null;
   notes?: string | null;
+  post_created_at?: string | null;
   created_at?: Date | null;
 }

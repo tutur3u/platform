@@ -55,7 +55,7 @@ export default async function Filters({
 }
 
 async function getTags(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -72,7 +72,7 @@ async function getTags(wsId: string) {
 }
 
 async function getExcludedTags(wsId: string, { includedTags }: SearchParams) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   if (!includedTags || includedTags.length === 0) {
     return getTags(wsId);

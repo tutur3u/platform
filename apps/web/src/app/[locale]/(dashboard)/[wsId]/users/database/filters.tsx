@@ -64,7 +64,7 @@ export default async function Filters({
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -84,7 +84,7 @@ async function getExcludedUserGroups(
   wsId: string,
   { includedGroups }: SearchParams
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   if (!includedGroups || includedGroups.length === 0) {
     return getUserGroups(wsId);

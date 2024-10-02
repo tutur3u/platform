@@ -13,20 +13,21 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     wsId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function WorkspacePostEmailsPage({
-  params: { locale, wsId },
+  params,
   searchParams,
 }: Props) {
   const t = await getTranslations();
+  const { locale, wsId } = await params;
 
-  const { data, count } = await getData(wsId, searchParams);
+  const { data, count } = await getData(wsId, await searchParams);
 
   return (
     <>
@@ -46,6 +47,7 @@ export default async function WorkspacePostEmailsPage({
           id: false,
           email: false,
           subject: false,
+          is_completed: false,
           created_at: false,
         }}
       />
@@ -62,14 +64,19 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('user_group_post_checks')
     .select(
-      'notes, user_id, email_id, is_completed, user:workspace_users!inner(email, display_name, full_name, ws_id), ...user_group_posts(post_id:id, post_title:title, post_content:content, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)'
+      'notes, user_id, email_id, is_completed, user:workspace_users!inner(email, display_name, full_name, ws_id), ...user_group_posts(post_id:id, post_title:title, post_content:content, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)',
+      {
+        count: 'exact',
+      }
     )
-    .eq('workspace_users.ws_id', wsId);
+    .eq('workspace_users.ws_id', wsId)
+    // workspace_users.email doesn't include @easy
+    .not('workspace_users.email', 'ilike', '%@easy%');
 
   if (page && pageSize) {
     const parsedPage = Number.parseInt(page);

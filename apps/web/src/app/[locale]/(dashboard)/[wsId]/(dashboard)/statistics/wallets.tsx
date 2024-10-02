@@ -6,7 +6,7 @@ import { getTranslations } from 'next-intl/server';
 const enabled = true;
 
 export default async function WalletsStatistics({ wsId }: { wsId: string }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const t = await getTranslations();
 
   const { count: walletsCount } = enabled

@@ -15,22 +15,23 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     userId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceUserDetailsPage({
-  params: { wsId, userId },
+  params,
   searchParams,
 }: Props) {
   const t = await getTranslations('user-data-table');
+  const { wsId, userId } = await params;
 
   const data = await getData({ wsId, userId });
 
@@ -52,7 +53,7 @@ export default async function WorkspaceUserDetailsPage({
   const { data: invoiceData, count: invoiceCount } = await getInvoiceData(
     wsId,
     userId,
-    searchParams
+    await searchParams
   );
 
   return (
@@ -244,7 +245,7 @@ export default async function WorkspaceUserDetailsPage({
 }
 
 async function getData({ wsId, userId }: { wsId: string; userId: string }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_users')
@@ -290,7 +291,7 @@ async function getGroupData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups')
@@ -313,7 +314,7 @@ async function getReportData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -349,7 +350,7 @@ async function getCouponData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_promotions')
@@ -374,7 +375,7 @@ async function getInvoiceData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('finance_invoices')

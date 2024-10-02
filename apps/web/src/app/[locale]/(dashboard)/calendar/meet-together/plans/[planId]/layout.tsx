@@ -4,15 +4,17 @@ import { Metadata } from 'next';
 import { ReactNode } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     planId: string;
-  };
+  }>;
 }
 
 export const generateMetadata = async ({
-  params: { locale, planId },
+  params,
 }: Props): Promise<Metadata> => {
+  const { locale, planId } = await params;
+
   const viTitle = 'Họp cùng nhau';
   const enTitle = 'Meet together';
 

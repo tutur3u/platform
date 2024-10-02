@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getCurrentSupabaseUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -13,7 +13,7 @@ export async function getCurrentSupabaseUser() {
 }
 
 export async function getCurrentUser(noRedirect?: boolean) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },

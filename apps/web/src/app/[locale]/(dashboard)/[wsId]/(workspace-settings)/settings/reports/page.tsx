@@ -15,16 +15,17 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function WorkspaceReportsSettingsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
+  const { wsId } = await params;
   const { withoutPermission } = await getPermissions({
     wsId,
     redirectTo: `/${wsId}/settings`,
@@ -33,7 +34,7 @@ export default async function WorkspaceReportsSettingsPage({
   if (withoutPermission('manage_user_report_templates'))
     redirect(`/${wsId}/settings`);
 
-  const { data } = await getConfigs(wsId, searchParams);
+  const { data } = await getConfigs(wsId, await searchParams);
   const locale = await getLocale();
   const t = await getTranslations();
 
@@ -104,7 +105,7 @@ export default async function WorkspaceReportsSettingsPage({
 }
 
 async function getConfigs(wsId: string, { q }: SearchParams) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_configs')

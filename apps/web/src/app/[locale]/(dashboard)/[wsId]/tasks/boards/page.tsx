@@ -10,27 +10,28 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q?: string;
     page?: string;
     pageSize?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceProjectsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
+  const { wsId } = await params;
   const { withoutPermission } = await getPermissions({
     wsId,
   });
 
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  const { data: rawData, count } = await getData(wsId, searchParams);
+  const { data: rawData, count } = await getData(wsId, await searchParams);
   const t = await getTranslations();
 
   const data = rawData.map((board) => ({
@@ -71,7 +72,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_boards')

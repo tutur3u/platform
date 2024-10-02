@@ -18,14 +18,13 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function WorkspaceSettingsPage({
-  params: { wsId },
-}: Props) {
+export default async function WorkspaceSettingsPage({ params }: Props) {
+  const { wsId } = await params;
   const { containsPermission } = await getPermissions({
     wsId,
   });
@@ -122,7 +121,7 @@ export default async function WorkspaceSettingsPage({
 }
 
 async function getSecrets(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_secrets')

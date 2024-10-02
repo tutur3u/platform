@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const validatedEmail = await validateEmail(email);
 
   const userExists = await checkIfUserExists({ email: validatedEmail });
-  const supabase = createClient();
+  const supabase = await createClient();
 
   if (userExists) {
     const { error } = await supabase.auth.signInWithOtp({
@@ -61,7 +61,7 @@ const validateEmail = async (email?: string | null) => {
 };
 
 const checkIfUserExists = async ({ email }: { email: string }) => {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin
     .from('user_private_details')

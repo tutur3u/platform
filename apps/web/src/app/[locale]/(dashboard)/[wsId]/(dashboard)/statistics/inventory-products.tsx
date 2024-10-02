@@ -8,7 +8,7 @@ export default async function InventoryProductsStatistics({
 }: {
   wsId: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const t = await getTranslations();
 
   const enabled = true;

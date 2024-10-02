@@ -2,17 +2,15 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     warehouseId: string;
-  };
+  }>;
 }
 
-export async function PUT(
-  req: Request,
-  { params: { warehouseId: id } }: Params
-) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { warehouseId: id } = await params;
 
   const { error } = await supabase
     .from('inventory_warehouses')
@@ -30,11 +28,9 @@ export async function PUT(
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(
-  _: Request,
-  { params: { warehouseId: id } }: Params
-) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { warehouseId: id } = await params;
 
   const { error } = await supabase
     .from('inventory_warehouses')

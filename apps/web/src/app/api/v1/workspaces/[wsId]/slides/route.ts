@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { wsId: __ } }: Params) {
+export async function GET(_: Request, { params: __ }: Params) {
   return NextResponse.json({ message: 'Not implemented' }, { status: 501 });
 
-  // const supabase = createClient();
+  // const supabase = await createClient();
 
   // const { data, error } = await supabase
   //   .from('workspace_slides')
@@ -28,10 +28,10 @@ export async function GET(_: Request, { params: { wsId: __ } }: Params) {
   // return NextResponse.json(data);
 }
 
-export async function POST(_: Request, { params: { wsId: __ } }: Params) {
+export async function POST(_: Request, { params: __ }: Params) {
   return NextResponse.json({ message: 'Not implemented' }, { status: 501 });
 
-  // const supabase = createClient();
+  // const supabase = await createClient();
 
   // const data = (await req.json()) as {
   //   name: string;

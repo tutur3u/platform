@@ -3,13 +3,14 @@ import { redirect } from 'next/navigation';
 
 export default async function ChatLayout({
   children,
-  params: { wsId },
+  params,
 }: {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }) {
+  const { wsId } = await params;
   const { withoutPermission } = await getPermissions({
     wsId,
   });

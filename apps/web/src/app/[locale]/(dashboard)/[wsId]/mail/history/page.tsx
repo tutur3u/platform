@@ -12,20 +12,21 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     wsId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function WorkspaceUsersPage({
-  params: { locale, wsId },
+  params,
   searchParams,
 }: Props) {
   const t = await getTranslations();
+  const { locale, wsId } = await params;
 
-  const { data: emails, count } = await getData(wsId, searchParams);
+  const { data: emails, count } = await getData(wsId, await searchParams);
 
   return (
     <>
@@ -61,7 +62,7 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('sent_emails')

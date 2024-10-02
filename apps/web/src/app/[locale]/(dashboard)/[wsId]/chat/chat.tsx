@@ -252,7 +252,7 @@ const Chat = ({
     if (!chat?.id) return;
 
     const { is_public } = newData;
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { error } = await supabase
       .from('ai_chats')

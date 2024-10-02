@@ -14,7 +14,7 @@ export default async function InvoicesStatistics({
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const t = await getTranslations();
 
   const getData = async () => {
