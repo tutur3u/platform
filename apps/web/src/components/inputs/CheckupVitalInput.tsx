@@ -1,6 +1,6 @@
 import { Vital } from '@/types/primitives/Vital';
-import { TrashIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { Divider, NumberInput } from '@mantine/core';
+import { TrashIcon, X } from 'lucide-react';
 
 interface Props {
   vital: Vital;
@@ -51,7 +51,7 @@ const CheckupVitalInput = ({ vital, updateVital, removeVital }: Props) => {
               : undefined
           }
         >
-          <XMarkIcon className="h-5 w-5" />
+          <X className="h-5 w-5" />
         </button>
 
         <button

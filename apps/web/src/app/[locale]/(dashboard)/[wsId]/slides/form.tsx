@@ -1,6 +1,6 @@
 'use client';
 
-import { UserGroupTag } from '@/types/primitives/user-group-tag';
+import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {

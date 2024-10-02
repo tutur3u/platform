@@ -2,18 +2,19 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     categoryId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { categoryId: id } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { categoryId } = await params;
 
   const { data, error } = await supabase
     .from('transaction_categories')
     .select('*')
-    .eq('id', id)
+    .eq('id', categoryId)
     .single();
 
   if (error) {
@@ -27,17 +28,15 @@ export async function GET(_: Request, { params: { categoryId: id } }: Params) {
   return NextResponse.json(data);
 }
 
-export async function PUT(
-  req: Request,
-  { params: { categoryId: id } }: Params
-) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { categoryId } = await params;
 
   const { error } = await supabase
     .from('transaction_categories')
     .update(data)
-    .eq('id', id);
+    .eq('id', categoryId);
 
   if (error) {
     console.log(error);
@@ -50,16 +49,14 @@ export async function PUT(
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(
-  _: Request,
-  { params: { categoryId: id } }: Params
-) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { categoryId } = await params;
 
   const { error } = await supabase
     .from('transaction_categories')
     .delete()
-    .eq('id', id);
+    .eq('id', categoryId);
 
   if (error) {
     console.log(error);

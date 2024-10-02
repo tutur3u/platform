@@ -1,44 +1,44 @@
 import { UserDatabaseFilter } from '../../filters';
 import EditableReportPreview from './editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUserReport } from '@/types/db';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
-import { PlusCircledIcon } from '@radix-ui/react-icons';
-import { User } from 'lucide-react';
+import { PlusCircle, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     reportId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
     groupId?: string;
     userId?: string;
     reportId?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceUserDetailsPage({
-  params: { wsId, reportId },
-  searchParams: { groupId, userId },
+  params,
+  searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations('user-data-table');
+  const { wsId, reportId } = await params;
+  const { groupId, userId } = await searchParams;
 
   const report =
     reportId === 'new'
       ? {
           user_id: userId,
           group_id: groupId,
+          group_name: undefined,
           created_at: new Date().toISOString(),
         }
       : await getData({ wsId, reportId });
@@ -70,7 +70,7 @@ export default async function WorkspaceUserDetailsPage({
           key="group-filter"
           tag="groupId"
           title={t('group')}
-          icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+          icon={<PlusCircle className="mr-2 h-4 w-4" />}
           defaultValues={[groupId || report.group_id!]}
           extraQueryOnSet={{ userId: undefined }}
           options={userGroups.map((group) => ({
@@ -129,7 +129,13 @@ export default async function WorkspaceUserDetailsPage({
 
       <EditableReportPreview
         wsId={wsId}
-        report={report}
+        report={{
+          ...report,
+          group_name:
+            report.group_name ||
+            userGroups?.find((group) => group.id === report.group_id)?.name ||
+            'No group',
+        }}
         configs={configs}
         isNew={reportId === 'new'}
       />
@@ -138,12 +144,12 @@ export default async function WorkspaceUserDetailsPage({
 }
 
 async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
     .select(
-      '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)',
+      '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
       {
         count: 'exact',
       }
@@ -178,11 +184,11 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   delete data.user;
   delete data.creator;
 
-  return data as WorkspaceUserReport;
+  return data as WorkspaceUserReport & { group_name: string };
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -199,7 +205,7 @@ async function getUserGroups(wsId: string) {
 }
 
 async function getUsers(wsId: string, groupId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -229,7 +235,7 @@ async function getReports(
   userId: string,
   forceRedirect = false
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -264,7 +270,7 @@ async function getReports(
 }
 
 async function getConfigs(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_configs')

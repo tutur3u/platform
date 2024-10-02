@@ -2,9 +2,9 @@ import { useSegments } from '@/hooks/useSegments';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { Vital } from '@/types/primitives/Vital';
 import { VitalGroup } from '@/types/primitives/VitalGroup';
-import { TrashIcon } from '@heroicons/react/24/solid';
 import { Divider, TextInput, Textarea } from '@mantine/core';
 import 'dayjs/locale/vi';
+import { Trash } from 'lucide-react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
@@ -195,7 +195,7 @@ export default function VitalGroupDetailsPage() {
                 className="h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20"
                 onClick={() => removeVital(idx)}
               >
-                <TrashIcon className="h-5 w-5" />
+                <Trash className="h-5 w-5" />
               </button>
             </div>
           ))}

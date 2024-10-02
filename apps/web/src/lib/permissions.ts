@@ -201,6 +201,13 @@ export const permissionGroups = ({
             disabled: false,
           },
           {
+            id: 'send_user_group_post_emails',
+            title: t('ws-roles.send_user_group_post_emails'),
+            description: t('ws-roles.send_user_group_post_emails_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
             id: 'manage_user_report_templates',
             title: t('ws-roles.manage_user_report_templates'),
             description: t('ws-roles.manage_user_report_templates_description'),

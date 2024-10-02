@@ -171,25 +171,30 @@ export default function UserMonthAttendance({
     <div className="rounded-lg border p-4">
       <div className="mb-2 flex w-full items-center border-b pb-2">
         <div className="aspect-square h-12 w-12 flex-none rounded-lg bg-gradient-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
-        <div className="ml-2 flex h-12 w-[calc(100%-3.5rem)] flex-col justify-between">
-          <div className="flex items-center justify-between gap-1">
-            <Link
-              href={data.href}
-              className="line-clamp-1 font-semibold text-zinc-900 hover:underline dark:text-zinc-200"
-            >
-              {data?.full_name || '-'}
-            </Link>
-          </div>
-          <div className="scrollbar-none flex items-center gap-1 overflow-auto">
-            {differentGroups?.map((group, idx) => (
-              <div
-                key={group.id + idx}
-                className="bg-foreground/5 dark:bg-foreground/10 flex-none whitespace-nowrap rounded border px-2 py-0.5 text-xs font-semibold"
+        <div className="flex w-full items-start justify-between gap-2">
+          <div className="ml-2 flex h-12 w-[calc(100%-3.5rem)] flex-col justify-between">
+            <div className="flex items-center justify-between gap-1">
+              <Link
+                href={data.href}
+                className="line-clamp-1 font-semibold text-zinc-900 hover:underline dark:text-zinc-200"
               >
-                {group.name}
-              </div>
-            ))}
+                {data?.full_name || '-'}
+              </Link>
+            </div>
+            <div className="scrollbar-none flex items-center gap-1 overflow-auto">
+              {differentGroups?.map((group, idx) => (
+                <div
+                  key={group.id + idx}
+                  className="bg-foreground/5 dark:bg-foreground/10 flex-none whitespace-nowrap rounded border px-2 py-0.5 text-xs font-semibold"
+                >
+                  {group.name}
+                </div>
+              ))}
+            </div>
           </div>
+          {/* <Button>
+            <CalendarCheck2 className="h-6 w-6" />
+          </Button> */}
         </div>
       </div>
 
@@ -341,7 +346,7 @@ export default function UserMonthAttendance({
 }
 
 async function getData(wsId: string, userId: string, month: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const startDate = new Date(month);
   const endDate = new Date(

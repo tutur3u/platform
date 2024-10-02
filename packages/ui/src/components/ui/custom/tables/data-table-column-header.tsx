@@ -7,13 +7,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../dropdown-menu';
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  CaretSortIcon,
-  EyeNoneIcon,
-} from '@radix-ui/react-icons';
 import { Column } from '@tanstack/react-table';
+import { ArrowDown, ArrowUp, ChevronDown, EyeOff } from 'lucide-react';
 import React from 'react';
 
 interface DataTableColumnHeaderProps<TData, TValue>
@@ -44,11 +39,11 @@ export function DataTableColumnHeader<TData, TValue>({
           >
             <span className="line-clamp-1">{title}</span>
             {column.getIsSorted() === 'desc' ? (
-              <ArrowDownIcon className="ml-2 h-4 w-4" />
+              <ArrowDown className="ml-2 h-4 w-4" />
             ) : column.getIsSorted() === 'asc' ? (
-              <ArrowUpIcon className="ml-2 h-4 w-4" />
+              <ArrowUp className="ml-2 h-4 w-4" />
             ) : (
-              <CaretSortIcon className="ml-2 h-4 w-4" />
+              <ChevronDown className="ml-2 h-4 w-4" />
             )}
           </Button>
         </DropdownMenuTrigger>
@@ -58,16 +53,16 @@ export function DataTableColumnHeader<TData, TValue>({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-            <ArrowUpIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
+            <ArrowUp className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
             {t('common.ascending')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-            <ArrowDownIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
+            <ArrowDown className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
             {t('common.descending')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-            <EyeNoneIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
+            <EyeOff className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
             {t('common.hide_column')}
           </DropdownMenuItem>
         </DropdownMenuContent>

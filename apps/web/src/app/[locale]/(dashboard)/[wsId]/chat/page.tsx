@@ -10,29 +10,26 @@ import { Message } from 'ai';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     lang: string;
-  };
+  }>;
 }
 
-export default async function AIPage({
-  params: { wsId },
-  searchParams,
-}: Props) {
+export default async function AIPage({ params, searchParams }: Props) {
+  const { wsId } = await params;
   await verifyHasSecrets(wsId, ['ENABLE_CHAT'], `/${wsId}`);
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['ai_chat'],
   });
 
-  if (!permissions.includes('ai_chat')) notFound();
+  if (withoutPermission('ai_chat')) notFound();
 
-  const { lang: locale } = searchParams;
-
+  const { lang: locale } = await searchParams;
   const workspace = await getWorkspace(wsId);
+
   if (!workspace) notFound();
 
   const { data: chats, count } = await getChats();
@@ -62,7 +59,7 @@ const hasKey = (key: string) => {
 };
 
 const getMessages = async () => {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('ai_chat_messages')

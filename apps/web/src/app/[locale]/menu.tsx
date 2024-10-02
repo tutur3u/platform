@@ -74,7 +74,8 @@ const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
 
   if (
     pathname !== '/' &&
-    !PUBLIC_PATHS.some((path) => pathname.startsWith(path))
+    !PUBLIC_PATHS.some((path) => pathname.startsWith(path)) &&
+    !pathname.startsWith('/settings')
   )
     return null;
 

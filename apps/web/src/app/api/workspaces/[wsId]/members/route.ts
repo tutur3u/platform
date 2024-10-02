@@ -2,18 +2,19 @@ import { createClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function PUT(req: NextRequest, { params: { wsId } }: Params) {
+export async function PUT(req: NextRequest, { params }: Params) {
+  const { wsId } = await params;
   const searchParams = req.nextUrl.searchParams;
 
   const userId = searchParams.get('id');
   const userEmail = searchParams.get('email');
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { pending, role, role_title } = await req.json();
 
   const query = supabase
@@ -43,13 +44,14 @@ export async function PUT(req: NextRequest, { params: { wsId } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(req: NextRequest, { params: { wsId } }: Params) {
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const { wsId } = await params;
   const searchParams = req.nextUrl.searchParams;
 
   const userId = searchParams.get('id');
   const userEmail = searchParams.get('email');
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const inviteQuery = userId
     ? supabase

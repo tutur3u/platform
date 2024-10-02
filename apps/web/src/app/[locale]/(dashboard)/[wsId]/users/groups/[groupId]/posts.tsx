@@ -11,6 +11,7 @@ import {
   AlertDialogTrigger,
 } from '@repo/ui/components/ui/alert-dialog';
 import { Button } from '@repo/ui/components/ui/button';
+import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +27,8 @@ import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
 import { format } from 'date-fns';
-import { BookPlus, Clock, Pencil, Trash2 } from 'lucide-react';
+import { BookPlus, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -53,9 +55,16 @@ export default function UserGroupPosts({
   posts: UserGroupPost[];
   onClick?: (id: string) => void;
 }) {
+  const t = useTranslations();
   const router = useRouter();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPost, setCurrentPost] = useState<UserGroupPost | undefined>();
+
+  const [configs, setConfigs] = useState({
+    showContent: true,
+    showStatus: true,
+  });
 
   const handleOpenDialog = (post?: UserGroupPost) => {
     setCurrentPost(
@@ -130,11 +139,51 @@ export default function UserGroupPosts({
   return (
     <>
       <div className="flex items-center justify-between">
-        <div className="text-xl font-semibold">Posts</div>
+        <div className="flex flex-col gap-1">
+          <div className="text-xl font-semibold">
+            {t('ws-user-groups.posts')}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="show-post-content"
+              checked={configs.showContent}
+              onCheckedChange={(checked) =>
+                setConfigs((prev) => ({
+                  ...prev,
+                  showContent: Boolean(checked),
+                }))
+              }
+            />
+            <label
+              htmlFor="show-post-content"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              {t('ws-user-groups.show_post_content')}
+            </label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="show-post-status"
+              checked={configs.showStatus}
+              onCheckedChange={(checked) =>
+                setConfigs((prev) => ({
+                  ...prev,
+                  showStatus: Boolean(checked),
+                }))
+              }
+            />
+            <label
+              htmlFor="show-post-status"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              {t('ws-user-groups.show_post_status')}
+            </label>
+          </div>
+        </div>
         {groupId && (
           <Button onClick={() => handleOpenDialog()}>
             <BookPlus className="mr-1 h-5 w-5" />
-            Add Post
+            {t('ws-user-groups.add_post')}
           </Button>
         )}
       </div>
@@ -144,17 +193,21 @@ export default function UserGroupPosts({
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>
-                {currentPost?.id ? 'Edit Post' : 'Add New Post'}
+                {currentPost?.id
+                  ? t('ws-user-groups.edit_post')
+                  : t('ws-user-groups.add_post')}
               </DialogTitle>
               <DialogDescription>
                 {currentPost?.id
-                  ? 'Make changes to your post here.'
-                  : 'Create a new post.'}
+                  ? t('ws-user-groups.edit_post_description')
+                  : t('ws-user-groups.add_post_description')}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid items-center gap-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">
+                  {t('post-email-data-table.post_title')}
+                </Label>
                 <Input
                   id="title"
                   name="title"
@@ -165,7 +218,9 @@ export default function UserGroupPosts({
                 />
               </div>
               <div className="grid items-center gap-2">
-                <Label htmlFor="content">Content</Label>
+                <Label htmlFor="content">
+                  {t('post-email-data-table.post_content')}
+                </Label>
                 <Textarea
                   id="content"
                   name="content"
@@ -176,7 +231,9 @@ export default function UserGroupPosts({
                 />
               </div>
               <div className="grid items-center gap-2">
-                <Label htmlFor="created_at">Notes</Label>
+                <Label htmlFor="created_at">
+                  {t('post-email-data-table.notes')}
+                </Label>
                 <Textarea
                   id="notes"
                   name="notes"
@@ -189,7 +246,7 @@ export default function UserGroupPosts({
             </div>
             <DialogFooter>
               <Button type="submit" onClick={submitPost}>
-                {currentPost?.id ? 'Save changes' : 'Create post'}
+                {currentPost?.id ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -197,17 +254,12 @@ export default function UserGroupPosts({
 
         {posts.length > 0 ? (
           posts.map((post) => (
-            <Link
-              href={
-                groupId
-                  ? `/${wsId}/users/groups/${groupId}/posts/${post.id}`
-                  : '#'
-              }
+            <div
               key={post.id}
               className={cn(
-                'hover:border-foreground hover:bg-foreground/10 flex flex-col gap-2 rounded border p-2 transition duration-300',
+                'hover:border-foreground hover:bg-foreground/5 flex flex-col gap-2 rounded border p-2 transition duration-300',
                 selectedPostId === post.id &&
-                  'border-foreground bg-foreground/10',
+                  'border-foreground bg-foreground/5',
                 groupId || 'cursor-pointer'
               )}
               onClick={() => post.id && onClick && onClick(post.id)}
@@ -231,6 +283,17 @@ export default function UserGroupPosts({
                 </div>
                 {groupId && (
                   <div className="flex gap-2">
+                    <Link
+                      href={
+                        groupId
+                          ? `/${wsId}/users/groups/${groupId}/posts/${post.id}`
+                          : '#'
+                      }
+                    >
+                      <Button size="sm" variant="outline">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
                     <Button
                       size="sm"
                       variant="outline"
@@ -268,15 +331,15 @@ export default function UserGroupPosts({
                   </div>
                 )}
               </div>
-              {post.content && (
+              {configs.showContent && post.content && (
                 <div className="whitespace-pre-line text-sm opacity-70">
                   {post.content}
                 </div>
               )}
-              {groupId && post.id && (
+              {configs.showStatus && groupId && post.id && (
                 <PostEmailStatus groupId={groupId} postId={post.id} />
               )}
-            </Link>
+            </div>
           ))
         ) : (
           <div className="text-center text-sm opacity-50">

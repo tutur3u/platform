@@ -1,6 +1,7 @@
 'use client';
 
 import { createClient } from '@/utils/supabase/client';
+import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -73,7 +74,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
 
       const { data: _, error } = await supabase.storage
         .from('workspaces')
-        .upload(`${wsId}/${file.name}`, file);
+        .upload(`${wsId}/${generateRandomUUID()}_${file.name}`, file);
 
       if (error) {
         setFileStatuses((prev) => ({

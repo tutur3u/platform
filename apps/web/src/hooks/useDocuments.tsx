@@ -1,5 +1,4 @@
 import { WorkspaceDocument } from '@/types/db';
-import { showNotification } from '@mantine/notifications';
 import { ReactNode, createContext, useContext } from 'react';
 import { mutate } from 'swr';
 
@@ -26,11 +25,11 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to create document');
       await mutate(`/api/workspaces/${wsId}/documents`);
     } catch (e) {
-      showNotification({
-        title: 'Failed to create document',
-        message: 'Make sure you have permission to create new documents',
-        color: 'red',
-      });
+      // showNotification({
+      //   title: 'Failed to create document',
+      //   message: 'Make sure you have permission to create new documents',
+      //   color: 'red',
+      // });
     }
   };
 
@@ -50,11 +49,11 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to update document');
       await mutate(`/api/workspaces/${wsId}/documents`);
     } catch (e) {
-      showNotification({
-        title: 'Failed to update document',
-        message: 'Make sure you have permission to update documents',
-        color: 'red',
-      });
+      // showNotification({
+      //   title: 'Failed to update document',
+      //   message: 'Make sure you have permission to update documents',
+      //   color: 'red',
+      // });
     }
   };
 
@@ -70,11 +69,11 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to delete document');
       await mutate(`/api/workspaces/${wsId}/documents`);
     } catch (e) {
-      showNotification({
-        title: 'Failed to delete document',
-        message: 'Make sure you have permission to delete documents',
-        color: 'red',
-      });
+      // showNotification({
+      //   title: 'Failed to delete document',
+      //   message: 'Make sure you have permission to delete documents',
+      //   color: 'red',
+      // });
     }
   };
 

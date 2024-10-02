@@ -3,12 +3,16 @@ import { Metadata } from 'next';
 import { ReactNode } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
-  };
+  }>;
 }
 
-export const generateMetadata = ({ params: { locale } }: Props): Metadata => {
+export const generateMetadata = async ({
+  params,
+}: Props): Promise<Metadata> => {
+  const { locale } = await params;
+
   const viTitle = 'Họp cùng nhau | Giải pháp thay thế When2Meet, mã nguồn mở';
   const enTitle = 'Meet together | The Open Source When2Meet Alternative';
 

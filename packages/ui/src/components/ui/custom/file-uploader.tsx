@@ -5,48 +5,46 @@ import { useControllableState } from '../../../hooks/use-controllable-state';
 import { Button } from '../button';
 import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
-import { Cross2Icon, FileTextIcon, UploadIcon } from '@radix-ui/react-icons';
-import { HTMLAttributes, useCallback, useEffect, useState } from 'react';
+import { File, FileText, Upload, X } from 'lucide-react';
+import { HTMLAttributes, useCallback, useState } from 'react';
 import Dropzone, {
   type DropzoneProps,
   type FileRejection,
 } from 'react-dropzone';
 import { toast } from 'sonner';
 
+export interface StatedFile {
+  rawFile: File;
+  url: string;
+  status: 'pending' | 'uploading' | 'uploaded' | 'error';
+}
+
 interface FileUploaderProps extends HTMLAttributes<HTMLDivElement> {
   /**
    * Value of the uploader.
-   * @type File[]
+   * @type StatedFile[]
    * @default undefined
    * @example value={files}
    */
-  value?: File[];
+  value?: StatedFile[];
 
   /**
    * Function to be called when the value changes.
-   * @type (files: File[]) => void
+   * @type (files: StatedFile[]) => void
    * @default undefined
    * @example onValueChange={(files) => setFiles(files)}
    */
   // eslint-disable-next-line no-unused-vars
-  onValueChange?: (files: File[]) => void;
+  onValueChange?: (files: StatedFile[]) => void;
 
   /**
    * Function to be called when files are uploaded.
-   * @type (files: File[]) => Promise<void>
+   * @type (files: StatedFile[]) => Promise<void>
    * @default undefined
    * @example onUpload={(files) => uploadFiles(files)}
    */
   // eslint-disable-next-line no-unused-vars
-  onUpload?: (files: File[]) => Promise<void>;
-
-  /**
-   * Progress of the uploaded files.
-   * @type Record<string, 'uploading' | 'uploaded' | 'error'> | undefined
-   * @default undefined
-   * @example progresses={{ "file1.png": 'uploading', "file2.png": 'uploaded' }}
-   */
-  progresses?: Record<string, 'uploading' | 'uploaded' | 'error'>;
+  onUpload?: (files: StatedFile[]) => Promise<void>;
 
   /**
    * Accepted file types for the uploader.
@@ -97,11 +95,7 @@ export function FileUploader(props: FileUploaderProps) {
     value: valueProp,
     onValueChange,
     onUpload,
-    progresses,
-    accept = {
-      'application/pdf': [],
-      'image/*': [],
-    },
+    accept = {},
     maxSize = 1024 * 1024 * 2,
     maxFileCount = 1,
     multiple = false,
@@ -127,14 +121,13 @@ export function FileUploader(props: FileUploaderProps) {
         return;
       }
 
-      const newFiles = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-      );
+      const newFiles: StatedFile[] = acceptedFiles.map((file) => ({
+        rawFile: file,
+        url: URL.createObjectURL(file),
+        status: 'pending',
+      }));
 
       const updatedFiles = files ? [...files, ...newFiles] : newFiles;
-
       setFiles(updatedFiles);
 
       if (rejectedFiles.length > 0) {
@@ -142,59 +135,28 @@ export function FileUploader(props: FileUploaderProps) {
           toast.error(`File ${file.name} was rejected`);
         });
       }
-
-      // if (
-      //   onUpload &&
-      //   updatedFiles.length > 0 &&
-      //   updatedFiles.length <= maxFileCount
-      // ) {
-      //   const target =
-      //     updatedFiles.length > 0 ? `${updatedFiles.length} files` : `file`;
-
-      //   toast.promise(onUpload(updatedFiles), {
-      //     loading: `Uploading ${target}...`,
-      //     success: () => {
-      //       setFiles([]);
-      //       return `${target} uploaded`;
-      //     },
-      //     error: `Failed to upload ${target}`,
-      //   });
-      // }
     },
-
     [files, maxFileCount, multiple, onUpload, setFiles]
   );
 
   function onRemove(index: number) {
-    if (!files) return;
-    const newFiles = files.filter((_, i) => i !== index);
-    setFiles(newFiles);
-    onValueChange?.(newFiles);
-  }
+    if (files?.[index]?.url) {
+      URL.revokeObjectURL(files[index].url);
+    }
 
-  // Revoke preview url when component unmounts
-  useEffect(() => {
-    return () => {
-      if (!files) return;
-      files.forEach((file) => {
-        if (isFileWithPreview(file)) {
-          URL.revokeObjectURL(file.preview);
-        }
-      });
-    };
-  }, []);
+    const newFiles = files?.filter((_, i) => i !== index);
+    setFiles(newFiles);
+  }
 
   const isDisabled = disabled || (files?.length ?? 0) >= maxFileCount;
 
-  const [loading, setLoading] = useState(false);
-
-  const [fileStatuses, setFileStatuses] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState(false);
 
   async function onSubmit() {
-    if (loading || !files || !files.length) return;
-    setLoading(true);
+    if (uploading || !files || !files.length) return;
+    setUploading(true);
     await onUpload?.(files);
-    setLoading(false);
+    setUploading(false);
   }
 
   return (
@@ -223,7 +185,7 @@ export function FileUploader(props: FileUploaderProps) {
             {isDragActive ? (
               <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
                 <div className="rounded-full border border-dashed p-3">
-                  <UploadIcon
+                  <Upload
                     className="text-muted-foreground size-7"
                     aria-hidden="true"
                   />
@@ -235,7 +197,7 @@ export function FileUploader(props: FileUploaderProps) {
             ) : (
               <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
                 <div className="rounded-full border border-dashed p-3">
-                  <UploadIcon
+                  <Upload
                     className="text-muted-foreground size-7"
                     aria-hidden="true"
                   />
@@ -266,7 +228,6 @@ export function FileUploader(props: FileUploaderProps) {
                 key={index}
                 file={file}
                 onRemove={() => onRemove(index)}
-                progress={progresses?.[file.name]}
               />
             ))}
           </div>
@@ -280,21 +241,16 @@ export function FileUploader(props: FileUploaderProps) {
           type="button"
           className="w-fit"
           onClick={() => {
-            setFileStatuses({});
             setFiles([]);
           }}
           variant="ghost"
           disabled={
-            loading ||
-            !files ||
-            files?.length === 0 ||
-            // at least one file is uploaded
-            (files.length > 0 &&
-              // all files match the uploaded status
-              files.every((file) => fileStatuses[file.name] === 'uploaded'))
+            uploading ||
+            (files?.length ?? 0) === 0 ||
+            ((files?.length ?? 0) > 0 &&
+              files?.every((file) => file.status === 'uploaded'))
           }
         >
-          {/* {t('storage-object-data-table.clear_files')} */}
           Clear Files
         </Button>
         <Button
@@ -302,16 +258,12 @@ export function FileUploader(props: FileUploaderProps) {
           className="w-full"
           onClick={onSubmit}
           disabled={
-            loading ||
-            !files ||
-            files?.length === 0 ||
-            // at least one file is uploaded
-            (files.length > 0 &&
-              // all files match the uploaded status
-              files.every((file) => fileStatuses[file.name] === 'uploaded'))
+            uploading ||
+            (files?.length ?? 0) === 0 ||
+            ((files?.length ?? 0) > 0 &&
+              files?.every((file) => file.status === 'uploaded'))
           }
         >
-          {/* {loading ? t('common.processing') : submitLabel} */}
           Upload Files
         </Button>
       </div>
@@ -320,34 +272,32 @@ export function FileUploader(props: FileUploaderProps) {
 }
 
 interface FileCardProps {
-  file: File;
+  file: StatedFile;
   onRemove: () => void;
-  progress?: 'uploading' | 'uploaded' | 'error';
 }
 
-function FileCard({ file, progress, onRemove }: FileCardProps) {
+function FileCard({ file, onRemove }: FileCardProps) {
   return (
     <div className="hover:bg-foreground/5 relative flex items-center gap-2 rounded-md p-2">
       <div className="flex flex-1 gap-2">
-        {isFileWithPreview(file) ? (
-          <div className="aspect-square size-10 flex-none">
-            <FilePreview file={file} />
-          </div>
-        ) : null}
+        <div className="aspect-square size-10 flex-none">
+          <FilePreview file={file} />
+        </div>
         <div className="flex w-full flex-col items-start gap-2 text-start">
           <div className="flex flex-col gap-px">
             <p className="text-foreground/80 line-clamp-1 text-sm font-semibold">
-              {file.name}
+              {file.rawFile.name}
             </p>
             <div className="text-muted-foreground text-xs font-semibold">
-              {progress === 'uploading' ? (
+              {file.status === 'pending' && (
+                <span>{formatBytes(file.rawFile.size)}</span>
+              )}
+              {file.status === 'uploading' && (
                 <span className="opacity-70">Uploading...</span>
-              ) : progress === 'uploaded' ? (
-                <span>Uploaded</span>
-              ) : progress === 'error' ? (
+              )}
+              {file.status === 'uploaded' && <span>Uploaded</span>}
+              {file.status === 'error' && (
                 <span className="text-destructive">Error</span>
-              ) : (
-                <span> {formatBytes(file.size)}</span>
               )}
             </div>
           </div>
@@ -361,7 +311,7 @@ function FileCard({ file, progress, onRemove }: FileCardProps) {
           className="size-7"
           onClick={onRemove}
         >
-          <Cross2Icon className="size-4" aria-hidden="true" />
+          <X className="size-4" aria-hidden="true" />
           <span className="sr-only">Remove file</span>
         </Button>
       </div>
@@ -369,32 +319,31 @@ function FileCard({ file, progress, onRemove }: FileCardProps) {
   );
 }
 
-function isFileWithPreview(file: File): file is File & { preview: string } {
-  return 'preview' in file && typeof file.preview === 'string';
-}
-
-interface FilePreviewProps {
-  file: File & { preview: string };
-}
-
-function FilePreview({ file }: FilePreviewProps) {
-  if (file.type.startsWith('image/')) {
-    return (
-      <img
-        src={file.preview}
-        alt={file.name}
-        width={48}
-        height={48}
-        loading="lazy"
-        className="rounded-md object-cover"
-      />
-    );
-  }
+function FilePreview({ file }: { file: StatedFile }) {
+  const isImage = file.rawFile.type.startsWith('image/');
+  const isPdf = file.rawFile.type.startsWith('application/pdf');
+  const isOther = !isImage && !isPdf;
 
   return (
-    <FileTextIcon
-      className="text-muted-foreground size-10"
-      aria-hidden="true"
-    />
+    <>
+      {isImage && (
+        <a href={file.url} target="_blank" rel="noopener noreferrer">
+          <img
+            src={file.url}
+            alt={file.rawFile.name}
+            width={48}
+            height={48}
+            loading="lazy"
+            className="rounded-md object-cover"
+          />
+        </a>
+      )}
+      {isPdf && (
+        <a href={file.url} target="_blank" rel="noopener noreferrer">
+          <FileText className="size-10" aria-hidden="true" />
+        </a>
+      )}
+      {isOther && <File className="size-10" aria-hidden="true" />}
+    </>
   );
 }
