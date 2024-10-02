@@ -1,3 +1,0 @@
-User-Agent: *
-Allow: /
-Sitemap: https://rewise.me/sitemap.xml

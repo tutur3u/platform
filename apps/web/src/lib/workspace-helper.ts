@@ -1,6 +1,5 @@
-import { DEV_MODE } from '../../../rewise/src/constants/common';
 import { permissions as rolePermissions } from './permissions';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import { DEV_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { PermissionId } from '@/types/db';
 import { Workspace } from '@/types/primitives/Workspace';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
