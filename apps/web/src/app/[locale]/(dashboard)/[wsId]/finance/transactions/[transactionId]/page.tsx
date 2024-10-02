@@ -77,7 +77,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
               <div className="text-lg font-semibold">
                 {t('ai_chat.upload_files')}
               </div>
-              <Separator />
+              <Separator className="mb-2" />
               <Bill wsId={wsId} transactionId={transactionId} />
             </div>
           </div>

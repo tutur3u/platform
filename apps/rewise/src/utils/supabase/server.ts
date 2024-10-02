@@ -32,9 +32,9 @@ async function createGenericClient(isAdmin: boolean) {
   });
 }
 
-export const createAdminClient = () => {
+export function createAdminClient() {
   return createGenericClient(true);
-};
+}
 
 export function createClient() {
   return createGenericClient(false);
