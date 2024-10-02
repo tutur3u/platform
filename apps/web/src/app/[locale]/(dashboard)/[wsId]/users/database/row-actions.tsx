@@ -61,7 +61,7 @@ const FormSchema = z.object({
   email: z.string().email().optional(),
   phone: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
-  birthday: z.date().optional(),
+  birthday: z.date().nullable().optional(),
   ethnicity: z.string().optional(),
   guardian: z.string().optional(),
   national_id: z.string().optional(),
@@ -147,8 +147,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   const [open, setOpen] = useState(false);
 
   const removeBirthday = () => {
-    form.setValue('birthday', undefined);
-    form.resetField('birthday');
+    form.setValue('birthday', null);
   };
 
   const updateMember = async (data: z.infer<typeof FormSchema>) => {
@@ -161,7 +160,9 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         },
         body: JSON.stringify({
           ...data,
-          birthday: dayjs(data.birthday).format('YYYY/MM/DD'),
+          birthday: data.birthday
+            ? dayjs(data.birthday).format('YYYY/MM/DD')
+            : null,
         }),
       }
     );
@@ -374,7 +375,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
                       <FormLabel>Birthday</FormLabel>
                       <FormControl className="flex">
                         <DatePicker
-                          defaultValue={
+                          value={
                             field.value
                               ? dayjs(field.value).toDate()
                               : undefined
@@ -388,11 +389,11 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
                   )}
                 />
                 <Button
-                  className="m-0 w-10 p-0"
-                  onClick={() => {
-                    removeBirthday();
-                  }}
                   type="button"
+                  size="icon"
+                  onClick={removeBirthday}
+                  className="aspect-square"
+                  disabled={!form.watch('birthday')}
                 >
                   <XIcon className="h-7 w-7"></XIcon>{' '}
                 </Button>
