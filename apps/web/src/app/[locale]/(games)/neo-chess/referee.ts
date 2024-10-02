@@ -28,14 +28,16 @@ export default class Referee {
         *  When rebuilding but not refreshing the page, the lastPosition is reset to undefined
         */
         const lastPosition = this.lastPositions.get(pieceId);
+        const isOurTeam = team === TeamType.OURS;
+        
+        const startX = firstMove ? prevX : (lastPosition ? lastPosition.x : prevX);
+        const startY = firstMove ? prevY : (lastPosition ? lastPosition.y : prevY);
+
+        const verticalDistance = Math.round(currY - startY);
+        const horizontalDistance = Math.abs(currX - startX);
 
         if (type === PieceType.PAWN) {
-            const isOurTeam = team === TeamType.OURS;
             const pawnDirection = isOurTeam ? -1 : 1;
-            const startX = firstMove ? prevX : (lastPosition ? lastPosition.x : prevX);
-            const startY = firstMove ? prevY : (lastPosition ? lastPosition.y : prevY);
-            const verticalDistance = Math.round(currY - startY);
-            const horizontalDistance = Math.abs(currX - startX);
 
             // MOVEMENT LOGIC
             if (horizontalDistance === 0 && verticalDistance * pawnDirection > 0) {
@@ -63,7 +65,18 @@ export default class Referee {
                 }
             }
         }
-        
+        else if (type === PieceType.KING) {
+
+            if (Math.round(verticalDistance) <= Math.round(cellSize) && Math.round(horizontalDistance) <= Math.round(cellSize)) {
+                if (!this.tileIsOccupied(column, row, boardState)                   // MOVEMENT LOGIC
+                    || this.tileIsOccupiedByOpponent(column, row, team, boardState) // ATTACK LOGIC
+                ) {
+                    this.lastPositions.set(pieceId, { x: currX, y: currY });
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 }
