@@ -3,7 +3,6 @@
 import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
-import { Cog6ToothIcon } from '@heroicons/react/24/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Avatar,
@@ -11,7 +10,6 @@ import {
   AvatarImage,
 } from '@repo/ui/components/ui/avatar';
 import { Button } from '@repo/ui/components/ui/button';
-import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
@@ -30,9 +28,8 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { User as UserIcon } from 'lucide-react';
+import { Settings, User as UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -153,7 +150,7 @@ export function MemberSettingsButton({
     >
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Cog6ToothIcon className="text-foreground/70 h-6 w-6" />
+          <Settings className="text-foreground/70 h-6 w-6" />
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -227,7 +224,7 @@ export function MemberSettingsButton({
                 (currentUser.role === 'ADMIN' && user.role === 'OWNER')
               }
             />
-            <Separator />
+            {/* <Separator />
             <FormField
               control={form.control}
               name="accessLevel"
@@ -270,7 +267,7 @@ export function MemberSettingsButton({
                 </FormItem>
               )}
               disabled={currentUser.role === 'MEMBER'}
-            />
+            /> */}
             {(currentUser.role === 'ADMIN' && user.role === 'OWNER') ||
               ((currentUser.role !== 'MEMBER' ||
                 currentUser.id === user.id) && (

@@ -8,29 +8,32 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q?: string;
     page?: string;
     pageSize?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceApiKeysPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  await getPermissions({
+  const { wsId } = await params;
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['manage_workspace_security'],
-    redirectTo: `/${wsId}/settings`,
   });
 
-  const { data: apiKeys, count } = await getApiKeys(wsId, searchParams);
+  if (withoutPermission('manage_workspace_security'))
+    redirect(`/${wsId}/settings`);
+
+  const { data: apiKeys, count } = await getApiKeys(wsId, await searchParams);
   const t = await getTranslations('ws-api-keys');
 
   return (
@@ -79,7 +82,7 @@ async function getApiKeys(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_api_keys')

@@ -3,6 +3,7 @@
 import { DateRangePicker } from './date-range-picker';
 import { MonthRangePicker } from './month-range-picker';
 import { YearRangePicker } from './year-range-picker';
+import { cn } from '@/lib/utils';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Select,
@@ -21,10 +22,30 @@ export function Filter({ className }: { className: string }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [view, setView] = useState('date');
+  const [view, setView] = useState('month');
 
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const defaultStartDate = dayjs().startOf('month').toDate();
+  const defaultEndDate = dayjs().endOf('month').toDate();
+
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    defaultStartDate
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(defaultEndDate);
+
+  useEffect(() => {
+    // If choosing start date but end date is not chosen
+    // set end date to the same date as start date
+    if (startDate && !endDate) setEndDate(startDate);
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    // If searchParams is empty, reset the filter
+    // to display current month data
+    if (searchParams.toString() === '')
+      router.push(
+        `${pathname}?view=month&startDate=${format(defaultStartDate, 'yyyy-MM-dd')}&endDate=${format(defaultEndDate, 'yyyy-MM-dd')}`
+      );
+  }, [pathname]);
 
   useEffect(() => {
     const viewParam = searchParams.get('view');
@@ -37,13 +58,22 @@ export function Filter({ className }: { className: string }) {
   }, [searchParams.get('view')]);
 
   useEffect(() => {
+    if (searchParams.toString() === '') return;
+
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
-    setStartDate(startDateParam ? new Date(startDateParam) : undefined);
-    setEndDate(endDateParam ? new Date(endDateParam) : undefined);
+
+    if (startDateParam !== dayjs(startDate).format('yyyy-MM-dd'))
+      setStartDate(startDateParam ? new Date(startDateParam) : undefined);
+
+    if (endDateParam !== dayjs(endDate).format('yyyy-MM-dd'))
+      setEndDate(endDateParam ? new Date(endDateParam) : undefined);
   }, [searchParams]);
 
   const resetFilter = () => {
+    setView('date');
+    setStartDate(undefined);
+    setEndDate(undefined);
     router.push(pathname);
   };
 
@@ -70,14 +100,19 @@ export function Filter({ className }: { className: string }) {
   };
 
   return (
-    <div className={className}>
+    <div
+      className={cn(
+        'flex flex-col flex-wrap items-stretch gap-4 md:flex-row md:items-end',
+        className
+      )}
+    >
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">Filter by</h2>
         <Select value={view} onValueChange={(value) => setView(value)}>
-          <SelectTrigger className="md:min-w-36 lg:min-w-48">
+          <SelectTrigger className="w-full lg:min-w-48">
             <SelectValue placeholder="Filter by" />
           </SelectTrigger>
-          <SelectContent className="md:min-w-36 lg:min-w-48">
+          <SelectContent className="w-full lg:min-w-48">
             <SelectItem value="date">Date range</SelectItem>
             <SelectItem value="month">Month range</SelectItem>
             <SelectItem value="year">Year range</SelectItem>
@@ -91,7 +126,7 @@ export function Filter({ className }: { className: string }) {
           endDate={endDate}
           setStartDate={setStartDate}
           setEndDate={setEndDate}
-          className="flex gap-4"
+          className="flex w-full flex-col gap-4 md:w-auto md:flex-row"
         />
       )}
 
@@ -106,7 +141,7 @@ export function Filter({ className }: { className: string }) {
           }
           setStartMonth={setStartDate}
           setEndMonth={setEndDate}
-          className="flex gap-4"
+          className="flex w-full flex-col gap-4 md:w-auto md:flex-row"
         />
       )}
 
@@ -120,13 +155,13 @@ export function Filter({ className }: { className: string }) {
           }
           setStartYear={setStartDate}
           setEndYear={setEndDate}
-          className="flex gap-4"
+          className="flex w-full flex-col gap-4 md:w-auto md:flex-row"
         />
       )}
 
       <Button
         variant="outline"
-        className="md:min-w-20 lg:min-w-24"
+        className="w-full md:w-auto lg:min-w-24"
         onClick={resetFilter}
         disabled={searchParams.toString() === ''}
       >
@@ -134,7 +169,7 @@ export function Filter({ className }: { className: string }) {
       </Button>
       <Button
         variant="default"
-        className="md:min-w-20 lg:min-w-24"
+        className="w-full md:w-auto lg:min-w-24"
         onClick={applyFilter}
         disabled={!isDirty()}
       >

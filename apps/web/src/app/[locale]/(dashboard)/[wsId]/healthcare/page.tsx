@@ -2,15 +2,14 @@ import StatisticCard from '@/components/cards/StatisticCard';
 import { createClient } from '@/utils/supabase/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function HealthcareOverviewPage({
-  params: { wsId },
-}: Props) {
-  const supabase = createClient();
+export default async function HealthcareOverviewPage({ params }: Props) {
+  const supabase = await createClient();
+  const { wsId } = await params;
 
   const { count: checkups } = await supabase
     .from('healthcare_checkups')

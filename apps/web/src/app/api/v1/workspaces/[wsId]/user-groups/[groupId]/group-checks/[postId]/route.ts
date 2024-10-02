@@ -3,22 +3,30 @@ import { NextResponse } from 'next/server';
 
 export async function PUT(
   req: Request,
-  { params: { postId } }: { params: { postId: string } }
+  { params }: { params: Promise<{ postId: string }> }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const data = await req.json();
+  const { postId } = await params;
 
-  const { error } = await supabase
-    .from('user_group_post_checks')
-    .upsert({
-      post_id: postId,
-      user_id: data.user_id,
-      notes: data.notes,
-      is_completed: data.is_completed,
-      created_at: data.created_at,
-    })
-    .eq('post_id', postId)
-    .eq('user_id', data.user_id);
+  const multiple = Array.isArray(data);
+
+  const { error } = multiple
+    ? await supabase
+        .from('user_group_post_checks')
+        .upsert(data)
+        .eq('post_id', postId)
+    : await supabase
+        .from('user_group_post_checks')
+        .upsert({
+          post_id: postId,
+          user_id: data.user_id,
+          notes: data.notes,
+          is_completed: data.is_completed,
+          created_at: data.created_at,
+        })
+        .eq('post_id', postId)
+        .eq('user_id', data.user_id);
 
   if (error) {
     console.error('Error updating user_group_post_checks:', error.message);

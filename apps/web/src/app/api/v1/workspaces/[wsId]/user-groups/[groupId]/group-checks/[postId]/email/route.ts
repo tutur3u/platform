@@ -1,6 +1,13 @@
+import { DEV_MODE } from '@/constants/common';
+import { getPermissions } from '@/lib/workspace-helper';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import dayjs from 'dayjs';
 import juice from 'juice';
 import { NextRequest, NextResponse } from 'next/server';
+
+const forceEnableEmailSending = false;
+const disableEmailSending = DEV_MODE && !forceEnableEmailSending;
 
 const sesClient = new SESClient({
   region: process.env.AWS_REGION as string,
@@ -13,12 +20,33 @@ const sesClient = new SESClient({
 export async function POST(
   req: NextRequest,
   {
-    params: { wsId, groupId: _, postId: __ },
+    params,
   }: {
-    params: { wsId: string; groupId: string; postId: string };
+    params: Promise<{ wsId: string; postId: string }>;
   }
 ) {
-  const isWSIDAllowed = wsId === process.env.MAILBOX_ALLOWED_WS_ID;
+  const sbAdmin = await createAdminClient();
+  const { wsId, postId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('send_user_group_post_emails')) {
+    return NextResponse.json({ message: 'Permission denied' }, { status: 403 });
+  }
+
+  const { data: workspaceSecret } =
+    wsId === process.env.MAILBOX_ALLOWED_WS_ID
+      ? { data: { id: wsId, value: 'true' } }
+      : await sbAdmin
+          .from('workspace_secrets')
+          .select('*')
+          .eq('ws_id', wsId)
+          .eq('name', 'ENABLE_EMAIL_SENDING')
+          .maybeSingle();
+
+  const isWSIDAllowed = workspaceSecret?.value === 'true';
 
   if (!isWSIDAllowed) {
     return NextResponse.json(
@@ -29,12 +57,14 @@ export async function POST(
 
   const data = (await req.json()) as {
     users: {
+      id: string;
       email: string;
       content: string;
       username: string;
       notes: string;
       is_completed: boolean;
     }[];
+    date: string;
   };
 
   if (!data.users) {
@@ -44,38 +74,63 @@ export async function POST(
     );
   }
 
-  data.users.forEach(async (user) => {
-    await sendEmail({
-      recipients: [
-        user.email,
-        // 'phucvo@tuturuuu.com',
-        // 'phathuynh@tuturuuu.com',
-        // 'khanhdao@tuturuuu.com',
-      ],
-      subject: `Easy Center | Báo cáo tiến độ ngày ${new Date().toLocaleDateString()} của ${user.username}`,
-      content: user.content,
-    });
-  });
+  const results = await Promise.all(
+    data.users.map(async (user) => {
+      const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(data.date).format('DD/MM/YYYY')} của ${user.username}`;
+      return sendEmail({
+        receiverId: user.id,
+        recipient: user.email,
+        subject,
+        content: user.content,
+        postId,
+      });
+    })
+  );
 
-  return NextResponse.json({ message: 'Data updated successfully' });
+  const successCount = results.filter((result) => result).length;
+  const failureCount = results.filter((result) => !result).length;
+
+  return NextResponse.json({
+    message: 'Emails sent and logged',
+    successCount,
+    failureCount,
+  });
 }
 
 const sendEmail = async ({
-  recipients,
+  receiverId,
+  recipient,
   subject,
   content,
+  postId,
 }: {
-  recipients: string[];
+  receiverId: string;
+  recipient: string;
   subject: string;
   content: string;
+  postId: string;
 }) => {
   try {
+    const supabase = await createClient();
+
+    const { data } = await supabase
+      .from('sent_emails')
+      .select('*')
+      .eq('receiver_id', receiverId)
+      .eq('post_id', postId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (data && data.length > 0) {
+      return false;
+    }
+
     const inlinedHtmlContent = juice(content);
 
     const params = {
       Source: `${process.env.SOURCE_NAME} <${process.env.SOURCE_EMAIL}>`,
       Destination: {
-        ToAddresses: recipients,
+        ToAddresses: [recipient],
       },
       Message: {
         Subject: { Data: subject },
@@ -85,9 +140,66 @@ const sendEmail = async ({
       },
     };
 
-    const command = new SendEmailCommand(params);
-    await sesClient.send(command);
+    if (!disableEmailSending) {
+      console.log('Sending email:', params);
+      const command = new SendEmailCommand(params);
+      await sesClient.send(command);
+      console.log('Email sent:', params);
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return false;
+    }
+
+    if (!process.env.SOURCE_NAME || !process.env.SOURCE_EMAIL) {
+      return false;
+    }
+
+    const { data: sentEmail, error } = await supabase
+      .from('sent_emails')
+      .insert({
+        post_id: postId,
+        sender_id: user.id,
+        receiver_id: receiverId,
+        email: recipient,
+        subject,
+        content: inlinedHtmlContent,
+        source_name: process.env.SOURCE_NAME,
+        source_email: process.env.SOURCE_EMAIL,
+      })
+      .select('id')
+      .single();
+
+    if (!sentEmail) {
+      console.error('Error logging sent email:', error);
+      return false;
+    }
+
+    if (error) {
+      console.error('Error logging sent email:', error);
+      return false;
+    }
+
+    const { error: checkUpdateError } = await supabase
+      .from('user_group_post_checks')
+      .update({
+        email_id: sentEmail.id,
+      })
+      .eq('post_id', postId)
+      .eq('user_id', receiverId);
+
+    if (checkUpdateError) {
+      console.error('Error updating check:', checkUpdateError);
+      return false;
+    }
+
+    return true;
   } catch (err) {
-    console.error(err);
+    console.error('Error sending email:', err);
+    return false;
   }
 };

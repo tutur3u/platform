@@ -2,13 +2,14 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     roleId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { roleId } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { roleId } = await params;
 
   const { data, error } = await supabase
     .from('workspace_role_members')
@@ -28,8 +29,9 @@ export async function GET(_: Request, { params: { roleId } }: Params) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request, { params: { roleId } }: Params) {
-  const supabase = createClient();
+export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { roleId } = await params;
 
   const data = (await req.json()) as {
     memberIds: string[];

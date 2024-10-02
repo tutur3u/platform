@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/server';
 import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
 interface SearchParams {
@@ -14,25 +15,28 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function WorkspaceReportsSettingsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  await getPermissions({
+  const { wsId } = await params;
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['manage_user_report_templates'],
     redirectTo: `/${wsId}/settings`,
   });
 
-  const { data } = await getConfigs(wsId, searchParams);
+  if (withoutPermission('manage_user_report_templates'))
+    redirect(`/${wsId}/settings`);
+
+  const { data } = await getConfigs(wsId, await searchParams);
   const locale = await getLocale();
-  const t = await getTranslations('ws-reports');
+  const t = await getTranslations();
 
   const configs = data.map((config) => ({
     ...config,
@@ -72,8 +76,8 @@ export default async function WorkspaceReportsSettingsPage({
     <>
       <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-2xl font-bold">{t('reports')}</h1>
-          <p className="text-foreground/80">{t('description')}</p>
+          <h1 className="text-2xl font-bold">{t('ws-reports.reports')}</h1>
+          <p className="text-foreground/80">{t('ws-reports.description')}</p>
         </div>
       </div>
       <Separator className="my-4" />
@@ -101,7 +105,7 @@ export default async function WorkspaceReportsSettingsPage({
 }
 
 async function getConfigs(wsId: string, { q }: SearchParams) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_configs')

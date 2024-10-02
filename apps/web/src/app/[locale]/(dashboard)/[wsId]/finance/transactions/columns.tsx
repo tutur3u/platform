@@ -126,7 +126,11 @@ export const transactionColumns = (
       cell: ({ row }) => (
         <div className="min-w-[8rem]">
           {row.getValue('taken_at')
-            ? moment(row.getValue('taken_at')).locale(locale).fromNow()
+            ? `${moment(row.getValue('taken_at')).locale(locale).fromNow()}, ${moment(
+                row.getValue('taken_at')
+              )
+                .locale(locale)
+                .format('DD/MM/YYYY')}`
             : '-'}
         </div>
       ),
@@ -152,7 +156,9 @@ export const transactionColumns = (
     },
     {
       id: 'actions',
-      cell: ({ row }) => <TransactionRowActions row={row} />,
+      cell: ({ row }) => (
+        <TransactionRowActions row={row} href={row.original.href} />
+      ),
     },
   ];
 };

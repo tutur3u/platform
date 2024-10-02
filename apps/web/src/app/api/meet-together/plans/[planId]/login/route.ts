@@ -3,15 +3,14 @@ import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     planId: string;
-  };
+  }>;
 }
 
-export async function POST(
-  req: Request,
-  { params: { planId: rawPlanId } }: Params
-) {
+export async function POST(req: Request, { params }: Params) {
+  const { planId: rawPlanId } = await params;
+
   // rawPlanId is an uuid without dashes,
   // we'll have to add them back to make it a valid uuid
   const planId = rawPlanId.replace(
@@ -24,7 +23,7 @@ export async function POST(
     return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
   }
 
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const { name, password } = await req.json();
 

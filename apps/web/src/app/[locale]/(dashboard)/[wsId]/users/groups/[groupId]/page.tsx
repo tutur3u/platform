@@ -3,14 +3,13 @@ import { UserDatabaseFilter } from '../../filters';
 import GroupMemberForm from './form';
 import PostsClient from './posts-client';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
-import { MinusCircledIcon } from '@radix-ui/react-icons';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { MinusCircle } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -22,27 +21,27 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     wsId: string;
     groupId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function UserGroupDetailsPage({
-  params: { locale, wsId, groupId },
+  params,
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations();
+  const { locale, wsId, groupId } = await params;
 
   const group = await getData(wsId, groupId);
 
   const { data: rawUsers, count: usersCount } = await getUserData(
     wsId,
     groupId,
-    searchParams
+    await searchParams
   );
 
   const { data: extraFields } = await getUserFields(wsId);
@@ -90,7 +89,7 @@ export default async function UserGroupDetailsPage({
             key="excluded-user-groups-filter"
             tag="excludedGroups"
             title={t('user-data-table.excluded_groups')}
-            icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
+            icon={<MinusCircle className="mr-2 h-4 w-4" />}
             options={excludedUserGroups.map((group) => ({
               label: group.name || 'No name',
               value: group.id,
@@ -122,7 +121,7 @@ export default async function UserGroupDetailsPage({
 }
 
 async function getData(wsId: string, groupId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('workspace_user_groups')
@@ -134,7 +133,7 @@ async function getData(wsId: string, groupId: string) {
   if (error) throw error;
   if (!data) notFound();
 
-  return data as WorkspaceUser;
+  return data as UserGroup;
 }
 
 async function getUserData(
@@ -148,7 +147,7 @@ async function getUserData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -192,7 +191,7 @@ async function getUserData(
 }
 
 async function getUserFields(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_fields')
@@ -209,7 +208,7 @@ async function getUserFields(wsId: string) {
 }
 
 async function getGroupPosts(groupId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('user_group_posts')
@@ -226,7 +225,7 @@ async function getGroupPosts(groupId: string) {
 }
 
 async function getExcludedUserGroups(wsId: string, groupId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .rpc(

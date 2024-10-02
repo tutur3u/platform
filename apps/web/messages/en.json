@@ -122,7 +122,8 @@
     "foreground": "Foreground",
     "background": "Background",
     "scan_me": "Scan me",
-    "qr_code": "QR Code"
+    "qr_code": "QR Code",
+    "current_plan": "Current plan"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -141,7 +142,7 @@
     "this-week": "This week",
     "last-week": "Last week",
     "next-week": "Next week",
-    "this-month": "This month",
+    "this_month": "This month",
     "last-month": "Last month",
     "next-month": "Next month",
     "this-year": "This year",
@@ -336,7 +337,6 @@
     "home": "Home",
     "refresh": "Refresh",
     "chat": "Chat",
-    "blackbox": "Blackbox",
     "calendar": "Calendar",
     "projects": "Projects",
     "documents": "Documents",
@@ -363,7 +363,8 @@
     "collapse-sidebar": "Collapse Sidebar",
     "expand-sidebar": "Expand Sidebar",
     "slides": "Slides",
-    "mailbox": "Mailbox"
+    "mail": "Mail",
+    "tasks": "Tasks"
   },
   "team-tabs": {
     "overview": "Overview",
@@ -503,9 +504,27 @@
     "source_email": "Source Email",
     "created_at": "Created At"
   },
+  "post-email-data-table": {
+    "id": "ID",
+    "recipient": "Recipient",
+    "group_name": "Group Name",
+    "post_title": "Post Title",
+    "post_content": "Post Content",
+    "email": "Email",
+    "subject": "Subject",
+    "is_completed": "Work Completed",
+    "send_email": "Send Email",
+    "preview": "Preview",
+    "notes": "Notes",
+    "created_at": "Created At"
+  },
   "user-group-data-table": {
     "id": "ID",
     "name": "Name",
+    "attendance_stats": "Attendance Stats",
+    "completed": "Completed",
+    "incomplete": "Incomplete",
+    "no_attendance_today": "No attendance today",
     "amount": "Amount",
     "locked": "Locked",
     "created_at": "Created At",
@@ -608,6 +627,9 @@
     "category": "Category",
     "description": "Description",
     "manufacturer": "Manufacturer",
+    "stock": "Stock",
+    "unit": "Unit",
+    "warehouse": "Warehouse",
     "usage": "Usage",
     "created_at": "Created at"
   },
@@ -674,15 +696,13 @@
     "add_new": "Add a new workflow to this workspace.",
     "edit_existing": "Edit an existing workflow in this workspace."
   },
-  "ws-projects": {
-    "projects": "Projects",
-    "workspace_project": "Workspace Project",
-    "description": "Manage all of your workspace tasks through projects.",
-    "name": "Name",
-    "create_project": "Create Project",
-    "edit_project": "Edit Project",
-    "add_new_workspace_project": "Add a new project to this workspace.",
-    "edit_existing_workspace_project": "Edit an existing project in this workspace."
+  "ws-task-boards": {
+    "name": "Board name",
+    "plural": "Task boards",
+    "singular": "Task board",
+    "create": "Create board",
+    "create_description": "Create a task board",
+    "description": "Task boards are used to manage tasks that are related to a specific project or goal."
   },
   "ws-settings": {
     "description": "Manage the settings of your workspace.",
@@ -777,7 +797,14 @@
     "create_description": "Create a new user group",
     "edit_description": "Edit an existing user group",
     "add_user": "Add users",
-    "add_user_description": "Add users to this group"
+    "add_user_description": "Add users to this group",
+    "posts": "Posts",
+    "add_post": "Add post",
+    "edit_post": "Edit post",
+    "edit_post_description": "Make changes to your post here.",
+    "add_post_description": "Add a new post.",
+    "show_post_content": "Show post content",
+    "show_post_status": "Show post status"
   },
   "ws-user-group-tags": {
     "singular": "Group Tag",
@@ -790,7 +817,9 @@
     "edit": "Edit Tag",
     "create_description": "Create a new group tag",
     "edit_description": "Edit an existing group tag",
-    "enable_custom_color": "Enable custom color"
+    "enable_custom_color": "Enable custom color",
+    "add_group": "Add groups",
+    "add_group_description": "Add a user group to this tag"
   },
   "ws-user-reports": {
     "singular": "User Report",
@@ -837,6 +866,42 @@
     "edit": "Edit category",
     "create_description": "Create a new transaction category",
     "edit_description": "Edit an existing transaction category"
+  },
+  "ws-product-categories": {
+    "singular": "Product Category",
+    "plural": "Product Categories",
+    "description": "Product categories are used to categorize the products in your workspace.",
+    "create": "Create category",
+    "edit": "Edit category",
+    "create_description": "Create a new product category",
+    "edit_description": "Edit an existing product category"
+  },
+  "ws-product-units": {
+    "singular": "Product Unit",
+    "plural": "Product Units",
+    "description": "Product units are used to define the units of measurement for the products in your workspace.",
+    "create": "Create unit",
+    "edit": "Edit unit",
+    "create_description": "Create a new product unit",
+    "edit_description": "Edit an existing product unit"
+  },
+  "ws-product-suppliers": {
+    "singular": "Product Supplier",
+    "plural": "Product Suppliers",
+    "description": "Product suppliers are used to manage the suppliers of the products in your workspace.",
+    "create": "Create supplier",
+    "edit": "Edit supplier",
+    "create_description": "Create a new product supplier",
+    "edit_description": "Edit an existing product supplier"
+  },
+  "ws-product-warehouses": {
+    "singular": "Product Warehouse",
+    "plural": "Product Warehouses",
+    "description": "Product warehouses are used to manage the storage locations of the products in your workspace.",
+    "create": "Create warehouse",
+    "edit": "Edit warehouse",
+    "create_description": "Create a new product warehouse",
+    "edit_description": "Edit an existing product warehouse"
   },
   "ws-user-fields": {
     "module": "User Fields",
@@ -958,7 +1023,9 @@
     "manage_finance": "Manage Finance",
     "manage_finance_description": "Allows members to view, create, edit, and delete financial transactions in the workspace.",
     "manage_user_report_templates": "Manage user report templates",
-    "manage_user_report_templates_description": "Allows members to edit user report templates."
+    "manage_user_report_templates_description": "Allows members to edit user report templates.",
+    "send_user_group_post_emails": "Send post content via emails",
+    "send_user_group_post_emails_description": "Allows members to send emails to virtual users created in your workspace about specific user group post content."
   },
   "ws-activities": {
     "description": "View all activities in your workspace",
@@ -1168,6 +1235,7 @@
     "finance": "Finance",
     "unnamed-ws": "Untitled workspace",
     "invoices": "Invoices",
+    "invoice": "Invoice",
     "show-phone": "Show phone",
     "show-gender": "Show gender",
     "show-address": "Show address",
@@ -1187,7 +1255,7 @@
     "note": "Note",
     "note-placeholder": "Enter note for this invoice",
     "add-note": "Add note",
-    "total": "The amount customer needs to pay",
+    "total": "Total",
     "total-placeholder": "Enter the amount customer needs to pay",
     "reset": "Reset",
     "discount": "Customer will receive a discount of",
@@ -1200,7 +1268,18 @@
     "reopen-invoice": "Reopen invoice",
     "close-invoice": "Close invoice",
     "save-changes": "Save changes",
-    "checkup": "Checkup"
+    "checkup": "Checkup",
+    "bill_to": "Bill to",
+    "invoice_date": "Invoice date",
+    "description": "Description",
+    "quantity": "Quantity",
+    "price": "Price",
+    "promotions": "Promotions",
+    "subtotal": "Subtotal",
+    "discounts": "Discounts",
+    "rounding": "Rounding",
+    "print": "Print",
+    "download_image": "Download image"
   },
   "ai_chat": {
     "welcome_to": "Welcome to",
@@ -1264,7 +1343,13 @@
     "microphone_permission_denied": "You have denied microphone permissions. Please enable microphone permissions in your browser settings to use this feature.",
     "upload_files": "Upload Files",
     "upload_file_description": "Choose files you want to upload to this chat.",
-    "response_language": "Response language"
+    "response_language": "Response language",
+    "chat_summary": "Chat summary",
+    "chat_notes": "Chat notes",
+    "multiple_choice": "Multiple choice",
+    "paragraph_answers": "Paragraph answers",
+    "ai_models": "AI Models",
+    "quizzes": "Quizzes"
   },
   "crud-ops": {
     "ops": "Operations",
@@ -1305,7 +1390,11 @@
     "change-password-description": "Change your pasword",
     "delete-account": "Delete account",
     "delete-account-description": "Delete your account",
-    "delete-account-message": "This will permanently delete your account and cannot be undone. Type your email address to confirm deletion."
+    "delete-account-message": "This will permanently delete your account and cannot be undone. Type your email address to confirm deletion.",
+    "new_avatar": "New avatar",
+    "upload_avatar": "Upload avatar",
+    "remove_avatar": "Remove avatar",
+    "save_avatar": "Save avatar"
   },
   "settings-appearance": {
     "appearance": "Appearance",
@@ -1351,18 +1440,93 @@
     "prompt_tokens": "Prompt tokens",
     "completion_tokens": "Completion tokens"
   },
-  "workspace-mailbox": {
+  "workspace-mail": {
     "overview": "Overview",
     "emails": "Emails",
     "history": "History",
-    "send": "Send email"
+    "send": "Send email",
+    "posts": "Posts"
   },
-  "dworkspace-mailbox": {
+  "dworkspace-mail": {
     "destination-addresses": "Destination Addresses"
   },
   "ws-emails": {
     "plural": "Emails",
     "singular": "Email",
     "description": "View mailing history that belongs to your workspace."
-  }
+  },
+  "ws-invoices": {
+    "plural": "Invoices",
+    "singular": "Invoice",
+    "description": "Invoices are used to link finance transactions and purchased products with applied promotions from your workspace's inventory.",
+    "create": "Create invoice",
+    "create_description": "Create a new invoice",
+    "edit": "Edit invoice",
+    "edit_description": "Edit an existing invoice"
+  },
+  "ws-inventory-products": {
+    "plural": "Products",
+    "singular": "Product",
+    "description": "Products are used as individual type of item that you have in your inventory and could be used to link with invoices.",
+    "create": "Create product",
+    "create_description": "Create a new product"
+  },
+  "ws-inventory-categories": {
+    "plural": "Categories",
+    "singular": "Category",
+    "description": "Categories are used to group similar inventory products together.",
+    "create": "Create category",
+    "create_description": "Create a new category"
+  },
+  "ws-inventory-units": {
+    "plural": "Units",
+    "singular": "Unit",
+    "description": "Units are used to measure inventory products.",
+    "create": "Create unit",
+    "create_description": "Create a new unit"
+  },
+  "ws-inventory-suppliers": {
+    "plural": "Suppliers",
+    "singular": "Supplier",
+    "description": "Suppliers are used to link inventory products with their suppliers.",
+    "create": "Create supplier",
+    "create_description": "Create a new supplier"
+  },
+  "ws-inventory-warehouses": {
+    "plural": "Warehouses",
+    "singular": "Warehouse",
+    "description": "Warehouses are used to store inventory products.",
+    "create": "Create warehouse",
+    "create_description": "Create a new warehouse"
+  },
+  "ws-inventory-batches": {
+    "plural": "Batches",
+    "singular": "Batch",
+    "description": "Batches are used to manage product imports and exports.",
+    "create": "Create batch",
+    "create_description": "Create a new batch"
+  },
+  "ws-inventory-promotions": {
+    "plural": "Promotions",
+    "singular": "Promotion",
+    "description": "Promotions are used to manage product discounts and promotions.",
+    "create": "Create promotion",
+    "create_description": "Create a new promotion"
+  },
+  "ws_post_details": {
+    "check_all": "Check all"
+  },
+  "ws-documents": {
+    "plural": "Documents",
+    "singular": "Document",
+    "create": "Create document",
+    "create_description": "Create a new document",
+    "description": "Documents are used to facilitate the sharing of information in your workspace."
+  },
+  "ws-post-emails": {
+    "plural": "Posts",
+    "singular": "Post",
+    "description": "Send emails to users that have their work checked by authorized staff in specific user group posts."
+  },
+  "avatar": "Avatar"
 }

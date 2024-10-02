@@ -5,7 +5,7 @@ import { getInitials } from '@/utils/name-helper';
 import { Avatar, Button, Divider, Select, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
 import { useTranslations } from 'next-intl';
-import React, { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useState } from 'react';
 
 interface Props {
   currentRole: UserRole;

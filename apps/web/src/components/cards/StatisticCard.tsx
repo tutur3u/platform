@@ -25,9 +25,11 @@ const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
           onClick || href ? 'hover:rounded-xl' : 'cursor-default'
         } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
       >
-        <div className="p-1 text-center text-lg font-semibold">{title}</div>
+        <div className="line-clamp-1 p-1 text-center text-lg font-semibold">
+          {title}
+        </div>
         <div
-          className={`border-border/30 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
+          className={`border-border/30 bg-foreground/5 text-foreground m-2 mt-0 line-clamp-1 rounded border p-4 text-center text-2xl font-bold ${
             !!onClick || !!href
               ? 'transition-all duration-300 group-hover:rounded-lg'
               : ''
@@ -45,9 +47,11 @@ const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
         onClick || href ? 'hover:rounded-xl' : 'cursor-default'
       } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
     >
-      <div className="p-1 text-center text-lg font-semibold">{title}</div>
+      <div className="line-clamp-1 p-1 text-center text-lg font-semibold">
+        {title}
+      </div>
       <div
-        className={`border-border/30 bg-foreground/5 text-foreground m-2 mt-0 flex items-center justify-center rounded border p-4 text-2xl font-bold ${
+        className={`border-border/30 bg-foreground/5 text-foreground m-2 mt-0 line-clamp-1 rounded border p-4 text-center text-2xl font-bold ${
           !!onClick || !!href
             ? 'transition-all duration-300 group-hover:rounded-lg'
             : ''

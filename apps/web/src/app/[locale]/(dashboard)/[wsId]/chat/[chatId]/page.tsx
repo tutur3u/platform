@@ -7,31 +7,26 @@ import { Message } from 'ai';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     chatId?: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     lang: string;
-  };
+  }>;
 }
 
-export default async function AIPage({
-  params: { wsId, chatId },
-  searchParams,
-}: Props) {
+export default async function AIPage({ params, searchParams }: Props) {
+  const { wsId, chatId } = await params;
   await verifyHasSecrets(wsId, ['ENABLE_CHAT'], `/${wsId}`);
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['ai_chat'],
   });
 
-  if (!permissions.includes('ai_chat')) notFound();
-
+  if (withoutPermission('ai_chat')) notFound();
   if (!chatId) notFound();
 
-  const { lang: locale } = searchParams;
-
+  const { lang: locale } = await searchParams;
   const messages = await getMessages(chatId);
 
   const chat = await getChat(chatId);
@@ -62,7 +57,7 @@ const hasKey = (key: string) => {
 };
 
 const getMessages = async (chatId: string) => {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('ai_chat_messages')
@@ -82,7 +77,7 @@ const getMessages = async (chatId: string) => {
 };
 
 const getChat = async (chatId: string) => {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('ai_chats')

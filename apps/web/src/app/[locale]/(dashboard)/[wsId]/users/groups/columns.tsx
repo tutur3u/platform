@@ -59,6 +59,22 @@ export const getUserGroupColumns = (
       </Link>
     ),
   },
+  // {
+  //   accessorKey: 'attendance_stats',
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader
+  //       t={t}
+  //       column={column}
+  //       title={t(`${namespace}.attendance_stats`)}
+  //     />
+  //   ),
+  //   cell: ({ row }) => (
+  //     <GroupAttendanceStats
+  //       groupId={row.original.id}
+  //       count={row.original.amount || 0}
+  //     />
+  //   ),
+  // },
   {
     accessorKey: 'amount',
     header: ({ column }) => (

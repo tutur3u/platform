@@ -1,5 +1,5 @@
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import dayjs from 'dayjs';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 
 export default function CalendarHeader({
@@ -54,7 +54,7 @@ export default function CalendarHeader({
             className="h-full rounded-l-lg bg-zinc-500/10 p-2 text-3xl transition hover:bg-zinc-500/20 dark:bg-zinc-300/10 dark:hover:bg-zinc-300/20"
             onClick={handlePrev}
           >
-            <ChevronLeftIcon className="w-4" />
+            <ChevronLeft className="w-4" />
           </button>
 
           <button
@@ -76,7 +76,7 @@ export default function CalendarHeader({
             className="h-full rounded-r-lg bg-zinc-500/10 p-2 text-3xl transition hover:bg-zinc-500/20 dark:bg-zinc-300/10 dark:hover:bg-zinc-300/20"
             onClick={handleNext}
           >
-            <ChevronRightIcon className="w-4" />
+            <ChevronRight className="w-4" />
           </button>
         </div>
 

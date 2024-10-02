@@ -4,18 +4,24 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId?: string;
     page?: string;
     ops?: string[];
     userIds?: string[];
     itemsPerPage?: string;
-  };
+  }>;
 }
 
-export default async function WorkspaceActivitiesPage({
-  params: { wsId, page = '1', ops = [], userIds = [], itemsPerPage = '15' },
-}: Props) {
+export default async function WorkspaceActivitiesPage({ params }: Props) {
+  const {
+    wsId,
+    page = '1',
+    ops = [],
+    userIds = [],
+    itemsPerPage = '15',
+  } = await params;
+
   if (!wsId) notFound();
 
   const logs = await getLogs(wsId, page, ops, userIds, itemsPerPage);
@@ -34,7 +40,7 @@ async function getLogs(
   userIds: string[],
   itemsPerPage: string
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('audit_logs')

@@ -13,7 +13,7 @@ interface SearchParams {
 }
 
 const DEFAULT_PAGE = '1';
-const DEFAULT_PAGE_SIZE = '6';
+const DEFAULT_PAGE_SIZE = '24';
 
 export default async function UserAttendances({
   wsId,
@@ -45,7 +45,7 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .rpc(

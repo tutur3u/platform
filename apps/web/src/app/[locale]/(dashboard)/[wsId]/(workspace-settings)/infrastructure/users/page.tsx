@@ -8,14 +8,13 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function InfrastructureUsersPage({
-  params: { wsId },
-}: Props) {
+export default async function InfrastructureUsersPage({ params }: Props) {
+  const { wsId } = await params;
   await enforceRootWorkspaceAdmin(wsId, {
     redirectTo: `/${wsId}/settings`,
   });
@@ -42,7 +41,7 @@ export default async function InfrastructureUsersPage({
 }
 
 async function getUsers() {
-  const supabaseAdmin = createAdminClient();
+  const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) notFound();
 
   const { data } = await supabaseAdmin.from('users').select('*');
@@ -51,7 +50,7 @@ async function getUsers() {
 }
 
 async function getUserCount() {
-  const supabaseAdmin = createAdminClient();
+  const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) notFound();
 
   const { count } = await supabaseAdmin.from('users').select('*', {

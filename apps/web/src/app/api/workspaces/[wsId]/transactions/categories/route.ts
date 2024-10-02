@@ -2,17 +2,18 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { wsId: id } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId } = await params;
 
   const { data, error } = await supabase
     .rpc('get_transaction_categories_with_amount', {}, { count: 'exact' })
-    .eq('ws_id', id)
+    .eq('ws_id', wsId)
     .order('name', { ascending: true });
 
   if (error) {
@@ -26,16 +27,16 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request, { params: { wsId: id } }: Params) {
-  const supabase = createClient();
-
+export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { wsId } = await params;
 
   const { error } = await supabase
     .from('transaction_categories')
     .upsert({
       ...data,
-      ws_id: id,
+      ws_id: wsId,
     })
     .eq('id', data.id);
 
