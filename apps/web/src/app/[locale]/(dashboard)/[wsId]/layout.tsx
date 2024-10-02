@@ -32,17 +32,15 @@ import { cookies } from 'next/headers';
 import { type ReactNode, Suspense } from 'react';
 
 interface LayoutProps {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
   children: ReactNode;
 }
 
-export default async function Layout({
-  children,
-  params: { wsId },
-}: LayoutProps) {
+export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
+  const { wsId } = await params;
 
   const secrets = await getSecrets({
     wsId,
@@ -191,8 +189,8 @@ export default async function Layout({
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
-  const layout = cookies().get('react-resizable-panels:layout:default');
-  const collapsed = cookies().get('react-resizable-panels:collapsed');
+  const layout = (await cookies()).get('react-resizable-panels:layout:default');
+  const collapsed = (await cookies()).get('react-resizable-panels:collapsed');
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined;
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;

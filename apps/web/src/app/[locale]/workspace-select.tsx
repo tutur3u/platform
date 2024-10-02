@@ -489,7 +489,7 @@ export default function WorkspaceSelect({
 }
 
 async function fetchWorkspaces() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },

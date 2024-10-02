@@ -9,7 +9,7 @@ export default async function UsersStatistics({
   wsId: string;
   redirect?: boolean;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const t = await getTranslations();
 
   const enabled = true;

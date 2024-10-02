@@ -9,7 +9,7 @@ export const preferredRegion = 'sin1';
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
 
 export async function POST(req: Request) {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const {
     id,
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const {
       data: { user },

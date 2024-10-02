@@ -20,12 +20,13 @@ const sesClient = new SESClient({
 export async function POST(
   req: NextRequest,
   {
-    params: { wsId, postId },
+    params,
   }: {
-    params: { wsId: string; postId: string };
+    params: Promise<{ wsId: string; postId: string }>;
   }
 ) {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
+  const { wsId, postId } = await params;
 
   const { withoutPermission } = await getPermissions({
     wsId,
@@ -110,7 +111,7 @@ const sendEmail = async ({
   postId: string;
 }) => {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data } = await supabase
       .from('sent_emails')

@@ -9,21 +9,25 @@ import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q?: string;
     page?: string;
     pageSize?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceUserFieldsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  const { data: userFields, count } = await getUserFields(wsId, searchParams);
+  const { wsId } = await params;
+  const { data: userFields, count } = await getUserFields(
+    wsId,
+    await searchParams
+  );
   const t = await getTranslations('ws-user-fields');
 
   return (
@@ -75,7 +79,7 @@ async function getUserFields(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_fields')

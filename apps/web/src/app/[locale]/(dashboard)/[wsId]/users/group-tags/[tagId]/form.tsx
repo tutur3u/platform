@@ -126,7 +126,7 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
 }
 
 async function getWorkspaceUserGroups(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups')
@@ -141,7 +141,7 @@ async function getWorkspaceUserGroups(wsId: string) {
 }
 
 async function getUserGroups(tagId: string, query?: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_group_tag_groups')

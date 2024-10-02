@@ -6,14 +6,14 @@ import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     chatId: string;
-  };
+  }>;
 }
 
 const getChat = async (chatId: string) => {
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('ai_chats')
@@ -31,8 +31,10 @@ const getChat = async (chatId: string) => {
 };
 
 export const generateMetadata = async ({
-  params: { locale, chatId },
+  params,
 }: Props): Promise<Metadata> => {
+  const { locale, chatId } = await params;
+
   const viTitle = 'Trò chuyện AI';
   const enTitle = 'AI Chat';
 

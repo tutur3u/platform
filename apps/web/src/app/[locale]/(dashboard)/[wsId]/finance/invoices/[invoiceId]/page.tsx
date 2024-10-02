@@ -18,16 +18,15 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     invoiceId: string;
     locale: string;
-  };
+  }>;
 }
 
-export default async function InvoiceDetailsPage({
-  params: { wsId, invoiceId, locale },
-}: Props) {
+export default async function InvoiceDetailsPage({ params }: Props) {
+  const { wsId, invoiceId, locale } = await params;
   const t = await getTranslations();
 
   const invoice = await getInvoice(invoiceId);
@@ -182,7 +181,7 @@ function DetailItem({
 }
 
 async function getInvoice(invoiceId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: invoice, error: invoiceError } = await supabase
     .from('finance_invoices')
@@ -198,7 +197,7 @@ async function getInvoice(invoiceId: string) {
 }
 
 async function getProducts(invoiceId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: products, error: productsError } = await supabase
     .from('finance_invoice_products')
@@ -211,7 +210,7 @@ async function getProducts(invoiceId: string) {
 }
 
 async function getPromotions(invoiceId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: promotions, error: promotionsError } = await supabase
     .from('finance_invoice_promotions')
@@ -224,7 +223,7 @@ async function getPromotions(invoiceId: string) {
 }
 
 async function getConfigs(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_configs')

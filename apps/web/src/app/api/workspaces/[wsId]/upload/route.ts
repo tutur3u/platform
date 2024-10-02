@@ -3,12 +3,14 @@ import { generateRandomUUID } from '@/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function POST(req: Request, { params: { wsId } }: Props) {
+export async function POST(req: Request, { params }: Props) {
+  const { wsId } = await params;
+
   // Parse the request URL
   const url = new URL(req.url);
 
@@ -22,7 +24,7 @@ export async function POST(req: Request, { params: { wsId } }: Props) {
     return NextResponse.json({ message: 'No file found' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.storage
     .from(`workspaces/${wsId}`)

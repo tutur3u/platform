@@ -9,21 +9,22 @@ import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q?: string;
     page?: string;
     pageSize?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceSecretsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  const { data: secrets, count } = await getSecrets(wsId, searchParams);
+  const { wsId } = await params;
+  const { data: secrets, count } = await getSecrets(wsId, await searchParams);
   const t = await getTranslations('ws-secrets');
 
   return (
@@ -72,7 +73,7 @@ async function getSecrets(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_secrets')

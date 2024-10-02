@@ -10,7 +10,7 @@ import { notFound, redirect } from 'next/navigation';
 export async function getWorkspace(id?: string) {
   if (!id) return null;
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -39,7 +39,7 @@ export async function getWorkspace(id?: string) {
 }
 
 export async function getWorkspaces(noRedirect?: boolean) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -63,7 +63,7 @@ export async function getWorkspaces(noRedirect?: boolean) {
 }
 
 export async function getWorkspaceInvites() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -118,7 +118,7 @@ export async function enforceRootWorkspaceAdmin(
 ) {
   enforceRootWorkspace(wsId, options);
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -149,7 +149,7 @@ export async function getSecrets({
   requiredSecrets?: string[];
   forceAdmin?: boolean;
 }) {
-  const supabase = forceAdmin ? createAdminClient() : createClient();
+  const supabase = await (forceAdmin ? createAdminClient() : createClient());
   const queryBuilder = supabase.from('workspace_secrets').select('*');
 
   if (wsId) queryBuilder.eq('ws_id', wsId);
@@ -208,7 +208,7 @@ export async function getPermissions({
   redirectTo?: string;
   enableNotFound?: boolean;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },

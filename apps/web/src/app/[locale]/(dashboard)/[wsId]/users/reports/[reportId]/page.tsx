@@ -11,25 +11,27 @@ import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     reportId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
     groupId?: string;
     userId?: string;
     reportId?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceUserDetailsPage({
-  params: { wsId, reportId },
-  searchParams: { groupId, userId },
+  params,
+  searchParams,
 }: Props) {
   const t = await getTranslations('user-data-table');
+  const { wsId, reportId } = await params;
+  const { groupId, userId } = await searchParams;
 
   const report =
     reportId === 'new'
@@ -142,7 +144,7 @@ export default async function WorkspaceUserDetailsPage({
 }
 
 async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -186,7 +188,7 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -203,7 +205,7 @@ async function getUserGroups(wsId: string) {
 }
 
 async function getUsers(wsId: string, groupId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -233,7 +235,7 @@ async function getReports(
   userId: string,
   forceRedirect = false
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('external_user_monthly_reports')
@@ -268,7 +270,7 @@ async function getReports(
 }
 
 async function getConfigs(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_configs')

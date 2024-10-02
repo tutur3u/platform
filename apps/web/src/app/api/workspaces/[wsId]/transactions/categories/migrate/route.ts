@@ -3,22 +3,22 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function PUT(req: Request, { params: { wsId: id } }: Params) {
-  const supabase = createClient();
-
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { wsId } = await params;
 
   const { error } = await supabase
     .from('transaction_categories')
     .upsert(
       (data?.categories || []).map((c: TransactionCategory) => ({
         ...c,
-        ws_id: id,
+        ws_id: wsId,
       }))
     )
     .eq('id', data.id);

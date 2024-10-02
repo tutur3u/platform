@@ -3,7 +3,7 @@ import { getCurrentUser } from '@/lib/user-helper';
 import { createClient } from '@/utils/supabase/server';
 
 export default async function ServerMenu() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user: sbUser },

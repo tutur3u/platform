@@ -2,13 +2,14 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     tagId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { tagId } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { tagId } = await params;
 
   const { data, error } = await supabase
     .from('workspace_user_group_tag_groups')
@@ -28,8 +29,9 @@ export async function GET(_: Request, { params: { tagId } }: Params) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request, { params: { tagId } }: Params) {
-  const supabase = createClient();
+export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { tagId } = await params;
 
   const data = (await req.json()) as {
     groupIds: string[];

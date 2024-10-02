@@ -3,13 +3,14 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { wsId } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId } = await params;
 
   const { data, error } = await supabase
     .from('workspace_wallets')
@@ -30,9 +31,9 @@ export async function GET(_: Request, { params: { wsId } }: Params) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request, { params: { wsId } }: Params) {
-  const supabase = createClient();
-
+export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId } = await params;
   const data: Wallet = await req.json();
 
   const { error } = await supabase.from('workspace_wallets').upsert({

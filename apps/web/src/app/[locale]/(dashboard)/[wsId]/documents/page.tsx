@@ -9,12 +9,13 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function DocumentsPage({ params: { wsId } }: Props) {
+export default async function DocumentsPage({ params }: Props) {
+  const { wsId } = await params;
   const ws = await getWorkspace(wsId);
   const documents = await getDocuments(wsId);
 
@@ -112,7 +113,7 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
 }
 
 async function getDocuments(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data } = await supabase
     .from('workspace_documents')

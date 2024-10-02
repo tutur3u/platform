@@ -11,27 +11,28 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     walletId: string;
     locale: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function WalletDetailsPage({
-  params: { wsId, walletId, locale },
+  params,
   searchParams,
 }: Props) {
   const t = await getTranslations();
+  const { wsId, walletId, locale } = await params;
   const { wallet } = await getData(walletId);
   const { data: rawData, count } = await getTransactions(
     walletId,
-    searchParams
+    await searchParams
   );
 
   const transactions = rawData.map((d) => ({
@@ -139,7 +140,7 @@ function DetailItem({
 }
 
 async function getData(walletId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: wallet, error: walletError } = await supabase
     .from('workspace_wallets')
@@ -160,7 +161,7 @@ async function getTransactions(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('wallet_transactions')

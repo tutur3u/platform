@@ -22,23 +22,24 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function WorkspaceUserAttendancePage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
   const locale = await getLocale();
   const t = await getTranslations();
+  const { wsId } = await params;
 
   const { data: userGroups } = await getUserGroups(wsId);
   const { data: excludedUserGroups } = await getExcludedUserGroups(
     wsId,
-    searchParams
+    await searchParams
   );
 
   return (
@@ -83,16 +84,16 @@ export default async function WorkspaceUserAttendancePage({
       </div>
 
       <Suspense
-        fallback={<UserAttendancesSkeleton searchParams={searchParams} />}
+        fallback={<UserAttendancesSkeleton searchParams={await searchParams} />}
       >
-        <UserAttendances wsId={wsId} searchParams={searchParams} />
+        <UserAttendances wsId={wsId} searchParams={await searchParams} />
       </Suspense>
     </>
   );
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -112,7 +113,7 @@ async function getExcludedUserGroups(
   wsId: string,
   { includedGroups }: SearchParams
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   if (!includedGroups || includedGroups.length === 0) {
     return getUserGroups(wsId);

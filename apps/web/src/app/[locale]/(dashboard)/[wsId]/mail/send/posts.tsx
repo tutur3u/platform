@@ -92,7 +92,7 @@ export default function MailPosts({
 }
 
 async function getGroupPosts(groupIds: string[]) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('user_group_posts')

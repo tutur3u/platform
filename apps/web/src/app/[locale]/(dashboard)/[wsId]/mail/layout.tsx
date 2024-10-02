@@ -5,17 +5,15 @@ import { redirect } from 'next/navigation';
 import type React from 'react';
 
 interface LayoutProps {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
   children: React.ReactNode;
 }
 
-export default async function Layout({
-  children,
-  params: { wsId },
-}: LayoutProps) {
+export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
+  const { wsId } = await params;
 
   const secrets = await getSecrets({
     wsId,

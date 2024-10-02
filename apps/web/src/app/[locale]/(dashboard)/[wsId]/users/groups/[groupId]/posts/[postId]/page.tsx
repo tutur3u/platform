@@ -18,26 +18,28 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     wsId: string;
     groupId: string;
     postId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
-export default async function HomeworkCheck({
-  params: { wsId, groupId, postId },
-  searchParams,
-}: Props) {
+export default async function HomeworkCheck({ params, searchParams }: Props) {
   const t = await getTranslations();
+  const { wsId, groupId, postId } = await params;
 
   const post = await getPostData(postId);
   const group = await getGroupData(wsId, groupId);
   const status = await getPostStatus(groupId, postId);
 
-  const { data: rawUsers } = await getUserData(wsId, groupId, searchParams);
+  const { data: rawUsers } = await getUserData(
+    wsId,
+    groupId,
+    await searchParams
+  );
   const users = rawUsers.map((u) => ({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
@@ -155,7 +157,7 @@ export default async function HomeworkCheck({
 }
 
 async function getPostData(postId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('user_group_posts')
@@ -170,7 +172,7 @@ async function getPostData(postId: string) {
 }
 
 async function getGroupData(wsId: string, groupId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('workspace_user_groups')
@@ -186,7 +188,7 @@ async function getGroupData(wsId: string, groupId: string) {
 }
 
 async function getPostStatus(groupId: string, postId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: users, count } = await supabase
     .from('workspace_user_groups_users')
@@ -230,7 +232,7 @@ async function getUserData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .rpc(

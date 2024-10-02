@@ -3,12 +3,13 @@ import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { redirect } from 'next/navigation';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function CalendarPage({ params: { wsId } }: PageProps) {
+export default async function CalendarPage({ params }: PageProps) {
+  const { wsId } = await params;
   const workspace = await getWorkspace(wsId);
 
   const { withoutPermission } = await getPermissions({

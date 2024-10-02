@@ -3,7 +3,7 @@ import useEmail from '@/hooks/useEmail';
 import { PostEmail } from '@/types/primitives/post-email';
 import { Button } from '@repo/ui/components/ui/button';
 import dayjs from 'dayjs';
-import { CircleAlert, MailCheck, Send } from 'lucide-react';
+import { CircleAlert, CircleSlash, MailCheck, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 export default function RowActions({ data }: { data: PostEmail }) {
@@ -59,6 +59,7 @@ export default function RowActions({ data }: { data: PostEmail }) {
           !data.email ||
           !!data.email_id ||
           !sendable ||
+          data.email.includes('@easy') ||
           success
         }
         variant={
@@ -69,7 +70,9 @@ export default function RowActions({ data }: { data: PostEmail }) {
               : 'outline'
         }
       >
-        {error ? (
+        {data?.email?.includes('@easy') ? (
+          <CircleSlash className="h-4 w-4" />
+        ) : error ? (
           <CircleAlert className="h-4 w-4" />
         ) : loading ? (
           <LoadingIndicator />
