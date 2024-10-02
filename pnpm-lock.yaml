@@ -127,7 +127,7 @@ importers:
         version: 0.1.22(next@15.0.0-canary.175(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-3feb7e4-20240930)(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930)(vite@5.4.8(@types/node@22.7.4))
       ai:
         specifier: ^3.4.7
-        version: 3.4.7(openai@4.67.0(zod@3.23.8))(react@19.0.0-rc-2d16326d-20240930)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.5.10(typescript@5.6.2))(zod@3.23.8)
+        version: 3.4.7(openai@4.67.1(zod@3.23.8))(react@19.0.0-rc-2d16326d-20240930)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.5.10(typescript@5.6.2))(zod@3.23.8)
       babel-plugin-react-compiler:
         specifier: 0.0.0-experimental-3feb7e4-20240930
         version: 0.0.0-experimental-3feb7e4-20240930
@@ -165,8 +165,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930)
       openai:
-        specifier: ^4.67.0
-        version: 4.67.0(zod@3.23.8)
+        specifier: ^4.67.1
+        version: 4.67.1(zod@3.23.8)
       pptxgenjs:
         specifier: ^3.12.0
         version: 3.12.0
@@ -422,7 +422,7 @@ importers:
         version: 0.1.22(next@15.0.0-canary.175(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-3feb7e4-20240930)(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930)(vite@5.4.8(@types/node@22.7.4))
       ai:
         specifier: ^3.4.7
-        version: 3.4.7(openai@4.67.0(zod@3.23.8))(react@19.0.0-rc-2d16326d-20240930)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.5.10(typescript@5.6.2))(zod@3.23.8)
+        version: 3.4.7(openai@4.67.1(zod@3.23.8))(react@19.0.0-rc-2d16326d-20240930)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.5.10(typescript@5.6.2))(zod@3.23.8)
       babel-plugin-react-compiler:
         specifier: 0.0.0-experimental-3feb7e4-20240930
         version: 0.0.0-experimental-3feb7e4-20240930
@@ -469,8 +469,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930)
       openai:
-        specifier: ^4.67.0
-        version: 4.67.0(zod@3.23.8)
+        specifier: ^4.67.1
+        version: 4.67.1(zod@3.23.8)
       pptxgenjs:
         specifier: ^3.12.0
         version: 3.12.0
@@ -6472,8 +6472,8 @@ packages:
     resolution: {integrity: sha512-VXJjc87FScF88uafS3JllDgvAm+c/Slfz06lorj2uAY34rlUu0Nt+v8wreiImcrgAjjIHp1rXpTDlLOGw29WwQ==}
     engines: {node: '>=18'}
 
-  openai@4.67.0:
-    resolution: {integrity: sha512-jdsPSEdZbUNVtvEFE/eeL4FjKavyVMJJEdGMZk9vExglqUrblEcFxi3LK2WhskhrYKAU1MgJAI+dK9pDcA5z5w==}
+  openai@4.67.1:
+    resolution: {integrity: sha512-2YbRFy6qaYRJabK2zLMn4txrB2xBy0KP5g/eoqeSPTT31mIJMnkT75toagvfE555IKa2RdrzJrZwdDsUipsAMw==}
     hasBin: true
     peerDependencies:
       zod: ^3.23.8
@@ -12073,7 +12073,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@3.4.7(openai@4.67.0(zod@3.23.8))(react@19.0.0-rc-2d16326d-20240930)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.5.10(typescript@5.6.2))(zod@3.23.8):
+  ai@3.4.7(openai@4.67.1(zod@3.23.8))(react@19.0.0-rc-2d16326d-20240930)(sswr@2.1.0(svelte@4.2.19))(svelte@4.2.19)(vue@3.5.10(typescript@5.6.2))(zod@3.23.8):
     dependencies:
       '@ai-sdk/provider': 0.0.24
       '@ai-sdk/provider-utils': 1.0.20(zod@3.23.8)
@@ -12090,7 +12090,7 @@ snapshots:
       secure-json-parse: 2.7.0
       zod-to-json-schema: 3.23.2(zod@3.23.8)
     optionalDependencies:
-      openai: 4.67.0(zod@3.23.8)
+      openai: 4.67.1(zod@3.23.8)
       react: 19.0.0-rc-2d16326d-20240930
       sswr: 2.1.0(svelte@4.2.19)
       svelte: 4.2.19
@@ -15152,7 +15152,7 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  openai@4.67.0(zod@3.23.8):
+  openai@4.67.1(zod@3.23.8):
     dependencies:
       '@types/node': 18.19.54
       '@types/node-fetch': 2.6.11
