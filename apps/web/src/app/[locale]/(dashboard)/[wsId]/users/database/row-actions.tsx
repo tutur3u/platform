@@ -39,7 +39,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
-import { Eye, X as UserIcon, XIcon } from 'lucide-react';
+import { Ellipsis, Eye, X as UserIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
