@@ -21,7 +21,8 @@ interface Props {
   }>;
 }
 
-export function generateMetadata({ params: { locale } }: Props): Metadata {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
   const enDescription =
     'The best tech club for SSET students at RMIT University.';
   const viDescription =
