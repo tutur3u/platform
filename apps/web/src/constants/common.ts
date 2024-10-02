@@ -31,6 +31,7 @@ export const PUBLIC_PATHS = [
   '/about',
   '/projects',
   '/neo-crush',
+  '/neo-chess',
   '/terms',
   '/privacy',
   '/branding',
