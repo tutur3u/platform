@@ -797,8 +797,8 @@ importers:
         specifier: 19.0.0-rc-2d16326d-20240930
         version: 19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930)
       react-dropzone:
-        specifier: ^14.2.3
-        version: 14.2.3(react@19.0.0-rc-2d16326d-20240930)
+        specifier: ^14.2.9
+        version: 14.2.9(react@19.0.0-rc-2d16326d-20240930)
       react-hook-form:
         specifier: ^7.53.0
         version: 7.53.0(react@19.0.0-rc-2d16326d-20240930)
@@ -6862,8 +6862,8 @@ packages:
       react: '>= 16.3.0'
       react-dom: '>= 16.3.0'
 
-  react-dropzone@14.2.3:
-    resolution: {integrity: sha512-O3om8I+PkFKbxCukfIR3QAGftYXDZfOE2N1mr/7qebQJHs7U+/RSL/9xomJNpRg9kM5h9soQSdf0Gc7OHF5Fug==}
+  react-dropzone@14.2.9:
+    resolution: {integrity: sha512-jRZsMC7h48WONsOLHcmhyn3cRWJoIPQjPApvt/sJVfnYaB3Qltn025AoRTTJaj4WdmmgmLl6tUQg1s0wOhpodQ==}
     engines: {node: '>= 10.13'}
     peerDependencies:
       react: '>= 16.8 || 18.0.0'
@@ -15499,7 +15499,7 @@ snapshots:
       react: 19.0.0-rc-2d16326d-20240930
       react-dom: 19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930)
 
-  react-dropzone@14.2.3(react@19.0.0-rc-2d16326d-20240930):
+  react-dropzone@14.2.9(react@19.0.0-rc-2d16326d-20240930):
     dependencies:
       attr-accept: 2.2.2
       file-selector: 0.6.0
