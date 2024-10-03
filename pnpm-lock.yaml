@@ -114,8 +114,8 @@ importers:
         specifier: ^8.20.5
         version: 8.20.5(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930)
       '@upstash/qstash':
-        specifier: ^2.7.10
-        version: 2.7.10
+        specifier: ^2.7.12
+        version: 2.7.12
       '@vercel/analytics':
         specifier: ^1.3.1
         version: 1.3.1(next@15.0.0-canary.175(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-3feb7e4-20240930)(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930)
@@ -409,8 +409,8 @@ importers:
         specifier: ^8.20.5
         version: 8.20.5(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930)
       '@upstash/qstash':
-        specifier: ^2.7.10
-        version: 2.7.10
+        specifier: ^2.7.12
+        version: 2.7.12
       '@vercel/analytics':
         specifier: ^1.3.1
         version: 1.3.1(next@15.0.0-canary.175(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-3feb7e4-20240930)(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930)
@@ -3794,8 +3794,8 @@ packages:
   '@ungap/structured-clone@1.2.0':
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  '@upstash/qstash@2.7.10':
-    resolution: {integrity: sha512-LKRQ+iMyzfTCq7Cw/GPv+ncI6c/gW9ZgSx9rFra7crAEix6iSqbwPDQY3zm0GafUCAiVtt1VvHFxcrPF2R3WGA==}
+  '@upstash/qstash@2.7.12':
+    resolution: {integrity: sha512-QUCIA8eFciExQ2pmEbuVJMf35fFGCGkqBLUOhaOLcqzyoZu3w7N/jtEZgxq8R73o2kkcoRRQJFJMF+TGBUJ+nw==}
 
   '@vercel/analytics@1.3.1':
     resolution: {integrity: sha512-xhSlYgAuJ6Q4WQGkzYTLmXwhYl39sWjoMA3nHxfkvG+WdBT25c563a7QhwwKivEOZtPJXifYHR1m2ihoisbWyA==}
@@ -6299,6 +6299,10 @@ packages:
   negotiator@0.6.3:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
+
+  neverthrow@7.2.0:
+    resolution: {integrity: sha512-iGBUfFB7yPczHHtA8dksKTJ9E8TESNTAx1UQWW6TzMF280vo9jdPYpLUXrMN1BCkPdHFdNG3fxOt2CUad8KhAw==}
+    engines: {node: '>=18'}
 
   next-intl@3.20.0:
     resolution: {integrity: sha512-0bCZcc38HfAZk/T+PNNcnJZknC+caS5rBK+WYRd1HsOL5O6puEu2H3kya8oT9s8piHjrTf7P0UHeahOFleOnrw==}
@@ -11860,10 +11864,11 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@upstash/qstash@2.7.10':
+  '@upstash/qstash@2.7.12':
     dependencies:
       crypto-js: 4.2.0
       jose: 5.9.3
+      neverthrow: 7.2.0
 
   '@vercel/analytics@1.3.1(next@15.0.0-canary.175(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-3feb7e4-20240930)(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930)':
     dependencies:
@@ -14937,6 +14942,8 @@ snapshots:
   natural-compare@1.4.0: {}
 
   negotiator@0.6.3: {}
+
+  neverthrow@7.2.0: {}
 
   next-intl@3.20.0(next@15.0.0-canary.175(@babel/core@7.25.2)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@0.0.0-experimental-3feb7e4-20240930)(react-dom@19.0.0-rc-2d16326d-20240930(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930))(react@19.0.0-rc-2d16326d-20240930):
     dependencies:
