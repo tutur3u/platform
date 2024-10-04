@@ -57,7 +57,7 @@ export default class Referee {
         const horizontalDistance = Math.round(currX - startX);
 
         const isDiagonalMove = Math.abs(horizontalDistance) === Math.abs(verticalDistance);
-        const isStraightMove = horizontalDistance === 0 || verticalDistance === 0;
+        // const isStraightMove = horizontalDistance === 0 || verticalDistance === 0;
 
         if (type === PieceType.PAWN) {
             const pawnDirection = isOurTeam ? -1 : 1;
