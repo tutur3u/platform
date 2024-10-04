@@ -82,7 +82,7 @@ export default async function MemberList({
               <span className="opacity-50">Unknown</span>
             )}{' '}
             {member?.role_title ? (
-              <span className="text-orange-300">({member.role_title})</span>
+              <span className="text-dynamic-orange">({member.role_title})</span>
             ) : null}
           </p>
           <p

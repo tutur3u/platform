@@ -177,7 +177,7 @@ export default function GroupMemberForm({
 }
 
 async function getWorkspaceUsers(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_users')
@@ -192,7 +192,7 @@ async function getWorkspaceUsers(wsId: string) {
 }
 
 async function getUsers(groupId: string, query?: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_users')

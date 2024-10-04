@@ -1,38 +1,53 @@
+import { productUnitColumns } from './columns';
+import { ProductUnitForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { basicColumns } from '@/data/columns/basic';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductUnit } from '@/types/primitives/ProductUnit';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceUnitsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
-  const { data, count } = await getData(wsId, searchParams);
+  const t = await getTranslations();
+  const { wsId } = await params;
+  const { data, count } = await getData(wsId, await searchParams);
 
   return (
-    <CustomDataTable
-      data={data}
-      columnGenerator={basicColumns}
-      namespace="basic-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        created_at: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-inventory-units.plural')}
+        singularTitle={t('ws-inventory-units.singular')}
+        description={t('ws-inventory-units.description')}
+        createTitle={t('ws-inventory-units.create')}
+        createDescription={t('ws-inventory-units.create_description')}
+        form={<ProductUnitForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={data}
+        columnGenerator={productUnitColumns}
+        namespace="basic-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
   );
 }
 
@@ -44,7 +59,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('inventory_units')

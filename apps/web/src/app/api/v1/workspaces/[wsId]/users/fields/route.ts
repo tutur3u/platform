@@ -2,18 +2,19 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { wsId: id } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId } = await params;
 
   const { data, error } = await supabase
     .from('workspace_user_fields')
     .select('*')
-    .eq('ws_id', id)
+    .eq('ws_id', wsId)
     .single();
 
   if (error) {
@@ -27,10 +28,10 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request, { params: { wsId: id } }: Params) {
-  const supabase = createClient();
-
+export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { wsId } = await params;
 
   const possible_values = data.possible_values
     ? data.possible_values.filter((value: string) => value !== '')
@@ -43,7 +44,7 @@ export async function POST(req: Request, { params: { wsId: id } }: Params) {
 
   const { error } = await supabase.from('workspace_user_fields').insert({
     ...newData,
-    ws_id: id,
+    ws_id: wsId,
   });
 
   if (error) {

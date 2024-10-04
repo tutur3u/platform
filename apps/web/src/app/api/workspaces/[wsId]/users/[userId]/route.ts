@@ -2,22 +2,20 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
     userId: string;
-  };
+  }>;
 }
 
-export async function GET(
-  _: Request,
-  { params: { wsId, userId: id } }: Params
-) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId, userId } = await params;
 
   const { data, error } = await supabase
     .from('workspace_users')
     .select('*')
-    .eq('id', id)
+    .eq('id', userId)
     .eq('ws_id', wsId)
     .single();
 
@@ -30,18 +28,15 @@ export async function GET(
   return NextResponse.json(data);
 }
 
-export async function PUT(
-  req: Request,
-  { params: { wsId, userId: id } }: Params
-) {
-  const supabase = createClient();
-
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { wsId, userId } = await params;
 
   const { error } = await supabase
     .from('workspace_users')
     .update(data)
-    .eq('id', id)
+    .eq('id', userId)
     .eq('ws_id', wsId);
 
   if (error)
@@ -53,16 +48,14 @@ export async function PUT(
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(
-  _: Request,
-  { params: { wsId, userId: id } }: Params
-) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId, userId } = await params;
 
   const { error } = await supabase
     .from('workspace_users')
     .delete()
-    .eq('id', id)
+    .eq('id', userId)
     .eq('ws_id', wsId);
 
   if (error)
