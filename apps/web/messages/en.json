@@ -2,9 +2,12 @@
   "common": {
     "and": "and",
     "login": "Login",
+    "export-content":"Please choose file type to export: ",
     "maximize": "Maximize",
+    "file-type":"File Type",
     "productivity": "productivity",
     "minimize": "minimize",
+    "export":"Export",
     "stress": "stress",
     "underconstruction": "Under Construction",
     "coming_soon": "Coming Soon",

@@ -52,6 +52,7 @@
     "@mantine/core": "^7.13.1",
     "@mantine/hooks": "^7.13.1",
     "@mantine/modals": "^7.13.1",
+    "@radix-ui/react-dialog": "^1.1.2",
     "@react-email/components": "0.0.25",
     "@react-email/tailwind": "1.0.0-canary.1",
     "@repo/ui": "workspace:*",
