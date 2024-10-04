@@ -12,22 +12,25 @@ export default class Referee {
         return piece !== undefined && piece.team !== team;
     }
 
-    // private isPathClear(startX: number, startY: number, endX: number, endY: number, boardState: Piece[]): boolean {
-    //     const xDirection = Math.sign(endX - startX);
-    //     const yDirection = Math.sign(endY - startY);
-    //     let x = startX + xDirection;
-    //     let y = startY + yDirection;
+    private isPathClear(verticalDistance: number, horizontalDistance: number, cellSize: number, boardState: Piece[], row: number, column: number): boolean {
+        const rowDirection = verticalDistance === 0 ? 0 : (verticalDistance > 0 ? 1 : -1);
+        const colDirection = horizontalDistance === 0 ? 0 : (horizontalDistance > 0 ? 1 : -1);
+        const steps = verticalDistance !== 0 ? (Math.abs(verticalDistance)/ Math.round(cellSize)) : (Math.abs(horizontalDistance)/ Math.round(cellSize));
 
-    //     while (x !== endX || y !== endY) {
-    //         if (this.tileIsOccupied(x, y, boardState)) {
-    //             return false;
-    //         }
-    //         x += xDirection;
-    //         y += yDirection;
-    //     }
+        for (let i = 1; i < steps; i++) {
+            let checkRow = 0;
+            let checkCol = 0;
 
-    //     return true;
-    // }
+            checkRow = row - i * rowDirection;
+            checkCol = column - i * colDirection;
+
+            if (this.tileIsOccupied(checkCol, checkRow, boardState)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     isValidMove(
         pieceId: string,
@@ -53,38 +56,35 @@ export default class Referee {
         const verticalDistance = Math.round(currY - startY);
         const horizontalDistance = Math.round(currX - startX);
 
+        const isDiagonalMove = Math.abs(horizontalDistance) === Math.abs(verticalDistance);
+        const isStraightMove = horizontalDistance === 0 || verticalDistance === 0;
+
         if (type === PieceType.PAWN) {
             const pawnDirection = isOurTeam ? -1 : 1;
 
             // MOVEMENT LOGIC
             if (Math.abs(horizontalDistance) === 0 && verticalDistance * pawnDirection > 0) {
-                if (firstMove) {
-                    if (Math.abs(verticalDistance) <= Math.round(cellSize * 2)) {
-                        const intermediateRow = isOurTeam ? row + 1 : row - 1;
-                        if (!this.tileIsOccupied(column, row, boardState) && (Math.abs(verticalDistance) === Math.round(cellSize) || !this.tileIsOccupied(column, intermediateRow, boardState))) {
-                            this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
-                            return true;
-                        }
-                    }
-                } else {
-                    if (Math.abs(verticalDistance) === Math.round(cellSize) && !this.tileIsOccupied(column, row, boardState)) {
-                        this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
-                        return true;
-                    }
-                }
-            }
-
-            // ATTACK LOGIC
-            else if (Math.abs(horizontalDistance) === Math.round(cellSize) && Math.abs(verticalDistance) === Math.round(cellSize) && verticalDistance * pawnDirection > 0) {
-                if (this.tileIsOccupiedByOpponent(column, row, team, boardState)) {
+                const intermediateRow = row - pawnDirection;
+                if (!this.tileIsOccupied(column, row, boardState) &&
+                    (
+                        (Math.abs(verticalDistance) === Math.round(cellSize) * 2 && firstMove && !this.tileIsOccupied(column, intermediateRow, boardState) && !this.tileIsOccupied(column, row, boardState))
+                        || Math.abs(verticalDistance) === Math.round(cellSize)
+                    )
+                ) {
                     this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
                     return true;
                 }
             }
+
+            // ATTACK LOGIC
+            else if (isDiagonalMove && Math.abs(verticalDistance) === Math.round(cellSize) && verticalDistance * pawnDirection > 0 && this.tileIsOccupiedByOpponent(column, row, team, boardState)) {
+                this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
+                return true;
+            }
         }
         else if (type === PieceType.KING) {
 
-            if (Math.round(verticalDistance) <= Math.round(cellSize) && Math.abs(horizontalDistance) <= Math.round(cellSize)) {
+            if (Math.abs(verticalDistance) <= Math.round(cellSize) && Math.abs(horizontalDistance) <= Math.round(cellSize)) {
                 if (!this.tileIsOccupied(column, row, boardState)                   // MOVEMENT LOGIC
                     || this.tileIsOccupiedByOpponent(column, row, team, boardState) // ATTACK LOGIC
                 ) {
@@ -93,42 +93,24 @@ export default class Referee {
                 }
             }
         }
-        // else if (type === PieceType.QUEEN) {
-        //     if (Math.round(verticalDistance) === Math.abs(horizontalDistance) || Math.round(verticalDistance) === 0 || Math.abs(horizontalDistance) === 0) {
-        //         if (this.isPathClear(startX, startY, currX, currY, boardState)) {
-        //             if (!this.tileIsOccupied(column, row, boardState)                   // MOVEMENT LOGIC
-        //                 || this.tileIsOccupiedByOpponent(column, row, team, boardState) // ATTACK LOGIC
-        //             ) {
-        //                 this.lastPositions.set(pieceId, { x: currX, y: currY });
-        //                 return true;
-        //             }
-        //         }
-        //     }
-        // }
         else if (type === PieceType.BISHOP) {
             
-            if (Math.abs(horizontalDistance) === Math.abs(verticalDistance)) {
-                const rowDirection = verticalDistance > 0 ? 1 : -1;
-                const colDirection = horizontalDistance > 0 ? 1 : -1;
-
-                const steps = Math.abs(verticalDistance)/ Math.round(cellSize);
-                for (let i = 1; i < steps; i++) {
-                    let checkRow = 0;
-                    let checkCol = 0;
-
-                    checkRow = row - i * rowDirection;
-                    checkCol = column - i * colDirection;
-
-                    if (this.tileIsOccupied(checkCol, checkRow, boardState)) {
-                        return false;
-                    }
-                }
-
-                if (!this.tileIsOccupied(column, row, boardState) || this.tileIsOccupiedByOpponent(column, row, team, boardState)) {
-                    this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
-                    console.log("Trying to move bishop");
-                    return true;
-                }
+            if (isDiagonalMove && this.isPathClear(verticalDistance, horizontalDistance, cellSize, boardState, row, column) &&
+                (!this.tileIsOccupied(column, row, boardState)                   // MOVEMENT LOGIC
+                || this.tileIsOccupiedByOpponent(column, row, team, boardState)) // ATTACK LOGIC
+            ) {
+                this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
+                return true;
+            }
+        }
+        else if (type === PieceType.QUEEN) {
+            
+            if (this.isPathClear(verticalDistance, horizontalDistance, cellSize, boardState, row, column) &&
+                (!this.tileIsOccupied(column, row, boardState)                   // MOVEMENT LOGIC
+                || this.tileIsOccupiedByOpponent(column, row, team, boardState)) // ATTACK LOGIC
+            ) {
+                this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
+                return true;
             }
         }
 
