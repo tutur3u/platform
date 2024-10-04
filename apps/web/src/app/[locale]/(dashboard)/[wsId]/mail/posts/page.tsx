@@ -1,4 +1,5 @@
 import { getPostEmailColumns } from './columns';
+import Filters from './filters';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { PostEmail } from '@/types/primitives/post-email';
 import { createClient } from '@/utils/supabase/server';
@@ -10,6 +11,9 @@ interface SearchParams {
   q?: string;
   page?: string;
   pageSize?: string;
+  userId?: string;
+  includedGroups?: string | string[];
+  excludedGroups?: string | string[];
 }
 
 interface Props {
@@ -26,7 +30,6 @@ export default async function WorkspacePostEmailsPage({
 }: Props) {
   const t = await getTranslations();
   const { locale, wsId } = await params;
-
   const { data, count } = await getData(wsId, await searchParams);
 
   return (
@@ -43,6 +46,9 @@ export default async function WorkspacePostEmailsPage({
         columnGenerator={getPostEmailColumns}
         extraData={{ locale }}
         count={count}
+        filters={
+          <Filters wsId={wsId} searchParams={await searchParams} noExclude />
+        }
         defaultVisibility={{
           id: false,
           email: false,
@@ -61,22 +67,44 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
+    includedGroups = [],
+    excludedGroups = [],
+    userId,
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
 
+  const hasFilters =
+    includedGroups.length > 0 || excludedGroups.length > 0 || userId;
+
   const queryBuilder = supabase
     .from('user_group_post_checks')
     .select(
-      'notes, user_id, email_id, is_completed, user:workspace_users!inner(email, display_name, full_name, ws_id), ...user_group_posts(post_id:id, post_title:title, post_content:content, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)',
+      `notes, user_id, email_id, is_completed, user:workspace_users!inner(email, display_name, full_name, ws_id), ...user_group_posts${
+        hasFilters ? '!inner' : ''
+      }(post_id:id, post_title:title, post_content:content, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)`,
       {
         count: 'exact',
       }
     )
     .eq('workspace_users.ws_id', wsId)
-    // workspace_users.email doesn't include @easy
     .not('workspace_users.email', 'ilike', '%@easy%');
+
+  if (includedGroups.length > 0) {
+    queryBuilder.in(
+      'user_group_posts.group_id',
+      Array.isArray(includedGroups) ? includedGroups : [includedGroups]
+    );
+  }
+
+  if (excludedGroups.length > 0) {
+    queryBuilder.not('user_group_posts.group_id', 'in', excludedGroups);
+  }
+
+  if (userId) {
+    queryBuilder.eq('user_id', userId);
+  }
 
   if (page && pageSize) {
     const parsedPage = Number.parseInt(page);
@@ -89,8 +117,6 @@ async function getData(
   const { data, error, count } = await queryBuilder.order('created_at', {
     ascending: false,
   });
-
-  // console.log('data', data);
 
   if (error) {
     if (!retry) throw error;
