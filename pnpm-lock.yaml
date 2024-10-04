@@ -66,8 +66,8 @@ importers:
         specifier: ^0.0.62
         version: 0.0.62(react@19.0.0-rc-2d16326d-20240930)(zod@3.23.8)
       '@anthropic-ai/sdk':
-        specifier: ^0.27.3
-        version: 0.27.3
+        specifier: ^0.28.0
+        version: 0.28.0
       '@aws-sdk/client-ses':
         specifier: ^3.664.0
         version: 3.664.0
@@ -343,8 +343,8 @@ importers:
         specifier: ^0.0.62
         version: 0.0.62(react@19.0.0-rc-2d16326d-20240930)(zod@3.23.8)
       '@anthropic-ai/sdk':
-        specifier: ^0.27.3
-        version: 0.27.3
+        specifier: ^0.28.0
+        version: 0.28.0
       '@aws-sdk/client-ses':
         specifier: ^3.664.0
         version: 3.664.0
@@ -992,8 +992,8 @@ packages:
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
 
-  '@anthropic-ai/sdk@0.27.3':
-    resolution: {integrity: sha512-IjLt0gd3L4jlOfilxVXTifn42FnVffMgDC04RJK1KDZpmkBWLv0XC92MVVmkxrFZNS/7l3xWgP/I3nqtX1sQHw==}
+  '@anthropic-ai/sdk@0.28.0':
+    resolution: {integrity: sha512-vV4mgpiw2HEg9hlkB91h7iB6izh3HhglExSdYQfFYyKxV05ajDsH/f6uxk1o2CpSKKFhpMQK1VQxz7JwBI/ADQ==}
 
   '@aws-crypto/crc32@5.2.0':
     resolution: {integrity: sha512-nLbCWqQNgUiwwtFsen1AdzAtvuLRsQS8rYgMuxCrdKf9kOssamGLuPwyTY9wyYblNr9+1XM8v6zoDTPPSIeANg==}
@@ -8165,7 +8165,7 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
 
-  '@anthropic-ai/sdk@0.27.3':
+  '@anthropic-ai/sdk@0.28.0':
     dependencies:
       '@types/node': 18.19.54
       '@types/node-fetch': 2.6.11
