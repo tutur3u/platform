@@ -1,6 +1,7 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
+import { cn } from '@/lib/utils';
 import {
   WorkspaceUser,
   WorkspaceUserAttendance,
@@ -23,10 +24,12 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 export default function UserMonthAttendance({
   wsId,
   user: initialUser,
+  noOutline,
 }: {
   wsId: string;
   user: WorkspaceUser & { href: string };
   defaultIncludedGroups?: string[];
+  noOutline?: boolean;
 }) {
   const locale = useLocale();
   const searchParams = useSearchParams();
@@ -168,7 +171,7 @@ export default function UserMonthAttendance({
     );
 
   return (
-    <div className="rounded-lg border p-4">
+    <div className={cn('rounded-lg', noOutline || 'border p-4')}>
       <div className="mb-2 flex w-full items-center border-b pb-2">
         <div className="aspect-square h-12 w-12 flex-none rounded-lg bg-gradient-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
         <div className="flex w-full items-start justify-between gap-2">

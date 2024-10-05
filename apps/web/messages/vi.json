@@ -490,7 +490,8 @@
     "revert_changes": "Hoàn tác",
     "apply_changes": "Áp dụng",
     "applying": "Đang áp dụng...",
-    "selected": "nhóm"
+    "selected": "nhóm",
+    "linked_products": "Sản phẩm liên kết"
   },
   "email-data-table": {
     "id": "Mã số",
@@ -527,7 +528,8 @@
     "locked": "Bị khoá",
     "created_at": "Tạo lúc",
     "included_tags": "Gắn thẻ đã bao gồm",
-    "excluded_tags": "Gắn thẻ đã loại trừ"
+    "excluded_tags": "Gắn thẻ đã loại trừ",
+    "special_users": "Người dùng đặc biệt"
   },
   "user-group-tag-data-table": {
     "id": "Mã số",
@@ -1526,5 +1528,8 @@
     "singular": "Bài viết",
     "description": "Gửi email cho người dùng mà nhân viên có thẩm quyền đã kiểm tra công việc của họ trong các bài viết của nhóm người dùng cụ thể."
   },
-  "avatar": "Ảnh đại diện"
+  "avatar": "Ảnh đại diện",
+  "ws-user-group-details": {
+    "schedule": "Lịch nhóm"
+  }
 }
