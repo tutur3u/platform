@@ -10,7 +10,7 @@ import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { MinusCircle } from 'lucide-react';
+import { Box, MinusCircle } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -47,6 +47,8 @@ export default async function UserGroupDetailsPage({
 
   const { data: extraFields } = await getUserFields(wsId);
   const { data: posts, count: postsCount } = await getGroupPosts(groupId);
+  const { data: linkedProducts, count: lpCount } =
+    await getLinkedProducts(groupId);
 
   const { data: excludedUserGroups } = await getExcludedUserGroups(
     wsId,
@@ -88,12 +90,29 @@ export default async function UserGroupDetailsPage({
             count={postsCount}
           />
         </div>
-        {/* <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
-          <div className="text-xl font-semibold">
+        <div className="border-border bg-foreground/5 col-span-full flex flex-col rounded-lg border p-4">
+          <div className="mb-2 text-xl font-semibold">
             {t('user-data-table.linked_products')}
+            {lpCount && ` (${lpCount})`}
+          </div>
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-4">
+            {linkedProducts.map((product) => (
+              <div
+                key={product.id}
+                className="bg-background flex items-center rounded-lg border p-2 md:p-4"
+              >
+                <Box className="mr-2 h-8 w-8" />
+                <div>
+                  <div className="text-lg font-semibold">{product.name}</div>
+                  {product.description && (
+                    <div className="text-sm">{product.description}</div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="border-border bg-foreground/5 col-span-full flex flex-col rounded-lg border p-4">
+        {/* <div className="border-border bg-foreground/5 col-span-full flex flex-col rounded-lg border p-4">
           <div className="text-xl font-semibold">
             {t('user-group-data-table.special_users')}
           </div>
@@ -236,6 +255,23 @@ async function getGroupPosts(groupId: string) {
   const queryBuilder = supabase
     .from('user_group_posts')
     .select('*', {
+      count: 'exact',
+    })
+    .eq('group_id', groupId)
+    .order('created_at', { ascending: false });
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count };
+}
+
+async function getLinkedProducts(groupId: string) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('user_group_linked_products')
+    .select('...workspace_products(id, name, description)', {
       count: 'exact',
     })
     .eq('group_id', groupId)
