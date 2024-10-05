@@ -18,15 +18,17 @@ import {
 } from '@repo/ui/components/ui/select';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import * as XLSX from 'xlsx';
 import { jsonToCSV } from 'react-papaparse';
+import * as XLSX from 'xlsx';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+
 export default function ExportDialogContent({ wsId }: { wsId: string }) {
   const t = useTranslations();
 
   const [exportFileType, setExportFileType] = useState('excel');
 
   const downloadCSV = (data: any[], filename: string) => {
-    const csv= jsonToCSV(data);
+    const csv = jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -56,6 +58,35 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
     document.body.removeChild(link);
   };
 
+  const handleExport = async () => {
+    const allData: WorkspaceUser[] = [];
+    let currentPage = 1;
+    const pageSize = 100;
+
+    while (true) {
+      const { data } = await getData(wsId, {
+        page: currentPage.toString(),
+        pageSize: pageSize.toString(),
+      });
+
+      allData.push(...data);
+
+
+      if (data.length < pageSize) {
+        break;
+      }
+
+      currentPage++;
+    }
+
+
+    if (exportFileType === 'csv') {
+      downloadCSV(allData, `export_${wsId}.csv`);
+    } else if (exportFileType === 'excel') {
+      downloadExcel(allData, `export_${wsId}.xlsx`);
+    }
+  };
+
   return (
     <>
       <DialogHeader>
@@ -78,23 +109,7 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
             {t('common.cancel')}
           </Button>
         </DialogClose>
-        <Button
-          onClick={async () => {
-            const data = await getData(wsId, {
-              from: 0,
-              to: 100,
-              limit: 100,
-            });
-
-            if (exportFileType === 'csv') {
-              downloadCSV(data, `export_${wsId}.csv`);
-            } else if (exportFileType === 'excel') {
-              downloadExcel(data, `export_${wsId}.xlsx`);
-            }
-          }}
-        >
-          {t('common.export')}
-        </Button>
+        <Button onClick={handleExport}>{t('common.export')}</Button>
       </DialogFooter>
     </>
   );
@@ -104,22 +119,10 @@ async function getData(
   wsId: string,
   {
     q,
-    from = 0,
-    to = 10,
-    limit = 10,
-    includedGroups = [],
-    excludedGroups = [],
-    retry = true,
-  }: {
-    q?: string;
-    includedGroups?: string | string[];
-    excludedGroups?: string | string[];
-    from?: number;
-    to?: number;
-    limit?: number;
-    retry?: boolean;
-  } = {}
-): Promise<any[]> { 
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
   const supabase = await createClient();
 
   const queryBuilder = supabase
@@ -127,12 +130,8 @@ async function getData(
       'get_workspace_users',
       {
         _ws_id: wsId,
-        included_groups: Array.isArray(includedGroups)
-          ? includedGroups
-          : [includedGroups],
-        excluded_groups: Array.isArray(excludedGroups)
-          ? excludedGroups
-          : [excludedGroups],
+        included_groups: [],
+        excluded_groups: [],
         search_query: q || '',
       },
       {
@@ -142,15 +141,18 @@ async function getData(
     .select('*')
     .order('full_name', { ascending: true, nullsFirst: false });
 
-  if (from && to) queryBuilder.range(from, to);
-  if (limit) queryBuilder.limit(limit);
+  const parsedPage = parseInt(page);
+  const parsedSize = parseInt(pageSize);
+  const start = (parsedPage - 1) * parsedSize;
+  const end = parsedPage * parsedSize;
 
-  const { data, error, count: _ } = await queryBuilder;
+  queryBuilder.range(start, end).limit(parsedSize);
+
+  const { data, error, count } = await queryBuilder;
 
   if (error) {
-    if (!retry) throw error;
-    return getData(wsId, { q, retry: false });
+    throw error;
   }
 
-  return data;  // No need to cast as a string, since it's an array of objects
+  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
 }
