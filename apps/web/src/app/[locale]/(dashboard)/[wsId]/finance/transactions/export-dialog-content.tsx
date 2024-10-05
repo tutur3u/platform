@@ -70,7 +70,6 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
       });
       allData.push(...data);
 
-
       if (data.length < pageSize) {
         break;
       }
@@ -135,7 +134,7 @@ async function getData(
     .order('taken_at', { ascending: false })
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('description', `%${q}%`);
 
   const parsedPage = parseInt(page);
   const parsedSize = parseInt(pageSize);

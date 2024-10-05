@@ -1,4 +1,5 @@
 import { transactionColumns } from './columns';
+import ExportDialogContent from './export-dialog-content';
 import { TransactionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { Transaction } from '@/types/primitives/Transaction';
@@ -6,7 +7,7 @@ import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
-import ExportDialogContent from './export-dialog-content';
+
 interface Props {
   params: Promise<{
     wsId: string;
@@ -46,7 +47,7 @@ export default async function WorkspaceTransactionsPage({
       <CustomDataTable
         data={data}
         columnGenerator={transactionColumns}
-        toolbarExportContent= {<ExportDialogContent wsId={wsId} />}
+        toolbarExportContent={<ExportDialogContent wsId={wsId} />}
         namespace="transaction-data-table"
         count={count}
         defaultVisibility={{
@@ -82,7 +83,7 @@ async function getData(
     .order('taken_at', { ascending: false })
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('description', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
