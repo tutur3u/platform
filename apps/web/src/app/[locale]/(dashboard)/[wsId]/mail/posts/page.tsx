@@ -54,7 +54,7 @@ export default async function WorkspacePostEmailsPage({
             <span className="opacity-50">/{count || 0}</span>
           </div>
         </div>
-        <div className="bg-dynamic-red/15 text-dynamic-red border-dynamic-red/15 flex w-full flex-col items-center gap-1 rounded border p-4 md:col-span-full lg:col-span-1">
+        <div className="bg-dynamic-red/15 text-dynamic-red border-dynamic-red/15 flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <MailWarning />
             {t('ws-post-emails.pending_emails')}
