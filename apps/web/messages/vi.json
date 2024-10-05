@@ -124,7 +124,8 @@
     "background": "Màu nền",
     "scan_me": "Quét mã QR",
     "qr_code": "Mã QR",
-    "current_plan": "Gói hiện tại"
+    "current_plan": "Gói hiện tại",
+    "incomplete": "Chưa hoàn thành"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1529,7 +1530,9 @@
   "ws-post-emails": {
     "plural": "Bài viết",
     "singular": "Bài viết",
-    "description": "Gửi email cho người dùng mà nhân viên có thẩm quyền đã kiểm tra công việc của họ trong các bài viết của nhóm người dùng cụ thể."
+    "description": "Gửi email cho người dùng mà nhân viên có thẩm quyền đã kiểm tra công việc của họ trong các bài viết của nhóm người dùng cụ thể.",
+    "sent_emails": "Email đã gửi",
+    "pending_emails": "Email đang chờ được gửi"
   },
   "avatar": "Ảnh đại diện",
   "ws-user-group-details": {

@@ -124,7 +124,8 @@
     "background": "Background",
     "scan_me": "Scan me",
     "qr_code": "QR Code",
-    "current_plan": "Current plan"
+    "current_plan": "Current plan",
+    "incomplete": "Incomplete"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1529,7 +1530,9 @@
   "ws-post-emails": {
     "plural": "Posts",
     "singular": "Post",
-    "description": "Send emails to users that have their work checked by authorized staff in specific user group posts."
+    "description": "Send emails to users that have their work checked by authorized staff in specific user group posts.",
+    "sent_emails": "Sent emails",
+    "pending_emails": "Pending emails"
   },
   "avatar": "Avatar",
   "ws-user-group-details": {

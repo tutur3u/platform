@@ -5,6 +5,7 @@ import { PostEmail } from '@/types/primitives/post-email';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { MailWarning, Send } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -31,6 +32,7 @@ export default async function WorkspacePostEmailsPage({
   const t = await getTranslations();
   const { locale, wsId } = await params;
   const { data, count } = await getData(wsId, await searchParams);
+  const status = await getSentEmails(wsId);
 
   return (
     <>
@@ -39,6 +41,31 @@ export default async function WorkspacePostEmailsPage({
         singularTitle={t('ws-post-emails.singular')}
         description={t('ws-post-emails.description')}
       />
+      <Separator className="my-4" />
+      <div className="gird-cols-1 grid gap-2 md:grid-cols-2">
+        <div className="bg-dynamic-purple/15 text-dynamic-purple border-dynamic-purple/15 flex w-full flex-col items-center gap-1 rounded border p-4">
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <Send />
+            {t('ws-post-emails.sent_emails')}
+          </div>
+          <Separator className="bg-dynamic-purple/15 my-1" />
+          <div className="text-xl font-semibold md:text-3xl">
+            {status.count || 0}
+            <span className="opacity-50">/{count || 0}</span>
+          </div>
+        </div>
+        <div className="bg-dynamic-red/15 text-dynamic-red border-dynamic-red/15 flex w-full flex-col items-center gap-1 rounded border p-4 md:col-span-full lg:col-span-1">
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <MailWarning />
+            {t('ws-post-emails.pending_emails')}
+          </div>
+          <Separator className="bg-dynamic-red/15 my-1" />
+          <div className="text-3xl font-semibold">
+            {(count || 0) - (status.count || 0)}
+            <span className="opacity-50">/{count || 0}</span>
+          </div>
+        </div>
+      </div>
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
@@ -54,6 +81,7 @@ export default async function WorkspacePostEmailsPage({
           email: false,
           subject: false,
           is_completed: false,
+          notes: false,
           created_at: false,
         }}
       />
@@ -132,4 +160,20 @@ async function getData(
     })),
     count: count || 0,
   } as { data: PostEmail[]; count: number };
+}
+
+async function getSentEmails(wsId: string) {
+  const supabase = await createClient();
+
+  const { count } = await supabase
+    .from('user_group_post_checks')
+    .select('workspace_users!inner(ws_id), sent_emails!inner(*)', {
+      head: true,
+      count: 'exact',
+    })
+    .eq('workspace_users.ws_id', wsId);
+
+  return {
+    count,
+  };
 }
