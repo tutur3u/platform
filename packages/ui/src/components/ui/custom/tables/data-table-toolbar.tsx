@@ -1,12 +1,17 @@
 'use client';
-
+import React from 'react';
 import { Button } from '../../button';
 import SearchBar from '../search-bar';
 import { DataTableCreateButton } from './data-table-create-button';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from '@repo/ui/components/ui/dialog';
 import { Table } from '@tanstack/react-table';
-import { X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
@@ -19,8 +24,10 @@ interface DataTableToolbarProps<TData> {
   extraColumns?: any[];
   defaultQuery?: string;
   disableSearch?: boolean;
+  enableExport?: boolean;
   isEmpty: boolean;
   t?: any;
+  exportContent?: ReactNode;
   onRefresh: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch: (query: string) => void;
@@ -36,9 +43,11 @@ export function DataTableToolbar<TData>({
   extraColumns,
   defaultQuery,
   disableSearch = false,
+  enableExport = false,
   isEmpty,
   t,
   namespace,
+  exportContent,
   onRefresh,
   onSearch,
   resetParams,
@@ -74,6 +83,22 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
+      {enableExport && exportContent && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto h-8 w-full md:w-fit"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {t?.('common.export')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm">{exportContent}</DialogContent>
+        </Dialog>
+      )}
+
       <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-fit">
         {editContent && (
           <DataTableCreateButton

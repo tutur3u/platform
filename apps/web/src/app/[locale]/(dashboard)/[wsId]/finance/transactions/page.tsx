@@ -1,4 +1,5 @@
 import { transactionColumns } from './columns';
+import ExportDialogContent from './export-dialog-content';
 import { TransactionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { Transaction } from '@/types/primitives/Transaction';
@@ -46,6 +47,7 @@ export default async function WorkspaceTransactionsPage({
       <CustomDataTable
         data={data}
         columnGenerator={transactionColumns}
+        toolbarExportContent={<ExportDialogContent wsId={wsId} />}
         namespace="transaction-data-table"
         count={count}
         defaultVisibility={{
@@ -53,6 +55,7 @@ export default async function WorkspaceTransactionsPage({
           report_opt_in: false,
           created_at: false,
         }}
+        enableExport
       />
     </>
   );
@@ -80,7 +83,7 @@ async function getData(
     .order('taken_at', { ascending: false })
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('description', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);

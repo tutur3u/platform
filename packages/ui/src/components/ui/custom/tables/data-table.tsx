@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -41,6 +42,8 @@ export interface DataTableProps<TData, TValue> {
   defaultVisibility?: VisibilityState;
   disableSearch?: boolean;
   isEmpty?: boolean;
+  toolbarExportContent?: ReactNode;
+  enableExport?: boolean;
   onRefresh?: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch?: (query: string) => void;
@@ -75,8 +78,10 @@ export function DataTable<TData, TValue>({
   defaultQuery,
   defaultVisibility = {},
   disableSearch,
+  enableExport,
   isEmpty,
   t,
+  toolbarExportContent,
   onRefresh,
   onSearch,
   setParams,
@@ -131,12 +136,14 @@ export function DataTable<TData, TValue>({
         filters={filters}
         extraColumns={extraColumns}
         disableSearch={disableSearch}
+        enableExport={enableExport}
         t={t}
         isEmpty={isEmpty || !data?.length}
         defaultQuery={defaultQuery}
         onSearch={onSearch || (() => {})}
         onRefresh={onRefresh || (() => {})}
         resetParams={resetParams || (() => {})}
+        exportContent={toolbarExportContent}
       />
       <div className="rounded-md border">
         <Table>

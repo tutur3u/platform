@@ -1,4 +1,5 @@
 import { getUserColumns } from './columns';
+import ExportDialogContent from './export-dialog-content';
 import Filters from './filters';
 import UserForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
@@ -59,6 +60,7 @@ export default async function WorkspaceUsersPage({
         extraData={{ locale }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
+        toolbarExportContent={<ExportDialogContent wsId={wsId} />}
         defaultVisibility={{
           id: false,
           gender: false,
@@ -77,6 +79,7 @@ export default async function WorkspaceUsersPage({
           // Extra columns
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
         }}
+        enableExport
       />
     </>
   );
