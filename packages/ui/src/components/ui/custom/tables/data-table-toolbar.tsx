@@ -23,8 +23,8 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { Table } from '@tanstack/react-table';
-import { X } from 'lucide-react';
-import { ReactNode } from 'react';
+import { Download, X } from 'lucide-react';
+import { ReactNode, useState } from 'react';
 
 interface DataTableToolbarProps<TData> {
   hasData: boolean;
@@ -67,6 +67,8 @@ export function DataTableToolbar<TData>({
     !isEmpty ||
     (defaultQuery?.length || 0) > 0;
 
+  const [exportFileType, setExportFileType] = useState('excel');
+
   return (
     <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
       <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
@@ -96,21 +98,28 @@ export function DataTableToolbar<TData>({
       {enableExport && (
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">{t?.('common.export')}</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto h-8 w-full md:w-fit"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {t?.('common.export')}
+            </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>{t?.('common.export')}</DialogTitle>
               <DialogDescription>
                 {t?.('common.export-content')}
               </DialogDescription>
-              <Select>
-                <SelectTrigger className="w-[180px]">
+              <Select value={exportFileType} onValueChange={setExportFileType}>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="File type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="light">Excel</SelectItem>
-                  <SelectItem value="dark">CSV</SelectItem>
+                  <SelectItem value="excel">Excel</SelectItem>
+                  <SelectItem value="csv">CSV</SelectItem>
                 </SelectContent>
               </Select>
             </DialogHeader>
