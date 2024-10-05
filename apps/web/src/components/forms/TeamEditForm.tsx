@@ -1,6 +1,5 @@
 import { Team } from '@/types/primitives/Team';
 import { Button, TextInput } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
 import { ChangeEvent, useState } from 'react';
 
 interface Props {
@@ -42,7 +41,7 @@ const TeamEditForm = ({ team, onSubmit, onDelete }: Props) => {
             const newTeam = { id: team?.id || undefined, name };
 
             if (onSubmit) onSubmit(newTeam);
-            closeAllModals();
+            // closeAllModals();
           }}
           mt="md"
         >

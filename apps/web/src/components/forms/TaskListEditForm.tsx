@@ -1,6 +1,5 @@
 import { TaskList } from '@/types/primitives/TaskList';
 import { Button, TextInput } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
 import { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -53,7 +52,7 @@ const TaskListEditForm = ({
             };
 
             if (onSubmit) onSubmit(newList);
-            closeAllModals();
+            // closeAllModals();
           }}
           mt="md"
         >

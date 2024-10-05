@@ -1,6 +1,5 @@
 import { Wallet } from '@/types/primitives/Wallet';
 import { Button } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
 
 interface Props {
   wallet: Wallet;
@@ -30,7 +29,7 @@ export default function WalletDeleteForm({ wallet, onDelete }: Props) {
           fullWidth
           variant="subtle"
           onClick={() => {
-            closeAllModals();
+            // closeAllModals();
           }}
           mt="md"
         >

@@ -16,7 +16,6 @@ import {
   Textarea,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { closeAllModals } from '@mantine/modals';
 import { Check, Trash, TriangleAlert, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
@@ -240,7 +239,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
     if (task?.id) await updateTask();
     else await addTask();
-    closeAllModals();
+    // closeAllModals();
   };
 
   const handleDelete = async () => {
@@ -252,7 +251,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
     if (response.ok) {
       onUpdated();
-      closeAllModals();
+      // closeAllModals();
     } else {
       // const res = await response.json();
       // showNotification({
@@ -278,7 +277,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
 
     if (res.ok) {
       onUpdated();
-      closeAllModals();
+      // closeAllModals();
     }
   };
 
@@ -511,7 +510,7 @@ const TaskEditForm = ({ task, listId, onUpdated }: TaskEditFormProps) => {
                       >
                         <Link
                           href={`/${assignee.handle}`}
-                          onClick={() => closeAllModals()}
+                          // onClick={() => closeAllModals()}
                         >
                           <Avatar
                             color="blue"

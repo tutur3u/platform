@@ -3,7 +3,6 @@
 import { User, UserRole } from '@/types/primitives/User';
 import { getInitials } from '@/utils/name-helper';
 import { Avatar, Button, Divider, Select, TextInput } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
 import { useTranslations } from 'next-intl';
 import { ChangeEvent, useState } from 'react';
 
@@ -124,7 +123,7 @@ const WorkspaceMemberEditForm = ({
           };
 
           await onSubmit(wsId, newUser);
-          closeAllModals();
+          // closeAllModals();
         }}
         disabled={
           !role || (role === user?.role && roleTitle === user?.role_title)
@@ -154,7 +153,7 @@ const WorkspaceMemberEditForm = ({
               color="red"
               onClick={async () => {
                 await onDelete?.();
-                closeAllModals();
+                // closeAllModals();
               }}
               className="bg-red-500/10 dark:bg-red-300/10"
               disabled={user.role === 'OWNER' && disallowOwnerChange}
