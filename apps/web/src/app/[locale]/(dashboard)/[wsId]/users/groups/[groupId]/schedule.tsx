@@ -161,6 +161,7 @@ export default function GroupSchedule({
 
                   return (
                     <div
+                      key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
                       className={`flex flex-none cursor-default justify-center rounded border border-green-500/30 bg-green-500/10 p-2 font-semibold text-green-600 transition duration-300 md:rounded-lg dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300`}
                     >
                       {day.getDate()}
