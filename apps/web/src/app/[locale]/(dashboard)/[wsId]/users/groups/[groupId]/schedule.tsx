@@ -147,8 +147,8 @@ export default function GroupSchedule({
                     );
 
                   if (
-                    !isPending &&
-                    data.sessions &&
+                    isPending ||
+                    !data?.sessions ||
                     !isDateAvailable(data.sessions, day)
                   )
                     return (
@@ -162,7 +162,7 @@ export default function GroupSchedule({
 
                   return (
                     <div
-                      className={`flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'}`}
+                      className={`flex flex-none cursor-default justify-center rounded border border-green-500/30 bg-green-500/10 p-2 font-semibold text-green-600 transition duration-300 md:rounded-lg dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300`}
                     >
                       {day.getDate()}
                     </div>
