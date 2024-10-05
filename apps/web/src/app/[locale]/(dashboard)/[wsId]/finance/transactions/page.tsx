@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
-
+import ExportDialogContent from './export-dialog-content';
 interface Props {
   params: Promise<{
     wsId: string;
@@ -46,6 +46,7 @@ export default async function WorkspaceTransactionsPage({
       <CustomDataTable
         data={data}
         columnGenerator={transactionColumns}
+        toolbarExportContent= {<ExportDialogContent wsId={wsId} />}
         namespace="transaction-data-table"
         count={count}
         defaultVisibility={{
@@ -53,6 +54,7 @@ export default async function WorkspaceTransactionsPage({
           report_opt_in: false,
           created_at: false,
         }}
+        enableExport
       />
     </>
   );

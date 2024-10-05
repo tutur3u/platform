@@ -16,17 +16,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/ui/select';
+import { Transaction } from '@/types/primitives/Transaction';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { jsonToCSV } from 'react-papaparse';
+
 export default function ExportDialogContent({ wsId }: { wsId: string }) {
   const t = useTranslations();
-
   const [exportFileType, setExportFileType] = useState('excel');
 
-  const downloadCSV = (data: any[], filename: string) => {
-    const csv= jsonToCSV(data);
+  const downloadCSV = (data: Transaction[], filename: string) => {
+    const csv = jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -36,7 +37,7 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
     document.body.removeChild(link);
   };
 
-  const downloadExcel = (data: any[], filename: string) => {
+  const downloadExcel = (data: Transaction[], filename: string) => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
@@ -80,10 +81,9 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
         </DialogClose>
         <Button
           onClick={async () => {
-            const data = await getData(wsId, {
-              from: 0,
-              to: 100,
-              limit: 100,
+            const { data } = await getData(wsId, {
+              page: '1', 
+              pageSize: '100',
             });
 
             if (exportFileType === 'csv') {
@@ -104,53 +104,46 @@ async function getData(
   wsId: string,
   {
     q,
-    from = 0,
-    to = 10,
-    limit = 10,
-    includedGroups = [],
-    excludedGroups = [],
-    retry = true,
-  }: {
-    q?: string;
-    includedGroups?: string | string[];
-    excludedGroups?: string | string[];
-    from?: number;
-    to?: number;
-    limit?: number;
-    retry?: boolean;
-  } = {}
-): Promise<any[]> { 
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .rpc(
-      'get_workspace_users',
-      {
-        _ws_id: wsId,
-        included_groups: Array.isArray(includedGroups)
-          ? includedGroups
-          : [includedGroups],
-        excluded_groups: Array.isArray(excludedGroups)
-          ? excludedGroups
-          : [excludedGroups],
-        search_query: q || '',
-      },
+    .from('wallet_transactions')
+    .select(
+      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
       {
         count: 'exact',
       }
     )
-    .select('*')
-    .order('full_name', { ascending: true, nullsFirst: false });
+    .eq('workspace_wallets.ws_id', wsId)
+    .order('taken_at', { ascending: false })
+    .order('created_at', { ascending: false });
 
-  if (from && to) queryBuilder.range(from, to);
-  if (limit) queryBuilder.limit(limit);
+  if (q) queryBuilder.ilike('name', `%${q}%`);
 
-  const { data, error, count: _ } = await queryBuilder;
+  const parsedPage = parseInt(page);
+  const parsedSize = parseInt(pageSize);
+  const start = (parsedPage - 1) * parsedSize;
+  const end = parsedPage * parsedSize;
 
-  if (error) {
-    if (!retry) throw error;
-    return getData(wsId, { q, retry: false });
-  }
+  queryBuilder.range(start, end).limit(parsedSize);
 
-  return data;  // No need to cast as a string, since it's an array of objects
+  const { data: rawData, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  const data = rawData.map(
+    ({ workspace_wallets, transaction_categories, ...rest }) => ({
+      ...rest,
+      wallet: workspace_wallets?.name,
+      category: transaction_categories?.name,
+    })
+  );
+
+  return { data, count } as {
+    data: Transaction[];
+    count: number;
+  };
 }

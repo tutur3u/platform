@@ -13,7 +13,7 @@ import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { Table } from '@tanstack/react-table';
 import { Settings2, UserCog } from 'lucide-react';
 import { Fragment } from 'react';
-
+import React from 'react';
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
   extraColumns?: any[];
