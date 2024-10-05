@@ -40,6 +40,7 @@ export default async function WorkspaceUsersPage({
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
+  
   return (
     <>
       <FeatureSummary

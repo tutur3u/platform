@@ -15,8 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -38,6 +36,7 @@ interface DataTableToolbarProps<TData> {
   extraColumns?: any[];
   defaultQuery?: string;
   disableSearch?: boolean;
+  enableExport?: boolean;
   isEmpty: boolean;
   t?: any;
   onRefresh: () => void;
@@ -55,6 +54,7 @@ export function DataTableToolbar<TData>({
   extraColumns,
   defaultQuery,
   disableSearch = false,
+  enableExport = false,
   isEmpty,
   t,
   namespace,
@@ -93,39 +93,39 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="outline">{t?.('common.export')}</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t?.('common.export')}</DialogTitle>
-            <DialogDescription>
-              {t?.('common.export-content')}
-            </DialogDescription>
-            <Select>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder='File type'/>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">Excel</SelectItem>
-                <SelectItem value="dark">CSV</SelectItem>
-              </SelectContent>
-            </Select>
-          </DialogHeader>
-          
-          <DialogFooter className="sm:justify-start">
-            <DialogClose asChild>
-              <Button type="button" variant="secondary">
-                Close
-              </Button>
-            </DialogClose>
-            <Button>
-                Export
-              </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {enableExport && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">{t?.('common.export')}</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t?.('common.export')}</DialogTitle>
+              <DialogDescription>
+                {t?.('common.export-content')}
+              </DialogDescription>
+              <Select>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="File type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">Excel</SelectItem>
+                  <SelectItem value="dark">CSV</SelectItem>
+                </SelectContent>
+              </Select>
+            </DialogHeader>
+
+            <DialogFooter className="sm:justify-start">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                  Close
+                </Button>
+              </DialogClose>
+              <Button>Export</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-fit">
         {editContent && (

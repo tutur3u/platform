@@ -131,6 +131,7 @@ export function DataTable<TData, TValue>({
         filters={filters}
         extraColumns={extraColumns}
         disableSearch={disableSearch}
+        enableExport={true}
         t={t}
         isEmpty={isEmpty || !data?.length}
         defaultQuery={defaultQuery}
