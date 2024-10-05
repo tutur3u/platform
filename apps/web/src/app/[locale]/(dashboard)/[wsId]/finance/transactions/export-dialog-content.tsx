@@ -1,5 +1,6 @@
 'use client';
 
+import { Transaction } from '@/types/primitives/Transaction';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -16,14 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/ui/select';
-import { Transaction } from '@/types/primitives/Transaction';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import * as XLSX from 'xlsx';
 import { jsonToCSV } from 'react-papaparse';
+import * as XLSX from 'xlsx';
 
 export default function ExportDialogContent({ wsId }: { wsId: string }) {
   const t = useTranslations();
+
   const [exportFileType, setExportFileType] = useState('excel');
 
   const downloadCSV = (data: Transaction[], filename: string) => {
@@ -57,6 +58,33 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
     document.body.removeChild(link);
   };
 
+  const handleExport = async () => {
+    const allData: Transaction[] = [];
+    let currentPage = 1;
+    const pageSize = 100;
+
+    while (true) {
+      const { data } = await getData(wsId, {
+        page: currentPage.toString(),
+        pageSize: pageSize.toString(),
+      });
+      allData.push(...data);
+
+
+      if (data.length < pageSize) {
+        break;
+      }
+
+      currentPage++;
+    }
+
+    if (exportFileType === 'csv') {
+      downloadCSV(allData, `export_${wsId}.csv`);
+    } else if (exportFileType === 'excel') {
+      downloadExcel(allData, `export_${wsId}.xlsx`);
+    }
+  };
+
   return (
     <>
       <DialogHeader>
@@ -79,22 +107,7 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
             {t('common.cancel')}
           </Button>
         </DialogClose>
-        <Button
-          onClick={async () => {
-            const { data } = await getData(wsId, {
-              page: '1', 
-              pageSize: '100',
-            });
-
-            if (exportFileType === 'csv') {
-              downloadCSV(data, `export_${wsId}.csv`);
-            } else if (exportFileType === 'excel') {
-              downloadExcel(data, `export_${wsId}.xlsx`);
-            }
-          }}
-        >
-          {t('common.export')}
-        </Button>
+        <Button onClick={handleExport}>{t('common.export')}</Button>
       </DialogFooter>
     </>
   );
