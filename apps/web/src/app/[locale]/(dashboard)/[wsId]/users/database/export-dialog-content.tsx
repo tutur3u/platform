@@ -50,10 +50,10 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
         </Select>
       </DialogHeader>
 
-      <DialogFooter className="sm:justify-start">
+      <DialogFooter className="justify-between">
         <DialogClose asChild>
           <Button type="button" variant="secondary">
-            Close
+            {t('common.cancel')}
           </Button>
         </DialogClose>
         <Button
@@ -66,7 +66,7 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
             downloadCSV(csvData, `export_${wsId}.csv`);
           }}
         >
-          Export
+          {t('common.export')}
         </Button>
       </DialogFooter>
     </>
