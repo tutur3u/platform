@@ -2,6 +2,7 @@ import { getUserColumns } from '../../database/columns';
 import { UserDatabaseFilter } from '../../filters';
 import GroupMemberForm from './form';
 import PostsClient from './posts-client';
+import GroupSchedule from './schedule';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -68,13 +69,30 @@ export default async function UserGroupDetailsPage({
         form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
       <Separator className="my-4" />
-      <div className="grid w-full grid-cols-1 gap-2 lg:grid-cols-2">
-        <div className="border-border bg-foreground/5 grid rounded-lg border p-4 pb-0">
+      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start"> */}
+        {/* <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="text-xl font-semibold">{t('ws-roles.members')}</div>
+        </div> */}
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="mb-2 text-xl font-semibold">
+            {t('ws-user-group-details.schedule')}
+          </div>
+          <GroupSchedule wsId={wsId} groupId={groupId} />
+        </div>
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <PostsClient wsId={wsId} groupId={groupId} posts={posts} />
         </div>
-        <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start">
-          {/* <div className="text-xl font-semibold">Attendance Calendar</div> */}
+        {/* <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="text-xl font-semibold">
+            {t('user-data-table.linked_products')}
+          </div>
         </div>
+        <div className="border-border bg-foreground/5 col-span-full flex flex-col rounded-lg border p-4">
+          <div className="text-xl font-semibold">
+            {t('user-group-data-table.special_users')}
+          </div>
+        </div> */}
       </div>
       <Separator className="my-4" />
       <CustomDataTable

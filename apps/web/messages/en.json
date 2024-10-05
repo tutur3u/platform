@@ -490,7 +490,8 @@
     "revert_changes": "Revert Changes",
     "apply_changes": "Apply Changes",
     "applying": "Applying...",
-    "selected": "Selected"
+    "selected": "Selected",
+    "linked_products": "Linked products"
   },
   "email-data-table": {
     "id": "ID",
@@ -527,7 +528,8 @@
     "locked": "Locked",
     "created_at": "Created At",
     "included_tags": "Included Tags",
-    "excluded_tags": "Excluded Tags"
+    "excluded_tags": "Excluded Tags",
+    "special_users": "Special users"
   },
   "user-group-tag-data-table": {
     "id": "ID",
@@ -1526,5 +1528,8 @@
     "singular": "Post",
     "description": "Send emails to users that have their work checked by authorized staff in specific user group posts."
   },
-  "avatar": "Avatar"
+  "avatar": "Avatar",
+  "ws-user-group-details": {
+    "schedule": "Group Schedule"
+  }
 }

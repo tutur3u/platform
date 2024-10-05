@@ -138,9 +138,9 @@ export default function UserGroupPosts({
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <div className="text-xl font-semibold">
+      <div className="flex items-start justify-between">
+        <div className="grid gap-1">
+          <div className="mb-2 text-xl font-semibold">
             {t('ws-user-groups.posts')}
           </div>
           <div className="flex items-center space-x-2">
