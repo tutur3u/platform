@@ -47,12 +47,14 @@ export default function UserGroupPosts({
   groupId,
   selectedPostId,
   posts,
+  count,
   onClick,
 }: {
   wsId: string;
   groupId?: string;
   selectedPostId?: string;
   posts: UserGroupPost[];
+  count?: number | null;
   onClick?: (id: string) => void;
 }) {
   const t = useTranslations();
@@ -142,6 +144,7 @@ export default function UserGroupPosts({
         <div className="grid gap-1">
           <div className="mb-2 text-xl font-semibold">
             {t('ws-user-groups.posts')}
+            {count && ` (${count})`}
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox

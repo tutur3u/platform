@@ -46,7 +46,7 @@ export default async function UserGroupDetailsPage({
   );
 
   const { data: extraFields } = await getUserFields(wsId);
-  const { data: posts } = await getGroupPosts(groupId);
+  const { data: posts, count: postsCount } = await getGroupPosts(groupId);
 
   const { data: excludedUserGroups } = await getExcludedUserGroups(
     wsId,
@@ -81,7 +81,12 @@ export default async function UserGroupDetailsPage({
           <GroupSchedule wsId={wsId} groupId={groupId} />
         </div>
         <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
-          <PostsClient wsId={wsId} groupId={groupId} posts={posts} />
+          <PostsClient
+            wsId={wsId}
+            groupId={groupId}
+            posts={posts}
+            count={postsCount}
+          />
         </div>
         {/* <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <div className="text-xl font-semibold">
