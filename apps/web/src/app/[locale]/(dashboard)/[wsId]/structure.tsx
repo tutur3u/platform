@@ -89,6 +89,17 @@ export function Structure({
     return link;
   });
 
+  const matchedLinks = filteredLinks
+    .sort((a, b) => b.href.length - a.href.length)
+    .filter(
+      (link) =>
+        pathname.startsWith(link.href) ||
+        link.aliases?.some((alias) => pathname.startsWith(alias))
+    )
+    .sort((a, b) => b.href.length - a.href.length);
+
+  const currentLink = matchedLinks?.[0];
+
   return (
     <>
       <nav
@@ -108,12 +119,11 @@ export function Structure({
             </Link>
           </div>
           <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
-          <div className="line-clamp-1 break-all text-lg font-semibold">
-            {
-              links
-                .filter((link) => pathname.startsWith(link.href))
-                .sort((a, b) => b.href.length - a.href.length)[0]?.title
-            }
+          <div className="flex items-center gap-2 break-all text-lg font-semibold">
+            {currentLink?.icon && (
+              <div className="flex-none">{currentLink.icon}</div>
+            )}
+            <span className="line-clamp-1">{currentLink?.title}</span>
           </div>
         </div>
         <div className="flex h-[52px] items-center gap-2">
@@ -280,18 +290,8 @@ export function Structure({
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
                     <BreadcrumbPage className="flex items-center gap-2">
-                      {
-                        filteredLinks
-                          .filter((link) => pathname.startsWith(link.href))
-                          .sort((a, b) => b.href.length - a.href.length)[0]
-                          ?.icon
-                      }
-                      {
-                        filteredLinks
-                          .filter((link) => pathname.startsWith(link.href))
-                          .sort((a, b) => b.href.length - a.href.length)[0]
-                          ?.title
-                      }
+                      {currentLink?.icon}
+                      {currentLink?.title}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
