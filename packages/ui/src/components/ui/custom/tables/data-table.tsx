@@ -41,6 +41,7 @@ export interface DataTableProps<TData, TValue> {
   defaultVisibility?: VisibilityState;
   disableSearch?: boolean;
   isEmpty?: boolean;
+  enableExport?: boolean;
   onRefresh?: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch?: (query: string) => void;
@@ -75,6 +76,7 @@ export function DataTable<TData, TValue>({
   defaultQuery,
   defaultVisibility = {},
   disableSearch,
+  enableExport,
   isEmpty,
   t,
   onRefresh,
@@ -131,7 +133,7 @@ export function DataTable<TData, TValue>({
         filters={filters}
         extraColumns={extraColumns}
         disableSearch={disableSearch}
-        enableExport={true}
+        enableExport={enableExport}
         t={t}
         isEmpty={isEmpty || !data?.length}
         defaultQuery={defaultQuery}
