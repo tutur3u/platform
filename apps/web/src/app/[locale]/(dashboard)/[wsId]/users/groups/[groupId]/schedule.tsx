@@ -52,10 +52,14 @@ export default function GroupSchedule({
   };
 
   const handlePrev = async () =>
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    );
 
   const handleNext = async () =>
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+    );
   const thisYear = currentDate.getFullYear();
   const thisMonth = currentDate.toLocaleString(locale, { month: '2-digit' });
 
@@ -107,15 +111,7 @@ export default function GroupSchedule({
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
 
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  onClick={handleNext}
-                  disabled={
-                    currentDate.getMonth() === new Date().getMonth() &&
-                    currentDate.getFullYear() === new Date().getFullYear()
-                  }
-                >
+                <Button size="xs" variant="secondary" onClick={handleNext}>
                   <ChevronRight className="h-6 w-6" />
                 </Button>
               </div>
