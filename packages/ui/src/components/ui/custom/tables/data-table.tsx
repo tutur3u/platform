@@ -41,6 +41,7 @@ export interface DataTableProps<TData, TValue> {
   defaultVisibility?: VisibilityState;
   disableSearch?: boolean;
   isEmpty?: boolean;
+  toolbarExportContent?: ReactNode;
   enableExport?: boolean;
   onRefresh?: () => void;
   // eslint-disable-next-line no-unused-vars
@@ -79,6 +80,7 @@ export function DataTable<TData, TValue>({
   enableExport,
   isEmpty,
   t,
+  toolbarExportContent,
   onRefresh,
   onSearch,
   setParams,
@@ -140,6 +142,7 @@ export function DataTable<TData, TValue>({
         onSearch={onSearch || (() => {})}
         onRefresh={onRefresh || (() => {})}
         resetParams={resetParams || (() => {})}
+        exportContent={toolbarExportContent}
       />
       <div className="rounded-md border">
         <Table>

@@ -7,24 +7,12 @@ import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/ui/components/ui/select';
 import { Table } from '@tanstack/react-table';
 import { Download, X } from 'lucide-react';
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
   hasData: boolean;
@@ -39,6 +27,7 @@ interface DataTableToolbarProps<TData> {
   enableExport?: boolean;
   isEmpty: boolean;
   t?: any;
+  exportContent?: ReactNode;
   onRefresh: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch: (query: string) => void;
@@ -58,6 +47,7 @@ export function DataTableToolbar<TData>({
   isEmpty,
   t,
   namespace,
+  exportContent,
   onRefresh,
   onSearch,
   resetParams,
@@ -66,8 +56,6 @@ export function DataTableToolbar<TData>({
     table.getState().columnFilters.length > 0 ||
     !isEmpty ||
     (defaultQuery?.length || 0) > 0;
-
-  const [exportFileType, setExportFileType] = useState('excel');
 
   return (
     <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
@@ -95,7 +83,7 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      {enableExport && (
+      {enableExport && exportContent && (
         <Dialog>
           <DialogTrigger asChild>
             <Button
@@ -107,32 +95,7 @@ export function DataTableToolbar<TData>({
               {t?.('common.export')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>{t?.('common.export')}</DialogTitle>
-              <DialogDescription>
-                {t?.('common.export-content')}
-              </DialogDescription>
-              <Select value={exportFileType} onValueChange={setExportFileType}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="File type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="excel">Excel</SelectItem>
-                  <SelectItem value="csv">CSV</SelectItem>
-                </SelectContent>
-              </Select>
-            </DialogHeader>
-
-            <DialogFooter className="sm:justify-start">
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">
-                  Close
-                </Button>
-              </DialogClose>
-              <Button>Export</Button>
-            </DialogFooter>
-          </DialogContent>
+          <DialogContent className="max-w-sm">{exportContent}</DialogContent>
         </Dialog>
       )}
 
