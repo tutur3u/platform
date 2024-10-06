@@ -1,5 +1,6 @@
 'use client';
 
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -20,9 +21,14 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import * as XLSX from 'xlsx';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 
-export default function ExportDialogContent({ wsId }: { wsId: string }) {
+export default function ExportDialogContent({
+  wsId,
+  exportType,
+}: {
+  wsId: string;
+  exportType: string;
+}) {
   const t = useTranslations();
 
   const [exportFileType, setExportFileType] = useState('excel');
@@ -71,7 +77,6 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
 
       allData.push(...data);
 
-
       if (data.length < pageSize) {
         break;
       }
@@ -79,11 +84,10 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
       currentPage++;
     }
 
-
     if (exportFileType === 'csv') {
-      downloadCSV(allData, `export_${wsId}.csv`);
+      downloadCSV(allData, `export_${exportType}.csv`);
     } else if (exportFileType === 'excel') {
-      downloadExcel(allData, `export_${wsId}.xlsx`);
+      downloadExcel(allData, `export_${exportType}.xlsx`);
     }
   };
 

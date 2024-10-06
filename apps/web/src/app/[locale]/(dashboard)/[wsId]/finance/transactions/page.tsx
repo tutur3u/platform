@@ -46,7 +46,7 @@ export default async function WorkspaceTransactionsPage({
       <CustomDataTable
         data={data}
         columnGenerator={transactionColumns}
-        toolbarExportContent= {<ExportDialogContent wsId={wsId} />}
+        toolbarExportContent= {<ExportDialogContent wsId={wsId} exportType='transactions' />}
         namespace="transaction-data-table"
         count={count}
         defaultVisibility={{
