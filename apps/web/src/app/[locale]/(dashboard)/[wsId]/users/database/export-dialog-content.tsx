@@ -1,5 +1,6 @@
-'use client';
+"use client";
 
+import * as React from "react";
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
@@ -21,6 +22,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import * as XLSX from 'xlsx';
+import { Progress } from "@repo/ui/components/ui/progress"; 
 
 export default function ExportDialogContent({
   wsId,
@@ -32,6 +34,8 @@ export default function ExportDialogContent({
   const t = useTranslations();
 
   const [exportFileType, setExportFileType] = useState('excel');
+  const [progress, setProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false); 
 
   const downloadCSV = (data: any[], filename: string) => {
     const csv = jsonToCSV(data);
@@ -65,6 +69,7 @@ export default function ExportDialogContent({
   };
 
   const handleExport = async () => {
+    setIsExporting(true); // Set exporting state
     const allData: WorkspaceUser[] = [];
     let currentPage = 1;
     const pageSize = 100;
@@ -77,18 +82,26 @@ export default function ExportDialogContent({
 
       allData.push(...data);
 
+
+      const progressValue = (currentPage * pageSize) / (allData.length + 1) * 100;
+      setProgress(progressValue);
+
       if (data.length < pageSize) {
+        setProgress(100); 
         break;
       }
 
       currentPage++;
     }
 
+    // Download file based on file type
     if (exportFileType === 'csv') {
       downloadCSV(allData, `export_${exportType}.csv`);
     } else if (exportFileType === 'excel') {
       downloadExcel(allData, `export_${exportType}.xlsx`);
     }
+
+    setIsExporting(false); 
   };
 
   return (
@@ -113,8 +126,17 @@ export default function ExportDialogContent({
             {t('common.cancel')}
           </Button>
         </DialogClose>
-        <Button onClick={handleExport}>{t('common.export')}</Button>
+        
+        <Button onClick={handleExport} disabled={isExporting}>
+          {isExporting ? 'loading' : t('common.export')}
+        </Button>
       </DialogFooter>
+
+      {isExporting && (
+        <div className="mt-4">
+          <Progress value={progress} className="w-full" />
+        </div>
+      )}
     </>
   );
 }

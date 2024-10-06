@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
+import { Progress } from '@repo/ui/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { useTranslations } from 'next-intl';
+import * as React from 'react';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import * as XLSX from 'xlsx';
@@ -32,6 +34,8 @@ export default function ExportDialogContent({
   const t = useTranslations();
 
   const [exportFileType, setExportFileType] = useState('excel');
+  const [progress, setProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   const downloadCSV = (data: Transaction[], filename: string) => {
     const csv = jsonToCSV(data);
@@ -65,16 +69,25 @@ export default function ExportDialogContent({
   };
 
   const handleExport = async () => {
+    setIsExporting(true);
+    setProgress(0);
+    
     const allData: Transaction[] = [];
     let currentPage = 1;
     const pageSize = 100;
 
     while (true) {
-      const { data } = await getData(wsId, {
+      const { data, count } = await getData(wsId, {
         page: currentPage.toString(),
         pageSize: pageSize.toString(),
       });
+
       allData.push(...data);
+
+      // Update progress based on total data count and pages fetched so far
+      const totalPages = Math.ceil(count / pageSize);
+      const progressValue = (currentPage / totalPages) * 100;
+      setProgress(progressValue);
 
       if (data.length < pageSize) {
         break;
@@ -83,12 +96,17 @@ export default function ExportDialogContent({
       currentPage++;
     }
 
-    console.log(exportType, 'export type is');
+    // After data fetching is completed, set progress to 100%
+    setProgress(100);
+
+    // Export the file based on the selected file type
     if (exportFileType === 'csv') {
       downloadCSV(allData, `export_${exportType}.csv`);
     } else if (exportFileType === 'excel') {
       downloadExcel(allData, `export_${exportType}.xlsx`);
     }
+
+    setIsExporting(false); // Stop the exporting process
   };
 
   return (
@@ -109,12 +127,20 @@ export default function ExportDialogContent({
 
       <DialogFooter className="justify-between">
         <DialogClose asChild>
-          <Button type="button" variant="secondary">
+          <Button type="button" variant="secondary" disabled={isExporting}>
             {t('common.cancel')}
           </Button>
         </DialogClose>
-        <Button onClick={handleExport}>{t('common.export')}</Button>
+        <Button onClick={handleExport} disabled={isExporting}>
+          {isExporting ? 'Loading...' : t('common.export')}
+        </Button>
       </DialogFooter>
+
+      {isExporting && (
+        <div className="mt-4">
+          <Progress value={progress} className="w-full" />
+        </div>
+      )}
     </>
   );
 }
