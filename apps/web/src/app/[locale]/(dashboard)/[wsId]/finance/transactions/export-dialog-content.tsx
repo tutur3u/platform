@@ -87,7 +87,6 @@ export default function ExportDialogContent({
 
       allData.push(...data);
 
-      // Update progress based on total data count and pages fetched so far
       const totalPages = Math.ceil(count / pageSize);
       const progressValue = (currentPage / totalPages) * 100;
       setProgress(progressValue);
@@ -149,49 +148,51 @@ export default function ExportDialogContent({
 }
 
 async function getData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('wallet_transactions')
-    .select(
-      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('workspace_wallets.ws_id', wsId)
-    .order('taken_at', { ascending: false })
-    .order('created_at', { ascending: false });
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  const parsedPage = parseInt(page);
-  const parsedSize = parseInt(pageSize);
-  const start = (parsedPage - 1) * parsedSize;
-  const end = parsedPage * parsedSize;
-
-  queryBuilder.range(start, end).limit(parsedSize);
-
-  const { data: rawData, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  const data = rawData.map(
-    ({ workspace_wallets, transaction_categories, ...rest }) => ({
-      ...rest,
-      wallet: workspace_wallets?.name,
-      category: transaction_categories?.name,
-    })
-  );
-
-  return { data, count } as {
-    data: Transaction[];
-    count: number;
-  };
-}
+    wsId: string,
+    {
+      q,
+      page = '1',
+      pageSize = '10',
+    }: { q?: string; page?: string; pageSize?: string }
+  ) {
+    const supabase = await createClient();
+  
+    const queryBuilder = supabase
+      .from('wallet_transactions')
+      .select(
+        '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
+        {
+          count: 'exact',
+        }
+      )
+      .eq('workspace_wallets.ws_id', wsId)
+      .order('taken_at', { ascending: false })
+      .order('created_at', { ascending: false });
+  
+    if (q) queryBuilder.ilike('description', `%${q}%`);
+  
+    if (page && pageSize) {
+      const parsedPage = parseInt(page);
+      const parsedSize = parseInt(pageSize);
+      const start = (parsedPage - 1) * parsedSize;
+      const end = parsedPage * parsedSize;
+      queryBuilder.range(start, end).limit(parsedSize);
+    }
+  
+    const { data: rawData, error, count } = await queryBuilder;
+    if (error) throw error;
+  
+    const data = rawData.map(
+      ({ workspace_wallets, transaction_categories, ...rest }) => ({
+        ...rest,
+        wallet: workspace_wallets?.name,
+        category: transaction_categories?.name,
+      })
+    );
+  
+    return { data, count } as {
+      data: Transaction[];
+      count: number;
+    };
+  }
+  

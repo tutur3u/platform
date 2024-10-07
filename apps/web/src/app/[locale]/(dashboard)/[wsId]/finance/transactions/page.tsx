@@ -89,7 +89,7 @@ async function getData(
     .order('taken_at', { ascending: false })
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('description', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
