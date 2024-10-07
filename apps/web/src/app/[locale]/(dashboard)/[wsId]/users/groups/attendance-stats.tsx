@@ -9,7 +9,7 @@ const GroupAttendanceStats = ({
   groupId,
   count,
 }: {
-  wsId: string;
+  wsId: string | undefined;
   groupId: string;
   count: number;
 }) => {
@@ -64,6 +64,8 @@ const GroupAttendanceStats = ({
     placeholderData: keepPreviousData,
     enabled: !!groupId,
   });
+
+  if (!wsId || !groupId) return null;
 
   const attended =
     res?.data?.reduce((a, b) => a + (b?.status === 'PRESENT' ? 1 : 0), 0) || 0;

@@ -34,6 +34,7 @@ export default async function WorkspaceUserGroupsPage({
 
   const groups = data.map((g) => ({
     ...g,
+    ws_id: wsId,
     href: `/${wsId}/users/groups/${g.id}`,
   }));
 

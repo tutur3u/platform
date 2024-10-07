@@ -71,6 +71,7 @@ export const getUserGroupColumns = (
     ),
     cell: ({ row }) => (
       <GroupAttendanceStats
+        wsId={row.original.ws_id}
         groupId={row.original.id}
         count={row.original.amount || 0}
       />
