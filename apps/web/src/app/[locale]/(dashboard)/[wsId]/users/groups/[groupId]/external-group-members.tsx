@@ -17,7 +17,7 @@ export default function ExternalGroupMembers({
   groups: UserGroup[];
 }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const groupsPerPage = 6;
+  const groupsPerPage = 8;
 
   const indexOfLastGroup = currentPage * groupsPerPage;
   const indexOfFirstGroup = indexOfLastGroup - groupsPerPage;
@@ -35,6 +35,27 @@ export default function ExternalGroupMembers({
 
   return (
     <>
+      {groups.length > groupsPerPage && (
+        <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+          <Button
+            size="xs"
+            variant="secondary"
+            onClick={handlePrev}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+
+          <Button
+            size="xs"
+            variant="secondary"
+            onClick={handleNext}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
       <div className="grid gap-2 md:grid-cols-2">
         {currentGroups.length > 0 &&
           currentGroups.map((group) => (
@@ -60,25 +81,6 @@ export default function ExternalGroupMembers({
               </div>
             </div>
           ))}
-      </div>
-      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
-        <Button
-          size="xs"
-          variant="secondary"
-          onClick={handlePrev}
-          disabled={currentPage === 1}
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </Button>
-
-        <Button
-          size="xs"
-          variant="secondary"
-          onClick={handleNext}
-          disabled={currentPage === totalPages}
-        >
-          <ChevronRight className="h-6 w-6" />
-        </Button>
       </div>
     </>
   );
