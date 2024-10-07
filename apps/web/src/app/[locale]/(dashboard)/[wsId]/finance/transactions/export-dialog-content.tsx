@@ -27,9 +27,11 @@ import * as XLSX from 'xlsx';
 export default function ExportDialogContent({
   wsId,
   exportType,
+  searchParams,
 }: {
   wsId: string;
   exportType: string;
+  searchParams: { q?: string; page?: string; pageSize?: string };
 }) {
   const t = useTranslations();
 
@@ -71,13 +73,14 @@ export default function ExportDialogContent({
   const handleExport = async () => {
     setIsExporting(true);
     setProgress(0);
-    
+
     const allData: Transaction[] = [];
     let currentPage = 1;
     const pageSize = 100;
 
     while (true) {
       const { data, count } = await getData(wsId, {
+        q: searchParams.q,
         page: currentPage.toString(),
         pageSize: pageSize.toString(),
       });
