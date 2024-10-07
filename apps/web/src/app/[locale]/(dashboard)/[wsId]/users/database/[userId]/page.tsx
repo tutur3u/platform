@@ -392,7 +392,7 @@ async function getInvoiceData(
     .eq('customer_id', userId)
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('notice', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);

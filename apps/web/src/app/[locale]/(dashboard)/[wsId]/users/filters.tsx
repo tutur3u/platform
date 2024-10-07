@@ -77,7 +77,7 @@ export function UserDatabaseFilter({
   sortCheckedFirst = true,
   multiple = true,
   disabled,
-  variant = 'outline',
+  variant,
   className,
   contentClassName,
   hideSelected = false,
@@ -163,7 +163,17 @@ export function UserDatabaseFilter({
     >
       <PopoverTrigger disabled={disabled} asChild>
         <Button
-          variant={variant}
+          variant={
+            variant
+              ? 'outline'
+              : !hideSelected &&
+                  selectedSize > 0 &&
+                  options
+                    .map((option) => option.value)
+                    .some((value) => selectedValues.has(value))
+                ? undefined
+                : 'outline'
+          }
           className={cn('h-8 border-dashed px-1', className)}
           disabled={disabled}
         >
@@ -178,7 +188,7 @@ export function UserDatabaseFilter({
                 <Separator orientation="vertical" className="mx-1 h-4" />
                 <Badge
                   variant="secondary"
-                  className="rounded-sm px-1 font-normal lg:hidden"
+                  className="bg-background/80 text-foreground hover:bg-background/80 rounded-sm px-1 font-normal lg:hidden"
                 >
                   {selectedSize}
                 </Badge>
@@ -186,7 +196,7 @@ export function UserDatabaseFilter({
                   {(multiple && selectedSize > 2) || alwaysShowNumber ? (
                     <Badge
                       variant="secondary"
-                      className="rounded-sm px-1 font-normal"
+                      className="bg-background/80 text-foreground hover:bg-background/80 rounded-sm px-1 font-normal"
                     >
                       {selectedSize} {t('selected')}
                     </Badge>
@@ -198,7 +208,7 @@ export function UserDatabaseFilter({
                         <Badge
                           variant="secondary"
                           key={option.value}
-                          className="rounded-sm px-1 font-normal"
+                          className="bg-background/80 text-foreground hover:bg-background/80 rounded-sm px-1 font-normal"
                         >
                           {option.label}
                         </Badge>

@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+
 import { Button } from '../../button';
 import SearchBar from '../search-bar';
 import { DataTableCreateButton } from './data-table-create-button';
@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
 import { Table } from '@tanstack/react-table';
-import { Download, X } from 'lucide-react';
+import { Download, RotateCcw } from 'lucide-react';
 import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
@@ -58,7 +58,7 @@ export function DataTableToolbar<TData>({
     (defaultQuery?.length || 0) > 0;
 
   return (
-    <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
+    <div className="flex flex-col items-start justify-between gap-2 md:flex-row">
       <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
         {disableSearch || (
           <SearchBar
@@ -79,7 +79,7 @@ export function DataTableToolbar<TData>({
             className="h-8 px-2 lg:px-3"
           >
             {t?.('common.reset')}
-            <X className="ml-2 h-4 w-4" />
+            <RotateCcw className="ml-2 h-4 w-4" />
           </Button>
         )}
       </div>
