@@ -129,7 +129,7 @@ export default function ExportDialogContent({
 
       <DialogFooter className="justify-between">
         <DialogClose asChild>
-          <Button type="button" variant="secondary" disabled={isExporting}>
+          <Button type="button" variant="secondary">
             {t('common.cancel')}
           </Button>
         </DialogClose>
@@ -175,7 +175,7 @@ async function getData(
       const parsedPage = parseInt(page);
       const parsedSize = parseInt(pageSize);
       const start = (parsedPage - 1) * parsedSize;
-      const end = parsedPage * parsedSize;
+      const end = parsedPage * parsedSize - 1;
       queryBuilder.range(start, end).limit(parsedSize);
     }
   
