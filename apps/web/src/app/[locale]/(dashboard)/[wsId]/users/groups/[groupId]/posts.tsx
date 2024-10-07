@@ -144,7 +144,7 @@ export default function UserGroupPosts({
         <div className="grid gap-1">
           <div className="mb-2 text-xl font-semibold">
             {t('ws-user-groups.posts')}
-            {count && ` (${count})`}
+            {!!count && ` (${count})`}
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox
