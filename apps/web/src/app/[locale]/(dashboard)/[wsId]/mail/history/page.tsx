@@ -81,7 +81,10 @@ async function getData(
     .select(
       `*, ...users(sender:display_name), recipient:workspace_users(display_name, full_name), ...user_group_posts${
         hasFilters ? '!inner' : ''
-      }(workspace_user_groups(group_id:id))`
+      }(workspace_user_groups(group_id:id))`,
+      {
+        count: 'exact',
+      }
     );
 
   if (includedGroups.length > 0) {
