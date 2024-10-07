@@ -503,7 +503,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
               onClick={deleteUser}
               disabled={!user.id || !user.ws_id}
             >
-              Delete
+              {t('common.delete')}
             </DropdownMenuItem>
           )}
           {extraData?.wsId && extraData?.groupId && (

@@ -10,7 +10,7 @@ import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Box, MinusCircle } from 'lucide-react';
+import { Box, MinusCircle, Users } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -73,9 +73,34 @@ export default async function UserGroupDetailsPage({
       <Separator className="my-4" />
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
         {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start"> */}
-        {/* <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
-          <div className="text-xl font-semibold">{t('ws-roles.members')}</div>
-        </div> */}
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="mb-2 text-xl font-semibold">
+            {t('ws-roles.members')}
+          </div>
+          <div className="grid gap-2 lg:grid-cols-2">
+            {excludedUserGroups.length > 0 &&
+              excludedUserGroups.map((group) => (
+                <div
+                  key={group.id}
+                  className="bg-background flex items-center rounded-lg border p-2 md:p-4"
+                >
+                  <div className="w-full">
+                    <div className="line-clamp-1 break-all text-center text-lg font-semibold">
+                      {group.name}
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="flex w-full items-center justify-center gap-1">
+                      <Users className="h-5 w-5" />
+                      <div className="font-semibold">
+                        {group.amount}
+                        <span className="opacity-50">/{usersCount}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
         <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <div className="mb-2 text-xl font-semibold">
             {t('ws-user-group-details.schedule')}
@@ -90,12 +115,12 @@ export default async function UserGroupDetailsPage({
             count={postsCount}
           />
         </div>
-        <div className="border-border bg-foreground/5 col-span-full flex flex-col rounded-lg border p-4">
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <div className="mb-2 text-xl font-semibold">
             {t('user-data-table.linked_products')}
             {lpCount && ` (${lpCount})`}
           </div>
-          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-4">
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
             {linkedProducts.map((product) => (
               <div
                 key={product.id}
@@ -112,7 +137,7 @@ export default async function UserGroupDetailsPage({
             ))}
           </div>
         </div>
-        {/* <div className="border-border bg-foreground/5 col-span-full flex flex-col rounded-lg border p-4">
+        {/* <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <div className="text-xl font-semibold">
             {t('user-group-data-table.special_users')}
           </div>
@@ -142,7 +167,6 @@ export default async function UserGroupDetailsPage({
         defaultVisibility={{
           id: false,
           gender: false,
-          avatar_url: false,
           display_name: false,
           ethnicity: false,
           guardian: false,

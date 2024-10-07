@@ -67,7 +67,7 @@ export const getUserColumns = (
         title={t(`${namespace}.avatar_url`)}
       />
     ),
-    cell: async ({ row }) => {
+    cell: ({ row }) => {
       const avatarUrl = row.getValue('avatar_url') as string | undefined;
       if (!avatarUrl) return <div className="min-w-[8rem]">-</div>;
 

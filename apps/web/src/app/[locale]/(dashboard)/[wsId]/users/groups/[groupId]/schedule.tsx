@@ -131,7 +131,13 @@ export default function GroupSchedule({
 
               <div className="grid grid-cols-7 gap-1 md:gap-2">
                 {daysInMonth.map((day, idx) => {
-                  if (isError || !isCurrentMonth(day))
+                  if (
+                    isError ||
+                    !isCurrentMonth(day) ||
+                    isPending ||
+                    !data?.sessions ||
+                    !isDateAvailable(data.sessions, day)
+                  )
                     return (
                       <div
                         key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
@@ -141,24 +147,10 @@ export default function GroupSchedule({
                       </div>
                     );
 
-                  if (
-                    isPending ||
-                    !data?.sessions ||
-                    !isDateAvailable(data.sessions, day)
-                  )
-                    return (
-                      <div
-                        key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
-                        className="bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg"
-                      >
-                        {day.getDate()}
-                      </div>
-                    );
-
                   return (
                     <div
                       key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
-                      className={`flex flex-none cursor-default justify-center rounded border border-green-500/30 bg-green-500/10 p-2 font-semibold text-green-600 transition duration-300 md:rounded-lg dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300`}
+                      className={`border-foreground/10 bg-foreground/10 text-foreground flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg`}
                     >
                       {day.getDate()}
                     </div>
