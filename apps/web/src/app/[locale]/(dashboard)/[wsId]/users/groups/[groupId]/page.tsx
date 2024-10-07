@@ -142,7 +142,6 @@ export default async function UserGroupDetailsPage({
         defaultVisibility={{
           id: false,
           gender: false,
-          avatar_url: false,
           display_name: false,
           ethnicity: false,
           guardian: false,
