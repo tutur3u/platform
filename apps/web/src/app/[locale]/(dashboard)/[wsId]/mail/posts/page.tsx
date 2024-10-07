@@ -9,7 +9,6 @@ import { MailWarning, Send } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
-  q?: string;
   page?: string;
   pageSize?: string;
   userId?: string;
@@ -32,7 +31,7 @@ export default async function WorkspacePostEmailsPage({
   const t = await getTranslations();
   const { locale, wsId } = await params;
   const { data, count } = await getData(wsId, await searchParams);
-  const status = await getSentEmails(wsId);
+  const status = await getSentEmails(wsId, await searchParams);
 
   return (
     <>
@@ -84,6 +83,7 @@ export default async function WorkspacePostEmailsPage({
           notes: false,
           created_at: false,
         }}
+        disableSearch
       />
     </>
   );
@@ -92,7 +92,6 @@ export default async function WorkspacePostEmailsPage({
 async function getData(
   wsId: string,
   {
-    q,
     page = '1',
     pageSize = '10',
     includedGroups = [],
@@ -148,7 +147,7 @@ async function getData(
 
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(wsId, { pageSize, retry: false });
   }
 
   return {
@@ -162,16 +161,44 @@ async function getData(
   } as { data: PostEmail[]; count: number };
 }
 
-async function getSentEmails(wsId: string) {
+async function getSentEmails(
+  wsId: string,
+  {
+    includedGroups = [],
+    excludedGroups = [],
+    userId,
+  }: SearchParams & { retry?: boolean } = {}
+) {
   const supabase = await createClient();
 
-  const { count } = await supabase
+  const queryBuilder = supabase
     .from('user_group_post_checks')
-    .select('workspace_users!inner(ws_id), sent_emails!inner(*)', {
-      head: true,
-      count: 'exact',
-    })
-    .eq('workspace_users.ws_id', wsId);
+    .select(
+      'workspace_users!inner(ws_id), sent_emails!inner(*), user_group_posts!inner(group_id)',
+      {
+        head: true,
+        count: 'exact',
+      }
+    )
+    .eq('workspace_users.ws_id', wsId)
+    .not('workspace_users.email', 'ilike', '%@easy%');
+
+  if (includedGroups.length > 0) {
+    queryBuilder.in(
+      'user_group_posts.group_id',
+      Array.isArray(includedGroups) ? includedGroups : [includedGroups]
+    );
+  }
+
+  if (excludedGroups.length > 0) {
+    queryBuilder.not('user_group_posts.group_id', 'in', excludedGroups);
+  }
+
+  if (userId) {
+    queryBuilder.eq('user_id', userId);
+  }
+
+  const { count } = await queryBuilder;
 
   return {
     count,

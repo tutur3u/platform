@@ -48,6 +48,7 @@ export default async function WorkspaceUsersPage({
           source_name: false,
           source_email: false,
         }}
+        disableSearch
       />
     </>
   );
