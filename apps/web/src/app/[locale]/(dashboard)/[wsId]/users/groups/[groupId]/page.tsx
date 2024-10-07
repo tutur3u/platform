@@ -1,5 +1,6 @@
 import { getUserColumns } from '../../database/columns';
 import { UserDatabaseFilter } from '../../filters';
+import ExternalGroupMembers from './external-group-members';
 import GroupMemberForm from './form';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
@@ -10,7 +11,7 @@ import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Box, MinusCircle, Users } from 'lucide-react';
+import { Box, MinusCircle } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -77,29 +78,11 @@ export default async function UserGroupDetailsPage({
           <div className="mb-2 text-xl font-semibold">
             {t('ws-roles.members')}
           </div>
-          <div className="grid gap-2 lg:grid-cols-2">
-            {excludedUserGroups.length > 0 &&
-              excludedUserGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className="bg-background flex items-center rounded-lg border p-2 md:p-4"
-                >
-                  <div className="w-full">
-                    <div className="line-clamp-1 break-all text-center text-lg font-semibold">
-                      {group.name}
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="flex w-full items-center justify-center gap-1">
-                      <Users className="h-5 w-5" />
-                      <div className="font-semibold">
-                        {group.amount}
-                        <span className="opacity-50">/{usersCount}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </div>
+          <ExternalGroupMembers
+            wsId={wsId}
+            totalUsers={usersCount}
+            groups={excludedUserGroups}
+          />
         </div>
         <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <div className="mb-2 text-xl font-semibold">
@@ -322,6 +305,7 @@ async function getExcludedUserGroups(wsId: string, groupId: string) {
       }
     )
     .select('id, name, amount')
+    .order('amount', { ascending: false })
     .order('name');
 
   const { data, error, count } = await queryBuilder;
