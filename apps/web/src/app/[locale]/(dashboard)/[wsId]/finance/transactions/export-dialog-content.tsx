@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { useTranslations } from 'next-intl';
-import * as React from 'react';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import * as XLSX from 'xlsx';
@@ -116,7 +115,14 @@ export default function ExportDialogContent({
       <DialogHeader>
         <DialogTitle>{t('common.export')}</DialogTitle>
         <DialogDescription>{t('common.export-content')}</DialogDescription>
-        <Select value={exportFileType} onValueChange={setExportFileType}>
+      </DialogHeader>
+
+      <div className="grid gap-1">
+        <Select
+          value={exportFileType}
+          onValueChange={setExportFileType}
+          disabled={isExporting}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="File type" />
           </SelectTrigger>
@@ -125,7 +131,13 @@ export default function ExportDialogContent({
             <SelectItem value="csv">CSV</SelectItem>
           </SelectContent>
         </Select>
-      </DialogHeader>
+
+        {isExporting && (
+          <div>
+            <Progress value={progress} className="h-2 w-full" />
+          </div>
+        )}
+      </div>
 
       <DialogFooter className="justify-between">
         <DialogClose asChild>
@@ -134,65 +146,58 @@ export default function ExportDialogContent({
           </Button>
         </DialogClose>
         <Button onClick={handleExport} disabled={isExporting}>
-          {isExporting ? 'Loading...' : t('common.export')}
+          {isExporting ? t('common.loading') : t('common.export')}
         </Button>
       </DialogFooter>
-
-      {isExporting && (
-        <div className="mt-4">
-          <Progress value={progress} className="w-full" />
-        </div>
-      )}
     </>
   );
 }
 
 async function getData(
-    wsId: string,
-    {
-      q,
-      page = '1',
-      pageSize = '10',
-    }: { q?: string; page?: string; pageSize?: string }
-  ) {
-    const supabase = await createClient();
-  
-    const queryBuilder = supabase
-      .from('wallet_transactions')
-      .select(
-        '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
-        {
-          count: 'exact',
-        }
-      )
-      .eq('workspace_wallets.ws_id', wsId)
-      .order('taken_at', { ascending: false })
-      .order('created_at', { ascending: false });
-  
-    if (q) queryBuilder.ilike('description', `%${q}%`);
-  
-    if (page && pageSize) {
-      const parsedPage = parseInt(page);
-      const parsedSize = parseInt(pageSize);
-      const start = (parsedPage - 1) * parsedSize;
-      const end = parsedPage * parsedSize - 1;
-      queryBuilder.range(start, end);
-    }
-  
-    const { data: rawData, error, count } = await queryBuilder;
-    if (error) throw error;
-  
-    const data = rawData.map(
-      ({ workspace_wallets, transaction_categories, ...rest }) => ({
-        ...rest,
-        wallet: workspace_wallets?.name,
-        category: transaction_categories?.name,
-      })
-    );
-  
-    return { data, count } as {
-      data: Transaction[];
-      count: number;
-    };
+  wsId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
+  const supabase = createClient();
+
+  const queryBuilder = supabase
+    .from('wallet_transactions')
+    .select(
+      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('workspace_wallets.ws_id', wsId)
+    .order('taken_at', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (q) queryBuilder.ilike('description', `%${q}%`);
+
+  if (page && pageSize) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize - 1;
+    queryBuilder.range(start, end);
   }
-  
+
+  const { data: rawData, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  const data = rawData.map(
+    ({ workspace_wallets, transaction_categories, ...rest }) => ({
+      ...rest,
+      wallet: workspace_wallets?.name,
+      category: transaction_categories?.name,
+    })
+  );
+
+  return { data, count } as {
+    data: Transaction[];
+    count: number;
+  };
+}

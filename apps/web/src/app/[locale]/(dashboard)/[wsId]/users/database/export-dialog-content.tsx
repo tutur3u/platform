@@ -1,6 +1,5 @@
-"use client";
+'use client';
 
-import * as React from "react";
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
@@ -11,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
+import { Progress } from '@repo/ui/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -22,7 +22,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import * as XLSX from 'xlsx';
-import { Progress } from "@repo/ui/components/ui/progress";
 
 interface SearchParams {
   q?: string;
@@ -87,13 +86,13 @@ export default function ExportDialogContent({
     const includedGroups = Array.isArray(searchParams.includedGroups)
       ? searchParams.includedGroups
       : searchParams.includedGroups
-      ? [searchParams.includedGroups]
-      : [];
+        ? [searchParams.includedGroups]
+        : [];
     const excludedGroups = Array.isArray(searchParams.excludedGroups)
       ? searchParams.excludedGroups
       : searchParams.excludedGroups
-      ? [searchParams.excludedGroups]
-      : [];
+        ? [searchParams.excludedGroups]
+        : [];
 
     while (true) {
       const { data } = await getData(wsId, {
@@ -103,10 +102,11 @@ export default function ExportDialogContent({
         includedGroups,
         excludedGroups,
       });
-      
+
       allData.push(...data);
 
-      const progressValue = (currentPage * pageSize) / (allData.length + 1) * 100;
+      const progressValue =
+        ((currentPage * pageSize) / (allData.length + 1)) * 100;
       setProgress(progressValue);
 
       if (data.length < pageSize) {
@@ -131,7 +131,14 @@ export default function ExportDialogContent({
       <DialogHeader>
         <DialogTitle>{t('common.export')}</DialogTitle>
         <DialogDescription>{t('common.export-content')}</DialogDescription>
-        <Select value={exportFileType} onValueChange={setExportFileType}>
+      </DialogHeader>
+
+      <div className="grid gap-1">
+        <Select
+          value={exportFileType}
+          onValueChange={setExportFileType}
+          disabled={isExporting}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="File type" />
           </SelectTrigger>
@@ -140,7 +147,13 @@ export default function ExportDialogContent({
             <SelectItem value="csv">CSV</SelectItem>
           </SelectContent>
         </Select>
-      </DialogHeader>
+
+        {isExporting && (
+          <div>
+            <Progress value={progress} className="h-2 w-full" />
+          </div>
+        )}
+      </div>
 
       <DialogFooter className="justify-between">
         <DialogClose asChild>
@@ -150,15 +163,9 @@ export default function ExportDialogContent({
         </DialogClose>
 
         <Button onClick={handleExport} disabled={isExporting}>
-          {isExporting ? 'loading' : t('common.export')}
+          {isExporting ? t('common.loading') : t('common.export')}
         </Button>
       </DialogFooter>
-
-      {isExporting && (
-        <div className="mt-4">
-          <Progress value={progress} className="w-full" />
-        </div>
-      )}
     </>
   );
 }
@@ -174,7 +181,7 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -208,8 +215,15 @@ async function getData(
 
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, page, pageSize, includedGroups, excludedGroups, retry: false });
-  } 
+    return getData(wsId, {
+      q,
+      page,
+      pageSize,
+      includedGroups,
+      excludedGroups,
+      retry: false,
+    });
+  }
 
-  return { data } as unknown as {data: WorkspaceUser[]};
+  return { data } as unknown as { data: WorkspaceUser[] };
 }
