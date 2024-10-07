@@ -11,9 +11,9 @@ import { getTranslations } from 'next-intl/server';
 interface SearchParams {
   page?: string;
   pageSize?: string;
-  userId?: string;
   includedGroups?: string | string[];
   excludedGroups?: string | string[];
+  userId?: string;
 }
 
 interface Props {
