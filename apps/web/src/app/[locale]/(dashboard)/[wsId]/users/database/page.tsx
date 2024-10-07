@@ -60,7 +60,11 @@ export default async function WorkspaceUsersPage({
         extraData={{ locale }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
-        toolbarExportContent={<ExportDialogContent wsId={wsId} />}
+        toolbarExportContent={<ExportDialogContent
+          wsId={wsId}
+          exportType="users"
+          searchParams={await searchParams}
+        />}
         defaultVisibility={{
           id: false,
           gender: false,

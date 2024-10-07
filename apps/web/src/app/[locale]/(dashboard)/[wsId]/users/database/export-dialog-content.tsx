@@ -1,5 +1,7 @@
-'use client';
+"use client";
 
+import * as React from "react";
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -20,12 +22,30 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import * as XLSX from 'xlsx';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { Progress } from "@repo/ui/components/ui/progress";
 
-export default function ExportDialogContent({ wsId }: { wsId: string }) {
+interface SearchParams {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  includedGroups?: string | string[];
+  excludedGroups?: string | string[];
+}
+
+export default function ExportDialogContent({
+  wsId,
+  exportType,
+  searchParams,
+}: {
+  wsId: string;
+  exportType: string;
+  searchParams: SearchParams;
+}) {
   const t = useTranslations();
 
   const [exportFileType, setExportFileType] = useState('excel');
+  const [progress, setProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   const downloadCSV = (data: any[], filename: string) => {
     const csv = jsonToCSV(data);
@@ -59,32 +79,51 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
   };
 
   const handleExport = async () => {
+    setIsExporting(true);
     const allData: WorkspaceUser[] = [];
     let currentPage = 1;
     const pageSize = 100;
+
+    const includedGroups = Array.isArray(searchParams.includedGroups)
+      ? searchParams.includedGroups
+      : searchParams.includedGroups
+      ? [searchParams.includedGroups]
+      : [];
+    const excludedGroups = Array.isArray(searchParams.excludedGroups)
+      ? searchParams.excludedGroups
+      : searchParams.excludedGroups
+      ? [searchParams.excludedGroups]
+      : [];
 
     while (true) {
       const { data } = await getData(wsId, {
         page: currentPage.toString(),
         pageSize: pageSize.toString(),
+        q: searchParams.q,
+        includedGroups,
+        excludedGroups,
       });
-
+      
       allData.push(...data);
 
+      const progressValue = (currentPage * pageSize) / (allData.length + 1) * 100;
+      setProgress(progressValue);
 
       if (data.length < pageSize) {
+        setProgress(100);
         break;
       }
 
       currentPage++;
     }
 
-
     if (exportFileType === 'csv') {
-      downloadCSV(allData, `export_${wsId}.csv`);
+      downloadCSV(allData, `export_${exportType}.csv`);
     } else if (exportFileType === 'excel') {
-      downloadExcel(allData, `export_${wsId}.xlsx`);
+      downloadExcel(allData, `export_${exportType}.xlsx`);
     }
+
+    setIsExporting(false);
   };
 
   return (
@@ -109,8 +148,17 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
             {t('common.cancel')}
           </Button>
         </DialogClose>
-        <Button onClick={handleExport}>{t('common.export')}</Button>
+
+        <Button onClick={handleExport} disabled={isExporting}>
+          {isExporting ? 'loading' : t('common.export')}
+        </Button>
       </DialogFooter>
+
+      {isExporting && (
+        <div className="mt-4">
+          <Progress value={progress} className="w-full" />
+        </div>
+      )}
     </>
   );
 }
@@ -121,7 +169,10 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+    includedGroups = [],
+    excludedGroups = [],
+    retry = true,
+  }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
 
@@ -130,8 +181,12 @@ async function getData(
       'get_workspace_users',
       {
         _ws_id: wsId,
-        included_groups: [],
-        excluded_groups: [],
+        included_groups: Array.isArray(includedGroups)
+          ? includedGroups
+          : [includedGroups],
+        excluded_groups: Array.isArray(excludedGroups)
+          ? excludedGroups
+          : [excludedGroups],
         search_query: q || '',
       },
       {
@@ -141,18 +196,20 @@ async function getData(
     .select('*')
     .order('full_name', { ascending: true, nullsFirst: false });
 
-  const parsedPage = parseInt(page);
-  const parsedSize = parseInt(pageSize);
-  const start = (parsedPage - 1) * parsedSize;
-  const end = parsedPage * parsedSize - 1;
-
-  queryBuilder.range(start, end).limit(parsedSize);
-
-  const { data, error, count } = await queryBuilder;
-
-  if (error) {
-    throw error;
+  if (page && pageSize) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize - 1;
+    queryBuilder.range(start, end);
   }
 
-  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+  const { data, error } = await queryBuilder;
+
+  if (error) {
+    if (!retry) throw error;
+    return getData(wsId, { q, page, pageSize, includedGroups, excludedGroups, retry: false });
+  } 
+
+  return { data } as unknown as {data: WorkspaceUser[]};
 }
