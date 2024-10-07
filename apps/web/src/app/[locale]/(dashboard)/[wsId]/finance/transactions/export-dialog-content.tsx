@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
+import { Progress } from '@repo/ui/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -22,10 +23,20 @@ import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import * as XLSX from 'xlsx';
 
-export default function ExportDialogContent({ wsId }: { wsId: string }) {
+export default function ExportDialogContent({
+  wsId,
+  exportType,
+  searchParams,
+}: {
+  wsId: string;
+  exportType: string;
+  searchParams: { q?: string; page?: string; pageSize?: string };
+}) {
   const t = useTranslations();
 
   const [exportFileType, setExportFileType] = useState('excel');
+  const [progress, setProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
 
   const downloadCSV = (data: Transaction[], filename: string) => {
     const csv = jsonToCSV(data);
@@ -59,16 +70,25 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
   };
 
   const handleExport = async () => {
+    setIsExporting(true);
+    setProgress(0);
+
     const allData: Transaction[] = [];
     let currentPage = 1;
     const pageSize = 100;
 
     while (true) {
-      const { data } = await getData(wsId, {
+      const { data, count } = await getData(wsId, {
+        q: searchParams.q,
         page: currentPage.toString(),
         pageSize: pageSize.toString(),
       });
+
       allData.push(...data);
+
+      const totalPages = Math.ceil(count / pageSize);
+      const progressValue = (currentPage / totalPages) * 100;
+      setProgress(progressValue);
 
       if (data.length < pageSize) {
         break;
@@ -77,11 +97,17 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
       currentPage++;
     }
 
+    // After data fetching is completed, set progress to 100%
+    setProgress(100);
+
+    // Export the file based on the selected file type
     if (exportFileType === 'csv') {
-      downloadCSV(allData, `export_${wsId}.csv`);
+      downloadCSV(allData, `export_${exportType}.csv`);
     } else if (exportFileType === 'excel') {
-      downloadExcel(allData, `export_${wsId}.xlsx`);
+      downloadExcel(allData, `export_${exportType}.xlsx`);
     }
+
+    setIsExporting(false); // Stop the exporting process
   };
 
   return (
@@ -89,7 +115,14 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
       <DialogHeader>
         <DialogTitle>{t('common.export')}</DialogTitle>
         <DialogDescription>{t('common.export-content')}</DialogDescription>
-        <Select value={exportFileType} onValueChange={setExportFileType}>
+      </DialogHeader>
+
+      <div className="grid gap-1">
+        <Select
+          value={exportFileType}
+          onValueChange={setExportFileType}
+          disabled={isExporting}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="File type" />
           </SelectTrigger>
@@ -98,7 +131,13 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
             <SelectItem value="csv">CSV</SelectItem>
           </SelectContent>
         </Select>
-      </DialogHeader>
+
+        {isExporting && (
+          <div>
+            <Progress value={progress} className="h-2 w-full" />
+          </div>
+        )}
+      </div>
 
       <DialogFooter className="justify-between">
         <DialogClose asChild>
@@ -106,7 +145,9 @@ export default function ExportDialogContent({ wsId }: { wsId: string }) {
             {t('common.cancel')}
           </Button>
         </DialogClose>
-        <Button onClick={handleExport}>{t('common.export')}</Button>
+        <Button onClick={handleExport} disabled={isExporting}>
+          {isExporting ? t('common.loading') : t('common.export')}
+        </Button>
       </DialogFooter>
     </>
   );
@@ -120,7 +161,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('wallet_transactions')
@@ -136,12 +177,13 @@ async function getData(
 
   if (q) queryBuilder.ilike('description', `%${q}%`);
 
-  const parsedPage = parseInt(page, 10);
-  const parsedSize = parseInt(pageSize, 10);
-  const start = (parsedPage - 1) * parsedSize;
-  const end = parsedPage * parsedSize;
-
-  queryBuilder.range(start, end).limit(parsedSize);
+  if (page && pageSize) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize - 1;
+    queryBuilder.range(start, end);
+  }
 
   const { data: rawData, error, count } = await queryBuilder;
   if (error) throw error;
