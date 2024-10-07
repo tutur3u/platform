@@ -91,7 +91,7 @@ const GroupAttendanceStats = ({
 
   return (
     <div
-      className={`flex items-center justify-center rounded border p-2 text-center font-semibold ${
+      className={`flex flex-wrap items-center justify-center gap-1 rounded border p-2 text-center font-semibold ${
         res?.available
           ? count <= attended + absent
             ? 'border-dynamic-green/10 bg-dynamic-green/10 text-dynamic-green'
@@ -103,7 +103,7 @@ const GroupAttendanceStats = ({
         ? count <= attended + absent
           ? t('user-group-data-table.completed')
           : t('user-group-data-table.incomplete')
-        : t('user-group-data-table.no_attendance_today')}{' '}
+        : t('user-group-data-table.no_attendance_today')}
       {res?.available && (
         <span className="opacity-50">
           ({attended + absent}/{count})
