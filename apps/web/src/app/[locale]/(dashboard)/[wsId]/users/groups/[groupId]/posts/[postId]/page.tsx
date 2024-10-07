@@ -5,7 +5,8 @@ import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Check, CheckCheck, CircleHelp, Send, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { Check, CheckCheck, CircleHelp, Clock, Send, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -51,14 +52,32 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
     <div>
       <FeatureSummary
         title={
-          <Link
-            href={`/${wsId}/users/groups/${groupId}`}
-            className="text-2xl font-bold hover:underline"
-          >
-            {group.name}
-          </Link>
+          <>
+            <Link
+              href={`/${wsId}/users/groups/${groupId}`}
+              className="text-2xl font-bold hover:underline"
+            >
+              {group.name}
+            </Link>
+            {post.created_at && (
+              <div className="flex items-center gap-0.5 text-xs opacity-70">
+                <Clock className="h-3 w-3" />
+                {format(new Date(post.created_at), 'HH:mm, dd/MM/yyyy')}
+              </div>
+            )}
+            <Separator className="my-2" />
+          </>
         }
-        description={`${post.title}\n\n${post.content}`.trim()}
+        description={
+          <div className="flex flex-col gap-2">
+            <h2 className="text-dynamic-blue bg-dynamic-blue/15 border-dynamic-blue/15 w-fit rounded border px-2 text-xl font-semibold uppercase">
+              {post?.title?.trim() || t('common.unknown')}
+            </h2>
+            <p className="text-sm opacity-70">
+              {post?.content?.trim() || t('common.empty')}
+            </p>
+          </div>
+        }
         secondaryTriggerTitle={`${t('ws_post_details.check_all')}`}
         secondaryTriggerIcon={<CheckCheck className="mr-1 h-5 w-5" />}
         secondaryTitle={t('ws_post_details.check_all')}
@@ -74,7 +93,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         disableSecondaryTrigger={status.checked === status.count}
         action={
           hasEmailSendingPermission ? (
-            <EmailList wsId={wsId} />
+            <EmailList wsId={wsId} groupId={groupId} />
           ) : (
             <CheckAll
               wsId={wsId}
@@ -147,8 +166,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               group_name: group.name,
             }}
             disableEmailSending={status.sent?.includes(user.id)}
-            // hideEmailSending={!hasEmailSendingPermission}
-            hideEmailSending
+            hideEmailSending={!hasEmailSendingPermission}
           />
         ))}
       </div>
