@@ -142,6 +142,7 @@ async function getData(
   }
 
   const { data, error, count } = await queryBuilder.order('created_at', {
+    referencedTable: 'user_group_posts',
     ascending: false,
   });
 
