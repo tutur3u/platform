@@ -25,6 +25,9 @@ export const ENABLE_KEYBOARD_SHORTCUTS = false;
 export const SHOW_TAILWIND_INDICATOR =
   process.env.SHOW_TAILWIND_INDICATOR === 'true';
 
+export const HIDE_TAILWIND_INDICATOR =
+  process.env.HIDE_TAILWIND_INDICATOR === 'true';
+
 export const PUBLIC_PATHS = [
   '/login',
   '/terms',
