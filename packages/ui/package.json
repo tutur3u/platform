@@ -45,7 +45,7 @@
     "eslint": "8.57.1",
     "input-otp": "^1.2.4",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.447.0",
+    "lucide-react": "^0.451.0",
     "next-themes": "^0.3.0",
     "react": "19.0.0-rc-2d16326d-20240930",
     "react-colorful": "^5.6.1",
