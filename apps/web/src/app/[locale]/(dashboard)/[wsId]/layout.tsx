@@ -16,13 +16,13 @@ import {
   Banknote,
   Calendar,
   ChartArea,
-  CheckCheck,
+  CircleCheck,
   Cog,
+  FileText,
   HardDrive,
   HeartPulse,
   Mail,
   MessageCircleIcon,
-  NotebookPen,
   Presentation,
   Sparkles,
   Users,
@@ -116,7 +116,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     {
       title: t('sidebar_tabs.tasks'),
       href: `/${wsId}/tasks/boards`,
-      icon: <CheckCheck className="h-4 w-4" />,
+      icon: <CircleCheck className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_TASKS', 'true', secrets) ||
         withoutPermission('manage_projects'),
@@ -125,7 +125,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     {
       title: t('sidebar_tabs.documents'),
       href: `/${wsId}/documents`,
-      icon: <NotebookPen className="h-4 w-4" />,
+      icon: <FileText className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_DOCS', 'true', secrets) ||
         withoutPermission('manage_documents'),

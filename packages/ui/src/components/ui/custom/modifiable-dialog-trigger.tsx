@@ -55,7 +55,11 @@ export default function ModifiableDialogTrigger<T>({
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
         // onInteractOutside={(e) => e.preventDefault()}
-        className={requireExpansion ? 'md:max-w-2xl xl:max-w-4xl' : undefined}
+        className={
+          requireExpansion
+            ? 'md:max-w-2xl lg:max-w-4xl xl:max-w-6xl'
+            : undefined
+        }
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

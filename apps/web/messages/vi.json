@@ -1029,7 +1029,11 @@
     "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",
     "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng.",
     "send_user_group_post_emails": "Gửi nội dung bài viết qua email",
-    "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể."
+    "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể.",
+    "export_users_data": "Cho phép xuất dữ liệu người dùng",
+    "export_users_data_description": "Cho phép thành viên xuất dữ liệu người dùng ảo được tạo trong không gian làm việc của bạn.",
+    "export_finance_data": "Cho phép xuất dữ liệu tài chính",
+    "export_finance_data_description": "Cho phép thành viên xuất dữ liệu giao dịch tài chính được tạo trong không gian làm việc của bạn."
   },
   "ws-activities": {
     "description": "Xem tất cả các hoạt động trong không gian làm việc của bạn",

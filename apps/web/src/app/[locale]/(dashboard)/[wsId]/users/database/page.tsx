@@ -3,6 +3,7 @@ import ExportDialogContent from './export-dialog-content';
 import Filters from './filters';
 import UserForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { getPermissions } from '@/lib/workspace-helper';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
@@ -36,6 +37,10 @@ export default async function WorkspaceUsersPage({
   const { data, count } = await getData(wsId, await searchParams);
   const { data: extraFields } = await getUserFields(wsId);
 
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
   const users = data.map((u) => ({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
@@ -61,11 +66,13 @@ export default async function WorkspaceUsersPage({
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
         toolbarExportContent={
-          <ExportDialogContent
-            wsId={wsId}
-            exportType="users"
-            searchParams={await searchParams}
-          />
+          containsPermission('export_users_data') && (
+            <ExportDialogContent
+              wsId={wsId}
+              exportType="users"
+              searchParams={await searchParams}
+            />
+          )
         }
         defaultVisibility={{
           id: false,

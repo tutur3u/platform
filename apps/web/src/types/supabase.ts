@@ -4950,8 +4950,10 @@ export type Database = {
         | 'manage_documents'
         | 'manage_drive'
         | 'manage_users'
+        | 'export_users_data'
         | 'manage_inventory'
         | 'manage_finance'
+        | 'export_finance_data'
         | 'ai_chat'
         | 'ai_lab'
         | 'send_user_group_post_emails';
