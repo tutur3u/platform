@@ -28,6 +28,9 @@ export const SHOW_TAILWIND_INDICATOR =
 export const HIDE_TAILWIND_INDICATOR =
   process.env.HIDE_TAILWIND_INDICATOR === 'true';
 
+export const IS_PRODUCTION_DB =
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
+
 export const PUBLIC_PATHS = [
   '/login',
   '/terms',
