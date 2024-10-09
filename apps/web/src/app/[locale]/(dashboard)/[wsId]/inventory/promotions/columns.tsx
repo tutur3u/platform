@@ -5,7 +5,7 @@ import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
-export const promotionColumns = (
+export const getPromotionColumns = (
   t: any,
   namespace: string
 ): ColumnDef<ProductPromotion>[] => [
@@ -102,8 +102,8 @@ export const promotionColumns = (
       </div>
     ),
   },
-  //   {
-  //     id: 'actions',
-  //     cell: ({ row }) => <SecretRowActions row={row} />,
-  //   },
+  {
+    id: 'actions',
+    cell: ({ row }) => <PromotionRowActions row={row} />,
+  },
 ];
