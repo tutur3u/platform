@@ -1515,7 +1515,20 @@
     "singular": "Promotion",
     "description": "Promotions are used to manage product discounts and promotions.",
     "create": "Create promotion",
-    "create_description": "Create a new promotion"
+    "create_description": "Create a new promotion",
+    "update": "Update promotion",
+    "form": {
+      "name": "Name",
+      "description": "Decription",
+      "code": "Coupon code",
+      "value": "Discount value",
+      "unit": {
+        "placeholder": "Unit",
+        "currency": "Currency",
+        "percentage": "Percentage"
+      }
+    }
+
   },
   "ws_post_details": {
     "check_all": "Check all"

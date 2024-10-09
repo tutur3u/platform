@@ -1515,7 +1515,19 @@
     "singular": "Khuyến mãi",
     "description": "Khuyến mãi được sử dụng để quản lý các sản phẩm khuyến mãi.",
     "create": "Tạo khuyến mãi",
-    "create_description": "Tạo một khuyến mãi mới"
+    "create_description": "Tạo một khuyến mãi mới",
+    "update": "Cập nhật khuyến mãi",
+    "form": {
+      "name": "Tên",
+      "description": "Mô tả",
+      "code": "Mã giảm giá",
+      "value": "Giá trị",
+      "unit": {
+        "placeholder": "Đơn vị",
+        "currency": "Tiền tệ",
+        "percentage": "Phần trăm"
+      }
+    }
   },
   "ws_post_details": {
     "check_all": "Đã kiểm tra tất cả"
