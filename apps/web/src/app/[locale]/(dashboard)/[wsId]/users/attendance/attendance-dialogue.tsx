@@ -25,7 +25,6 @@ interface AttendanceDialogProps {
   onClose: () => void;
   date: Date;
   user: WorkspaceUser;
-  wsId: string;
   groups: { id: string; name: string }[];
   onAttendanceUpdated: () => void;
   currentStatus: 'PRESENT' | 'ABSENT' | null;
@@ -37,7 +36,6 @@ export function AttendanceDialog({
   onClose,
   date,
   user,
-  wsId,
   groups,
   onAttendanceUpdated,
   currentStatus,
@@ -63,10 +61,9 @@ export function AttendanceDialog({
     const { error } = await supabase
       .from('user_group_attendance')
       .upsert({
-        ws_id: wsId,
         user_id: user.id,
         group_id: selectedGroupId,
-        date: format(date, 'yyyy-mm-dd'),
+        date: format(date, 'yyyy-MM-dd'),
         status,
       })
       .select();

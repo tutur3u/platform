@@ -375,7 +375,6 @@ export default function UserMonthAttendance({
                   onClose={handleDialogClose}
                   date={selectedDate}
                   user={data}
-                  wsId={wsId}
                   groups={differentGroups || []}
                   onAttendanceUpdated={handleAttendanceUpdated}
                   currentStatus={currentStatus}
