@@ -113,7 +113,10 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
             <FormItem>
               <FormLabel>{t('ws-inventory-promotions.form.name')}</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input
+                  {...field}
+                  placeholder={t('ws-inventory-promotions.form.name')}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -128,7 +131,10 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
                 {t('ws-inventory-promotions.form.description')}
               </FormLabel>
               <FormControl>
-                <Textarea {...field} />
+                <Textarea
+                  {...field}
+                  placeholder={t('ws-inventory-promotions.form.description')}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -142,7 +148,10 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
             <FormItem className="flex-1">
               <FormLabel>{t('ws-inventory-promotions.form.code')}</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input
+                  {...field}
+                  placeholder={t('ws-inventory-promotions.form.code')}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -156,7 +165,11 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
               <FormItem className="flex-1">
                 <FormLabel>{t('ws-inventory-promotions.form.value')}</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input
+                    type="number"
+                    {...field}
+                    placeholder={t('ws-inventory-promotions.form.value')}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -173,7 +186,12 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
                 <FormControl>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-32">
-                      <SelectValue {...field} />
+                      <SelectValue
+                        {...field}
+                        placeholder={t(
+                          'ws-inventory-promotions.form.unit.placeholder'
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="currency">
