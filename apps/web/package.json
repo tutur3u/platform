@@ -69,7 +69,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
-    "framer-motion": "^11.11.4",
+    "framer-motion": "^11.11.7",
     "html2canvas": "^1.4.1",
     "jotai": "^2.10.0",
     "juice": "^11.0.0",
