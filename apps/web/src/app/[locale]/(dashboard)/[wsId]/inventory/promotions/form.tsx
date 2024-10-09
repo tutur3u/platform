@@ -97,8 +97,8 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
     } else {
       setLoading(false);
       toast({
-        title: 'Error creating product',
-        description: 'An error occurred while creating the product',
+        title: 'Error creating promotion',
+        description: 'An error occurred while creating the promotion',
       });
     }
   }
@@ -198,7 +198,7 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading
             ? t('common.processing')
-            : !!data?.id
+            : data?.id
               ? t('common.edit')
               : t('common.create')}
         </Button>
