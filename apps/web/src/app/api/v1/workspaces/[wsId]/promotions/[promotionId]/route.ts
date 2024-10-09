@@ -41,7 +41,7 @@ export async function DELETE(_: Request, { params }: Params) {
   const { error } = await supabase
     .from('workspace_promotions')
     .delete()
-    .eq('ws_id', promotionId);
+    .eq('id', promotionId);
 
   if (error) {
     console.log(error);
