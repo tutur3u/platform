@@ -8,7 +8,6 @@ import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
-import { redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -29,11 +28,8 @@ export default async function WorkspacePromotionsPage({
   const { wsId } = await params;
   const { data, count } = await getData(wsId, await searchParams);
 
-  // TODO: de-dup this as route context
-  const user = await getCurrentUser();
-  // TODO: this as a middleware to ensure all route are authenticated
-  if (!user) redirect('/login');
-  const wsUser = await getWorkspaceUser(wsId, user.id);
+  const user = await getCurrentUser(true);
+  const wsUser = await getWorkspaceUser(wsId, user?.id!);
 
   const promotions = data.map(({ value, use_ratio, ...rest }) => ({
     ...rest,

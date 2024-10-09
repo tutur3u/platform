@@ -17,7 +17,7 @@ export async function POST(req: Request, { params }: Params) {
     ws_id: wsId,
     // TODO: better handling boolean value, as expand to further units
     unit: undefined,
-    use_ratio: data.unit === 'percentage' ? true : false,
+    use_ratio: data.unit === 'percentage',
   });
 
   if (error) {
