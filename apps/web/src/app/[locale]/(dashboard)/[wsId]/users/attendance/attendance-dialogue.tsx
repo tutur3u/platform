@@ -15,9 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/ui/select';
+import { useToast } from '@repo/ui/hooks/use-toast';
 import { format } from 'date-fns';
 import { useLocale } from 'next-intl';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface AttendanceDialogProps {
   isOpen: boolean;
@@ -43,30 +44,44 @@ export function AttendanceDialog({
   currentGroupId,
 }: AttendanceDialogProps) {
   const locale = useLocale();
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(currentGroupId);
-  const [status, setStatus] = useState<'PRESENT' | 'ABSENT' | null>(currentStatus);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
+    currentGroupId
+  );
+  const [status, setStatus] = useState<'PRESENT' | 'ABSENT' | null>(
+    currentStatus
+  );
+  const { toast } = useToast();
 
   useEffect(() => {
-    setSelectedGroup(currentGroupId);
+    setSelectedGroupId(currentGroupId);
     setStatus(currentStatus);
   }, [currentGroupId, currentStatus]);
 
   const handleSubmit = async () => {
-    if (!selectedGroup || !status) return;
+    if (!selectedGroupId || !status) return;
     const supabase = await createClient();
     const { error } = await supabase
       .from('user_group_attendance')
       .upsert({
         ws_id: wsId,
         user_id: user.id,
-        group_id: selectedGroup,
-        date: format(date, 'yyyy-MM-dd'),
+        group_id: selectedGroupId,
+        date: format(date, 'yyyy-mm-dd'),
         status,
       })
       .select();
     if (error) {
       console.error('Error updating attendance:', error);
+      toast({
+        title: 'Error updating attendance',
+        description: error.message,
+        variant: 'destructive',
+      });
     } else {
+      toast({
+        title: 'Attendance updated',
+        description: 'The attendance record has been successfully updated.',
+      });
       onAttendanceUpdated();
       onClose();
     }
@@ -96,7 +111,10 @@ export function AttendanceDialog({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <span className="text-right font-semibold">Group:</span>
-            <Select onValueChange={setSelectedGroup} value={selectedGroup || undefined}>
+            <Select
+              onValueChange={setSelectedGroupId}
+              value={selectedGroupId || undefined}
+            >
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a group" />
               </SelectTrigger>
@@ -109,21 +127,26 @@ export function AttendanceDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <span className="text-right font-semibold">Status:</span>
+            <div className="col-span-3 flex gap-2">
+              <Button
+                variant={status === 'PRESENT' ? 'default' : 'outline'}
+                onClick={() => setStatus('PRESENT')}
+              >
+                Present
+              </Button>
+              <Button
+                variant={status === 'ABSENT' ? 'default' : 'outline'}
+                onClick={() => setStatus('ABSENT')}
+              >
+                Absent
+              </Button>
+            </div>
+          </div>
         </div>
         <DialogFooter>
-          <Button
-            variant={status === 'PRESENT' ? 'default' : 'outline'}
-            onClick={() => setStatus('PRESENT')}
-          >
-            Present
-          </Button>
-          <Button
-            variant={status === 'ABSENT' ? 'default' : 'outline'}
-            onClick={() => setStatus('ABSENT')}
-          >
-            Absent
-          </Button>
-          <Button onClick={handleSubmit} disabled={!selectedGroup || !status}>
+          <Button onClick={handleSubmit} disabled={!selectedGroupId || !status}>
             Save
           </Button>
         </DialogFooter>

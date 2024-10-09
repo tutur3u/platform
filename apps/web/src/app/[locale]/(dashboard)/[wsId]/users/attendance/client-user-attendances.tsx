@@ -19,17 +19,19 @@ interface SearchParams {
 const DEFAULT_PAGE = '1';
 const DEFAULT_PAGE_SIZE = '24';
 
-export default function ClientUserAttendances({
-  wsId,
-  searchParams: serverSearchParams,
-  data,
-  count,
-}: {
+import { FC } from 'react';
+
+const ClientUserAttendances: FC<{
   wsId: string;
   searchParams: SearchParams;
   data: WorkspaceUser[];
   count: number;
-}) {
+}> = ({
+  wsId,
+  searchParams: serverSearchParams,
+  data,
+  count,
+}) => {
   const t = useTranslations();
   const searchParams = useSearchParams();
 
@@ -117,3 +119,5 @@ export default function ClientUserAttendances({
     </>
   );
 }
+
+export default ClientUserAttendances;

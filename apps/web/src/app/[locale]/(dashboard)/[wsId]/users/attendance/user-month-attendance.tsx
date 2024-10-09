@@ -183,30 +183,6 @@ export default function UserMonthAttendance({
   const handleDateClick = (date: Date) => {
     if (!isAfter(date, today)) {
       setSelectedDate(date);
-
-      // Find the attendance for the selected date
-      const attendanceForDate = data.attendance?.find((attendance) => {
-        const attendanceDate = new Date(attendance.date);
-        return (
-          attendanceDate.getDate() === date.getDate() &&
-          attendanceDate.getMonth() === date.getMonth() &&
-          attendanceDate.getFullYear() === date.getFullYear()
-        );
-      });
-
-      // Set the current status and group
-      if (attendanceForDate) {
-        setCurrentStatus(attendanceForDate.status as 'PRESENT' | 'ABSENT');
-        setCurrentGroupId(
-          Array.isArray(attendanceForDate.groups)
-            ? attendanceForDate.groups[0]?.id || null
-            : attendanceForDate.groups?.id || null
-        );
-      } else {
-        setCurrentStatus(null);
-        setCurrentGroupId(null);
-      }
-
       setIsDialogOpen(true);
     }
   };
@@ -339,8 +315,9 @@ export default function UserMonthAttendance({
                     if (!isDateAttended(data, day) && !isDateAbsent(data, day))
                       return (
                         <div
+                          onClick={() => handleDateClick(day)}
                           key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
-                          className="bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg"
+                          className="bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg"
                         >
                           {day.getDate()}
                         </div>
