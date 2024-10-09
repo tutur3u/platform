@@ -1,5 +1,6 @@
 'use client';
 
+import ColumnCreation from './column-creation';
 import { coordinateGetter } from './keyboard-preset';
 import { type Task, TaskCard } from './task';
 import type { Column } from './task-list';
@@ -23,101 +24,44 @@ import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const defaultCols = [
-  {
-    id: 'backlog' as const,
-    title: 'Backlog',
-  },
-  {
-    id: 'todo' as const,
-    title: 'Todo',
-  },
-  {
-    id: 'in-progress' as const,
-    title: 'In progress',
-  },
-  {
-    id: 'reviewing' as const,
-    title: 'Reviewing',
-  },
-  {
-    id: 'done' as const,
-    title: 'Done',
-  },
-] satisfies Column[];
+interface KanbanBoardProps {
+  wsId?: string;
+  defaultCols: defaultCols[];
+  initialTasks: Task[];
+}
 
-export type ColumnId = (typeof defaultCols)[number]['id'];
+interface defaultCols {
+  id?: UniqueIdentifier;
+  board_id?: string | null;
+  title?: string | null;
+  position?: number | null;
+  created_at?: string | null;
+}
 
-const initialTasks: Task[] = [
-  {
-    id: 'task1',
-    columnId: 'done',
-    content: 'Project initiation and planning',
-  },
-  {
-    id: 'task2',
-    columnId: 'done',
-    content: 'Gather requirements from stakeholders',
-  },
-  {
-    id: 'task3',
-    columnId: 'done',
-    content: 'Create wireframes and mockups',
-  },
-  {
-    id: 'task4',
-    columnId: 'in-progress',
-    content: 'Develop homepage layout',
-  },
-  {
-    id: 'task5',
-    columnId: 'reviewing',
-    content: 'Design color scheme and typography',
-  },
-  {
-    id: 'task6',
-    columnId: 'todo',
-    content: 'Implement user authentication',
-  },
-  {
-    id: 'task7',
-    columnId: 'backlog',
-    content: 'Build contact us page',
-  },
-  {
-    id: 'task8',
-    columnId: 'backlog',
-    content: 'Create product catalog',
-  },
-  {
-    id: 'task9',
-    columnId: 'backlog',
-    content: 'Develop about us page',
-  },
-  {
-    id: 'task10',
-    columnId: 'backlog',
-    content: 'Optimize website for mobile devices',
-  },
-  {
-    id: 'task11',
-    columnId: 'todo',
-    content: 'Integrate payment gateway',
-  },
-  {
-    id: 'task12',
-    columnId: 'todo',
-    content: 'Perform testing and bug fixing',
-  },
-  {
-    id: 'task13',
-    columnId: 'todo',
-    content: 'Launch website and deploy to server',
-  },
-];
+interface DefaultColumn {
+  id: string;
+  board_id: string;
+  title: string;
+  position: number;
+  created_at: string;
+}
+export type ColumnId = DefaultColumn['id'];
 
-export function KanbanBoard() {
-  const [columns, setColumns] = useState<Column[]>(defaultCols);
+
+export function KanbanBoard({
+  wsId,
+  defaultCols,
+  initialTasks,
+}: KanbanBoardProps) {
+  const processedColumns = defaultCols.map((col) => ({
+    id: col.id ?? '',
+    board_id: col.board_id ?? '',
+    title: col.title ?? 'Untitled',
+    position: col.position ?? 0,
+    created_at: col.created_at ?? '',
+  }));
+
+  const [columns] = useState<Column[]>(processedColumns);
   const pickedUpTaskColumn = useRef<ColumnId | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
@@ -271,6 +215,11 @@ export function KanbanBoard() {
       onDragOver={onDragOver}
     >
       <BoardContainer>
+        {columns.length === 0 && (
+          <div className="flex h-screen items-center justify-center">
+            <ColumnCreation></ColumnCreation>
+          </div>
+        )}
         <SortableContext items={columnsId}>
           {columns.map((col) => (
             <BoardColumn
@@ -296,6 +245,38 @@ export function KanbanBoard() {
     if (data?.type === 'Task') {
       setActiveTask(data.task);
       return;
+    }
+  }
+  async function updateTaskPositionOnServer(
+    taskId: UniqueIdentifier,
+    columnId: string,
+    position: number
+  ) {
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-boards/column/${taskId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tasks: {
+              columnId, 
+              position,
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error updating task:', errorData);
+      } else {
+        console.log('Task position updated successfully on the server.');
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
     }
   }
 

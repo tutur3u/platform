@@ -12,6 +12,9 @@ export interface Task {
   id: UniqueIdentifier;
   columnId: ColumnId;
   content: string;
+  position: number | null;
+  created_at: string;
+  updated_at: string | null;
 }
 
 interface TaskCardProps {
