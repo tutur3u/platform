@@ -21,18 +21,20 @@ export async function getWorkspace(id?: string) {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, created_at, workspace_members(role)'
     )
     .eq('id', id)
-    .eq('workspace_members.user_id', user.id)
     .single();
 
-  if (error || !data?.workspace_members[0]?.role) notFound();
+  const workspaceJoined = !!data?.workspace_members[0]?.role;
+
+  if (error) notFound();
   const { workspace_members, ...rest } = data;
 
   const ws = {
     ...rest,
     role: workspace_members[0]?.role,
+    joined: workspaceJoined,
   };
 
   return ws as Workspace;

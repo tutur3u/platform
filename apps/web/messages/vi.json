@@ -265,7 +265,11 @@
     "accept-invite-error-title": "Đã xảy ra lỗi khi chấp nhận lời mời.",
     "accept-invite-error-msg": "Vui lòng thử lại sau.",
     "decline-invite-error-title": "Đã xảy ra lỗi khi từ chối lời mời.",
-    "decline-invite-error-msg": "Vui lòng thử lại sau."
+    "decline-invite-error-msg": "Vui lòng thử lại sau.",
+    "invited-you": "đã mời bạn",
+    "workspace-invitation": "Lời mời vào không gian làm việc",
+    "you-been-invited-to-join-the": "Bạn đã được mời tham gia vào không gian làm việc",
+    "accept-to-start-collaborating": ". Hãy chấp nhận lời mời để bắt đầu làm việc cùng nhau!"
   },
   "auth": {
     "password": "Mật khẩu",

@@ -265,7 +265,11 @@
     "accept-invite-error-title": "There was an error accepting the invite.",
     "accept-invite-error-msg": "Please try again later.",
     "decline-invite-error-title": "There was an error declining the invite.",
-    "decline-invite-error-msg": "Please try again later."
+    "decline-invite-error-msg": "Please try again later.",
+    "invited-you": "invited you",
+    "workspace-invitation": "Workspace invitation",
+    "you-been-invited-to-join-the": "You've been invited to join the",
+    "accept-to-start-collaborating": " workspace. Accept to start collaborating!"
   },
   "auth": {
     "password": "Password",

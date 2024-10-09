@@ -11,13 +11,26 @@ export async function POST(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
 
-  const { data, error } = await supabase
+  const { error: workspaceInvitesError } = await supabase
     .from('workspace_invites')
     .delete()
     .eq('ws_id', wsId);
 
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 401 });
+  const { error: workspaceEmailInvitesError } = await supabase
+    .from('workspace_email_invites')
+    .delete()
+    .eq('ws_id', wsId);
 
-  return NextResponse.json(data);
+  if (workspaceInvitesError || workspaceEmailInvitesError)
+    return NextResponse.json(
+      {
+        error:
+          workspaceInvitesError?.message || workspaceEmailInvitesError?.message,
+      },
+      { status: 401 }
+    );
+
+  return NextResponse.json({
+    message: 'Invites declined successfully',
+  });
 }

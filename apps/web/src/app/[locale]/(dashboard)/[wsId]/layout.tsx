@@ -1,6 +1,7 @@
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import FleetingNavigator from './fleeting-navigator';
+import InvitationCard from './invitation-card';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
@@ -29,6 +30,7 @@ import {
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 
 interface LayoutProps {
@@ -194,6 +196,14 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined;
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
+
+  if (!workspace) redirect('/onboarding');
+  if (!workspace?.joined)
+    return (
+      <div className="flex h-screen w-screen items-center justify-center p-2 md:p-4">
+        <InvitationCard workspace={workspace} />
+      </div>
+    );
 
   return (
     <>
