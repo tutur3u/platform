@@ -35,14 +35,24 @@ interface Props {
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
-const FormSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1).max(255),
-  description: z.string().optional(),
-  code: z.string().min(1).max(255),
-  value: z.coerce.number().min(0),
-  unit: z.string(),
-});
+const FormSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    code: z.string().min(1).max(255),
+    value: z.coerce.number().min(0),
+    unit: z.string(),
+  })
+  .refine(
+    ({ unit, value }) =>
+      (unit === 'percentage' && value <= 100) || unit !== 'percentage',
+    {
+      // TODO: i18n
+      message: 'Percentage value cannot exceed 100%',
+      path: ['value'],
+    }
+  );
 
 export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
   const t = useTranslations();
