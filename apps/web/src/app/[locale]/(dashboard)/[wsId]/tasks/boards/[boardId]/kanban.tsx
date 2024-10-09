@@ -1,5 +1,6 @@
 'use client';
 
+import ColumnCreation from './columnCreation';
 import { coordinateGetter } from './keyboard-preset';
 import { type Task, TaskCard } from './task';
 import type { Column } from './task-list';
@@ -23,106 +24,51 @@ import { SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const defaultCols = [
-  {
-    id: 'backlog' as const,
-    title: 'Backlog',
-  },
-  {
-    id: 'todo' as const,
-    title: 'Todo',
-  },
-  {
-    id: 'in-progress' as const,
-    title: 'In progress',
-  },
-  {
-    id: 'reviewing' as const,
-    title: 'Reviewing',
-  },
-  {
-    id: 'done' as const,
-    title: 'Done',
-  },
-] satisfies Column[];
+interface KanbanBoardProps {
+  wsId?: string;
+  defaultCols: defaultCols[];
+  initialTasks: Task[];
+  boardId: string;
+}
 
-export type ColumnId = (typeof defaultCols)[number]['id'];
+interface defaultCols {
+  id?: UniqueIdentifier;
+  board_id?: string | null;
+  title?: string | null;
+  position?: number | null;
+  created_at?: string | null;
+}
 
-const initialTasks: Task[] = [
-  {
-    id: 'task1',
-    columnId: 'done',
-    content: 'Project initiation and planning',
-  },
-  {
-    id: 'task2',
-    columnId: 'done',
-    content: 'Gather requirements from stakeholders',
-  },
-  {
-    id: 'task3',
-    columnId: 'done',
-    content: 'Create wireframes and mockups',
-  },
-  {
-    id: 'task4',
-    columnId: 'in-progress',
-    content: 'Develop homepage layout',
-  },
-  {
-    id: 'task5',
-    columnId: 'reviewing',
-    content: 'Design color scheme and typography',
-  },
-  {
-    id: 'task6',
-    columnId: 'todo',
-    content: 'Implement user authentication',
-  },
-  {
-    id: 'task7',
-    columnId: 'backlog',
-    content: 'Build contact us page',
-  },
-  {
-    id: 'task8',
-    columnId: 'backlog',
-    content: 'Create product catalog',
-  },
-  {
-    id: 'task9',
-    columnId: 'backlog',
-    content: 'Develop about us page',
-  },
-  {
-    id: 'task10',
-    columnId: 'backlog',
-    content: 'Optimize website for mobile devices',
-  },
-  {
-    id: 'task11',
-    columnId: 'todo',
-    content: 'Integrate payment gateway',
-  },
-  {
-    id: 'task12',
-    columnId: 'todo',
-    content: 'Perform testing and bug fixing',
-  },
-  {
-    id: 'task13',
-    columnId: 'todo',
-    content: 'Launch website and deploy to server',
-  },
-];
+interface DefaultColumn {
+  id: string;
+  board_id: string;
+  title: string;
+  position: number;
+  created_at: string;
+}
+export type ColumnId = DefaultColumn['id'];
 
-export function KanbanBoard() {
-  const [columns, setColumns] = useState<Column[]>(defaultCols);
+
+
+export function KanbanBoard({
+  wsId,
+  defaultCols,
+  initialTasks,
+  boardId,
+}: KanbanBoardProps) {
+  const processedColumns = defaultCols.map((col) => ({
+    id: col.id ?? '',
+    board_id: col.board_id ?? '',
+    title: col.title ?? 'Untitled',
+    position: col.position ?? 0,
+    created_at: col.created_at ?? '',
+  }));
+
+  const [columns] = useState<Column[]>(processedColumns);
   const pickedUpTaskColumn = useRef<ColumnId | null>(null);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [portal, setPortal] = useState<React.ReactPortal | null>(null);
@@ -270,17 +216,32 @@ export function KanbanBoard() {
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
     >
-      <BoardContainer>
-        <SortableContext items={columnsId}>
-          {columns.map((col) => (
-            <BoardColumn
-              key={col.id}
-              column={col}
-              tasks={tasks.filter((task) => task.columnId === col.id)}
-            />
-          ))}
-        </SortableContext>
-      </BoardContainer>
+      {columns.length !== 0 && (
+        <div className="pt-7 absolute right-4 top-4">
+          <ColumnCreation wsId={wsId ?? ''} boardId={boardId} />
+        </div>
+      )}
+      <div className="pt-16">
+        <BoardContainer>
+          {columns.length === 0 && (
+            <div className="flex h-screen items-center justify-center">
+              <ColumnCreation wsId={wsId ?? ''} boardId={boardId} />
+            </div>
+          )}
+          <SortableContext items={columnsId}>
+            {columns.map((col) => (
+              <BoardColumn
+                key={col.id}
+                column={col}
+                tasks={tasks
+                  .filter((task) => task.columnId === col.id)
+                  .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))} // Sort by position
+              />
+            ))}
+          </SortableContext>
+        </BoardContainer>
+      </div>
+
       {portal}
     </DndContext>
   );
@@ -298,6 +259,38 @@ export function KanbanBoard() {
       return;
     }
   }
+  async function updateTaskPositionOnServer(
+    taskId: UniqueIdentifier,
+    columnId: string,
+    position: number
+  ) {
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-boards/column/${taskId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tasks: {
+              columnId,
+              position,
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error updating task:', errorData);
+      } else {
+        console.log('Task position updated successfully on the server.');
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  }
 
   function onDragEnd(event: DragEndEvent) {
     setActiveColumn(null);
@@ -313,17 +306,37 @@ export function KanbanBoard() {
 
     const activeData = active.data.current;
 
-    if (activeId === overId) return;
+    if (activeId === overId) return; // No change if dropped on the same task
 
-    const isActiveAColumn = activeData?.type === 'Column';
-    if (!isActiveAColumn) return;
+    const isActiveATask = activeData?.type === 'Task';
 
-    setColumns((columns) => {
-      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
+    if (!isActiveATask) return;
 
-      const overColumnIndex = columns.findIndex((col) => col.id === overId);
+    // Find the new position based on drop target
+    const newPosition = tasks.findIndex((task) => task.id === overId);
 
-      return arrayMove(columns, activeColumnIndex, overColumnIndex);
+    // Update the task's position in the state
+    setTasks((tasks) => {
+      const activeIndex = tasks.findIndex((t) => t.id === activeId);
+
+      // Move the task to the new position in the same or different column
+      const updatedTasks = arrayMove(tasks, activeIndex, newPosition);
+
+      // Reassign positions to each task (e.g., 1, 2, 3, etc.)
+      const tasksWithUpdatedPositions = updatedTasks.map((task, index) => ({
+        ...task,
+        position: index + 1, // Update task's position
+      }));
+      console.log(tasksWithUpdatedPositions, 'taks position');
+      // Send updated positions to the server
+      tasksWithUpdatedPositions.forEach((task) => {
+        console.log('update tasks');
+
+        // Ensure we're updating the task with the new columnId and position
+        updateTaskPositionOnServer(task.id, task.columnId, task.position);
+      });
+
+      return tasksWithUpdatedPositions;
     });
   }
 

@@ -8,7 +8,7 @@ import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-
+import React from 'react';
 interface Props {
   params: Promise<{
     wsId: string;
