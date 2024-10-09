@@ -105,7 +105,7 @@
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.10",
     "postcss": "^8.4.47",
-    "supabase": "^1.203.0",
+    "supabase": "^1.204.3",
     "typescript": "^5.6.3",
     "vitest": "^2.1.2"
   },
