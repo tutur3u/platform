@@ -287,3 +287,19 @@ export async function getPermissions({
 
   return { permissions, containsPermission, withoutPermission };
 }
+
+export async function getWorkspaceUser(id: string, userId: string) {
+  const supabase = await createClient();
+
+  // TODO: this could be expand to back-relate platform_user_id -> auth.user
+  const { data, error } = await supabase
+    .from('workspace_user_linked_users')
+    .select('*')
+    .eq('ws_id', id)
+    .eq('platform_user_id', userId)
+    .single();
+
+  if (error) notFound();
+
+  return data;
+}
