@@ -2,15 +2,15 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     promotionId: string;
-  };
+  }>;
 }
 
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
   const data = await req.json();
-  const { promotionId } = params;
+  const { promotionId } = await params;
 
   const { error } = await supabase
     .from('workspace_promotions')
@@ -36,7 +36,7 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { promotionId } = params;
+  const { promotionId } = await params;
 
   const { error } = await supabase
     .from('workspace_promotions')
