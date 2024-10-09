@@ -1,10 +1,14 @@
+import { getPromotionColumns } from './columns';
+import { PromotionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { promotionColumns } from '@/data/columns/promotions';
+import { getCurrentUser } from '@/lib/user-helper';
+import { getWorkspaceUser } from '@/lib/workspace-helper';
 import { ProductPromotion } from '@/types/primitives/ProductPromotion';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -25,6 +29,12 @@ export default async function WorkspacePromotionsPage({
   const { wsId } = await params;
   const { data, count } = await getData(wsId, await searchParams);
 
+  // TODO: de-dup this as route context
+  const user = await getCurrentUser();
+  // TODO: this as a middleware to ensure all route are authenticated
+  if (!user) redirect('/login');
+  const wsUser = await getWorkspaceUser(wsId, user.id);
+
   const promotions = data.map(({ value, use_ratio, ...rest }) => ({
     ...rest,
     value: use_ratio
@@ -44,12 +54,12 @@ export default async function WorkspacePromotionsPage({
         description={t('ws-inventory-promotions.description')}
         createTitle={t('ws-inventory-promotions.create')}
         createDescription={t('ws-inventory-promotions.create_description')}
-        // form={<PromotionForm wsId={wsId} />}
+        form={<PromotionForm wsId={wsId} wsUserId={wsUser.virtual_user_id} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
         data={promotions}
-        columnGenerator={promotionColumns}
+        columnGenerator={getPromotionColumns}
         namespace="promotion-data-table"
         count={count}
         defaultVisibility={{
