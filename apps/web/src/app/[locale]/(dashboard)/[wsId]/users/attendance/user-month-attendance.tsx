@@ -20,6 +20,7 @@ import { format, isAfter, parse, startOfDay } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 
 export default function UserMonthAttendance({
@@ -34,6 +35,7 @@ export default function UserMonthAttendance({
 }) {
   const locale = useLocale();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const queryMonth = searchParams.get('month');
 
@@ -183,6 +185,26 @@ export default function UserMonthAttendance({
   const handleDateClick = (date: Date) => {
     if (!isAfter(date, today)) {
       setSelectedDate(date);
+
+      // Find the attendance record for the selected date
+      const attendanceRecord = data.attendance?.find((attendance) => {
+        const attendanceDate = new Date(attendance.date);
+        return (
+          attendanceDate.getDate() === date.getDate() &&
+          attendanceDate.getMonth() === date.getMonth() &&
+          attendanceDate.getFullYear() === date.getFullYear()
+        );
+      });
+
+      // Set the current status and group ID if an attendance record exists
+      if (attendanceRecord) {
+        setCurrentStatus(attendanceRecord.status as 'PRESENT' | 'ABSENT');
+        setCurrentGroupId(attendanceRecord.groups?.[0]?.id || null);
+      } else {
+        setCurrentStatus(null);
+        setCurrentGroupId(null);
+      }
+
       setIsDialogOpen(true);
     }
   };
@@ -194,7 +216,9 @@ export default function UserMonthAttendance({
     setCurrentGroupId(null);
   };
 
-  const handleAttendanceUpdated = () => {};
+  const handleAttendanceUpdated = () => {
+    router.refresh();
+  };
 
   return (
     <div className={cn('rounded-lg', noOutline || 'border p-4')}>
@@ -312,16 +336,8 @@ export default function UserMonthAttendance({
                         </div>
                       );
 
-                    if (!isDateAttended(data, day) && !isDateAbsent(data, day))
-                      return (
-                        <div
-                          onClick={() => handleDateClick(day)}
-                          key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
-                          className="bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg"
-                        >
-                          {day.getDate()}
-                        </div>
-                      );
+                    const isAttended = isDateAttended(data, day);
+                    const isAbsent = isDateAbsent(data, day);
 
                     return (
                       <Fragment
@@ -335,9 +351,9 @@ export default function UserMonthAttendance({
                             <div
                               onClick={() => handleDateClick(day)}
                               className={`flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
-                                isDateAttended(data, day)
+                                isAttended
                                   ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
-                                  : isDateAbsent(data, day)
+                                  : isAbsent
                                     ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/20 dark:text-red-300'
                                     : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'
                               }`}

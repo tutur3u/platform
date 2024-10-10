@@ -56,32 +56,61 @@ export function AttendanceDialog({
   }, [currentGroupId, currentStatus]);
 
   const handleSubmit = async () => {
-    if (!selectedGroupId || !status) return;
     const supabase = await createClient();
-    const { error } = await supabase
-      .from('user_group_attendance')
-      .upsert({
-        user_id: user.id,
-        group_id: selectedGroupId,
-        date: format(date, 'yyyy-MM-dd'),
-        status,
-      })
-      .select();
-    if (error) {
-      console.error('Error updating attendance:', error);
-      toast({
-        title: 'Error updating attendance',
-        description: error.message,
-        variant: 'destructive',
-      });
+    if (!selectedGroupId) return;
+
+    if (status) {
+      const { error } = await supabase
+        .from('user_group_attendance')
+        .upsert({
+          user_id: user.id,
+          group_id: selectedGroupId,
+          date: format(date, 'yyyy-MM-dd'),
+          status,
+        })
+        .select();
+
+      if (error) {
+        console.error('Error updating attendance:', error);
+        toast({
+          title: 'Error updating attendance',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Attendance updated',
+          description: 'The attendance record has been successfully updated.',
+        });
+      }
     } else {
-      toast({
-        title: 'Attendance updated',
-        description: 'The attendance record has been successfully updated.',
-      });
-      onAttendanceUpdated();
-      onClose();
+      // Remove the attendance record
+      const { error } = await supabase
+        .from('user_group_attendance')
+        .delete()
+        .match({
+          user_id: user.id,
+          group_id: selectedGroupId,
+          date: format(date, 'yyyy-MM-dd'),
+        });
+
+      if (error) {
+        console.error('Error removing attendance:', error);
+        toast({
+          title: 'Error removing attendance',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Attendance removed',
+          description: 'The attendance record has been successfully removed.',
+        });
+      }
     }
+
+    onAttendanceUpdated();
+    onClose();
   };
 
   return (
@@ -139,11 +168,17 @@ export function AttendanceDialog({
               >
                 Absent
               </Button>
+              <Button
+                variant={status === null ? 'default' : 'outline'}
+                onClick={() => setStatus(null)}
+              >
+                Clear
+              </Button>
             </div>
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleSubmit} disabled={!selectedGroupId || !status}>
+          <Button onClick={handleSubmit} disabled={!selectedGroupId}>
             Save
           </Button>
         </DialogFooter>
