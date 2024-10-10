@@ -1,5 +1,6 @@
 'use client';
 
+import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { Workspace } from '@/types/primitives/Workspace';
 import {
   Avatar,
@@ -18,6 +19,7 @@ import {
 import { toast } from '@repo/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface WorkspaceInvitationProps {
   workspace: Workspace;
@@ -30,6 +32,8 @@ export default function InvitationCard({
 }: WorkspaceInvitationProps) {
   const router = useRouter();
   const t = useTranslations();
+
+  const [loading, setLoading] = useState<'accept' | 'decline' | undefined>();
 
   const acceptInviteSuccessTitle = t('invite.accept-invite-success-title');
   const acceptInviteSuccessMessage = t('invite.accept-invite-success-msg');
@@ -44,6 +48,7 @@ export default function InvitationCard({
   const declineInviteErrorMessage = t('invite.decline-invite-error-msg');
 
   const acceptInvite = async (ws: Workspace) => {
+    setLoading('accept');
     const response = await fetch(`/api/workspaces/${ws.id}/accept-invite`, {
       method: 'POST',
     });
@@ -56,6 +61,7 @@ export default function InvitationCard({
       });
       router.refresh();
     } else {
+      setLoading(undefined);
       toast({
         title: acceptInviteErrorTitle,
         description: acceptInviteErrorMessage,
@@ -65,6 +71,7 @@ export default function InvitationCard({
   };
 
   const declineInvite = async (ws: Workspace) => {
+    setLoading('decline');
     const response = await fetch(`/api/workspaces/${ws.id}/decline-invite`, {
       method: 'POST',
     });
@@ -78,6 +85,7 @@ export default function InvitationCard({
       router.push('/onboarding');
       router.refresh();
     } else {
+      setLoading(undefined);
       toast({
         title: declineInviteErrorTitle,
         description: declineInviteErrorMessage,
@@ -124,14 +132,24 @@ export default function InvitationCard({
           variant="outline"
           onClick={() => declineInvite(workspace)}
           className="hover:bg-destructive hover:text-destructive-foreground transition-colors"
+          disabled={!!loading}
         >
-          {t('invite.decline-invite')}
+          {loading === 'decline' ? (
+            <LoadingIndicator />
+          ) : (
+            t('invite.decline-invite')
+          )}
         </Button>
         <Button
           onClick={() => acceptInvite(workspace)}
           className="transition-colors"
+          disabled={!!loading}
         >
-          {t('invite.accept-invite')}
+          {loading === 'accept' ? (
+            <LoadingIndicator className="text-background" />
+          ) : (
+            t('invite.accept-invite')
+          )}
         </Button>
       </CardFooter>
     </Card>
