@@ -336,8 +336,16 @@ export default function UserMonthAttendance({
                         </div>
                       );
 
-                    const isAttended = isDateAttended(data, day);
-                    const isAbsent = isDateAbsent(data, day);
+                    if (!isDateAttended(data, day) && !isDateAbsent(data, day))
+                      return (
+                        <div
+                          onClick={() => handleDateClick(day)}
+                          key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
+                          className="bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg"
+                        >
+                          {day.getDate()}
+                        </div>
+                      );
 
                     return (
                       <Fragment
@@ -351,9 +359,9 @@ export default function UserMonthAttendance({
                             <div
                               onClick={() => handleDateClick(day)}
                               className={`flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
-                                isAttended
+                                isDateAttended(data, day)
                                   ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
-                                  : isAbsent
+                                  : isDateAbsent(data, day)
                                     ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/20 dark:text-red-300'
                                     : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'
                               }`}
