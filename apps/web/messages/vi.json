@@ -450,7 +450,10 @@
     "size": "Kích cỡ",
     "created_at": "Ngày tạo",
     "files": "Tệp tin",
-    "clear_files": "Huỷ tất cả"
+    "clear_files": "Huỷ tất cả",
+    "folder": {
+      "name": "Name"
+    }
   },
   "ai-prompts-data-table": {
     "id": "Mã số",
