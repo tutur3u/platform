@@ -48,7 +48,7 @@
     "babel-plugin-react-compiler": "0.0.0-experimental-58c2b1c-20241007",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
-    "framer-motion": "^11.11.7",
+    "framer-motion": "^11.11.8",
     "juice": "^11.0.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.451.0",
