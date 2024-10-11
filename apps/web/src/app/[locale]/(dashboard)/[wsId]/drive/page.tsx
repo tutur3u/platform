@@ -18,6 +18,7 @@ interface Props {
     q: string;
     page: string;
     pageSize: string;
+    path: string;
   }>;
 }
 
