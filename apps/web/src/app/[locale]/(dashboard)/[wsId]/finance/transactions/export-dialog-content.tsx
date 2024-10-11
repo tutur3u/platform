@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
+import { Input } from '@repo/ui/components/ui/input';
 import { Progress } from '@repo/ui/components/ui/progress';
 import {
   Select,
@@ -37,7 +38,7 @@ export default function ExportDialogContent({
   const [exportFileType, setExportFileType] = useState('excel');
   const [progress, setProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
-
+  const [filename, setFilename] = useState(`export_${exportType}`);
   const downloadCSV = (data: Transaction[], filename: string) => {
     const csv = jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -102,9 +103,9 @@ export default function ExportDialogContent({
 
     // Export the file based on the selected file type
     if (exportFileType === 'csv') {
-      downloadCSV(allData, `export_${exportType}.csv`);
+      downloadCSV(allData, `${filename}.csv`);
     } else if (exportFileType === 'excel') {
-      downloadExcel(allData, `export_${exportType}.xlsx`);
+      downloadExcel(allData, `${filename}.xlsx`);
     }
 
     setIsExporting(false); // Stop the exporting process
@@ -118,6 +119,14 @@ export default function ExportDialogContent({
       </DialogHeader>
 
       <div className="grid gap-1">
+        <Input
+          type="text"
+          value={filename}
+          onChange={(e) => setFilename(e.target.value)}
+          className="input-class w-full pb-4"
+          disabled={isExporting}
+        />
+
         <Select
           value={exportFileType}
           onValueChange={setExportFileType}
