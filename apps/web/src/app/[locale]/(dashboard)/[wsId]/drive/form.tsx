@@ -83,6 +83,7 @@ export function StorageFolderForm({ wsId, data, onComplete }: FolderProps) {
 
     if (!error) {
       onComplete?.();
+      setLoading(false);
       router.refresh();
     } else {
       setLoading(false);
