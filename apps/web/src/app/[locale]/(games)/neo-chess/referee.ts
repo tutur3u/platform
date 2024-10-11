@@ -1,4 +1,4 @@
-import { PieceType, TeamType, Piece } from "./pieceSetup";
+import { PieceType, TeamType, Piece, removePieceById, pieces } from "./pieceSetup";
 
 export default class Referee {
     private lastPositions: Map<string, { x: number, y: number, column: number, row: number }> = new Map();
@@ -59,6 +59,14 @@ export default class Referee {
         const isDiagonalMove = Math.abs(horizontalDistance) === Math.abs(verticalDistance);
         // const isStraightMove = horizontalDistance === 0 || verticalDistance === 0;
 
+        const removeCapturedPiece = (x: number, y: number) => {
+            const piece = boardState.find(p => p.x === x && p.y === y);
+            if (piece) {
+                removePieceById(piece.id, team);
+                console.log("Piece removed: ", piece.id);
+            }
+        };
+
         if (type === PieceType.PAWN) {
             const pawnDirection = isOurTeam ? -1 : 1;
 
@@ -72,13 +80,16 @@ export default class Referee {
                     )
                 ) {
                     this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
+                    console.log("Valid move: ", pieces.find(p => p.id === pieceId));
                     return true;
                 }
             }
 
             // ATTACK LOGIC
             else if (isDiagonalMove && Math.abs(verticalDistance) === Math.round(cellSize) && verticalDistance * pawnDirection > 0 && this.tileIsOccupiedByOpponent(column, row, team, boardState)) {
+                removeCapturedPiece(column, row);
                 this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
+                console.log("Valid capture: ", pieces.find(p => p.id === pieceId));
                 return true;
             }
         }
@@ -88,6 +99,9 @@ export default class Referee {
                 if (!this.tileIsOccupied(column, row, boardState)                   // MOVEMENT LOGIC
                     || this.tileIsOccupiedByOpponent(column, row, team, boardState) // ATTACK LOGIC
                 ) {
+                    if (this.tileIsOccupiedByOpponent(column, row, team, boardState)) {
+                        removeCapturedPiece(column, row);
+                    }
                     this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
                     return true;
                 }
@@ -99,6 +113,9 @@ export default class Referee {
                 (!this.tileIsOccupied(column, row, boardState)                   // MOVEMENT LOGIC
                 || this.tileIsOccupiedByOpponent(column, row, team, boardState)) // ATTACK LOGIC
             ) {
+                if (this.tileIsOccupiedByOpponent(column, row, team, boardState)) {
+                    removeCapturedPiece(column, row);
+                }
                 this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
                 return true;
             }
@@ -109,6 +126,9 @@ export default class Referee {
                 (!this.tileIsOccupied(column, row, boardState)                   // MOVEMENT LOGIC
                 || this.tileIsOccupiedByOpponent(column, row, team, boardState)) // ATTACK LOGIC
             ) {
+                if (this.tileIsOccupiedByOpponent(column, row, team, boardState)) {
+                    removeCapturedPiece(column, row);
+                }
                 this.lastPositions.set(pieceId, { x: currX, y: currY, column, row });
                 return true;
             }

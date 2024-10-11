@@ -1,13 +1,18 @@
 "use client";
 
+import React, { useState, useCallback } from 'react';
 import Tile from './piece';
-import React from 'react';
 import { useDragAndDrop } from './use-dnd';
-import { horizontal, vertical, pieces, PieceType, TeamType } from './pieceSetup';
-
+import { horizontal, vertical, pieces as initialPieces, Piece } from './pieceSetup';
 
 export default function ChessBoard() {
-    const { grabPiece, movePiece, dropPiece, chessboardRef } = useDragAndDrop();
+    const [pieces, setPieces] = useState<Piece[]>(initialPieces);
+
+    const removePieceById = useCallback((id: string) => {
+        setPieces(prevPieces => prevPieces.filter(piece => piece.id !== id));
+    }, []);
+
+    const { grabPiece, movePiece, dropPiece, chessboardRef } = useDragAndDrop(removePieceById);
 
     // Create the board
     let board: React.ReactNode[] = [];
@@ -16,27 +21,16 @@ export default function ChessBoard() {
         const row: React.ReactNode[] = [];
 
         for (let j = 0; j <= vertical.length + 1; j++) {
-            let image = undefined;
-            let type: PieceType | undefined = undefined;
-            let team: TeamType | undefined = undefined;
-            let firstMove = false;
-
-            pieces.forEach((piece) => {
-                if (piece.x === j && piece.y === i) {
-                    image = piece.image;
-                    type = piece.type;
-                    team = piece.team;
-                }
-            });
+            let piece = pieces.find(p => p.x === j && p.y === i);
 
             if (i === 0 || i === horizontal.length + 1) {
                 if (j === 0 || j === vertical.length + 1) {
                     row.push(
-                        <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12"></div>
+                        <div key={`${j},${i}`} className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12"></div>
                     );
                 } else {
                     row.push(
-                        <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
+                        <div key={`${j},${i}`} className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
                             {`${horizontal[j - 1]}`}
                         </div>
                     );
@@ -44,32 +38,31 @@ export default function ChessBoard() {
             } else {
                 if (j === 0 || j === vertical.length + 1) {
                     row.push(
-                        <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
+                        <div key={`${j},${i}`} className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
                             {`${vertical[vertical.length - i]}`}
                         </div>
                     );
                 } else {
+                    const tileColor = (i % 2 !== 0 && j % 2 !== 0) || (i % 2 === 0 && j % 2 === 0) ? "" : "bg-blue-200";
                     row.push(
-                        (i % 2 !== 0 && j % 2 !== 0) || (i % 2 === 0 && j % 2 === 0) ? (
-                            <div className="relative flex aspect-square h-6 items-center justify-center md:h-9 lg:h-12">
-                                { image && type && team && (
-                                    <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} type={type} team={team} firstMove={firstMove} />
-                                )}
-                            </div>
-                        ) : (
-                            <div className="relative flex aspect-square h-6 items-center justify-center bg-blue-200 md:h-9 lg:h-12">
-                                { image && type && team && (
-                                    <Tile id={`${j}, ${i}`} key={`${j}, ${i}`} image={image} type={type} team={team} firstMove={firstMove} />
-                                )}
-                            </div>
-                        )
+                        <div key={`${j},${i}`} className={`relative flex aspect-square h-6 items-center justify-center ${tileColor} md:h-9 lg:h-12`}>
+                            {piece && (
+                                <Tile
+                                    id={piece.id}
+                                    image={piece.image}
+                                    type={piece.type}
+                                    team={piece.team}
+                                    firstMove={piece.firstMove}
+                                />
+                            )}
+                        </div>
                     );
                 }
             }
         }
 
         board.push(
-            <div className="mx-auto grid w-fit grid-cols-10 divide-x">{row}</div>
+            <div key={i} className="mx-auto grid w-fit grid-cols-10 divide-x">{row}</div>
         );
     }
 
@@ -90,7 +83,8 @@ export default function ChessBoard() {
                         role="none"
                         className="bg-border my-2 h-[1px] w-full shrink-0 md:my-4"
                     ></div>
-                    <button className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-10 w-full items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
+                    <button className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-10 w-full items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                            onClick={() => setPieces(initialPieces)}>
                         Restart
                     </button>
                 </div>

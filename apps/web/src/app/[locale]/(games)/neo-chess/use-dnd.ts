@@ -4,9 +4,10 @@
 import React, { useRef } from 'react';
 import Referee from './referee';
 import { PieceType, TeamType, pieces } from './pieceSetup';
+import ChessBoard from './chessboard';
 
 
-export function useDragAndDrop() {
+export function useDragAndDrop(removePieceById: (id: string) => void) {
     const chessboardRef = useRef<HTMLDivElement>(null);
     let activePiece: HTMLElement | null = null;
     let hasMoved = useRef(false);
@@ -178,6 +179,16 @@ export function useDragAndDrop() {
                     if (pieces[pieceIndex]) {
                         pieces[pieceIndex].x = cellCenter.current.nextColumn;
                         pieces[pieceIndex].y = cellCenter.current.nextRow;
+                    }
+
+                    // Check if a piece is captured
+                    const capturedPiece = pieces.find(piece => 
+                        piece.x === cellCenter.current.nextColumn && 
+                        piece.y === cellCenter.current.nextRow && 
+                        piece.id !== pieceId
+                    );
+                    if (capturedPiece) {
+                        removePieceById(capturedPiece.id);
                     }
 
                     fixPosition.current[pieceId].firstMove = false;
