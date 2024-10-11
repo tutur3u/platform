@@ -306,7 +306,7 @@ export function KanbanBoard({
 
     const activeData = active.data.current;
 
-    if (activeId === overId) return; // No change if dropped on the same task
+    if (activeId === overId) return;
 
     const isActiveATask = activeData?.type === 'Task';
 

@@ -8,13 +8,13 @@ interface Params {
 }
 
 export async function POST(req: Request, { params: { taskId } }: Params) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
-    // Parse the request body as JSON
+
     const data = await req.json();
 
-    // Ensure the necessary properties exist
+
     if (!data.tasks || !data.tasks.position || !data.tasks.columnId) {
       return NextResponse.json(
         { message: 'Invalid input data' },
@@ -22,7 +22,7 @@ export async function POST(req: Request, { params: { taskId } }: Params) {
       );
     }
 
-    // Update the task in the Supabase table
+
     const { error } = await supabase
       .from('workspace_board_tasks')
       .update({ position: data.tasks.position, columnId: data.tasks.columnId })
