@@ -452,7 +452,7 @@
     "files": "Files",
     "clear_files": "Clear files",
     "folder": {
-      "name": "Name"
+      "name": "Folder name"
     }
   },
   "ai-prompts-data-table": {

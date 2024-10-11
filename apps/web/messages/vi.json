@@ -452,7 +452,7 @@
     "files": "Tệp tin",
     "clear_files": "Huỷ tất cả",
     "folder": {
-      "name": "Name"
+      "name": "Tên thư mục"
     }
   },
   "ai-prompts-data-table": {
