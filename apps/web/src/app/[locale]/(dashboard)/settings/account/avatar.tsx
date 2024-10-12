@@ -43,6 +43,9 @@ const FormSchema = z.object({
   }, 'Please upload a valid image file'),
 });
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024; 
+const AVATAR_SIZE = 500; 
+
 export default function UserAvatar({ user }: AvatarProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -59,56 +62,93 @@ export default function UserAvatar({ user }: AvatarProps) {
     resolver: zodResolver(FormSchema),
   });
 
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = AVATAR_SIZE;
+          canvas.height = AVATAR_SIZE;
+
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('Blob creation failed'));
+                }
+              },
+              file.type,
+              0.7 // 70% quality
+            );
+          } else {
+            reject(new Error('Canvas context is null'));
+          }
+        };
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   async function onSubmit(data: z.infer<typeof FormSchema>) {
-    console.log('onSubmit called', data);
     if (!data.file) return;
 
     setSaving(true);
 
-    const filePath = `${generateRandomUUID()}`;
-
-    const { data: _, error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, data.file);
-
-    if (uploadError) {
-      toast({
-        title: 'Upload failed',
-        description:
-          'There was an error uploading your avatar. Please try again.',
-        variant: 'destructive',
+    try {
+      const compressedBlob = await compressImage(data.file);
+      const compressedFile = new File([compressedBlob], data.file.name, {
+        type: data.file.type,
       });
-      setSaving(false);
-      return;
-    }
 
-    const { data: urlData } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(filePath);
+      if (compressedFile.size > MAX_FILE_SIZE) {
+        throw new Error('Compressed file is still too large');
+      }
 
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ avatar_url: urlData.publicUrl })
-      .eq('id', user.id);
+      const filePath = `${generateRandomUUID()}`;
 
-    if (updateError) {
-      toast({
-        title: 'Update failed',
-        description:
-          'There was an error updating your avatar. Please try again.',
-        variant: 'destructive',
-      });
-    } else {
+      const { data: _, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, compressedFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: urlData.publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
       toast({
         title: 'Avatar updated',
         description: 'Your avatar has been successfully updated.',
       });
       router.refresh();
       setOpen(false);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: 'Update failed',
+        description:
+          'There was an error updating your avatar. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      form.reset();
+      setSaving(false);
     }
-
-    form.reset();
-    setSaving(false);
   }
 
   const removeAvatar = async () => {
@@ -143,10 +183,24 @@ export default function UserAvatar({ user }: AvatarProps) {
     setSaving(false);
   };
 
-  const handleFileSelect = (file: File) => {
-    const fileURL = URL.createObjectURL(file);
-    setPreviewSrc(fileURL);
-    form.setValue('file', file);
+  const handleFileSelect = async (file: File) => {
+    try {
+      const compressedBlob = await compressImage(file);
+      const fileURL = URL.createObjectURL(compressedBlob);
+      setPreviewSrc(fileURL);
+      form.setValue(
+        'file',
+        new File([compressedBlob], file.name, { type: file.type })
+      );
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      toast({
+        title: 'Compression failed',
+        description:
+          'There was an error compressing your image. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
