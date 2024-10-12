@@ -1,8 +1,6 @@
-"use client";
+'use client';
 
-import React from 'react';
 import { PieceType, TeamType } from './pieceSetup';
-
 
 interface Piece {
   id: string;
@@ -12,8 +10,13 @@ interface Piece {
   firstMove: boolean;
 }
 
-export default function Tile({id, image}: Piece) {
+export default function Tile({ id, image }: Piece) {
   return (
-    <img id={id} className="hover:cursor-grab active:cursor-grabbing" style={{backgroundImage: `url(${image})`}} src={image}/>
+    <img
+      id={id}
+      className="hover:cursor-grab active:cursor-grabbing"
+      style={{ backgroundImage: `url(${image})` }}
+      src={image}
+    />
   );
 }
