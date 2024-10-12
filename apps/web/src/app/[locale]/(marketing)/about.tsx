@@ -105,9 +105,6 @@ const BackgroundAndFont = () => {
   );
 };
 
-
-
-
 const AboutUs = () => {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -183,11 +180,13 @@ const AboutUs = () => {
       <div className="bg-gradient-custom relative flex h-screen w-full items-center justify-center">
         <BackgroundAndFont />
         <div className="animate-slide-in-up flex max-w-[1000px] flex-col items-center">
-            <h2 className="mt-[-150px] text-[24px] font-extralight">Neo Culture Tech </h2>
+          <h2 className="mt-[-150px] text-[24px] font-extralight">
+            Neo Culture Tech{' '}
+          </h2>
           <h1 className="mt-4 text-[60px] font-extralight text-[#F7FFF7]">
             The Nexus of Tech Communities,
           </h1>
-          <h1 className=" flex p-2 -mr-[20px] text-[45px] font-extralight text-[#F7FFF7]">
+          <h1 className="-mr-[20px] flex p-2 text-[45px] font-extralight text-[#F7FFF7]">
             Where We Embrace
             <span className="slider -mt-2 text-[60px]">
               {words.map((word, index) => (
@@ -207,101 +206,110 @@ const AboutUs = () => {
           </div>
 
           <div className="absolute my-80 flex flex-col">
-            <span className="relative flex flex-col h-12 w-12">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"strokeWidth="2.5"stroke="currentColor"className="w-6 h-6 chevron chevron-1">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
-          </svg>
-
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="2.5"
-          stroke="currentColor"
-          className="w-6 h-6 chevron chevron-2  mt-[-4px]"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="m19.5 8.25-7.5 7.5-7.5-7.5"
-          />
-        </svg>
-      </span>
-    </div>
-</div>
-
-
-
-          <div className="absolute left-1/2 top-[80%] mt-20 flex h-[800px] -translate-x-1/2 flex-col">
-            <h2 className="text-center text-[32px] font-extralight">
-              The Humans of <br />
-              <span className="text-[36px]">Neo Culture Tech</span>
-            </h2>
-            <div className="ml-40 mt-10 w-[780px] text-center text-[18px] font-extralight">
-              <p>
-                Founded in 2019, we are RMIT University's leading club for SSET
-                students interested in exploring the dynamic world of
-                technology. Our objective is to bring forth human factors and
-                create student connections through informative events,
-                unforgettable activities, and practical projects.
-              </p>
-
-              <p className="py-4">
-                We promote the growth of an inclusive environment where all
-                members can flourish and meet like-minded people to further
-                their professional interests, learn from one another, and expand
-                their knowledge of the tech industry, cutting-edge technologies,
-                programming, design, and other subjects. You belong here
-                regardless of your background—TBS, SCD, or SSET.
-              </p>
-
-              <p>
-                Join us to be a part of a vibrant community that creates
-                everlasting experiences of student life!
-              </p>
-            </div>
-
-            <div className="relative w-[1100px]">
-              {' '}
-              {/* Added relative container */}
-              {/* Left Button */}
-              <button
-                onClick={scrollLeft}
-                className="absolute left-[-65px] top-1/2 z-10 flex h-12 w-12 -translate-y-[10px] items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20"
+            <span className="relative flex h-12 w-12 flex-col">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2.5"
+                stroke="currentColor"
+                className="chevron chevron-1 h-6 w-6"
               >
-                ←
-              </button>
-              {/* Image Container */}
-              <div
-                ref={scrollRef}
-                className="custom-scrollbar flex w-full snap-x snap-mandatory space-x-10 overflow-y-hidden overflow-x-scroll py-10" // Adjusted margin
-                onScroll={handleScroll}
-                style={{ scrollSnapAlign: 'center' }}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                />
+              </svg>
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2.5"
+                stroke="currentColor"
+                className="chevron chevron-2 mt-[-4px] h-6 w-6"
               >
-                {images.map((src, index) => (
-                  <div
-                    key={index}
-                    className="image-container h-auto w-[320px] shrink-0 snap-center"
-                    style={{ scrollSnapAlign: 'center' }}
-                  >
-                    <img
-                      className="w-80 rounded-lg shadow-xl"
-                      src={src}
-                      alt={`Gallery image ${index + 1}`}
-                    />
-                  </div>
-                ))}
-              </div>
-              {/* Right Button */}
-              <button
-                onClick={scrollRight}
-                className="absolute right-[-65px] top-1/2 z-10 flex h-12 w-12 -translate-y-[10px] items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20"
-              >
-                →
-              </button>
-            </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                />
+              </svg>
+            </span>
           </div>
         </div>
+
+        <div className="absolute left-1/2 top-[80%] mt-20 flex h-[800px] -translate-x-1/2 flex-col">
+          <h2 className="text-center text-[32px] font-extralight">
+            The Humans of <br />
+            <span className="text-[36px]">Neo Culture Tech</span>
+          </h2>
+          <div className="ml-40 mt-10 w-[780px] text-center text-[18px] font-extralight">
+            <p>
+              Founded in 2019, we are RMIT University's leading club for SSET
+              students interested in exploring the dynamic world of technology.
+              Our objective is to bring forth human factors and create student
+              connections through informative events, unforgettable activities,
+              and practical projects.
+            </p>
+
+            <p className="py-4">
+              We promote the growth of an inclusive environment where all
+              members can flourish and meet like-minded people to further their
+              professional interests, learn from one another, and expand their
+              knowledge of the tech industry, cutting-edge technologies,
+              programming, design, and other subjects. You belong here
+              regardless of your background—TBS, SCD, or SSET.
+            </p>
+
+            <p>
+              Join us to be a part of a vibrant community that creates
+              everlasting experiences of student life!
+            </p>
+          </div>
+
+          <div className="relative w-[1100px]">
+            {' '}
+            {/* Added relative container */}
+            {/* Left Button */}
+            <button
+              onClick={scrollLeft}
+              className="absolute left-[-65px] top-1/2 z-10 flex h-12 w-12 -translate-y-[10px] items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20"
+            >
+              ←
+            </button>
+            {/* Image Container */}
+            <div
+              ref={scrollRef}
+              className="custom-scrollbar flex w-full snap-x snap-mandatory space-x-10 overflow-y-hidden overflow-x-scroll py-10" // Adjusted margin
+              onScroll={handleScroll}
+              style={{ scrollSnapAlign: 'center' }}
+            >
+              {images.map((src, index) => (
+                <div
+                  key={index}
+                  className="image-container h-auto w-[320px] shrink-0 snap-center"
+                  style={{ scrollSnapAlign: 'center' }}
+                >
+                  <img
+                    className="w-80 rounded-lg shadow-xl"
+                    src={src}
+                    alt={`Gallery image ${index + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
+            {/* Right Button */}
+            <button
+              onClick={scrollRight}
+              className="absolute right-[-65px] top-1/2 z-10 flex h-12 w-12 -translate-y-[10px] items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20"
+            >
+              →
+            </button>
+          </div>
+        </div>
+      </div>
       <div className="h-screen w-full bg-[#52267E]"></div>
     </>
   );
