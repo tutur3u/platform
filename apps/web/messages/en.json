@@ -125,7 +125,8 @@
     "scan_me": "Scan me",
     "qr_code": "QR Code",
     "current_plan": "Current plan",
-    "incomplete": "Incomplete"
+    "incomplete": "Incomplete",
+    "file-name": "File Name"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1536,7 +1537,6 @@
         "percentage": "Percentage"
       }
     }
-
   },
   "ws_post_details": {
     "check_all": "Check all"

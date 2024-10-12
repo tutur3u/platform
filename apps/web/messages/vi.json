@@ -125,7 +125,8 @@
     "scan_me": "Quét mã QR",
     "qr_code": "Mã QR",
     "current_plan": "Gói hiện tại",
-    "incomplete": "Chưa hoàn thành"
+    "incomplete": "Chưa hoàn thành",
+    "file-name": "Tên tệp"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
