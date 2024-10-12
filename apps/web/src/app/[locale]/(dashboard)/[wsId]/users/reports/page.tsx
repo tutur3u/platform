@@ -26,12 +26,10 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
-import { ReactElement } from 'react';
-
 export default async function WorkspaceUserReportsPage({
   params,
   searchParams,
-}: Props): Promise<ReactElement> {
+}: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
   const { page, pageSize, groupId, userId } = await searchParams;
