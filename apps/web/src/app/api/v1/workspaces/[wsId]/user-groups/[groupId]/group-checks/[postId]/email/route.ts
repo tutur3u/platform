@@ -9,6 +9,11 @@ import { NextRequest, NextResponse } from 'next/server';
 const forceEnableEmailSending = false;
 const disableEmailSending = DEV_MODE && !forceEnableEmailSending;
 
+const domainBlacklist = [
+  // for initial customer migration
+  'easy.com',
+];
+
 const sesClient = new SESClient({
   region: process.env.AWS_REGION as string,
   credentials: {
@@ -140,7 +145,10 @@ const sendEmail = async ({
       },
     };
 
-    if (!disableEmailSending) {
+    if (
+      !disableEmailSending &&
+      !domainBlacklist.some((domain) => recipient.includes(domain))
+    ) {
       console.log('Sending email:', params);
       const command = new SendEmailCommand(params);
       await sesClient.send(command);

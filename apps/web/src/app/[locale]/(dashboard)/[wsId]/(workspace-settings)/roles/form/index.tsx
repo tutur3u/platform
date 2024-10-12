@@ -206,7 +206,7 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="h-[50vh] border-b">
+          <ScrollArea className="h-[50vh] border-b md:h-[60vh]">
             <div className="mb-4">
               <TabsContent value="display">
                 <RoleFormDisplaySection {...sectionProps} />

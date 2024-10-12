@@ -13,11 +13,23 @@ export async function POST(req: Request, { params }: Params) {
 
   const { email, role, accessLevel } = await req.json();
 
+  if (!email) {
+    return NextResponse.json(
+      { message: 'Email is required.' },
+      { status: 400 }
+    );
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { error } = await supabase.from('workspace_email_invites').insert({
     ws_id: wsId,
-    email,
+    email: email.toLowerCase(),
     role_title: role,
     role: accessLevel,
+    invited_by: user?.id,
   });
 
   if (error) {

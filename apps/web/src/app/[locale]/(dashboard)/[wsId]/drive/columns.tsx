@@ -6,6 +6,9 @@ import { formatBytes } from '@/utils/file-helper';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
+import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useCallback } from 'react';
 
 export const storageObjectsColumns = (
   t: any,
@@ -56,13 +59,46 @@ export const storageObjectsColumns = (
         title={t(`${namespace}.name`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem] font-semibold">
-        {row.getValue('name')
-          ? (row.getValue('name') as string).split(`${wsId}/`)[1]
-          : '-'}
-      </div>
-    ),
+    cell: ({ row }) => {
+      if (row.getValue('id'))
+        return (
+          <div className="min-w-[8rem] font-semibold">
+            {row.getValue('name')}
+          </div>
+        );
+
+      // if id is not given, row is references as a path (folder)
+      // therefore, generate path link as param
+      const pathname = usePathname();
+      const searchParams = useSearchParams();
+      const basePath = searchParams.get('path') ?? '';
+
+      // merging current params with newly added param
+      // see: https://nextjs.org/docs/app/api-reference/functions/use-search-params#updating-searchparams
+      const createQueryString = useCallback(
+        (name: string, value: string) => {
+          const params = new URLSearchParams(searchParams.toString());
+          params.set(name, value);
+
+          return params.toString();
+        },
+        [searchParams]
+      );
+
+      return (
+        <div className="min-w-[8rem] font-semibold">
+          <Link
+            href={
+              pathname +
+              '?' +
+              createQueryString('path', basePath + row.getValue('name') + '/')
+            }
+          >
+            {row.getValue('name')}
+          </Link>
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'size',

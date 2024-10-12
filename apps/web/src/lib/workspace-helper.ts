@@ -21,18 +21,20 @@ export async function getWorkspace(id?: string) {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, created_at, workspace_members(role)'
     )
     .eq('id', id)
-    .eq('workspace_members.user_id', user.id)
     .single();
 
-  if (error || !data?.workspace_members[0]?.role) notFound();
+  const workspaceJoined = !!data?.workspace_members[0]?.role;
+
+  if (error) notFound();
   const { workspace_members, ...rest } = data;
 
   const ws = {
     ...rest,
     role: workspace_members[0]?.role,
+    joined: workspaceJoined,
   };
 
   return ws as Workspace;
@@ -286,4 +288,20 @@ export async function getPermissions({
     !containsPermission(permission);
 
   return { permissions, containsPermission, withoutPermission };
+}
+
+export async function getWorkspaceUser(id: string, userId: string) {
+  const supabase = await createClient();
+
+  // TODO: this could be expand to back-relate platform_user_id -> auth.user
+  const { data, error } = await supabase
+    .from('workspace_user_linked_users')
+    .select('*')
+    .eq('ws_id', id)
+    .eq('platform_user_id', userId)
+    .single();
+
+  if (error) notFound();
+
+  return data;
 }

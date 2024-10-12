@@ -125,7 +125,8 @@
     "scan_me": "Quét mã QR",
     "qr_code": "Mã QR",
     "current_plan": "Gói hiện tại",
-    "incomplete": "Chưa hoàn thành"
+    "incomplete": "Chưa hoàn thành",
+    "file-name": "Tên tệp"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -265,7 +266,11 @@
     "accept-invite-error-title": "Đã xảy ra lỗi khi chấp nhận lời mời.",
     "accept-invite-error-msg": "Vui lòng thử lại sau.",
     "decline-invite-error-title": "Đã xảy ra lỗi khi từ chối lời mời.",
-    "decline-invite-error-msg": "Vui lòng thử lại sau."
+    "decline-invite-error-msg": "Vui lòng thử lại sau.",
+    "invited-you": "đã mời bạn",
+    "workspace-invitation": "Lời mời vào không gian làm việc",
+    "you-been-invited-to-join-the": "Bạn đã được mời tham gia vào không gian làm việc",
+    "accept-to-start-collaborating": ". Hãy chấp nhận lời mời để bắt đầu làm việc cùng nhau!"
   },
   "auth": {
     "password": "Mật khẩu",
@@ -446,7 +451,10 @@
     "size": "Kích cỡ",
     "created_at": "Ngày tạo",
     "files": "Tệp tin",
-    "clear_files": "Huỷ tất cả"
+    "clear_files": "Huỷ tất cả",
+    "folder": {
+      "name": "Tên thư mục"
+    }
   },
   "ai-prompts-data-table": {
     "id": "Mã số",
@@ -1029,7 +1037,11 @@
     "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",
     "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng.",
     "send_user_group_post_emails": "Gửi nội dung bài viết qua email",
-    "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể."
+    "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể.",
+    "export_users_data": "Cho phép xuất dữ liệu người dùng",
+    "export_users_data_description": "Cho phép thành viên xuất dữ liệu người dùng ảo được tạo trong không gian làm việc của bạn.",
+    "export_finance_data": "Cho phép xuất dữ liệu tài chính",
+    "export_finance_data_description": "Cho phép thành viên xuất dữ liệu giao dịch tài chính được tạo trong không gian làm việc của bạn."
   },
   "ws-activities": {
     "description": "Xem tất cả các hoạt động trong không gian làm việc của bạn",
@@ -1515,7 +1527,19 @@
     "singular": "Khuyến mãi",
     "description": "Khuyến mãi được sử dụng để quản lý các sản phẩm khuyến mãi.",
     "create": "Tạo khuyến mãi",
-    "create_description": "Tạo một khuyến mãi mới"
+    "create_description": "Tạo một khuyến mãi mới",
+    "update": "Cập nhật khuyến mãi",
+    "form": {
+      "name": "Tên",
+      "description": "Mô tả",
+      "code": "Mã giảm giá",
+      "value": "Giá trị",
+      "unit": {
+        "placeholder": "Đơn vị",
+        "currency": "Tiền tệ",
+        "percentage": "Phần trăm"
+      }
+    }
   },
   "ws_post_details": {
     "check_all": "Đã kiểm tra tất cả"

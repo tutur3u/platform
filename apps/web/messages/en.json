@@ -125,7 +125,8 @@
     "scan_me": "Scan me",
     "qr_code": "QR Code",
     "current_plan": "Current plan",
-    "incomplete": "Incomplete"
+    "incomplete": "Incomplete",
+    "file-name": "File Name"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -265,7 +266,11 @@
     "accept-invite-error-title": "There was an error accepting the invite.",
     "accept-invite-error-msg": "Please try again later.",
     "decline-invite-error-title": "There was an error declining the invite.",
-    "decline-invite-error-msg": "Please try again later."
+    "decline-invite-error-msg": "Please try again later.",
+    "invited-you": "invited you",
+    "workspace-invitation": "Workspace invitation",
+    "you-been-invited-to-join-the": "You've been invited to join the",
+    "accept-to-start-collaborating": " workspace. Accept to start collaborating!"
   },
   "auth": {
     "password": "Password",
@@ -446,7 +451,10 @@
     "size": "Size",
     "created_at": "Created at",
     "files": "Files",
-    "clear_files": "Clear files"
+    "clear_files": "Clear files",
+    "folder": {
+      "name": "Folder name"
+    }
   },
   "ai-prompts-data-table": {
     "id": "ID",
@@ -1029,7 +1037,11 @@
     "manage_user_report_templates": "Manage user report templates",
     "manage_user_report_templates_description": "Allows members to edit user report templates.",
     "send_user_group_post_emails": "Send post content via emails",
-    "send_user_group_post_emails_description": "Allows members to send emails to virtual users created in your workspace about specific user group post content."
+    "send_user_group_post_emails_description": "Allows members to send emails to virtual users created in your workspace about specific user group post content.",
+    "export_users_data": "Allow exporting users data",
+    "export_users_data_description": "Allows members to export users data in the workspace.",
+    "export_finance_data": "Allow exporting finance data",
+    "export_finance_data_description": "Allows members to export finance data in the workspace."
   },
   "ws-activities": {
     "description": "View all activities in your workspace",
@@ -1515,7 +1527,19 @@
     "singular": "Promotion",
     "description": "Promotions are used to manage product discounts and promotions.",
     "create": "Create promotion",
-    "create_description": "Create a new promotion"
+    "create_description": "Create a new promotion",
+    "update": "Update promotion",
+    "form": {
+      "name": "Name",
+      "description": "Decription",
+      "code": "Coupon code",
+      "value": "Discount value",
+      "unit": {
+        "placeholder": "Unit",
+        "currency": "Currency",
+        "percentage": "Percentage"
+      }
+    }
   },
   "ws_post_details": {
     "check_all": "Check all"

@@ -1,4 +1,5 @@
 import { StaffToolbar } from './staff-toolbar';
+import { ProductionIndicator } from '@/components/production-indicator';
 import { Providers } from '@/components/providers';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { locales } from '@/config';
@@ -143,6 +144,7 @@ export default async function RootLayout({ children, params }: Props) {
           </NextIntlClientProvider>
         </Providers>
         <TailwindIndicator />
+        <ProductionIndicator />
         <StaffToolbar />
         <Toaster />
       </body>

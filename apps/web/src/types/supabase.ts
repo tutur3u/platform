@@ -3104,6 +3104,7 @@ export type Database = {
         Row: {
           created_at: string;
           email: string;
+          invited_by: string | null;
           role: string;
           role_title: string;
           ws_id: string;
@@ -3111,6 +3112,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           email: string;
+          invited_by?: string | null;
           role?: string;
           role_title?: string;
           ws_id: string;
@@ -3118,11 +3120,19 @@ export type Database = {
         Update: {
           created_at?: string;
           email?: string;
+          invited_by?: string | null;
           role?: string;
           role_title?: string;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_email_invites_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_email_invites_role_fkey';
             columns: ['role'];
@@ -4950,8 +4960,10 @@ export type Database = {
         | 'manage_documents'
         | 'manage_drive'
         | 'manage_users'
+        | 'export_users_data'
         | 'manage_inventory'
         | 'manage_finance'
+        | 'export_finance_data'
         | 'ai_chat'
         | 'ai_lab'
         | 'send_user_group_post_emails';
