@@ -1,8 +1,8 @@
 'use client';
 
-import { PieceType, TeamType, pieces } from './pieceSetup';
+import { PieceType, TeamType, pieces as initialPieces } from './pieceSetup';
 import Referee from './referee';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
 export function useDragAndDrop(
   removePieceById: (id: string) => void,
@@ -12,6 +12,7 @@ export function useDragAndDrop(
   let activePiece: HTMLElement | null = null;
   let hasMoved = useRef(false);
   const referee = new Referee();
+  const [boardState, setBoardState] = useState(initialPieces); // Initial board state
 
   const touchStartPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const fixPosition = useRef<
@@ -132,10 +133,6 @@ export function useDragAndDrop(
 
     if (activePiece && chessboard && hasMoved.current) {
       const pieceId = activePiece.id;
-
-      const chessboardRect = chessboard.getBoundingClientRect();
-      const cellSize = chessboardRect.width / 10;
-
       const imageSrc = (activePiece as HTMLImageElement).src;
       const pieceMatch = imageSrc.match(/([bw])_(\w+)\.png$/);
       let pieceTeam: TeamType | null = null;
@@ -166,16 +163,17 @@ export function useDragAndDrop(
           cellCenter.current.nextRow,
           fixPosition.current[pieceId].column,
           fixPosition.current[pieceId].row,
-          cellSize,
           pieceType,
           pieceTeam,
           fixPosition.current[pieceId].firstMove,
-          pieces
+          boardState
         );
 
-        if (validMove) {
+        if (validMove.isValid) {
+          setBoardState(validMove.updatedBoardState);
+
           // Capture logic: Remove the captured piece based on position
-          const capturedPiece = pieces.find(
+          const capturedPiece = boardState.find(
             (piece) =>
               piece.x === cellCenter.current.nextColumn &&
               piece.y === cellCenter.current.nextRow &&
@@ -192,11 +190,11 @@ export function useDragAndDrop(
           );
 
           // Update the pieces array
-          const pieceIndex = pieces.findIndex((p) => p.id === pieceId);
-          if (pieceIndex !== -1 && pieces[pieceIndex]) {
-            pieces[pieceIndex].x = cellCenter.current.nextColumn;
-            pieces[pieceIndex].y = cellCenter.current.nextRow;
-            pieces[pieceIndex].firstMove = false;
+          const pieceIndex = boardState.findIndex((p) => p.id === pieceId);
+          if (pieceIndex !== -1 && boardState[pieceIndex]) {
+            boardState[pieceIndex].x = cellCenter.current.nextColumn;
+            boardState[pieceIndex].y = cellCenter.current.nextRow;
+            boardState[pieceIndex].firstMove = false;
           }
 
           activePiece.style.position = 'static';

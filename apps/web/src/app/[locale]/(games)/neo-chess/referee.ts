@@ -20,10 +20,14 @@ export default class Referee {
     return piece !== undefined && piece.team !== team;
   }
 
+  // Assuming you have a function to handle piece capture
+  capturePiece(x: number, y: number, boardState: Piece[]): Piece[] {
+    return boardState.filter(piece => !(piece.x === x && piece.y === y));
+  }
+
   private isPathClear(
     verticalDistance: number,
     horizontalDistance: number,
-    cellSize: number,
     boardState: Piece[],
     row: number,
     column: number
@@ -34,8 +38,8 @@ export default class Referee {
       horizontalDistance === 0 ? 0 : horizontalDistance > 0 ? 1 : -1;
     const steps =
       verticalDistance !== 0
-        ? Math.abs(verticalDistance) / Math.round(cellSize)
-        : Math.abs(horizontalDistance) / Math.round(cellSize);
+        ? Math.abs(verticalDistance)
+        : Math.abs(horizontalDistance);
 
     for (let i = 1; i < steps; i++) {
       let checkRow = 0;
@@ -58,12 +62,11 @@ export default class Referee {
     row: number,
     prevX: number,
     prevY: number,
-    cellSize: number,
     type: PieceType,
     team: TeamType,
     firstMove: boolean,
     boardState: Piece[]
-  ) {
+  ): { isValid: boolean, updatedBoardState: Piece[] } {
     const lastPosition = this.lastPositions.get(pieceId);
     const isOurTeam = team === TeamType.OURS;
 
@@ -84,7 +87,7 @@ export default class Referee {
       if (horizontalDistance === 0) {
         if (verticalDistance === pawnDirection) {
           if (!this.tileIsOccupied(column, row, boardState)) {
-            return true;
+            return { isValid: true, updatedBoardState: boardState };
           }
         } else if (
           verticalDistance === 2 * pawnDirection &&
@@ -92,7 +95,7 @@ export default class Referee {
           !this.tileIsOccupied(column, row - pawnDirection, boardState) &&
           !this.tileIsOccupied(column, row, boardState)
         ) {
-          return true;
+          return { isValid: true, updatedBoardState: boardState };
         }
       }
       // Diagonal capture
@@ -101,7 +104,8 @@ export default class Referee {
         verticalDistance === pawnDirection &&
         this.tileIsOccupiedByOpponent(column, row, team, boardState)
       ) {
-        return true;
+        boardState = this.capturePiece(column, row, boardState);
+        return { isValid: true, updatedBoardState: boardState };
       }
     } else if (type === PieceType.KING) {
       if (
@@ -112,7 +116,8 @@ export default class Referee {
           !this.tileIsOccupied(column, row, boardState) ||
           this.tileIsOccupiedByOpponent(column, row, team, boardState)
         ) {
-          return true;
+          boardState = this.capturePiece(column, row, boardState);
+          return { isValid: true, updatedBoardState: boardState };
         }
       }
     } else if (type === PieceType.BISHOP) {
@@ -121,7 +126,6 @@ export default class Referee {
         this.isPathClear(
           verticalDistance,
           horizontalDistance,
-          cellSize,
           boardState,
           row,
           column
@@ -129,7 +133,8 @@ export default class Referee {
         (!this.tileIsOccupied(column, row, boardState) ||
           this.tileIsOccupiedByOpponent(column, row, team, boardState))
       ) {
-        return true;
+        boardState = this.capturePiece(column, row, boardState);
+        return { isValid: true, updatedBoardState: boardState };
       }
     } else if (type === PieceType.QUEEN) {
       if (
@@ -139,7 +144,6 @@ export default class Referee {
         this.isPathClear(
           verticalDistance,
           horizontalDistance,
-          cellSize,
           boardState,
           row,
           column
@@ -147,10 +151,11 @@ export default class Referee {
         (!this.tileIsOccupied(column, row, boardState) ||
           this.tileIsOccupiedByOpponent(column, row, team, boardState))
       ) {
-        return true;
+        boardState = this.capturePiece(column, row, boardState);
+        return { isValid: true, updatedBoardState: boardState };
       }
     }
 
-    return false;
+    return { isValid: false, updatedBoardState: boardState };
   }
 }
