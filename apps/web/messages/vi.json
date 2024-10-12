@@ -1569,6 +1569,9 @@
   },
   "avatar": "Ảnh đại diện",
   "ws-user-group-details": {
-    "schedule": "Lịch nhóm"
+    "schedule": "Lịch nhóm",
+    "attendance": "Điểm danh nhóm",
+    "reports": "Báo cáo nhóm",
+    "metrics": "Số liệu nhóm"
   }
 }

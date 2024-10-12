@@ -5,14 +5,24 @@ import GroupMemberForm from './form';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { cn } from '@/lib/utils';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Box, MinusCircle } from 'lucide-react';
+import {
+  Box,
+  Calendar,
+  ChartColumn,
+  FileUser,
+  MinusCircle,
+  UserCheck,
+} from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 interface SearchParams {
@@ -64,9 +74,69 @@ export default async function UserGroupDetailsPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={group.name || t('ws-user-groups.plural')}
-        singularTitle={group.name || t('ws-user-groups.singular')}
-        description={t('ws-user-groups.description')}
+        title={
+          <>
+            <h1 className="w-full text-2xl font-bold">
+              {group.name || t('ws-user-groups.singular')}
+            </h1>
+            <Separator className="my-2" />
+          </>
+        }
+        description={
+          <>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className={cn(
+                  'border font-semibold',
+                  'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                )}
+                disabled
+              >
+                <Calendar className="mr-1 h-5 w-5" />
+                {t('ws-user-group-details.schedule')}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className={cn(
+                  'border font-semibold',
+                  'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                )}
+                disabled
+              >
+                <UserCheck className="mr-1 h-5 w-5" />
+                {t('ws-user-group-details.attendance')}
+              </Button>
+              <Link href={`/${wsId}/users/reports/new?groupId=${groupId}`}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className={cn(
+                    'border font-semibold',
+                    'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
+                  )}
+                >
+                  <FileUser className="mr-1 h-5 w-5" />
+                  {t('ws-user-group-details.reports')}
+                </Button>
+              </Link>
+              <Button
+                type="button"
+                variant="secondary"
+                className={cn(
+                  'border font-semibold',
+                  'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                )}
+                disabled
+              >
+                <ChartColumn className="mr-1 h-5 w-5" />
+                {t('ws-user-group-details.metrics')}
+              </Button>
+            </div>
+          </>
+        }
         createTitle={t('ws-user-groups.add_user')}
         createDescription={t('ws-user-groups.add_user_description')}
         form={<GroupMemberForm wsId={wsId} groupId={groupId} />}

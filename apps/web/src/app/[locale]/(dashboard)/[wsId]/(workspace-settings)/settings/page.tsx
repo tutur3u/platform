@@ -4,10 +4,18 @@ import FeatureToggles from './feature-toggles';
 import WorkspaceLogoSettings from './logo';
 import Security from './security';
 import { DEV_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { getSecrets, getWorkspace } from '@/lib/workspace-helper';
+import {
+  getPermissions,
+  getSecrets,
+  getWorkspace,
+  verifyHasSecrets,
+} from '@/lib/workspace-helper';
+import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { UserPlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface Props {
   params: Promise<{
@@ -17,9 +25,15 @@ interface Props {
 
 export default async function WorkspaceSettingsPage({ params }: Props) {
   const { wsId } = await params;
+
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
   const t = await getTranslations();
   const ws = await getWorkspace(wsId);
   const secrets = await getSecrets({ wsId });
+  const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 
   const preventWorkspaceDeletion =
     secrets
@@ -45,6 +59,20 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
       <FeatureSummary
         pluralTitle={t('common.settings')}
         description={t('ws-settings.description')}
+        action={
+          containsPermission('manage_workspace_members') ? (
+            <Link href={`/${wsId}/members`}>
+              <Button className="cursor-pointer">
+                <UserPlus className="mr-2 h-4 w-4" />
+                <span>
+                  {disableInvite
+                    ? t('ws-members.invite_member_disabled')
+                    : t('ws-members.invite_member')}
+                </span>
+              </Button>
+            </Link>
+          ) : undefined
+        }
       />
       <Separator className="my-4" />
 
