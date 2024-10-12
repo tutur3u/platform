@@ -451,7 +451,10 @@
     "size": "Size",
     "created_at": "Created at",
     "files": "Files",
-    "clear_files": "Clear files"
+    "clear_files": "Clear files",
+    "folder": {
+      "name": "Folder name"
+    }
   },
   "ai-prompts-data-table": {
     "id": "ID",
