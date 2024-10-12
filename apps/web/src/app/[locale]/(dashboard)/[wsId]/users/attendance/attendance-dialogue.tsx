@@ -16,48 +16,59 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { useToast } from '@repo/ui/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { useLocale } from 'next-intl';
-import React, { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 
 interface AttendanceDialogProps {
+  wsId: string;
   isOpen: boolean;
   onClose: () => void;
   date: Date;
   user: WorkspaceUser;
-  groups: { id: string; name: string }[];
   onAttendanceUpdated: () => void;
   currentStatus: 'PRESENT' | 'ABSENT' | null;
-  currentGroupId: string | null;
 }
 
 export function AttendanceDialog({
+  wsId,
   isOpen,
   onClose,
   date,
   user,
-  groups,
   onAttendanceUpdated,
   currentStatus,
-  currentGroupId,
 }: AttendanceDialogProps) {
+  const t = useTranslations();
   const locale = useLocale();
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
-    currentGroupId
-  );
+
+  const [loading, setLoading] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>();
   const [status, setStatus] = useState<'PRESENT' | 'ABSENT' | null>(
     currentStatus
   );
+
+  const groupsQuery = useQuery({
+    queryKey: ['workspaces', wsId, 'users', user.id, 'groups'],
+    queryFn: () => getGroupData({ wsId, userId: user.id }),
+  });
+
   const { toast } = useToast();
 
   useEffect(() => {
-    setSelectedGroupId(currentGroupId);
+    setSelectedGroupId(groupsQuery?.data?.data?.[0]?.id);
     setStatus(currentStatus);
-  }, [currentGroupId, currentStatus]);
+  }, [groupsQuery?.data?.data, currentStatus]);
 
   const handleSubmit = async () => {
-    const supabase = await createClient();
-    if (!selectedGroupId) return;
+    setLoading(true);
+
+    const supabase = createClient();
+    if (!selectedGroupId) {
+      setLoading(false);
+      return;
+    }
 
     if (status) {
       const { error } = await supabase
@@ -73,14 +84,13 @@ export function AttendanceDialog({
       if (error) {
         console.error('Error updating attendance:', error);
         toast({
-          title: 'Error updating attendance',
+          title: t('ws-user-attendance.update_error'),
           description: error.message,
           variant: 'destructive',
         });
       } else {
         toast({
-          title: 'Attendance updated',
-          description: 'The attendance record has been successfully updated.',
+          title: t('ws-user-attendance.update_success'),
         });
       }
     } else {
@@ -97,19 +107,19 @@ export function AttendanceDialog({
       if (error) {
         console.error('Error removing attendance:', error);
         toast({
-          title: 'Error removing attendance',
+          title: t('ws-user-attendance.update_error'),
           description: error.message,
           variant: 'destructive',
         });
       } else {
         toast({
-          title: 'Attendance removed',
-          description: 'The attendance record has been successfully removed.',
+          title: t('ws-user-attendance.update_success'),
         });
       }
     }
 
     onAttendanceUpdated();
+    setLoading(false);
     onClose();
   };
 
@@ -117,15 +127,21 @@ export function AttendanceDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Update Attendance</DialogTitle>
+          <DialogTitle>{t('workspace-users-tabs.attendance')}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <span className="text-right font-semibold">Name:</span>
-            <span className="col-span-3">{user.full_name}</span>
+            <span className="text-right font-semibold">
+              {t('ws-users.display_name')}:
+            </span>
+            <span className="col-span-3">
+              {user?.display_name || user?.full_name || user?.email || '-'}
+            </span>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <span className="text-right font-semibold">Date:</span>
+            <span className="text-right font-semibold">
+              {t('common.date')}:
+            </span>
             <span className="col-span-3">
               {date.toLocaleDateString(locale, {
                 weekday: 'long',
@@ -136,16 +152,25 @@ export function AttendanceDialog({
             </span>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <span className="text-right font-semibold">Group:</span>
+            <span className="text-right font-semibold">
+              {t('post-email-data-table.group_name')}:
+            </span>
             <Select
               onValueChange={setSelectedGroupId}
-              value={selectedGroupId || undefined}
+              value={selectedGroupId || groupsQuery.data?.data?.[0]?.id}
+              disabled={loading || !groupsQuery.data?.data?.length}
             >
               <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a group" />
+                <SelectValue
+                  placeholder={
+                    groupsQuery.data?.data?.length
+                      ? t('ws-user-attendance.select_group')
+                      : t('ws-user-attendance.no_groups')
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {groups.map((group) => (
+                {groupsQuery.data?.data?.map((group) => (
                   <SelectItem key={group.id} value={group.id}>
                     {group.name}
                   </SelectItem>
@@ -154,35 +179,63 @@ export function AttendanceDialog({
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <span className="text-right font-semibold">Status:</span>
+            <span className="text-right font-semibold">
+              {t('common.status')}:
+            </span>
             <div className="col-span-3 flex gap-2">
               <Button
                 variant={status === 'PRESENT' ? 'default' : 'outline'}
                 onClick={() => setStatus('PRESENT')}
+                disabled={loading || !groupsQuery.data?.data?.length}
               >
-                Present
+                {t('ws-user-attendance.present')}
               </Button>
               <Button
                 variant={status === 'ABSENT' ? 'default' : 'outline'}
                 onClick={() => setStatus('ABSENT')}
+                disabled={loading || !groupsQuery.data?.data?.length}
               >
-                Absent
+                {t('ws-user-attendance.absent')}
               </Button>
               <Button
                 variant={status === null ? 'default' : 'outline'}
                 onClick={() => setStatus(null)}
+                disabled={loading || !groupsQuery.data?.data?.length}
               >
-                Clear
+                {t('ws-user-attendance.not-set')}
               </Button>
             </div>
           </div>
         </div>
         <DialogFooter>
           <Button onClick={handleSubmit} disabled={!selectedGroupId}>
-            Save
+            {t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+async function getGroupData({
+  wsId,
+  userId,
+}: {
+  wsId: string;
+  userId: string;
+}) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('workspace_user_groups')
+    .select('*, workspace_user_groups_users!inner(user_id)', {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId)
+    .eq('workspace_user_groups_users.user_id', userId);
+
+  const { data, count, error } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count };
 }

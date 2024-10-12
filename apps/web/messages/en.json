@@ -126,7 +126,9 @@
     "qr_code": "QR Code",
     "current_plan": "Current plan",
     "incomplete": "Incomplete",
-    "file-name": "File Name"
+    "file-name": "File Name",
+    "date": "Date",
+    "status": "Status"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -797,7 +799,14 @@
     "create": "Add attendance",
     "edit": "Edit attendance",
     "create_description": "Add a new attendance",
-    "edit_description": "Edit an existing attendance"
+    "edit_description": "Edit an existing attendance",
+    "present": "Present",
+    "absent": "Absent",
+    "not-set": "Not set",
+    "no_groups": "No group found",
+    "select_group": "Select a group",
+    "update_error": "Attendance update error",
+    "update_success": "Attendance updated"
   },
   "ws-user-groups": {
     "singular": "User group",

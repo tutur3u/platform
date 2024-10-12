@@ -60,6 +60,7 @@ export default function UserMonthAttendance({
     isPending,
     isError,
     data: queryData,
+    refetch,
   } = useQuery({
     queryKey: [
       'workspaces',
@@ -178,7 +179,6 @@ export default function UserMonthAttendance({
   const [currentStatus, setCurrentStatus] = useState<
     'PRESENT' | 'ABSENT' | null
   >(null);
-  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
 
   const today = startOfDay(new Date());
 
@@ -199,10 +199,8 @@ export default function UserMonthAttendance({
       // Set the current status and group ID if an attendance record exists
       if (attendanceRecord) {
         setCurrentStatus(attendanceRecord.status as 'PRESENT' | 'ABSENT');
-        setCurrentGroupId(attendanceRecord.groups?.[0]?.id || null);
       } else {
         setCurrentStatus(null);
-        setCurrentGroupId(null);
       }
 
       setIsDialogOpen(true);
@@ -213,10 +211,10 @@ export default function UserMonthAttendance({
     setIsDialogOpen(false);
     setSelectedDate(null);
     setCurrentStatus(null);
-    setCurrentGroupId(null);
   };
 
   const handleAttendanceUpdated = () => {
+    refetch();
     router.refresh();
   };
 
@@ -231,7 +229,7 @@ export default function UserMonthAttendance({
                 href={data.href}
                 className="line-clamp-1 font-semibold text-zinc-900 hover:underline dark:text-zinc-200"
               >
-                {data?.full_name || '-'}
+                {data?.display_name || data?.full_name || data?.email || '-'}
               </Link>
             </div>
             <div className="scrollbar-none flex items-center gap-1 overflow-auto">
@@ -338,13 +336,17 @@ export default function UserMonthAttendance({
 
                     if (!isDateAttended(data, day) && !isDateAbsent(data, day))
                       return (
-                        <div
+                        <button
                           onClick={() => handleDateClick(day)}
                           key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
-                          className="bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg"
+                          className={cn(
+                            'bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg',
+                            isAfter(day, today) &&
+                              'cursor-not-allowed opacity-50 hover:cursor-not-allowed'
+                          )}
                         >
                           {day.getDate()}
-                        </div>
+                        </button>
                       );
 
                     return (
@@ -356,7 +358,7 @@ export default function UserMonthAttendance({
                             disabled={isError || !isCurrentMonth(day)}
                             asChild
                           >
-                            <div
+                            <button
                               onClick={() => handleDateClick(day)}
                               className={`flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
                                 isDateAttended(data, day)
@@ -367,7 +369,7 @@ export default function UserMonthAttendance({
                               }`}
                             >
                               {day.getDate()}
-                            </div>
+                            </button>
                           </TooltipTrigger>
 
                           <TooltipContent>
@@ -395,14 +397,13 @@ export default function UserMonthAttendance({
 
               {selectedDate && (
                 <AttendanceDialog
+                  wsId={wsId}
                   isOpen={isDialogOpen}
-                  onClose={handleDialogClose}
+                  currentStatus={currentStatus}
                   date={selectedDate}
                   user={data}
-                  groups={differentGroups || []}
                   onAttendanceUpdated={handleAttendanceUpdated}
-                  currentStatus={currentStatus}
-                  currentGroupId={currentGroupId}
+                  onClose={handleDialogClose}
                 />
               )}
             </div>

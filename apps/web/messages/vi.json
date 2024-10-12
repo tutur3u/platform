@@ -126,7 +126,9 @@
     "qr_code": "Mã QR",
     "current_plan": "Gói hiện tại",
     "incomplete": "Chưa hoàn thành",
-    "file-name": "Tên tệp"
+    "file-name": "Tên tệp",
+    "date": "Ngày",
+    "status": "Trạng thái"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -797,7 +799,14 @@
     "create": "Tạo điểm danh",
     "edit": "Chỉnh sửa điểm danh",
     "create_description": "Tạo một điểm danh mới",
-    "edit_description": "Chỉnh sửa điểm danh hiện có"
+    "edit_description": "Chỉnh sửa điểm danh hiện có",
+    "present": "Có mặt",
+    "absent": "Vắng mặt",
+    "not-set": "Chưa đặt",
+    "select_group": "Chọn một nhóm",
+    "no_groups": "Không tìm thấy nhóm nào",
+    "update_error": "Lỗi cập nhật điểm danh",
+    "update_success": "Đã cập nhật điểm danh"
   },
   "ws-user-groups": {
     "singular": "Nhóm người dùng",
