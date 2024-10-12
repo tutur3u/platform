@@ -13,14 +13,7 @@ import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import {
-  Box,
-  Calendar,
-  ChartColumn,
-  FileUser,
-  MinusCircle,
-  UserCheck,
-} from 'lucide-react';
+import { Box, Calendar, FileUser, MinusCircle } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -90,26 +83,41 @@ export default async function UserGroupDetailsPage({
                 variant="secondary"
                 className={cn(
                   'border font-semibold',
-                  'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                  'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
                 )}
                 disabled
               >
                 <Calendar className="mr-1 h-5 w-5" />
-                {t('ws-user-group-details.schedule')}
+                {t('infrastructure-tabs.overview')}
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                className={cn(
-                  'border font-semibold',
-                  'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                )}
-                disabled
-              >
-                <UserCheck className="mr-1 h-5 w-5" />
-                {t('ws-user-group-details.attendance')}
-              </Button>
-              <Link href={`/${wsId}/users/reports/new?groupId=${groupId}`}>
+              <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className={cn(
+                    'border font-semibold',
+                    'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                  )}
+                >
+                  <Calendar className="mr-1 h-5 w-5" />
+                  {t('ws-user-group-details.schedule')}
+                </Button>
+              </Link>
+              {/* {DEV_MODE && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className={cn(
+                    'border font-semibold',
+                    'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                  )}
+                  disabled
+                >
+                  <UserCheck className="mr-1 h-5 w-5" />
+                  {t('ws-user-group-details.attendance')}
+                </Button>
+              )} */}
+              <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
                 <Button
                   type="button"
                   variant="secondary"
@@ -122,18 +130,20 @@ export default async function UserGroupDetailsPage({
                   {t('ws-user-group-details.reports')}
                 </Button>
               </Link>
-              <Button
-                type="button"
-                variant="secondary"
-                className={cn(
-                  'border font-semibold',
-                  'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
-                )}
-                disabled
-              >
-                <ChartColumn className="mr-1 h-5 w-5" />
-                {t('ws-user-group-details.metrics')}
-              </Button>
+              {/* {DEV_MODE && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className={cn(
+                    'border font-semibold',
+                    'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                  )}
+                  disabled
+                >
+                  <ChartColumn className="mr-1 h-5 w-5" />
+                  {t('ws-user-group-details.metrics')}
+                </Button>
+              )} */}
             </div>
           </>
         }
