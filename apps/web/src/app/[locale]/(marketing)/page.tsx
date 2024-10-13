@@ -1,14 +1,4 @@
 import AboutUs from './about';
-import GetStartedButton from './get-started-button';
-import Members from './members';
-import {
-  CalendarHeart,
-  Cpu,
-  MemoryStick,
-  Network,
-  Sparkles,
-  Telescope,
-} from 'lucide-react';
 
 export default function MarketingPage() {
   return (

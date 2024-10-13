@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 const BackgroundAndFont = () => {
   return (
@@ -131,10 +131,10 @@ const AboutUs = () => {
 
         // Add adjacent class to the previous and next images
         if (index > 0) {
-          children[index - 1].classList.add('adjacent');
+          children[index - 1]?.classList.add('adjacent');
         }
         if (index < children.length - 1) {
-          children[index + 1].classList.add('adjacent');
+          children[index + 1]?.classList.add('adjacent');
         }
       }
     });
