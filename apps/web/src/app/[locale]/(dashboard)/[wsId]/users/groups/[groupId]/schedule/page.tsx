@@ -7,7 +7,7 @@ import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { CalendarIcon, FileUser, UserCheck } from 'lucide-react';
+import { CalendarIcon, ChartColumn, FileUser, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -91,7 +91,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
                   {t('ws-user-group-details.reports')}
                 </Button>
               </Link>
-              {/* {DEV_MODE && (
+              <Link href={`/${wsId}/users/groups/${groupId}/metrics`}>
                 <Button
                   type="button"
                   variant="secondary"
@@ -99,12 +99,11 @@ export default async function UserGroupDetailsPage({ params }: Props) {
                     'border font-semibold',
                     'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
                   )}
-                  disabled
                 >
                   <ChartColumn className="mr-1 h-5 w-5" />
                   {t('ws-user-group-details.metrics')}
                 </Button>
-              )} */}
+              </Link>
             </div>
           </>
         }

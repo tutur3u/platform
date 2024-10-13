@@ -6,7 +6,7 @@ export default function Loading() {
   return (
     <div>
       <FeatureSummary
-        title={<div className="text-2xl font-bold hover:underline">...</div>}
+        title={<div className="text-2xl font-bold">...</div>}
         description="..."
       />
       <Separator className="my-4" />
