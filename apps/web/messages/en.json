@@ -1569,6 +1569,9 @@
   },
   "avatar": "Avatar",
   "ws-user-group-details": {
-    "schedule": "Group Schedule"
+    "schedule": "Group Schedule",
+    "attendance": "Group Attendance",
+    "reports": "Group Reports",
+    "metrics": "Group Metrics"
   }
 }

@@ -78,9 +78,12 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
-    .select('*', {
-      count: 'exact',
-    })
+    .select(
+      'id, ws_id, name, starting_date, ending_date, archived, notes, amount, created_at',
+      {
+        count: 'exact',
+      }
+    )
     .eq('ws_id', wsId)
     .order('name');
 
