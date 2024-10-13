@@ -128,7 +128,9 @@
     "incomplete": "Chưa hoàn thành",
     "file-name": "Tên tệp",
     "date": "Ngày",
-    "status": "Trạng thái"
+    "status": "Trạng thái",
+    "years_old": "tuổi",
+    "year_old": "tuổi"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

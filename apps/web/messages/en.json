@@ -128,7 +128,9 @@
     "incomplete": "Incomplete",
     "file-name": "File Name",
     "date": "Date",
-    "status": "Status"
+    "status": "Status",
+    "years_old": "years old",
+    "year_old": "year old"
   },
   "date_helper": {
     "time-unit": "Time unit",
