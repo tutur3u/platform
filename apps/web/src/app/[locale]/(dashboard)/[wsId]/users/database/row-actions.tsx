@@ -517,7 +517,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
               }
               disabled={!user.id || !user.ws_id}
             >
-              Remove from group
+              {t('user-data-table.remove-from-group')}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>

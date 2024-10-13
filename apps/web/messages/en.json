@@ -507,7 +507,8 @@
     "apply_changes": "Apply Changes",
     "applying": "Applying...",
     "selected": "Selected",
-    "linked_products": "Linked products"
+    "linked_products": "Linked products",
+    "remove-from-group": "Remove from group"
   },
   "email-data-table": {
     "id": "ID",

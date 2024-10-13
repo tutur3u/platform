@@ -507,7 +507,8 @@
     "apply_changes": "Áp dụng",
     "applying": "Đang áp dụng...",
     "selected": "nhóm",
-    "linked_products": "Sản phẩm liên kết"
+    "linked_products": "Sản phẩm liên kết",
+    "remove-from-group": "Xóa khỏi nhóm"
   },
   "email-data-table": {
     "id": "Mã số",
