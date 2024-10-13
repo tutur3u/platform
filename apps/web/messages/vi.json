@@ -130,7 +130,8 @@
     "date": "Ngày",
     "status": "Trạng thái",
     "years_old": "tuổi",
-    "year_old": "tuổi"
+    "year_old": "tuổi",
+    "average": "Trung bình"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

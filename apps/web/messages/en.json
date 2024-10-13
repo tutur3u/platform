@@ -130,7 +130,8 @@
     "date": "Date",
     "status": "Status",
     "years_old": "years old",
-    "year_old": "year old"
+    "year_old": "year old",
+    "average": "Average"
   },
   "date_helper": {
     "time-unit": "Time unit",

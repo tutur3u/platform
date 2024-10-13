@@ -129,7 +129,7 @@ export default async function UserGroupDetailsPage({
                 <FileUser className="mr-1 h-5 w-5" />
                 {t('ws-user-group-details.reports')}
               </Button>
-              <Link href={`/${wsId}/users/groups/${groupId}/metrics`}>
+              <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
                 <Button
                   type="button"
                   variant="secondary"

@@ -136,7 +136,7 @@ export default async function UserGroupDetailsPage({
                   {t('ws-user-group-details.reports')}
                 </Button>
               </Link>
-              <Link href={`/${wsId}/users/groups/${groupId}/metrics`}>
+              <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
                 <Button
                   type="button"
                   variant="secondary"
