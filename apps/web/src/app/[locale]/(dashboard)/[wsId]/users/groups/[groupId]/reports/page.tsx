@@ -1,10 +1,16 @@
+import { UserDatabaseFilter } from '../../../filters';
+import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
+import { availableConfigs } from '@/constants/configs/reports';
 import { cn } from '@/lib/utils';
+import { WorkspaceUserReport } from '@/types/db';
 import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Calendar, FileUser } from 'lucide-react';
+import { Calendar, FileUser, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -15,13 +21,48 @@ interface Props {
     wsId: string;
     groupId: string;
   }>;
+  searchParams: Promise<{
+    q: string;
+    page: string;
+    pageSize: string;
+    userId?: string;
+    reportId?: string;
+  }>;
 }
 
-export default async function UserGroupDetailsPage({ params }: Props) {
+export default async function UserGroupDetailsPage({
+  params,
+  searchParams,
+}: Props) {
   const t = await getTranslations();
-  const { locale: _, wsId, groupId } = await params;
 
+  const { wsId, groupId } = await params;
+  const { reportId, userId } = await searchParams;
   const group = await getData(wsId, groupId);
+
+  const report =
+    reportId === 'new'
+      ? {
+          user_id: userId,
+          group_id: groupId,
+          group_name: undefined,
+          created_at: new Date().toISOString(),
+        }
+      : reportId
+        ? await getReport({ wsId, reportId })
+        : undefined;
+
+  const { data: users } = groupId
+    ? await getUsers(wsId, groupId)
+    : { data: [] };
+
+  const { data: reports } =
+    (report?.user_id && !groupId && !userId) ||
+    (userId && users.map((user) => user.id).includes(userId))
+      ? await getReports(wsId, groupId, userId || report?.user_id!)
+      : { data: [] };
+
+  const { data: configs } = await getConfigs(wsId);
 
   return (
     <>
@@ -77,20 +118,18 @@ export default async function UserGroupDetailsPage({ params }: Props) {
                   {t('ws-user-group-details.attendance')}
                 </Button>
               )} */}
-              <Link href={`/${wsId}/users/reports/new?groupId=${groupId}`}>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className={cn(
-                    'border font-semibold',
-                    'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
-                  )}
-                  disabled
-                >
-                  <FileUser className="mr-1 h-5 w-5" />
-                  {t('ws-user-group-details.reports')}
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                variant="secondary"
+                className={cn(
+                  'border font-semibold',
+                  'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
+                )}
+                disabled
+              >
+                <FileUser className="mr-1 h-5 w-5" />
+                {t('ws-user-group-details.reports')}
+              </Button>
               {/* {DEV_MODE && (
                 <Button
                   type="button"
@@ -112,6 +151,68 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         createDescription={t('ws-user-groups.add_user_description')}
       />
       <Separator className="my-4" />
+      <div className="flex min-h-full w-full flex-col">
+        <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
+          <UserDatabaseFilter
+            key="user-filter"
+            tag="userId"
+            title={t('user-data-table.user')}
+            icon={<User className="mr-2 h-4 w-4" />}
+            defaultValues={
+              groupId
+                ? userId && users.map((user) => user.id).includes(userId)
+                  ? [userId]
+                  : []
+                : userId
+                  ? [userId]
+                  : report?.user_id
+                    ? [report.user_id]
+                    : []
+            }
+            options={users.map((user) => ({
+              label: user.full_name || 'No name',
+              value: user.id,
+            }))}
+            disabled={!groupId}
+            resetSignals={['groupId']}
+            sortCheckedFirst={false}
+            multiple={false}
+          />
+
+          {reports.length > 0 && (
+            <UserDatabaseFilter
+              key="report-filter"
+              tag="reportId"
+              title={t('user-data-table.report')}
+              icon={<User className="mr-2 h-4 w-4" />}
+              // defaultValues={!groupId && !userId ? [reportId] : []}
+              options={reports.map((report) => ({
+                label: report.title || 'No title',
+                value: report.id,
+              }))}
+              disabled={!userId && !report?.user_id}
+              resetSignals={['groupId', 'userId']}
+              sortCheckedFirst={false}
+              multiple={false}
+            />
+          )}
+        </div>
+
+        {groupId && userId && (
+          <EditableReportPreview
+            wsId={wsId}
+            report={{
+              ...report,
+              group_name:
+                report?.group_name ||
+                group.name ||
+                t('ws-user-groups.singular'),
+            }}
+            configs={configs}
+            isNew={false}
+          />
+        )}
+      </div>
     </>
   );
 }
@@ -130,4 +231,156 @@ async function getData(wsId: string, groupId: string) {
   if (!data) notFound();
 
   return data as UserGroup;
+}
+
+async function getReport({
+  wsId,
+  reportId,
+}: {
+  wsId: string;
+  reportId: string;
+}) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('external_user_monthly_reports')
+    .select(
+      '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('id', reportId)
+    .eq('user.ws_id', wsId)
+    .order('created_at', { ascending: false })
+    .maybeSingle();
+
+  const { data: rawData, error } = await queryBuilder;
+  if (error) throw error;
+  if (!rawData) notFound();
+
+  const data: {
+    user_name?: string;
+    creator_name?: string;
+    user?: any;
+    creator?: any;
+    [key: string]: any;
+  } = {
+    user_name: Array.isArray(rawData.user)
+      ? rawData.user?.[0]?.full_name
+      : // @ts-expect-error
+        (rawData.user?.full_name ?? undefined),
+    creator_name: Array.isArray(rawData.creator)
+      ? rawData.creator?.[0]?.full_name
+      : // @ts-expect-error
+        (rawData.creator?.full_name ?? undefined),
+    ...rawData,
+  };
+
+  delete data.user;
+  delete data.creator;
+
+  return data as WorkspaceUserReport & { group_name: string };
+}
+
+async function getUsers(wsId: string, groupId: string) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .rpc(
+      'get_workspace_users',
+      {
+        _ws_id: wsId,
+        included_groups: [groupId],
+        excluded_groups: [],
+        search_query: '',
+      },
+      {
+        count: 'exact',
+      }
+    )
+    .select('id, full_name')
+    .order('full_name', { ascending: true, nullsFirst: false });
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count } as { data: WorkspaceUser[]; count: number };
+}
+
+async function getReports(wsId: string, groupId: string, userId: string) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('external_user_monthly_reports')
+    .select(
+      '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('user_id', userId)
+    .eq('group_id', groupId)
+    .eq('workspace_users.ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  const { data: rawData, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  const data = rawData?.map((rawData) => ({
+    // @ts-expect-error
+    user_name: rawData.user.full_name,
+    // @ts-expect-error
+    creator_name: rawData.creator.full_name,
+    ...rawData,
+  }));
+
+  return { data, count } as { data: WorkspaceUserReport[]; count: number };
+}
+
+async function getConfigs(wsId: string) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('workspace_configs')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  queryBuilder.in(
+    'id',
+    availableConfigs.map(({ id }) => id)
+  );
+
+  const { data: rawData, error } = await queryBuilder;
+  if (error) throw error;
+
+  // Create a copy of availableConfigs to include in the response
+  let configs = [
+    ...availableConfigs.map(({ defaultValue, ...rest }) => ({
+      ...rest,
+      value: defaultValue,
+    })),
+  ];
+
+  // If rawData is not empty, merge it with availableConfigs
+  if (rawData && rawData.length) {
+    rawData.forEach((config) => {
+      const index = configs.findIndex((c) => c.id === config.id);
+      if (index !== -1) {
+        // Replace the default config with the one from the database
+        configs[index] = { ...configs[index], ...config };
+      } else {
+        // If the config does not exist in availableConfigs, add it
+        configs.push(config);
+      }
+    });
+  }
+
+  const count = configs.length;
+
+  return { data: configs, count } as {
+    data: WorkspaceConfig[];
+    count: number;
+  };
 }
