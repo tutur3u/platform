@@ -13,7 +13,7 @@ import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Box, Calendar, FileUser, MinusCircle } from 'lucide-react';
+import { Box, Calendar, FileUser, MinusCircle, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -103,7 +103,7 @@ export default async function UserGroupDetailsPage({
                   {t('ws-user-group-details.schedule')}
                 </Button>
               </Link>
-              {/* {DEV_MODE && (
+              <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
                 <Button
                   type="button"
                   variant="secondary"
@@ -111,12 +111,11 @@ export default async function UserGroupDetailsPage({
                     'border font-semibold',
                     'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
                   )}
-                  disabled
                 >
                   <UserCheck className="mr-1 h-5 w-5" />
                   {t('ws-user-group-details.attendance')}
                 </Button>
-              )} */}
+              </Link>
               <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
                 <Button
                   type="button"
