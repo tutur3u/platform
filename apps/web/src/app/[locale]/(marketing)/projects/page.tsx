@@ -4,7 +4,7 @@ import Projects from './projects';
 export default function MarketingPage() {
   return (
     <div className="flex justify-center">
-      <div className="text-foreground relative flex h-[2200px] w-full max-w-6xl flex-col items-center px-3 py-16">
+      <div className="text-foreground relative flex max-w-6xl flex-col items-center px-3 py-16">
         <Canvas />
         <Projects />
       </div>

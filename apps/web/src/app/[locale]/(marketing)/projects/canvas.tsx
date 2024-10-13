@@ -88,5 +88,5 @@ export default function Canvas() {
     }
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute" />;
+  return <canvas ref={canvasRef} className="absolute -z-10" />;
 }
