@@ -9,8 +9,8 @@ export default function Canvas() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    canvas.width = canvas.parentElement?.offsetWidth! * 0.8;
-    canvas.height = canvas.width;
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -88,5 +88,7 @@ export default function Canvas() {
     }
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute -z-10" />;
+  return (
+    <canvas ref={canvasRef} className="absolute -z-10 aspect-square w-[80%]" />
+  );
 }

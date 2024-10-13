@@ -16,7 +16,7 @@ export default function Projects() {
   const [pinnedStatus, setPinnedStatus] = useState<boolean>(false);
 
   return (
-    <div className="flex flex-col items-center pt-64">
+    <div className="flex flex-col items-center pt-32 md:pt-64">
       <div className="mt-8 max-w-4xl text-center">
         <div className="mb-2 text-4xl font-bold">Projects</div>
         Our club has worked on a wide-range of projects covering{' '}
