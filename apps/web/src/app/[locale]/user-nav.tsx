@@ -5,6 +5,7 @@ import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-ite
 import DashboardMenuItem from './dashboard-menu-item';
 import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
+import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 import { getCurrentUser } from '@/lib/user-helper';
 import { cn } from '@/lib/utils';
@@ -126,12 +127,23 @@ export async function UserNav({
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
-          <Link href="/settings/account">
+          {/* <Link href="/settings/account">
             <DropdownMenuItem className="cursor-pointer">
               <Settings className="mr-2 h-4 w-4" />
               <span>{t('common.settings')}</span>
             </DropdownMenuItem>
-          </Link>
+          </Link> */}
+          {user && (
+            <UserSettingsDialog
+              trigger={
+                <DropdownMenuItem className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>{t('common.settings')}</span>
+                </DropdownMenuItem>
+              }
+              user={user}
+            />
+          )}
         </DropdownMenuGroup>
         <InviteMembersMenuItem />
         <DropdownMenuSeparator />
