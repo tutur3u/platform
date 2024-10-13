@@ -2,9 +2,10 @@ import { cn } from '@/lib/utils';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
+import { YearCalendar } from '@repo/ui/components/ui/custom/calendar/year-calendar';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Calendar, FileUser } from 'lucide-react';
+import { CalendarIcon, FileUser } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -19,7 +20,7 @@ interface Props {
 
 export default async function UserGroupDetailsPage({ params }: Props) {
   const t = await getTranslations();
-  const { locale: _, wsId, groupId } = await params;
+  const { locale, wsId, groupId } = await params;
 
   const group = await getData(wsId, groupId);
 
@@ -46,7 +47,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
                     'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
                   )}
                 >
-                  <Calendar className="mr-1 h-5 w-5" />
+                  <CalendarIcon className="mr-1 h-5 w-5" />
                   {t('infrastructure-tabs.overview')}
                 </Button>
               </Link>
@@ -59,7 +60,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
                 )}
                 disabled
               >
-                <Calendar className="mr-1 h-5 w-5" />
+                <CalendarIcon className="mr-1 h-5 w-5" />
                 {t('ws-user-group-details.schedule')}
               </Button>
               {/* {DEV_MODE && (
@@ -110,6 +111,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         createDescription={t('ws-user-groups.add_user_description')}
       />
       <Separator className="my-4" />
+      <YearCalendar locale={locale} />
     </>
   );
 }
