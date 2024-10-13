@@ -1,6 +1,6 @@
 export interface WorkspaceUserAttendance {
   date: string;
-  status: string;
+  status: 'PRESENT' | 'ABSENT';
   groups?: {
     id: string;
     name: string;

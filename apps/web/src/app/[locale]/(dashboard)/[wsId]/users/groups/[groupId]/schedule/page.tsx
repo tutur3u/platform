@@ -5,6 +5,7 @@ import { Button } from '@repo/ui/components/ui/button';
 import { YearCalendar } from '@repo/ui/components/ui/custom/calendar/year-calendar';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import dayjs from 'dayjs';
 import { CalendarIcon, FileUser } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -111,7 +112,21 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         createDescription={t('ws-user-groups.add_user_description')}
       />
       <Separator className="my-4" />
-      <YearCalendar locale={locale} />
+      <YearCalendar
+        locale={locale}
+        attendanceData={
+          group.sessions?.map((s) => ({
+            date: s,
+            status: 'PRESENT',
+            groups: [
+              {
+                id: s,
+                name: dayjs(s).format('D MMMM YYYY'),
+              },
+            ],
+          })) || []
+        }
+      />
     </>
   );
 }
