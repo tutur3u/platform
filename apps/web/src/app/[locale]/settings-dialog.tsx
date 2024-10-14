@@ -1,5 +1,8 @@
-'use client';
-import React, { useState, Suspense } from 'react';
+import UserAvatar from './settings-avatar';
+import DisplayNameInput from './settings-display-name-input';
+import EmailInput from './settings-email-input';
+import SettingItemTab from '@/components/settings/SettingItemTab';
+import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import {
   Dialog,
   DialogContent,
@@ -9,30 +12,25 @@ import {
 } from '@repo/ui/components/ui/dialog';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { useTranslations } from 'next-intl';
-import SettingItemTab from '@/components/settings/SettingItemTab';
-import UserAvatar from './settings-avatar';
-import DisplayNameInput from './settings-display-name-input';
-import EmailInput from './settings-email-input';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import React, { Suspense } from 'react';
 
 interface UserSettingsDialogProps {
   trigger: React.ReactNode;
   user: WorkspaceUser;
 }
 
-export default async function UserSettingsDialog({ trigger, user }: UserSettingsDialogProps) {
+export default async function UserSettingsDialog({
+  trigger,
+  user,
+}: UserSettingsDialogProps) {
   const t = useTranslations();
-
-  const [open, setOpen] = useState(false);
 
   if (!user) return null;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Account settings</DialogTitle>
         </DialogHeader>
