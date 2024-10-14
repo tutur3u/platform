@@ -836,8 +836,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.13)
       vaul:
-        specifier: ^1.0.0
-        version: 1.0.0(@types/react-dom@18.3.1)(@types/react@18.3.11)(react-dom@19.0.0-rc-70fb1363-20241010(react@19.0.0-rc-70fb1363-20241010))(react@19.0.0-rc-70fb1363-20241010)
+        specifier: ^1.1.0
+        version: 1.1.0(@types/react-dom@18.3.1)(@types/react@18.3.11)(react-dom@19.0.0-rc-70fb1363-20241010(react@19.0.0-rc-70fb1363-20241010))(react@19.0.0-rc-70fb1363-20241010)
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -7526,8 +7526,8 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
-    resolution: {tarball: https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e}
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
+    resolution: {commit: 32f550d3b3bdb1b781aabe100683311cd982c98e, repo: git@github.com:securedeveloper/js-xlsx.git, type: git}
     version: 0.8.20
     engines: {node: '>=0.8'}
     hasBin: true
@@ -7843,8 +7843,8 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  vaul@1.0.0:
-    resolution: {integrity: sha512-TegfMkwy86RSvSiIVREG6OqgRL7agqRsKYyWYacyVUAdpcIi34QoCOED476Mbf8J5d06e1hygSdvJhehlxEBhQ==}
+  vaul@1.1.0:
+    resolution: {integrity: sha512-YhO/bikcauk48hzhMhvIvT+U87cuCbNbKk9fF4Ou5UkI9t2KkBMernmdP37pCzF15hrv55fcny1YhexK8h6GVQ==}
     peerDependencies:
       react: ^16.8 || ^17.0 || ^18.0
       react-dom: ^16.8 || ^17.0 || ^18.0
@@ -15301,7 +15301,7 @@ snapshots:
   react-export-excel@0.5.3:
     dependencies:
       file-saver: 1.3.8
-      xlsx: tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e
+      xlsx: tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e
 
   react-hook-form@7.53.0(react@19.0.0-rc-70fb1363-20241010):
     dependencies:
@@ -16215,7 +16215,7 @@ snapshots:
       mkdirp: 3.0.1
       yallist: 5.0.0
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
     dependencies:
       adler-32: 1.3.1
       cfb: 1.2.2
@@ -16516,7 +16516,7 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vaul@1.0.0(@types/react-dom@18.3.1)(@types/react@18.3.11)(react-dom@19.0.0-rc-70fb1363-20241010(react@19.0.0-rc-70fb1363-20241010))(react@19.0.0-rc-70fb1363-20241010):
+  vaul@1.1.0(@types/react-dom@18.3.1)(@types/react@18.3.11)(react-dom@19.0.0-rc-70fb1363-20241010(react@19.0.0-rc-70fb1363-20241010))(react@19.0.0-rc-70fb1363-20241010):
     dependencies:
       '@radix-ui/react-dialog': 1.1.2(@types/react-dom@18.3.1)(@types/react@18.3.11)(react-dom@19.0.0-rc-70fb1363-20241010(react@19.0.0-rc-70fb1363-20241010))(react@19.0.0-rc-70fb1363-20241010)
       react: 19.0.0-rc-70fb1363-20241010
