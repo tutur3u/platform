@@ -22,7 +22,7 @@ export default class Referee {
 
   // Assuming you have a function to handle piece capture
   capturePiece(x: number, y: number, boardState: Piece[]): Piece[] {
-    return boardState.filter(piece => !(piece.x === x && piece.y === y));
+    return boardState.filter((piece) => !(piece.x === x && piece.y === y));
   }
 
   private isPathClear(
@@ -66,7 +66,7 @@ export default class Referee {
     team: TeamType,
     firstMove: boolean,
     boardState: Piece[]
-  ): { isValid: boolean, updatedBoardState: Piece[] } {
+  ): { isValid: boolean; updatedBoardState: Piece[] } {
     const lastPosition = this.lastPositions.get(pieceId);
     const isOurTeam = team === TeamType.OURS;
 
@@ -141,6 +141,34 @@ export default class Referee {
         (isDiagonalMove ||
           horizontalDistance === 0 ||
           verticalDistance === 0) &&
+        this.isPathClear(
+          verticalDistance,
+          horizontalDistance,
+          boardState,
+          row,
+          column
+        ) &&
+        (!this.tileIsOccupied(column, row, boardState) ||
+          this.tileIsOccupiedByOpponent(column, row, team, boardState))
+      ) {
+        boardState = this.capturePiece(column, row, boardState);
+        return { isValid: true, updatedBoardState: boardState };
+      }
+    } else if (type === PieceType.KNIGHT) {
+      if (
+        ((Math.abs(horizontalDistance) === 1 &&
+          Math.abs(verticalDistance) === 2) ||
+          (Math.abs(horizontalDistance) === 2 &&
+            Math.abs(verticalDistance) === 1)) &&
+        (!this.tileIsOccupied(column, row, boardState) ||
+          this.tileIsOccupiedByOpponent(column, row, team, boardState))
+      ) {
+        boardState = this.capturePiece(column, row, boardState);
+        return { isValid: true, updatedBoardState: boardState };
+      }
+    } else if (type === PieceType.ROOK) {
+      if (
+        (horizontalDistance === 0 || verticalDistance === 0) &&
         this.isPathClear(
           verticalDistance,
           horizontalDistance,
