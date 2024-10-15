@@ -6,11 +6,13 @@ import Image from 'next/image';
 
 interface ProjectDetailProps {
   onClose: () => void;
-  data: Project;
+  data: Project | undefined;
 }
 
 const ProjectDetail = ({ onClose, data }: ProjectDetailProps) => {
-  console.log(data);
+  if (!data) {
+    return null;
+  }
   const { name, description, type, manager, techStack, purpose, status } = data;
   return (
     <>
