@@ -11,14 +11,7 @@ export default function Projects() {
     undefined
   );
   const [status, setStatus] = useState<
-    'completed' | 'in-progress' | 'planning' | undefined
-  >(undefined);
-
-  const [pinnedType, setPinnedType] = useState<boolean>(false);
-  const [pinnedStatus, setPinnedStatus] = useState<boolean>(false);
-
-  const [activeButtonIndex, setActiveButtonIndex] = useState<
-    number | undefined
+    'planning' | 'in-progress' | 'completed' | undefined
   >(undefined);
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -43,27 +36,24 @@ export default function Projects() {
       <div className="flex flex-col items-center pt-2 md:pt-4">
         <div className="mt-36 grid max-w-4xl grid-cols-3 gap-2 text-center md:mt-4">
           {[
-            'Web Development',
-            'Software',
-            'Hardware',
-            'Completed Projects',
-            'Ongoing Projects',
-            'Upcoming Projects',
-          ].map((p, index) => (
+            { key: 'web', label: 'Web Development' },
+            { key: 'software', label: 'Software' },
+            { key: 'hardware', label: 'Hardware' },
+          ].map((p) => (
             <motion.button
-              key={index}
+              key={p.key}
               onClick={() => {
-                index === activeButtonIndex
-                  ? setActiveButtonIndex(undefined)
-                  : setActiveButtonIndex(index);
+                p.key === type
+                  ? setType(undefined)
+                  : setType(p.key as 'web' | 'software' | 'hardware');
               }}
               initial={false}
               animate={{
                 background:
-                  activeButtonIndex === index
+                  p.key === type
                     ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
                     : 'transparent',
-                scale: activeButtonIndex === index ? 1.05 : 1,
+                scale: p.key === type ? 1.05 : 1,
               }}
               transition={{
                 type: 'spring',
@@ -72,7 +62,39 @@ export default function Projects() {
               }}
               className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] md:text-base"
             >
-              {p}
+              {p.label}
+            </motion.button>
+          ))}
+          {[
+            { key: 'planning', label: 'Planning Projects' },
+            { key: 'in-progress', label: 'Ongoing Projects' },
+            { key: 'completed', label: 'Completed Projects' },
+          ].map((p) => (
+            <motion.button
+              key={p.key}
+              onClick={() => {
+                p.key === status
+                  ? setStatus(undefined)
+                  : setStatus(
+                      p.key as 'planning' | 'in-progress' | 'completed'
+                    );
+              }}
+              initial={false}
+              animate={{
+                background:
+                  p.key === status
+                    ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
+                    : 'transparent',
+                scale: p.key === status ? 1.05 : 1,
+              }}
+              transition={{
+                type: 'spring',
+                stiffness: 300,
+                damping: 20,
+              }}
+              className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] md:text-base"
+            >
+              {p.label}
             </motion.button>
           ))}
         </div>
@@ -188,7 +210,7 @@ export default function Projects() {
                   {member.status === 'completed'
                     ? 'Completed'
                     : member.status === 'in-progress'
-                      ? 'In Progress'
+                      ? 'Ongoing'
                       : member.status === 'planning'
                         ? 'Planning'
                         : ''}

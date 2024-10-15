@@ -1,7 +1,7 @@
 export type Project = {
   name: string;
   description?: string;
-  type: 'web' | 'software' | 'hardware' | 'other';
+  type: 'web' | 'software' | 'hardware';
   manager?: string;
   techStack?: string[];
   purpose: string;
@@ -29,7 +29,7 @@ export const projects: Project[] = [
   {
     name: 'Neo Chess',
     description:
-      "An in-house chess game that is planned for RMIT 2024 Semester C's Club Day.",
+      "An in-house chess game that is planned for RMIT Sem C 2024's Club Day.",
     type: 'web',
     techStack: [
       'Next.js',
@@ -46,7 +46,7 @@ export const projects: Project[] = [
   {
     name: 'Neo Checker',
     description:
-      "An in-house checkers game that is planned for RMIT 2024 Semester C's Club Day.",
+      "An in-house checkers game that is planned for RMIT Sem C 2024's Club Day.",
     type: 'web',
     techStack: [
       'Next.js',
@@ -55,15 +55,15 @@ export const projects: Project[] = [
       'Supabase Realtime',
       'Shadcn UI',
     ],
-    status: 'in-progress',
+    status: 'planning',
     manager: 'Vo Hoang Phuc',
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
   },
   {
-    name: 'NCT-2024C Landing Page',
+    name: 'NCT Landing Page',
     description:
-      "The landing page for RMIT 2024 Semester C's Club Day, showcasing the club's projects and activities.",
+      "The landing page for RMIT Sem C 2024's Club Day, showcasing the club's projects and activities.",
     type: 'web',
     techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
     status: 'planning',
@@ -74,7 +74,7 @@ export const projects: Project[] = [
   {
     name: 'NCT AI Chatbot',
     description:
-      "An AI chatbot that is planned for RMIT 2024 Semester C's Club Day.",
+      "An AI chatbot that is planned for RMIT Sem C 2024's Club Day.",
     type: 'web',
     techStack: [
       'Next.js',
@@ -91,7 +91,7 @@ export const projects: Project[] = [
   {
     name: 'Neo Crush Alpha',
     description:
-      "An 4-day internal hackathon game that was planned for RMIT 2024 Semester B's Club Day.",
+      "An 4-day internal hackathon game that was planned for RMIT Sem B 2024's Club Day.",
     type: 'web',
     techStack: [
       'Next.js',
@@ -194,7 +194,7 @@ export const projects: Project[] = [
     type: 'hardware',
     techStack: ['C++', 'Arduino'],
     status: 'completed',
-    manager: 'Cao Viet Quang',
+    manager: 'Cao Nguyen Viet Quang',
     purpose:
       'Hands on intermediate embedded project with hardware design and C programming.',
   },
