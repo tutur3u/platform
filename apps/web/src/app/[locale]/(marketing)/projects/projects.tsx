@@ -1,7 +1,9 @@
 'use client';
 
 import { projects } from './data';
+import { useTextSelection } from '@mantine/hooks';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 
 export default function Projects() {
@@ -12,14 +14,52 @@ export default function Projects() {
     'completed' | 'in-progress' | 'planning' | undefined
   >(undefined);
 
+  const [activeButtonIndex, setActiveButtonIndex] = useState<
+    number | undefined
+  >(undefined);
+
   const [pinnedType, setPinnedType] = useState<boolean>(false);
   const [pinnedStatus, setPinnedStatus] = useState<boolean>(false);
 
   return (
-    <div className="flex flex-col items-center pt-32 md:pt-64">
-      <div className="mt-8 max-w-4xl text-center">
-        <div className="mb-2 text-4xl font-bold">Projects</div>
-        Our club has worked on a wide-range of projects covering{' '}
+    <div className="flex flex-col items-center pt-2 md:pt-4">
+      <div className="mt-36 grid max-w-4xl grid-cols-3 gap-2 text-center md:mt-4">
+        {[
+          'Web Development',
+          'Software',
+          'Hardware',
+          'Completed Projects',
+          'Ongoing Projects',
+          'Upcomming Projects',
+        ].map((p, index) => (
+          <motion.button
+            key={index}
+            onClick={() => {
+              index === activeButtonIndex
+                ? setActiveButtonIndex(undefined)
+                : setActiveButtonIndex(index);
+            }}
+            initial={false}
+            animate={{
+              background:
+                activeButtonIndex === index
+                  ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
+                  : 'transparent',
+              scale: activeButtonIndex === index ? 1.05 : 1,
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 20,
+            }}
+            className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] md:text-base"
+          >
+            {p}
+          </motion.button>
+        ))}
+      </div>
+
+      {/* <div className="mt-8 max-w-4xl text-center">
         <button
           className={`font-semibold text-blue-500 underline underline-offset-2 dark:text-blue-300 ${
             type !== undefined && type !== 'web' ? 'opacity-30' : ''
@@ -154,7 +194,7 @@ export default function Projects() {
           Upcoming projects
         </button>{' '}
         below.
-      </div>
+      </div> */}
 
       <div className="my-4 grid w-full gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {projects.map((member) => (

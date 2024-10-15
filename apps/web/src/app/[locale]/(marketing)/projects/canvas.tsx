@@ -54,7 +54,7 @@ export default function Canvas() {
     // Draw the first circle
     drawCircle(
       canvas.width * 0.45,
-      canvas.height * 0.55,
+      canvas.height * 0.5,
       canvas.width * 0.4,
       '#1AF4E6',
       true
@@ -63,7 +63,7 @@ export default function Canvas() {
     // Draw the second circle
     drawCircle(
       canvas.width * 0.55,
-      canvas.height * 0.55,
+      canvas.height * 0.5,
       canvas.width * 0.4,
       '#F4B71A',
       true
@@ -72,7 +72,7 @@ export default function Canvas() {
     // Draw the third circle
     drawCircle(
       canvas.width * 0.5,
-      canvas.height * 0.5,
+      canvas.height * 0.45,
       canvas.width * 0.4,
       'black',
       false
@@ -81,7 +81,7 @@ export default function Canvas() {
     for (let i = 0; i < 5; i++) {
       drawChevron(
         canvas.width * 0.5,
-        canvas.height * 0.5 + i * 40,
+        canvas.height * 0.45 + i * 40,
         canvas.width * 0.4 - i * 40,
         Math.PI / 2
       );
