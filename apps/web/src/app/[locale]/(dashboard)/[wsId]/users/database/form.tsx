@@ -214,7 +214,7 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
               </Avatar>
 
               <div>
-                <Button variant="ghost" type='button' className="mt-2">
+                <Button variant="ghost" type="button" className="mt-2">
                   <label htmlFor="file-upload" className="cursor-pointer">
                     {previewSrc
                       ? t('settings-account.new_avatar')

@@ -41,8 +41,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
-import { Loader2 } from 'lucide-react';
-import { Ellipsis, Eye, UserIcon, XIcon } from 'lucide-react';
+import { Ellipsis, Eye, Loader2, UserIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -79,7 +78,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
 
   const user = row.original;
 
-  const [file, setFile] = useState<File | null>(null); 
+  const [file, setFile] = useState<File | null>(null);
   const [previewSrc, setPreviewSrc] = useState<string | null>(
     user?.avatar_url || null
   );
@@ -117,7 +116,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
 
   async function uploadImageToSupabase(file: File, wsId: string) {
     const supabase = createClient();
-    console.log('wsID idd', wsId);
+
     const fileExtension = file.name.split('.').pop();
     const filePath = `${wsId}/users/${generateRandomUUID()}.${fileExtension}`;
     const { error } = await supabase.storage
@@ -137,7 +136,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
       console.error('Error generating signed URL:', signedURLError.message);
       throw new Error('Failed to generate signed URL');
     }
-    console.log(data.signedUrl, 'sign URL in updaldoad ');
+
     return data.signedUrl;
   }
 
@@ -148,7 +147,6 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
       if (file) {
         const signedUrl = await uploadImageToSupabase(file, extraData.wsId);
         data.avatar_url = signedUrl;
-        console.log('there is file ', signedUrl);
       }
 
       const response = await fetch(
@@ -253,7 +251,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
     groupId: string;
     userId: string;
   }) => {
-    console.log(wsId, "wisalsdkac");
+    console.log(wsId, 'wisalsdkac');
     const res = await fetch(
       `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${userId}`,
       {
