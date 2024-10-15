@@ -118,7 +118,8 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   async function uploadImageToSupabase(file: File, wsId: string) {
     const supabase = createClient();
     console.log('wsID idd', wsId);
-    const filePath = `${wsId}/users/${generateRandomUUID()}`;
+    const fileExtension = file.name.split('.').pop();
+    const filePath = `${wsId}/users/${generateRandomUUID()}.${fileExtension}`;
     const { error } = await supabase.storage
       .from('workspaces')
       .upload(filePath, file);
