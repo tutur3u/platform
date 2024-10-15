@@ -125,7 +125,13 @@
     "scan_me": "Quét mã QR",
     "qr_code": "Mã QR",
     "current_plan": "Gói hiện tại",
-    "incomplete": "Chưa hoàn thành"
+    "incomplete": "Chưa hoàn thành",
+    "file-name": "Tên tệp",
+    "date": "Ngày",
+    "status": "Trạng thái",
+    "years_old": "tuổi",
+    "year_old": "tuổi",
+    "average": "Trung bình"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -450,7 +456,10 @@
     "size": "Kích cỡ",
     "created_at": "Ngày tạo",
     "files": "Tệp tin",
-    "clear_files": "Huỷ tất cả"
+    "clear_files": "Huỷ tất cả",
+    "folder": {
+      "name": "Tên thư mục"
+    }
   },
   "ai-prompts-data-table": {
     "id": "Mã số",
@@ -499,7 +508,8 @@
     "apply_changes": "Áp dụng",
     "applying": "Đang áp dụng...",
     "selected": "nhóm",
-    "linked_products": "Sản phẩm liên kết"
+    "linked_products": "Sản phẩm liên kết",
+    "remove-from-group": "Xóa khỏi nhóm"
   },
   "email-data-table": {
     "id": "Mã số",
@@ -793,7 +803,14 @@
     "create": "Tạo điểm danh",
     "edit": "Chỉnh sửa điểm danh",
     "create_description": "Tạo một điểm danh mới",
-    "edit_description": "Chỉnh sửa điểm danh hiện có"
+    "edit_description": "Chỉnh sửa điểm danh hiện có",
+    "present": "Có mặt",
+    "absent": "Vắng mặt",
+    "not-set": "Chưa đặt",
+    "select_group": "Chọn một nhóm",
+    "no_groups": "Không tìm thấy nhóm nào",
+    "update_error": "Lỗi cập nhật điểm danh",
+    "update_success": "Đã cập nhật điểm danh"
   },
   "ws-user-groups": {
     "singular": "Nhóm người dùng",
@@ -1556,6 +1573,9 @@
   },
   "avatar": "Ảnh đại diện",
   "ws-user-group-details": {
-    "schedule": "Lịch nhóm"
+    "schedule": "Lịch nhóm",
+    "attendance": "Điểm danh nhóm",
+    "reports": "Báo cáo nhóm",
+    "metrics": "Số liệu nhóm"
   }
 }

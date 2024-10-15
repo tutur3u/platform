@@ -103,7 +103,7 @@ export default function EditableReportPreview({
   };
 
   return (
-    <div className="grid h-fit gap-4 2xl:grid-cols-2">
+    <div className="grid h-fit gap-4 xl:grid-cols-2">
       <div className="grid h-fit gap-4">
         {isNew || (
           <div className="grid h-fit gap-2 rounded-lg border p-4">

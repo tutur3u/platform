@@ -125,7 +125,13 @@
     "scan_me": "Scan me",
     "qr_code": "QR Code",
     "current_plan": "Current plan",
-    "incomplete": "Incomplete"
+    "incomplete": "Incomplete",
+    "file-name": "File Name",
+    "date": "Date",
+    "status": "Status",
+    "years_old": "years old",
+    "year_old": "year old",
+    "average": "Average"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -450,7 +456,10 @@
     "size": "Size",
     "created_at": "Created at",
     "files": "Files",
-    "clear_files": "Clear files"
+    "clear_files": "Clear files",
+    "folder": {
+      "name": "Folder name"
+    }
   },
   "ai-prompts-data-table": {
     "id": "ID",
@@ -499,7 +508,8 @@
     "apply_changes": "Apply Changes",
     "applying": "Applying...",
     "selected": "Selected",
-    "linked_products": "Linked products"
+    "linked_products": "Linked products",
+    "remove-from-group": "Remove from group"
   },
   "email-data-table": {
     "id": "ID",
@@ -793,7 +803,14 @@
     "create": "Add attendance",
     "edit": "Edit attendance",
     "create_description": "Add a new attendance",
-    "edit_description": "Edit an existing attendance"
+    "edit_description": "Edit an existing attendance",
+    "present": "Present",
+    "absent": "Absent",
+    "not-set": "Not set",
+    "no_groups": "No group found",
+    "select_group": "Select a group",
+    "update_error": "Attendance update error",
+    "update_success": "Attendance updated"
   },
   "ws-user-groups": {
     "singular": "User group",
@@ -1536,7 +1553,6 @@
         "percentage": "Percentage"
       }
     }
-
   },
   "ws_post_details": {
     "check_all": "Check all"
@@ -1557,6 +1573,9 @@
   },
   "avatar": "Avatar",
   "ws-user-group-details": {
-    "schedule": "Group Schedule"
+    "schedule": "Group Schedule",
+    "attendance": "Group Attendance",
+    "reports": "Group Reports",
+    "metrics": "Group Metrics"
   }
 }

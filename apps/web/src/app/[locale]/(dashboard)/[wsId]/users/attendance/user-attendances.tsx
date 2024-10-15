@@ -1,6 +1,7 @@
 import ClientUserAttendances from './client-user-attendances';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
+import { ReactElement } from 'react';
 
 interface SearchParams {
   q?: string;
@@ -21,7 +22,7 @@ export default async function UserAttendances({
 }: {
   wsId: string;
   searchParams: SearchParams;
-}) {
+}): Promise<ReactElement> {
   const { data, count } = await getData(wsId, searchParams);
 
   return (
