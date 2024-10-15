@@ -1,7 +1,7 @@
 import SettingItemTab from '../../../../../components/settings/SettingItemTab';
-import UserAvatar from './avatar';
-import DisplayNameInput from './display-name-input';
-import EmailInput from './email-input';
+import UserAvatar from '../../../settings-avatar';
+import DisplayNameInput from '../../../settings-display-name-input';
+import EmailInput from '../../../settings-email-input';
 import { getCurrentUser } from '@/lib/user-helper';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
