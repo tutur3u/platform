@@ -135,16 +135,22 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
         <div className="flex items-center md:overflow-x-auto">
           {groupIndicators.map((indicator) => (
             <div className="grid border-r last:border-r-0">
-              <div key={indicator.id} className="w-32 px-4 py-2 font-semibold">
+              <button
+                key={indicator.id}
+                className="hover:bg-dynamic-purple/10 hover:text-dynamic-purple w-32 px-4 py-2 font-semibold"
+              >
                 <span className="line-clamp-1 break-all">{indicator.name}</span>
-              </div>
+              </button>
               {users.map((user) => (
-                <div key={user.id} className="w-32 border-t px-4 py-2">
+                <button
+                  key={user.id}
+                  className="hover:bg-dynamic-blue/10 hover:text-dynamic-blue w-32 border-t px-4 py-2"
+                >
                   {indicators.find(
                     (i) =>
                       i.user_id === user.id && i.indicator_id === indicator.id
                   )?.value || '-'}
-                </div>
+                </button>
               ))}
             </div>
           ))}

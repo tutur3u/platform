@@ -296,7 +296,6 @@ export function Structure({
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-
               {children}
             </main>
           </ResizablePanel>
