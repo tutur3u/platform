@@ -1,4 +1,4 @@
-export const projects: {
+export type Project = {
   name: string;
   description?: string;
   type: 'web' | 'software' | 'hardware' | 'other';
@@ -6,7 +6,9 @@ export const projects: {
   techStack?: string[];
   purpose: string;
   status: 'planning' | 'in-progress' | 'completed';
-}[] = [
+};
+
+export const projects: Project[] = [
   {
     name: 'Neo Crush',
     description:
