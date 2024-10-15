@@ -54,7 +54,7 @@
     "lucide-react": "^0.453.0",
     "moment": "^2.30.1",
     "negotiator": "^0.6.3",
-    "next": "15.0.0-canary.191",
+    "next": "15.0.0-canary.192",
     "next-intl": "^3.21.1",
     "next-themes": "^0.3.0",
     "openai": "^4.67.3",
