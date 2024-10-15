@@ -13,7 +13,7 @@ const ProjectDetail = ({ onClose, data }: ProjectDetailProps) => {
   if (!data) {
     return null;
   }
-  const { name, description, type, manager, techStack, purpose, status } = data;
+  const { name, description } = data;
   return (
     <>
       <AnimatePresence>
