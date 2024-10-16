@@ -1,7 +1,7 @@
 import { UserNav } from './user-nav';
 import { Suspense } from 'react';
 
-export async function UserNavWrapper({
+export function UserNavWrapper({
   hideMetadata = false,
 }: {
   hideMetadata?: boolean;
