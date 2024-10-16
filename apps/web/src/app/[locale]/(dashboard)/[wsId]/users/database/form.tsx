@@ -95,13 +95,13 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
   const removeAvatar = async () => {
     setSaving(true);
     setPreviewSrc(null);
-    setFile(null); // Also clear the file
+    setFile(null); 
 
     if (!data?.avatar_url) {
       setSaving(false);
       return;
     }
-    // You can update the avatar URL in your backend here if needed
+
     router.refresh();
     setSaving(false);
   };
