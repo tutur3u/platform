@@ -68,7 +68,7 @@ const FormSchema = z.object({
   national_id: z.string().optional(),
   address: z.string().optional(),
   note: z.string().optional(),
-  avatar_url: z.string().optional(),
+  avatar_url: z.string().nullable().optional(),
 });
 
 export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
@@ -215,17 +215,24 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
 
     try {
       const supabase = createClient();
+      console.log('removed called');
+      console.log(user.id, 'user id');
 
-      const { error: updateError } = await supabase
+      // Update the database
+      const { data, error: updateError } = await supabase
         .from('workspace_users')
         .update({ avatar_url: null })
         .eq('id', user.id);
 
+      console.log('Update result:', data);
       if (updateError) {
         throw new Error('Error updating avatar_url in the database');
       }
 
+      // Update form state
       setPreviewSrc(null);
+      form.setValue('avatar_url', null); // Clear avatar_url in the form state
+
       toast({
         title: 'Avatar removed successfully',
         description: 'The user avatar has been removed.',
