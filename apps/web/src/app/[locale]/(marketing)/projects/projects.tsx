@@ -23,15 +23,15 @@ export default function Projects() {
   return (
     <>
       <div className="mt-28 flex flex-col items-center md:mt-72">
-        <p className="text-xl tracking-wider md:text-6xl">
+        <p className="text-2xl tracking-wider sm:text-3xl md:text-6xl">
           NEO Culture Tech Club
         </p>
-        <p className="mt-1 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-3xl font-bold tracking-widest text-transparent md:mt-6 md:text-7xl">
+        <p className="mt-1 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-5xl font-bold tracking-widest text-transparent md:mt-6 md:text-7xl">
           PROJECTS
         </p>
-        <p className="mt-1 text-center text-xs font-light md:mt-4 md:text-2xl">
-          The place where you can learn, grow and have <br /> fun with
-          technology, by building projects.
+        <p className="mt-1 max-w-lg text-center text-xl font-light md:mt-4 md:max-w-2xl md:text-2xl">
+          The place where you can learn, grow and have fun with technology,
+          by building projects.
         </p>
       </div>
       <div className="flex flex-col items-center pt-2 md:pt-4">
@@ -99,7 +99,7 @@ export default function Projects() {
             </motion.button>
           ))}
         </div>
-        <div className="my-4 grid w-full gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="my-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {projects.map((project) => (
             // <ProjectCard
             //   key={project.name}

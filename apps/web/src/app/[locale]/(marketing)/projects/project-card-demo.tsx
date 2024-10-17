@@ -16,11 +16,13 @@ export default function ProjectCardDemo({
 }: ProjectCardDemoProps) {
   console.log(project, type, status, onClick);
   return (
-    <button className="text-card-foreground flex items-center justify-center border-2">
-      <div className="relative w-80 overflow-hidden [clip-path:polygon(10%_0%,90%_0%,100%_15%,100%_85%,90%_100%,10%_100%,0%_85%,0%_15%)]">
-        <div className="z-10 flex h-full flex-col p-6">
+    <button className="max-w-80 rounded-bl-lg bg-slate-800 [clip-path:polygon(20%_0,85%_0,100%_15%,100%_85%,85%_100%,0_100%,0_20%,10%_15%)]">
+      <div className="flex items-center justify-center">
+        <div className="flex h-full flex-col px-6 py-4">
           <div className="jusity-center flex flex-col">
-            <p className="mb-4 text-center text-2xl font-bold">Neo Checker</p>
+            <div className="mx-4 rounded-lg bg-blue-500/5 p-2 [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)]">
+              <p className="text-center text-lg font-bold">Neo Checker</p>
+            </div>
             <Separator className="my-2" />
             <h2 className="mb-2 text-center text-xl">Vo Hoang Phuc</h2>
             <p className="mb-5 text-center text-base text-gray-400">
@@ -30,10 +32,10 @@ export default function ProjectCardDemo({
           </div>
 
           <div className="space-y-4">
-            <div className="w-full rounded-lg bg-gradient-to-b from-[#1AF4E6] to-white/25 px-4 py-2 text-center font-semibold transition-opacity hover:opacity-90">
+            <div className="rounded-lg bg-gradient-to-b from-[#1AF4E6] to-white/25 px-4 py-2 text-center font-semibold transition-opacity [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)] hover:opacity-90">
               Web Development
             </div>
-            <div className="w-full rounded-lg bg-gradient-to-b from-[#1AF4E6] to-white/25 px-4 py-2 text-center font-semibold transition-opacity hover:opacity-90">
+            <div className="rounded-lg bg-gradient-to-b from-[#1AF4E6] to-white/25 px-4 py-2 text-center font-semibold transition-opacity [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)] hover:opacity-90">
               In progress
             </div>
           </div>
