@@ -1,18 +1,22 @@
-'use client';
-
 import { PieceType, TeamType, pieces as initialPieces } from './pieceSetup';
 import Referee from './referee';
 import React, { useRef, useState } from 'react';
 
 export function useDragAndDrop(
   removePieceById: (id: string) => void,
-  updatePiecePosition: (id: string, x: number, y: number) => void
+  updatePiecePosition: (id: string, x: number, y: number) => void,
+  promotePawn: (id: string, newType: PieceType) => void
 ) {
   const chessboardRef = useRef<HTMLDivElement>(null);
   let activePiece: HTMLElement | null = null;
   let hasMoved = useRef(false);
   const referee = new Referee();
   const [boardState, setBoardState] = useState(initialPieces); // Initial board state
+  const [promotionInfo, setPromotionInfo] = useState<{
+    pieceId: string;
+    column: number;
+    row: number;
+  } | null>(null); // State for promotion
 
   const touchStartPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const fixPosition = useRef<
@@ -197,6 +201,19 @@ export function useDragAndDrop(
             boardState[pieceIndex].firstMove = false;
           }
 
+          // Pawn promotion logic
+          if (
+            pieceType === PieceType.PAWN &&
+            (cellCenter.current.nextRow === 1 ||
+              cellCenter.current.nextRow === 8)
+          ) {
+            setPromotionInfo({
+              pieceId,
+              column: cellCenter.current.nextColumn,
+              row: cellCenter.current.nextRow,
+            });
+          }
+
           activePiece.style.position = 'static';
           activePiece.style.removeProperty('left');
           activePiece.style.removeProperty('top');
@@ -226,5 +243,19 @@ export function useDragAndDrop(
     activePiece = null;
   }
 
-  return { grabPiece, movePiece, dropPiece, chessboardRef };
+  function handlePromotion(type: PieceType) {
+    if (promotionInfo) {
+      promotePawn(promotionInfo.pieceId, type);
+      setPromotionInfo(null);
+    }
+  }
+
+  return {
+    grabPiece,
+    movePiece,
+    dropPiece,
+    chessboardRef,
+    promotionInfo,
+    handlePromotion,
+  };
 }

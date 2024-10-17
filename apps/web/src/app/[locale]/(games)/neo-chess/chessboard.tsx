@@ -3,10 +3,13 @@
 import Tile from './piece';
 import {
   Piece,
+  PieceType,
+  TeamType,
   horizontal,
   pieces as initialPieces,
   vertical,
 } from './pieceSetup';
+import PromotionModal from './promotion';
 import { useDragAndDrop } from './use-dnd';
 import React, { useCallback, useState } from 'react';
 
@@ -28,10 +31,28 @@ export default function ChessBoard() {
     []
   );
 
-  const { grabPiece, movePiece, dropPiece, chessboardRef } = useDragAndDrop(
-    removePieceById,
-    updatePiecePosition
-  );
+  const promotePawn = useCallback((id: string, newType: PieceType) => {
+    setPieces((prevPieces) =>
+      prevPieces.map((piece) =>
+        piece.id === id
+          ? {
+              ...piece,
+              type: newType,
+              image: `/neo-chess/${piece.team === TeamType.OURS ? 'w' : 'b'}_${newType.toLowerCase()}.png`,
+            }
+          : piece
+      )
+    );
+  }, []);
+
+  const {
+    grabPiece,
+    movePiece,
+    dropPiece,
+    chessboardRef,
+    promotionInfo,
+    handlePromotion,
+  } = useDragAndDrop(removePieceById, updatePiecePosition, promotePawn);
 
   // Create the board
   let board: React.ReactNode[] = [];
@@ -114,6 +135,15 @@ export default function ChessBoard() {
             onMouseUp={dropPiece}
           >
             {board}
+            {promotionInfo && (
+              <PromotionModal
+                onSelect={handlePromotion}
+                team={
+                  pieces.find((piece) => piece.id === promotionInfo.pieceId)
+                    ?.team ?? TeamType.OURS
+                }
+              />
+            )}
           </div>
           <div
             data-orientation="horizontal"
