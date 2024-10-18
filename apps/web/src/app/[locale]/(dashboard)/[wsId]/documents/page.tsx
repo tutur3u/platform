@@ -1,4 +1,5 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
+import TailwindAdvancedEditor from './advanced-editor';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
@@ -7,7 +8,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { FilePlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import TailwindAdvancedEditor from "./advanced-editor";
+
 interface Props {
   params: Promise<{
     wsId: string;
