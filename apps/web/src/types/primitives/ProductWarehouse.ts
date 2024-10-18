@@ -1,5 +1,5 @@
-import { Entity } from './Entity';
-
-export interface ProductWarehouse extends Entity {
-  ws_id?: string;
+export interface ProductWarehouse {
+  id: string;
+  name: string;
+  ws_id: string;
 }
