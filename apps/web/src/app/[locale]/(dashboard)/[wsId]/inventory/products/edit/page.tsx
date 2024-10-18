@@ -33,7 +33,6 @@ export default async function WorkspaceProductsPage({
     // 1. /edit?create (create new product)
     // 2. /edit?id={:id} (edit existing product)
     // else, redirect to products list. on both, prioritize editing (id > create)
-    // this was implemented similar to WordPress' post editing/creating page
     redirect('../products');
   }
 
