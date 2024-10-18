@@ -1,9 +1,9 @@
 import { StaffToolbar } from './staff-toolbar';
 import { ProductionIndicator } from '@/components/production-indicator';
 import { Providers } from '@/components/providers';
-import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { locales } from '@/config';
 import { siteConfig } from '@/constants/configs';
+import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { Toaster } from '@repo/ui/components/ui/toaster';
 import '@repo/ui/globals.css';
 import { cn } from '@repo/ui/lib/utils';

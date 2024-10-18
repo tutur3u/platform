@@ -7,7 +7,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { FilePlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-
+import TailwindAdvancedEditor from "./advanced-editor";
 interface Props {
   params: Promise<{
     wsId: string;
@@ -108,6 +108,7 @@ export default async function DocumentsPage({ params }: Props) {
             <DocumentCard key={`doc-${doc.id}`} wsId={ws?.id} document={doc} />
           ))}
       </div>
+      <TailwindAdvancedEditor></TailwindAdvancedEditor>
     </>
   );
 }
