@@ -45,8 +45,8 @@ importers:
         specifier: ^0.0.51
         version: 0.0.51(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.46
-        version: 0.0.46(zod@3.23.8)
+        specifier: ^0.0.48
+        version: 0.0.48(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.25
         version: 0.0.25(zod@3.23.8)
@@ -322,8 +322,8 @@ importers:
         specifier: ^0.0.51
         version: 0.0.51(zod@3.23.8)
       '@ai-sdk/azure':
-        specifier: ^0.0.46
-        version: 0.0.46(zod@3.23.8)
+        specifier: ^0.0.48
+        version: 0.0.48(zod@3.23.8)
       '@ai-sdk/cohere':
         specifier: ^0.0.25
         version: 0.0.25(zod@3.23.8)
@@ -899,8 +899,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/azure@0.0.46':
-    resolution: {integrity: sha512-hTISpqSvkhyJk2QS7EgRV4x3QBrhLjrA5aefq0Dw+WoSbzxz0r7Bpyi+NONCDl0fxmj/dJKKmZh2AqvTX9n7Lg==}
+  '@ai-sdk/azure@0.0.48':
+    resolution: {integrity: sha512-RZc5WXkhHg/Brsz9L7FvaO0sJiQ+vvV3+DZPVvcXdl7zEaVKwSXa88KNaHCpg+/iBPh6urAqpfrTgRk30Ncnlg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -931,6 +931,12 @@ packages:
 
   '@ai-sdk/openai@0.0.67':
     resolution: {integrity: sha512-LOvbQaKXuNdhlZ+Asinc4DGdh4v32wKTzFB8FIKvVYjPuXwMWAsK4ZjrS6sxwB37AjmyGLPTMVBUtwcHZdpk+A==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+
+  '@ai-sdk/openai@0.0.68':
+    resolution: {integrity: sha512-WSzB7qpBTrnYvFbnBBmIsw1G8GM04JRMr+I7B5T7msgZfleG4cTvVrn9A1HeHHw9TmbKiaCKJrEZH4V0lb7jNQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -7531,8 +7537,8 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
-    resolution: {tarball: https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e}
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
+    resolution: {commit: 32f550d3b3bdb1b781aabe100683311cd982c98e, repo: git@github.com:securedeveloper/js-xlsx.git, type: git}
     version: 0.8.20
     engines: {node: '>=0.8'}
     hasBin: true
@@ -8169,9 +8175,9 @@ snapshots:
       '@ai-sdk/provider-utils': 1.0.20(zod@3.23.8)
       zod: 3.23.8
 
-  '@ai-sdk/azure@0.0.46(zod@3.23.8)':
+  '@ai-sdk/azure@0.0.48(zod@3.23.8)':
     dependencies:
-      '@ai-sdk/openai': 0.0.67(zod@3.23.8)
+      '@ai-sdk/openai': 0.0.68(zod@3.23.8)
       '@ai-sdk/provider': 0.0.24
       '@ai-sdk/provider-utils': 1.0.20(zod@3.23.8)
       zod: 3.23.8
@@ -8205,6 +8211,12 @@ snapshots:
       zod: 3.23.8
 
   '@ai-sdk/openai@0.0.67(zod@3.23.8)':
+    dependencies:
+      '@ai-sdk/provider': 0.0.24
+      '@ai-sdk/provider-utils': 1.0.20(zod@3.23.8)
+      zod: 3.23.8
+
+  '@ai-sdk/openai@0.0.68(zod@3.23.8)':
     dependencies:
       '@ai-sdk/provider': 0.0.24
       '@ai-sdk/provider-utils': 1.0.20(zod@3.23.8)
@@ -15313,7 +15325,7 @@ snapshots:
   react-export-excel@0.5.3:
     dependencies:
       file-saver: 1.3.8
-      xlsx: tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e
+      xlsx: tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e
 
   react-hook-form@7.53.0(react@19.0.0-rc-cd22717c-20241013):
     dependencies:
@@ -16229,7 +16241,7 @@ snapshots:
       mkdirp: 3.0.1
       yallist: 5.0.0
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
     dependencies:
       adler-32: 1.3.1
       cfb: 1.2.2
