@@ -12,7 +12,7 @@ export default function Projects() {
     undefined
   );
   const [status, setStatus] = useState<
-    'planning' | 'in-progress' | 'completed' | undefined
+    'planning' | 'ongoing' | 'completed' | undefined
   >(undefined);
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -68,7 +68,7 @@ export default function Projects() {
           ))}
           {[
             { key: 'planning', label: 'Planning Projects' },
-            { key: 'in-progress', label: 'Ongoing Projects' },
+            { key: 'ongoing', label: 'Ongoing Projects' },
             { key: 'completed', label: 'Completed Projects' },
           ].map((p) => (
             <motion.button
@@ -76,9 +76,7 @@ export default function Projects() {
               onClick={() => {
                 p.key === status
                   ? setStatus(undefined)
-                  : setStatus(
-                      p.key as 'planning' | 'in-progress' | 'completed'
-                    );
+                  : setStatus(p.key as 'planning' | 'ongoing' | 'completed');
               }}
               initial={false}
               animate={{

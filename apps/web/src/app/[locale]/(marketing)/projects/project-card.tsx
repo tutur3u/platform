@@ -111,7 +111,7 @@ export default function ProjectCard({
           className={`mt-2 w-full rounded border p-1 text-center text-sm font-semibold ${
             project.status === 'completed'
               ? 'border-green-500/20 bg-green-500/10 text-green-500 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300'
-              : project.status === 'in-progress'
+              : project.status === 'ongoing'
                 ? 'border-purple-500/20 bg-purple-500/10 text-purple-500 dark:border-purple-300/20 dark:bg-purple-300/10 dark:text-purple-300'
                 : project.status === 'planning'
                   ? 'border-orange-500/20 bg-orange-500/10 text-orange-500 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300'
@@ -120,11 +120,11 @@ export default function ProjectCard({
         >
           {project.status === 'completed'
             ? 'Completed'
-            : project.status === 'in-progress'
+            : project.status === 'ongoing'
               ? 'Ongoing'
               : project.status === 'planning'
                 ? 'Planning'
-                : ''}
+                : 'Unknown'}
         </div>
       </div>
     </button>

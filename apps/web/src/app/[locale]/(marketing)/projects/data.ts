@@ -5,7 +5,7 @@ export type Project = {
   manager?: string;
   techStack?: string[];
   purpose: string;
-  status: 'planning' | 'in-progress' | 'completed';
+  status: 'planning' | 'ongoing' | 'completed';
 };
 
 export const projects: Project[] = [
@@ -21,7 +21,7 @@ export const projects: Project[] = [
       'Supabase Realtime',
       'Shadcn UI',
     ],
-    status: 'in-progress',
+    status: 'ongoing',
     manager: 'Vo Hoang Phuc',
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
@@ -38,7 +38,7 @@ export const projects: Project[] = [
       'Supabase Realtime',
       'Shadcn UI',
     ],
-    status: 'in-progress',
+    status: 'ongoing',
     manager: 'Vo Hoang Phuc',
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
