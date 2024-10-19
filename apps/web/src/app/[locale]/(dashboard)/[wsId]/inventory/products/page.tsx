@@ -2,9 +2,12 @@ import { productColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { Product } from '@/types/primitives/Product';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface Props {
   params: Promise<{
@@ -33,7 +36,14 @@ export default async function WorkspaceProductsPage({
         description={t('ws-inventory-products.description')}
         createTitle={t('ws-inventory-products.create')}
         createDescription={t('ws-inventory-products.create_description')}
-        // form={<ProductForm wsId={wsId} />}
+        action={
+          <Link href="./products/new">
+            <Button className="cursor-pointer">
+              <Plus className="mr-2 h-4 w-4" />
+              <span>{t('ws-inventory-products.create')}</span>
+            </Button>
+          </Link>
+        }
       />
       <Separator className="my-4" />
       <CustomDataTable

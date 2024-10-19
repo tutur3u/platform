@@ -43,8 +43,8 @@ const FormSchema = z.object({
   }, 'Please upload a valid image file'),
 });
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; 
-const AVATAR_SIZE = 500; 
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+const AVATAR_SIZE = 500;
 
 export default function UserAvatar({ user }: AvatarProps) {
   const t = useTranslations();

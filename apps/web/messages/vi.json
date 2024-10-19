@@ -649,6 +649,7 @@
     "unit": "Đơn vị",
     "warehouse": "Kho",
     "usage": "Cách dùng",
+    "price": "Giá",
     "created_at": "Tạo lúc"
   },
   "batch-data-table": {
@@ -1498,21 +1499,36 @@
     "singular": "Sản phẩm",
     "description": "Sản phẩm được sử dụng dưới dạng loại mặt hàng riêng lẻ mà bạn có trong kho của mình và có thể được sử dụng để liên kết với hóa đơn.",
     "create": "Tạo sản phẩm",
-    "create_description": "Tạo một sản phẩm mới"
+    "create_description": "Tạo một sản phẩm mới",
+    "form": {
+      "details": "Chi tiết",
+      "name": "Tên sản phẩm",
+      "manufacturer": "Nhà sản xuất",
+      "description": "Mô tả",
+      "usage": "Cách dùng",
+      "price": "Giá",
+      "stock": "Kho hàng",
+      "add_warehouse": "Thêm kho hàng",
+      "amount": "Số lượng",
+      "min_amount": "Số lượng ít nhất",
+      "category": "Danh mục"
+    }
   },
   "ws-inventory-categories": {
     "plural": "Danh mục sản phẩm",
     "singular": "Danh mục sản phẩm",
     "description": "Danh mục được sử dụng để nhóm các sản phẩm tồn kho tương tự lại với nhau.",
     "create": "Tạo danh mục",
-    "create_description": "Tạo một danh mục mới"
+    "create_description": "Tạo một danh mục mới",
+    "placeholder": "Chọn danh mục sản phẩm"
   },
   "ws-inventory-units": {
     "plural": "Đơn vị tính",
     "singular": "Đơn vị tính",
     "description": "Đơn vị tính được sử dụng để đo lường các sản phẩm tồn kho.",
     "create": "Tạo đơn vị tính",
-    "create_description": "Tạo một đơn vị tính mới"
+    "create_description": "Tạo một đơn vị tính mới",
+    "placeholder": "Chọn đơn vị tính"
   },
   "ws-inventory-suppliers": {
     "plural": "Nhà cung cấp",
@@ -1526,7 +1542,8 @@
     "singular": "Kho hàng",
     "description": "Kho hàng được sử dụng để lưu trữ các sản phẩm tồn kho.",
     "create": "Tạo kho hàng",
-    "create_description": "Tạo một kho hàng mới"
+    "create_description": "Tạo một kho hàng mới",
+    "placeholder": "Chọn kho hàng"
   },
   "ws-inventory-batches": {
     "plural": "Lô hàng",
