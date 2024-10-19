@@ -16,7 +16,6 @@ import {
   LinkIcon,
   Lock,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 import { QRCode } from 'react-qrcode-logo';
 
@@ -37,8 +36,6 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
 }) => {
   const [updating, setUpdating] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-
-  const t = useTranslations('ws-documents');
 
   const handleVisibilityChange = async (newIsPublic: boolean) => {
     setUpdating(true);

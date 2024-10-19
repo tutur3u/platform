@@ -13,7 +13,7 @@ export const MathSelector = () => {
       variant="ghost"
       size="sm"
       className="w-12 rounded-none"
-      onClick={(evt) => {
+      onClick={(_) => {
         if (editor.isActive('math')) {
           editor.chain().focus().unsetLatex().run();
         } else {

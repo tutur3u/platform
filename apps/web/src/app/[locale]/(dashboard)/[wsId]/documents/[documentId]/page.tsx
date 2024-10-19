@@ -1,20 +1,18 @@
 'use client';
 
 import TailwindAdvancedEditor from '../advanced-editor';
+import DocumentShareDialog from '../document-share-dialog';
+import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
-import { useEffect, useState } from 'react';
-import { JSONContent } from 'novel';
-// import { useTranslations } from 'next-intl';
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from '@repo/ui/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@repo/ui/components/ui/tooltip";
+} from '@repo/ui/components/ui/tooltip';
 import { Share2 } from 'lucide-react';
-import { cn } from "@/lib/utils";
-import DocumentShareDialog from '../document-share-dialog';
-
+import { JSONContent } from 'novel';
+import { useEffect, useState } from 'react';
 
 interface Props {
   params: {
@@ -25,9 +23,13 @@ interface Props {
 
 export default function DocumentDetailsPage({ params }: Props) {
   const { wsId, documentId } = params;
-  const [document, setDocument] = useState<{ id: string; name: string; content: JSONContent | null; isPublic: boolean } | null>(null);
+  const [document, setDocument] = useState<{
+    id: string;
+    name: string;
+    content: JSONContent | null;
+    isPublic: boolean;
+  } | null>(null);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  // const t = useTranslations('ws-documents');
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -44,7 +46,7 @@ export default function DocumentDetailsPage({ params }: Props) {
           id: data.id,
           name: data.name ?? 'Untitled',
           content: data.content ? JSON.parse(data.content) : null,
-          isPublic: data.is_public
+          isPublic: data.is_public,
         });
 
         if (data.content) {
@@ -90,7 +92,7 @@ export default function DocumentDetailsPage({ params }: Props) {
 
   return (
     <div className="relative w-full max-w-screen-lg">
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">{document.name}</h1>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -99,14 +101,14 @@ export default function DocumentDetailsPage({ params }: Props) {
               variant="ghost"
               className={cn(
                 'transition duration-300',
-                !document.id ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0' : 'pointer-events-auto ml-1 w-10 opacity-100'
+                !document.id
+                  ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
+                  : 'pointer-events-auto ml-1 w-10 opacity-100'
               )}
               onClick={() => setIsShareDialogOpen(true)}
             >
               <Share2 />
-              <span className="sr-only">
-                Share
-              </span>
+              <span className="sr-only">Share</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>Share</TooltipContent>

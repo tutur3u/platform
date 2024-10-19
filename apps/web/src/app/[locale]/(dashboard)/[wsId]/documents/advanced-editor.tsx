@@ -10,7 +10,7 @@ import { MathSelector } from './selectors/math-selector';
 import { NodeSelector } from './selectors/node-selector';
 import { TextButtons } from './selectors/text-buttons';
 import { slashCommand, suggestionItems } from './slash-command';
-import { Separator } from './ui/separator';
+import { Separator } from '@repo/ui/components/ui/separator';
 import {
   EditorCommand,
   EditorCommandEmpty,
@@ -56,7 +56,7 @@ const TailwindAdvancedEditor = () => {
   const debouncedUpdates = useDebouncedCallback(
     async (editor: EditorInstance) => {
       const json = editor.getJSON();
-      console.log(json)
+      console.log(json);
       setCharsCount(editor.storage.characterCount.words());
       window.localStorage.setItem(
         'html-content',
@@ -128,7 +128,7 @@ const TailwindAdvancedEditor = () => {
               {suggestionItems.map((item) => (
                 <EditorCommandItem
                   value={item.title}
-                  onCommand={(val) => item.command(val)}
+                  onCommand={(val) => item?.command?.(val)}
                   className="hover:bg-accent aria-selected:bg-accent flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm"
                   key={item.title}
                 >
@@ -150,7 +150,6 @@ const TailwindAdvancedEditor = () => {
             <Separator orientation="vertical" />
             <NodeSelector open={openNode} onOpenChange={setOpenNode} />
             <Separator orientation="vertical" />
-
             <LinkSelector open={openLink} onOpenChange={setOpenLink} />
             <Separator orientation="vertical" />
             <MathSelector />
