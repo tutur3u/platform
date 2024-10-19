@@ -3073,6 +3073,7 @@ export type Database = {
           content: string | null;
           created_at: string | null;
           id: string;
+          is_public: boolean;
           name: string | null;
           ws_id: string;
         };
@@ -3080,6 +3081,7 @@ export type Database = {
           content?: string | null;
           created_at?: string | null;
           id?: string;
+          is_public?: boolean;
           name?: string | null;
           ws_id: string;
         };
@@ -3087,6 +3089,7 @@ export type Database = {
           content?: string | null;
           created_at?: string | null;
           id?: string;
+          is_public?: boolean;
           name?: string | null;
           ws_id?: string;
         };
