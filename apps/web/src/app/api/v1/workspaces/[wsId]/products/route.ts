@@ -11,7 +11,7 @@ interface Params {
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const data = (await req.json()) as Product2 & {
+  const { inventory, ...data } = (await req.json()) as Product2 & {
     inventory: ProductInventory[];
   };
   const { wsId } = await params;
@@ -21,7 +21,6 @@ export async function POST(req: Request, { params }: Params) {
     .insert({
       ...data,
       ws_id: wsId,
-      inventory: undefined,
     })
     .select('id')
     .single();
@@ -35,15 +34,15 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  let inventory = await supabase.from('inventory_products').insert(
-    data.inventory.map((inventory) => ({
+  const { error } = await supabase.from('inventory_products').insert(
+    inventory.map((inventory) => ({
       ...inventory,
       product_id: product.data.id,
     }))
   );
 
-  if (inventory.error) {
-    console.log(inventory.error);
+  if (error) {
+    console.log(error);
     return NextResponse.json(
       { message: 'Error creating inventory' },
       { status: 500 }
