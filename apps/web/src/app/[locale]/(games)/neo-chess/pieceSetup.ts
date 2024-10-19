@@ -11,6 +11,7 @@ interface Piece {
   type: PieceType;
   team: TeamType;
   firstMove: boolean;
+  enPassant: boolean;
 }
 
 enum TeamType {
@@ -59,6 +60,7 @@ const initialPositions: Record<
           type: piece.type,
           team: teamType,
           firstMove: false,
+          enPassant: false,
         });
       });
     });

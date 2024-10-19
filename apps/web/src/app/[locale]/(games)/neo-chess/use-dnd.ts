@@ -177,10 +177,15 @@ export function useDragAndDrop(
           setBoardState(validMove.updatedBoardState);
 
           // Capture logic: Remove the captured piece based on position
+          const isOurTeam = pieceTeam === TeamType.OURS;
+          const pawnDirection = isOurTeam ? -1 : 1;
           const capturedPiece = boardState.find(
             (piece) =>
               piece.x === cellCenter.current.nextColumn &&
-              piece.y === cellCenter.current.nextRow &&
+              piece.y ===
+                (piece.enPassant
+                  ? cellCenter.current.nextRow! - pawnDirection
+                  : cellCenter.current.nextRow) &&
               piece.id !== pieceId
           );
           if (capturedPiece) {

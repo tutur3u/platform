@@ -1,4 +1,4 @@
-import { Piece, PieceType, TeamType } from './pieceSetup';
+import { Piece, PieceType, TeamType, pieces } from './pieceSetup';
 
 export default class Referee {
   private lastPositions: Map<
@@ -7,7 +7,7 @@ export default class Referee {
   > = new Map();
 
   tileIsOccupied(x: number, y: number, boardState: Piece[]): boolean {
-    return boardState.some((piece) => piece.x === x && piece.y === y);
+    return boardState.some((p) => p.x === x && p.y === y);
   }
 
   tileIsOccupiedByOpponent(
@@ -22,7 +22,7 @@ export default class Referee {
 
   // Assuming you have a function to handle piece capture
   capturePiece(x: number, y: number, boardState: Piece[]): Piece[] {
-    return boardState.filter((piece) => !(piece.x === x && piece.y === y));
+    return boardState.filter((p) => !(p.x === x && p.y === y));
   }
 
   private isPathClear(
@@ -56,6 +56,21 @@ export default class Referee {
     return true;
   }
 
+  private isEnPassantMove(
+    column: number,
+    row: number,
+    team: TeamType,
+    boardState: Piece[]
+  ): boolean {
+    const enPassantDirection = team === TeamType.OURS ? -1 : 1;
+    const enPassantRow = row - enPassantDirection;
+    const adjacentPawn = boardState.find(
+      (p) => p.x === column && p.y === enPassantRow && p.type === PieceType.PAWN
+    );
+
+    return adjacentPawn !== undefined && adjacentPawn.enPassant;
+  }
+
   isValidMove(
     pieceId: string,
     column: number,
@@ -78,34 +93,60 @@ export default class Referee {
 
     const isDiagonalMove =
       Math.abs(horizontalDistance) === Math.abs(verticalDistance);
+    const isStraightMove =
+      (horizontalDistance === 0 && verticalDistance !== 0) ||
+      (verticalDistance === 0 && horizontalDistance !== 0);
 
     if (type === PieceType.PAWN) {
       const pawnDirection = isOurTeam ? -1 : 1;
-      const startRow = isOurTeam ? 7 : 2;
 
       // Forward movement
       if (horizontalDistance === 0) {
-        if (verticalDistance === pawnDirection) {
-          if (!this.tileIsOccupied(column, row, boardState)) {
-            return { isValid: true, updatedBoardState: boardState };
-          }
+        const possibleEnPassant = boardState.find(
+          (p) => p.firstMove && p.enPassant && p.type === PieceType.PAWN
+        );
+
+        const currPawn = boardState.find(
+          (p) => p.x === startX && p.y === startY && p.type === PieceType.PAWN
+        );
+
+        if (currPawn!.x - pawnDirection !== possibleEnPassant?.x) {
+          pieces.forEach((p) => {
+            p.enPassant = false;
+          });
+        }
+        
+        if (
+          verticalDistance === pawnDirection &&
+          !this.tileIsOccupied(column, row, boardState)
+        ) {
+          return { isValid: true, updatedBoardState: boardState };
         } else if (
           verticalDistance === 2 * pawnDirection &&
-          Math.round(startY) === startRow &&
+          firstMove &&
           !this.tileIsOccupied(column, row - pawnDirection, boardState) &&
           !this.tileIsOccupied(column, row, boardState)
         ) {
+          if (currPawn) {
+            currPawn.enPassant = true;
+          }
           return { isValid: true, updatedBoardState: boardState };
         }
       }
       // Diagonal capture
       else if (
         Math.abs(horizontalDistance) === 1 &&
-        verticalDistance === pawnDirection &&
-        this.tileIsOccupiedByOpponent(column, row, team, boardState)
+        verticalDistance === pawnDirection
       ) {
-        boardState = this.capturePiece(column, row, boardState);
-        return { isValid: true, updatedBoardState: boardState };
+        if (this.isEnPassantMove(column, row, team, boardState)) {
+          boardState = this.capturePiece(column, row - pawnDirection, boardState);
+          return { isValid: true, updatedBoardState: boardState };
+        } else if (
+          this.tileIsOccupiedByOpponent(column, row, team, boardState)
+        ) {
+          boardState = this.capturePiece(column, row, boardState);
+          return { isValid: true, updatedBoardState: boardState };
+        }
       }
     } else if (type === PieceType.KING) {
       if (
@@ -138,9 +179,7 @@ export default class Referee {
       }
     } else if (type === PieceType.QUEEN) {
       if (
-        (isDiagonalMove ||
-          horizontalDistance === 0 ||
-          verticalDistance === 0) &&
+        (isDiagonalMove || isStraightMove) &&
         this.isPathClear(
           verticalDistance,
           horizontalDistance,
@@ -168,7 +207,7 @@ export default class Referee {
       }
     } else if (type === PieceType.ROOK) {
       if (
-        (horizontalDistance === 0 || verticalDistance === 0) &&
+        isStraightMove &&
         this.isPathClear(
           verticalDistance,
           horizontalDistance,
