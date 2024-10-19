@@ -1,6 +1,6 @@
 import { SystemLanguageDropdownItem } from './system-language-dropdown-item';
 
-export async function SystemLanguageWrapper({
+export function SystemLanguageWrapper({
   currentLocale,
 }: {
   currentLocale: string | undefined;
