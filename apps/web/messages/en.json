@@ -649,6 +649,7 @@
     "unit": "Unit",
     "warehouse": "Warehouse",
     "usage": "Usage",
+    "price": "Price",
     "created_at": "Created at"
   },
   "batch-data-table": {
@@ -1498,21 +1499,36 @@
     "singular": "Product",
     "description": "Products are used as individual type of item that you have in your inventory and could be used to link with invoices.",
     "create": "Create product",
-    "create_description": "Create a new product"
+    "create_description": "Create a new product",
+    "form": {
+      "details": "Details",
+      "name": "Product name",
+      "manufacturer": "Manufacturer",
+      "description": "Description",
+      "usage": "Usage",
+      "price": "Price",
+      "stock": "Stock",
+      "add_warehouse": "Add warehouse",
+      "amount": "Amount",
+      "min_amount": "Min amount",
+      "category": "Category"
+    }
   },
   "ws-inventory-categories": {
     "plural": "Categories",
     "singular": "Category",
     "description": "Categories are used to group similar inventory products together.",
     "create": "Create category",
-    "create_description": "Create a new category"
+    "create_description": "Create a new category",
+    "placeholder": "Choose a category"
   },
   "ws-inventory-units": {
     "plural": "Units",
     "singular": "Unit",
     "description": "Units are used to measure inventory products.",
     "create": "Create unit",
-    "create_description": "Create a new unit"
+    "create_description": "Create a new unit",
+    "placeholder": "Choose a unit"
   },
   "ws-inventory-suppliers": {
     "plural": "Suppliers",
@@ -1526,7 +1542,8 @@
     "singular": "Warehouse",
     "description": "Warehouses are used to store inventory products.",
     "create": "Create warehouse",
-    "create_description": "Create a new warehouse"
+    "create_description": "Create a new warehouse",
+    "placeholder": "Choose a warehouse"
   },
   "ws-inventory-batches": {
     "plural": "Batches",
