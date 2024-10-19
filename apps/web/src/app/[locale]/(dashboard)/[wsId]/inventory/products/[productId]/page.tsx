@@ -8,35 +8,19 @@ import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
-import { redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
     wsId: string;
-  }>;
-  searchParams: Promise<{
-    id?: string;
-    create?: string;
+    productId: string;
   }>;
 }
 
-export default async function WorkspaceProductsPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function WorkspaceProductsPage({ params }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
-  const { id, create } = await searchParams;
+  const { wsId, productId } = await params;
 
-  if (!id && create !== '') {
-    // only accepts:
-    // 1. /edit?create (create new product)
-    // 2. /edit?id={:id} (edit existing product)
-    // else, redirect to products list. on both, prioritize editing (id > create)
-    redirect('../products');
-  }
-
-  const data = await getData(wsId, id);
+  const data = productId === 'new' ? undefined : await getData(wsId, productId);
   const categories = await getCategories(wsId);
   const warehouses = await getWarehouses(wsId);
   const units = await getUnits(wsId);
@@ -62,16 +46,14 @@ export default async function WorkspaceProductsPage({
   );
 }
 
-async function getData(wsId: string, id?: string) {
-  if (!id) return undefined;
-
+async function getData(wsId: string, productId: string) {
   const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_products')
     .select('*, inventory:inventory_products(*)')
     .eq('ws_id', wsId)
-    .eq('id', id)
+    .eq('id', productId)
     .single();
 
   const { data, error } = await queryBuilder;
