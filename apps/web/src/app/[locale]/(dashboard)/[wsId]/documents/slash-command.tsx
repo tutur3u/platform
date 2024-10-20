@@ -188,7 +188,7 @@ export const suggestionItems = createSuggestionItems([
     command: ({ editor, range }) => {
       const tweetLink = prompt('Please enter Twitter Link');
       const tweetRegex = new RegExp(
-        /^https?:\/\/(www\.)?x\.com\/([a-zA-Z0-9_]{1,15})(\/status\/(\d+))?(\/\S*)?$/
+        /^https?:\/\/(www\.)?(x\.com|twitter\.com)\/([a-zA-Z0-9_]{1,15})\/status\/(\d+)(\/\S*)?$/
       );
 
       if (tweetLink && tweetRegex.test(tweetLink)) {
