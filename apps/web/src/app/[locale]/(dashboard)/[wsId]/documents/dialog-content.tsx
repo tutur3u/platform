@@ -2,10 +2,10 @@
 
 import { Button } from '@repo/ui/components/ui/button';
 import {
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogClose
 } from '@repo/ui/components/ui/dialog';
 import { Input } from '@repo/ui/components/ui/input';
 import { useRouter } from 'next/navigation';

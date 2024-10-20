@@ -1,6 +1,9 @@
-import { Popover } from '@radix-ui/react-popover';
 import { Button } from '@repo/ui/components/ui/button';
-import { PopoverContent, PopoverTrigger } from '@repo/ui/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@repo/ui/components/ui/popover';
 import {
   Check,
   CheckSquare,
@@ -19,7 +22,9 @@ import { EditorBubbleItem, useEditor } from 'novel';
 export type SelectorItem = {
   name: string;
   icon: LucideIcon;
+  // eslint-disable-next-line no-unused-vars
   command: (editor: ReturnType<typeof useEditor>['editor']) => void;
+  // eslint-disable-next-line no-unused-vars
   isActive: (editor: ReturnType<typeof useEditor>['editor']) => boolean;
 };
 
@@ -98,6 +103,7 @@ const items: SelectorItem[] = [
 ];
 interface NodeSelectorProps {
   open: boolean;
+  // eslint-disable-next-line no-unused-vars
   onOpenChange: (open: boolean) => void;
 }
 
