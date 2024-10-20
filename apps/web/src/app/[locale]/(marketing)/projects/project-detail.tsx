@@ -38,7 +38,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         <Image
           src={DemoProjectImage}
           alt="Demo Project"
-          className="grounded-lg object-cover"
+          className="grounded-lg rounded-lg object-cover"
         />
       </motion.div>
     </motion.div>
