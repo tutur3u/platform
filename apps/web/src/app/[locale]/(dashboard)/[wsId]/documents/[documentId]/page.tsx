@@ -1,9 +1,21 @@
-import React from 'react'
 import Editor from '../advanced-editor';
-export default function page() {
+import { Button } from '@repo/ui/components/ui/button';
+import React from 'react';
+
+interface Props {
+  params: Promise<{
+    wsId: string;
+    documentId: string;
+  }>;
+}
+export default async function Page({params }: Props) {
+    const {wsId, documentId}= await params;
   return (
-    <div>   
-        <Editor></Editor>
+    <div className="flex flex-col">
+      <div className="mb-4 flex justify-end">
+        <Button>Delete</Button>
+      </div>
+      <Editor />
     </div>
-  )
+  );
 }

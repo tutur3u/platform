@@ -3100,6 +3100,70 @@ export type Database = {
           },
         ];
       };
+      workspace_documents_block: {
+        Row: {
+          content: string | null;
+          created_at: string;
+          document_id: string | null;
+          id: string;
+          type: string | null;
+        };
+        Insert: {
+          content?: string | null;
+          created_at?: string;
+          document_id?: string | null;
+          id?: string;
+          type?: string | null;
+        };
+        Update: {
+          content?: string | null;
+          created_at?: string;
+          document_id?: string | null;
+          id?: string;
+          type?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_documents_block_document_id_fkey';
+            columns: ['document_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_documents';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_documents_block_attributes: {
+        Row: {
+          attribute_key: string;
+          attribute_value: string;
+          block_id: string | null;
+          created_at: string;
+          id: string;
+        };
+        Insert: {
+          attribute_key: string;
+          attribute_value: string;
+          block_id?: string | null;
+          created_at?: string;
+          id?: string;
+        };
+        Update: {
+          attribute_key?: string;
+          attribute_value?: string;
+          block_id?: string | null;
+          created_at?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_documents_block_attributes_block_id_fkey';
+            columns: ['block_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_documents_block';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_email_invites: {
         Row: {
           created_at: string;

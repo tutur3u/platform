@@ -1,4 +1,5 @@
 import { WorkspaceDocument } from '@/types/db';
+import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { FilePlus } from 'lucide-react';
 import moment from 'moment';
@@ -11,7 +12,7 @@ interface Props {
   document: Partial<WorkspaceDocument>;
 }
 
-const DocumentCard = ({ wsId: _, document }: Props) => {
+const DocumentCard = ({ wsId, document }: Props) => {
   const { id, name, content, created_at } = document;
   // const href = id ? `/${wsId}/documents/${id}` : '';
 
@@ -21,8 +22,7 @@ const DocumentCard = ({ wsId: _, document }: Props) => {
 
   return (
     <Link
-      // href={href}
-      href="#"
+      href={`/${wsId}/documents/${id}`}
       key={`doc-${id}`}
       className="border-border relative grid cursor-default gap-4 rounded-lg border p-4 transition"
     >
@@ -40,6 +40,7 @@ const DocumentCard = ({ wsId: _, document }: Props) => {
                 __html: document.content || '',
               }}
             />
+            <Button>Helo</Button>
           </>
         )}
       </div>
