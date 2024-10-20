@@ -1,7 +1,10 @@
 import { cn } from '@/lib/utils';
-import { Popover, PopoverTrigger } from '@radix-ui/react-popover';
 import { Button } from '@repo/ui/components/ui/button';
-import { PopoverContent } from '@repo/ui/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@repo/ui/components/ui/popover';
 import { Check, Trash } from 'lucide-react';
 import { useEditor } from 'novel';
 import { useEffect, useRef } from 'react';
@@ -10,7 +13,8 @@ export function isValidUrl(url: string) {
   try {
     new URL(url);
     return true;
-  } catch (_e) {
+  } catch (e) {
+    console.error(e);
     return false;
   }
 }
@@ -20,12 +24,14 @@ export function getUrlFromString(str: string) {
     if (str.includes('.') && !str.includes(' ')) {
       return new URL(`https://${str}`).toString();
     }
-  } catch (_e) {
+  } catch (e) {
+    console.error(e);
     return null;
   }
 }
 interface LinkSelectorProps {
   open: boolean;
+  // eslint-disable-next-line no-unused-vars
   onOpenChange: (open: boolean) => void;
 }
 
@@ -86,7 +92,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
               className="flex h-8 items-center rounded-sm p-1 text-red-600 transition-all hover:bg-red-100 dark:hover:bg-red-800"
               onClick={() => {
                 editor.chain().focus().unsetLink().run();
-                inputRef.current.value = '';
+                if (inputRef.current) inputRef.current.value = '';
                 onOpenChange(false);
               }}
             >

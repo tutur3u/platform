@@ -1,5 +1,6 @@
 'use client';
 
+import { ProductRowActions } from './row-actions';
 import { Product } from '@/types/primitives/Product';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
@@ -113,8 +114,8 @@ export const productColumns = (
       </div>
     ),
   },
-  // {
-  //   id: 'actions',
-  //   cell: ({ row }) => <ProductRowActions row={row} />,
-  // },
+  {
+    id: 'actions',
+    cell: ({ row }) => <ProductRowActions row={row} />,
+  },
 ];

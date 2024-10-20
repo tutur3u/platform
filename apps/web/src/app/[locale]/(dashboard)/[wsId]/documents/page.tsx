@@ -1,4 +1,5 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
+import Editor from './advanced-editor';
 import MyDialogContent from './dialog-content';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
@@ -9,7 +10,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { FilePlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import Editor from './advanced-editor';
+
 interface Props {
   params: Promise<{ wsId: string }>;
 }

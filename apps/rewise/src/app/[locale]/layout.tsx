@@ -1,7 +1,7 @@
 import { Providers } from '@/components/providers';
+import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { locales } from '@/config';
 import { siteConfig } from '@/constants/configs';
-import { TailwindIndicator } from '@repo/ui/components-indicator';
 import { Toaster } from '@repo/ui/components/ui/toaster';
 import '@repo/ui/globals.css';
 import { cn } from '@repo/ui/lib/utils';

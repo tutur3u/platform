@@ -95,7 +95,7 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
   const removeAvatar = async () => {
     setSaving(true);
     setPreviewSrc(null);
-    setFile(null); 
+    setFile(null);
 
     if (!data?.avatar_url) {
       setSaving(false);

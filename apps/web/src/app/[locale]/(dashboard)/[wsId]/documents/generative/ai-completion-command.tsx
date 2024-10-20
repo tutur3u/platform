@@ -1,6 +1,10 @@
-import { CommandGroup, CommandItem, CommandSeparator } from "../ui/command";
-import { useEditor } from "novel";
-import { Check, TextQuote, TrashIcon } from "lucide-react";
+import {
+  CommandGroup,
+  CommandItem,
+  CommandSeparator,
+} from '@repo/ui/components/ui/command';
+import { Check, TextQuote, TrashIcon } from 'lucide-react';
+import { useEditor } from 'novel';
 
 const AICompletionCommands = ({
   completion,
@@ -17,8 +21,8 @@ const AICompletionCommands = ({
           className="gap-2 px-4"
           value="replace"
           onSelect={() => {
+            if (!editor) return;
             const selection = editor.view.state.selection;
-
             editor
               .chain()
               .focus()
@@ -27,18 +31,19 @@ const AICompletionCommands = ({
                   from: selection.from,
                   to: selection.to,
                 },
-                completion,
+                completion
               )
               .run();
           }}
         >
-          <Check className="h-4 w-4 text-muted-foreground" />
+          <Check className="text-muted-foreground h-4 w-4" />
           Replace selection
         </CommandItem>
         <CommandItem
           className="gap-2 px-4"
           value="insert"
           onSelect={() => {
+            if (!editor) return;
             const selection = editor.view.state.selection;
             editor
               .chain()
@@ -47,7 +52,7 @@ const AICompletionCommands = ({
               .run();
           }}
         >
-          <TextQuote className="h-4 w-4 text-muted-foreground" />
+          <TextQuote className="text-muted-foreground h-4 w-4" />
           Insert below
         </CommandItem>
       </CommandGroup>
@@ -55,7 +60,7 @@ const AICompletionCommands = ({
 
       <CommandGroup>
         <CommandItem onSelect={onDiscard} value="thrash" className="gap-2 px-4">
-          <TrashIcon className="h-4 w-4 text-muted-foreground" />
+          <TrashIcon className="text-muted-foreground h-4 w-4" />
           Discard
         </CommandItem>
       </CommandGroup>

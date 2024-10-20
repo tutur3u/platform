@@ -8,7 +8,6 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: {
     ppr: true,
-    pprFallbacks: true,
     // reactCompiler: true,
     optimizeServerReact: true,
   },
