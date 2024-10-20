@@ -1,4 +1,5 @@
 import { WorkspaceDocument } from '@/types/db';
+import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { FilePlus } from 'lucide-react';
 import moment from 'moment';
@@ -39,6 +40,7 @@ const DocumentCard = ({ wsId, document }: Props) => {
                 __html: document.content || '',
               }}
             />
+            <Button>Helo</Button>
           </>
         )}
       </div>
