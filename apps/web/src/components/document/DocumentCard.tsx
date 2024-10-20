@@ -11,9 +11,9 @@ interface Props {
   document: Partial<WorkspaceDocument>;
 }
 
-const DocumentCard = ({ wsId: _, document }: Props) => {
+const DocumentCard = ({ wsId, document }: Props) => {
   const { id, name, content, created_at } = document;
-  // const href = id ? `/${wsId}/documents/${id}` : '';
+  const href = id ? `/${wsId}/documents/${id}` : '#';
 
   const locale = useLocale();
 
@@ -21,10 +21,9 @@ const DocumentCard = ({ wsId: _, document }: Props) => {
 
   return (
     <Link
-      // href={href}
-      href="#"
+      href={href}
       key={`doc-${id}`}
-      className="border-border relative grid cursor-default gap-4 rounded-lg border p-4 transition"
+      className="border-border hover:bg-accent relative grid cursor-pointer gap-4 rounded-lg border p-4 transition"
     >
       <div>
         <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">

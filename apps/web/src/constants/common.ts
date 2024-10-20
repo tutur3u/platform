@@ -38,6 +38,7 @@ export const PUBLIC_PATHS = [
   '/branding',
   '/ai/chats',
   '/qr-generator',
+  '/documents',
   '/calendar/meet-together',
 ].reduce((acc: string[], path) => {
   // Add the original path
