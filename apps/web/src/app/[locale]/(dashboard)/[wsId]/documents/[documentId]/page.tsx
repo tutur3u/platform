@@ -12,17 +12,17 @@ import {
 } from '@repo/ui/components/ui/tooltip';
 import { Share2 } from 'lucide-react';
 import { JSONContent } from 'novel';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     documentId: string;
-  };
+  }>;
 }
 
 export default function DocumentDetailsPage({ params }: Props) {
-  const { wsId, documentId } = params;
+  const { wsId, documentId } = use(params);
   const [document, setDocument] = useState<{
     id: string;
     name: string;
