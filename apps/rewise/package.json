@@ -83,7 +83,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.1.0",
     "@eslint/js": "^9.13.0",
-    "@next/bundle-analyzer": "15.0.0-canary.203",
+    "@next/bundle-analyzer": "15.0.0-rc.1",
     "@next/eslint-plugin-next": "15.0.0-canary.203",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
