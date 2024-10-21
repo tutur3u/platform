@@ -97,6 +97,11 @@ export default class Referee {
       (horizontalDistance === 0 && verticalDistance !== 0) ||
       (verticalDistance === 0 && horizontalDistance !== 0);
 
+    if (type !== PieceType.PAWN) {
+      pieces.forEach((p) => {
+        p.enPassant = false;
+      });
+    }
     if (type === PieceType.PAWN) {
       const pawnDirection = isOurTeam ? -1 : 1;
 
@@ -115,7 +120,7 @@ export default class Referee {
             p.enPassant = false;
           });
         }
-        
+
         if (
           verticalDistance === pawnDirection &&
           !this.tileIsOccupied(column, row, boardState)
@@ -139,7 +144,11 @@ export default class Referee {
         verticalDistance === pawnDirection
       ) {
         if (this.isEnPassantMove(column, row, team, boardState)) {
-          boardState = this.capturePiece(column, row - pawnDirection, boardState);
+          boardState = this.capturePiece(
+            column,
+            row - pawnDirection,
+            boardState
+          );
           return { isValid: true, updatedBoardState: boardState };
         } else if (
           this.tileIsOccupiedByOpponent(column, row, team, boardState)
