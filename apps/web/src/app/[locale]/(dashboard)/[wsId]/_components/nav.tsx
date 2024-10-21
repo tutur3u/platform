@@ -1,7 +1,11 @@
 'use client';
 
 import { NavLink } from '@/components/navigation';
-import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import {
+  ENABLE_KEYBOARD_SHORTCUTS,
+  PROD_MODE,
+  ROOT_WORKSPACE_ID,
+} from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@repo/ui/components/ui/button';
@@ -11,7 +15,7 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface NavProps {
@@ -29,6 +33,7 @@ export function Nav({
   isCollapsed,
   onClick,
 }: NavProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -38,6 +43,47 @@ export function Nav({
   useEffect(() => {
     if (urlToLoad) setUrlToLoad(undefined);
   }, [pathname, searchParams]);
+
+  function hasFocus(selector: string) {
+    return Array.from(document.querySelectorAll(selector)).some(function (el) {
+      return el === document.activeElement;
+    });
+  }
+
+  function parseShortcut(shortcut: string) {
+    const parts = shortcut.split('+');
+    return {
+      ctrl: parts.includes('CTRL'),
+      shift: parts.includes('SHIFT'),
+      key: parts.find((part) => part.length === 1),
+    };
+  }
+
+  useEffect(() => {
+    function down(e: KeyboardEvent) {
+      links.forEach((link) => {
+        if (!link.shortcut || !link.href) return;
+        const { ctrl, shift, key } = parseShortcut(link.shortcut);
+        if (
+          !hasFocus('input, select, textarea') &&
+          e.key.toUpperCase() === key?.toUpperCase() &&
+          ctrl === e.ctrlKey &&
+          shift === e.shiftKey
+        ) {
+          e.preventDefault();
+          if (!link.newTab) setUrlToLoad(link.href.split('?')[0]);
+          router.push(link.href);
+        }
+      });
+    }
+
+    if (ENABLE_KEYBOARD_SHORTCUTS) document.addEventListener('keydown', down);
+
+    return () => {
+      if (ENABLE_KEYBOARD_SHORTCUTS)
+        document.removeEventListener('keydown', down);
+    };
+  }, [links]);
 
   return (
     <div
@@ -86,15 +132,15 @@ export function Nav({
                   }
                   className={cn(
                     buttonVariants({
-                      variant: isActive ? 'default' : 'ghost',
+                      variant: isActive ? 'secondary' : 'ghost',
                       size: 'icon',
                     }),
-                    'h-9 w-9',
+                    'h-9 w-9 max-sm:hover:bg-transparent',
                     urlToLoad === link.href &&
                       'bg-accent text-accent-foreground animate-pulse'
                   )}
                   onClick={() => {
-                    setUrlToLoad(link.href);
+                    if (!link.newTab) setUrlToLoad(link.href.split('?')[0]);
                     onClick?.();
                   }}
                 >
@@ -102,11 +148,34 @@ export function Nav({
                   <span className="sr-only">{link.title}</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right" className="flex items-center gap-4">
+              <TooltipContent
+                side="right"
+                className={cn(
+                  'flex items-center gap-4',
+                  ENABLE_KEYBOARD_SHORTCUTS &&
+                    link.shortcut &&
+                    'flex-col items-start gap-1'
+                )}
+              >
                 {link.title}
-                {link.trailing && (
-                  <span className="text-muted-foreground ml-auto">
-                    {link.trailing}
+                {((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
+                  link.trailing) && (
+                  <span
+                    className={cn(
+                      'text-muted-foreground',
+                      ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
+                        ? 'bg-foreground/5 rounded-lg border px-2 py-0.5'
+                        : 'ml-auto'
+                    )}
+                  >
+                    {ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
+                      ? // replaces 'CTRL' with '⌘' and 'SHIFT' with '⇧'
+                        // removes all '+' characters
+                        link.shortcut
+                          .replace('CTRL', '⌘')
+                          .replace('SHIFT', '⇧')
+                          .replace(/\+/g, '')
+                      : link.trailing}
                   </span>
                 )}
               </TooltipContent>
@@ -117,33 +186,46 @@ export function Nav({
               href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
               className={cn(
                 buttonVariants({
-                  variant: isActive ? 'default' : 'ghost',
+                  variant: isActive ? 'secondary' : 'ghost',
                   size: 'sm',
                 }),
                 urlToLoad === link.href &&
                   'bg-accent text-accent-foreground animate-pulse',
-                'justify-start'
+                'justify-between gap-2 max-sm:hover:bg-transparent'
               )}
               onClick={() => {
-                setUrlToLoad(link.href);
+                if (!link.newTab) setUrlToLoad(link.href.split('?')[0]);
                 onClick?.();
               }}
             >
-              {link.icon && (
-                <>
-                  {link.icon}
-                  <span className="w-2" />
-                </>
-              )}
-              {link.title}
-              {link.trailing && (
+              <div className="flex items-center">
+                {link.icon && (
+                  <>
+                    {link.icon}
+                    <span className="w-2" />
+                  </>
+                )}
+                {link.title}
+              </div>
+              {((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
+                link.trailing) && (
                 <span
                   className={cn(
-                    'ml-auto',
-                    isActive && 'text-background dark:text-white'
+                    'text-muted-foreground',
+                    isActive && 'bg-background text-foreground',
+                    ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
+                      ? 'bg-foreground/5 hidden rounded-lg border px-2 py-0.5 md:block'
+                      : 'ml-auto'
                   )}
                 >
-                  {link.trailing}
+                  {ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
+                    ? // replaces 'CTRL' with '⌘' and 'SHIFT' with '⇧'
+                      // removes all '+' characters
+                      link.shortcut
+                        .replace('CTRL', '⌘')
+                        .replace('SHIFT', '⇧')
+                        .replace(/\+/g, '')
+                    : link.trailing}
                 </span>
               )}
             </Link>

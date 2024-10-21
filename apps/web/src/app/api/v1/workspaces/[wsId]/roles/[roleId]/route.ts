@@ -3,17 +3,15 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
     roleId: string;
-  };
+  }>;
 }
 
-export async function PUT(
-  req: Request,
-  { params: { wsId, roleId: id } }: Params
-) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId, roleId: id } = await params;
 
   const data = (await req.json()) as WorkspaceRole;
 
@@ -55,8 +53,9 @@ export async function PUT(
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params: { roleId: id } }: Params) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { roleId: id } = await params;
 
   const { error } = await supabase
     .from('workspace_roles')

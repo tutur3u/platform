@@ -1,10 +1,5 @@
-import {
-  Cog6ToothIcon,
-  MagnifyingGlassIcon,
-  SparklesIcon,
-} from '@heroicons/react/20/solid';
 import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Sparkles } from 'lucide-react';
 
 export default function FleetingNavigatorMenu({
   setCurrentView,
@@ -20,10 +15,10 @@ export default function FleetingNavigatorMenu({
         size="icon"
         onClick={() => setCurrentView('assistant')}
       >
-        <SparklesIcon className="h-5 w-5" />
+        <Sparkles className="h-5 w-5" />
       </Button>
 
-      <Separator orientation="vertical" className="mx-1 h-6" />
+      {/* <Separator orientation="vertical" className="mx-1 h-6" />
 
       <Button
         variant="ghost"
@@ -40,7 +35,7 @@ export default function FleetingNavigatorMenu({
         disabled
       >
         <Cog6ToothIcon className="h-5 w-5" />
-      </Button>
+      </Button> */}
     </div>
   );
 }

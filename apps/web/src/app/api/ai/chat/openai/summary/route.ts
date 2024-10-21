@@ -27,7 +27,7 @@ export async function PATCH(req: Request) {
     const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const {
       data: { user },

@@ -3,13 +3,14 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function PUT(req: Request, { params: { wsId } }: Params) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId } = await params;
 
   const data = (await req.json()) as WorkspaceRole;
 

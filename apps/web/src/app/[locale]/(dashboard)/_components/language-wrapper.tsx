@@ -9,8 +9,7 @@ interface Props {
 }
 
 export async function LanguageWrapper({ label, locale }: Props) {
-  const cookies = c();
-
+  const cookies = await c();
   const currentLocale = cookies.get(LOCALE_COOKIE_NAME)?.value;
 
   const isLocaleSupported = currentLocale

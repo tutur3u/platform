@@ -2,13 +2,14 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     tagId: string;
-  };
+  }>;
 }
 
-export async function PUT(req: Request, { params: { tagId: id } }: Params) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { tagId: id } = await params;
 
   const data = (await req.json()) as {
     name: string;
@@ -34,8 +35,9 @@ export async function PUT(req: Request, { params: { tagId: id } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params: { tagId: id } }: Params) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { tagId: id } = await params;
 
   const { error } = await supabase
     .from('workspace_user_group_tags')

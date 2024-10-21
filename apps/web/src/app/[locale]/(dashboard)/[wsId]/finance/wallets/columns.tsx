@@ -140,7 +140,9 @@ export const walletColumns = (
     },
     {
       id: 'actions',
-      cell: ({ row }) => <WalletRowActions row={row} />,
+      cell: ({ row }) => (
+        <WalletRowActions row={row} href={row.original.href} />
+      ),
     },
   ];
 };

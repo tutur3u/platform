@@ -42,6 +42,7 @@ const navItems = (t: any) => {
     { href: '/about', label: t('common.about') },
     { href: '/projects', label: t('common.projects') },
     { href: '/neo-crush', label: 'Neo Crush' },
+    { href: '/neo-chess', label: 'Neo Chess' },
     { href: '/calendar/meet-together', label: t('common.meet-together') },
     // {
     //   href: 'https://docs.tuturuuu.com',
@@ -74,7 +75,8 @@ const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
 
   if (
     pathname !== '/' &&
-    !PUBLIC_PATHS.some((path) => pathname.startsWith(path))
+    !PUBLIC_PATHS.some((path) => pathname.startsWith(path)) &&
+    !pathname.startsWith('/settings')
   )
     return null;
 

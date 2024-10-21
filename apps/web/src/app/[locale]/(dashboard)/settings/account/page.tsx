@@ -1,39 +1,40 @@
 import SettingItemTab from '../../../../../components/settings/SettingItemTab';
+import UserAvatar from './avatar';
 import DisplayNameInput from './display-name-input';
 import EmailInput from './email-input';
 import { getCurrentUser } from '@/lib/user-helper';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 export default async function AccountSettingsPage() {
-  const t = await getTranslations('settings-account');
+  const t = await getTranslations();
   const user = await getCurrentUser();
-
-  // const avatarLabel = t('avatar');
-  // const avatarDescription = t('avatar-description');
-  const displayNameLabel = t('display-name');
-  const displayNameDescription = t('display-name-description');
-  const emailDescription = t('email-description');
 
   return (
     <div className="grid gap-1 md:min-w-max md:max-w-lg">
-      {/* <SettingItemTab title={avatarLabel} description={avatarDescription}>
-        <Avatar user={user} />
-      </SettingItemTab> */}
+      <SettingItemTab
+        title={t('settings-account.avatar')}
+        description={t('settings-account.avatar-description')}
+      >
+        {user && <UserAvatar user={user} />}
+      </SettingItemTab>
+
+      <Separator className="my-4" />
 
       <Suspense
         fallback={
           <SettingItemTab
-            title={displayNameLabel}
-            description={displayNameDescription}
+            title={t('settings-account.display-name')}
+            description={t('settings-account.display-name-description')}
           >
             <DisplayNameInput disabled />
           </SettingItemTab>
         }
       >
         <SettingItemTab
-          title={displayNameLabel}
-          description={displayNameDescription}
+          title={t('settings-account.display-name')}
+          description={t('settings-account.display-name-description')}
         >
           <DisplayNameInput defaultValue={user?.display_name} />
         </SettingItemTab>
@@ -59,12 +60,18 @@ export default async function AccountSettingsPage() {
 
       <Suspense
         fallback={
-          <SettingItemTab title="Email" description={emailDescription}>
+          <SettingItemTab
+            title="Email"
+            description={t('settings-account.email-description')}
+          >
             <EmailInput disabled />
           </SettingItemTab>
         }
       >
-        <SettingItemTab title="Email" description={emailDescription}>
+        <SettingItemTab
+          title="Email"
+          description={t('settings-account.email-description')}
+        >
           <EmailInput oldEmail={user!?.email} newEmail={user!?.new_email} />
         </SettingItemTab>
       </Suspense>

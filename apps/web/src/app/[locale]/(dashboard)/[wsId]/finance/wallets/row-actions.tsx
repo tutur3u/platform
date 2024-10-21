@@ -2,7 +2,6 @@
 
 import { WalletForm } from './form';
 import { Wallet } from '@/types/primitives/Wallet';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
@@ -14,19 +13,22 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface WalletRowActionsProps {
   row: Row<Wallet>;
+  href?: string;
 }
 
-export function WalletRowActions(props: WalletRowActionsProps) {
+export function WalletRowActions({ row, href }: WalletRowActionsProps) {
   const t = useTranslations();
 
   const router = useRouter();
-  const data = props.row.original;
+  const data = row.original;
 
   const deleteWallet = async () => {
     const res = await fetch(
@@ -53,13 +55,22 @@ export function WalletRowActions(props: WalletRowActionsProps) {
 
   return (
     <div className="flex items-center justify-end gap-2">
+      {href && (
+        <Link href={href}>
+          <Button>
+            <Eye className="mr-1 h-5 w-5" />
+            {t('common.view')}
+          </Button>
+        </Link>
+      )}
+
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
           >
-            <DotsHorizontalIcon className="h-4 w-4" />
+            <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>

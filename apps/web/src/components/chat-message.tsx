@@ -17,6 +17,7 @@ import { Message } from 'ai';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import 'katex/dist/katex.min.css';
 import { Bot, Send, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -175,6 +176,220 @@ export function ChatMessage({
               return <h1 className="text-foreground mb-2 mt-6">{children}</h1>;
             },
             h2({ children }) {
+              // Quiz component
+              if (
+                Array.isArray(children) &&
+                children.length > 0 &&
+                children[0] === '@' &&
+                children.some(
+                  (child) =>
+                    typeof child === 'string' && child.startsWith('<QUIZ>')
+                )
+              ) {
+                const quizContent = children.join('');
+                const questionMatch = quizContent.match(
+                  /<QUESTION>(.*?)<\/QUESTION>/
+                );
+                const question = questionMatch
+                  ? questionMatch[1]
+                  : 'No question found';
+
+                const optionsMatches = Array.from(
+                  quizContent.matchAll(
+                    /<OPTION(?: isCorrect)?>(.*?)<\/OPTION>/g
+                  )
+                );
+
+                const options = optionsMatches.map((match) => ({
+                  isCorrect: match[0].includes('isCorrect'),
+                  text: match?.[1]?.trim() || '',
+                }));
+
+                const [selectedOption, setSelectedOption] = useState<{
+                  isCorrect: boolean;
+                  text: string;
+                }>({ isCorrect: false, text: '' });
+                const [revealCorrect, setRevealCorrect] = useState(false);
+
+                const handleOptionClick = (option: {
+                  isCorrect: boolean;
+                  text: string;
+                }) => {
+                  if (revealCorrect) return;
+
+                  setSelectedOption(option);
+                  setRevealCorrect(true);
+                };
+
+                const questionElement = (
+                  <div className="text-foreground text-lg font-bold">
+                    {question}
+                  </div>
+                );
+
+                const optionsElements = options.map((option, index) => (
+                  <button
+                    key={index}
+                    className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
+                      revealCorrect && option.isCorrect
+                        ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
+                        : revealCorrect
+                          ? 'bg-foreground/5 text-foreground opacity-50'
+                          : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
+                    }`}
+                    onClick={() => handleOptionClick(option)}
+                  >
+                    {option.text}
+                  </button>
+                ));
+
+                return (
+                  <div className="bg-foreground/5 mt-4 flex w-full flex-col items-center justify-center rounded-lg border p-4">
+                    {questionElement}
+                    <Separator className="my-2" />
+                    <div
+                      className={`grid w-full gap-2 md:grid-cols-2 ${
+                        options.length === 3
+                          ? 'xl:grid-cols-3'
+                          : 'xl:grid-cols-4'
+                      }`}
+                    >
+                      {optionsElements}
+                    </div>
+                    {revealCorrect && (
+                      <>
+                        <div className="mt-4">
+                          <span className="opacity-70">
+                            {t('correct_answer_is_highlighed')}.{' '}
+                            {t('you_selected')}{' '}
+                          </span>
+                          <span className="font-semibold">
+                            {selectedOption.text}
+                          </span>
+                          <span className="opacity-70">, {t('which_is')} </span>
+                          {selectedOption.isCorrect ? (
+                            <span className="text-dynamic-green font-semibold underline">
+                              {t('correct')}
+                            </span>
+                          ) : (
+                            <span className="text-dynamic-red font-semibold underline">
+                              {t('incorrect')}
+                            </span>
+                          )}
+                          <span className="opacity-70">.</span>
+                        </div>
+
+                        <Separator className="my-4" />
+                        <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm font-semibold">
+                          {t('experimental_disclaimer')}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              }
+
+              // Flashcard component
+              if (
+                Array.isArray(children) &&
+                children.length > 0 &&
+                children[0] === '@' &&
+                children.some(
+                  (child) =>
+                    typeof child === 'string' && child.startsWith('<FLASHCARD>')
+                )
+              ) {
+                const flashcardContent = children.join('');
+                const questionMatch = flashcardContent.match(
+                  /<QUESTION>(.*?)<\/QUESTION>/
+                );
+                const question = questionMatch
+                  ? questionMatch[1]
+                  : 'No question found';
+
+                const answerMatch = flashcardContent.match(
+                  /<ANSWER>(.*?)<\/ANSWER>/
+                );
+                const answer = answerMatch ? answerMatch[1] : 'No answer found';
+
+                const [revealAnswer, setRevealAnswer] = useState(false);
+
+                return (
+                  <div className="bg-foreground/5 mt-4 flex w-full flex-col items-center justify-center rounded-lg border p-4">
+                    <div className="text-foreground text-lg font-bold">
+                      {question}
+                    </div>
+                    <Separator className="mb-4 mt-2" />
+                    <button
+                      className={`text-foreground w-full rounded border px-3 py-1 text-center font-semibold transition duration-300 ${
+                        revealAnswer
+                          ? 'cursor-default border-transparent'
+                          : 'bg-foreground/5 hover:bg-foreground/10'
+                      }`}
+                      onClick={() => setRevealAnswer(true)}
+                    >
+                      {revealAnswer ? (
+                        <>
+                          <div className="text-dynamic-yellow">{answer}</div>
+                          <Separator className="my-4" />
+                          <div className="border-dynamic-purple/20 text-dynamic-purple bg-dynamic-purple/10 w-full rounded border p-1 text-center text-sm">
+                            {t('experimental_disclaimer')}
+                          </div>
+                        </>
+                      ) : (
+                        t('reveal_answer')
+                      )}
+                    </button>
+                  </div>
+                );
+              }
+
+              // If the message is a followup, we will render it as a button
+              if (
+                Array.isArray(children) &&
+                children?.[0] === '@' &&
+                children?.[1]?.startsWith('<')
+              ) {
+                // content will be all the text after the @<*> excluding the last child
+                const content = children
+                  ?.slice(2, -1)
+                  ?.map((child) => child?.toString())
+                  ?.join('')
+                  ?.trim();
+
+                if (embeddedUrl)
+                  return (
+                    <Link
+                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 inline-block rounded-full border text-left font-semibold no-underline transition last:mb-0"
+                      href={`${embeddedUrl}/${message?.chat_id}?input=${content}`}
+                    >
+                      <span className="line-clamp-1 px-3 py-1">
+                        {content || '...'}
+                      </span>
+                    </Link>
+                  );
+
+                if (setInput)
+                  return (
+                    <button
+                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
+                      onClick={() => setInput(content || '')}
+                    >
+                      <span className="line-clamp-1 px-3 py-1">
+                        {content || '...'}
+                      </span>
+                    </button>
+                  );
+
+                return (
+                  <span className="text-foreground bg-foreground/5 mb-2 inline-block rounded-full border text-left transition last:mb-0">
+                    <span className="line-clamp-1 px-3 py-1">
+                      {content || '...'}
+                    </span>
+                  </span>
+                );
+              }
+
               return <h2 className="text-foreground mb-2 mt-6">{children}</h2>;
             },
             h3({ children }) {

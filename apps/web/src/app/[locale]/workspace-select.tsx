@@ -1,11 +1,9 @@
 'use client';
 
-import { User } from '@/types/primitives/User';
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
 import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CaretSortIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import {
   Avatar,
   AvatarFallback,
@@ -53,7 +51,8 @@ import {
 } from '@repo/ui/components/ui/select';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { cn } from '@repo/ui/lib/utils';
-import { CheckIcon } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -71,13 +70,19 @@ export default function WorkspaceSelect({
   hideLeading?: boolean;
 }) {
   const t = useTranslations();
-
-  const [user, setUser] = useState<User | undefined>();
-  const [workspaces, setWorkspaces] = useState<Workspace[] | undefined>();
-
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+
+  const wsId = params.wsId as string | undefined;
+
+  const workspacesQuery = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: fetchWorkspaces,
+    enabled: !!wsId,
+  });
+
+  const workspaces = workspacesQuery.data;
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -124,17 +129,17 @@ export default function WorkspaceSelect({
   }
 
   const groups = [
-    {
-      id: 'personal',
-      label: t('common.personal_account'),
-      teams: [
-        {
-          label:
-            user?.display_name || user?.handle || user?.email || 'Personal',
-          value: user?.id,
-        },
-      ],
-    },
+    // {
+    //   id: 'personal',
+    //   label: t('common.personal_account'),
+    //   teams: [
+    //     {
+    //       label:
+    //         user?.display_name || user?.handle || user?.email || 'Personal',
+    //       value: user?.id,
+    //     },
+    //   ],
+    // },
     {
       id: 'workspaces',
       label: t('common.workspaces'),
@@ -159,54 +164,7 @@ export default function WorkspaceSelect({
     }
   };
 
-  const wsId = params.wsId as string | undefined;
   const workspace = workspaces?.find((ws) => ws.id === wsId);
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    async function fetchData() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select(
-          'id, display_name, avatar_url, handle, created_at, user_private_details(email, new_email, birthday)'
-        )
-        .eq('id', user.id)
-        .single();
-
-      if (userError) return;
-
-      const { user_private_details, ...userRest } = userData;
-      setUser({ ...userRest, ...user_private_details } as User);
-
-      const { data: wsData, error: wsError } = await supabase
-        .from('workspaces')
-        .select(
-          'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
-        )
-        .eq('workspace_members.user_id', user.id);
-
-      if (wsError) return;
-
-      setWorkspaces(wsData as Workspace[]);
-    }
-
-    supabase.auth.onAuthStateChange((event) => {
-      if (
-        event === 'INITIAL_SESSION' ||
-        event === 'TOKEN_REFRESHED' ||
-        event === 'SIGNED_IN' ||
-        event === 'SIGNED_OUT'
-      )
-        fetchData();
-    });
-  }, [wsId]);
 
   // Toggle the menu when ⌘K is pressed
   useEffect(() => {
@@ -223,71 +181,6 @@ export default function WorkspaceSelect({
       document.removeEventListener('keydown', down);
     };
   }, []);
-
-  // const [onlineUsers, setOnlineUsers] = useState<User[] | undefined>();
-
-  // useEffect(() => {
-  //   async function trackPresence(channel: RealtimeChannel | null) {
-  //     if (!wsId || !user || !channel) return;
-
-  //     const userStatus = {
-  //       id: user.id,
-  //       display_name: user.display_name || user.handle || user.email,
-  //       avatar_url: user.avatar_url,
-  //       online_at: new Date().toISOString(),
-  //     };
-
-  //     channel
-  //       .on('presence', { event: 'sync' }, () => {
-  //         const newState = channel.presenceState();
-  //         // console.log('sync', newState);
-
-  //         const users = Object.values(newState)
-  //           .map(
-  //             (user) =>
-  //               ({
-  //                 ...user?.[0],
-  //               }) as unknown as User
-  //           )
-  //           // sort ones with display_name first, then prioritize ones with avatar_url
-  //           .sort((a, b) => {
-  //             if (a.display_name && !b.display_name) return -1;
-  //             if (!a.display_name && b.display_name) return 1;
-  //             if (a.avatar_url && !b.avatar_url) return -1;
-  //             if (!a.avatar_url && b.avatar_url) return 1;
-  //             return 0;
-  //           });
-
-  //         setOnlineUsers(users);
-  //       })
-  //       // .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-  //       //   console.log('join', key, newPresences);
-  //       // })
-  //       // .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-  //       //   console.log('leave', key, leftPresences);
-  //       // })
-  //       .subscribe(async (status) => {
-  //         if (status !== 'SUBSCRIBED') return;
-  //         await channel.track(userStatus);
-  //       });
-  //   }
-
-  //   if (!wsId || !user?.id) return;
-  //   const supabase = createClient();
-
-  //   const channel = supabase.channel(`workspace:${wsId}`, {
-  //     config: {
-  //       presence: {
-  //         key: user.id,
-  //       },
-  //     },
-  //   });
-
-  //   trackPresence(channel);
-  //   return () => {
-  //     channel?.unsubscribe();
-  //   };
-  // }, [wsId, user]);
 
   if (!wsId) return null;
 
@@ -340,7 +233,7 @@ export default function WorkspaceSelect({
                 </span>
               </div>
               {hideLeading || (
-                <CaretSortIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
               )}
             </Button>
           </PopoverTrigger>
@@ -397,7 +290,7 @@ export default function WorkspaceSelect({
                       setShowNewWorkspaceDialog(true);
                     }}
                   >
-                    <PlusCircledIcon className="mr-2 h-5 w-5" />
+                    <PlusCircle className="mr-2 h-5 w-5" />
                     {t('common.create_new_workspace')}
                   </CommandItem>
                 </CommandGroup>
@@ -593,4 +486,24 @@ export default function WorkspaceSelect({
       </Popover> */}
     </>
   );
+}
+
+async function fetchWorkspaces() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data: workspaces, error: error } = await supabase
+    .from('workspaces')
+    .select(
+      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+    )
+    .eq('workspace_members.user_id', user.id);
+
+  if (error) return;
+  return workspaces as Workspace[];
 }

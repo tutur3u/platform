@@ -9,5 +9,6 @@ export interface Wallet extends Entity {
   report_opt_in?: boolean;
   limit?: number | null;
   type?: 'STANDARD' | 'CREDIT';
+  href?: string;
   ws_id?: string;
 }

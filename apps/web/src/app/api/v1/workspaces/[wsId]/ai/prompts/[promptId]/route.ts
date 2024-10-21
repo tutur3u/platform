@@ -2,13 +2,14 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     promptId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { promptId: id } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { promptId: id } = await params;
 
   const { data, error } = await supabase
     .from('workspace_ai_prompts')
@@ -27,8 +28,9 @@ export async function GET(_: Request, { params: { promptId: id } }: Params) {
   return NextResponse.json(data);
 }
 
-export async function PUT(req: Request, { params: { promptId: id } }: Params) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const { promptId: id } = await params;
+  const supabase = await createClient();
   const data = await req.json();
 
   const { error } = await supabase
@@ -47,8 +49,9 @@ export async function PUT(req: Request, { params: { promptId: id } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params: { promptId: id } }: Params) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { promptId: id } = await params;
 
   const { error } = await supabase
     .from('workspace_ai_prompts')

@@ -1,7 +1,6 @@
 import TaskListEditForm from '../../forms/TaskListEditForm';
 import { TaskList } from '@/types/primitives/TaskList';
 import { Workspace } from '@/types/primitives/Workspace';
-import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import {
   Accordion,
   AccordionControlProps,
@@ -9,6 +8,7 @@ import {
   Menu,
 } from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
+import { Ellipsis } from 'lucide-react';
 import { mutate } from 'swr';
 
 const TaskListAccordionControl = (
@@ -100,7 +100,7 @@ const TaskListAccordionControl = (
             size="lg"
             className="bg-zinc-300/5 text-zinc-300 hover:bg-zinc-300/10"
           >
-            <EllipsisHorizontalIcon className="w-6" />
+            <Ellipsis className="w-6" />
           </ActionIcon>
         </Menu.Target>
 

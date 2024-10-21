@@ -2,13 +2,14 @@ import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     planId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { planId } }: Params) {
-  const sbAdmin = createAdminClient();
+export async function GET(_: Request, { params }: Params) {
+  const sbAdmin = await createAdminClient();
+  const { planId } = await params;
 
   const guestTimeBlocksQuery = sbAdmin
     .from('meet_together_guest_timeblocks')
@@ -46,8 +47,9 @@ export async function GET(_: Request, { params: { planId } }: Params) {
   return NextResponse.json(timeblocks);
 }
 
-export async function POST(req: Request, { params: { planId } }: Params) {
-  const supabase = createClient();
+export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { planId } = await params;
 
   const data = await req.json();
 
@@ -84,7 +86,7 @@ export async function POST(req: Request, { params: { planId } }: Params) {
 
     return NextResponse.json({ id: tb.id, message: 'success' });
   } else {
-    const sbAdmin = createAdminClient();
+    const sbAdmin = await createAdminClient();
 
     const { data: guest } = await sbAdmin
       .from('meet_together_guests')

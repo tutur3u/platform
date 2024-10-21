@@ -2,13 +2,14 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { wsId: id } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId: id } = await params;
 
   const {
     data: { user },
@@ -40,8 +41,9 @@ export async function GET(_: Request, { params: { wsId: id } }: Params) {
   });
 }
 
-export async function PUT(req: Request, { params: { wsId: id } }: Params) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId: id } = await params;
 
   const { name } = await req.json();
 
@@ -61,8 +63,9 @@ export async function PUT(req: Request, { params: { wsId: id } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params: { wsId: id } }: Params) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId: id } = await params;
 
   const { error } = await supabase.from('workspaces').delete().eq('id', id);
 

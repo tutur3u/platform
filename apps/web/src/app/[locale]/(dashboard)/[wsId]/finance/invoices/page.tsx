@@ -1,41 +1,60 @@
+import { invoiceColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { invoiceColumns } from '@/data/columns/invoices';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { Invoice } from '@/types/primitives/Invoice';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceInvoicesPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_INVOICES'], `/${wsId}`);
-  const { data, count } = await getData(wsId, searchParams);
+  const t = await getTranslations();
+  const { wsId } = await params;
+  const { data: rawData, count } = await getData(wsId, await searchParams);
+
+  const data = rawData.map((d) => ({
+    ...d,
+    href: `/${wsId}/finance/invoices/${d.id}`,
+    ws_id: wsId,
+  }));
 
   return (
-    <CustomDataTable
-      data={data}
-      columnGenerator={invoiceColumns}
-      namespace="invoice-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        customer_id: false,
-        price: false,
-        total_diff: false,
-        note: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-invoices.plural')}
+        singularTitle={t('ws-invoices.singular')}
+        description={t('ws-invoices.description')}
+        createTitle={t('ws-invoices.create')}
+        createDescription={t('ws-invoices.create_description')}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={data}
+        columnGenerator={invoiceColumns}
+        namespace="invoice-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          customer_id: false,
+          price: false,
+          total_diff: false,
+          note: false,
+        }}
+      />
+    </>
   );
 }
 
@@ -47,7 +66,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('finance_invoices')

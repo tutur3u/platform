@@ -2,6 +2,7 @@
 
 # dependencies
 node_modules
+.history
 .pnp
 .pnp.js
 
@@ -12,7 +13,9 @@ coverage
 .next/
 out/
 build
+dist
 .swc/
+.vercel
 
 # misc
 .DS_Store
@@ -32,5 +35,6 @@ yarn-error.log*
 # turbo
 .turbo
 
-# ui
-dist/
+# Typescript
+*.tsbuildinfo
+next-env.d.ts
