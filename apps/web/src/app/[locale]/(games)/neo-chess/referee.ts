@@ -107,19 +107,14 @@ export default class Referee {
 
       // Forward movement
       if (horizontalDistance === 0) {
-        const possibleEnPassant = boardState.find(
-          (p) => p.firstMove && p.enPassant && p.type === PieceType.PAWN
-        );
-
         const currPawn = boardState.find(
           (p) => p.x === startX && p.y === startY && p.type === PieceType.PAWN
         );
 
-        if (currPawn!.x - pawnDirection !== possibleEnPassant?.x) {
-          pieces.forEach((p) => {
-            p.enPassant = false;
-          });
-        }
+        pieces.forEach((p) => {
+          p.enPassant = false;
+        });
+        console.log('enPassant reset');
 
         if (
           verticalDistance === pawnDirection &&
@@ -134,6 +129,7 @@ export default class Referee {
         ) {
           if (currPawn) {
             currPawn.enPassant = true;
+            console.log('enPassant set');
           }
           return { isValid: true, updatedBoardState: boardState };
         }
