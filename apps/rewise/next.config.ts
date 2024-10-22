@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: {
     ppr: true,
-    // reactCompiler: true,
+    reactCompiler: true,
     optimizeServerReact: true,
   },
   transpilePackages: ['@repo/ui'],
