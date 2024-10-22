@@ -16,15 +16,18 @@ export function useDragAndDrop(
     pieceId: string;
     column: number;
     row: number;
-  } | null>(null); // State for promotion
+  } | null>(null);
 
   const touchStartPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const fixPosition = useRef<
-    Record<
-      string,
-      { column: number; row: number; x: number; y: number; firstMove: boolean }
-    >
-  >({});
+  const fixPosition = useRef<{
+    [key: string]: {
+      column: number;
+      row: number;
+      x: number;
+      y: number;
+      firstMove: boolean;
+    };
+  }>({});
   const cellCenter = useRef<{
     nextColumn?: number;
     nextRow?: number;
