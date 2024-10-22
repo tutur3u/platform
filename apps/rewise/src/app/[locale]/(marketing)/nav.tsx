@@ -15,7 +15,7 @@ import {
 } from '@repo/ui/components/ui/tooltip';
 import { CirclePlus } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface NavProps {
@@ -81,10 +81,11 @@ export function Nav({
   className,
   onClick,
 }: NavProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [urlToLoad, setUrlToLoad] = useState<string>();
 
+  const [urlToLoad, setUrlToLoad] = useState<string>();
   const [configs, setConfigs] = useState({
     showChatName: true,
     showFavorites: true,
@@ -214,6 +215,10 @@ export function Nav({
                     : '/?refresh=true'
                 }
                 className="flex items-center justify-start"
+                onClick={() => {
+                  if (pathname === '/' && !searchParams.get('id')) return;
+                  onClick?.();
+                }}
               >
                 <Button
                   size={isCollapsed ? 'icon' : undefined}
@@ -241,6 +246,15 @@ export function Nav({
                 : '/?refresh=true'
             }
             className="flex items-center justify-start"
+            onClick={() => {
+              router.push(
+                pathname === '/' && !searchParams.get('id')
+                  ? '/'
+                  : '/?refresh=true'
+              );
+              router.refresh();
+              onClick?.();
+            }}
           >
             <Button
               size={isCollapsed ? 'icon' : undefined}
