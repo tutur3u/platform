@@ -22,9 +22,9 @@
     "**/*.tsx",
     "global.d.ts",
     "next-env.d.ts",
+    "next.config.mjs",
     "postcss.config.mjs",
     ".next/types/**/*.ts",
-    "next.config.mjs"
   ],
   "exclude": [
     "node_modules"

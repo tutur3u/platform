@@ -20,6 +20,7 @@ import {
   CircleCheck,
   Cog,
   FileText,
+  GraduationCap,
   HardDrive,
   HeartPulse,
   Mail,
@@ -49,6 +50,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     requiredSecrets: [
       'ENABLE_X',
       'ENABLE_AI',
+      'ENABLE_EDUCATION',
       'ENABLE_CHAT',
       'ENABLE_TASKS',
       'ENABLE_SLIDES',
@@ -88,6 +90,15 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <Sparkles className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_AI', 'true', secrets) ||
+        withoutPermission('ai_lab'),
+      shortcut: 'A',
+    },
+    {
+      title: t('sidebar_tabs.education'),
+      href: `/${wsId}/education`,
+      icon: <GraduationCap className="h-4 w-4" />,
+      disabled:
+        !verifySecret('ENABLE_EDUCATION', 'true', secrets) ||
         withoutPermission('ai_lab'),
       shortcut: 'A',
     },
