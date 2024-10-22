@@ -84,7 +84,7 @@
     "@eslint/eslintrc": "^3.1.0",
     "@eslint/js": "^9.13.0",
     "@next/bundle-analyzer": "15.0.1-canary.1",
-    "@next/eslint-plugin-next": "15.0.1-canary.1",
+    "@next/eslint-plugin-next": "15.0.1-canary.2",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.59.7",
