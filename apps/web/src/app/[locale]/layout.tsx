@@ -12,11 +12,11 @@ import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
-import { Lora } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
-const font = Lora({ subsets: ['latin', 'vietnamese'], display: 'block' });
+const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
 
 interface Props {
   children: ReactNode;
