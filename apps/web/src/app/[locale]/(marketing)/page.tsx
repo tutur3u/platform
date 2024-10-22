@@ -1,4 +1,5 @@
 import AboutUs from './about';
+import WhyUs from './why-us';
 import WhatIsNeo from './what-is-neo';
 
 export default function MarketingPage() {
@@ -18,6 +19,7 @@ export default function MarketingPage() {
       </div>
       <AboutUs />
       <WhatIsNeo />
+      <WhyUs />
     </div>
   );
 }
