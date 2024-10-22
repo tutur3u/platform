@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
-    documentId: string; 
+    documentId: string;
   }>;
 }
 
