@@ -26,14 +26,19 @@ import { handleImageDrop, handleImagePaste } from 'novel/plugins';
 import { useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
+
+interface Props{
+  documentId: string; 
+}
 const hljs = require('highlight.js');
 
 const extensions = [...defaultExtensions, slashCommand];
 
-const TailwindAdvancedEditor = () => {
+const TailwindAdvancedEditor = ({documentId} : Props) => {
   const [initialContent, setInitialContent] = useState<null | JSONContent>(
     null
   );
+  console.log(documentId, "document id ")
   const [saveStatus, setSaveStatus] = useState('Saved');
   const [charsCount, setCharsCount] = useState();
 

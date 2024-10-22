@@ -13,12 +13,24 @@ import {
 import { Share2 } from 'lucide-react';
 import { JSONContent } from 'novel';
 import { use, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   params: Promise<{
     wsId: string;
     documentId: string;
   }>;
+}
+
+async function deleteDocument(wsId: string, documentId: string) {
+  const response = await fetch(`/api/v1/workspaces/${wsId}/documents/${documentId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to delete document');
+  }
 }
 
 export default function DocumentDetailsPage({ params }: Props) {
@@ -30,6 +42,18 @@ export default function DocumentDetailsPage({ params }: Props) {
     isPublic: boolean;
   } | null>(null);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const router = useRouter(); // Use router here
+
+  const handleDelete = async () => {
+    if (document) {
+      try {
+        await deleteDocument(wsId, document.id);
+        router.push(`/${wsId}/documents`); 
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -92,8 +116,9 @@ export default function DocumentDetailsPage({ params }: Props) {
 
   return (
     <div className="relative w-full max-w-screen-lg">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{document.name}</h1>
+      <div className="mb-4 flex items-center justify-end">
+        <h1 className="text-2xl font-bold flex-grow">{document.name}</h1>
+        <Button className="mr-2" onClick={handleDelete}>Delete</Button>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -103,7 +128,7 @@ export default function DocumentDetailsPage({ params }: Props) {
                 'transition duration-300',
                 !document.id
                   ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
-                  : 'pointer-events-auto ml-1 w-10 opacity-100'
+                  : 'pointer-events-auto w-10 opacity-100'
               )}
               onClick={() => setIsShareDialogOpen(true)}
             >
@@ -114,7 +139,8 @@ export default function DocumentDetailsPage({ params }: Props) {
           <TooltipContent>Share</TooltipContent>
         </Tooltip>
       </div>
-      <TailwindAdvancedEditor />
+
+      <TailwindAdvancedEditor documentId={documentId} />
       <DocumentShareDialog
         isOpen={isShareDialogOpen}
         onClose={() => setIsShareDialogOpen(false)}
