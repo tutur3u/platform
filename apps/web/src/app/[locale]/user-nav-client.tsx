@@ -60,10 +60,10 @@ export default function UserNavClient({
         <DropdownMenuTrigger asChild>
           <button
             className={cn(
-              'flex w-full gap-2 rounded p-1 text-start transition',
+              'flex w-full gap-2 rounded-md p-1 text-start transition',
               hideMetadata
                 ? 'items-center justify-center'
-                : 'hover:bg-foreground/10 bg-foreground/10 items-start justify-start md:bg-transparent'
+                : 'hover:bg-foreground/10 bg-foreground/5 items-center justify-start md:bg-transparent'
             )}
           >
             <Avatar className="relative cursor-pointer overflow-visible font-semibold">
@@ -81,11 +81,11 @@ export default function UserNavClient({
               <UserPresenceIndicator className="-bottom-1 -right-1 h-3 w-3 border-2" />
             </Avatar>
             {hideMetadata || (
-              <div className="grid w-full">
+              <div className="flex w-full flex-col items-start justify-center">
                 <div className="line-clamp-1 break-all text-sm font-semibold">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 break-all text-sm opacity-70">
+                <div className="line-clamp-1 break-all text-xs opacity-70">
                   {user?.email}
                 </div>
               </div>

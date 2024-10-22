@@ -138,10 +138,9 @@ export function Nav({
           : pathname?.startsWith(link.href);
 
     return isCollapsed ? (
-      <Tooltip key={index} delayDuration={0}>
+      <Tooltip key={link.href} delayDuration={0}>
         <TooltipTrigger asChild>
           <ChatLink
-            key={index}
             single={single}
             isActive={isActive}
             isCollapsed={isCollapsed}
@@ -175,7 +174,7 @@ export function Nav({
       </Tooltip>
     ) : (
       <ChatLink
-        key={index}
+        key={link.href}
         single={single}
         isActive={isActive}
         isCollapsed={isCollapsed}
