@@ -99,7 +99,6 @@ export function Nav({
 
   const renderLink = (
     link: NavLink,
-    index: number,
     configs: {
       showChatName: boolean;
       showFavorites: boolean;
@@ -271,7 +270,7 @@ export function Nav({
 
         {single ? (
           <div className="grid gap-1">
-            {links.map((link, index) => renderLink(link, index, configs))}
+            {links.map((link) => renderLink(link, configs))}
           </div>
         ) : (
           <>
@@ -331,9 +330,7 @@ export function Nav({
                           </div>
                         )}
                         <div className="grid gap-1">
-                          {dateLinks.map((link, index) =>
-                            renderLink(link, index, configs)
-                          )}
+                          {dateLinks.map((link) => renderLink(link, configs))}
                         </div>
                       </div>
                       <Separator />
@@ -356,9 +353,7 @@ export function Nav({
                         </div>
                       )}
                       <div className="grid gap-1">
-                        {dateLinks.map((link, index) =>
-                          renderLink(link, index, configs)
-                        )}
+                        {dateLinks.map((link) => renderLink(link, configs))}
                       </div>
                     </div>
                   );
