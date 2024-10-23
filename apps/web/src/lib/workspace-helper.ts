@@ -143,18 +143,15 @@ export async function enforceRootWorkspaceAdmin(
 
 export async function getSecrets({
   wsId,
-  requiredSecrets,
   forceAdmin = false,
 }: {
   wsId?: string;
-  requiredSecrets?: string[];
   forceAdmin?: boolean;
 }) {
   const supabase = await (forceAdmin ? createAdminClient() : createClient());
   const queryBuilder = supabase.from('workspace_secrets').select('*');
 
   if (wsId) queryBuilder.eq('ws_id', wsId);
-  if (requiredSecrets) queryBuilder.in('name', requiredSecrets);
 
   const { data, error } = await queryBuilder.order('created_at', {
     ascending: false,
@@ -173,7 +170,7 @@ export async function verifyHasSecrets(
   requiredSecrets: string[],
   redirectPath?: string
 ) {
-  const secrets = await getSecrets({ wsId, requiredSecrets, forceAdmin: true });
+  const secrets = await getSecrets({ wsId, forceAdmin: true });
 
   const allSecretsVerified = requiredSecrets.every((secret) => {
     const { value } = getSecret(secret, secrets) || {};
@@ -191,13 +188,20 @@ export function getSecret(
   return secrets.find(({ name }) => name === secretName);
 }
 
-export function verifySecret(
-  secretName: string,
-  secretValue: string,
-  secrets: WorkspaceSecret[]
-) {
-  const secret = getSecret(secretName, secrets);
-  return secret?.value === secretValue;
+export async function verifySecret({
+  wsId,
+  forceAdmin = false,
+  name,
+  value,
+}: {
+  wsId: string;
+  forceAdmin?: boolean;
+  name: string;
+  value: string;
+}) {
+  const secrets = await getSecrets({ wsId, forceAdmin });
+  const secret = getSecret(name, secrets);
+  return secret?.value === value;
 }
 
 export async function getPermissions({

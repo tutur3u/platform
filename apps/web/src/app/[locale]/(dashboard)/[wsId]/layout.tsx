@@ -47,18 +47,6 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const secrets = await getSecrets({
     wsId,
-    requiredSecrets: [
-      'ENABLE_X',
-      'ENABLE_AI',
-      'ENABLE_EDUCATION',
-      'ENABLE_CHAT',
-      'ENABLE_TASKS',
-      'ENABLE_SLIDES',
-      'ENABLE_DOCS',
-      'ENABLE_DRIVE',
-      'ENABLE_HEALTHCARE',
-      'ENABLE_EMAIL_SENDING',
-    ],
     forceAdmin: true,
   });
 

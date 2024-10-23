@@ -1599,5 +1599,10 @@
     "attendance": "Group Attendance",
     "reports": "Group Reports",
     "metrics": "Group Metrics"
+  },
+  "workspace-education-tabs": {
+    "overview": "Overview",
+    "courses": "Courses",
+    "materials": "Learning Materials"
   }
 }

@@ -1599,5 +1599,10 @@
     "attendance": "Điểm danh nhóm",
     "reports": "Báo cáo nhóm",
     "metrics": "Số liệu nhóm"
+  },
+  "workspace-education-tabs": {
+    "overview": "Tổng quan",
+    "courses": "Khóa học",
+    "materials": "Tài liệu học tập"
   }
 }
