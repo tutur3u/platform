@@ -2,7 +2,7 @@
 
 import LogoTitle from '../../logo-title';
 import WorkspaceSelect from '../../workspace-select';
-import { Nav } from './_components/nav';
+import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { cn } from '@/lib/utils';

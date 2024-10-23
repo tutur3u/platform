@@ -1,46 +1,51 @@
-import { secretColumns } from './columns';
-import SecretForm from './form';
+import { getWorkspaceQuizColumns } from './columns';
+import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { WorkspaceQuiz } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
+interface SearchParams {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  includedTags?: string | string[];
+  excludedTags?: string | string[];
+}
+
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    q?: string;
-    page?: string;
-    pageSize?: string;
-  }>;
+  searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceSecretsPage({
+export default async function WorkspaceQuizzesPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
-  const { data: secrets, count } = await getSecrets(wsId, await searchParams);
   const t = await getTranslations();
+  const { wsId } = await params;
+
+  const { data, count } = await getData(wsId, await searchParams);
 
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-secrets.plural')}
-        singularTitle={t('ws-secrets.singular')}
-        description={t('ws-secrets.description')}
-        createTitle={t('ws-secrets.create')}
-        createDescription={t('ws-secrets.create_description')}
-        form={<SecretForm wsId={wsId} />}
+        pluralTitle={t('ws-quizzes.plural')}
+        singularTitle={t('ws-quizzes.singular')}
+        description={t('ws-quizzes.description')}
+        createTitle={t('ws-quizzes.create')}
+        createDescription={t('ws-quizzes.create_description')}
+        form={<QuizForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
-        columnGenerator={secretColumns}
-        namespace="secret-data-table"
-        data={secrets}
+        data={data}
+        columnGenerator={getWorkspaceQuizColumns}
+        namespace="quiz-data-table"
         count={count}
         defaultVisibility={{
           id: false,
@@ -51,18 +56,19 @@ export default async function WorkspaceSecretsPage({
   );
 }
 
-async function getSecrets(
+async function getData(
   wsId: string,
   {
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+    retry = true,
+  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_secrets')
+    .from('workspace_quizzes')
     .select('*', {
       count: 'exact',
     })
@@ -80,7 +86,10 @@ async function getSecrets(
   }
 
   const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+  if (error) {
+    if (!retry) throw error;
+    return getData(wsId, { q, pageSize, retry: false });
+  }
 
-  return { data, count } as { data: WorkspaceSecret[]; count: number };
+  return { data, count } as { data: WorkspaceQuiz[]; count: number };
 }

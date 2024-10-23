@@ -1,12 +1,7 @@
 'use client';
 
-import NotificationAction from './notification-action';
+import Action from './notification-action';
 import { ReactNode, useState } from 'react';
-
-export enum NotificationActionType {
-  WORKSPACE_INVITE_ACCEPT = 'WORKSPACE_INVITE_ACCEPT',
-  WORKSPACE_INVITE_DECLINE = 'WORKSPACE_INVITE_DECLINE',
-}
 
 type buttonVariant =
   | 'default'
@@ -21,7 +16,7 @@ export type NotificationAction = {
   id: string;
   label: ReactNode;
   variant?: buttonVariant;
-  type?: NotificationActionType;
+  type?: 'WORKSPACE_INVITE_ACCEPT' | 'WORKSPACE_INVITE_DECLINE';
   payload?: any;
 };
 
@@ -35,7 +30,7 @@ export default function NotificationActionList({ actions }: Props) {
   return (
     <div className="flex items-center gap-2">
       {actions?.map((action) => (
-        <NotificationAction
+        <Action
           key={action.id}
           action={action}
           disabled={processingAction !== undefined}

@@ -1,8 +1,7 @@
-import { getUserGroupColumns } from './columns';
-import Filters from './filters';
-import UserGroupForm from './form';
+import { getWorkspaceCourseColumns } from './columns';
+import CourseForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceCourse } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -23,7 +22,7 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceUserGroupsPage({
+export default async function WorkspaceCoursesPage({
   params,
   searchParams,
 }: Props) {
@@ -41,23 +40,21 @@ export default async function WorkspaceUserGroupsPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-user-groups.plural')}
-        singularTitle={t('ws-user-groups.singular')}
-        description={t('ws-user-groups.description')}
-        createTitle={t('ws-user-groups.create')}
-        createDescription={t('ws-user-groups.create_description')}
-        form={<UserGroupForm wsId={wsId} />}
+        pluralTitle={t('ws-courses.plural')}
+        singularTitle={t('ws-courses.singular')}
+        description={t('ws-courses.description')}
+        createTitle={t('ws-courses.create')}
+        createDescription={t('ws-courses.create_description')}
+        form={<CourseForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
         data={groups}
-        columnGenerator={getUserGroupColumns}
-        namespace="user-group-data-table"
+        columnGenerator={getWorkspaceCourseColumns}
+        namespace="course-data-table"
         count={count}
-        filters={<Filters wsId={wsId} searchParams={await searchParams} />}
         defaultVisibility={{
           id: false,
-          locked: false,
           created_at: false,
         }}
       />
@@ -77,13 +74,10 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_user_groups_with_amount')
-    .select(
-      'id, ws_id, name, starting_date, ending_date, archived, notes, amount, created_at',
-      {
-        count: 'exact',
-      }
-    )
+    .from('workspace_courses')
+    .select('*', {
+      count: 'exact',
+    })
     .eq('ws_id', wsId)
     .order('name');
 
@@ -103,5 +97,5 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data, count } as { data: WorkspaceCourse[]; count: number };
 }

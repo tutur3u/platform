@@ -14,6 +14,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
+import { DraftingCompass, FlaskConical } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -33,6 +35,7 @@ export function Nav({
   isCollapsed,
   onClick,
 }: NavProps) {
+  const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -71,7 +74,8 @@ export function Nav({
           shift === e.shiftKey
         ) {
           e.preventDefault();
-          if (!link.newTab) setUrlToLoad(link.href.split('?')[0]);
+          if (!link.newTab && link.href.split('?')[0] !== pathname)
+            setUrlToLoad(link.href.split('?')[0]);
           router.push(link.href);
         }
       });
@@ -83,7 +87,7 @@ export function Nav({
       if (ENABLE_KEYBOARD_SHORTCUTS)
         document.removeEventListener('keydown', down);
     };
-  }, [links]);
+  }, [links, pathname]);
 
   return (
     <div
@@ -140,7 +144,8 @@ export function Nav({
                       'bg-accent text-accent-foreground animate-pulse'
                   )}
                   onClick={() => {
-                    if (!link.newTab) setUrlToLoad(link.href.split('?')[0]);
+                    if (!link.newTab && link.href.split('?')[0] !== pathname)
+                      setUrlToLoad(link.href.split('?')[0]);
                     onClick?.();
                   }}
                 >
@@ -152,18 +157,20 @@ export function Nav({
                 side="right"
                 className={cn(
                   'flex items-center gap-4',
-                  ENABLE_KEYBOARD_SHORTCUTS &&
-                    link.shortcut &&
+                  ((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
+                    link.experimental) &&
                     'flex-col items-start gap-1'
                 )}
               >
                 {link.title}
                 {((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
-                  link.trailing) && (
+                  link.trailing ||
+                  link.experimental) && (
                   <span
                     className={cn(
                       'text-muted-foreground',
-                      ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
+                      (ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
+                        link.experimental
                         ? 'bg-foreground/5 rounded-lg border px-2 py-0.5'
                         : 'ml-auto'
                     )}
@@ -175,7 +182,19 @@ export function Nav({
                           .replace('CTRL', '⌘')
                           .replace('SHIFT', '⇧')
                           .replace(/\+/g, '')
-                      : link.trailing}
+                      : link.trailing ||
+                        (link.experimental && (
+                          <div className="flex items-center gap-1">
+                            {link.experimental === 'alpha' ? (
+                              <DraftingCompass className="h-2 w-2 flex-none" />
+                            ) : (
+                              <FlaskConical className="h-2 w-2 flex-none" />
+                            )}
+                            <span className="line-clamp-1 break-all text-xs font-semibold">
+                              {t(`common.${link.experimental}`)}
+                            </span>
+                          </div>
+                        ))}
                   </span>
                 )}
               </TooltipContent>
@@ -194,7 +213,8 @@ export function Nav({
                 'justify-between gap-2 max-sm:hover:bg-transparent'
               )}
               onClick={() => {
-                if (!link.newTab) setUrlToLoad(link.href.split('?')[0]);
+                if (!link.newTab && link.href.split('?')[0] !== pathname)
+                  setUrlToLoad(link.href.split('?')[0]);
                 onClick?.();
               }}
             >
@@ -208,14 +228,16 @@ export function Nav({
                 {link.title}
               </div>
               {((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
-                link.trailing) && (
+                link.trailing ||
+                link.experimental) && (
                 <span
                   className={cn(
                     'text-muted-foreground',
                     isActive && 'bg-background text-foreground',
                     ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
                       ? 'bg-foreground/5 hidden rounded-lg border px-2 py-0.5 md:block'
-                      : 'ml-auto'
+                      : 'ml-auto',
+                    link.experimental && 'bg-transparent'
                   )}
                 >
                   {ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
@@ -225,7 +247,19 @@ export function Nav({
                         .replace('CTRL', '⌘')
                         .replace('SHIFT', '⇧')
                         .replace(/\+/g, '')
-                    : link.trailing}
+                    : link.trailing ||
+                      (link.experimental && (
+                        <div className="flex items-center gap-1">
+                          {link.experimental === 'alpha' ? (
+                            <DraftingCompass className="h-2 w-2 flex-none" />
+                          ) : (
+                            <FlaskConical className="h-2 w-2 flex-none" />
+                          )}
+                          <span className="line-clamp-1 break-all text-xs font-semibold">
+                            {t(`common.${link.experimental}`)}
+                          </span>
+                        </div>
+                      ))}
                 </span>
               )}
             </Link>

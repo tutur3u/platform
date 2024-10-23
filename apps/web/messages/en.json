@@ -1,5 +1,7 @@
 {
   "common": {
+    "alpha": "Alpha",
+    "beta": "Beta",
     "and": "and",
     "login": "Login",
     "export-content": "Please choose file type to export",
@@ -348,7 +350,7 @@
     "new": "New",
     "home": "Home",
     "refresh": "Refresh",
-    "chat": "Chat",
+    "chat_with_ai": "Chat with AI",
     "calendar": "Calendar",
     "projects": "Projects",
     "documents": "Documents",
@@ -534,6 +536,24 @@
     "send_email": "Send Email",
     "preview": "Preview",
     "notes": "Notes",
+    "created_at": "Created At"
+  },
+  "course-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "modules": "Modules",
+    "created_at": "Created At"
+  },
+  "quiz-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "question": "Question",
+    "created_at": "Created At"
+  },
+  "flashcard-data-table": {
+    "id": "ID",
+    "front": "Front",
+    "back": "Back",
     "created_at": "Created At"
   },
   "user-group-data-table": {
@@ -752,7 +772,11 @@
     "create_secret": "Create Secret",
     "edit_secret": "Edit Secret",
     "add_new_workspace_secret": "Add a new secret for this workspace.",
-    "edit_existing_workspace_secret": "Edit an existing secret for this workspace."
+    "edit_existing_workspace_secret": "Edit an existing secret for this workspace.",
+    "plural": "Secrets",
+    "singular": "Secret",
+    "create": "Create secret",
+    "create_description": "Create a new secret"
   },
   "ws-api-keys": {
     "api_key": "API Key",
@@ -1595,5 +1619,44 @@
     "attendance": "Group Attendance",
     "reports": "Group Reports",
     "metrics": "Group Metrics"
+  },
+  "workspace-education-tabs": {
+    "overview": "Overview",
+    "courses": "Courses",
+    "materials": "Learning Materials",
+    "quizzes": "Quizzes",
+    "flashcards": "Flashcards"
+  },
+  "ws-courses": {
+    "plural": "Courses",
+    "singular": "Course",
+    "create": "Create course",
+    "create_description": "Create a new course",
+    "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
+    "edit": "Edit course",
+    "name": "Course name",
+    "edit_description": "Edit an existing course"
+  },
+  "ws-flashcards": {
+    "plural": "Flashcards",
+    "singular": "Flashcard",
+    "create": "Create flashcard",
+    "create_description": "Create a new flashcard",
+    "description": "Manage flashcards in your workspace that have a front and back side for learning purposes.",
+    "edit": "Edit flashcard",
+    "front": "Front",
+    "back": "Back",
+    "edit_description": "Edit an existing flashcard"
+  },
+  "ws-quizzes": {
+    "plural": "Quizzes",
+    "singular": "Quiz",
+    "create": "Create quiz",
+    "create_description": "Create a new quiz",
+    "description": "Manage quizzes in your workspace that have multiple choice questions for learning purposes.",
+    "edit": "Edit quiz",
+    "question": "Question",
+    "answer": "Answer",
+    "edit_description": "Edit an existing quiz"
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceCourse } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -20,7 +20,7 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  data?: UserGroup;
+  data?: WorkspaceCourse;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
@@ -30,8 +30,8 @@ const FormSchema = z.object({
   name: z.string().min(1),
 });
 
-export default function UserGroupForm({ wsId, data, onFinish }: Props) {
-  const t = useTranslations('ws-user-groups');
+export default function CourseForm({ wsId, data, onFinish }: Props) {
+  const t = useTranslations('ws-courses');
   const router = useRouter();
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -52,8 +52,8 @@ export default function UserGroupForm({ wsId, data, onFinish }: Props) {
     try {
       const res = await fetch(
         data.id
-          ? `/api/v1/workspaces/${wsId}/user-groups/${data.id}`
-          : `/api/v1/workspaces/${wsId}/user-groups`,
+          ? `/api/v1/workspaces/${wsId}/courses/${data.id}`
+          : `/api/v1/workspaces/${wsId}/courses`,
         {
           method: data.id ? 'PUT' : 'POST',
           body: JSON.stringify(data),
@@ -66,13 +66,13 @@ export default function UserGroupForm({ wsId, data, onFinish }: Props) {
       } else {
         const data = await res.json();
         toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
+          title: `Failed to ${data.id ? 'edit' : 'create'} course`,
           description: data.message,
         });
       }
     } catch (error) {
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
+        title: `Failed to ${data.id ? 'edit' : 'create'} course`,
         description: error instanceof Error ? error.message : String(error),
       });
     }

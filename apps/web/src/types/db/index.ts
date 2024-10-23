@@ -8,6 +8,9 @@ export type EmailHistoryEntry = Tables<'sent_emails'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
+export type WorkspaceCourse = Tables<'workspace_courses'>;
+export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
+export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
 
 export type PermissionId =
   Database['public']['Enums']['workspace_role_permission'];

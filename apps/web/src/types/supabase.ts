@@ -1766,23 +1766,40 @@ export type Database = {
           },
         ];
       };
-      quizzes: {
+      quiz_options: {
         Row: {
           created_at: string;
           id: string;
-          name: string | null;
+          is_correct: boolean;
+          points: number | null;
+          quiz_id: string;
+          value: string;
         };
         Insert: {
           created_at?: string;
           id?: string;
-          name?: string | null;
+          is_correct: boolean;
+          points?: number | null;
+          quiz_id: string;
+          value: string;
         };
         Update: {
           created_at?: string;
           id?: string;
-          name?: string | null;
+          is_correct?: boolean;
+          points?: number | null;
+          quiz_id?: string;
+          value?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'quiz_options_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       sent_emails: {
         Row: {
@@ -1852,13 +1869,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'sent_emails_sender_id_fkey';
-            columns: ['sender_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'sent_emails_sender_id_fkey1';
             columns: ['sender_id'];
             isOneToOne: false;
             referencedRelation: 'users';
@@ -3027,6 +3037,65 @@ export type Database = {
           },
         ];
       };
+      workspace_course_modules: {
+        Row: {
+          created_at: string;
+          id: number;
+          is_public: boolean;
+          is_published: boolean;
+          name: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: number;
+          is_public?: boolean;
+          is_published?: boolean;
+          name?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: number;
+          is_public?: boolean;
+          is_published?: boolean;
+          name?: string;
+        };
+        Relationships: [];
+      };
+      workspace_courses: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_public: boolean;
+          is_published: boolean;
+          name: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_public?: boolean;
+          is_published?: boolean;
+          name?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_public?: boolean;
+          is_published?: boolean;
+          name?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_courses_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_default_permissions: {
         Row: {
           created_at: string;
@@ -3209,6 +3278,38 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_email_invites_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_flashcards: {
+        Row: {
+          back: string;
+          created_at: string;
+          front: string;
+          id: string;
+          ws_id: string;
+        };
+        Insert: {
+          back: string;
+          created_at?: string;
+          front: string;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          back?: string;
+          created_at?: string;
+          front?: string;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_flashcards_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -3444,6 +3545,35 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_promotions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_quizzes: {
+        Row: {
+          created_at: string;
+          id: string;
+          question: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          question: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          question?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_quizzes_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -4498,14 +4628,14 @@ export type Database = {
             foreignKeyName: 'public_workspace_users_updated_by_fkey';
             columns: ['updated_by'];
             isOneToOne: false;
-            referencedRelation: 'workspace_users';
+            referencedRelation: 'distinct_invoice_creators';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'public_workspace_users_updated_by_fkey';
             columns: ['updated_by'];
             isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
+            referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
@@ -4519,14 +4649,14 @@ export type Database = {
             foreignKeyName: 'workspace_users_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
-            referencedRelation: 'workspace_users';
+            referencedRelation: 'distinct_invoice_creators';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_users_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
+            referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
@@ -5121,4 +5251,19 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions['schema']]['Enums'][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema['Enums']
     ? PublicSchema['Enums'][PublicEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema['CompositeTypes']
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema['CompositeTypes']
+    ? PublicSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never;

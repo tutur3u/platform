@@ -1,8 +1,7 @@
-import { getUserGroupColumns } from './columns';
-import Filters from './filters';
-import UserGroupForm from './form';
+import { getWorkspaceFlashcardColumns } from './columns';
+import FlashcardForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceFlashcard } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -23,7 +22,7 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceUserGroupsPage({
+export default async function WorkspaceFlashcardsPage({
   params,
   searchParams,
 }: Props) {
@@ -32,32 +31,24 @@ export default async function WorkspaceUserGroupsPage({
 
   const { data, count } = await getData(wsId, await searchParams);
 
-  const groups = data.map((g) => ({
-    ...g,
-    ws_id: wsId,
-    href: `/${wsId}/users/groups/${g.id}`,
-  }));
-
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-user-groups.plural')}
-        singularTitle={t('ws-user-groups.singular')}
-        description={t('ws-user-groups.description')}
-        createTitle={t('ws-user-groups.create')}
-        createDescription={t('ws-user-groups.create_description')}
-        form={<UserGroupForm wsId={wsId} />}
+        pluralTitle={t('ws-flashcards.plural')}
+        singularTitle={t('ws-flashcards.singular')}
+        description={t('ws-flashcards.description')}
+        createTitle={t('ws-flashcards.create')}
+        createDescription={t('ws-flashcards.create_description')}
+        form={<FlashcardForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={groups}
-        columnGenerator={getUserGroupColumns}
-        namespace="user-group-data-table"
+        data={data}
+        columnGenerator={getWorkspaceFlashcardColumns}
+        namespace="flashcard-data-table"
         count={count}
-        filters={<Filters wsId={wsId} searchParams={await searchParams} />}
         defaultVisibility={{
           id: false,
-          locked: false,
           created_at: false,
         }}
       />
@@ -77,17 +68,14 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_user_groups_with_amount')
-    .select(
-      'id, ws_id, name, starting_date, ending_date, archived, notes, amount, created_at',
-      {
-        count: 'exact',
-      }
-    )
+    .from('workspace_flashcards')
+    .select('*', {
+      count: 'exact',
+    })
     .eq('ws_id', wsId)
-    .order('name');
+    .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('front', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
@@ -98,10 +86,11 @@ async function getData(
   }
 
   const { data, error, count } = await queryBuilder;
+
   if (error) {
     if (!retry) throw error;
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data, count } as { data: WorkspaceFlashcard[]; count: number };
 }

@@ -43,7 +43,6 @@ const SearchBar = ({ t, defaultValue = '', className, onSearch }: Props) => {
   return (
     <Input
       placeholder={searchPlaceholder}
-      defaultValue={defaultValue || ''}
       value={value}
       onChange={(e) => {
         setValue(e.target.value);
