@@ -50,7 +50,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const navLinks: NavLink[] = [
     {
-      title: t('sidebar_tabs.chat'),
+      title: t('sidebar_tabs.chat_with_ai'),
       href: `/${wsId}/chat`,
       icon: <MessageCircleIcon className="h-4 w-4" />,
       forceRefresh: true,
