@@ -91,7 +91,7 @@ export default class Referee {
           piece.y,
           piece.type,
           piece.team,
-          false,
+          piece.firstMove,
           boardState,
           true
         );
@@ -99,6 +99,34 @@ export default class Referee {
       }
       return false;
     });
+  }
+
+  private castling(king: Piece, rook: Piece, boardState: Piece[]): boolean {
+    const row = king.y;
+    const colDirection = rook.x > king.x ? 1 : -1;
+    const steps = Math.abs(rook.x - king.x);
+
+    // Check if there is a barrier between the king and rook
+    for (let i = 1; i < steps; i++) {
+      const checkCol = king.x + i * colDirection;
+
+      if (this.tileIsOccupied(checkCol, row, boardState)) {
+        return false;
+      }
+    }
+
+    // Check if the King passes through or ends up in a square under attack
+    for (let i = 0; i <= 2; i++) {
+      const checkCol = king.x + i * colDirection;
+      const simulatedBoardState = boardState.map((p) =>
+        p.id === king.id ? { ...p, x: checkCol } : p
+      );
+      if (this.isKingInDanger(king.team, simulatedBoardState)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   isValidMove(
@@ -184,10 +212,16 @@ export default class Referee {
           this.tileIsOccupiedByOpponent(column, row, team, boardState)
         ) {
           boardState = this.capturePiece(column, row, boardState);
+          pieces.forEach((p) => {
+            p.enPassant = false;
+          });
+
           isValid = true;
         }
       }
-    } else if (type === PieceType.KING) {
+    }
+    
+    else if (type === PieceType.KING) {
       if (
         Math.abs(verticalDistance) <= 1 &&
         Math.abs(horizontalDistance) <= 1
@@ -200,7 +234,32 @@ export default class Referee {
           isValid = true;
         }
       }
-    } else if (type === PieceType.BISHOP) {
+      // Castling
+      else if (
+        firstMove &&
+        isStraightMove &&
+        Math.abs(horizontalDistance) === 2
+      ) {
+        const rookCol = horizontalDistance === 2 ? 8 : 1;
+        const rookCastling = boardState.find(
+          (p) =>
+            p.x === rookCol &&
+            p.y === row &&
+            p.type === PieceType.ROOK &&
+            p.team === team &&
+            p.firstMove === true
+        );
+
+        if (
+          rookCastling &&
+          this.castling(currPiece!, rookCastling, boardState)
+        ) {
+          isValid = true;
+        }
+      }
+    }
+    
+    else if (type === PieceType.BISHOP) {
       if (
         isDiagonalMove &&
         this.isPathClear(
@@ -216,7 +275,9 @@ export default class Referee {
         boardState = this.capturePiece(column, row, boardState);
         isValid = true;
       }
-    } else if (type === PieceType.QUEEN) {
+    }
+    
+    else if (type === PieceType.QUEEN) {
       if (
         (isDiagonalMove || isStraightMove) &&
         this.isPathClear(
@@ -232,7 +293,9 @@ export default class Referee {
         boardState = this.capturePiece(column, row, boardState);
         isValid = true;
       }
-    } else if (type === PieceType.KNIGHT) {
+    }
+    
+    else if (type === PieceType.KNIGHT) {
       if (
         ((Math.abs(horizontalDistance) === 1 &&
           Math.abs(verticalDistance) === 2) ||
@@ -244,7 +307,9 @@ export default class Referee {
         boardState = this.capturePiece(column, row, boardState);
         isValid = true;
       }
-    } else if (type === PieceType.ROOK) {
+    }
+    
+    else if (type === PieceType.ROOK) {
       if (
         isStraightMove &&
         this.isPathClear(

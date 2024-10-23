@@ -59,7 +59,7 @@ const initialPositions: Record<
           y: pieceY,
           type: piece.type,
           team: teamType,
-          firstMove: false,
+          firstMove: true,
           enPassant: false,
         });
       });

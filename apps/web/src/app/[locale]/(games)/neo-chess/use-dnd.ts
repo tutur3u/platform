@@ -209,6 +209,39 @@ export function useDragAndDrop(
             boardState[pieceIndex].firstMove = false;
           }
 
+          // King castling logic
+          if (
+            pieceId === '5, 8' &&
+            pieceType === PieceType.KING &&
+            Math.abs(
+              cellCenter.current.nextColumn -
+                fixPosition.current[pieceId].column
+            ) === 2
+          ) {
+            const rookCol = cellCenter.current.nextColumn === 7 ? 8 : 1;
+            const newRookCol = cellCenter.current.nextColumn === 7 ? 6 : 4;
+            const rook = boardState.find(
+              (p) =>
+                p.x === rookCol &&
+                p.y === cellCenter.current.nextRow &&
+                p.type === PieceType.ROOK &&
+                p.team === pieceTeam
+            );
+            if (rook) {
+              updatePiecePosition(
+                rook.id,
+                newRookCol,
+                cellCenter.current.nextRow
+              );
+              const rookIndex = boardState.findIndex((p) => p.id === rook.id);
+              if (rookIndex !== -1 && boardState[rookIndex]) {
+                boardState[rookIndex].x = newRookCol;
+                boardState[rookIndex].y = cellCenter.current.nextRow;
+                boardState[rookIndex].firstMove = false;
+              }
+            }
+          }
+
           // Pawn promotion logic
           if (
             pieceType === PieceType.PAWN &&
