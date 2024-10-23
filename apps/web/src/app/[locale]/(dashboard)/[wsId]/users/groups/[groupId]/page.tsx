@@ -89,7 +89,7 @@ export default async function UserGroupDetailsPage({
                 type="button"
                 variant="secondary"
                 className={cn(
-                  'border font-semibold',
+                  'border font-semibold max-sm:w-full',
                   'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
                 )}
                 disabled
@@ -102,7 +102,7 @@ export default async function UserGroupDetailsPage({
                   type="button"
                   variant="secondary"
                   className={cn(
-                    'border font-semibold',
+                    'border font-semibold max-sm:w-full',
                     'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
                   )}
                 >
@@ -115,7 +115,7 @@ export default async function UserGroupDetailsPage({
                   type="button"
                   variant="secondary"
                   className={cn(
-                    'border font-semibold',
+                    'border font-semibold max-sm:w-full',
                     'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
                   )}
                 >
@@ -128,7 +128,7 @@ export default async function UserGroupDetailsPage({
                   type="button"
                   variant="secondary"
                   className={cn(
-                    'border font-semibold',
+                    'border font-semibold max-sm:w-full',
                     'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
                   )}
                 >
@@ -141,7 +141,7 @@ export default async function UserGroupDetailsPage({
                   type="button"
                   variant="secondary"
                   className={cn(
-                    'border font-semibold',
+                    'border font-semibold max-sm:w-full',
                     'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
                   )}
                 >

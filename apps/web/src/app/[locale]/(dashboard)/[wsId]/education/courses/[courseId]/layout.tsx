@@ -11,6 +11,7 @@ import {
   ListTodo,
   Paperclip,
   SwatchBook,
+  TriangleAlert,
   Youtube,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
@@ -50,7 +51,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 type="button"
                 variant="secondary"
                 className={cn(
-                  'border font-semibold',
+                  'border font-semibold max-sm:w-full',
                   'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
                 )}
                 disabled
@@ -62,73 +63,75 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 type="button"
                 variant="secondary"
                 className={cn(
-                  'border font-semibold',
+                  'border font-semibold max-sm:w-full',
                   'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
                 )}
                 disabled
               >
                 <Goal className="h-5 w-5" />
                 {t('course-details-tabs.module_objectives')}
+                <TriangleAlert className="h-5 w-5" />
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 className={cn(
-                  'border font-semibold',
+                  'border font-semibold max-sm:w-full',
                   'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
                 )}
                 disabled
               >
                 <Paperclip className="h-5 w-5" />
-                {t('course-details-tabs.resources')}
+                {t('course-details-tabs.resources')} (0)
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 className={cn(
-                  'border font-semibold',
+                  'border font-semibold max-sm:w-full',
                   'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
                 )}
                 disabled
               >
                 <Youtube className="h-5 w-5" />
-                {t('course-details-tabs.youtube_links')}
+                {t('course-details-tabs.youtube_links')} (0)
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 className={cn(
-                  'border font-semibold',
+                  'border font-semibold max-sm:w-full',
                   'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
                 )}
                 disabled
               >
                 <ListTodo className="h-5 w-5" />
-                {t('ws-quizzes.plural')}
+                {t('ws-quizzes.plural')} (0)
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 className={cn(
-                  'border font-semibold',
+                  'border font-semibold max-sm:w-full',
                   'border-dynamic-sky/20 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20'
                 )}
                 disabled
               >
                 <SwatchBook className="h-5 w-5" />
-                {t('ws-flashcards.plural')}
+                {t('ws-flashcards.plural')} (0)
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 className={cn(
-                  'border font-semibold',
+                  'border font-semibold max-sm:w-full',
                   'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
                 )}
                 disabled
               >
                 <BookText className="h-5 w-5" />
                 {t('course-details-tabs.extra_reading')}
+                <TriangleAlert className="h-5 w-5" />
               </Button>
             </div>
           </>
