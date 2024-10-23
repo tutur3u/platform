@@ -1634,7 +1634,8 @@
     "create": "Tạo khóa học",
     "create_description": "Tạo một khóa học mới",
     "edit": "Chỉnh sửa khóa học",
-    "name": "Tên khóa học"
+    "name": "Tên khóa học",
+    "edit_description": "Chỉnh sửa khóa học hiện có"
   },
   "ws-flashcards": {
     "plural": "Thẻ từ vựng",
@@ -1644,7 +1645,8 @@
     "description": "Quản lý thẻ từ vựng trong không gian làm việc của bạn có một mặt trước và mặt sau dành cho mục đích học tập.",
     "edit": "Chỉnh sửa thẻ từ vựng",
     "front": "Mặt trước",
-    "back": "Mặt sau"
+    "back": "Mặt sau",
+    "edit_description": "Chỉnh sửa thẻ từ vựng hiện có"
   },
   "ws-quizzes": {
     "plural": "Bộ trắc nghiệm",
@@ -1654,6 +1656,7 @@
     "description": "Quản lý bộ trắc nghiệm trong không gian làm việc của bạn có các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
     "edit": "Chỉnh sửa bộ trắc nghiệm",
     "question": "Câu hỏi",
-    "answer": "Câu trả lời"
+    "answer": "Câu trả lời",
+    "edit_description": "Chỉnh sửa bài kiểm tra hiện có"
   }
 }

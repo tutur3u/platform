@@ -1,4 +1,5 @@
 import { getUserGroupColumns } from './columns';
+import CourseForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
@@ -44,7 +45,7 @@ export default async function WorkspaceCoursesPage({
         description={t('ws-courses.description')}
         createTitle={t('ws-courses.create')}
         createDescription={t('ws-courses.create_description')}
-        // form={<UserGroupForm wsId={wsId} />}
+        form={<CourseForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable

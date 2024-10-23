@@ -1,4 +1,5 @@
 import { getUserGroupColumns } from './columns';
+import FlashcardForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
@@ -38,7 +39,7 @@ export default async function WorkspaceFlashcardsPage({
         description={t('ws-flashcards.description')}
         createTitle={t('ws-flashcards.create')}
         createDescription={t('ws-flashcards.create_description')}
-        // form={<UserGroupForm wsId={wsId} />}
+        form={<FlashcardForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable

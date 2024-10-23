@@ -1,4 +1,5 @@
 import { getUserGroupColumns } from './columns';
+import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
@@ -38,7 +39,7 @@ export default async function WorkspaceQuizzesPage({
         description={t('ws-quizzes.description')}
         createTitle={t('ws-quizzes.create')}
         createDescription={t('ws-quizzes.create_description')}
-        // form={<UserGroupForm wsId={wsId} />}
+        form={<QuizForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable

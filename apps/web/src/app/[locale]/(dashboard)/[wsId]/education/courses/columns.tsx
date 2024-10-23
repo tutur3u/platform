@@ -67,7 +67,7 @@ export const getUserGroupColumns = (
         title={t(`${namespace}.modules`)}
       />
     ),
-    cell: ({ row }) => <div>{row.getValue('modules')}</div>,
+    cell: ({ row }) => <div>{row.getValue('modules') || '-'}</div>,
   },
   {
     accessorKey: 'created_at',

@@ -1634,7 +1634,8 @@
     "create_description": "Create a new course",
     "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
     "edit": "Edit course",
-    "name": "Course name"
+    "name": "Course name",
+    "edit_description": "Edit an existing course"
   },
   "ws-flashcards": {
     "plural": "Flashcards",
@@ -1644,7 +1645,8 @@
     "description": "Manage flashcards in your workspace that have a front and back side for learning purposes.",
     "edit": "Edit flashcard",
     "front": "Front",
-    "back": "Back"
+    "back": "Back",
+    "edit_description": "Edit an existing flashcard"
   },
   "ws-quizzes": {
     "plural": "Quizzes",
@@ -1654,6 +1656,7 @@
     "description": "Manage quizzes in your workspace that have multiple choice questions for learning purposes.",
     "edit": "Edit quiz",
     "question": "Question",
-    "answer": "Answer"
+    "answer": "Answer",
+    "edit_description": "Edit an existing quiz"
   }
 }

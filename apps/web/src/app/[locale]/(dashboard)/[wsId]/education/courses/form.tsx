@@ -30,7 +30,7 @@ const FormSchema = z.object({
   name: z.string().min(1),
 });
 
-export default function UserGroupForm({ wsId, data, onFinish }: Props) {
+export default function CourseForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations('ws-courses');
   const router = useRouter();
 

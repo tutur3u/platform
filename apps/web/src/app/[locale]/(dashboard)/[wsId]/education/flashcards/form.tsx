@@ -1,6 +1,6 @@
 'use client';
 
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceFlashcard } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -20,25 +20,27 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  data?: UserGroup;
+  data?: WorkspaceFlashcard;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1),
+  front: z.string().min(1),
+  back: z.string().min(1),
 });
 
-export default function UserGroupForm({ wsId, data, onFinish }: Props) {
-  const t = useTranslations('ws-courses');
+export default function FlashcardForm({ wsId, data, onFinish }: Props) {
+  const t = useTranslations('ws-flashcards');
   const router = useRouter();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,
-      name: data?.name || '',
+      front: data?.front || '',
+      back: data?.back || '',
     },
   });
 
@@ -52,8 +54,8 @@ export default function UserGroupForm({ wsId, data, onFinish }: Props) {
     try {
       const res = await fetch(
         data.id
-          ? `/api/v1/workspaces/${wsId}/courses/${data.id}`
-          : `/api/v1/workspaces/${wsId}/courses`,
+          ? `/api/v1/workspaces/${wsId}/flashcards/${data.id}`
+          : `/api/v1/workspaces/${wsId}/flashcards`,
         {
           method: data.id ? 'PUT' : 'POST',
           body: JSON.stringify(data),
@@ -83,12 +85,25 @@ export default function UserGroupForm({ wsId, data, onFinish }: Props) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
         <FormField
           control={form.control}
-          name="name"
+          name="front"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('name')}</FormLabel>
+              <FormLabel>{t('front')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('name')} autoComplete="off" {...field} />
+                <Input placeholder={t('front')} autoComplete="off" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="back"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('back')}</FormLabel>
+              <FormControl>
+                <Input placeholder={t('back')} autoComplete="off" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

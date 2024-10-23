@@ -31,7 +31,7 @@ export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
 
   const deleteUserGroup = async () => {
     const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/user-groups/${data.id}`,
+      `/api/v1/workspaces/${data.ws_id}/flashcards/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -87,8 +87,8 @@ export function UserGroupRowActions({ row }: UserGroupRowActionsProps) {
       <ModifiableDialogTrigger
         data={data}
         open={showEditDialog}
-        title={t('ws-user-groups.edit')}
-        editDescription={t('ws-user-groups.edit_description')}
+        title={t('ws-flashcards.edit')}
+        editDescription={t('ws-flashcards.edit_description')}
         setOpen={setShowEditDialog}
         form={<UserGroupForm wsId={data.ws_id} data={data} />}
       />
