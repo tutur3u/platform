@@ -122,7 +122,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <Calendar className="h-4 w-4" />,
       disabled: withoutPermission('manage_calendar'),
       shortcut: 'C',
-      experimental: 'beta',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.tasks'),
@@ -132,7 +132,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         !(await verifySecret({ wsId, name: 'ENABLE_TASKS', value: 'true' })) ||
         withoutPermission('manage_projects'),
       shortcut: 'T',
-      experimental: 'beta',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.documents'),
@@ -142,7 +142,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         !(await verifySecret({ wsId, name: 'ENABLE_DOCS', value: 'true' })) ||
         withoutPermission('manage_documents'),
       shortcut: 'O',
-      experimental: 'beta',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.drive'),
@@ -152,6 +152,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         !(await verifySecret({ wsId, name: 'ENABLE_DRIVE', value: 'true' })) ||
         withoutPermission('manage_drive'),
       shortcut: 'R',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.users'),
