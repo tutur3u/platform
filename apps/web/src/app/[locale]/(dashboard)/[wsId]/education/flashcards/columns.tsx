@@ -1,16 +1,15 @@
 'use client';
 
-import { UserGroupRowActions } from './row-actions';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceFlashcardRowActions } from './row-actions';
+import { WorkspaceFlashcard } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import Link from 'next/link';
 
-export const getUserGroupColumns = (
+export const getWorkspaceFlashcardColumns = (
   t: any,
   namespace: string
-): ColumnDef<UserGroup>[] => [
+): ColumnDef<WorkspaceFlashcard>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -53,9 +52,7 @@ export const getUserGroupColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link href={row.original.href || '#'} className="min-w-[8rem]">
-        {row.getValue('front') || '-'}
-      </Link>
+      <div className="min-w-[8rem]">{row.getValue('front') || '-'}</div>
     ),
   },
   {
@@ -88,6 +85,6 @@ export const getUserGroupColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <UserGroupRowActions row={row} />,
+    cell: ({ row }) => <WorkspaceFlashcardRowActions row={row} />,
   },
 ];

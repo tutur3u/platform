@@ -1,16 +1,15 @@
 'use client';
 
-import { UserGroupRowActions } from './row-actions';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceCourseRowActions } from './row-actions';
+import { WorkspaceCourse } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
-import Link from 'next/link';
 
-export const getUserGroupColumns = (
+export const getWorkspaceCourseColumns = (
   t: any,
   namespace: string
-): ColumnDef<UserGroup>[] => [
+): ColumnDef<WorkspaceCourse>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -53,9 +52,10 @@ export const getUserGroupColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link href={row.original.href || '#'} className="min-w-[8rem]">
-        {row.getValue('name') || '-'}
-      </Link>
+      // <Link href={row.original.href || '#'} className="min-w-[8rem]">
+      //   {row.getValue('name') || '-'}
+      // </Link>
+      <div className="min-w-[8rem]">{row.getValue('name') || '-'}</div>
     ),
   },
   {
@@ -88,6 +88,6 @@ export const getUserGroupColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <UserGroupRowActions row={row} />,
+    cell: ({ row }) => <WorkspaceCourseRowActions row={row} />,
   },
 ];

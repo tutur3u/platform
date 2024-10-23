@@ -1,7 +1,7 @@
-import { getUserGroupColumns } from './columns';
+import { getWorkspaceQuizColumns } from './columns';
 import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceQuiz } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -44,7 +44,7 @@ export default async function WorkspaceQuizzesPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
-        columnGenerator={getUserGroupColumns}
+        columnGenerator={getWorkspaceQuizColumns}
         namespace="quiz-data-table"
         count={count}
         defaultVisibility={{
@@ -91,5 +91,5 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data, count } as { data: WorkspaceQuiz[]; count: number };
 }

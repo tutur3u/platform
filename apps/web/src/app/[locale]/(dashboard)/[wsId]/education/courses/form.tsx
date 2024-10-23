@@ -1,6 +1,6 @@
 'use client';
 
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceCourse } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -20,7 +20,7 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  data?: UserGroup;
+  data?: WorkspaceCourse;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }

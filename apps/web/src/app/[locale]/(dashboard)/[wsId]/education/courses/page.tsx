@@ -1,7 +1,7 @@
-import { getUserGroupColumns } from './columns';
+import { getWorkspaceCourseColumns } from './columns';
 import CourseForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceCourse } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -50,7 +50,7 @@ export default async function WorkspaceCoursesPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={groups}
-        columnGenerator={getUserGroupColumns}
+        columnGenerator={getWorkspaceCourseColumns}
         namespace="course-data-table"
         count={count}
         defaultVisibility={{
@@ -97,5 +97,5 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data, count } as { data: WorkspaceCourse[]; count: number };
 }
