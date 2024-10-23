@@ -247,8 +247,8 @@ importers:
         specifier: 15.0.1-canary.3
         version: 15.0.1-canary.3
       '@next/eslint-plugin-next':
-        specifier: 15.0.1-canary.3
-        version: 15.0.1-canary.3
+        specifier: 15.0.1
+        version: 15.0.1
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -578,8 +578,8 @@ importers:
         specifier: 15.0.1-canary.3
         version: 15.0.1-canary.3
       '@next/eslint-plugin-next':
-        specifier: 15.0.1-canary.3
-        version: 15.0.1-canary.3
+        specifier: 15.0.1
+        version: 15.0.1
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -1955,8 +1955,8 @@ packages:
   '@next/env@15.0.1-canary.3':
     resolution: {integrity: sha512-lhn6DappRJYyXXbfvg52imgvYqQ6lrfhjQZstN3RRBabk75ctlYzfNkk3LNajYb1qKNoQLIBws0LstANzwgwdg==}
 
-  '@next/eslint-plugin-next@15.0.1-canary.3':
-    resolution: {integrity: sha512-XrhEZ9R5mRJwJWz+dJtJlGRWX12MMl6Njr/xabIMJ+2Snwdxw485kgv3W/cc8osQ15ELl9Bu2pPGT+TN7AoCuQ==}
+  '@next/eslint-plugin-next@15.0.1':
+    resolution: {integrity: sha512-bKWsMaGPbiFAaGqrDJvbE8b4Z0uKicGVcgOI77YM2ui3UfjHMr4emFPrZTLeZVchi7fT1mooG2LxREfUUClIKw==}
 
   '@next/swc-darwin-arm64@14.2.3':
     resolution: {integrity: sha512-3pEYo/RaGqPP0YzwnlmPN2puaF2WMLM3apt5jLW2fFdXD9+pqcoTzRk+iZsf8ta7+quAe4Q6Ms0nR0SFGFdS1A==}
@@ -8207,8 +8207,8 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
-    resolution: {tarball: https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e}
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
+    resolution: {commit: 32f550d3b3bdb1b781aabe100683311cd982c98e, repo: git@github.com:securedeveloper/js-xlsx.git, type: git}
     version: 0.8.20
     engines: {node: '>=0.8'}
     hasBin: true
@@ -10268,7 +10268,7 @@ snapshots:
 
   '@next/env@15.0.1-canary.3': {}
 
-  '@next/eslint-plugin-next@15.0.1-canary.3':
+  '@next/eslint-plugin-next@15.0.1':
     dependencies:
       fast-glob: 3.3.1
 
@@ -16843,7 +16843,7 @@ snapshots:
   react-export-excel@0.5.3:
     dependencies:
       file-saver: 1.3.8
-      xlsx: tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e
+      xlsx: tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e
 
   react-hook-form@7.53.1(react@19.0.0-rc-69d4b800-20241021):
     dependencies:
@@ -17857,7 +17857,7 @@ snapshots:
       mkdirp: 3.0.1
       yallist: 5.0.0
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
     dependencies:
       adler-32: 1.3.1
       cfb: 1.2.2
