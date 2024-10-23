@@ -76,7 +76,7 @@ export default async function UserGroupAttendancePage({
                     'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
                   )}
                 >
-                  <CalendarIcon className="mr-1 h-5 w-5" />
+                  <CalendarIcon className="h-5 w-5" />
                   {t('infrastructure-tabs.overview')}
                 </Button>
               </Link>
@@ -89,7 +89,7 @@ export default async function UserGroupAttendancePage({
                     'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
                   )}
                 >
-                  <CalendarIcon className="mr-1 h-5 w-5" />
+                  <CalendarIcon className="h-5 w-5" />
                   {t('ws-user-group-details.schedule')}
                 </Button>
               </Link>
@@ -102,7 +102,7 @@ export default async function UserGroupAttendancePage({
                 )}
                 disabled
               >
-                <UserCheck className="mr-1 h-5 w-5" />
+                <UserCheck className="h-5 w-5" />
                 {t('ws-user-group-details.attendance')}
               </Button>
               <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
@@ -114,7 +114,7 @@ export default async function UserGroupAttendancePage({
                     'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
                   )}
                 >
-                  <FileUser className="mr-1 h-5 w-5" />
+                  <FileUser className="h-5 w-5" />
                   {t('ws-user-group-details.reports')}
                 </Button>
               </Link>
@@ -127,7 +127,7 @@ export default async function UserGroupAttendancePage({
                     'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
                   )}
                 >
-                  <ChartColumn className="mr-1 h-5 w-5" />
+                  <ChartColumn className="h-5 w-5" />
                   {t('ws-user-group-details.metrics')}
                 </Button>
               </Link>

@@ -5,6 +5,7 @@ import { WorkspaceCourse } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
+import Link from 'next/link';
 
 export const getWorkspaceCourseColumns = (
   t: any,
@@ -52,10 +53,12 @@ export const getWorkspaceCourseColumns = (
       />
     ),
     cell: ({ row }) => (
-      // <Link href={row.original.href || '#'} className="min-w-[8rem]">
-      //   {row.getValue('name') || '-'}
-      // </Link>
-      <div className="min-w-[8rem]">{row.getValue('name') || '-'}</div>
+      <Link
+        href={row.original.href || '#'}
+        className="min-w-[8rem] font-semibold hover:underline"
+      >
+        {row.getValue('name') || '-'}
+      </Link>
     ),
   },
   {

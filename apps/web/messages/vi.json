@@ -1658,5 +1658,12 @@
     "question": "Câu hỏi",
     "answer": "Câu trả lời",
     "edit_description": "Chỉnh sửa bài kiểm tra hiện có"
+  },
+  "course-details-tabs": {
+    "preview": "Xem trước",
+    "module_objectives": "Mục tiêu của mô-đun",
+    "resources": "Tài nguyên",
+    "youtube_links": "Liên kết YouTube",
+    "extra_reading": "Đọc thêm"
   }
 }

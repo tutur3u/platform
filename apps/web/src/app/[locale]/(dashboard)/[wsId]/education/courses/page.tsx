@@ -31,10 +31,10 @@ export default async function WorkspaceCoursesPage({
 
   const { data, count } = await getData(wsId, await searchParams);
 
-  const groups = data.map((g) => ({
-    ...g,
+  const courses = data.map((c) => ({
+    ...c,
     ws_id: wsId,
-    href: `/${wsId}/users/groups/${g.id}`,
+    href: `/${wsId}/education/courses/${c.id}`,
   }));
 
   return (
@@ -49,7 +49,7 @@ export default async function WorkspaceCoursesPage({
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={groups}
+        data={courses}
         columnGenerator={getWorkspaceCourseColumns}
         namespace="course-data-table"
         count={count}

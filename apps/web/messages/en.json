@@ -1658,5 +1658,12 @@
     "question": "Question",
     "answer": "Answer",
     "edit_description": "Edit an existing quiz"
+  },
+  "course-details-tabs": {
+    "preview": "Preview",
+    "module_objectives": "Module objectives",
+    "resources": "Resources",
+    "youtube_links": "YouTube links",
+    "extra_reading": "Extra reading"
   }
 }
