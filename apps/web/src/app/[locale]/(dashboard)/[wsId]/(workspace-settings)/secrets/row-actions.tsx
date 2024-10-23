@@ -1,8 +1,9 @@
 'use client';
 
-import SecretEditDialog from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
+import SecretForm from './form';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { Button } from '@repo/ui/components/ui/button';
+import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,11 +26,11 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
-  const secret = row.original;
+  const data = row.original;
 
   const deleteSecret = async () => {
     const res = await fetch(
-      `/api/workspaces/${secret.ws_id}/secrets/${secret.id}`,
+      `/api/workspaces/${data.ws_id}/secrets/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -48,7 +49,7 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!secret.id || !secret.ws_id) return null;
+  if (!data.id || !data.ws_id) return null;
 
   return (
     <>
@@ -72,11 +73,14 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <SecretEditDialog
-        data={secret}
+
+      <ModifiableDialogTrigger
+        data={data}
         open={showEditDialog}
+        title={t('ws-user-groups.edit')}
+        editDescription={t('ws-user-groups.edit_description')}
         setOpen={setShowEditDialog}
-        submitLabel={t('ws-secrets.edit_secret')}
+        form={<SecretForm wsId={data.ws_id} data={data} />}
       />
     </>
   );

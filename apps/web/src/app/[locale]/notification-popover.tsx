@@ -99,12 +99,12 @@ export default async function NotificationPopover() {
                 key={notification.id}
                 className="bg-foreground/5 mb-2 rounded-lg border p-2 pb-2 last:mb-0"
               >
-                <p className="text-sm font-medium leading-none">
+                <div className="text-sm font-medium leading-none">
                   {notification.title}
-                </p>
-                <p className="text-foreground/80 mb-2 mt-1 text-sm">
+                </div>
+                <div className="text-foreground/80 mb-2 mt-1 text-sm">
                   {notification.description}
-                </p>
+                </div>
 
                 <NotificationActionList actions={notification.actions} />
               </div>

@@ -752,7 +752,11 @@
     "create_secret": "Create Secret",
     "edit_secret": "Edit Secret",
     "add_new_workspace_secret": "Add a new secret for this workspace.",
-    "edit_existing_workspace_secret": "Edit an existing secret for this workspace."
+    "edit_existing_workspace_secret": "Edit an existing secret for this workspace.",
+    "plural": "Secrets",
+    "singular": "Secret",
+    "create": "Create secret",
+    "create_description": "Create a new secret"
   },
   "ws-api-keys": {
     "api_key": "API Key",

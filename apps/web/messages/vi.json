@@ -752,7 +752,11 @@
     "create_secret": "Tạo mã bí mật",
     "edit_secret": "Chỉnh sửa mã bí mật",
     "add_new_workspace_secret": "Thêm mã bí mật mới",
-    "edit_existing_workspace_secret": "Chỉnh sửa mã bí mật hiện có cho không gian làm việc này."
+    "edit_existing_workspace_secret": "Chỉnh sửa mã bí mật hiện có cho không gian làm việc này.",
+    "plural": "Mã bí mật",
+    "singular": "Mã bí mật",
+    "create_description": "Tạo một mã bí mật mới",
+    "create": "Tạo mã bí mật"
   },
   "ws-api-keys": {
     "api_key": "Khoá API",
