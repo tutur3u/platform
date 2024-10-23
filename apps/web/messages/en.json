@@ -536,6 +536,24 @@
     "notes": "Notes",
     "created_at": "Created At"
   },
+  "course-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "modules": "Modules",
+    "created_at": "Created At"
+  },
+  "quiz-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "question": "Question",
+    "created_at": "Created At"
+  },
+  "flashcard-data-table": {
+    "id": "ID",
+    "front": "Front",
+    "back": "Back",
+    "created_at": "Created At"
+  },
   "user-group-data-table": {
     "id": "ID",
     "name": "Name",
@@ -1606,5 +1624,34 @@
     "materials": "Learning Materials",
     "quizzes": "Quizzes",
     "flashcards": "Flashcards"
+  },
+  "ws-courses": {
+    "plural": "Courses",
+    "singular": "Course",
+    "create": "Create course",
+    "create_description": "Create a new course",
+    "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
+    "edit": "Edit course",
+    "name": "Course name"
+  },
+  "ws-flashcards": {
+    "plural": "Flashcards",
+    "singular": "Flashcard",
+    "create": "Create flashcard",
+    "create_description": "Create a new flashcard",
+    "description": "Manage flashcards in your workspace that have a front and back side for learning purposes.",
+    "edit": "Edit flashcard",
+    "front": "Front",
+    "back": "Back"
+  },
+  "ws-quizzes": {
+    "plural": "Quizzes",
+    "singular": "Quiz",
+    "create": "Create quiz",
+    "create_description": "Create a new quiz",
+    "description": "Manage quizzes in your workspace that have multiple choice questions for learning purposes.",
+    "edit": "Edit quiz",
+    "question": "Question",
+    "answer": "Answer"
   }
 }
