@@ -58,6 +58,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         !(await verifySecret({ wsId, name: 'ENABLE_CHAT', value: 'true' })) ||
         withoutPermission('ai_chat'),
       shortcut: 'X',
+      experimental: 'beta',
     },
     {
       title: t('common.dashboard'),
@@ -74,6 +75,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         !(await verifySecret({ wsId, name: 'ENABLE_AI', value: 'true' })) ||
         withoutPermission('ai_lab'),
       shortcut: 'A',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.education'),
@@ -86,6 +88,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           value: 'true',
         })) || withoutPermission('ai_lab'),
       shortcut: 'A',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.slides'),
@@ -97,6 +100,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         value: 'true',
       })),
       shortcut: 'S',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.mail'),
@@ -110,6 +114,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           value: 'true',
         })) || withoutPermission('send_user_group_post_emails'),
       shortcut: 'M',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.calendar'),
@@ -117,6 +122,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <Calendar className="h-4 w-4" />,
       disabled: withoutPermission('manage_calendar'),
       shortcut: 'C',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.tasks'),
@@ -126,6 +132,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         !(await verifySecret({ wsId, name: 'ENABLE_TASKS', value: 'true' })) ||
         withoutPermission('manage_projects'),
       shortcut: 'T',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.documents'),
@@ -135,6 +142,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         !(await verifySecret({ wsId, name: 'ENABLE_DOCS', value: 'true' })) ||
         withoutPermission('manage_documents'),
       shortcut: 'O',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.drive'),
@@ -170,6 +178,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         value: 'true',
       })),
       shortcut: 'H',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.finance'),

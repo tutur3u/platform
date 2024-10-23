@@ -1,5 +1,7 @@
 {
   "common": {
+    "alpha": "Alpha",
+    "beta": "Beta",
     "and": "and",
     "login": "Login",
     "export-content": "Please choose file type to export",

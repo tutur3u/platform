@@ -1,5 +1,7 @@
 {
   "common": {
+    "alpha": "Alpha",
+    "beta": "Beta",
     "and": "và",
     "login": "Đăng nhập",
     "maximize": "Tối ưu hóa",
