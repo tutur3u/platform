@@ -1603,6 +1603,8 @@
   "workspace-education-tabs": {
     "overview": "Overview",
     "courses": "Courses",
-    "materials": "Learning Materials"
+    "materials": "Learning Materials",
+    "quizzes": "Quizzes",
+    "flashcards": "Flashcards"
   }
 }

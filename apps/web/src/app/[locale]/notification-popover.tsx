@@ -70,7 +70,7 @@ export default async function NotificationPopover() {
         >
           <Bell className="h-6 w-6" />
           {notifications.length > 0 && (
-            <div className="bg-foreground text-background absolute right-2 top-1 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full p-1 text-center text-xs transition-all group-hover:-right-1 group-hover:-top-2 group-hover:h-4 group-hover:w-auto">
+            <div className="bg-foreground group-hover:text-background text-foreground absolute right-2 top-1 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full p-1 text-center text-xs font-semibold transition-all group-hover:-right-1 group-hover:-top-2 group-hover:h-4 group-hover:w-auto">
               <div className="relative opacity-0 group-hover:opacity-100">
                 {notifications.length}
               </div>

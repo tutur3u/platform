@@ -1603,6 +1603,8 @@
   "workspace-education-tabs": {
     "overview": "Tổng quan",
     "courses": "Khóa học",
-    "materials": "Tài liệu học tập"
+    "materials": "Tài liệu học tập",
+    "quizzes": "Bộ trắc nghiệm",
+    "flashcards": "Thẻ từ vựng"
   }
 }
