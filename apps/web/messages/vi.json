@@ -1,5 +1,7 @@
 {
   "common": {
+    "alpha": "Alpha",
+    "beta": "Beta",
     "and": "và",
     "login": "Đăng nhập",
     "maximize": "Tối ưu hóa",
@@ -131,7 +133,10 @@
     "status": "Trạng thái",
     "years_old": "tuổi",
     "year_old": "tuổi",
-    "average": "Trung bình"
+    "average": "Trung bình",
+    "no_content_yet": "Chưa có nội dung",
+    "words": "từ",
+    "word": "từ"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -348,7 +353,7 @@
     "new": "Tạo mới",
     "home": "Trang chủ",
     "refresh": "Làm mới",
-    "chat": "Trò chuyện",
+    "chat_with_ai": "Trò chuyện với AI",
     "calendar": "Lịch",
     "projects": "Dự án",
     "documents": "Tài liệu",
@@ -534,6 +539,24 @@
     "send_email": "Gửi email",
     "preview": "Xem trước",
     "notes": "Ghi chú",
+    "created_at": "Ngày tạo"
+  },
+  "course-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "modules": "Mô-đun",
+    "created_at": "Ngày tạo"
+  },
+  "quiz-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "question": "Câu hỏi",
+    "created_at": "Ngày tạo"
+  },
+  "flashcard-data-table": {
+    "id": "Mã số",
+    "front": "Mặt trước",
+    "back": "Mặt sau",
     "created_at": "Ngày tạo"
   },
   "user-group-data-table": {
@@ -752,7 +775,11 @@
     "create_secret": "Tạo mã bí mật",
     "edit_secret": "Chỉnh sửa mã bí mật",
     "add_new_workspace_secret": "Thêm mã bí mật mới",
-    "edit_existing_workspace_secret": "Chỉnh sửa mã bí mật hiện có cho không gian làm việc này."
+    "edit_existing_workspace_secret": "Chỉnh sửa mã bí mật hiện có cho không gian làm việc này.",
+    "plural": "Mã bí mật",
+    "singular": "Mã bí mật",
+    "create_description": "Tạo một mã bí mật mới",
+    "create": "Tạo mã bí mật"
   },
   "ws-api-keys": {
     "api_key": "Khoá API",
@@ -1595,5 +1622,51 @@
     "attendance": "Điểm danh nhóm",
     "reports": "Báo cáo nhóm",
     "metrics": "Số liệu nhóm"
+  },
+  "workspace-education-tabs": {
+    "overview": "Tổng quan",
+    "courses": "Khóa học",
+    "materials": "Tài liệu học tập",
+    "quizzes": "Bộ trắc nghiệm",
+    "flashcards": "Thẻ từ vựng"
+  },
+  "ws-courses": {
+    "plural": "Khóa học",
+    "singular": "Khóa học",
+    "description": "Quản lý các khóa học trong không gian làm việc của bạn bao gồm nội dung đánh dấu, trang trình bày, câu hỏi và thẻ ghi chú.",
+    "create": "Tạo khóa học",
+    "create_description": "Tạo một khóa học mới",
+    "edit": "Chỉnh sửa khóa học",
+    "name": "Tên khóa học",
+    "edit_description": "Chỉnh sửa khóa học hiện có"
+  },
+  "ws-flashcards": {
+    "plural": "Thẻ từ vựng",
+    "singular": "Thẻ từ vựng",
+    "create": "Tạo thẻ từ vựng",
+    "create_description": "Tạo một thẻ từ vựng mới",
+    "description": "Quản lý thẻ từ vựng trong không gian làm việc của bạn có một mặt trước và mặt sau dành cho mục đích học tập.",
+    "edit": "Chỉnh sửa thẻ từ vựng",
+    "front": "Mặt trước",
+    "back": "Mặt sau",
+    "edit_description": "Chỉnh sửa thẻ từ vựng hiện có"
+  },
+  "ws-quizzes": {
+    "plural": "Bộ trắc nghiệm",
+    "singular": "Bộ trắc nghiệm",
+    "create": "Tạo bộ trắc nghiệm",
+    "create_description": "Tạo một bộ trắc nghiệm mới",
+    "description": "Quản lý bộ trắc nghiệm trong không gian làm việc của bạn có các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
+    "edit": "Chỉnh sửa bộ trắc nghiệm",
+    "question": "Câu hỏi",
+    "answer": "Câu trả lời",
+    "edit_description": "Chỉnh sửa bài kiểm tra hiện có"
+  },
+  "course-details-tabs": {
+    "preview": "Xem trước",
+    "module_objectives": "Mục tiêu của mô-đun",
+    "resources": "Tài nguyên",
+    "youtube_links": "Liên kết YouTube",
+    "extra_reading": "Đọc thêm"
   }
 }

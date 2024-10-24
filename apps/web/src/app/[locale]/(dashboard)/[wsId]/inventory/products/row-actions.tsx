@@ -6,12 +6,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface ProductRowActionsProps {
   row: Row<Product>;
@@ -20,10 +23,31 @@ interface ProductRowActionsProps {
 
 export function ProductRowActions({ row, href }: ProductRowActionsProps) {
   const t = useTranslations();
+  const router = useRouter();
 
   const data = row.original;
 
   if (!data.id || !data.ws_id) return null;
+
+  async function deleteProduct() {
+    const res = await fetch(
+      `/api/v1/workspaces/${data.ws_id}/products/${data.id}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const data = await res.json();
+      toast({
+        // TODO: i18n
+        title: 'Failed to delete workspace product',
+        description: data.message,
+      });
+    }
+  }
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -49,6 +73,11 @@ export function ProductRowActions({ row, href }: ProductRowActionsProps) {
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuItem asChild>
             <Link href={`./products/${data.id}`}>{t('common.edit')}</Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={deleteProduct}>
+            {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

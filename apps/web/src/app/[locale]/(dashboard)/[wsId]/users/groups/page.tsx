@@ -27,7 +27,7 @@ export default async function WorkspaceUserGroupsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations('ws-user-groups');
+  const t = await getTranslations();
   const { wsId } = await params;
 
   const { data, count } = await getData(wsId, await searchParams);
@@ -41,11 +41,11 @@ export default async function WorkspaceUserGroupsPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('plural')}
-        singularTitle={t('singular')}
-        description={t('description')}
-        createTitle={t('create')}
-        createDescription={t('create_description')}
+        pluralTitle={t('ws-user-groups.plural')}
+        singularTitle={t('ws-user-groups.singular')}
+        description={t('ws-user-groups.description')}
+        createTitle={t('ws-user-groups.create')}
+        createDescription={t('ws-user-groups.create_description')}
         form={<UserGroupForm wsId={wsId} />}
       />
       <Separator className="my-4" />

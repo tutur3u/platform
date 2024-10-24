@@ -83,11 +83,11 @@ export default async function UserGroupDetailsPage({
                   type="button"
                   variant="secondary"
                   className={cn(
-                    'border font-semibold',
+                    'border font-semibold max-sm:w-full',
                     'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
                   )}
                 >
-                  <Calendar className="mr-1 h-5 w-5" />
+                  <Calendar className="h-5 w-5" />
                   {t('infrastructure-tabs.overview')}
                 </Button>
               </Link>
@@ -96,11 +96,11 @@ export default async function UserGroupDetailsPage({
                   type="button"
                   variant="secondary"
                   className={cn(
-                    'border font-semibold',
+                    'border font-semibold max-sm:w-full',
                     'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
                   )}
                 >
-                  <Calendar className="mr-1 h-5 w-5" />
+                  <Calendar className="h-5 w-5" />
                   {t('ws-user-group-details.schedule')}
                 </Button>
               </Link>
@@ -109,11 +109,11 @@ export default async function UserGroupDetailsPage({
                   type="button"
                   variant="secondary"
                   className={cn(
-                    'border font-semibold',
+                    'border font-semibold max-sm:w-full',
                     'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
                   )}
                 >
-                  <UserCheck className="mr-1 h-5 w-5" />
+                  <UserCheck className="h-5 w-5" />
                   {t('ws-user-group-details.attendance')}
                 </Button>
               </Link>
@@ -121,12 +121,12 @@ export default async function UserGroupDetailsPage({
                 type="button"
                 variant="secondary"
                 className={cn(
-                  'border font-semibold',
+                  'border font-semibold max-sm:w-full',
                   'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
                 )}
                 disabled
               >
-                <FileUser className="mr-1 h-5 w-5" />
+                <FileUser className="h-5 w-5" />
                 {t('ws-user-group-details.reports')}
               </Button>
               <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
@@ -134,11 +134,11 @@ export default async function UserGroupDetailsPage({
                   type="button"
                   variant="secondary"
                   className={cn(
-                    'border font-semibold',
+                    'border font-semibold max-sm:w-full',
                     'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
                   )}
                 >
-                  <ChartColumn className="mr-1 h-5 w-5" />
+                  <ChartColumn className="h-5 w-5" />
                   {t('ws-user-group-details.metrics')}
                 </Button>
               </Link>

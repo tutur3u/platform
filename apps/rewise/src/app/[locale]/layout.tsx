@@ -13,6 +13,8 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
 import { ReactNode } from 'react';
 
+const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
+
 interface Props {
   children: ReactNode;
   params: Promise<{
@@ -93,8 +95,6 @@ export const viewport: Viewport = {
   colorScheme: 'dark light',
 };
 
-const inter = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
-
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
@@ -108,8 +108,8 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'bg-background overflow-hidden font-sans antialiased',
-          inter.className
+          'bg-background overflow-hidden antialiased',
+          font.className
         )}
       >
         <VercelAnalytics />

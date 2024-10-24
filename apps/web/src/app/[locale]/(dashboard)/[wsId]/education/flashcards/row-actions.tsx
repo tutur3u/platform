@@ -1,8 +1,9 @@
 'use client';
 
-import SecretEditDialog from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/_components/secret-edit-dialog';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import WorkspaceFlashcardForm from './form';
+import { WorkspaceFlashcard } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
+import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,19 +18,21 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface SecretRowActionsProps {
-  row: Row<WorkspaceSecret>;
+interface WorkspaceFlashcardRowActionsProps {
+  row: Row<WorkspaceFlashcard>;
 }
 
-export function SecretRowActions({ row }: SecretRowActionsProps) {
+export function WorkspaceFlashcardRowActions({
+  row,
+}: WorkspaceFlashcardRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
-  const secret = row.original;
+  const data = row.original;
 
-  const deleteSecret = async () => {
+  const deleteWorkspaceFlashcard = async () => {
     const res = await fetch(
-      `/api/workspaces/${secret.ws_id}/secrets/${secret.id}`,
+      `/api/v1/workspaces/${data.ws_id}/flashcards/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -40,7 +43,7 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
     } else {
       const data = await res.json();
       toast({
-        title: 'Failed to delete workspace secret',
+        title: 'Failed to delete workspace user group tag',
         description: data.message,
       });
     }
@@ -48,10 +51,10 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!secret.id || !secret.ws_id) return null;
+  if (!data.id || !data.ws_id) return null;
 
   return (
-    <>
+    <div className="flex items-center justify-end gap-2">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -67,17 +70,20 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteSecret}>
+          <DropdownMenuItem onClick={deleteWorkspaceFlashcard}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <SecretEditDialog
-        data={secret}
+
+      <ModifiableDialogTrigger
+        data={data}
         open={showEditDialog}
+        title={t('ws-flashcards.edit')}
+        editDescription={t('ws-flashcards.edit_description')}
         setOpen={setShowEditDialog}
-        submitLabel={t('ws-secrets.edit_secret')}
+        form={<WorkspaceFlashcardForm wsId={data.ws_id} data={data} />}
       />
-    </>
+    </div>
   );
 }

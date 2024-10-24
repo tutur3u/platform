@@ -1,3 +1,5 @@
+'use client';
+
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
@@ -10,33 +12,62 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface Props {
-  data: WorkspaceSecret;
-  submitLabel?: string;
-  onSubmit: (values: z.infer<typeof FormSchema>) => void;
+  wsId: string;
+  data?: WorkspaceSecret;
+  // eslint-disable-next-line no-unused-vars
+  onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1),
   value: z.string().min(1),
 });
 
 export const ApiConfigFormSchema = FormSchema;
 
-export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
-  const t = useTranslations('ws-secrets');
+export default function SecretForm({ wsId, data, onFinish }: Props) {
+  const t = useTranslations();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      name: data.name || '',
-      value: data.value || (data.id ? '' : 'true'),
+      id: data?.id,
+      name: data?.name || '',
+      value: data?.value || (data?.id ? '' : 'true'),
     },
   });
+
+  const onSubmit = async (data: z.infer<typeof ApiConfigFormSchema>) => {
+    const res = await fetch(
+      data?.id
+        ? `/api/workspaces/${wsId}/secrets/${data.id}`
+        : `/api/workspaces/${wsId}/secrets`,
+      {
+        method: data?.id ? 'PUT' : 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (res.ok) {
+      onFinish?.(data);
+      router.refresh();
+    } else {
+      const data = await res.json();
+      toast({
+        title: `Failed to ${data.id ? 'edit' : 'create'} secret`,
+        description: data.message,
+      });
+    }
+  };
 
   const isDirty = form.formState.isDirty;
   const isValid = form.formState.isValid;
@@ -52,7 +83,7 @@ export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('name')}</FormLabel>
+              <FormLabel>{t('ws-secrets.name')}</FormLabel>
               <FormControl>
                 <Input
                   placeholder="Name"
@@ -78,7 +109,7 @@ export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
           name="value"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('value')}</FormLabel>
+              <FormLabel>{t('ws-secrets.value')}</FormLabel>
               <FormControl>
                 <Input placeholder="Value" autoComplete="off" {...field} />
               </FormControl>
@@ -88,7 +119,7 @@ export default function SecretForm({ data, submitLabel, onSubmit }: Props) {
         />
 
         <Button type="submit" className="w-full" disabled={disabled}>
-          {submitLabel}
+          {data?.id ? t('common.edit') : t('common.create')}
         </Button>
       </form>
     </Form>

@@ -60,32 +60,32 @@ export default function UserNavClient({
         <DropdownMenuTrigger asChild>
           <button
             className={cn(
-              'flex w-full gap-2 rounded-lg border p-1 text-start transition',
+              'flex w-full gap-2 rounded-md p-1 text-start transition',
               hideMetadata
-                ? 'items-center justify-center border-transparent'
-                : 'hover:bg-foreground/10 hover:border-foreground/10 border-foreground/10 bg-foreground/10 items-start justify-start md:border-transparent md:bg-transparent'
+                ? 'items-center justify-center'
+                : 'hover:bg-foreground/10 bg-foreground/5 items-center justify-start md:bg-transparent'
             )}
           >
             <Avatar className="relative cursor-pointer overflow-visible font-semibold">
               <AvatarImage
                 src={user?.avatar_url ?? undefined}
-                className="overflow-clip rounded-full"
+                className="overflow-clip rounded-lg"
               />
-              <AvatarFallback className="font-semibold">
+              <AvatarFallback className="rounded-lg font-semibold">
                 {user?.display_name ? (
                   getInitials(user.display_name)
                 ) : (
                   <User className="h-5 w-5" />
                 )}
               </AvatarFallback>
-              <UserPresenceIndicator className="h-3 w-3 border-2" />
+              <UserPresenceIndicator className="-bottom-1 -right-1 h-3 w-3 border-2" />
             </Avatar>
             {hideMetadata || (
-              <div className="grid w-full">
+              <div className="flex w-full flex-col items-start justify-center">
                 <div className="line-clamp-1 break-all text-sm font-semibold">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 break-all text-sm opacity-70">
+                <div className="line-clamp-1 break-all text-xs opacity-70">
                   {user?.email}
                 </div>
               </div>
@@ -94,7 +94,8 @@ export default function UserNavClient({
         </DropdownMenuTrigger>
         <DropdownMenuContent
           className="w-56"
-          align={hideMetadata ? 'start' : 'end'}
+          side="right"
+          align="end"
           forceMount
         >
           <DropdownMenuLabel className="font-normal">
@@ -120,7 +121,7 @@ export default function UserNavClient({
                 <span>{t('common.theme')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
-                <DropdownMenuSubContent>
+                <DropdownMenuSubContent sideOffset={4}>
                   <ThemeDropdownItems />
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
@@ -131,7 +132,7 @@ export default function UserNavClient({
                 <span>{t('common.language')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
-                <DropdownMenuSubContent>
+                <DropdownMenuSubContent sideOffset={4}>
                   <LanguageWrapper
                     locale="en"
                     label="English"

@@ -99,7 +99,6 @@ export function Nav({
 
   const renderLink = (
     link: NavLink,
-    index: number,
     configs: {
       showChatName: boolean;
       showFavorites: boolean;
@@ -138,10 +137,9 @@ export function Nav({
           : pathname?.startsWith(link.href);
 
     return isCollapsed ? (
-      <Tooltip key={index} delayDuration={0}>
+      <Tooltip key={link.href} delayDuration={0}>
         <TooltipTrigger asChild>
           <ChatLink
-            key={index}
             single={single}
             isActive={isActive}
             isCollapsed={isCollapsed}
@@ -175,7 +173,7 @@ export function Nav({
       </Tooltip>
     ) : (
       <ChatLink
-        key={index}
+        key={link.href}
         single={single}
         isActive={isActive}
         isCollapsed={isCollapsed}
@@ -272,7 +270,7 @@ export function Nav({
 
         {single ? (
           <div className="grid gap-1">
-            {links.map((link, index) => renderLink(link, index, configs))}
+            {links.map((link) => renderLink(link, configs))}
           </div>
         ) : (
           <>
@@ -332,9 +330,7 @@ export function Nav({
                           </div>
                         )}
                         <div className="grid gap-1">
-                          {dateLinks.map((link, index) =>
-                            renderLink(link, index, configs)
-                          )}
+                          {dateLinks.map((link) => renderLink(link, configs))}
                         </div>
                       </div>
                       <Separator />
@@ -357,9 +353,7 @@ export function Nav({
                         </div>
                       )}
                       <div className="grid gap-1">
-                        {dateLinks.map((link, index) =>
-                          renderLink(link, index, configs)
-                        )}
+                        {dateLinks.map((link) => renderLink(link, configs))}
                       </div>
                     </div>
                   );

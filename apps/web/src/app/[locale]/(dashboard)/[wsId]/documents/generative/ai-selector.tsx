@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 
 interface AISelectorProps {
   open: boolean;
+  // eslint-disable-next-line no-unused-vars
   onOpenChange: (open: boolean) => void;
 }
 

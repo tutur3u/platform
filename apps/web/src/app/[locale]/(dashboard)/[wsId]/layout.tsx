@@ -8,7 +8,6 @@ import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
-  getSecrets,
   getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
@@ -45,37 +44,21 @@ export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
   const { wsId } = await params;
 
-  const secrets = await getSecrets({
-    wsId,
-    requiredSecrets: [
-      'ENABLE_X',
-      'ENABLE_AI',
-      'ENABLE_EDUCATION',
-      'ENABLE_CHAT',
-      'ENABLE_TASKS',
-      'ENABLE_SLIDES',
-      'ENABLE_DOCS',
-      'ENABLE_DRIVE',
-      'ENABLE_HEALTHCARE',
-      'ENABLE_EMAIL_SENDING',
-    ],
-    forceAdmin: true,
-  });
-
   const { withoutPermission } = await getPermissions({
     wsId,
   });
 
   const navLinks: NavLink[] = [
     {
-      title: t('sidebar_tabs.chat'),
+      title: t('sidebar_tabs.chat_with_ai'),
       href: `/${wsId}/chat`,
       icon: <MessageCircleIcon className="h-4 w-4" />,
       forceRefresh: true,
       disabled:
-        !verifySecret('ENABLE_CHAT', 'true', secrets) ||
+        !(await verifySecret({ wsId, name: 'ENABLE_CHAT', value: 'true' })) ||
         withoutPermission('ai_chat'),
       shortcut: 'X',
+      experimental: 'beta',
     },
     {
       title: t('common.dashboard'),
@@ -89,25 +72,35 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/ai`,
       icon: <Sparkles className="h-4 w-4" />,
       disabled:
-        !verifySecret('ENABLE_AI', 'true', secrets) ||
+        !(await verifySecret({ wsId, name: 'ENABLE_AI', value: 'true' })) ||
         withoutPermission('ai_lab'),
       shortcut: 'A',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.education'),
       href: `/${wsId}/education`,
       icon: <GraduationCap className="h-4 w-4" />,
       disabled:
-        !verifySecret('ENABLE_EDUCATION', 'true', secrets) ||
-        withoutPermission('ai_lab'),
+        !(await verifySecret({
+          wsId,
+          name: 'ENABLE_EDUCATION',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
       shortcut: 'A',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.slides'),
       href: `/${wsId}/slides`,
       icon: <Presentation className="h-4 w-4" />,
-      disabled: !verifySecret('ENABLE_SLIDES', 'true', secrets),
+      disabled: !(await verifySecret({
+        wsId,
+        name: 'ENABLE_SLIDES',
+        value: 'true',
+      })),
       shortcut: 'S',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.mail'),
@@ -115,9 +108,13 @@ export default async function Layout({ children, params }: LayoutProps) {
         wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/posts`,
       icon: <Mail className="h-4 w-4" />,
       disabled:
-        !verifySecret('ENABLE_EMAIL_SENDING', 'true', secrets) ||
-        withoutPermission('send_user_group_post_emails'),
+        !(await verifySecret({
+          wsId,
+          name: 'ENABLE_EMAIL_SENDING',
+          value: 'true',
+        })) || withoutPermission('send_user_group_post_emails'),
       shortcut: 'M',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.calendar'),
@@ -125,33 +122,37 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <Calendar className="h-4 w-4" />,
       disabled: withoutPermission('manage_calendar'),
       shortcut: 'C',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.tasks'),
       href: `/${wsId}/tasks/boards`,
       icon: <CircleCheck className="h-4 w-4" />,
       disabled:
-        !verifySecret('ENABLE_TASKS', 'true', secrets) ||
+        !(await verifySecret({ wsId, name: 'ENABLE_TASKS', value: 'true' })) ||
         withoutPermission('manage_projects'),
       shortcut: 'T',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.documents'),
       href: `/${wsId}/documents`,
       icon: <FileText className="h-4 w-4" />,
       disabled:
-        !verifySecret('ENABLE_DOCS', 'true', secrets) ||
+        !(await verifySecret({ wsId, name: 'ENABLE_DOCS', value: 'true' })) ||
         withoutPermission('manage_documents'),
       shortcut: 'O',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.drive'),
       href: `/${wsId}/drive`,
       icon: <HardDrive className="h-4 w-4" />,
       disabled:
-        !verifySecret('ENABLE_DRIVE', 'true', secrets) ||
+        !(await verifySecret({ wsId, name: 'ENABLE_DRIVE', value: 'true' })) ||
         withoutPermission('manage_drive'),
       shortcut: 'R',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.users'),
@@ -172,8 +173,13 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('sidebar_tabs.healthcare'),
       href: `/${wsId}/healthcare`,
       icon: <HeartPulse className="h-4 w-4" />,
-      disabled: !verifySecret('ENABLE_HEALTHCARE', 'true', secrets),
+      disabled: !(await verifySecret({
+        wsId,
+        name: 'ENABLE_HEALTHCARE',
+        value: 'true',
+      })),
       shortcut: 'H',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.finance'),
@@ -248,7 +254,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         {children}
       </Structure>
 
-      {verifySecret('ENABLE_CHAT', 'true', secrets) && (
+      {(await verifySecret({ wsId, name: 'ENABLE_CHAT', value: 'true' })) && (
         <FleetingNavigator wsId={wsId} />
       )}
     </>
