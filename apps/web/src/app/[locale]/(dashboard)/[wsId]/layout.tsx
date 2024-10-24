@@ -142,7 +142,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         !(await verifySecret({ wsId, name: 'ENABLE_DOCS', value: 'true' })) ||
         withoutPermission('manage_documents'),
       shortcut: 'O',
-      experimental: 'alpha',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.drive'),
