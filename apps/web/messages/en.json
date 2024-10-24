@@ -133,7 +133,8 @@
     "status": "Status",
     "years_old": "years old",
     "year_old": "year old",
-    "average": "Average"
+    "average": "Average",
+    "no_content_yet": "No content yet"
   },
   "date_helper": {
     "time-unit": "Time unit",

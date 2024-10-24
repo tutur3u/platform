@@ -8,6 +8,7 @@ import {
   BookText,
   Eye,
   Goal,
+  GraduationCap,
   ListTodo,
   Paperclip,
   SwatchBook,
@@ -38,7 +39,11 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
       <FeatureSummary
         title={
           <>
-            <h1 className="w-full text-2xl font-bold">
+            <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
+              <div className="bg-dynamic-blue/20 border-dynamic-blue/20 text-dynamic-blue flex items-center gap-2 rounded-lg border px-2 text-lg">
+                <GraduationCap className="h-6 w-6" />
+                {t('ws-courses.singular')}
+              </div>
               {group.name || t('ws-user-groups.singular')}
             </h1>
             <Separator className="my-2" />

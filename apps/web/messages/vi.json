@@ -133,7 +133,8 @@
     "status": "Trạng thái",
     "years_old": "tuổi",
     "year_old": "tuổi",
-    "average": "Trung bình"
+    "average": "Trung bình",
+    "no_content_yet": "Chưa có nội dung"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
