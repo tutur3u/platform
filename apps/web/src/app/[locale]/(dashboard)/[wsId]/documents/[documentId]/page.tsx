@@ -69,7 +69,7 @@ export default function DocumentDetailsPage({ params }: Props) {
         setDocument({
           id: data.id,
           name: data.name ?? 'Untitled',
-          content: data.content ? JSON.parse(data.content) : null,
+          content: data.content ? JSON.parse(JSON.stringify(data.content)) : null,
           isPublic: data.is_public,
         });
 

@@ -1,6 +1,5 @@
 'use client';
 
-import { defaultEditorContent } from './content';
 import { defaultExtensions } from './extensions';
 import GenerativeMenuSwitch from './generative/generative-menu-switch';
 import { uploadFn } from './image-upload';
@@ -10,6 +9,7 @@ import { MathSelector } from './selectors/math-selector';
 import { NodeSelector } from './selectors/node-selector';
 import { TextButtons } from './selectors/text-buttons';
 import { slashCommand, suggestionItems } from './slash-command';
+import { createClient } from '@/utils/supabase/client';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
   EditorCommand,
@@ -26,33 +26,68 @@ import { handleImageDrop, handleImagePaste } from 'novel/plugins';
 import { useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
-
-interface Props{
-  documentId: string; 
+interface Props {
+  documentId: string;
 }
+
 const hljs = require('highlight.js');
 
 const extensions = [...defaultExtensions, slashCommand];
 
-const TailwindAdvancedEditor = ({documentId} : Props) => {
+// Function to fetch the document content based on the documentId
+async function fetchDocumentContent(documentId: string) {
+  const supabase = createClient();
+
+  // Fetch the document metadata and content
+  const { data: documentData, error: documentError } = await supabase
+    .from('workspace_documents')
+    .select('id, name, content')
+    .eq('id', documentId)
+    .single();
+
+  if (documentError || !documentData) {
+    throw new Error('Document not found');
+  }
+
+  const content =
+    typeof documentData.content === 'string'
+      ? JSON.parse(documentData.content)
+      : documentData.content;
+  console.log(content, 'fech content');
+  return content;
+}
+
+async function saveDocumentContent(documentId: string, documentContent: any) {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('workspace_documents')
+    .update({
+      content: JSON.stringify(documentContent), // Ensure this is stringified
+    })
+    .eq('id', documentId);
+
+  if (error) {
+    throw new Error('Error saving document');
+  }
+}
+
+const TailwindAdvancedEditor = ({ documentId }: Props) => {
   const [initialContent, setInitialContent] = useState<null | JSONContent>(
     null
   );
-  console.log(documentId, "document id ")
   const [saveStatus, setSaveStatus] = useState('Saved');
-  const [charsCount, setCharsCount] = useState();
+  const [charsCount, setCharsCount] = useState<number | undefined>();
 
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const [openAI, setOpenAI] = useState(false);
 
-  //Apply Codeblock Highlighting on the HTML from editor.getHTML()
+  // Apply code block highlighting on the editor HTML
   const highlightCodeblocks = (content: string) => {
     const doc = new DOMParser().parseFromString(content, 'text/html');
     doc.querySelectorAll('pre code').forEach((el) => {
-      // @ts-ignore
-      // https://highlightjs.readthedocs.io/en/latest/api.html?highlight=highlightElement#highlightelement
       hljs.highlightElement(el);
     });
     return new XMLSerializer().serializeToString(doc);
@@ -61,8 +96,10 @@ const TailwindAdvancedEditor = ({documentId} : Props) => {
   const debouncedUpdates = useDebouncedCallback(
     async (editor: EditorInstance) => {
       const json = editor.getJSON();
-      console.log(json);
       setCharsCount(editor.storage.characterCount.words());
+
+      await saveDocumentContent(documentId, json);
+
       window.localStorage.setItem(
         'html-content',
         highlightCodeblocks(editor.getHTML())
@@ -78,10 +115,18 @@ const TailwindAdvancedEditor = ({documentId} : Props) => {
   );
 
   useEffect(() => {
-    const content = window.localStorage.getItem('novel-content');
-    if (content) setInitialContent(JSON.parse(content));
-    else setInitialContent(defaultEditorContent);
-  }, []);
+    const loadDocument = async () => {
+      try {
+        const fetchedContent = await fetchDocumentContent(documentId);
+
+        setInitialContent(fetchedContent); // Directly set the fetched content
+      } catch (error) {
+        console.error('Failed to load document:', error);
+      }
+    };
+
+    loadDocument();
+  }, [documentId]);
 
   if (!initialContent) return null;
 

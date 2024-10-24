@@ -1,5 +1,4 @@
 import { WorkspaceDocument } from '@/types/db';
-import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { FilePlus } from 'lucide-react';
 import moment from 'moment';
@@ -17,9 +16,8 @@ const DocumentCard = ({ wsId, document }: Props) => {
   const href = id ? `/${wsId}/documents/${id}` : '#';
 
   const locale = useLocale();
-
+  console.log(JSON.parse(JSON.stringify(document.content)))
   const creationDate = moment(created_at).locale(locale).fromNow();
-
   return (
     <Link
       href={href}
@@ -35,12 +33,11 @@ const DocumentCard = ({ wsId, document }: Props) => {
           <>
             <Separator className="my-2" />
             <div
-              className="prose text-foreground line-clamp-3 opacity-80"
+              className="prose text-foreground pt-6 line-clamp-3 opacity-80"
               dangerouslySetInnerHTML={{
-                __html: document.content || '',
+                __html: '',
               }}
             />
-            <Button>Helo</Button>
           </>
         )}
       </div>
