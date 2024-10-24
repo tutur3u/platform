@@ -1,5 +1,5 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
-import Editor from './advanced-editor';
+import { TailwindAdvancedEditor } from './advanced-editor';
 import MyDialogContent from './dialog-content';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
@@ -63,7 +63,7 @@ export default async function DocumentsPage({ params }: Props) {
             <DocumentCard key={`doc-${doc.id}`} wsId={ws?.id} document={doc} />
           ))}
       </div>
-      <Editor></Editor>
+      <TailwindAdvancedEditor />
     </>
   );
 }

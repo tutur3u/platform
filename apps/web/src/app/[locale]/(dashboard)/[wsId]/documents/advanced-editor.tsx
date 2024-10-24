@@ -30,7 +30,7 @@ const hljs = require('highlight.js');
 
 const extensions = [...defaultExtensions, slashCommand];
 
-const TailwindAdvancedEditor = () => {
+export const TailwindAdvancedEditor = () => {
   const [initialContent, setInitialContent] = useState<null | JSONContent>(
     null
   );
@@ -81,7 +81,7 @@ const TailwindAdvancedEditor = () => {
   if (!initialContent) return null;
 
   return (
-    <div className="relative w-full max-w-screen-lg">
+    <div className="relative w-full">
       <div className="absolute right-5 top-5 z-10 mb-5 flex gap-2">
         <div className="bg-accent text-muted-foreground rounded-lg px-2 py-1 text-sm">
           {saveStatus}
@@ -100,7 +100,7 @@ const TailwindAdvancedEditor = () => {
         <EditorContent
           initialContent={initialContent}
           extensions={extensions}
-          className="border-muted bg-background relative min-h-[500px] w-full max-w-screen-lg sm:mb-[calc(20vh)] sm:rounded-lg sm:border sm:shadow-lg"
+          className="border-muted bg-foreground/50 relative min-h-[500px] w-full sm:mb-[calc(20vh)] sm:rounded-lg sm:border sm:shadow-lg"
           editorProps={{
             handleDOMEvents: {
               keydown: (_view, event) => handleCommandNavigation(event),
@@ -111,7 +111,7 @@ const TailwindAdvancedEditor = () => {
               handleImageDrop(view, event, moved, uploadFn),
             attributes: {
               class:
-                'prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full',
+                'prose prose-lg dark:prose-invert prose-headings:font-title font-default h-full focus:outline-none max-w-full',
             },
           }}
           onUpdate={({ editor }) => {
@@ -163,5 +163,3 @@ const TailwindAdvancedEditor = () => {
     </div>
   );
 };
-
-export default TailwindAdvancedEditor;

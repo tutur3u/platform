@@ -1,6 +1,6 @@
 'use client';
 
-import TailwindAdvancedEditor from '../advanced-editor';
+import { TailwindAdvancedEditor } from '../advanced-editor';
 import DocumentShareDialog from '../document-share-dialog';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';

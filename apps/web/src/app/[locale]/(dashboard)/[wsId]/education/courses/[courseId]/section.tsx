@@ -5,9 +5,11 @@ import { ReactNode } from 'react';
 export default async function CourseSection({
   title,
   icon,
+  hideContent,
 }: {
   title: string;
   icon: ReactNode;
+  hideContent?: boolean;
 }) {
   const t = await getTranslations();
 
@@ -17,8 +19,12 @@ export default async function CourseSection({
         {icon}
         {title}
       </div>
-      <Separator className="my-2" />
-      <div className="opacity-50">{t('common.no_content_yet')}.</div>
+      {hideContent || (
+        <>
+          <Separator className="my-2" />
+          <div className="opacity-50">{t('common.no_content_yet')}.</div>
+        </>
+      )}
     </div>
   );
 }

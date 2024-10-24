@@ -1662,9 +1662,9 @@
   },
   "course-details-tabs": {
     "preview": "Preview",
-    "module_objectives": "Module objectives",
+    "module_objectives": "Module Objectives",
     "resources": "Resources",
-    "youtube_links": "YouTube links",
-    "extra_reading": "Extra reading"
+    "youtube_links": "YouTube Links",
+    "extra_reading": "Extra Reading"
   }
 }
