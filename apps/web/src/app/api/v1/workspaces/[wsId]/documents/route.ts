@@ -9,15 +9,18 @@ interface Params {
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
-
   const data = await req.json();
 
   const { wsId: id } = await params;
 
-  const { error } = await supabase.from('workspace_documents').insert({
-    ...data,
-    ws_id: id,
-  });
+  const { data: doc, error } = await supabase
+    .from('workspace_documents')
+    .insert({
+      ...data,
+      ws_id: id,
+    })
+    .select('id')
+    .single();
 
   if (error) {
     console.log(error);
@@ -27,5 +30,5 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json({ id: doc.id, message: 'success' });
 }

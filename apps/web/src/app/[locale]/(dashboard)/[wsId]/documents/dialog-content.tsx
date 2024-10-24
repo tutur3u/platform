@@ -19,7 +19,8 @@ interface MyDialogContentProps {
 async function createDocumentAction(
   wsId: string,
   documentName: string,
-  router: ReturnType<typeof useRouter>
+  router: ReturnType<typeof useRouter>,
+  callback: () => void
 ) {
   try {
     const response = await fetch(`/api/v1/workspaces/${wsId}/documents`, {
@@ -36,6 +37,9 @@ async function createDocumentAction(
       throw new Error('Failed to create document');
     }
 
+    callback();
+    const docId = (await response.json()).id;
+    router.push(`/${wsId}/documents/${docId}`);
     router.refresh();
   } catch (error) {
     console.error('Error creating document:', error);
@@ -56,7 +60,10 @@ export default function MyDialogContent({ wsId }: MyDialogContentProps) {
 
     setLoading(true);
     try {
-      await createDocumentAction(wsId, documentName, router);
+      await createDocumentAction(wsId, documentName, router, () => {
+        setDocumentName('');
+        setEmptyCheck(false);
+      });
     } catch (error) {
       console.error('Failed to create document:', error);
     } finally {
