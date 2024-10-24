@@ -55,19 +55,16 @@ export const TailwindAdvancedEditor = ({
   }, [content]);
 
   const [saveStatus, setSaveStatus] = useState('Saved');
-  const [charsCount, setCharsCount] = useState();
+  const [charsCount, setCharsCount] = useState<number | undefined>();
 
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const [openAI, setOpenAI] = useState(false);
 
-  //Apply Codeblock Highlighting on the HTML from editor.getHTML()
   const highlightCodeblocks = (content: string) => {
     const doc = new DOMParser().parseFromString(content, 'text/html');
     doc.querySelectorAll('pre code').forEach((el) => {
-      // @ts-ignore
-      // https://highlightjs.readthedocs.io/en/latest/api.html?highlight=highlightElement#highlightelement
       hljs.highlightElement(el);
     });
     return new XMLSerializer().serializeToString(doc);
@@ -77,6 +74,7 @@ export const TailwindAdvancedEditor = ({
     async (editor: EditorInstance) => {
       const json = editor.getJSON();
       setCharsCount(editor.storage.characterCount.words());
+
       window.localStorage.setItem(
         'html-content',
         highlightCodeblocks(editor.getHTML())

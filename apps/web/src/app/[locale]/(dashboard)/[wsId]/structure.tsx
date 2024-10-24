@@ -14,7 +14,6 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@repo/ui/components/ui/breadcrumb';
 import { Button } from '@repo/ui/components/ui/button';
@@ -289,10 +288,15 @@ export function Structure({
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="flex items-center gap-2">
+                    <BreadcrumbLink
+                      href={
+                        currentLink?.href === pathname ? '#' : currentLink?.href
+                      }
+                      className="flex items-center gap-2"
+                    >
                       {currentLink?.icon}
                       {currentLink?.title}
-                    </BreadcrumbPage>
+                    </BreadcrumbLink>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>

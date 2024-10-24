@@ -25,9 +25,10 @@ import {
 } from 'novel/extensions';
 import { UploadImagesPlugin } from 'novel/plugins';
 
-//TODO I am using cx here to get tailwind autocomplete working, idk if someone else can write a regex to just capture the class key in objects
+// Configure AIHighlight for advanced functionality
 const aiHighlight = AIHighlight;
 
+// Configure the placeholder with any customizations
 const placeholder = Placeholder.configure({
   placeholder: ({ node }) => {
     if (node.type.name === 'heading') {
@@ -40,6 +41,7 @@ const placeholder = Placeholder.configure({
   includeChildren: true,
 });
 
+// Configure TiptapLink with Tailwind CSS classes for styling
 const tiptapLink = TiptapLink.configure({
   HTMLAttributes: {
     class: cx(
@@ -48,6 +50,7 @@ const tiptapLink = TiptapLink.configure({
   },
 });
 
+// Configure TiptapImage with base64 support and image classes for styling
 const tiptapImage = TiptapImage.extend({
   addProseMirrorPlugins() {
     return [
@@ -63,15 +66,17 @@ const tiptapImage = TiptapImage.extend({
   },
 });
 
+// Configure UpdatedImage extension with styles
 const updatedImage = UpdatedImage.configure({
   HTMLAttributes: {
     class: cx('rounded-lg border border-muted'),
   },
 });
 
+// Configure TaskList and TaskItem with styles
 const taskList = TaskList.configure({
   HTMLAttributes: {
-    class: cx('not-prose pl-2 '),
+    class: cx('not-prose pl-2'),
   },
 });
 const taskItem = TaskItem.configure({
@@ -81,12 +86,14 @@ const taskItem = TaskItem.configure({
   nested: true,
 });
 
+// Configure HorizontalRule with styling
 const horizontalRule = HorizontalRule.configure({
   HTMLAttributes: {
     class: cx('mt-4 mb-6 border-t border-muted-foreground'),
   },
 });
 
+// StarterKit with custom configurations
 const starterKit = StarterKit.configure({
   bulletList: {
     HTMLAttributes: {
@@ -116,7 +123,7 @@ const starterKit = StarterKit.configure({
   code: {
     HTMLAttributes: {
       class: cx(
-        'rounded-md bg-muted  px-1.5 py-1 font-mono font-medium text-warning'
+        'rounded-md bg-muted px-1.5 py-1 font-mono font-medium text-warning'
       ),
       spellcheck: 'false',
     },
@@ -129,12 +136,12 @@ const starterKit = StarterKit.configure({
   gapcursor: false,
 });
 
+// Configure CodeBlockLowlight with common language support
 const codeBlockLowlight = CodeBlockLowlight.configure({
-  // configure lowlight: common /  all / use highlightJS in case there is a need to specify certain language grammars only
-  // common: covers 37 language grammars which should be good enough in most cases
   lowlight: createLowlight(common),
 });
 
+// Configure Youtube embedding with styling
 const youtube = Youtube.configure({
   HTMLAttributes: {
     class: cx('rounded-lg border border-muted'),
@@ -142,6 +149,7 @@ const youtube = Youtube.configure({
   inline: false,
 });
 
+// Configure Twitter embedding with styling
 const twitter = Twitter.configure({
   HTMLAttributes: {
     class: cx('not-prose'),
@@ -149,6 +157,7 @@ const twitter = Twitter.configure({
   inline: false,
 });
 
+// Configure Mathematics with LaTeX and styling options
 const mathematics = Mathematics.configure({
   HTMLAttributes: {
     class: cx('text-foreground rounded p-1 hover:bg-accent cursor-pointer'),
@@ -158,8 +167,10 @@ const mathematics = Mathematics.configure({
   },
 });
 
+// Configure CharacterCount extension
 const characterCount = CharacterCount.configure();
 
+// Export all extensions as default for use in the editor
 export const defaultExtensions = [
   starterKit,
   placeholder,
