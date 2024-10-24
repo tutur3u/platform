@@ -11,7 +11,6 @@ import {
   ListTodo,
   Paperclip,
   SwatchBook,
-  TriangleAlert,
   Youtube,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
@@ -60,12 +59,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               />
               <LinkButton
                 href={`${commonHref}/objectives`}
-                title={
-                  <>
-                    {t('course-details-tabs.module_objectives')}
-                    <TriangleAlert className="h-5 w-5" />
-                  </>
-                }
+                title={t('course-details-tabs.module_objectives')}
                 icon={<Goal className="h-5 w-5" />}
                 className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
               />
@@ -74,33 +68,32 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 title={`${t('course-details-tabs.resources')} (0)`}
                 icon={<Paperclip className="h-5 w-5" />}
                 className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
+                disabled
               />
               <LinkButton
                 href={`${commonHref}/youtube-links`}
                 title={`${t('course-details-tabs.youtube_links')} (0)`}
                 icon={<Youtube className="h-5 w-5" />}
                 className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20"
+                disabled
               />
               <LinkButton
                 href={`${commonHref}/quizzes`}
                 title={`${t('ws-quizzes.plural')} (0)`}
                 icon={<ListTodo className="h-5 w-5" />}
                 className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
+                disabled
               />
               <LinkButton
                 href={`${commonHref}/flashcards`}
                 title={`${t('ws-flashcards.plural')} (0)`}
                 icon={<SwatchBook className="h-5 w-5" />}
                 className="border-dynamic-sky/20 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20"
+                disabled
               />
               <LinkButton
                 href={`${commonHref}/extra-content`}
-                title={
-                  <>
-                    {t('course-details-tabs.extra_reading')}
-                    <TriangleAlert className="h-5 w-5" />
-                  </>
-                }
+                title={t('course-details-tabs.extra_reading')}
                 icon={<BookText className="h-5 w-5" />}
                 className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20"
               />

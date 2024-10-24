@@ -134,7 +134,9 @@
     "years_old": "years old",
     "year_old": "year old",
     "average": "Average",
-    "no_content_yet": "No content yet"
+    "no_content_yet": "No content yet",
+    "words": "words",
+    "word": "word"
   },
   "date_helper": {
     "time-unit": "Time unit",

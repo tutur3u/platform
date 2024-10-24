@@ -3064,26 +3064,32 @@ export type Database = {
       workspace_courses: {
         Row: {
           created_at: string;
+          extra_content: Json | null;
           id: string;
           is_public: boolean;
           is_published: boolean;
           name: string;
+          objectives: Json | null;
           ws_id: string;
         };
         Insert: {
           created_at?: string;
+          extra_content?: Json | null;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          objectives?: Json | null;
           ws_id: string;
         };
         Update: {
           created_at?: string;
+          extra_content?: Json | null;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          objectives?: Json | null;
           ws_id?: string;
         };
         Relationships: [

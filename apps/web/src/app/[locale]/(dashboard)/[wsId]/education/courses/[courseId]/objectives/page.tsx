@@ -1,9 +1,17 @@
-import { TailwindAdvancedEditor } from '../../../../documents/advanced-editor';
-import CourseSection from '../section';
+import { CourseSection } from '../section';
+import { ModuleObjectivesEditor } from './editor';
 import { Goal } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
-export default async function ModuleObjectsPage() {
+interface Props {
+  params: Promise<{
+    wsId: string;
+    courseId: string;
+  }>;
+}
+
+export default async function ModuleObjectsPage({ params }: Props) {
+  const { wsId, courseId } = await params;
   const t = await getTranslations();
 
   return (
@@ -13,7 +21,7 @@ export default async function ModuleObjectsPage() {
         icon={<Goal className="h-5 w-5" />}
         hideContent
       />
-      <TailwindAdvancedEditor />
+      <ModuleObjectivesEditor wsId={wsId} courseId={courseId} />
     </div>
   );
 }

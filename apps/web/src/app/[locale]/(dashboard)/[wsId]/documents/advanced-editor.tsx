@@ -10,7 +10,9 @@ import { MathSelector } from './selectors/math-selector';
 import { NodeSelector } from './selectors/node-selector';
 import { TextButtons } from './selectors/text-buttons';
 import { slashCommand, suggestionItems } from './slash-command';
+import { cn } from '@/lib/utils';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { useTranslations } from 'next-intl';
 import {
   EditorCommand,
   EditorCommandEmpty,
@@ -30,10 +32,28 @@ const hljs = require('highlight.js');
 
 const extensions = [...defaultExtensions, slashCommand];
 
-export const TailwindAdvancedEditor = () => {
+export const TailwindAdvancedEditor = ({
+  content,
+  previewMode = false,
+  disableLocalStorage,
+  onSave,
+}: {
+  content?: JSONContent | undefined;
+  previewMode?: boolean;
+  disableLocalStorage?: boolean;
+  // eslint-disable-next-line no-unused-vars
+  onSave?: (data: JSONContent) => Promise<void>;
+}) => {
+  const t = useTranslations();
+
   const [initialContent, setInitialContent] = useState<null | JSONContent>(
     null
   );
+
+  useEffect(() => {
+    setInitialContent(content || defaultEditorContent);
+  }, [content]);
+
   const [saveStatus, setSaveStatus] = useState('Saved');
   const [charsCount, setCharsCount] = useState();
 
@@ -66,40 +86,53 @@ export const TailwindAdvancedEditor = () => {
         'markdown',
         editor.storage.markdown.getMarkdown()
       );
+      if (onSave) await onSave(json);
       setSaveStatus('Saved');
     },
     500
   );
 
   useEffect(() => {
+    if (disableLocalStorage) return;
     const content = window.localStorage.getItem('novel-content');
     if (content) setInitialContent(JSON.parse(content));
     else setInitialContent(defaultEditorContent);
-  }, []);
+  }, [disableLocalStorage]);
 
-  if (!initialContent) return null;
+  if (!initialContent) return <div>{t('common.loading')}...</div>;
 
   return (
     <div className="relative w-full">
-      <div className="absolute right-5 top-5 z-10 mb-5 flex gap-2">
-        <div className="bg-accent text-muted-foreground rounded-lg px-2 py-1 text-sm">
-          {saveStatus}
+      {previewMode || (
+        <div className="absolute right-5 top-5 z-10 mb-5 flex gap-2">
+          <div className="bg-accent text-muted-foreground rounded-lg px-2 py-1 text-sm">
+            {saveStatus}
+          </div>
+          {charsCount !== undefined && (
+            <div
+              className={
+                charsCount
+                  ? 'bg-accent text-muted-foreground rounded-lg px-2 py-1 text-sm'
+                  : 'hidden'
+              }
+            >
+              {charsCount}{' '}
+              {charsCount > 1 ? t('common.words') : t('common.word')}
+            </div>
+          )}
         </div>
-        <div
-          className={
-            charsCount
-              ? 'bg-accent text-muted-foreground rounded-lg px-2 py-1 text-sm'
-              : 'hidden'
-          }
-        >
-          {charsCount} Words
-        </div>
-      </div>
+      )}
       <EditorRoot>
         <EditorContent
+          editable={!previewMode}
           initialContent={initialContent}
           extensions={extensions}
-          className="border-foreground/10 bg-background relative mb-[calc(20vh)] min-h-[500px] w-full rounded-lg border p-2 shadow-lg md:p-4"
+          className={cn(
+            'relative w-full',
+            previewMode
+              ? 'bg-transparent'
+              : 'border-foreground/10 bg-foreground/5 mb-[calc(20vh)] min-h-[500px] rounded-lg border p-2 shadow-lg md:p-4'
+          )}
           editorProps={{
             handleDOMEvents: {
               keydown: (_view, event) => handleCommandNavigation(event),

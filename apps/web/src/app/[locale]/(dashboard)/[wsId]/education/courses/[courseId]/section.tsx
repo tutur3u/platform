@@ -1,17 +1,35 @@
 import { Separator } from '@repo/ui/components/ui/separator';
+import { isEqual } from 'lodash';
 import { getTranslations } from 'next-intl/server';
+import { JSONContent } from 'novel';
 import { ReactNode } from 'react';
 
-export default async function CourseSection({
+export async function CourseSection({
   title,
   icon,
+  rawContent,
+  content,
   hideContent,
 }: {
   title: string;
   icon: ReactNode;
+  rawContent?: JSONContent;
+  content?: ReactNode;
   hideContent?: boolean;
 }) {
   const t = await getTranslations();
+
+  const isContentEmpty =
+    !hideContent &&
+    (!rawContent ||
+      isEqual(rawContent, {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+          },
+        ],
+      }));
 
   return (
     <div className="bg-foreground/5 border-foreground/10 rounded-lg border p-4">
@@ -22,7 +40,11 @@ export default async function CourseSection({
       {hideContent || (
         <>
           <Separator className="my-2" />
-          <div className="opacity-50">{t('common.no_content_yet')}.</div>
+          {isContentEmpty ? (
+            <div className="opacity-50">{t('common.no_content_yet')}.</div>
+          ) : (
+            content
+          )}
         </>
       )}
     </div>
