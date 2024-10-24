@@ -5,6 +5,17 @@ import { DocumentEditor } from './editor';
 import { cn } from '@/lib/utils';
 import { WorkspaceDocument } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@repo/ui/components/ui/alert-dialog';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Tooltip,
@@ -53,6 +64,7 @@ export default function DocumentDetailsPage({ params }: Props) {
   }, [wsId, documentId]);
 
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
 
   const handleDelete = async () => {
@@ -85,9 +97,37 @@ export default function DocumentDetailsPage({ params }: Props) {
     <div className="relative w-full">
       <div className="mb-4 flex items-center justify-end">
         <h1 className="flex-grow text-2xl font-bold">{document.name}</h1>
-        <Button className="mr-2" onClick={handleDelete}>
-          {t('common.delete')}
-        </Button>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
+          <AlertDialogTrigger asChild>
+            <Button
+              className="mr-2"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              {t('common.delete')}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t('common.confirm_delete_title')}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('common.confirm_delete_description')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
+                {t('common.cancel')}
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>
+                {t('common.delete')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
