@@ -3149,6 +3149,7 @@ export type Database = {
           created_at: string;
           id: string;
           is_public: boolean | null;
+          legacy_content: string | null;
           name: string | null;
           ws_id: string | null;
         };
@@ -3157,6 +3158,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           is_public?: boolean | null;
+          legacy_content?: string | null;
           name?: string | null;
           ws_id?: string | null;
         };
@@ -3165,6 +3167,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           is_public?: boolean | null;
+          legacy_content?: string | null;
           name?: string | null;
           ws_id?: string | null;
         };
