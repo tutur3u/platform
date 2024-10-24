@@ -20,7 +20,6 @@ export default class Referee {
     return piece !== undefined && piece.team !== team;
   }
 
-  // Assuming you have a function to handle piece capture
   capturePiece(x: number, y: number, boardState: Piece[]): Piece[] {
     return boardState.filter((p) => !(p.x === x && p.y === y));
   }
@@ -42,11 +41,8 @@ export default class Referee {
         : Math.abs(horizontalDistance);
 
     for (let i = 1; i < steps; i++) {
-      let checkRow = 0;
-      let checkCol = 0;
-
-      checkRow = row - i * rowDirection;
-      checkCol = column - i * colDirection;
+      const checkRow = row - i * rowDirection;
+      const checkCol = column - i * colDirection;
 
       if (this.tileIsOccupied(checkCol, checkRow, boardState)) {
         return false;
@@ -71,6 +67,68 @@ export default class Referee {
     return adjacentPawn !== undefined && adjacentPawn.enPassant;
   }
 
+  private findKingPosition(
+    team: TeamType,
+    boardState: Piece[]
+  ): { x: number; y: number } | null {
+    const king = boardState.find(
+      (p) => p.type === PieceType.KING && p.team === team
+    );
+    return king ? { x: king.x, y: king.y } : null;
+  }
+
+  private isKingInDanger(team: TeamType, boardState: Piece[]): boolean {
+    const kingPosition = this.findKingPosition(team, boardState);
+    if (!kingPosition) return false;
+
+    return boardState.some((piece) => {
+      if (piece.team !== team) {
+        const { isValid } = this.isValidMove(
+          piece.id,
+          kingPosition.x,
+          kingPosition.y,
+          piece.x,
+          piece.y,
+          piece.type,
+          piece.team,
+          piece.firstMove,
+          boardState,
+          true
+        );
+        return isValid;
+      }
+      return false;
+    });
+  }
+
+  private castling(king: Piece, rook: Piece, boardState: Piece[]): boolean {
+    const row = king.y;
+    const colDirection = rook.x > king.x ? 1 : -1;
+    const steps = Math.abs(rook.x - king.x);
+
+    // Check if there is a barrier between the king and rook
+    for (let i = 1; i < steps; i++) {
+      const checkCol = king.x + i * colDirection;
+
+      if (this.tileIsOccupied(checkCol, row, boardState)) {
+        return false;
+      }
+    }
+
+    // Check if the King passes through or ends up in a square under attack
+    for (let i = 0; i <= 2; i++) {
+      const checkCol = king.x + i * colDirection;
+      const simulatedBoardState = boardState.map((p) =>
+        p.id === king.id ? { ...p, x: checkCol } : p
+      );
+      if (this.isKingInDanger(king.team, simulatedBoardState)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   isValidMove(
     pieceId: string,
     column: number,
@@ -80,7 +138,8 @@ export default class Referee {
     type: PieceType,
     team: TeamType,
     firstMove: boolean,
-    boardState: Piece[]
+    boardState: Piece[],
+    simulate: boolean = false
   ): { isValid: boolean; updatedBoardState: Piece[] } {
     const lastPosition = this.lastPositions.get(pieceId);
     const isOurTeam = team === TeamType.OURS;
@@ -97,45 +156,44 @@ export default class Referee {
       (horizontalDistance === 0 && verticalDistance !== 0) ||
       (verticalDistance === 0 && horizontalDistance !== 0);
 
-    if (type !== PieceType.PAWN) {
+    let isValid = false;
+
+    const currPiece = boardState.find((p) => p.x === startX && p.y === startY);
+    const pawnDirection = isOurTeam ? -1 : 1;
+
+    if (!simulate && currPiece!.type !== PieceType.PAWN) {
       pieces.forEach((p) => {
         p.enPassant = false;
       });
     }
-    if (type === PieceType.PAWN) {
-      const pawnDirection = isOurTeam ? -1 : 1;
 
+    if (type === PieceType.PAWN) {
       // Forward movement
       if (horizontalDistance === 0) {
-        const possibleEnPassant = boardState.find(
-          (p) => p.firstMove && p.enPassant && p.type === PieceType.PAWN
-        );
-
-        const currPawn = boardState.find(
-          (p) => p.x === startX && p.y === startY && p.type === PieceType.PAWN
-        );
-
-        if (currPawn!.x - pawnDirection !== possibleEnPassant?.x) {
-          pieces.forEach((p) => {
-            p.enPassant = false;
-          });
-        }
-
         if (
           verticalDistance === pawnDirection &&
           !this.tileIsOccupied(column, row, boardState)
         ) {
-          return { isValid: true, updatedBoardState: boardState };
+          pieces.forEach((p) => {
+            p.enPassant = false;
+          });
+
+          isValid = true;
         } else if (
           verticalDistance === 2 * pawnDirection &&
           firstMove &&
           !this.tileIsOccupied(column, row - pawnDirection, boardState) &&
           !this.tileIsOccupied(column, row, boardState)
         ) {
-          if (currPawn) {
-            currPawn.enPassant = true;
+          pieces.forEach((p) => {
+            p.enPassant = false;
+          });
+
+          if (currPiece!.type === PieceType.PAWN) {
+            currPiece!.enPassant = true;
           }
-          return { isValid: true, updatedBoardState: boardState };
+
+          isValid = true;
         }
       }
       // Diagonal capture
@@ -149,15 +207,21 @@ export default class Referee {
             row - pawnDirection,
             boardState
           );
-          return { isValid: true, updatedBoardState: boardState };
+          isValid = true;
         } else if (
           this.tileIsOccupiedByOpponent(column, row, team, boardState)
         ) {
           boardState = this.capturePiece(column, row, boardState);
-          return { isValid: true, updatedBoardState: boardState };
+          pieces.forEach((p) => {
+            p.enPassant = false;
+          });
+
+          isValid = true;
         }
       }
-    } else if (type === PieceType.KING) {
+    }
+    
+    else if (type === PieceType.KING) {
       if (
         Math.abs(verticalDistance) <= 1 &&
         Math.abs(horizontalDistance) <= 1
@@ -167,10 +231,35 @@ export default class Referee {
           this.tileIsOccupiedByOpponent(column, row, team, boardState)
         ) {
           boardState = this.capturePiece(column, row, boardState);
-          return { isValid: true, updatedBoardState: boardState };
+          isValid = true;
         }
       }
-    } else if (type === PieceType.BISHOP) {
+      // Castling
+      else if (
+        firstMove &&
+        isStraightMove &&
+        Math.abs(horizontalDistance) === 2
+      ) {
+        const rookCol = horizontalDistance === 2 ? 8 : 1;
+        const rookCastling = boardState.find(
+          (p) =>
+            p.x === rookCol &&
+            p.y === row &&
+            p.type === PieceType.ROOK &&
+            p.team === team &&
+            p.firstMove === true
+        );
+
+        if (
+          rookCastling &&
+          this.castling(currPiece!, rookCastling, boardState)
+        ) {
+          isValid = true;
+        }
+      }
+    }
+    
+    else if (type === PieceType.BISHOP) {
       if (
         isDiagonalMove &&
         this.isPathClear(
@@ -184,9 +273,11 @@ export default class Referee {
           this.tileIsOccupiedByOpponent(column, row, team, boardState))
       ) {
         boardState = this.capturePiece(column, row, boardState);
-        return { isValid: true, updatedBoardState: boardState };
+        isValid = true;
       }
-    } else if (type === PieceType.QUEEN) {
+    }
+    
+    else if (type === PieceType.QUEEN) {
       if (
         (isDiagonalMove || isStraightMove) &&
         this.isPathClear(
@@ -200,9 +291,11 @@ export default class Referee {
           this.tileIsOccupiedByOpponent(column, row, team, boardState))
       ) {
         boardState = this.capturePiece(column, row, boardState);
-        return { isValid: true, updatedBoardState: boardState };
+        isValid = true;
       }
-    } else if (type === PieceType.KNIGHT) {
+    }
+    
+    else if (type === PieceType.KNIGHT) {
       if (
         ((Math.abs(horizontalDistance) === 1 &&
           Math.abs(verticalDistance) === 2) ||
@@ -212,9 +305,11 @@ export default class Referee {
           this.tileIsOccupiedByOpponent(column, row, team, boardState))
       ) {
         boardState = this.capturePiece(column, row, boardState);
-        return { isValid: true, updatedBoardState: boardState };
+        isValid = true;
       }
-    } else if (type === PieceType.ROOK) {
+    }
+    
+    else if (type === PieceType.ROOK) {
       if (
         isStraightMove &&
         this.isPathClear(
@@ -228,6 +323,16 @@ export default class Referee {
           this.tileIsOccupiedByOpponent(column, row, team, boardState))
       ) {
         boardState = this.capturePiece(column, row, boardState);
+        isValid = true;
+      }
+    }
+
+    if (isValid) {
+      const simulatedBoardState = boardState.map((p) =>
+        p.id === pieceId ? { ...p, x: column, y: row } : p
+      );
+
+      if (!this.isKingInDanger(team, simulatedBoardState)) {
         return { isValid: true, updatedBoardState: boardState };
       }
     }

@@ -16,15 +16,18 @@ export function useDragAndDrop(
     pieceId: string;
     column: number;
     row: number;
-  } | null>(null); // State for promotion
+  } | null>(null);
 
   const touchStartPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const fixPosition = useRef<
-    Record<
-      string,
-      { column: number; row: number; x: number; y: number; firstMove: boolean }
-    >
-  >({});
+  const fixPosition = useRef<{
+    [key: string]: {
+      column: number;
+      row: number;
+      x: number;
+      y: number;
+      firstMove: boolean;
+    };
+  }>({});
   const cellCenter = useRef<{
     nextColumn?: number;
     nextRow?: number;
@@ -204,6 +207,39 @@ export function useDragAndDrop(
             boardState[pieceIndex].x = cellCenter.current.nextColumn;
             boardState[pieceIndex].y = cellCenter.current.nextRow;
             boardState[pieceIndex].firstMove = false;
+          }
+
+          // King castling logic
+          if (
+            pieceId === '5, 8' &&
+            pieceType === PieceType.KING &&
+            Math.abs(
+              cellCenter.current.nextColumn -
+                fixPosition.current[pieceId].column
+            ) === 2
+          ) {
+            const rookCol = cellCenter.current.nextColumn === 7 ? 8 : 1;
+            const newRookCol = cellCenter.current.nextColumn === 7 ? 6 : 4;
+            const rook = boardState.find(
+              (p) =>
+                p.x === rookCol &&
+                p.y === cellCenter.current.nextRow &&
+                p.type === PieceType.ROOK &&
+                p.team === pieceTeam
+            );
+            if (rook) {
+              updatePiecePosition(
+                rook.id,
+                newRookCol,
+                cellCenter.current.nextRow
+              );
+              const rookIndex = boardState.findIndex((p) => p.id === rook.id);
+              if (rookIndex !== -1 && boardState[rookIndex]) {
+                boardState[rookIndex].x = newRookCol;
+                boardState[rookIndex].y = cellCenter.current.nextRow;
+                boardState[rookIndex].firstMove = false;
+              }
+            }
           }
 
           // Pawn promotion logic
