@@ -133,5 +133,3 @@ alter table "public"."workspace_documents" add constraint "workspace_documents_p
 alter table "public"."workspace_documents" add constraint "workspace_documents_ws_id_fkey" FOREIGN KEY (ws_id) REFERENCES workspaces(id) not valid;
 
 alter table "public"."workspace_documents" validate constraint "workspace_documents_ws_id_fkey";
-
-
