@@ -34,11 +34,11 @@ const hljs = require('highlight.js');
 
 const extensions = [...defaultExtensions, slashCommand];
 
-// Function to fetch the document content based on the documentId
+
 async function fetchDocumentContent(documentId: string) {
   const supabase = createClient();
 
-  // Fetch the document metadata and content
+
   const { data: documentData, error: documentError } = await supabase
     .from('workspace_documents')
     .select('id, name, content')
@@ -63,7 +63,7 @@ async function saveDocumentContent(documentId: string, documentContent: any) {
   const { error } = await supabase
     .from('workspace_documents')
     .update({
-      content: JSON.stringify(documentContent), // Ensure this is stringified
+      content: JSON.stringify(documentContent), 
     })
     .eq('id', documentId);
 
@@ -84,7 +84,7 @@ const TailwindAdvancedEditor = ({ documentId }: Props) => {
   const [openLink, setOpenLink] = useState(false);
   const [openAI, setOpenAI] = useState(false);
 
-  // Apply code block highlighting on the editor HTML
+
   const highlightCodeblocks = (content: string) => {
     const doc = new DOMParser().parseFromString(content, 'text/html');
     doc.querySelectorAll('pre code').forEach((el) => {
@@ -119,7 +119,7 @@ const TailwindAdvancedEditor = ({ documentId }: Props) => {
       try {
         const fetchedContent = await fetchDocumentContent(documentId);
 
-        setInitialContent(fetchedContent); // Directly set the fetched content
+        setInitialContent(fetchedContent); 
       } catch (error) {
         console.error('Failed to load document:', error);
       }

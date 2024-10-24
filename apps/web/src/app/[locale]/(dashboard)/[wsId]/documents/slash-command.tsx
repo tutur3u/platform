@@ -153,6 +153,30 @@ export const suggestionItems = createSuggestionItems([
     },
   },
   {
+    title: 'Document',
+    description: 'Add a link to another document in this workspace.',
+    searchTerms: ['Document'],
+    icon: <Code size={18} />,
+    command: ({ editor, range }) => {
+      const documentId = prompt('Please enter the Document ID');
+      if (documentId) {
+        const documentLink = `/documents/${documentId}`;
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertContent({
+            type: 'link', 
+            attrs: { href: documentLink },
+            content: [{ text: `Document ${documentId}`, type: 'text' }],
+          })
+          .run();
+      } else {
+        alert('Document ID cannot be empty.');
+      }
+    },
+  },  
+  {
     title: 'Youtube',
     description: 'Embed a Youtube video.',
     searchTerms: ['video', 'youtube', 'embed'],
