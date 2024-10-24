@@ -8,7 +8,6 @@ import {
   ImageIcon,
   List,
   ListOrdered,
-  MessageSquarePlus,
   Text,
   TextQuote,
   Twitter,
@@ -17,15 +16,15 @@ import {
 import { Command, createSuggestionItems, renderItems } from 'novel/extensions';
 
 export const suggestionItems = createSuggestionItems([
-  {
-    title: 'Send Feedback',
-    description: 'Let us know how we can improve.',
-    icon: <MessageSquarePlus size={18} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).run();
-      window.open('/feedback', '_blank');
-    },
-  },
+  // {
+  //   title: 'Send Feedback',
+  //   description: 'Let us know how we can improve.',
+  //   icon: <MessageSquarePlus size={18} />,
+  //   command: ({ editor, range }) => {
+  //     editor.chain().focus().deleteRange(range).run();
+  //     window.open('/feedback', '_blank');
+  //   },
+  // },
   {
     title: 'Text',
     description: 'Just start typing with plain text.',
@@ -161,7 +160,7 @@ export const suggestionItems = createSuggestionItems([
       const videoLink = prompt('Please enter Youtube Video Link');
       //From https://regexr.com/3dj5t
       const ytregex = new RegExp(
-        /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
+        /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w-]+\?v=|embed\/|v\/)?)([\w-]+)(\S+)?$/
       );
 
       if (videoLink && ytregex.test(videoLink)) {

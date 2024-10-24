@@ -56,7 +56,6 @@ export const TailwindAdvancedEditor = () => {
   const debouncedUpdates = useDebouncedCallback(
     async (editor: EditorInstance) => {
       const json = editor.getJSON();
-      console.log(json);
       setCharsCount(editor.storage.characterCount.words());
       window.localStorage.setItem(
         'html-content',
@@ -100,7 +99,7 @@ export const TailwindAdvancedEditor = () => {
         <EditorContent
           initialContent={initialContent}
           extensions={extensions}
-          className="border-muted bg-foreground/50 relative min-h-[500px] w-full sm:mb-[calc(20vh)] sm:rounded-lg sm:border sm:shadow-lg"
+          className="border-foreground/10 bg-background relative mb-[calc(20vh)] min-h-[500px] w-full rounded-lg border p-2 shadow-lg md:p-4"
           editorProps={{
             handleDOMEvents: {
               keydown: (_view, event) => handleCommandNavigation(event),
@@ -111,7 +110,7 @@ export const TailwindAdvancedEditor = () => {
               handleImageDrop(view, event, moved, uploadFn),
             attributes: {
               class:
-                'prose prose-lg dark:prose-invert prose-headings:font-title font-default h-full focus:outline-none max-w-full',
+                'prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full',
             },
           }}
           onUpdate={({ editor }) => {
@@ -147,7 +146,6 @@ export const TailwindAdvancedEditor = () => {
           </EditorCommand>
 
           <GenerativeMenuSwitch open={openAI} onOpenChange={setOpenAI}>
-            <Separator orientation="vertical" />
             <NodeSelector open={openNode} onOpenChange={setOpenNode} />
             <Separator orientation="vertical" />
             <LinkSelector open={openLink} onOpenChange={setOpenLink} />
