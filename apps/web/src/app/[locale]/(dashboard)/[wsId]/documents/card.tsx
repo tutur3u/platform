@@ -1,5 +1,4 @@
 import { WorkspaceDocument } from '@/types/db';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { FilePlus } from 'lucide-react';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -11,13 +10,13 @@ interface Props {
   document: Partial<WorkspaceDocument>;
 }
 
-const DocumentCard = ({ wsId, document }: Props) => {
-  const { id, name, content, created_at } = document;
+export const DocumentCard = ({ wsId, document }: Props) => {
+  const { id, name, created_at } = document;
   const href = id ? `/${wsId}/documents/${id}` : '#';
 
   const locale = useLocale();
-  console.log(JSON.parse(JSON.stringify(document.content)))
   const creationDate = moment(created_at).locale(locale).fromNow();
+
   return (
     <Link
       href={href}
@@ -28,18 +27,6 @@ const DocumentCard = ({ wsId, document }: Props) => {
         <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">
           {name || 'Untitled Document'}
         </p>
-
-        {content && (
-          <>
-            <Separator className="my-2" />
-            <div
-              className="prose text-foreground pt-6 line-clamp-3 opacity-80"
-              dangerouslySetInnerHTML={{
-                __html: '',
-              }}
-            />
-          </>
-        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 justify-self-start text-sm font-semibold">
@@ -51,5 +38,3 @@ const DocumentCard = ({ wsId, document }: Props) => {
     </Link>
   );
 };
-
-export default DocumentCard;

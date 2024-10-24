@@ -1,5 +1,6 @@
 'use client';
 
+import { defaultEditorContent } from './content';
 import { defaultExtensions } from './extensions';
 import GenerativeMenuSwitch from './generative/generative-menu-switch';
 import { uploadFn } from './image-upload';
@@ -26,10 +27,6 @@ import { ImageResizer, handleCommandNavigation } from 'novel/extensions';
 import { handleImageDrop, handleImagePaste } from 'novel/plugins';
 import { useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-
-interface Props {
-  documentId: string;
-}
 
 const hljs = require('highlight.js');
 
@@ -65,7 +62,6 @@ export const TailwindAdvancedEditor = ({
   const [openLink, setOpenLink] = useState(false);
   const [openAI, setOpenAI] = useState(false);
 
-
   const highlightCodeblocks = (content: string) => {
     const doc = new DOMParser().parseFromString(content, 'text/html');
     doc.querySelectorAll('pre code').forEach((el) => {
@@ -78,8 +74,6 @@ export const TailwindAdvancedEditor = ({
     async (editor: EditorInstance) => {
       const json = editor.getJSON();
       setCharsCount(editor.storage.characterCount.words());
-
-      await saveDocumentContent(documentId, json);
 
       window.localStorage.setItem(
         'html-content',

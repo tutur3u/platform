@@ -1,4 +1,4 @@
-import DocumentCard from '../../../../../components/document/DocumentCard';
+import { DocumentCard } from './card';
 import MyDialogContent from './dialog-content';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
@@ -62,7 +62,6 @@ export default async function DocumentsPage({ params }: Props) {
             <DocumentCard key={`doc-${doc.id}`} wsId={ws?.id} document={doc} />
           ))}
       </div>
-
     </>
   );
 }
@@ -72,7 +71,7 @@ async function getDocuments(wsId: string) {
 
   const { data } = await supabase
     .from('workspace_documents')
-    .select('id, name, content, created_at')
+    .select('id, name, created_at')
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 

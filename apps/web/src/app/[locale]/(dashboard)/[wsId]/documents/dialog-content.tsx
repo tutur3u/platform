@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
+  DialogTitle,
 } from '@repo/ui/components/ui/dialog';
 import { Input } from '@repo/ui/components/ui/input';
 import { useRouter } from 'next/navigation';
@@ -66,7 +67,7 @@ export default function MyDialogContent({ wsId }: MyDialogContentProps) {
   return (
     <DialogContent>
       <DialogHeader>
-        <h3 className="text-lg font-semibold">Create new document</h3>
+        <DialogTitle>Create new document</DialogTitle>
       </DialogHeader>
       <DialogDescription>
         Please input a name for the document

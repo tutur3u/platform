@@ -165,7 +165,7 @@ export const suggestionItems = createSuggestionItems([
           .focus()
           .deleteRange(range)
           .insertContent({
-            type: 'link', 
+            type: 'link',
             attrs: { href: documentLink },
             content: [{ text: `Document ${documentId}`, type: 'text' }],
           })
@@ -174,7 +174,7 @@ export const suggestionItems = createSuggestionItems([
         alert('Document ID cannot be empty.');
       }
     },
-  },  
+  },
   {
     title: 'Youtube',
     description: 'Embed a Youtube video.',

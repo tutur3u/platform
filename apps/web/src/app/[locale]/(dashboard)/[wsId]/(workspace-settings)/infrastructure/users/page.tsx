@@ -10,7 +10,6 @@ import { notFound } from 'next/navigation';
 interface Props {
   params: Promise<{
     wsId: string;
-
   }>;
 }
 
