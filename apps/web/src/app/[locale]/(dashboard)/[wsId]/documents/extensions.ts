@@ -27,8 +27,19 @@ import { UploadImagesPlugin } from 'novel/plugins';
 
 //TODO I am using cx here to get tailwind autocomplete working, idk if someone else can write a regex to just capture the class key in objects
 const aiHighlight = AIHighlight;
-//You can overwrite the placeholder with your own configuration
-const placeholder = Placeholder;
+
+const placeholder = Placeholder.configure({
+  placeholder: ({ node }) => {
+    if (node.type.name === 'heading') {
+      return `Heading ${node.attrs.level}`;
+    }
+    return "Press '/' for commands";
+  },
+  emptyEditorClass:
+    'cursor-text before:content-[attr(data-placeholder)] before:absolute before:top-0 before:left-0 before:text-mauve-11 before:opacity-50 before-pointer-events-none',
+  includeChildren: true,
+});
+
 const tiptapLink = TiptapLink.configure({
   HTMLAttributes: {
     class: cx(

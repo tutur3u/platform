@@ -133,7 +133,10 @@
     "status": "Status",
     "years_old": "years old",
     "year_old": "year old",
-    "average": "Average"
+    "average": "Average",
+    "no_content_yet": "No content yet",
+    "words": "words",
+    "word": "word"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1661,9 +1664,9 @@
   },
   "course-details-tabs": {
     "preview": "Preview",
-    "module_objectives": "Module objectives",
+    "module_objectives": "Module Objectives",
     "resources": "Resources",
-    "youtube_links": "YouTube links",
-    "extra_reading": "Extra reading"
+    "youtube_links": "YouTube Links",
+    "extra_reading": "Extra Reading"
   }
 }
