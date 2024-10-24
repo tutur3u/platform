@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { ProductCategory } from '@/types/primitives/ProductCategory';
 import { ProductUnit } from '@/types/primitives/ProductUnit';
 import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
@@ -12,6 +13,15 @@ import {
   CardTitle,
 } from '@repo/ui/components/ui/card';
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@repo/ui/components/ui/command';
+import {
   Form,
   FormControl,
   FormField,
@@ -20,6 +30,11 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@repo/ui/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -30,6 +45,7 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { Check, ChevronsUpDown, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -413,32 +429,62 @@ export function ProductForm({
                       <FormLabel>
                         {t('ws-inventory-categories.singular')}
                       </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger
-                            id="status"
-                            aria-label={t(
-                              'ws-inventory-categories.placeholder'
-                            )}
-                          >
-                            <SelectValue
-                              placeholder={t(
-                                'ws-inventory-categories.placeholder'
-                              )}
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between"
+                            >
+                              {field.value
+                                ? categories.find(
+                                    (category) => category.id === field.value
+                                  )?.name
+                                : t('ws-inventory-categories.placeholder')}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0">
+                          <Command>
+                            <CommandInput placeholder="Search category..." />
+                            <CommandList>
+                              <CommandEmpty>
+                                Category {field.value} not found.
+                              </CommandEmpty>
+                              <CommandGroup>
+                                <CommandItem>
+                                  <Plus className="mr-2 h-4 w-4" />
+                                  Create new category
+                                </CommandItem>
+                              </CommandGroup>
+                              <CommandSeparator />
+                              <CommandGroup>
+                                {categories.map((category) => (
+                                  <CommandItem
+                                    value={category.name}
+                                    key={category.id}
+                                    onSelect={() => {
+                                      form.setValue('category_id', category.id);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        category.id === field.value
+                                          ? 'opacity-100'
+                                          : 'opacity-0'
+                                      )}
+                                    />
+                                    {category.name}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -450,7 +496,7 @@ export function ProductForm({
           <Button type="submit" className="w-full" disabled={loading}>
             {loading
               ? t('common.processing')
-              : !!data?.id
+              : data?.id
                 ? t('common.edit')
                 : t('common.create')}
           </Button>
