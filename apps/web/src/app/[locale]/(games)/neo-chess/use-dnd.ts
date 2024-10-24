@@ -1,6 +1,6 @@
 import { PieceType, TeamType, pieces as initialPieces } from './pieceSetup';
 import Referee from './referee';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export function useDragAndDrop(
   removePieceById: (id: string) => void,
@@ -11,12 +11,30 @@ export function useDragAndDrop(
   let activePiece: HTMLElement | null = null;
   let hasMoved = useRef(false);
   const referee = new Referee();
-  const [boardState, setBoardState] = useState(initialPieces); // Initial board state
+
+  // Board state management
+  const [boardState, setBoardState] = useState(initialPieces);
+
+  // Promotion management
   const [promotionInfo, setPromotionInfo] = useState<{
     pieceId: string;
     column: number;
     row: number;
   } | null>(null);
+
+  // Turn management
+  const [currentTurn, setCurrentTurn] = useState<TeamType>(
+    Math.random() < 0.5 ? TeamType.OURS : TeamType.OPPONENT
+  );
+  const [turnAnnouncement, setAnnouncement] = useState<string>('');
+  useEffect(() => {
+    const startingTeam = currentTurn;
+    setAnnouncement(
+      startingTeam === TeamType.OURS
+        ? 'Light moves first!'
+        : 'Dark moves first!'
+    );
+  }, []);
 
   const touchStartPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const fixPosition = useRef<{
@@ -38,6 +56,19 @@ export function useDragAndDrop(
   function grabPiece(e: React.MouseEvent) {
     e.preventDefault();
     if (e.target instanceof HTMLImageElement) {
+      // If incorrect turn, don't allow to move
+      const pieceId = e.target.id;
+      const piece = boardState.find((p) => p.id === pieceId);
+      let pieceTeam: TeamType | null = null;
+
+      if (piece) {
+        pieceTeam = piece.team;
+      }
+      if (pieceTeam !== currentTurn) {
+        return;
+      }
+
+      // If correct turn, allow to move
       activePiece = e.target;
       touchStartPosition.current = { x: e.clientX, y: e.clientY };
       activePiece.style.position = 'absolute';
@@ -146,15 +177,9 @@ export function useDragAndDrop(
       let pieceType: PieceType | null = null;
 
       if (pieceMatch) {
-        if (pieceMatch[1]) {
-          const pieceTeamString =
-            pieceMatch[1] === 'w' ? TeamType.OURS : TeamType.OPPONENT;
-          pieceTeam = TeamType[pieceTeamString as keyof typeof TeamType];
-        }
-        if (pieceMatch[2]) {
-          const pieceTypeString = pieceMatch[2].toUpperCase();
-          pieceType = PieceType[pieceTypeString as keyof typeof PieceType];
-        }
+        pieceTeam = pieceMatch[1] === 'w' ? TeamType.OURS : TeamType.OPPONENT;
+        pieceType =
+          PieceType[pieceMatch[2]!.toUpperCase() as keyof typeof PieceType];
       }
 
       if (
@@ -177,7 +202,16 @@ export function useDragAndDrop(
         );
 
         if (validMove.isValid) {
+          // Update the board state
           setBoardState(validMove.updatedBoardState);
+
+          // Update the turn
+          setCurrentTurn(
+            pieceTeam === TeamType.OURS ? TeamType.OPPONENT : TeamType.OURS
+          );
+          setAnnouncement(
+            pieceTeam === TeamType.OURS ? "Black's turn!" : "White's turn!"
+          );
 
           // Capture logic: Remove the captured piece based on position
           const isOurTeam = pieceTeam === TeamType.OURS;
@@ -211,7 +245,6 @@ export function useDragAndDrop(
 
           // King castling logic
           if (
-            pieceId === '5, 8' &&
             pieceType === PieceType.KING &&
             Math.abs(
               cellCenter.current.nextColumn -
@@ -298,5 +331,6 @@ export function useDragAndDrop(
     chessboardRef,
     promotionInfo,
     handlePromotion,
+    turnAnnouncement,
   };
 }
