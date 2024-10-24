@@ -110,9 +110,9 @@ drop table "public"."workspace_documents_block";
 
 drop table "public"."workspace_documents_block_attributes";
 
-alter table "public"."workspace_documents" alter column "content" drop default;
+alter table "public"."workspace_documents" rename column "content" to "legacy_content";
 
-alter table "public"."workspace_documents" alter column "content" set data type jsonb using "content"::jsonb;
+alter table "public"."workspace_documents" add column "content" jsonb;
 
 alter table "public"."workspace_documents" alter column "created_at" set not null;
 
