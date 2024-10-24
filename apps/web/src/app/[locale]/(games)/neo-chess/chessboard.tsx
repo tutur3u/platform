@@ -52,6 +52,7 @@ export default function ChessBoard() {
     chessboardRef,
     promotionInfo,
     handlePromotion,
+    turnAnnouncement,
   } = useDragAndDrop(removePieceById, updatePiecePosition, promotePawn);
 
   // Create the board
@@ -126,6 +127,10 @@ export default function ChessBoard() {
   return (
     <div className="left-[50%] top-[50%] m-auto grid w-full max-w-sm p-6 sm:rounded-lg md:max-w-4xl lg:max-w-6xl">
       <div className="m-auto grid grid-cols-1 items-center justify-center">
+        <div className="flex items-center justify-center text-lg font-medium uppercase">
+          {turnAnnouncement}
+        </div>
+
         <div className="bg-card text-card-foreground w-full rounded-lg border p-4 shadow-sm md:max-w-fit">
           <div
             className="relative divide-y"
