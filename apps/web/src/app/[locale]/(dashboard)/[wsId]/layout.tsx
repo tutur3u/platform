@@ -55,8 +55,12 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <MessageCircleIcon className="h-4 w-4" />,
       forceRefresh: true,
       disabled:
-        !(await verifySecret({ wsId, name: 'ENABLE_CHAT', value: 'true' })) ||
-        withoutPermission('ai_chat'),
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_CHAT',
+          value: 'true',
+        })) || withoutPermission('ai_chat'),
       shortcut: 'X',
       experimental: 'beta',
     },
@@ -72,8 +76,12 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/ai`,
       icon: <Sparkles className="h-4 w-4" />,
       disabled:
-        !(await verifySecret({ wsId, name: 'ENABLE_AI', value: 'true' })) ||
-        withoutPermission('ai_lab'),
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
       shortcut: 'A',
       experimental: 'beta',
     },
@@ -83,6 +91,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <GraduationCap className="h-4 w-4" />,
       disabled:
         !(await verifySecret({
+          forceAdmin: true,
           wsId,
           name: 'ENABLE_EDUCATION',
           value: 'true',
@@ -95,6 +104,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/slides`,
       icon: <Presentation className="h-4 w-4" />,
       disabled: !(await verifySecret({
+        forceAdmin: true,
         wsId,
         name: 'ENABLE_SLIDES',
         value: 'true',
@@ -109,6 +119,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <Mail className="h-4 w-4" />,
       disabled:
         !(await verifySecret({
+          forceAdmin: true,
           wsId,
           name: 'ENABLE_EMAIL_SENDING',
           value: 'true',
@@ -129,8 +140,12 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/tasks/boards`,
       icon: <CircleCheck className="h-4 w-4" />,
       disabled:
-        !(await verifySecret({ wsId, name: 'ENABLE_TASKS', value: 'true' })) ||
-        withoutPermission('manage_projects'),
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) || withoutPermission('manage_projects'),
       shortcut: 'T',
       experimental: 'alpha',
     },
@@ -139,8 +154,12 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/documents`,
       icon: <FileText className="h-4 w-4" />,
       disabled:
-        !(await verifySecret({ wsId, name: 'ENABLE_DOCS', value: 'true' })) ||
-        withoutPermission('manage_documents'),
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_DOCS',
+          value: 'true',
+        })) || withoutPermission('manage_documents'),
       shortcut: 'O',
       experimental: 'beta',
     },
@@ -149,8 +168,12 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/drive`,
       icon: <HardDrive className="h-4 w-4" />,
       disabled:
-        !(await verifySecret({ wsId, name: 'ENABLE_DRIVE', value: 'true' })) ||
-        withoutPermission('manage_drive'),
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_DRIVE',
+          value: 'true',
+        })) || withoutPermission('manage_drive'),
       shortcut: 'R',
       experimental: 'beta',
     },
@@ -174,6 +197,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/healthcare`,
       icon: <HeartPulse className="h-4 w-4" />,
       disabled: !(await verifySecret({
+        forceAdmin: true,
         wsId,
         name: 'ENABLE_HEALTHCARE',
         value: 'true',
@@ -254,9 +278,12 @@ export default async function Layout({ children, params }: LayoutProps) {
         {children}
       </Structure>
 
-      {(await verifySecret({ wsId, name: 'ENABLE_CHAT', value: 'true' })) && (
-        <FleetingNavigator wsId={wsId} />
-      )}
+      {(await verifySecret({
+        forceAdmin: true,
+        wsId,
+        name: 'ENABLE_CHAT',
+        value: 'true',
+      })) && <FleetingNavigator wsId={wsId} />}
     </>
   );
 }
