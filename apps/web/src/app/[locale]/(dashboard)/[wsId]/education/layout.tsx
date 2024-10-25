@@ -17,6 +17,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   if (
     !(await verifySecret({
+      forceAdmin: true,
       wsId,
       name: 'ENABLE_EDUCATION',
       value: 'true',
