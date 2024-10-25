@@ -1,6 +1,6 @@
 import { TailwindAdvancedEditor } from '../../../../../documents/advanced-editor';
 import { CourseSection } from '../../section';
-import { WorkspaceCourse } from '@/types/db';
+import { WorkspaceCourseModule } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import {
   BookText,
@@ -18,23 +18,24 @@ interface Props {
     locale: string;
     wsId: string;
     courseId: string;
+    moduleId: string;
   }>;
 }
 
 export default async function UserGroupDetailsPage({ params }: Props) {
   const t = await getTranslations();
-  const { wsId, courseId } = await params;
-  const course = await getCourseData(wsId, courseId);
+  const { courseId, moduleId } = await params;
+  const data = await getModuleData(courseId, moduleId);
 
   return (
     <div className="grid gap-4">
       <CourseSection
-        title={t('course-details-tabs.module_objectives')}
+        title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
-        rawContent={course.objectives as JSONContent | undefined}
+        rawContent={data.content as JSONContent | undefined}
         content={
           <TailwindAdvancedEditor
-            content={course.objectives as JSONContent | undefined}
+            content={data.content as JSONContent | undefined}
             disableLocalStorage
             previewMode
           />
@@ -59,10 +60,10 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       <CourseSection
         title={t('course-details-tabs.extra_reading')}
         icon={<BookText className="h-5 w-5" />}
-        rawContent={course.extra_content as JSONContent | undefined}
+        rawContent={data.extra_content as JSONContent | undefined}
         content={
           <TailwindAdvancedEditor
-            content={course.extra_content as JSONContent | undefined}
+            content={data.extra_content as JSONContent | undefined}
             disableLocalStorage
             previewMode
           />
@@ -72,19 +73,19 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   );
 }
 
-const getCourseData = async (wsId: string, courseId: string) => {
+const getModuleData = async (courseId: string, moduleId: string) => {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('workspace_courses')
+    .from('workspace_course_modules')
     .select('*')
-    .eq('id', courseId)
-    .eq('ws_id', wsId)
+    .eq('id', moduleId)
+    .eq('course_id', courseId)
     .single();
 
   if (error) {
     console.error('error', error);
   }
 
-  return data as WorkspaceCourse;
+  return data as WorkspaceCourseModule;
 };

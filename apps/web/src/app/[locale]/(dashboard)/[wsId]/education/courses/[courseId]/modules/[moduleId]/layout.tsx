@@ -59,8 +59,8 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 className="border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20"
               />
               <LinkButton
-                href={`${commonHref}/objectives`}
-                title={t('course-details-tabs.module_objectives')}
+                href={`${commonHref}/content`}
+                title={t('course-details-tabs.module_content')}
                 icon={<Goal className="h-5 w-5" />}
                 className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
               />

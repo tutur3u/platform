@@ -7,11 +7,11 @@ import { JSONContent } from 'novel';
 import { useEffect, useState } from 'react';
 
 export function ModuleExtraContentEditor({
-  wsId,
   courseId,
+  moduleId,
 }: {
-  wsId: string;
   courseId: string;
+  moduleId: string;
 }) {
   const t = useTranslations();
 
@@ -19,20 +19,20 @@ export function ModuleExtraContentEditor({
   const [content, setContent] = useState<JSONContent | undefined>(undefined);
 
   useEffect(() => {
-    getExtraContent(wsId, courseId).then((data) => {
+    getExtraContent(courseId, moduleId).then((data) => {
       setContent(data as JSONContent);
       setLoading(false);
     });
-  }, [wsId, courseId]);
+  }, [courseId, moduleId]);
 
   const onSave = async (data: JSONContent) => {
     const supabase = createClient();
 
     const { error } = await supabase
-      .from('workspace_courses')
+      .from('workspace_course_modules')
       .update({ extra_content: data })
-      .eq('id', courseId)
-      .eq('ws_id', wsId);
+      .eq('id', moduleId)
+      .eq('courseId', courseId);
 
     if (error) {
       console.error('error', error);
@@ -54,14 +54,14 @@ export function ModuleExtraContentEditor({
   );
 }
 
-const getExtraContent = async (wsId: string, courseId: string) => {
+const getExtraContent = async (courseId: string, moduleId: string) => {
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from('workspace_courses')
+    .from('workspace_course_modules')
     .select('extra_content')
-    .eq('id', courseId)
-    .eq('ws_id', wsId)
+    .eq('id', moduleId)
+    .eq('course_id', courseId)
     .single();
 
   if (error) {

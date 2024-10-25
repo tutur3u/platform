@@ -3039,24 +3039,30 @@ export type Database = {
       };
       workspace_course_modules: {
         Row: {
+          content: Json | null;
           course_id: string;
           created_at: string;
+          extra_content: Json | null;
           id: string;
           is_public: boolean;
           is_published: boolean;
           name: string;
         };
         Insert: {
+          content?: Json | null;
           course_id: string;
           created_at?: string;
-          id: string;
+          extra_content?: Json | null;
+          id?: string;
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
         };
         Update: {
+          content?: Json | null;
           course_id?: string;
           created_at?: string;
+          extra_content?: Json | null;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
@@ -3075,32 +3081,26 @@ export type Database = {
       workspace_courses: {
         Row: {
           created_at: string;
-          extra_content: Json | null;
           id: string;
           is_public: boolean;
           is_published: boolean;
           name: string;
-          objectives: Json | null;
           ws_id: string;
         };
         Insert: {
           created_at?: string;
-          extra_content?: Json | null;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
-          objectives?: Json | null;
           ws_id: string;
         };
         Update: {
           created_at?: string;
-          extra_content?: Json | null;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
-          objectives?: Json | null;
           ws_id?: string;
         };
         Relationships: [

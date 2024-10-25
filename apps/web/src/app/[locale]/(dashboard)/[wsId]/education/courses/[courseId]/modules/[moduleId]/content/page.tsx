@@ -1,5 +1,5 @@
 import { CourseSection } from '../../../section';
-import { ModuleObjectivesEditor } from './editor';
+import { ModuleContentEditor } from './editor';
 import { Goal } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
@@ -7,21 +7,22 @@ interface Props {
   params: Promise<{
     wsId: string;
     courseId: string;
+    moduleId: string;
   }>;
 }
 
-export default async function ModuleObjectsPage({ params }: Props) {
-  const { wsId, courseId } = await params;
+export default async function ModuleContentPage({ params }: Props) {
+  const { courseId, moduleId } = await params;
   const t = await getTranslations();
 
   return (
     <div className="grid gap-4">
       <CourseSection
-        title={t('course-details-tabs.module_objectives')}
+        title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
         hideContent
       />
-      <ModuleObjectivesEditor wsId={wsId} courseId={courseId} />
+      <ModuleContentEditor courseId={courseId} moduleId={moduleId} />
     </div>
   );
 }

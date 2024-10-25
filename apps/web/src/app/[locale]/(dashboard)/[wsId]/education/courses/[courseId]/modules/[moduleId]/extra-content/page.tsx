@@ -7,11 +7,12 @@ interface Props {
   params: Promise<{
     wsId: string;
     courseId: string;
+    moduleId: string;
   }>;
 }
 
 export default async function ModuleExtraContentPage({ params }: Props) {
-  const { wsId, courseId } = await params;
+  const { courseId, moduleId } = await params;
   const t = await getTranslations();
 
   return (
@@ -21,7 +22,7 @@ export default async function ModuleExtraContentPage({ params }: Props) {
         icon={<BookText className="h-5 w-5" />}
         hideContent
       />
-      <ModuleExtraContentEditor wsId={wsId} courseId={courseId} />
+      <ModuleExtraContentEditor courseId={courseId} moduleId={moduleId} />
     </div>
   );
 }

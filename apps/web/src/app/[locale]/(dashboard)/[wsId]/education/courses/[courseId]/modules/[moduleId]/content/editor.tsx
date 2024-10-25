@@ -6,12 +6,12 @@ import { useTranslations } from 'next-intl';
 import { JSONContent } from 'novel';
 import { useEffect, useState } from 'react';
 
-export function ModuleObjectivesEditor({
-  wsId,
+export function ModuleContentEditor({
   courseId,
+  moduleId,
 }: {
-  wsId: string;
   courseId: string;
+  moduleId: string;
 }) {
   const t = useTranslations();
 
@@ -19,20 +19,20 @@ export function ModuleObjectivesEditor({
   const [content, setContent] = useState<JSONContent | undefined>(undefined);
 
   useEffect(() => {
-    getObjectivesContent(wsId, courseId).then((data) => {
+    getContent(courseId, moduleId).then((data) => {
       setContent(data as JSONContent);
       setLoading(false);
     });
-  }, [wsId, courseId]);
+  }, [courseId, moduleId]);
 
   const onSave = async (data: JSONContent) => {
     const supabase = createClient();
 
     const { error } = await supabase
-      .from('workspace_courses')
-      .update({ objectives: data })
-      .eq('id', courseId)
-      .eq('ws_id', wsId);
+      .from('workspace_course_modules')
+      .update({ content: data })
+      .eq('id', moduleId)
+      .eq('course_id', courseId);
 
     if (error) {
       console.error('error', error);
@@ -54,19 +54,19 @@ export function ModuleObjectivesEditor({
   );
 }
 
-const getObjectivesContent = async (wsId: string, courseId: string) => {
+const getContent = async (courseId: string, moduleId: string) => {
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from('workspace_courses')
-    .select('objectives')
-    .eq('id', courseId)
-    .eq('ws_id', wsId)
+    .from('workspace_course_modules')
+    .select('content')
+    .eq('id', moduleId)
+    .eq('course_id', courseId)
     .single();
 
   if (error) {
     console.error('error', error);
   }
 
-  return data?.objectives;
+  return data?.content;
 };
