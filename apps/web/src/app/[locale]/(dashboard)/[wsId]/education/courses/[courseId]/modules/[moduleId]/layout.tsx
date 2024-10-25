@@ -1,4 +1,5 @@
 import LinkButton from '../../link-button';
+import { DEV_MODE } from '@/constants/common';
 import { WorkspaceCourseModule } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -69,6 +70,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 title={`${t('course-details-tabs.resources')} (0)`}
                 icon={<Paperclip className="h-5 w-5" />}
                 className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
+                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/youtube-links`}
@@ -81,12 +83,14 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 title={`${t('ws-quizzes.plural')} (0)`}
                 icon={<ListTodo className="h-5 w-5" />}
                 className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
+                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/flashcards`}
                 title={`${t('ws-flashcards.plural')} (0)`}
                 icon={<SwatchBook className="h-5 w-5" />}
                 className="border-dynamic-sky/20 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20"
+                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/extra-content`}
