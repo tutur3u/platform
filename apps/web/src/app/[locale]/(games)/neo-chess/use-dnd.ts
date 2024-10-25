@@ -331,11 +331,30 @@ export function useDragAndDrop(
     };
 
     activePiece = null;
+
+    console.log(boardState);
   }
 
   function handlePromotion(type: PieceType) {
     if (promotionInfo) {
-      promotePawn(promotionInfo.pieceId, type);
+      const pieceId = promotionInfo.pieceId;
+      const piece = boardState.find((p) => p.id === pieceId);
+      if (piece) {
+        const oldX = piece.x;
+        promotePawn(pieceId, type);
+        setBoardState((prevBoardState) =>
+          prevBoardState.map((p) =>
+            p.id === pieceId
+              ? {
+                  ...p,
+                  id: `${p.image.includes('b') ? 'dark' : 'light'}-${type.toLowerCase()}-${oldX}`,
+                  type: type,
+                  image: `/neo-chess/${p.team === TeamType.OURS ? 'w' : 'b'}_${type.toLowerCase()}.png`,
+                }
+              : p
+          )
+        );
+      }
       setPromotionInfo(null);
     }
   }

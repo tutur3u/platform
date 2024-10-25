@@ -41,6 +41,7 @@ export default function ChessBoard() {
         piece.id === id
           ? {
               ...piece,
+              id: `${piece.image.includes('b') ? 'dark' : 'light'}-${newType.toLowerCase()}-${piece.x}`,
               type: newType,
               image: `/neo-chess/${piece.team === TeamType.OURS ? 'w' : 'b'}_${newType.toLowerCase()}.png`,
             }
