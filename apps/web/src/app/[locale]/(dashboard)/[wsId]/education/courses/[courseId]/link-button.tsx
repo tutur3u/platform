@@ -26,7 +26,7 @@ export default function LinkButton({
       <Button
         type="button"
         variant="secondary"
-        className={cn('border font-semibold max-sm:w-full', className)}
+        className={cn('border font-semibold max-md:w-full', className)}
         disabled
       >
         {icon}
@@ -39,7 +39,7 @@ export default function LinkButton({
       <Button
         type="button"
         variant="secondary"
-        className={cn('border font-semibold max-sm:w-full', className)}
+        className={cn('border font-semibold max-md:w-full', className)}
         disabled={disabled}
       >
         {icon}

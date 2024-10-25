@@ -84,7 +84,7 @@ export default async function UserGroupDetailsPage({
         }
         description={
           <>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid flex-wrap gap-2 md:flex">
               <Button
                 type="button"
                 variant="secondary"

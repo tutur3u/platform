@@ -41,18 +41,20 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
         title={
           <>
             <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="bg-dynamic-purple/20 border-dynamic-purple/20 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg">
+              <div className="bg-dynamic-purple/20 border-dynamic-purple/20 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
                 <Box className="h-6 w-6" />
                 {t('ws-course-modules.singular')}
               </div>
-              {data.name || t('common.unknown')}
+              <div className="line-clamp-1 text-lg font-bold md:text-2xl">
+                {data.name || t('common.unknown')}
+              </div>
             </h1>
             <Separator className="my-2" />
           </>
         }
         description={
           <>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid flex-wrap gap-2 md:flex">
               <LinkButton
                 href={`${commonHref}`}
                 title={t('course-details-tabs.preview')}

@@ -80,40 +80,48 @@ export default function FeatureSummary<T>({
     <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
       <div className="w-full">
         {title || <h1 className="w-full text-2xl font-bold">{pluralTitle}</h1>}
-        <div className="text-foreground/80 whitespace-pre-wrap">
-          {description}
+        {description && (
+          <div className="text-foreground/80 whitespace-pre-wrap">
+            {description}
+          </div>
+        )}
+      </div>
+      {(form ||
+        action ||
+        showDefaultFormAsSecondary ||
+        (showSecondaryTrigger && !showCustomSecondaryTrigger) ||
+        (showSecondaryTrigger && secondaryTrigger)) && (
+        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+          {showDefaultFormAsSecondary ||
+          (showSecondaryTrigger && !showCustomSecondaryTrigger) ? (
+            <ModifiableDialogTrigger
+              data={defaultData}
+              trigger={secondaryTrigger}
+              form={form}
+              open={open}
+              setOpen={setOpen}
+              editDescription={secondaryDescription}
+              requireExpansion={requireExpansion}
+              title={secondaryTitle}
+              forceDefault
+            />
+          ) : (
+            showSecondaryTrigger && secondaryTrigger
+          )}
+          {action || (
+            <ModifiableDialogTrigger
+              data={data}
+              trigger={primaryTrigger}
+              form={form}
+              open={open}
+              setOpen={setOpen}
+              createDescription={createDescription}
+              requireExpansion={requireExpansion}
+              title={singularTitle}
+            />
+          )}
         </div>
-      </div>
-      <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-        {showDefaultFormAsSecondary ||
-        (showSecondaryTrigger && !showCustomSecondaryTrigger) ? (
-          <ModifiableDialogTrigger
-            data={defaultData}
-            trigger={secondaryTrigger}
-            form={form}
-            open={open}
-            setOpen={setOpen}
-            editDescription={secondaryDescription}
-            requireExpansion={requireExpansion}
-            title={secondaryTitle}
-            forceDefault
-          />
-        ) : (
-          showSecondaryTrigger && secondaryTrigger
-        )}
-        {action || (
-          <ModifiableDialogTrigger
-            data={data}
-            trigger={primaryTrigger}
-            form={form}
-            open={open}
-            setOpen={setOpen}
-            createDescription={createDescription}
-            requireExpansion={requireExpansion}
-            title={singularTitle}
-          />
-        )}
-      </div>
+      )}
     </div>
   );
 }

@@ -77,7 +77,7 @@ export default async function UserGroupDetailsPage({
         }
         description={
           <>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid flex-wrap gap-2 md:flex">
               <Link href={`/${wsId}/users/groups/${groupId}`}>
                 <Button
                   type="button"

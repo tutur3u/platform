@@ -55,7 +55,10 @@ export const getUserGroupColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link href={row.original.href || '#'} className="min-w-[8rem]">
+      <Link
+        href={row.original.href || '#'}
+        className="min-w-[8rem] font-semibold hover:underline"
+      >
         {row.getValue('name') || '-'}
       </Link>
     ),
