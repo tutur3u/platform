@@ -1,4 +1,4 @@
-import { CourseSection } from '../section';
+import { CourseSection } from '../../../section';
 import { ModuleExtraContentEditor } from './editor';
 import { BookText } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';

@@ -1643,6 +1643,16 @@
     "name": "Course name",
     "edit_description": "Edit an existing course"
   },
+  "ws-course-modules": {
+    "plural": "Course Modules",
+    "singular": "Course Module",
+    "create": "Create module",
+    "create_description": "Create a new module",
+    "description": "Manage modules in your workspace that are part of a course.",
+    "edit": "Edit module",
+    "name": "Module name",
+    "edit_description": "Edit an existing module"
+  },
   "ws-flashcards": {
     "plural": "Flashcards",
     "singular": "Flashcard",

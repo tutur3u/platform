@@ -1,90 +1,103 @@
-import { TailwindAdvancedEditor } from '../../../documents/advanced-editor';
-import { CourseSection } from './section';
-import { WorkspaceCourse } from '@/types/db';
+import { getWorkspaceCourseModuleColumns } from './columns';
+import CourseModuleForm from './form';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { WorkspaceCourseModule } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
-import {
-  BookText,
-  Goal,
-  ListTodo,
-  Paperclip,
-  SwatchBook,
-  Youtube,
-} from 'lucide-react';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
-import { JSONContent } from 'novel';
+
+interface SearchParams {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  includedTags?: string | string[];
+  excludedTags?: string | string[];
+}
 
 interface Props {
   params: Promise<{
-    locale: string;
     wsId: string;
     courseId: string;
   }>;
+  searchParams: Promise<SearchParams>;
 }
 
-export default async function UserGroupDetailsPage({ params }: Props) {
+export default async function WorkspaceCoursesPage({
+  params,
+  searchParams,
+}: Props) {
   const t = await getTranslations();
   const { wsId, courseId } = await params;
-  const course = await getCourseData(wsId, courseId);
+
+  const { data, count } = await getData(courseId, await searchParams);
+
+  const modules = data.map((m) => ({
+    ...m,
+    ws_id: wsId,
+    href: `/${wsId}/education/courses/${courseId}/modules/${m.id}`,
+  }));
 
   return (
-    <div className="grid gap-4">
-      <CourseSection
-        title={t('course-details-tabs.module_objectives')}
-        icon={<Goal className="h-5 w-5" />}
-        rawContent={course.objectives as JSONContent | undefined}
-        content={
-          <TailwindAdvancedEditor
-            content={course.objectives as JSONContent | undefined}
-            disableLocalStorage
-            previewMode
-          />
-        }
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-course-modules.plural')}
+        singularTitle={t('ws-course-modules.singular')}
+        description={t('ws-course-modules.description')}
+        createTitle={t('ws-course-modules.create')}
+        createDescription={t('ws-course-modules.create_description')}
+        form={<CourseModuleForm wsId={wsId} courseId={courseId} />}
       />
-      <CourseSection
-        title={t('course-details-tabs.resources')}
-        icon={<Paperclip className="h-5 w-5" />}
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={modules}
+        columnGenerator={getWorkspaceCourseModuleColumns}
+        extraData={{ wsId, courseId }}
+        namespace="course-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
       />
-      <CourseSection
-        title={t('course-details-tabs.youtube_links')}
-        icon={<Youtube className="h-5 w-5" />}
-      />
-      <CourseSection
-        title={t('ws-quizzes.plural')}
-        icon={<ListTodo className="h-5 w-5" />}
-      />
-      <CourseSection
-        title={t('ws-flashcards.plural')}
-        icon={<SwatchBook className="h-5 w-5" />}
-      />
-      <CourseSection
-        title={t('course-details-tabs.extra_reading')}
-        icon={<BookText className="h-5 w-5" />}
-        rawContent={course.extra_content as JSONContent | undefined}
-        content={
-          <TailwindAdvancedEditor
-            content={course.extra_content as JSONContent | undefined}
-            disableLocalStorage
-            previewMode
-          />
-        }
-      />
-    </div>
+    </>
   );
 }
 
-const getCourseData = async (wsId: string, courseId: string) => {
+async function getData(
+  courseId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+    retry = true,
+  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
+) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('workspace_courses')
-    .select('*')
-    .eq('id', courseId)
-    .eq('ws_id', wsId)
-    .single();
+  const queryBuilder = supabase
+    .from('workspace_course_modules')
+    .select('*', {
+      count: 'exact',
+    })
+    .eq('course_id', courseId)
+    .order('name');
 
-  if (error) {
-    console.error('error', error);
+  if (q) queryBuilder.ilike('name', `%${q}%`);
+
+  if (page && pageSize) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  return data as WorkspaceCourse;
-};
+  const { data, error, count } = await queryBuilder;
+  if (error) {
+    if (!retry) throw error;
+    return getData(courseId, { q, pageSize, retry: false });
+  }
+
+  return { data, count } as { data: WorkspaceCourseModule[]; count: number };
+}

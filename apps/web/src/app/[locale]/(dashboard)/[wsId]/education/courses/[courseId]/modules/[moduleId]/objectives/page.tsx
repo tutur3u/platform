@@ -1,4 +1,4 @@
-import { CourseSection } from '../section';
+import { CourseSection } from '../../../section';
 import { ModuleObjectivesEditor } from './editor';
 import { Goal } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';

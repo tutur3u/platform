@@ -13,7 +13,7 @@ interface Props<T> {
   title?: ReactNode;
   pluralTitle?: string;
   singularTitle?: string;
-  description: ReactNode;
+  description?: ReactNode;
   action?: ReactNode;
   createTitle?: string;
   createDescription?: string;

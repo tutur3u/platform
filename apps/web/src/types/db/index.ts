@@ -13,6 +13,9 @@ export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
 export type WorkspaceCourse = Tables<'workspace_courses'> & {
   href?: string;
 };
+export type WorkspaceCourseModule = Tables<'workspace_course_modules'> & {
+  href?: string;
+};
 
 export type PermissionId =
   Database['public']['Enums']['workspace_role_permission'];

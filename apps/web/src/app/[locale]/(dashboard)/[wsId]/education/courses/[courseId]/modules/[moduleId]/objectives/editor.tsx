@@ -1,6 +1,6 @@
 'use client';
 
-import { TailwindAdvancedEditor } from '../../../../documents/advanced-editor';
+import { TailwindAdvancedEditor } from '../../../../../../documents/advanced-editor';
 import { createClient } from '@/utils/supabase/client';
 import { useTranslations } from 'next-intl';
 import { JSONContent } from 'novel';

@@ -75,7 +75,7 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_courses')
-    .select('*', {
+    .select('*, workspace_course_modules(id.count())', {
       count: 'exact',
     })
     .eq('ws_id', wsId)
@@ -97,5 +97,11 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: WorkspaceCourse[]; count: number };
+  return {
+    data: data.map(({ workspace_course_modules, ...rest }) => ({
+      ...rest,
+      modules: workspace_course_modules?.[0]?.count || 0,
+    })),
+    count,
+  } as { data: WorkspaceCourse[]; count: number };
 }

@@ -1643,6 +1643,16 @@
     "name": "Tên khóa học",
     "edit_description": "Chỉnh sửa khóa học hiện có"
   },
+  "ws-course-modules": {
+    "plural": "Mô-đun khóa học",
+    "singular": "Mô-đun khóa học",
+    "create": "Tạo mô-đun",
+    "create_description": "Tạo một mô-đun mới",
+    "description": "Quản lý các mô-đun trong khóa học nằm trong không gian làm việc của bạn.",
+    "edit": "Chỉnh sửa mô-đun",
+    "name": "Tên mô-đun",
+    "edit_description": "Chỉnh sửa mô-đun hiện có"
+  },
   "ws-flashcards": {
     "plural": "Thẻ từ vựng",
     "singular": "Thẻ từ vựng",

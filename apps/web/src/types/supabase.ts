@@ -3039,27 +3039,38 @@ export type Database = {
       };
       workspace_course_modules: {
         Row: {
+          course_id: string;
           created_at: string;
-          id: number;
+          id: string;
           is_public: boolean;
           is_published: boolean;
           name: string;
         };
         Insert: {
+          course_id: string;
           created_at?: string;
-          id?: number;
+          id: string;
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
         };
         Update: {
+          course_id?: string;
           created_at?: string;
-          id?: number;
+          id?: string;
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_course_modules_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_courses';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       workspace_courses: {
         Row: {

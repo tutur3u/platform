@@ -1,7 +1,7 @@
 'use client';
 
-import WorkspaceCourseForm from './form';
-import { WorkspaceCourse } from '@/types/db';
+import WorkspaceCourseModuleForm from './form';
+import { WorkspaceCourseModule } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
@@ -18,21 +18,25 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface WorkspaceCourseRowActionsProps {
-  row: Row<WorkspaceCourse>;
+interface WorkspaceCourseModuleRowActionsProps {
+  wsId: string;
+  courseId: string;
+  row: Row<WorkspaceCourseModule>;
 }
 
-export function WorkspaceCourseRowActions({
+export function WorkspaceCourseModuleRowActions({
+  wsId,
+  courseId,
   row,
-}: WorkspaceCourseRowActionsProps) {
+}: WorkspaceCourseModuleRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
 
   const data = row.original;
 
-  const deleteWorkspaceCourse = async () => {
+  const deleteWorkspaceCourseModule = async () => {
     const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/courses/${data.id}`,
+      `/api/v1/workspaces/${wsId}/course-modules/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -51,7 +55,7 @@ export function WorkspaceCourseRowActions({
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  if (!data.id || !data.ws_id) return null;
+  if (!data.id || !wsId) return null;
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -79,7 +83,7 @@ export function WorkspaceCourseRowActions({
             {t('common.edit')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWorkspaceCourse}>
+          <DropdownMenuItem onClick={deleteWorkspaceCourseModule}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -91,7 +95,13 @@ export function WorkspaceCourseRowActions({
         title={t('ws-flashcards.edit')}
         editDescription={t('ws-flashcards.edit_description')}
         setOpen={setShowEditDialog}
-        form={<WorkspaceCourseForm wsId={data.ws_id} data={data} />}
+        form={
+          <WorkspaceCourseModuleForm
+            wsId={wsId}
+            courseId={courseId}
+            data={data}
+          />
+        }
       />
     </div>
   );
