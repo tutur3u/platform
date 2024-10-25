@@ -1,5 +1,6 @@
 'use client';
 
+import CheckmateModal from './checkmate';
 import Tile from './piece';
 import {
   Piece,
@@ -15,6 +16,9 @@ import React, { useCallback, useState } from 'react';
 
 export default function ChessBoard() {
   const [pieces, setPieces] = useState<Piece[]>(initialPieces);
+  const [isCheckmate, setIsCheckmate] = useState<{ team: TeamType | null }>({
+    team: null,
+  });
 
   const removePieceById = useCallback((id: string) => {
     setPieces((prevPieces) => prevPieces.filter((piece) => piece.id !== id));
@@ -45,6 +49,10 @@ export default function ChessBoard() {
     );
   }, []);
 
+  const checkmate = useCallback((team: TeamType) => {
+      handleCheckmate(team);
+    }, []);
+
   const {
     grabPiece,
     movePiece,
@@ -53,7 +61,9 @@ export default function ChessBoard() {
     promotionInfo,
     handlePromotion,
     turnAnnouncement,
-  } = useDragAndDrop(removePieceById, updatePiecePosition, promotePawn);
+    checkmateInfo,
+    handleCheckmate,
+  } = useDragAndDrop(removePieceById, updatePiecePosition, promotePawn, checkmate);
 
   // Create the board
   let board: React.ReactNode[] = [];
@@ -147,6 +157,15 @@ export default function ChessBoard() {
                   pieces.find((piece) => piece.id === promotionInfo.pieceId)
                     ?.team ?? TeamType.OURS
                 }
+              />
+            )}
+            {checkmateInfo && (
+              <CheckmateModal
+                team={isCheckmate.team === TeamType.OURS ? 'White' : 'Black'}
+                onRestart={() => {
+                  setPieces(initialPieces);
+                  setIsCheckmate({ team: null });
+                }}
               />
             )}
           </div>
