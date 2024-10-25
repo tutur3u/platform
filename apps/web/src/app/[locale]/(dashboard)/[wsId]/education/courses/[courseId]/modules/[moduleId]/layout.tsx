@@ -1,5 +1,5 @@
 import LinkButton from '../../link-button';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { WorkspaceCourseModule } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -72,7 +72,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               />
               <LinkButton
                 href={`${commonHref}/youtube-links`}
-                title={`${t('course-details-tabs.youtube_links')} (0)`}
+                title={`${t('course-details-tabs.youtube_links')} (${data.youtube_links?.length || 0})`}
                 icon={<Youtube className="h-5 w-5" />}
                 className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20"
               />
@@ -117,5 +117,5 @@ async function getData(courseId: string, moduleId: string) {
   if (error) throw error;
   if (!data) notFound();
 
-  return data as UserGroup;
+  return data as WorkspaceCourseModule;
 }

@@ -1,6 +1,5 @@
 'use client';
 
-import { WorkspaceCourseModule } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -20,21 +19,28 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  courseId: string;
-  data?: WorkspaceCourseModule;
+  moduleId: string;
+  link?: string;
+  links?: string[];
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1),
+  link: z
+    .string()
+    .min(1, 'Link is required')
+    .regex(
+      /^(https?:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/,
+      'Invalid YouTube link'
+    ),
 });
 
-export default function CourseModuleForm({
+export default function YouTubeLinkForm({
   wsId,
-  courseId,
-  data,
+  moduleId,
+  link,
+  links,
   onFinish,
 }: Props) {
   const t = useTranslations('ws-course-modules');
@@ -43,8 +49,7 @@ export default function CourseModuleForm({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      id: data?.id,
-      name: data?.name || '',
+      link: link || '',
     },
   });
 
@@ -57,12 +62,15 @@ export default function CourseModuleForm({
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     try {
       const res = await fetch(
-        data.id
-          ? `/api/v1/workspaces/${wsId}/course-modules/${data.id}`
-          : `/api/v1/workspaces/${wsId}/courses/${courseId}/modules`,
+        `/api/v1/workspaces/${wsId}/course-modules/${moduleId}`,
         {
-          method: data.id ? 'PUT' : 'POST',
-          body: JSON.stringify(data),
+          method: 'PUT',
+          body: JSON.stringify({
+            youtube_links: [
+              ...(links || []),
+              data.link,
+            ]
+          }),
         }
       );
 
@@ -72,13 +80,13 @@ export default function CourseModuleForm({
       } else {
         const data = await res.json();
         toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
+          title: `Failed to ${link ? 'edit' : 'create'} youtube link`,
           description: data.message,
         });
       }
     } catch (error) {
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} course module`,
+        title: `Failed to ${link ? 'edit' : 'create'} youtube link`,
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -89,12 +97,16 @@ export default function CourseModuleForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
         <FormField
           control={form.control}
-          name="name"
+          name="link"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('name')}</FormLabel>
+              <FormLabel>{t('youtube_link')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('name')} autoComplete="off" {...field} />
+                <Input
+                  placeholder={t('youtube_link')}
+                  autoComplete="off"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -102,7 +114,7 @@ export default function CourseModuleForm({
         />
 
         <Button type="submit" className="w-full" disabled={disabled}>
-          {data?.id ? t('edit') : t('create')}
+          {link ? t('edit_link') : t('add_link')}
         </Button>
       </form>
     </Form>

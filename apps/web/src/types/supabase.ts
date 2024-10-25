@@ -3047,6 +3047,7 @@ export type Database = {
           is_public: boolean;
           is_published: boolean;
           name: string;
+          youtube_links: string[] | null;
         };
         Insert: {
           content?: Json | null;
@@ -3057,6 +3058,7 @@ export type Database = {
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          youtube_links?: string[] | null;
         };
         Update: {
           content?: Json | null;
@@ -3067,6 +3069,7 @@ export type Database = {
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
+          youtube_links?: string[] | null;
         };
         Relationships: [
           {

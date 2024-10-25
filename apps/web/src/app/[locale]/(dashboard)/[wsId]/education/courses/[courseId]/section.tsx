@@ -21,7 +21,7 @@ export async function CourseSection({
 
   const isContentEmpty =
     !hideContent &&
-    (!rawContent ||
+    ((!content && !rawContent) ||
       isEqual(rawContent, {
         type: 'doc',
         content: [

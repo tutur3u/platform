@@ -1,5 +1,6 @@
 import { TailwindAdvancedEditor } from '../../../../../documents/advanced-editor';
 import { CourseSection } from '../../section';
+import { YoutubeEmbed } from './youtube-links/embed';
 import { WorkspaceCourseModule } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import {
@@ -48,6 +49,15 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       <CourseSection
         title={t('course-details-tabs.youtube_links')}
         icon={<Youtube className="h-5 w-5" />}
+        content={
+          data.youtube_links && data.youtube_links.length > 0 ? (
+            <div className="grid gap-4">
+              {data.youtube_links.map((link: string, index: number) => (
+                <YoutubeEmbed key={index} embedId={link.split('v=')[1]} />
+              ))}
+            </div>
+          ) : undefined
+        }
       />
       <CourseSection
         title={t('ws-quizzes.plural')}

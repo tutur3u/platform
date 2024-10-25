@@ -1651,7 +1651,13 @@
     "description": "Manage modules in your workspace that are part of a course.",
     "edit": "Edit module",
     "name": "Module name",
-    "edit_description": "Edit an existing module"
+    "edit_description": "Edit an existing module",
+    "add_link": "Add link",
+    "add_youtube_link_description": "Add a new YouTube link.",
+    "youtube_link": "YouTube Link",
+    "youtube_links": "YouTube Links",
+    "edit_link": "Edit link",
+    "invalid_youtube_link": "Invalid YouTube link"
   },
   "ws-flashcards": {
     "plural": "Flashcards",
@@ -1681,6 +1687,7 @@
     "resources": "Resources",
     "youtube_links": "YouTube Links",
     "extra_reading": "Extra Reading",
-    "module_content": "Module Content"
+    "module_content": "Module Content",
+    "no_youtube_links": "No YouTube links yet."
   }
 }

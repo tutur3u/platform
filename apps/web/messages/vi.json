@@ -1651,7 +1651,13 @@
     "description": "Quản lý các mô-đun trong khóa học nằm trong không gian làm việc của bạn.",
     "edit": "Chỉnh sửa mô-đun",
     "name": "Tên mô-đun",
-    "edit_description": "Chỉnh sửa mô-đun hiện có"
+    "edit_description": "Chỉnh sửa mô-đun hiện có",
+    "add_link": "Thêm liên kết",
+    "add_youtube_link_description": "Thêm liên kết YouTube mới.",
+    "youtube_link": "Liên kết YouTube",
+    "youtube_links": "Liên kết YouTube",
+    "edit_link": "Chỉnh sửa liên kết",
+    "invalid_youtube_link": "Liên kết YouTube không hợp lệ"
   },
   "ws-flashcards": {
     "plural": "Thẻ từ vựng",
@@ -1681,6 +1687,7 @@
     "resources": "Tài nguyên",
     "youtube_links": "Liên kết YouTube",
     "extra_reading": "Đọc thêm",
-    "module_content": "Nội dung mô-đun"
+    "module_content": "Nội dung mô-đun",
+    "no_youtube_links": "Chưa có liên kết YouTube nào."
   }
 }
