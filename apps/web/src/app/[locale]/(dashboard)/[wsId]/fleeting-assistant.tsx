@@ -40,6 +40,7 @@ export default function FleetingAssistant({
   messages: Message[];
   onBack: () => void;
   onReset: () => void;
+  // eslint-disable-next-line no-unused-vars
   onSubmit: (prompt: string) => Promise<Partial<AIChat> | undefined>;
 }) {
   const t = useTranslations();
@@ -59,7 +60,7 @@ export default function FleetingAssistant({
           description: t('ai_chat.try_again_later'),
         });
     },
-    onError(_) {
+    onError() {
       toast({
         title: t('ai_chat.something_went_wrong'),
         description: t('ai_chat.try_again_later'),

@@ -21,15 +21,16 @@ export async function CourseSection({
 
   const isContentEmpty =
     !hideContent &&
-    ((!content && !rawContent) ||
-      isEqual(rawContent, {
-        type: 'doc',
-        content: [
-          {
-            type: 'paragraph',
-          },
-        ],
-      }));
+    (rawContent
+      ? isEqual(rawContent, {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+            },
+          ],
+        })
+      : !content);
 
   return (
     <div className="bg-foreground/5 border-foreground/10 rounded-lg border p-4">

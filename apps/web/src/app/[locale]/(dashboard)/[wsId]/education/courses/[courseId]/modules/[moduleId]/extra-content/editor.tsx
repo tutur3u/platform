@@ -32,7 +32,7 @@ export function ModuleExtraContentEditor({
       .from('workspace_course_modules')
       .update({ extra_content: data })
       .eq('id', moduleId)
-      .eq('courseId', courseId);
+      .eq('course_id', courseId);
 
     if (error) {
       console.error('error', error);

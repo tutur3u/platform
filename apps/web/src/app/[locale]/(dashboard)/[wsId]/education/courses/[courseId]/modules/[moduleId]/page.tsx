@@ -35,11 +35,13 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         icon={<Goal className="h-5 w-5" />}
         rawContent={data.content as JSONContent | undefined}
         content={
-          <TailwindAdvancedEditor
-            content={data.content as JSONContent | undefined}
-            disableLocalStorage
-            previewMode
-          />
+          data.content ? (
+            <TailwindAdvancedEditor
+              content={data.content as JSONContent}
+              disableLocalStorage
+              previewMode
+            />
+          ) : undefined
         }
       />
       <CourseSection
@@ -72,11 +74,13 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         icon={<BookText className="h-5 w-5" />}
         rawContent={data.extra_content as JSONContent | undefined}
         content={
-          <TailwindAdvancedEditor
-            content={data.extra_content as JSONContent | undefined}
-            disableLocalStorage
-            previewMode
-          />
+          data.extra_content ? (
+            <TailwindAdvancedEditor
+              content={data.extra_content as JSONContent}
+              disableLocalStorage
+              previewMode
+            />
+          ) : undefined
         }
       />
     </div>
