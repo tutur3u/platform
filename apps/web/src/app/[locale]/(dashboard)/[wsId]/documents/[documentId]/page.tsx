@@ -26,7 +26,7 @@ import { Globe2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { JSONContent } from 'novel';
-import { use, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   params: Promise<{
@@ -51,16 +51,30 @@ async function deleteDocument(wsId: string, documentId: string) {
 
 export default function DocumentDetailsPage({ params }: Props) {
   const t = useTranslations();
-  const { wsId, documentId } = use(params);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [wsId, setWsId] = useState<string | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [document, setDocument] = useState<WorkspaceDocument | null>();
 
   useEffect(() => {
-    getData(wsId, documentId).then((data) => {
-      setDocument(data);
-      setLoading(false);
-    });
+    async function resolveParams() {
+      const resolvedParams = await params;
+      setWsId(resolvedParams.wsId);
+      setDocumentId(resolvedParams.documentId);
+    }
+
+    resolveParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (wsId && documentId) {
+      getData(wsId, documentId).then((data) => {
+        setDocument(data);
+        setLoading(false);
+      });
+    }
   }, [wsId, documentId]);
 
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
@@ -68,7 +82,7 @@ export default function DocumentDetailsPage({ params }: Props) {
   const router = useRouter();
 
   const handleDelete = async () => {
-    if (document) {
+    if (document && wsId && documentId) {
       try {
         setLoading(true);
         await deleteDocument(wsId, document.id);
@@ -80,7 +94,7 @@ export default function DocumentDetailsPage({ params }: Props) {
   };
 
   const handleUpdateVisibility = async (is_public: boolean) => {
-    if (document) {
+    if (document && documentId) {
       const supabase = createClient();
       await supabase
         .from('workspace_documents')
@@ -90,13 +104,33 @@ export default function DocumentDetailsPage({ params }: Props) {
     }
   };
 
-  if (loading) return <div>{t('common.loading')}...</div>;
+  const handleNameChange = async () => {
+    const newName = nameInputRef.current?.value;
+    if (newName && document) {
+      const supabase = createClient();
+      await supabase
+        .from('workspace_documents')
+        .update({ name: newName })
+        .eq('id', document.id);
+      setDocument({ ...document, name: newName });
+    }
+  };
+
+  if (loading || !wsId || !documentId)
+    return <div>{t('common.loading')}...</div>;
   if (!document) return null;
 
   return (
     <div className="relative w-full">
       <div className="mb-4 flex items-center justify-end">
-        <h1 className="flex-grow text-2xl font-bold">{document.name}</h1>
+        <input
+          ref={nameInputRef}
+          type="text"
+          defaultValue={document.name || ''}
+          className="flex-grow border-none text-2xl font-bold focus:border-b focus:border-gray-400 focus:bg-gray-100 focus:outline-none"
+          onBlur={handleNameChange}
+          onKeyDown={(e) => e.key === 'Enter' && handleNameChange()}
+        />
         <AlertDialog
           open={isDeleteDialogOpen}
           onOpenChange={setIsDeleteDialogOpen}
