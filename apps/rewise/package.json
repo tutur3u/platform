@@ -3,15 +3,15 @@
   "version": "0.14.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 7804",
-    "devx": "pnpm i && next dev -p 7804",
-    "bdevx": "bun i && next dev -p 7804",
+    "dev": "next dev -p 7804 --turbo",
+    "devx": "pnpm i && next dev -p 7804 --turbo",
+    "bdevx": "bun i && next dev -p 7804 --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "next build && next start -p 7804",
+    "preview": "next build && next start -p 7804 --turbo",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "dependencies": {
