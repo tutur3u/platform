@@ -141,7 +141,8 @@
     "confirm_delete_title": "Xác nhận xoá",
     "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được.",
     "previous": "Trước đó",
-    "next": "Tiếp theo"
+    "next": "Tiếp theo",
+    "published": "Đã xuất bản"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -549,6 +550,8 @@
   "course-data-table": {
     "id": "Mã số",
     "name": "Tên",
+    "is_public": "Công khai",
+    "is_published": "Đã xuất bản",
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
   },

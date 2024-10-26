@@ -4,6 +4,7 @@ import { WorkspaceCourseModuleRowActions } from './row-actions';
 import { WorkspaceCourseModule } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -61,6 +62,36 @@ export const getWorkspaceCourseModuleColumns = (
       >
         {row.getValue('name') || '-'}
       </Link>
+    ),
+  },
+  {
+    accessorKey: 'is_public',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.is_public`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="font-semibold">
+        {row.getValue('is_public') ? <Check /> : <X />}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'is_published',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.is_published`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="font-semibold">
+        {row.getValue('is_published') ? <Check /> : <X />}
+      </div>
     ),
   },
   {

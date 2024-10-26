@@ -1,4 +1,5 @@
 import LinkButton from '../../link-button';
+import ModuleToggles from './toggles';
 import { DEV_MODE } from '@/constants/common';
 import { WorkspaceCourseModule } from '@/types/db';
 import { createClient, createDynamicClient } from '@/utils/supabase/server';
@@ -54,6 +55,12 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 {data.name || t('common.unknown')}
               </div>
             </h1>
+            <ModuleToggles
+              courseId={courseId}
+              moduleId={moduleId}
+              isPublic={data.is_public}
+              isPublished={data.is_published}
+            />
             <Separator className="my-2" />
           </>
         }
