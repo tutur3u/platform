@@ -1,5 +1,6 @@
 -- Populate auth users
-INSERT INTO "auth"."users" (
+INSERT INTO
+    "auth"."users" (
         "instance_id",
         "id",
         "aud",
@@ -33,7 +34,8 @@ INSERT INTO "auth"."users" (
         "reauthentication_sent_at",
         "is_sso_user"
     )
-VALUES (
+VALUES
+    (
         '00000000-0000-0000-0000-000000000000',
         '00000000-0000-0000-0000-000000000001',
         'authenticated',
@@ -203,9 +205,12 @@ VALUES (
         NULL,
         'f'
     );
+
 -- Populate handles
-insert into public.handles (value)
-values ('local'),
+insert into
+    public.handles (value)
+values
+    ('local'),
     ('user1'),
     ('user2'),
     ('user3'),
@@ -215,41 +220,84 @@ values ('local'),
     ('prototype-general'),
     ('prototype-pharmacy'),
     ('prototype-school');
+
 -- Update user handles
-update public.users
-set handle = 'local'
-where id = '00000000-0000-0000-0000-000000000001';
-update public.users
-set handle = 'user1'
-where id = '00000000-0000-0000-0000-000000000002';
-update public.users
-set handle = 'user2'
-where id = '00000000-0000-0000-0000-000000000003';
-update public.users
-set handle = 'user3'
-where id = '00000000-0000-0000-0000-000000000004';
-update public.users
-set handle = 'user4'
-where id = '00000000-0000-0000-0000-000000000005';
+update
+    public.users
+set
+    handle = 'local'
+where
+    id = '00000000-0000-0000-0000-000000000001';
+
+update
+    public.users
+set
+    handle = 'user1'
+where
+    id = '00000000-0000-0000-0000-000000000002';
+
+update
+    public.users
+set
+    handle = 'user2'
+where
+    id = '00000000-0000-0000-0000-000000000003';
+
+update
+    public.users
+set
+    handle = 'user3'
+where
+    id = '00000000-0000-0000-0000-000000000004';
+
+update
+    public.users
+set
+    handle = 'user4'
+where
+    id = '00000000-0000-0000-0000-000000000005';
+
 -- Update user display names
-update public.users
-set display_name = 'Local'
-where id = '00000000-0000-0000-0000-000000000001';
-update public.users
-set display_name = 'User 1'
-where id = '00000000-0000-0000-0000-000000000002';
-update public.users
-set display_name = 'User 2'
-where id = '00000000-0000-0000-0000-000000000003';
-update public.users
-set display_name = 'User 3'
-where id = '00000000-0000-0000-0000-000000000004';
-update public.users
-set display_name = 'User 4'
-where id = '00000000-0000-0000-0000-000000000005';
+update
+    public.users
+set
+    display_name = 'Local'
+where
+    id = '00000000-0000-0000-0000-000000000001';
+
+update
+    public.users
+set
+    display_name = 'User 1'
+where
+    id = '00000000-0000-0000-0000-000000000002';
+
+update
+    public.users
+set
+    display_name = 'User 2'
+where
+    id = '00000000-0000-0000-0000-000000000003';
+
+update
+    public.users
+set
+    display_name = 'User 3'
+where
+    id = '00000000-0000-0000-0000-000000000004';
+
+update
+    public.users
+set
+    display_name = 'User 4'
+where
+    id = '00000000-0000-0000-0000-000000000005';
+
 -- Populate workspaces
-insert into public.workspaces (id, name, handle, creator_id)
-values (
+insert into
+    public.workspaces (id, name, handle, creator_id)
+values
+    (
         '00000000-0000-0000-0000-000000000000',
         'Tuturuuu',
         'tuturuuu',
@@ -279,11 +327,19 @@ values (
         'prototype-school',
         null
     );
+
 -- Populate workspace_secrets
-insert into public.workspace_secrets (ws_id, name, value)
-values (
+insert into
+    public.workspace_secrets (ws_id, name, value)
+values
+    (
         '00000000-0000-0000-0000-000000000000',
         'ENABLE_CHAT',
+        'true'
+    ),
+(
+        '00000000-0000-0000-0000-000000000000',
+        'ENABLE_EDUCATION',
         'true'
     ),
     (
@@ -306,9 +362,12 @@ values (
         'ENABLE_FINANCE',
         'true'
     );
+
 -- Populate workspace_members
-insert into public.workspace_members (user_id, ws_id, role)
-values (
+insert into
+    public.workspace_members (user_id, ws_id, role)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000000',
         'OWNER'
@@ -353,9 +412,12 @@ values (
         '00000000-0000-0000-0000-000000000004',
         'ADMIN'
     );
+
 -- Populate workspace_invites with remaining users
-insert into public.workspace_invites (user_id, ws_id, role, role_title)
-values (
+insert into
+    public.workspace_invites (user_id, ws_id, role, role_title)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000001',
         'MEMBER',
@@ -421,9 +483,12 @@ values (
         'MEMBER',
         ''
     );
+
 -- Populate workspace_teams
-insert into public.workspace_teams (id, name, ws_id)
-values (
+insert into
+    public.workspace_teams (id, name, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Alpha',
         '00000000-0000-0000-0000-000000000001'
@@ -448,9 +513,12 @@ values (
         'Mora',
         '00000000-0000-0000-0000-000000000002'
     );
+
 -- Populate documents
-insert into public.workspace_documents (name, ws_id)
-values (
+insert into
+    public.workspace_documents (name, ws_id)
+values
+    (
         'Document 1',
         '00000000-0000-0000-0000-000000000001'
     ),
@@ -474,9 +542,12 @@ values (
         'Document 6',
         '00000000-0000-0000-0000-000000000004'
     );
+
 -- Populate boards
-insert into public.workspace_boards (id, name, ws_id)
-values (
+insert into
+    public.workspace_boards (id, name, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Board 1',
         '00000000-0000-0000-0000-000000000001'
@@ -496,9 +567,12 @@ values (
         'Board 4',
         '00000000-0000-0000-0000-000000000004'
     );
+
 -- Populate wallets
-insert into public.workspace_wallets (id, name, ws_id)
-values (
+insert into
+    public.workspace_wallets (id, name, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Wallet 1',
         '00000000-0000-0000-0000-000000000001'
@@ -528,9 +602,12 @@ values (
         'Wallet 6',
         '00000000-0000-0000-0000-000000000004'
     );
+
 -- Populate transactions
-insert into public.wallet_transactions (description, amount, wallet_id)
-values (
+insert into
+    public.wallet_transactions (description, amount, wallet_id)
+values
+    (
         'Transaction 1',
         100000,
         '00000000-0000-0000-0000-000000000001'
@@ -560,9 +637,12 @@ values (
         600000,
         '00000000-0000-0000-0000-000000000004'
     );
+
 -- Populate inventory product categories
-insert into public.product_categories (id, name, ws_id)
-values (
+insert into
+    public.product_categories (id, name, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Thuốc',
         '00000000-0000-0000-0000-000000000003'
@@ -592,9 +672,12 @@ values (
         'Đồ chơi',
         '00000000-0000-0000-0000-000000000003'
     );
+
 -- Populate inventory units
-insert into public.inventory_units (id, name, ws_id)
-values (
+insert into
+    public.inventory_units (id, name, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Vỉ',
         '00000000-0000-0000-0000-000000000003'
@@ -679,9 +762,12 @@ values (
         'Ống',
         '00000000-0000-0000-0000-000000000003'
     );
+
 -- Populate workspace products
-insert into public.workspace_products (id, name, manufacturer, category_id, ws_id)
-values (
+insert into
+    public.workspace_products (id, name, manufacturer, category_id, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Thuốc trị đau',
         'ABC, Inc.',
@@ -751,9 +837,12 @@ values (
         '00000000-0000-0000-0000-000000000004',
         '00000000-0000-0000-0000-000000000003'
     );
+
 -- Populate inventory suppliers
-insert into public.inventory_suppliers (id, name, ws_id)
-values (
+insert into
+    public.inventory_suppliers (id, name, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Nhà thuốc Long Châu',
         '00000000-0000-0000-0000-000000000003'
@@ -768,9 +857,12 @@ values (
         'Chợ thuốc',
         '00000000-0000-0000-0000-000000000003'
     );
+
 -- Populate inventory warehouses
-insert into public.inventory_warehouses (id, name, ws_id)
-values (
+insert into
+    public.inventory_warehouses (id, name, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Kho nhà thuốc',
         '00000000-0000-0000-0000-000000000003'
@@ -780,15 +872,18 @@ values (
         'Kho phụ',
         '00000000-0000-0000-0000-000000000003'
     );
+
 -- Populate inventory products
-insert into public.inventory_products (
+insert into
+    public.inventory_products (
         product_id,
         unit_id,
         warehouse_id,
         price,
         min_amount
     )
-values (
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000002',
         '00000000-0000-0000-0000-000000000001',
@@ -837,15 +932,18 @@ values (
         95000,
         50
     );
+
 -- Populate inventory batches
-insert into public.inventory_batches (
+insert into
+    public.inventory_batches (
         id,
         warehouse_id,
         supplier_id,
         price,
         total_diff
     )
-values (
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000001',
@@ -859,15 +957,18 @@ values (
         5000000,
         0
     );
+
 -- Populate inventory batch products
-insert into public.inventory_batch_products (
+insert into
+    public.inventory_batch_products (
         batch_id,
         product_id,
         unit_id,
         amount,
         price
     )
-values (
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000002',
@@ -888,9 +989,12 @@ values (
         50,
         3500000
     );
+
 -- Populate transaction categories
-insert into public.transaction_categories (id, name, is_expense, ws_id)
-values (
+insert into
+    public.transaction_categories (id, name, is_expense, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Nhập hàng',
         true,
@@ -902,9 +1006,12 @@ values (
         false,
         '00000000-0000-0000-0000-000000000003'
     );
+
 -- Populate vitals
-insert into public.healthcare_vitals (id, ws_id, name, unit)
-values (
+insert into
+    public.healthcare_vitals (id, ws_id, name, unit)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000003',
         'Nhiệt độ',
@@ -940,9 +1047,12 @@ values (
         'Nhịp thở',
         'lần/phút'
     );
+
 -- Populate diagnoses
-insert into public.healthcare_diagnoses (id, ws_id, name, description)
-values (
+insert into
+    public.healthcare_diagnoses (id, ws_id, name, description)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000003',
         'Sốt',
@@ -960,9 +1070,12 @@ values (
         'Đau đầu',
         'Đau đầu là tình trạng đau ở vùng đầu.'
     );
+
 -- Populate vital_groups
-insert into public.healthcare_vital_groups (id, ws_id, name, description)
-values (
+insert into
+    public.healthcare_vital_groups (id, ws_id, name, description)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000003',
         'Sức khỏe',
@@ -974,9 +1087,12 @@ values (
         'Tình trạng',
         'Nhóm các chỉ số tình trạng của bệnh nhân.'
     );
+
 -- Populate vital_group_vitals
-insert into public.vital_group_vitals (group_id, vital_id)
-values (
+insert into
+    public.vital_group_vitals (group_id, vital_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         '00000000-0000-0000-0000-000000000001'
     ),
@@ -1000,8 +1116,10 @@ values (
         '00000000-0000-0000-0000-000000000002',
         '00000000-0000-0000-0000-000000000006'
     );
+
 -- Populate workspace_users
-insert into public.workspace_users (
+insert into
+    public.workspace_users (
         full_name,
         email,
         phone,
@@ -1013,7 +1131,8 @@ insert into public.workspace_users (
         national_id,
         ws_id
     )
-values (
+values
+    (
         'Nguyen Van A',
         'nguyenvana@gmail.com',
         '0909090808',
@@ -1049,9 +1168,12 @@ values (
         NULL,
         '00000000-0000-0000-0000-000000000003'
     );
+
 -- Populate workspace user roles
-insert into public.workspace_user_groups (id, name, ws_id)
-values (
+insert into
+    public.workspace_user_groups (id, name, ws_id)
+values
+    (
         '00000000-0000-0000-0000-000000000001',
         'Bệnh nhân',
         '00000000-0000-0000-0000-000000000003'
@@ -1083,8 +1205,10 @@ values (
     );
 
 -- insert manage_workspace_roles as permission into workspace_default_permissions for all workspaces
-insert into public.workspace_default_permissions (ws_id, permission, enabled)
-values (
+insert into
+    public.workspace_default_permissions (ws_id, permission, enabled)
+values
+    (
         '00000000-0000-0000-0000-000000000000',
         'manage_workspace_roles',
         true
@@ -1108,4 +1232,102 @@ values (
         '00000000-0000-0000-0000-000000000004',
         'manage_workspace_roles',
         true
+    );
+
+insert into
+    public.workspace_courses (id, ws_id, name)
+values
+    (
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 1'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 2'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 3'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 4'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000005',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 5'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000006',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 6'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000007',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 7'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000008',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 8'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000009',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 9'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000010',
+        '00000000-0000-0000-0000-000000000000',
+        'Course 10'
+    );
+
+insert into
+    public.workspace_course_modules (course_id, name)
+values
+    (
+        '00000000-0000-0000-0000-000000000001',
+        'Module 1'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000001',
+        'Module 2'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'Module 3'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        'Module 4'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
+        'Module 5'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000005',
+        'Module 6'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000006',
+        'Module 7'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000007',
+        'Module 8'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000008',
+        'Module 9'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000009',
+        'Module 10'
     );
