@@ -9,12 +9,14 @@ interface Params {
 
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const data = await req.json();
+
+  // eslint-disable-next-line no-unused-vars
+  const { moduleId: _, quiz_options, ...rest } = await req.json();
   const { quizId: id } = await params;
 
   const { error } = await supabase
     .from('workspace_quizzes')
-    .update(data)
+    .update(rest)
     .eq('id', id);
 
   if (error) {
@@ -23,6 +25,12 @@ export async function PUT(req: Request, { params }: Params) {
       { message: 'Error updating workspace quiz' },
       { status: 500 }
     );
+  }
+
+  if (quiz_options) {
+    await supabase
+      .from('quiz_options')
+      .upsert(quiz_options.map((o: any) => ({ ...o, quiz_id: id })));
   }
 
   return NextResponse.json({ message: 'success' });

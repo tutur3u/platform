@@ -1,6 +1,5 @@
 import LinkButton from '../../link-button';
 import ModuleToggles from './toggles';
-import { DEV_MODE } from '@/constants/common';
 import { WorkspaceCourseModule } from '@/types/db';
 import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -40,6 +39,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   });
 
   const flashcards = await getFlashcards(moduleId);
+  const quizzes = await getQuizzes(moduleId);
 
   return (
     <>
@@ -93,10 +93,9 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               />
               <LinkButton
                 href={`${commonHref}/quizzes`}
-                title={`${t('ws-quizzes.plural')} (0)`}
+                title={`${t('ws-quizzes.plural')} (${quizzes || 0})`}
                 icon={<ListTodo className="h-5 w-5" />}
                 className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
-                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/flashcards`}
@@ -141,6 +140,18 @@ async function getFlashcards(moduleId: string) {
 
   const { count, error } = await supabase
     .from('course_module_flashcards')
+    .select('*', { count: 'exact', head: true })
+    .eq('module_id', moduleId);
+  if (error) throw error;
+
+  return count;
+}
+
+async function getQuizzes(moduleId: string) {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from('course_module_quizzes')
     .select('*', { count: 'exact', head: true })
     .eq('module_id', moduleId);
   if (error) throw error;

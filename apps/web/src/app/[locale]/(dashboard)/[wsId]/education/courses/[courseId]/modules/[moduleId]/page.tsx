@@ -1,6 +1,7 @@
 import { TailwindAdvancedEditor } from '../../../../../documents/advanced-editor';
 import { CourseSection } from '../../section';
 import ClientFlashcards from './flashcards/client-flashcards';
+import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
 import { WorkspaceCourseModule } from '@/types/db';
@@ -34,6 +35,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
   const flashcards = await getFlashcards(moduleId);
+  const quizzes = await getQuizzes(moduleId);
 
   const cards = flashcards.map((fc) => ({
     id: fc.id,
@@ -133,6 +135,18 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/quizzes`}
         title={t('ws-quizzes.plural')}
         icon={<ListTodo className="h-5 w-5" />}
+        content={
+          quizzes && quizzes.length > 0 ? (
+            <div className="grid gap-4 pt-2 md:grid-cols-2">
+              <ClientQuizzes
+                wsId={wsId}
+                moduleId={moduleId}
+                quizzes={quizzes}
+                previewMode
+              />
+            </div>
+          ) : undefined
+        }
       />
       <CourseSection
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/flashcards`}
@@ -193,6 +207,21 @@ const getFlashcards = async (moduleId: string) => {
   const { data, error } = await supabase
     .from('course_module_flashcards')
     .select('...workspace_flashcards(*)')
+    .eq('module_id', moduleId);
+
+  if (error) {
+    console.error('error', error);
+  }
+
+  return data || [];
+};
+
+const getQuizzes = async (moduleId: string) => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('course_module_quizzes')
+    .select('...workspace_quizzes(*, quiz_options(*))')
     .eq('module_id', moduleId);
 
   if (error) {
