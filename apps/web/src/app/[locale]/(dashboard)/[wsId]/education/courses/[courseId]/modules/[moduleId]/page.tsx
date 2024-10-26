@@ -33,7 +33,6 @@ export default async function UserGroupDetailsPage({ params }: Props) {
 
   const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
-
   const flashcards = await getFlashcards(moduleId);
 
   const cards = flashcards.map((fc) => ({

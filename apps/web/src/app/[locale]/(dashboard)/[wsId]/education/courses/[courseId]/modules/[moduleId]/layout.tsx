@@ -96,7 +96,6 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 title={`${t('ws-flashcards.plural')} (${flashcards || 0})`}
                 icon={<SwatchBook className="h-5 w-5" />}
                 className="border-dynamic-sky/20 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20"
-                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/extra-content`}
