@@ -127,7 +127,7 @@ export default function DocumentDetailsPage({ params }: Props) {
           ref={nameInputRef}
           type="text"
           defaultValue={document.name || ''}
-          className="flex-grow border-none text-2xl font-bold focus:border-b focus:border-gray-400 focus:bg-gray-100 focus:outline-none"
+          className="flex-grow text-2xl"
           onBlur={handleNameChange}
           onKeyDown={(e) => e.key === 'Enter' && handleNameChange()}
         />
