@@ -73,9 +73,9 @@ export default async function ModuleResourcesPage({ params }: Props) {
       />
       {resources &&
         resources.length > 0 &&
-        resources.map((file, index) => (
+        resources.map((file) => (
           <div
-            key={`${index}-${file}`}
+            key={file.name}
             className="border-foreground/10 flex flex-wrap items-center gap-2 rounded-lg border p-2 md:p-4"
           >
             <DeleteResourceButton path={`${storagePath}${file.name}`} />

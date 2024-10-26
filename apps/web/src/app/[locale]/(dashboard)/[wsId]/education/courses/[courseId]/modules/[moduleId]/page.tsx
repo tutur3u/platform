@@ -89,7 +89,14 @@ export default async function UserGroupDetailsPage({ params }: Props) {
           data.youtube_links && data.youtube_links.length > 0 ? (
             <div className="grid gap-4">
               {data.youtube_links.map((link: string, index: number) => (
-                <YoutubeEmbed key={index} embedId={link.split('v=')[1]} />
+                <YoutubeEmbed
+                  key={index}
+                  embedId={
+                    link.includes('youtube.com')
+                      ? link.split('v=')[1]
+                      : link.split('youtu.be/')[1]
+                  }
+                />
               ))}
             </div>
           ) : undefined
