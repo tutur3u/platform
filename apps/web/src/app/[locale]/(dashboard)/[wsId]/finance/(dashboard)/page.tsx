@@ -15,6 +15,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { Suspense } from 'react';
 
 export interface FinanceDashboardSearchParams {
+  showFinanceStats?: boolean;
   view?: string;
   startDate?: string;
   endDate?: string;

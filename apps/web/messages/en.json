@@ -1262,7 +1262,8 @@
     "total-expense": "Total expense",
     "total-income": "Total income",
     "recent-transactions": "Recent transactions",
-    "no-transaction": "You have no transactions"
+    "no-transaction": "You have no transactions",
+    "show-finance-stats": "Show finance statistics"
   },
   "inventory-overview": {
     "products-with-prices": "Products with prices"

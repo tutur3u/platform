@@ -1,3 +1,4 @@
+import type { FinanceDashboardSearchParams } from '../../finance/(dashboard)/page';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
@@ -7,8 +8,10 @@ const enabled = true;
 
 export default async function TransactionCategoriesStatistics({
   wsId,
+  searchParams: { showFinanceStats } = {},
 }: {
   wsId: string;
+  searchParams?: FinanceDashboardSearchParams;
 }) {
   const supabase = await createClient();
   const t = await getTranslations();
@@ -32,7 +35,7 @@ export default async function TransactionCategoriesStatistics({
   return (
     <StatisticCard
       title={t('workspace-finance-tabs.categories')}
-      value={categoriesCount}
+      value={showFinanceStats ? categoriesCount : '***'}
       href={`/${wsId}/finance/transactions/categories`}
     />
   );

@@ -1262,7 +1262,8 @@
     "total-expense": "Tổng chi",
     "total-income": "Tổng thu",
     "recent-transactions": "Giao dịch gần đây",
-    "no-transaction": "Không có giao dịch nào"
+    "no-transaction": "Không có giao dịch nào",
+    "show-finance-stats": "Hiển thị số liệu thống kê tài chính"
   },
   "inventory-overview": {
     "products-with-prices": "Sản phẩm có đơn giá"

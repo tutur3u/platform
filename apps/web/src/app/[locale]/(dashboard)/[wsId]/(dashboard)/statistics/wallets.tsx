@@ -1,3 +1,4 @@
+import type { FinanceDashboardSearchParams } from '../../finance/(dashboard)/page';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
@@ -5,7 +6,13 @@ import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
-export default async function WalletsStatistics({ wsId }: { wsId: string }) {
+export default async function WalletsStatistics({
+  wsId,
+  searchParams: { showFinanceStats } = {},
+}: {
+  wsId: string;
+  searchParams?: FinanceDashboardSearchParams;
+}) {
   const supabase = await createClient();
   const t = await getTranslations();
 
@@ -28,7 +35,7 @@ export default async function WalletsStatistics({ wsId }: { wsId: string }) {
   return (
     <StatisticCard
       title={t('workspace-finance-tabs.wallets')}
-      value={walletsCount}
+      value={showFinanceStats ? walletsCount : '***'}
       href={`/${wsId}/finance/wallets`}
     />
   );
