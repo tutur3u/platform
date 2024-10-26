@@ -89,6 +89,9 @@ export default function Canvas() {
   }, []);
 
   return (
-    <canvas ref={canvasRef} className="absolute -z-10 aspect-square w-[80%]" />
+    <canvas
+      ref={canvasRef}
+      className="absolute -z-10 mt-12 aspect-square w-[80%] md:mt-8"
+    />
   );
 }

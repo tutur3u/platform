@@ -77,11 +77,11 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         <p className="my-4 text-lg font-semibold text-white md:text-xl lg:text-2xl">
           Technologies
         </p>
-        <div className="flex flex-wrap justify-center gap-5 md:flex-nowrap md:justify-around">
+        <div className="flex flex-wrap justify-center gap-5">
           {techStack?.map((tech, index) => (
             <div
               key={index}
-              className="flex min-w-20 items-center justify-center rounded-3xl px-4 py-2 text-center md:w-36 md:p-2"
+              className="flex w-1/3 items-center justify-center rounded-3xl px-4 py-2 text-center md:w-1/4"
               style={{
                 background:
                   'linear-gradient(180deg, rgba(244,183,26,0.7) 0%, rgba(135,213,128,0.6) 50%, rgba(26,244,230,0.5) 100%)',
