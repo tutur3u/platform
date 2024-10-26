@@ -139,16 +139,16 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         title={t('ws-flashcards.plural')}
         icon={<SwatchBook className="h-5 w-5" />}
         content={
-          <div className="grid gap-4 pt-2 md:grid-cols-2">
-            {flashcards && flashcards.length > 0 && (
+          flashcards && flashcards.length > 0 ? (
+            <div className="grid gap-4 pt-2 md:grid-cols-2">
               <ClientFlashcards
                 wsId={wsId}
                 moduleId={moduleId}
                 cards={cards}
                 previewMode
               />
-            )}
-          </div>
+            </div>
+          ) : undefined
         }
       />
       <CourseSection
