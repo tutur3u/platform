@@ -1,4 +1,4 @@
-import { TailwindAdvancedEditor } from '../../../../../documents/advanced-editor';
+import { TailwindAdvancedEditor } from '../../../../../documents/components/text-editor/advanced-editor';
 import { CourseSection } from '../../section';
 import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';

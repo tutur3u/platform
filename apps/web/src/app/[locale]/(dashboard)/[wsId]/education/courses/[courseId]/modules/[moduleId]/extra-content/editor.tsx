@@ -1,10 +1,11 @@
 'use client';
 
-import { TailwindAdvancedEditor } from '../../../../../../documents/advanced-editor';
+import { TailwindAdvancedEditor } from '../../../../../../documents/components/text-editor/advanced-editor';
 import { createClient } from '@/utils/supabase/client';
 import { useTranslations } from 'next-intl';
 import { JSONContent } from 'novel';
 import { useEffect, useState } from 'react';
+
 
 export function ModuleExtraContentEditor({
   courseId,

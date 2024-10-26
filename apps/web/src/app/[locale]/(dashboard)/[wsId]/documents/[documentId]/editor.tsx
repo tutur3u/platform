@@ -1,8 +1,9 @@
 'use client';
 
-import { TailwindAdvancedEditor } from '../advanced-editor';
+import { TailwindAdvancedEditor } from '../components/text-editor/advanced-editor';
 import { createClient } from '@/utils/supabase/client';
 import { JSONContent } from 'novel';
+
 
 export function DocumentEditor({
   wsId,

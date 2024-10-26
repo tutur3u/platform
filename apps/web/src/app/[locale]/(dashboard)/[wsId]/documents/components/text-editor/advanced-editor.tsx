@@ -1,15 +1,15 @@
 'use client';
 
-import { defaultEditorContent } from './content';
-import { defaultExtensions } from './extensions';
-import GenerativeMenuSwitch from './generative/generative-menu-switch';
-import { uploadFn } from './image-upload';
-import { ColorSelector } from './selectors/color-selector';
-import { LinkSelector } from './selectors/link-selector';
-import { MathSelector } from './selectors/math-selector';
-import { NodeSelector } from './selectors/node-selector';
-import { TextButtons } from './selectors/text-buttons';
-import { slashCommand, suggestionItems } from './components/ui/slash-command';
+import { defaultEditorContent } from '../../content';
+import { defaultExtensions } from '../../extensions';
+import { uploadFn } from '../../image-upload';
+import { slashCommand, suggestionItems } from '../../slash-command';
+import GenerativeMenuSwitch from '../generative/generative-menu-switch';
+import { ColorSelector } from '../selectors/color-selector';
+import { LinkSelector } from '../selectors/link-selector';
+import { MathSelector } from '../selectors/math-selector';
+import { NodeSelector } from '../selectors/node-selector';
+import { TextButtons } from '../selectors/text-buttons';
 import { cn } from '@/lib/utils';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { useTranslations } from 'next-intl';

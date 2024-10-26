@@ -1,22 +1,21 @@
 'use client';
 
-import { Editor } from './liveblock-editor'
+import { CollaborativeEditor } from './liveblock-colab-editor';
 import {
   ClientSideSuspense,
   LiveblocksProvider,
   RoomProvider,
 } from '@liveblocks/react/suspense';
+import process from 'process';
 
 export default function App() {
   return (
     <LiveblocksProvider
-      publicApiKey={
-        'pk_dev_ew1CU-SlltbyWvnDXtV3-TST-js7rC4pUvCT_jEjJNWeieSSi0kC6BJkl4pLaNYv'
-      }
+      publicApiKey={process.env.LIVEBLOCKS_PUBLIC_API_KEY || 'pk_live_...'} // API key must be provided in .env.local
     >
       <RoomProvider id="my-room">
         <ClientSideSuspense fallback={<div>Loading…</div>}>
-          <Editor />
+          <CollaborativeEditor />
         </ClientSideSuspense>
       </RoomProvider>
     </LiveblocksProvider>
