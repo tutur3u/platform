@@ -2,6 +2,7 @@
 
 import DocumentShareDialog from '../document-share-dialog';
 import { DocumentEditor } from './editor';
+import { Room } from './room';
 import { cn } from '@/lib/utils';
 import { WorkspaceDocument } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
@@ -149,11 +150,15 @@ export default function DocumentDetailsPage({ params }: Props) {
         </Tooltip>
       </div>
 
-      <DocumentEditor
-        wsId={wsId}
-        docId={documentId}
-        content={document.content as JSONContent}
-      />
+      {/* LiveBlock Collaborative Text Editor */}
+      <Room wsID={wsId} documentID={documentId}>
+        <DocumentEditor
+          wsId={wsId}
+          docId={documentId}
+          content={document.content as JSONContent}
+        />
+      </Room>
+
       <DocumentShareDialog
         isOpen={isShareDialogOpen}
         onClose={() => setIsShareDialogOpen(false)}
