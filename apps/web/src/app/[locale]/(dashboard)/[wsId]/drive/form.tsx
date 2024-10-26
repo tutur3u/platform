@@ -19,7 +19,7 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { Check, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -74,7 +74,7 @@ export function StorageFolderForm({ wsId, data, onComplete }: FolderProps) {
 
     const placeholderFile = new File([''], EMPTY_FOLDER_PLACEHOLDER_NAME);
 
-    const { data: _, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('workspaces')
       .upload(
         `${wsId}/${path}${data.name}/${placeholderFile.name}`,
@@ -167,7 +167,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
         [file.name]: 'uploading',
       }));
 
-      const { data: _, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('workspaces')
         .upload(`${wsId}/${path}${generateRandomUUID()}_${file.name}`, file);
 
@@ -214,7 +214,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
           control={form.control}
           name="files"
           disabled={loading}
-          render={({ field: { value, onChange, ...fieldProps } }) => (
+          render={({ field: { onChange, ...fieldProps } }) => (
             <FormItem>
               <FormLabel>
                 {t('storage-object-data-table.files')}
@@ -224,6 +224,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
                 <FormControl>
                   <Input
                     {...fieldProps}
+                    value={undefined}
                     type="file"
                     placeholder="Files"
                     accept="image/*"
@@ -247,11 +248,8 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
                       return a.name.localeCompare(b.name);
                     })
                     .map((file, i) => (
-                      <>
-                        <div
-                          key={i}
-                          className="flex items-center justify-between gap-2 p-2"
-                        >
+                      <Fragment key={file.name}>
+                        <div className="flex items-center justify-between gap-2 p-2">
                           <div>
                             {editingFile?.name === file.name ? (
                               <input
@@ -350,7 +348,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
                           )}
                         </div>
                         {i !== files.length - 1 && <div className="border-b" />}
-                      </>
+                      </Fragment>
                     ))}
                 </ScrollArea>
               )}
