@@ -9,7 +9,6 @@ const nextConfig: NextConfig = {
   experimental: {
     ppr: true,
     // reactCompiler: true,
-    useLightningcss: true,
     optimizeServerReact: true,
   },
   // logging: {
