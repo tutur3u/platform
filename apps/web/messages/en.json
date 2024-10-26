@@ -1659,7 +1659,11 @@
     "youtube_link": "YouTube Link",
     "youtube_links": "YouTube Links",
     "edit_link": "Edit link",
-    "invalid_youtube_link": "Invalid YouTube link"
+    "invalid_youtube_link": "Invalid YouTube link",
+    "resource": "Resource",
+    "resources": "Resources",
+    "add_resource": "Add resource",
+    "add_resource_description": "Add a new resource."
   },
   "ws-flashcards": {
     "plural": "Flashcards",

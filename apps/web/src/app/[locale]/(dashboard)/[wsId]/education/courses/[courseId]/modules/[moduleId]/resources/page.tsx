@@ -58,10 +58,10 @@ export default async function ModuleResourcesPage({ params }: Props) {
             </h1>
           </div>
         }
-        singularTitle={t('ws-course-modules.youtube_link')}
-        pluralTitle={t('ws-course-modules.youtube_links')}
-        createTitle={t('ws-course-modules.add_link')}
-        createDescription={t('ws-course-modules.add_youtube_link_description')}
+        singularTitle={t('ws-course-modules.resource')}
+        pluralTitle={t('ws-course-modules.resources')}
+        createTitle={t('ws-course-modules.add_resource')}
+        createDescription={t('ws-course-modules.add_resource_description')}
         form={
           <StorageObjectForm
             wsId={wsId}

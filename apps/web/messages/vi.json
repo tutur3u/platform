@@ -1659,7 +1659,11 @@
     "youtube_link": "Liên kết YouTube",
     "youtube_links": "Liên kết YouTube",
     "edit_link": "Chỉnh sửa liên kết",
-    "invalid_youtube_link": "Liên kết YouTube không hợp lệ"
+    "invalid_youtube_link": "Liên kết YouTube không hợp lệ",
+    "resource": "Tài nguyên",
+    "resources": "Tài nguyên",
+    "add_resource_description": "Thêm một tài nguyên mới.",
+    "add_resource": "Thêm tài nguyên"
   },
   "ws-flashcards": {
     "plural": "Thẻ từ vựng",
