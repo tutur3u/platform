@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 export type Json =
   | string
   | number
@@ -344,6 +343,39 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_module_flashcards: {
+        Row: {
+          created_at: string;
+          flashcard_id: string;
+          module_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          flashcard_id: string;
+          module_id: string;
+        };
+        Update: {
+          created_at?: string;
+          flashcard_id?: string;
+          module_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_module_flashcards_flashcard_id_fkey';
+            columns: ['flashcard_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_flashcards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_flashcards_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
             referencedColumns: ['id'];
           },
         ];

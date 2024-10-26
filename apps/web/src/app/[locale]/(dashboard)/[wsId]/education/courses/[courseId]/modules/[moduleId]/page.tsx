@@ -1,5 +1,6 @@
 import { TailwindAdvancedEditor } from '../../../../../documents/advanced-editor';
 import { CourseSection } from '../../section';
+import ClientFlashcards from './flashcards/client-flashcards';
 import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
 import { WorkspaceCourseModule } from '@/types/db';
@@ -32,6 +33,33 @@ export default async function UserGroupDetailsPage({ params }: Props) {
 
   const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
+
+  const flashcards = await getFlashcards(moduleId);
+
+  const cards = flashcards.map((fc) => ({
+    id: fc.id,
+    front: fc.front,
+    back: fc.back,
+    width: '100%',
+    frontCardStyle: {
+      color: 'var(--foreground)',
+      backgroundColor: 'hsl(var(--foreground) / 0.05)',
+    },
+    frontHTML: (
+      <div className="flex h-full w-full items-center justify-center rounded-xl border p-4 text-center text-lg font-semibold md:text-2xl">
+        {fc.front}
+      </div>
+    ),
+    backCardStyle: {
+      color: 'var(--foreground)',
+      backgroundColor: 'hsl(var(--foreground) / 0.05)',
+    },
+    backHTML: (
+      <div className="flex h-full w-full items-center justify-center rounded-xl border p-4 text-center text-lg font-semibold md:text-2xl">
+        {fc.back}
+      </div>
+    ),
+  }));
 
   return (
     <div className="grid gap-4">
@@ -111,6 +139,18 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/flashcards`}
         title={t('ws-flashcards.plural')}
         icon={<SwatchBook className="h-5 w-5" />}
+        content={
+          <div className="grid gap-4 pt-2 md:grid-cols-2">
+            {flashcards && flashcards.length > 0 && (
+              <ClientFlashcards
+                wsId={wsId}
+                moduleId={moduleId}
+                cards={cards}
+                previewMode
+              />
+            )}
+          </div>
+        }
       />
       <CourseSection
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/extra-content`}
@@ -146,6 +186,21 @@ const getModuleData = async (courseId: string, moduleId: string) => {
   }
 
   return data as WorkspaceCourseModule;
+};
+
+const getFlashcards = async (moduleId: string) => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('course_module_flashcards')
+    .select('...workspace_flashcards(*)')
+    .eq('module_id', moduleId);
+
+  if (error) {
+    console.error('error', error);
+  }
+
+  return data || [];
 };
 
 async function getResources({ path }: { path: string }) {

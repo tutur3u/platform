@@ -9,12 +9,14 @@ interface Params {
 
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const data = await req.json();
+
+  // eslint-disable-next-line no-unused-vars
+  const { moduleId: _, ...rest } = await req.json();
   const { flashcardId: id } = await params;
 
   const { error } = await supabase
     .from('workspace_flashcards')
-    .update(data)
+    .update(rest)
     .eq('id', id);
 
   if (error) {

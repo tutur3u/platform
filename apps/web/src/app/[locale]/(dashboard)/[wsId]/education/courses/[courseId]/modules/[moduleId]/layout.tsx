@@ -38,6 +38,8 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
     path: `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`,
   });
 
+  const flashcards = await getFlashcards(moduleId);
+
   return (
     <>
       <FeatureSummary
@@ -91,7 +93,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               />
               <LinkButton
                 href={`${commonHref}/flashcards`}
-                title={`${t('ws-flashcards.plural')} (0)`}
+                title={`${t('ws-flashcards.plural')} (${flashcards || 0})`}
                 icon={<SwatchBook className="h-5 w-5" />}
                 className="border-dynamic-sky/20 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20"
                 disabled={!DEV_MODE}
@@ -126,6 +128,18 @@ async function getData(courseId: string, moduleId: string) {
   if (!data) notFound();
 
   return data as WorkspaceCourseModule;
+}
+
+async function getFlashcards(moduleId: string) {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from('course_module_flashcards')
+    .select('*', { count: 'exact', head: true })
+    .eq('module_id', moduleId);
+  if (error) throw error;
+
+  return count;
 }
 
 async function getResources({ path }: { path: string }) {

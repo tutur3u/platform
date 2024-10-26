@@ -32,12 +32,16 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId: id } = await params;
 
-  const data = await req.json();
+  const { moduleId, ...rest } = await req.json();
 
-  const { error } = await supabase.from('workspace_flashcards').insert({
-    ...data,
-    ws_id: id,
-  });
+  const { data, error } = await supabase
+    .from('workspace_flashcards')
+    .insert({
+      ...rest,
+      ws_id: id,
+    })
+    .select('id')
+    .single();
 
   if (error) {
     console.log(error);
@@ -45,6 +49,13 @@ export async function POST(req: Request, { params }: Params) {
       { message: 'Error creating workspace flashcard' },
       { status: 500 }
     );
+  }
+
+  if (moduleId) {
+    await supabase.from('course_module_flashcards').insert({
+      module_id: moduleId,
+      flashcard_id: data.id,
+    });
   }
 
   return NextResponse.json({ message: 'success' });
