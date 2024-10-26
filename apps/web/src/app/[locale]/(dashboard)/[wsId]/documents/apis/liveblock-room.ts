@@ -1,81 +1,48 @@
-export const getTextEditorRooms = async (wsId: string, documentId: string | undefined) => {
-    const roomIDPrefix = documentId ? `${wsId}:${documentId}` : wsId;
-    const queryString = `roomId^'${roomIDPrefix}:' AND metadata['roomType']:'text-editor'`;
-    const encodedQuery = encodeURIComponent(queryString);
+export const createRoomId = (wsId: string, documentId: string) => `${wsId}:${documentId}`;
 
+const fetchAPI = async (url: string, options: RequestInit) => {
     try {
-        const response = await fetch(`https://api.liveblocks.io/v2/rooms?query=${encodedQuery}`, {
-            method: 'GET'
-        });
-
+        const response = await fetch(url, options);
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to get available rooms');
+            throw new Error(errorData.message || 'Request failed');
         }
-
         const result = await response.json();
         if (result.error) {
             throw new Error(result.error.message || 'API error occurred');
         }
-
         return result;
     } catch (error) {
-        console.error('Error fetching text editor rooms:', error);
+        console.error('Fetch error:', error);
         throw error;
     }
 };
 
-export const createTextEditorRoom = async (wsId: string, documentId: string, defaultAccess: string | 'room:write') => {
-    const id = `${wsId}:${documentId}`;
-    const roomType = 'text-editor';
-    const metadata = { roomType };
+export const getTextEditorRooms = async (roomId: string) => {
+    const queryString = `roomId^'${roomId}:' AND metadata['roomType']:'text-editor'`;
+    const encodedQuery = encodeURIComponent(queryString);
+    const url = `https://api.liveblocks.io/v2/rooms?query=${encodedQuery}`;
 
-    try {
-        const response = await fetch('https://api.liveblocks.io/v2/rooms', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id, metadata, defaultAccess }),
-        });
+    return fetchAPI(url, { method: 'GET' });
+};
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to create room');
-        }
+export const createTextEditorRoom = async (roomId: string, defaultAccess: string = 'room:write') => {
+    const metadata = { roomType: 'text-editor' };
+    const url = 'https://api.liveblocks.io/v2/rooms';
+    const options = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: roomId, metadata, defaultAccess }),
+    };
 
-        const result = await response.json();
-        if (result.error) {
-            throw new Error(result.error.message || 'API error occurred');
-        }
-
-        return result;
-    } catch (error) {
-        console.error('Error creating text editor room:', error);
-        throw error;
-    }
-}
+    return fetchAPI(url, options);
+};
 
 export const getActiveUsers = async (wsId: string, documentId: string) => {
     const roomId = `${wsId}:${documentId}`;
-    try {
-        const response = await fetch(`https://api.liveblocks.io/v2/rooms/${roomId}/active_users`, {
-            method: 'GET'
-        });
+    const url = `https://api.liveblocks.io/v2/rooms/${roomId}/active_users`;
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to get active users');
-        }
-
-        const result = await response.json();
-        if (result.error) {
-            throw new Error(result.error.message || 'API error occurred');
-        }
-
-        return result;
-    } catch (error) {
-        console.error('Error fetching active users:', error);
-        throw error;
-    }
-}
+    return fetchAPI(url, { method: 'GET' });
+};
