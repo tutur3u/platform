@@ -33,6 +33,8 @@ interface FolderProps {
 
 interface Props {
   wsId: string;
+  path?: string;
+  accept?: string;
   onComplete?: () => void;
   submitLabel?: string;
 }
@@ -129,14 +131,20 @@ export function StorageFolderForm({ wsId, data, onComplete }: FolderProps) {
   );
 }
 
-export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
+export function StorageObjectForm({
+  wsId,
+  path,
+  accept = 'image/*',
+  onComplete,
+  submitLabel,
+}: Props) {
   const t = useTranslations();
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const path = searchParams.get('path') ?? '';
+  const uploadPath = searchParams.get('path') || '';
 
   const [loading, setLoading] = useState(false);
 
@@ -169,7 +177,10 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
 
       const { error } = await supabase.storage
         .from('workspaces')
-        .upload(`${wsId}/${path}${generateRandomUUID()}_${file.name}`, file);
+        .upload(
+          `${path || `${wsId}/${uploadPath}`}${generateRandomUUID()}_${file.name}`,
+          file
+        );
 
       if (error) {
         setFileStatuses((prev) => ({
@@ -227,7 +238,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
                     value={undefined}
                     type="file"
                     placeholder="Files"
-                    accept="image/*"
+                    accept={accept}
                     onChange={(e) => {
                       onChange(e.target.files && Array.from(e.target.files));
                     }}

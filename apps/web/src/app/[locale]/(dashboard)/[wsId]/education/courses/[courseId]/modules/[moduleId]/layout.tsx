@@ -1,7 +1,7 @@
 import LinkButton from '../../link-button';
 import { DEV_MODE } from '@/constants/common';
 import { WorkspaceCourseModule } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
+import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
@@ -34,6 +34,9 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   const commonHref = `/${wsId}/education/courses/${courseId}/modules/${moduleId}`;
 
   const data = await getData(courseId, moduleId);
+  const resources = await getResources({
+    path: `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`,
+  });
 
   return (
     <>
@@ -69,10 +72,9 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               />
               <LinkButton
                 href={`${commonHref}/resources`}
-                title={`${t('course-details-tabs.resources')} (0)`}
+                title={`${t('course-details-tabs.resources')} (${resources.length || 0})`}
                 icon={<Paperclip className="h-5 w-5" />}
                 className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
-                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/youtube-links`}
@@ -124,4 +126,13 @@ async function getData(courseId: string, moduleId: string) {
   if (!data) notFound();
 
   return data as WorkspaceCourseModule;
+}
+
+async function getResources({ path }: { path: string }) {
+  const supabase = await createDynamicClient();
+
+  const { data, error } = await supabase.storage.from('workspaces').list(path);
+  if (error) throw error;
+
+  return data;
 }

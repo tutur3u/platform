@@ -52,7 +52,7 @@ export default function FeatureSummary<T>({
   secondaryTitle,
   secondaryDescription,
   primaryTrigger = form || href ? (
-    <Button className="w-full md:w-fit" disabled={!form && !href}>
+    <Button size="xs" className="w-full md:w-fit" disabled={!form && !href}>
       <Plus className={cn('h-5 w-5', primaryTriggerTitle ? 'mr-1' : '')} />
       {primaryTriggerTitle}
     </Button>
@@ -61,6 +61,7 @@ export default function FeatureSummary<T>({
   disableSecondaryTrigger,
   secondaryTrigger = (
     <Button
+      size="xs"
       variant="ghost"
       className="w-full md:w-fit"
       disabled={(!form && !href && !defaultData) || disableSecondaryTrigger}

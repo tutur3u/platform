@@ -139,7 +139,9 @@
     "word": "từ",
     "share": "Chia sẻ",
     "confirm_delete_title": "Xác nhận xoá",
-    "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được."
+    "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được.",
+    "previous": "Trước đó",
+    "next": "Tiếp theo"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1688,6 +1690,7 @@
     "youtube_links": "Liên kết YouTube",
     "extra_reading": "Đọc thêm",
     "module_content": "Nội dung mô-đun",
-    "no_youtube_links": "Chưa có liên kết YouTube nào."
+    "no_youtube_links": "Chưa có liên kết YouTube nào.",
+    "resource_preview_unavailable": "Bản xem trước tài nguyên không có sẵn"
   }
 }
