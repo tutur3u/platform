@@ -9,7 +9,7 @@ import { LinkSelector } from './selectors/link-selector';
 import { MathSelector } from './selectors/math-selector';
 import { NodeSelector } from './selectors/node-selector';
 import { TextButtons } from './selectors/text-buttons';
-import { slashCommand, suggestionItems } from './slash-command';
+import { slashCommand, suggestionItems } from './components/ui/slash-command';
 import { cn } from '@/lib/utils';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { useTranslations } from 'next-intl';
