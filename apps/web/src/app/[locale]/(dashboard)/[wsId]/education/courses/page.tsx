@@ -79,7 +79,7 @@ async function getData(
       count: 'exact',
     })
     .eq('ws_id', wsId)
-    .order('name');
+    .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
