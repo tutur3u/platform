@@ -1,9 +1,11 @@
-import { createClient } from '@/utils/supabase/server';
+import DeleteResourceButton from './delete-resource';
+import FileDisplay from './file-display';
+import { StorageObjectForm } from '@/app/[locale]/(dashboard)/[wsId]/drive/form';
+import { createDynamicClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Paperclip } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
 
 interface Props {
   params: Promise<{
@@ -13,10 +15,37 @@ interface Props {
   }>;
 }
 
+// @ts-expect-error
+if (typeof Promise.withResolvers === 'undefined') {
+  if (typeof window !== 'undefined') {
+    // @ts-expect-error This does not exist outside of polyfill which this is doing
+    window.Promise.withResolvers = function () {
+      let resolve, reject;
+      const promise = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+  } else {
+    // @ts-expect-error This does not exist outside of polyfill which this is doing
+    global.Promise.withResolvers = function () {
+      let resolve, reject;
+      const promise = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+  }
+}
+
 export default async function ModuleResourcesPage({ params }: Props) {
-  const { courseId, moduleId } = await params;
   const t = await getTranslations();
-  const links = await getResources(moduleId, courseId);
+
+  const { wsId, courseId, moduleId } = await params;
+  const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
+  const resources = await getResources({ path: storagePath });
 
   return (
     <div className="grid gap-4">
@@ -29,61 +58,53 @@ export default async function ModuleResourcesPage({ params }: Props) {
             </h1>
           </div>
         }
-        singularTitle={t('ws-course-modules.youtube_link')}
-        pluralTitle={t('ws-course-modules.youtube_links')}
-        createTitle={t('ws-course-modules.add_link')}
-        createDescription={t('ws-course-modules.add_youtube_link_description')}
-        // form={
-        //   <YouTubeLinkForm
-        //     wsId={wsId}
-        //     moduleId={moduleId}
-        //     links={links || []}
-        //   />
-        // }
+        singularTitle={t('ws-course-modules.resource')}
+        pluralTitle={t('ws-course-modules.resources')}
+        createTitle={t('ws-course-modules.add_resource')}
+        createDescription={t('ws-course-modules.add_resource_description')}
+        form={
+          <StorageObjectForm
+            wsId={wsId}
+            submitLabel={t('common.upload')}
+            path={storagePath}
+            accept="*"
+          />
+        }
       />
-      {links &&
-        links.length > 0 &&
-        links.map((link: string, index: number) => (
+      {resources &&
+        resources.length > 0 &&
+        resources.map((file) => (
           <div
-            key={`${index}-${link}`}
+            key={file.name}
             className="border-foreground/10 flex flex-wrap items-center gap-2 rounded-lg border p-2 md:p-4"
           >
-            {/* <DeleteLinkButton
-              moduleId={moduleId}
-              courseId={courseId}
-              link={link}
-              links={links}
-            /> */}
-            <Link
-              href={link}
-              className="font-semibold hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {link}
-            </Link>
+            <DeleteResourceButton path={`${storagePath}${file.name}`} />
+            <div className="font-semibold hover:underline">
+              {file.name
+                // remove leading UUID_ from file name
+                .replace(
+                  /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_/,
+                  ''
+                )}
+            </div>
             <Separator className="my-2" />
-            {/* <YoutubeEmbed key={index} embedId={link.split('v=')[1]} /> */}
+            <div className="w-full">
+              <FileDisplay path={storagePath} file={file} />
+            </div>
           </div>
         ))}
     </div>
   );
 }
 
-const getResources = async (moduleId: string, courseId: string) => {
-  const supabase = await createClient();
+async function getResources({ path }: { path: string }) {
+  const supabase = await createDynamicClient();
 
-  const { data, error } = await supabase
-    .from('workspace_course_modules')
-    .select('youtube_links')
-    .eq('id', moduleId)
-    .eq('course_id', courseId)
-    .single();
+  const { data, error } = await supabase.storage.from('workspaces').list(path, {
+    sortBy: { column: 'created_at', order: 'desc' },
+  });
 
-  if (error) {
-    console.error('error', error);
-  }
+  if (error) throw error;
 
-  console.log(data);
-  return [];
-};
+  return data;
+}

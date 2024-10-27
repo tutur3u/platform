@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 interface Props {
   wsId: string;
   row: Row<StorageObject>;
+  // eslint-disable-next-line no-unused-vars
   setStorageObject: (value: StorageObject | undefined) => void;
 }
 
@@ -34,7 +35,7 @@ export function StorageObjectRowActions(props: Props) {
 
     const { error } = await supabase.storage
       .from('workspaces')
-      .remove([storageObj.name]);
+      .remove([`${props.wsId}/${storageObj.name}`]);
 
     if (!error) {
       router.refresh();
@@ -65,7 +66,7 @@ export function StorageObjectRowActions(props: Props) {
 
     const { error } = await supabase.storage
       .from('workspaces')
-      .move(storageObj.name, `${props.wsId}/${safeNewName}`);
+      .move(`${props.wsId}/${storageObj.name}`, `${props.wsId}/${safeNewName}`);
 
     if (!error) {
       router.refresh();
@@ -82,7 +83,7 @@ export function StorageObjectRowActions(props: Props) {
 
     const { data, error } = await supabase.storage
       .from('workspaces')
-      .download(storageObj.name);
+      .download(`${props.wsId}/${storageObj.name}`);
 
     if (error) {
       toast({

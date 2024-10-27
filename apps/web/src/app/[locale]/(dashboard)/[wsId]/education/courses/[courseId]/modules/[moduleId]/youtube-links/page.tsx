@@ -66,7 +66,14 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
               {link}
             </Link>
             <Separator className="my-2" />
-            <YoutubeEmbed key={index} embedId={link.split('v=')[1]} />
+            <YoutubeEmbed
+              key={index}
+              embedId={
+                link.includes('youtube.com')
+                  ? link.split('v=')[1]
+                  : link.split('youtu.be/')[1]
+              }
+            />
           </div>
         ))}
     </div>

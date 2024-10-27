@@ -9,7 +9,7 @@ const enabled = true;
 
 export default async function InvoicesStatistics({
   wsId,
-  searchParams: { view, startDate, endDate } = {},
+  searchParams: { showFinanceStats, view, startDate, endDate } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
@@ -56,7 +56,7 @@ export default async function InvoicesStatistics({
   return (
     <StatisticCard
       title={t('workspace-finance-tabs.invoices')}
-      value={invoicesCount}
+      value={showFinanceStats ? invoicesCount : '***'}
       href={`/${wsId}/finance/invoices`}
     />
   );

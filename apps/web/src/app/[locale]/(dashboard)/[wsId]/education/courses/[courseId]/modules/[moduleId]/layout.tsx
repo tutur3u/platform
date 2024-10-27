@@ -1,7 +1,7 @@
 import LinkButton from '../../link-button';
-import { DEV_MODE } from '@/constants/common';
+import ModuleToggles from './toggles';
 import { WorkspaceCourseModule } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
+import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
@@ -34,6 +34,12 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   const commonHref = `/${wsId}/education/courses/${courseId}/modules/${moduleId}`;
 
   const data = await getData(courseId, moduleId);
+  const resources = await getResources({
+    path: `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`,
+  });
+
+  const flashcards = await getFlashcards(moduleId);
+  const quizzes = await getQuizzes(moduleId);
 
   return (
     <>
@@ -49,6 +55,12 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 {data.name || t('common.unknown')}
               </div>
             </h1>
+            <ModuleToggles
+              courseId={courseId}
+              moduleId={moduleId}
+              isPublic={data.is_public}
+              isPublished={data.is_published}
+            />
             <Separator className="my-2" />
           </>
         }
@@ -69,10 +81,9 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               />
               <LinkButton
                 href={`${commonHref}/resources`}
-                title={`${t('course-details-tabs.resources')} (0)`}
+                title={`${t('course-details-tabs.resources')} (${resources.length || 0})`}
                 icon={<Paperclip className="h-5 w-5" />}
                 className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
-                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/youtube-links`}
@@ -82,17 +93,15 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               />
               <LinkButton
                 href={`${commonHref}/quizzes`}
-                title={`${t('ws-quizzes.plural')} (0)`}
+                title={`${t('ws-quizzes.plural')} (${quizzes || 0})`}
                 icon={<ListTodo className="h-5 w-5" />}
                 className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
-                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/flashcards`}
-                title={`${t('ws-flashcards.plural')} (0)`}
+                title={`${t('ws-flashcards.plural')} (${flashcards || 0})`}
                 icon={<SwatchBook className="h-5 w-5" />}
                 className="border-dynamic-sky/20 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20"
-                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/extra-content`}
@@ -124,4 +133,37 @@ async function getData(courseId: string, moduleId: string) {
   if (!data) notFound();
 
   return data as WorkspaceCourseModule;
+}
+
+async function getFlashcards(moduleId: string) {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from('course_module_flashcards')
+    .select('*', { count: 'exact', head: true })
+    .eq('module_id', moduleId);
+  if (error) throw error;
+
+  return count;
+}
+
+async function getQuizzes(moduleId: string) {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from('course_module_quizzes')
+    .select('*', { count: 'exact', head: true })
+    .eq('module_id', moduleId);
+  if (error) throw error;
+
+  return count;
+}
+
+async function getResources({ path }: { path: string }) {
+  const supabase = await createDynamicClient();
+
+  const { data, error } = await supabase.storage.from('workspaces').list(path);
+  if (error) throw error;
+
+  return data;
 }

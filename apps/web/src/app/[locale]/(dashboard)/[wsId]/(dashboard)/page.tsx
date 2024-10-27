@@ -1,33 +1,27 @@
+import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
 import {
-  FinanceCategoryStatistics,
   HealthcareCategoryStatistics,
   InventoryCategoryStatistics,
   UsersCategoryStatistics,
 } from './categories';
 import { DailyTotalChart, HourlyTotalChart, MonthlyTotalChart } from './charts';
+import FinanceStatistics from './finance';
 import {
   BatchesStatistics,
-  ExpenseStatistics,
   HealthCheckupsStatistics,
   HealthDiagnosesStatistics,
   HealthVitalGroupsStatistics,
   HealthVitalsStatistics,
-  IncomeStatistics,
   InventoryProductsStatistics,
-  InvoicesStatistics,
   ProductCategoriesStatistics,
   ProductsStatistics,
   PromotionsStatistics,
   SuppliersStatistics,
-  TotalBalanceStatistics,
-  TransactionCategoriesStatistics,
-  TransactionsStatistics,
   UnitsStatistics,
   UserGroupTagsStatistics,
   UserGroupsStatistics,
   UserReportsStatistics,
   UsersStatistics,
-  WalletsStatistics,
   WarehousesStatistics,
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
@@ -44,9 +38,13 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<FinanceDashboardSearchParams>;
 }
 
-export default async function WorkspaceHomePage({ params }: Props) {
+export default async function WorkspaceHomePage({
+  params,
+  searchParams,
+}: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
   const workspace = await getWorkspace(wsId);
@@ -76,37 +74,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
         }
       />
 
-      <FinanceCategoryStatistics wsId={wsId} />
-
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
-          <TotalBalanceStatistics wsId={wsId} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <IncomeStatistics wsId={wsId} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <ExpenseStatistics wsId={wsId} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <WalletsStatistics wsId={wsId} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <TransactionCategoriesStatistics wsId={wsId} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <TransactionsStatistics wsId={wsId} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <InvoicesStatistics wsId={wsId} />
-        </Suspense>
-      </div>
+      <FinanceStatistics wsId={wsId} searchParams={searchParams} />
 
       <HealthcareCategoryStatistics wsId={wsId} />
 

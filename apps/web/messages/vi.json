@@ -141,7 +141,14 @@
     "confirm_delete_title": "Xác nhận xoá",
     "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được.",
     "saved": "Đã lưu",
-    "unsaved": "Chưa lưu"
+    "unsaved": "Chưa lưu",
+    "previous": "Trước đó",
+    "next": "Tiếp theo",
+    "published": "Đã xuất bản",
+    "option": "Lựa chọn",
+    "correct": "Chính xác",
+    "add_option": "Thêm tùy chọn",
+    "question": "Câu hỏi"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -549,6 +556,8 @@
   "course-data-table": {
     "id": "Mã số",
     "name": "Tên",
+    "is_public": "Công khai",
+    "is_published": "Đã xuất bản",
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
   },
@@ -1262,7 +1271,8 @@
     "total-expense": "Tổng chi",
     "total-income": "Tổng thu",
     "recent-transactions": "Giao dịch gần đây",
-    "no-transaction": "Không có giao dịch nào"
+    "no-transaction": "Không có giao dịch nào",
+    "show-finance-stats": "Hiển thị số liệu thống kê tài chính"
   },
   "inventory-overview": {
     "products-with-prices": "Sản phẩm có đơn giá"
@@ -1659,7 +1669,11 @@
     "youtube_link": "Liên kết YouTube",
     "youtube_links": "Liên kết YouTube",
     "edit_link": "Chỉnh sửa liên kết",
-    "invalid_youtube_link": "Liên kết YouTube không hợp lệ"
+    "invalid_youtube_link": "Liên kết YouTube không hợp lệ",
+    "resource": "Tài nguyên",
+    "resources": "Tài nguyên",
+    "add_resource_description": "Thêm một tài nguyên mới.",
+    "add_resource": "Thêm tài nguyên"
   },
   "ws-flashcards": {
     "plural": "Thẻ từ vựng",
@@ -1690,6 +1704,7 @@
     "youtube_links": "Liên kết YouTube",
     "extra_reading": "Đọc thêm",
     "module_content": "Nội dung mô-đun",
-    "no_youtube_links": "Chưa có liên kết YouTube nào."
+    "no_youtube_links": "Chưa có liên kết YouTube nào.",
+    "resource_preview_unavailable": "Bản xem trước tài nguyên không có sẵn"
   }
 }
