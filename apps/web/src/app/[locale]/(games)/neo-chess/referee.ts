@@ -101,6 +101,83 @@ export default class Referee {
     });
   }
 
+  private getPossibleMovesForPiece(
+    piece: Piece,
+    boardState: Piece[]
+  ): Array<{ x: number; y: number }> {
+    const possibleMoves: Array<{ x: number; y: number }> = [];
+
+    for (let x = 0; x < 9; x++) {
+      for (let y = 0; y < 9; y++) {
+        const { isValid } = this.isValidMove(
+          piece.id,
+          x,
+          y,
+          piece.x,
+          piece.y,
+          piece.type,
+          piece.team,
+          piece.firstMove,
+          boardState
+        );
+
+        if (isValid) {
+          possibleMoves.push({ x, y });
+        }
+      }
+    }
+
+    return possibleMoves;
+  }
+
+  private simulateMove(
+    boardState: Piece[],
+    piece: Piece,
+    move: { x: number; y: number }
+  ): Piece[] {
+    // Create a copy of the board state
+    const newBoardState = boardState.map((p) => ({ ...p }));
+
+    // Move the piece
+    const pieceToMove = newBoardState.find((p) => p.id === piece.id);
+    if (pieceToMove) {
+      pieceToMove.x = move.x;
+      pieceToMove.y = move.y;
+      pieceToMove.firstMove = false;
+    }
+
+    return newBoardState;
+  }
+
+  private isCheckmate(team: TeamType, boardState: Piece[]): boolean {
+    // Check if the king is in check
+    if (!this.isKingInDanger(team, boardState)) {
+      return false;
+    }
+
+    // Generate all pieces for the current team
+    const playerPieces = boardState.filter((piece) => piece.team === team);
+
+    // Check each piece for possible legal moves
+    for (const piece of playerPieces) {
+      const possibleMoves = this.getPossibleMovesForPiece(piece, boardState);
+
+      for (const move of possibleMoves) {
+        const simulatedBoardState = this.simulateMove(boardState, piece, move);
+        if (!this.isKingInDanger(team, simulatedBoardState)) {
+          return false;
+        }
+      }
+    }
+
+    // If no legal moves found, it's checkmate
+    return true;
+  }
+
+  public checkForCheckmate(team: TeamType, boardState: Piece[]): boolean {
+    return this.isCheckmate(team, boardState);
+  }
+
   private castling(king: Piece, rook: Piece, boardState: Piece[]): boolean {
     const row = king.y;
     const colDirection = rook.x > king.x ? 1 : -1;

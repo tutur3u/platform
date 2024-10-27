@@ -5,7 +5,8 @@ import React, { useEffect, useRef, useState } from 'react';
 export function useDragAndDrop(
   removePieceById: (id: string) => void,
   updatePiecePosition: (id: string, x: number, y: number) => void,
-  promotePawn: (id: string, newType: PieceType) => void
+  promotePawn: (id: string, newType: PieceType) => void,
+  checkmate: (team: TeamType) => void
 ) {
   const chessboardRef = useRef<HTMLDivElement>(null);
   let activePiece: HTMLElement | null = null;
@@ -26,15 +27,20 @@ export function useDragAndDrop(
   const [currentTurn, setCurrentTurn] = useState<TeamType>(
     Math.random() < 0.5 ? TeamType.OURS : TeamType.OPPONENT
   );
-  const [turnAnnouncement, setAnnouncement] = useState<string>('');
+  const [turnAnnouncement, setTurnAnnouncement] = useState<string>('');
   useEffect(() => {
     const startingTeam = currentTurn;
-    setAnnouncement(
+    setTurnAnnouncement(
       startingTeam === TeamType.OURS
         ? 'Light moves first!'
         : 'Dark moves first!'
     );
   }, []);
+
+  // Checkmate management
+  const [checkmateInfo, setCheckmateInfo] = useState<{
+    team: string;
+  } | null>(null);
 
   const touchStartPosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const fixPosition = useRef<{
@@ -209,7 +215,7 @@ export function useDragAndDrop(
           setCurrentTurn(
             pieceTeam === TeamType.OURS ? TeamType.OPPONENT : TeamType.OURS
           );
-          setAnnouncement(
+          setTurnAnnouncement(
             pieceTeam === TeamType.OURS ? "Black's turn!" : "White's turn!"
           );
 
@@ -298,6 +304,16 @@ export function useDragAndDrop(
             row: cellCenter.current.nextRow,
             firstMove: false,
           };
+
+          // Check for checkmate
+          const checkmateTeam = referee.checkForCheckmate(
+            pieceTeam === TeamType.OURS ? TeamType.OPPONENT : TeamType.OURS,
+            validMove.updatedBoardState
+          );
+          if (checkmateTeam) {
+            setCheckmateInfo({ team: pieceTeam });
+            return;
+          }
         } else {
           // Revert to original position
           activePiece.style.position = 'static';
@@ -315,12 +331,38 @@ export function useDragAndDrop(
     };
 
     activePiece = null;
+
+    console.log(boardState);
   }
 
   function handlePromotion(type: PieceType) {
     if (promotionInfo) {
-      promotePawn(promotionInfo.pieceId, type);
+      const pieceId = promotionInfo.pieceId;
+      const piece = boardState.find((p) => p.id === pieceId);
+      if (piece) {
+        const oldX = piece.x;
+        promotePawn(pieceId, type);
+        setBoardState((prevBoardState) =>
+          prevBoardState.map((p) =>
+            p.id === pieceId
+              ? {
+                  ...p,
+                  id: `${p.image.includes('b') ? 'dark' : 'light'}-${type.toLowerCase()}-${oldX}`,
+                  type: type,
+                  image: `/neo-chess/${p.team === TeamType.OURS ? 'w' : 'b'}_${type.toLowerCase()}.png`,
+                }
+              : p
+          )
+        );
+      }
       setPromotionInfo(null);
+    }
+  }
+
+  function handleCheckmate(team: TeamType) {
+    if (checkmateInfo) {
+      checkmate(team);
+      setCheckmateInfo(null);
     }
   }
 
@@ -332,5 +374,7 @@ export function useDragAndDrop(
     promotionInfo,
     handlePromotion,
     turnAnnouncement,
+    checkmateInfo,
+    handleCheckmate,
   };
 }
