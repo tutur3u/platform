@@ -139,7 +139,9 @@
     "word": "từ",
     "share": "Chia sẻ",
     "confirm_delete_title": "Xác nhận xoá",
-    "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được."
+    "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được.",
+    "saved": "Đã lưu",
+    "unsaved": "Chưa lưu"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

@@ -17,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@repo/ui/components/ui/alert-dialog';
 import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
 import {
   Tooltip,
   TooltipContent,
@@ -123,8 +124,8 @@ export default function DocumentDetailsPage({ params }: Props) {
 
   return (
     <div className="relative w-full">
-      <div className="mb-4 flex items-center justify-end">
-        <input
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <Input
           ref={nameInputRef}
           type="text"
           defaultValue={document.name || ''}
@@ -132,15 +133,13 @@ export default function DocumentDetailsPage({ params }: Props) {
           onBlur={handleNameChange}
           onKeyDown={(e) => e.key === 'Enter' && handleNameChange()}
         />
+
         <AlertDialog
           open={isDeleteDialogOpen}
           onOpenChange={setIsDeleteDialogOpen}
         >
           <AlertDialogTrigger asChild>
-            <Button
-              className="mr-2"
-              onClick={() => setIsDeleteDialogOpen(true)}
-            >
+            <Button onClick={() => setIsDeleteDialogOpen(true)}>
               {t('common.delete')}
             </Button>
           </AlertDialogTrigger>
@@ -163,6 +162,7 @@ export default function DocumentDetailsPage({ params }: Props) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
