@@ -14,6 +14,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
 import { notFound } from 'next/navigation';
+import '@/style/prosemirror.css';
 import { ReactNode } from 'react';
 
 const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });

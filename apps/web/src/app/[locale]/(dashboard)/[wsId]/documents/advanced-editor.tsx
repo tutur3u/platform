@@ -12,6 +12,7 @@ import { TextButtons } from './selectors/text-buttons';
 import { slashCommand, suggestionItems } from './slash-command';
 import { cn } from '@/lib/utils';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { CircleCheck, CircleDashed } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   EditorCommand,
@@ -54,7 +55,7 @@ export const TailwindAdvancedEditor = ({
     setInitialContent(content || defaultEditorContent);
   }, [content]);
 
-  const [saveStatus, setSaveStatus] = useState('Saved');
+  const [saveStatus, setSaveStatus] = useState(t('common.saved'));
   const [charsCount, setCharsCount] = useState<number | undefined>();
 
   const [openNode, setOpenNode] = useState(false);
@@ -85,7 +86,7 @@ export const TailwindAdvancedEditor = ({
         editor.storage.markdown.getMarkdown()
       );
       if (onSave) await onSave(json);
-      setSaveStatus('Saved');
+      setSaveStatus(t('common.saved'));
     },
     500
   );
@@ -103,8 +104,13 @@ export const TailwindAdvancedEditor = ({
     <div className="relative w-full">
       {previewMode || (
         <div className="absolute right-5 top-5 z-10 mb-5 flex gap-2">
-          <div className="bg-accent text-muted-foreground rounded-lg px-2 py-1 text-sm">
+          <div className="bg-accent text-muted-foreground flex items-center gap-1 rounded-lg px-2 py-1 text-sm">
             {saveStatus}
+            {saveStatus === t('common.saved') ? (
+              <CircleCheck className="h-3 w-3" />
+            ) : (
+              <CircleDashed className="h-3 w-3" />
+            )}
           </div>
           {charsCount !== undefined && (
             <div
@@ -144,9 +150,13 @@ export const TailwindAdvancedEditor = ({
                 'prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full',
             },
           }}
+          onCreate={({ editor }) => {
+            debouncedUpdates(editor);
+            setSaveStatus(t('common.saved'));
+          }}
           onUpdate={({ editor }) => {
             debouncedUpdates(editor);
-            setSaveStatus('Unsaved');
+            setSaveStatus(t('common.unsaved'));
           }}
           slotAfter={<ImageResizer />}
         >
