@@ -1,8 +1,7 @@
 'use client';
 
+import LiveblockContainer from '../components/text-editor/liveblock-container';
 import DocumentShareDialog from '../document-share-dialog';
-import { DocumentEditor } from './editor';
-import { Room } from './room';
 import { cn } from '@/lib/utils';
 import { WorkspaceDocument } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
@@ -26,7 +25,6 @@ import {
 import { Globe2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { JSONContent } from 'novel';
 import { use, useEffect, useState } from 'react';
 
 interface Props {
@@ -151,13 +149,16 @@ export default function DocumentDetailsPage({ params }: Props) {
       </div>
 
       {/* LiveBlock Collaborative Text Editor */}
-      <Room wsID={wsId} documentID={documentId}>
-        <DocumentEditor
-          wsId={wsId}
-          docId={documentId}
-          content={document.content as JSONContent}
-        />
-      </Room>
+      {/* <LiveblocksProvider>
+        <Room wsID={wsId} documentID={documentId}>
+          <DocumentEditor
+            wsId={wsId}
+            docId={documentId}
+            content={document.content as JSONContent}
+          />
+        </Room>
+      </LiveblocksProvider> */}
+      <LiveblockContainer />
 
       <DocumentShareDialog
         isOpen={isShareDialogOpen}

@@ -5,13 +5,15 @@ import {
   ClientSideSuspense,
   LiveblocksProvider,
   RoomProvider,
-} from '@liveblocks/react/suspense';
-import process from 'process';
+} from '@liveblocks/react';
 
-export default function App() {
+export default function LiveblockContainer() {
+  if (!process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_API_KEY)
+    return <div>Missing Liveblocks public API key.</div>;
+
   return (
     <LiveblocksProvider
-      publicApiKey={process.env.LIVEBLOCKS_PUBLIC_API_KEY || 'pk_live_...'} // API key must be provided in .env.local
+      publicApiKey={process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_API_KEY}
     >
       <RoomProvider id="my-room">
         <ClientSideSuspense fallback={<div>Loading…</div>}>
