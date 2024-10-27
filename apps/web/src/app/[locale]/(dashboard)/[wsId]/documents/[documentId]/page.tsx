@@ -56,30 +56,28 @@ export default function DocumentDetailsPage({ params }: Props) {
   const [wsId, setWsId] = useState<string | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [document, setDocument] = useState<WorkspaceDocument | null>();
+  const [document, setDocument] = useState<WorkspaceDocument | null>(null);
+
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    async function resolveParams() {
-      const resolvedParams = await params;
+    params.then((resolvedParams) => {
       setWsId(resolvedParams.wsId);
       setDocumentId(resolvedParams.documentId);
-    }
-
-    resolveParams();
+    });
   }, [params]);
 
   useEffect(() => {
     if (wsId && documentId) {
+      setLoading(true);
       getData(wsId, documentId).then((data) => {
         setDocument(data);
         setLoading(false);
       });
     }
   }, [wsId, documentId]);
-
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const router = useRouter();
 
   const handleDelete = async () => {
     if (document && wsId && documentId) {
@@ -89,6 +87,8 @@ export default function DocumentDetailsPage({ params }: Props) {
         router.push(`/${wsId}/documents`);
       } catch (error) {
         console.error(error);
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -116,8 +116,9 @@ export default function DocumentDetailsPage({ params }: Props) {
     }
   };
 
-  if (loading || !wsId || !documentId)
+  if (loading || !wsId || !documentId) {
     return <div>{t('common.loading')}...</div>;
+  }
   if (!document) return null;
 
   return (
