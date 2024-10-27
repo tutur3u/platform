@@ -66,10 +66,7 @@ export default function YouTubeLinkForm({
         {
           method: 'PUT',
           body: JSON.stringify({
-            youtube_links: [
-              ...(links || []),
-              data.link,
-            ]
+            youtube_links: [...(links || []), data.link],
           }),
         }
       );

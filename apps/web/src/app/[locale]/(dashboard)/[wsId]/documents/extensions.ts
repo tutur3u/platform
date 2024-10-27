@@ -143,7 +143,9 @@ const codeBlockLowlight = CodeBlockLowlight.configure({
 
 function extractVideoId(url: string) {
   if (!url) return null; // Check if URL is provided
-  const match = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/);
+  const match = url.match(
+    /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
+  );
   return match ? match[1] : null;
 }
 
@@ -159,7 +161,7 @@ const youtube = Youtube.extend({
   },
   addNodeView() {
     return ({ node }) => {
-      const url = node.attrs?.src; 
+      const url = node.attrs?.src;
       const videoId = extractVideoId(url);
 
       // Create a resizable container div
@@ -168,9 +170,8 @@ const youtube = Youtube.extend({
         'relative',
         'rounded-lg border border-muted resize overflow-auto'
       );
-      container.style.width = '100%'; 
-      container.style.height = 'auto'; 
-
+      container.style.width = '100%';
+      container.style.height = 'auto';
 
       if (videoId) {
         const video = document.createElement('iframe');
@@ -181,7 +182,9 @@ const youtube = Youtube.extend({
 
         container.appendChild(video);
       } else {
-        container.innerText = url ? 'Invalid YouTube URL' : 'YouTube URL missing';
+        container.innerText = url
+          ? 'Invalid YouTube URL'
+          : 'YouTube URL missing';
       }
 
       return {
