@@ -48,7 +48,7 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { Check, ChevronsUpDown, Plus } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -108,7 +108,7 @@ export function ProductForm({
     },
   });
 
-  const { fields, append } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     name: 'inventory',
     control: form.control,
   });
@@ -121,6 +121,10 @@ export function ProductForm({
       amount: 0,
       price: 0,
     });
+  }
+
+  function removeStock(index: number) {
+    remove(index);
   }
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
@@ -441,6 +445,20 @@ export function ProductForm({
                             </FormItem>
                           )}
                         />
+                      </div>
+
+                      <div className="text-right">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          onClick={() => {
+                            removeStock(i);
+                          }}
+                        >
+                          <Trash />
+                          <span className="sr-only">Remove stock option</span>
+                        </Button>
                       </div>
 
                       <Separator />
