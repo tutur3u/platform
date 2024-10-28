@@ -6,7 +6,6 @@ import {
   CodeBlockLowlight,
   Color,
   CustomKeymap,
-  GlobalDragHandle,
   HighlightExtension,
   HorizontalRule,
   MarkdownExtension,
@@ -24,6 +23,8 @@ import {
   Youtube,
 } from 'novel/extensions';
 import { UploadImagesPlugin } from 'novel/plugins';
+import AutoJoiner from 'tiptap-extension-auto-joiner';
+import GlobalDragHandle from 'tiptap-extension-global-drag-handle';
 
 // Configure AIHighlight for advanced functionality
 const aiHighlight = AIHighlight;
@@ -193,6 +194,9 @@ const youtube = Youtube.extend({
     };
   },
 }).configure({
+  HTMLAttributes: {
+    class: cx('rounded-lg border border-muted'),
+  },
   inline: false,
 });
 
@@ -217,6 +221,20 @@ const mathematics = Mathematics.configure({
 // Configure CharacterCount extension
 const characterCount = CharacterCount.configure();
 
+const autoJoiner = AutoJoiner.configure({
+  elementsToJoin: ['bulletList', 'orderedList'], // default
+});
+
+const globalDragHandle = GlobalDragHandle.configure({
+  dragHandleWidth: 20, // default
+
+  // The scrollTreshold specifies how close the user must drag an element to the edge of the lower/upper screen for automatic
+  // scrolling to take place. For example, scrollTreshold = 100 means that scrolling starts automatically when the user drags an
+  // element to a position that is max. 99px away from the edge of the screen
+  // You can set this to 0 to prevent auto scrolling caused by this extension
+  scrollTreshold: 100, // default
+});
+
 // Export all extensions as default for use in the editor
 export const defaultExtensions = [
   starterKit,
@@ -239,5 +257,6 @@ export const defaultExtensions = [
   TextStyle,
   Color,
   CustomKeymap,
-  GlobalDragHandle,
+  autoJoiner,
+  globalDragHandle,
 ];
