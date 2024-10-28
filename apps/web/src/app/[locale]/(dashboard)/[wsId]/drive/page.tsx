@@ -1,4 +1,4 @@
-import { StorageObjectForm } from './form';
+import NewActions from './new-actions';
 import StorageObjectsTable from './table';
 import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import {
@@ -53,9 +53,7 @@ export default async function WorkspaceStorageObjectsPage({
         description={t('ws-storage-objects.description')}
         createTitle={t('ws-storage-objects.upload')}
         createDescription={t('ws-storage-objects.upload_description')}
-        form={
-          <StorageObjectForm wsId={wsId} submitLabel={t('common.upload')} />
-        }
+        action={<NewActions wsId={wsId} />}
       />
 
       <div className="mb-8 mt-4 grid gap-4 text-center md:grid-cols-2 xl:grid-cols-4">
