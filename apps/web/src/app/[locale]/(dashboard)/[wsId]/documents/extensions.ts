@@ -36,8 +36,6 @@ const placeholder = Placeholder.configure({
     }
     return "Press '/' for commands";
   },
-  emptyEditorClass:
-    'cursor-text before:content-[attr(data-placeholder)] before:absolute before:top-0 before:left-0 before:text-mauve-11 before:opacity-50 before-pointer-events-none',
   includeChildren: true,
 });
 
