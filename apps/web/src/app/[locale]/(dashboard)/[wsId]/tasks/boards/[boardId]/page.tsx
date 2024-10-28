@@ -2,15 +2,17 @@ import { createClient } from '@/utils/supabase/client';
 import { KanbanBoard } from './kanban';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId?: string;
     boardId?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceBoardEditor({
-  params: { wsId, boardId },
+  params,
 }: Props) {
+  const { wsId, boardId } = await params
+
   if (!boardId) {
     return <p>No boardId provided</p>;
   }
@@ -34,7 +36,7 @@ export default async function WorkspaceBoardEditor({
 async function getData(boardId: string) {
   const supabase = createClient();
 
-  // Fetch all columns for the given board
+
   const { data: columns, error: columnError } = await supabase
     .from('workspace_boards_columns')
     .select('*')
@@ -50,7 +52,7 @@ async function getData(boardId: string) {
     return { columns: [], tasks: [] };
   }
 
-  // Fetch all tasks for the given columns using their column IDs
+
   const { data: tasks, error: taskError } = await supabase
     .from('workspace_board_tasks')
     .select('*');
@@ -61,8 +63,8 @@ async function getData(boardId: string) {
   }
 
   const processedTasks = tasks.map((task, index) => ({
-    id: task.id ?? '', // Ensure task ID is set
-    columnId: task.columnId ?? '', // Ensure columnId is set
+    id: task.id ?? '', 
+    columnId: task.columnId ?? '',
     content: task.content ?? 'No Content',
     position: task.position != null ? task.position : index + 1,
     created_at: task.created_at ?? '',

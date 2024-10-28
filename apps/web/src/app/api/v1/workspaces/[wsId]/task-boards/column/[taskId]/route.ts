@@ -2,18 +2,16 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     taskId: string;
-  };
+  }>;
 }
 
-export async function POST(req: Request, { params: { taskId } }: Params) {
+export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
-
+  const { taskId } = await params;
   try {
-
     const data = await req.json();
-
 
     if (!data.tasks || !data.tasks.position || !data.tasks.columnId) {
       return NextResponse.json(
@@ -21,7 +19,6 @@ export async function POST(req: Request, { params: { taskId } }: Params) {
         { status: 400 }
       );
     }
-
 
     const { error } = await supabase
       .from('workspace_board_tasks')
