@@ -149,7 +149,8 @@
     "correct": "Correct",
     "add_option": "Add option",
     "question": "Question",
-    "import": "Import"
+    "import": "Import",
+    "invalid-file-type": "Invalid file type"
   },
   "date_helper": {
     "time-unit": "Time unit",

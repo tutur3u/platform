@@ -84,6 +84,18 @@ export function DataTableToolbar<TData>({
         )}
       </div>
 
+      {importContent && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 w-full md:w-fit">
+              <Upload className="h-4 w-4" />
+              {t?.('common.import')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm">{importContent}</DialogContent>
+        </Dialog>
+      )}
+
       {exportContent && (
         <Dialog>
           <DialogTrigger asChild>
@@ -97,18 +109,6 @@ export function DataTableToolbar<TData>({
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-sm">{exportContent}</DialogContent>
-        </Dialog>
-      )}
-
-      {importContent && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 w-full md:w-fit">
-              <Upload className="h-4 w-4" />
-              {t?.('common.import')}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-sm">{importContent}</DialogContent>
         </Dialog>
       )}
 
