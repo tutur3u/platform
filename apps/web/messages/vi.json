@@ -148,7 +148,8 @@
     "option": "Lựa chọn",
     "correct": "Chính xác",
     "add_option": "Thêm tùy chọn",
-    "question": "Câu hỏi"
+    "question": "Câu hỏi",
+    "create_new": "Tạo mới"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -737,12 +738,19 @@
     "ai_chat_playground_discontinued_p2": "tạm thời bị vô hiệu hóa để tiến hành cải thiện và kiểm tra thêm. Đừng lo lắng! Chúng tôi đang phát triển thêm nhiều tính năng thú vị để mang lại trải nghiệm tốt hơn cho bạn. Hãy chờ đợi sự trở lại với nhiều tính năng vượt trội hơn. Cảm ơn bạn đã kiên nhẫn và thấu hiểu cho chúng tôi.\n\nTrân trọng,\nTuturuuu"
   },
   "ws-storage-objects": {
-    "module": "Tuturuuu Drive",
+    "name": "Tuturuuu Drive",
+    "plural": "Tuturuuu Drive",
+    "singular": "Tuturuuu Drive",
+    "upload": "Tải lên",
+    "upload_description": "Tải tệp tin lên Tuturuuu Drive",
     "description": "Lưu trữ tệp làm việc một cách an toàn và truy cập chúng từ bất kỳ nơi nào.",
     "total_files": "Tổng số tệp",
     "total_size": "Tổng dung lượng",
     "largest_file": "Tệp lớn nhất",
-    "smallest_file": "Tệp nhỏ nhất"
+    "smallest_file": "Tệp nhỏ nhất",
+    "files": "Tệp tin",
+    "folder": "Thư mục",
+    "folder_create": "Tạo thư mục mới"
   },
   "ws-ai-workflows": {
     "module": "Quy trình",

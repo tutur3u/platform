@@ -148,7 +148,8 @@
     "option": "Option",
     "correct": "Correct",
     "add_option": "Add option",
-    "question": "Question"
+    "question": "Question",
+    "create_new": "Create new"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -737,12 +738,19 @@
     "ai_chat_playground_discontinued_p2": "has been temporarily disabled for improvement and further testing. Don't worry! We are working on exciting features to bring you a better experience. Stay tuned for a comeback with more features and functionalities. Thank you for your patience and understanding.\n\nBest regards,\nTuturuuu"
   },
   "ws-storage-objects": {
-    "module": "Tuturuuu Drive",
+    "name": "Tuturuuu Drive",
+    "plural": "Tuturuuu Drive",
+    "singular": "Tuturuuu Drive",
+    "upload": "Upload",
+    "upload_description": "Upload multiple files to Tuturuuu Drive",
     "description": "Store workspace files securely, and access them from anywhere.",
     "total_files": "Total Files",
     "total_size": "Total Size",
     "largest_file": "Largest File",
-    "smallest_file": "Smallest File"
+    "smallest_file": "Smallest File",
+    "files": "Files",
+    "folder": "Folder",
+    "folder_create": "Create folder"
   },
   "ws-ai-workflows": {
     "module": "Workflows",
