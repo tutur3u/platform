@@ -746,7 +746,10 @@
     "total_files": "Tổng số tệp",
     "total_size": "Tổng dung lượng",
     "largest_file": "Tệp lớn nhất",
-    "smallest_file": "Tệp nhỏ nhất"
+    "smallest_file": "Tệp nhỏ nhất",
+    "files": "Tệp tin",
+    "folder": "Thư mục",
+    "folder_create": "Tạo thư mục mới"
   },
   "ws-ai-workflows": {
     "module": "Quy trình",
