@@ -15,7 +15,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^0.0.32",
+    "@ai-sdk/amazon-bedrock": "^0.0.33",
     "@ai-sdk/anthropic": "^0.0.53",
     "@ai-sdk/azure": "^0.0.50",
     "@ai-sdk/cohere": "^0.0.27",
