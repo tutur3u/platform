@@ -27,9 +27,9 @@ export default function NewActions({ wsId }: Props) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="cursor-pointer">
-            <Plus className="mr-2 h-4 w-4" />
-            <span>{t('common.new')}</span>
+          <Button size="xs" className="cursor-pointer">
+            <Plus className="h-4 w-4" />
+            <span>{t('common.create_new')}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
