@@ -28,8 +28,8 @@ export default function ColumnCreation({ wsId, boardId }: { wsId: string, boardI
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            boardId: boardId,  // The boardId where the column will be created
-            title: title,      // The title of the new column
+            boardId: boardId,  
+            title: title,      
           }),
         }
       );
@@ -64,14 +64,14 @@ export default function ColumnCreation({ wsId, boardId }: { wsId: string, boardI
             {/* Input for the column title */}
             <Input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}  // Update title state on input change
+              onChange={(e) => setTitle(e.target.value)}  
               placeholder="Enter column title"
             />
           </div>
           <DialogFooter>
             <Button 
               type="submit" 
-              onClick={createNewColumn}  // Trigger the function on button click
+              onClick={createNewColumn} 
             >
               Create
             </Button>

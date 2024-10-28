@@ -10,7 +10,6 @@ export async function POST(req: Request) {
       boardId,
       title,
     });
-
     if (error) {
       console.error('Error inserting data:', error);
       return NextResponse.json(
