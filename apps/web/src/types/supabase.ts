@@ -18,9 +18,11 @@ export type Database = {
           creator_id: string | null;
           finish_reason: string | null;
           id: string;
+          metadata: Json | null;
           model: string | null;
           prompt_tokens: number;
           role: Database['public']['Enums']['chat_role'];
+          type: Database['public']['Enums']['ai_message_type'];
         };
         Insert: {
           chat_id: string;
@@ -30,9 +32,11 @@ export type Database = {
           creator_id?: string | null;
           finish_reason?: string | null;
           id?: string;
+          metadata?: Json | null;
           model?: string | null;
           prompt_tokens?: number;
           role: Database['public']['Enums']['chat_role'];
+          type?: Database['public']['Enums']['ai_message_type'];
         };
         Update: {
           chat_id?: string;
@@ -42,9 +46,11 @@ export type Database = {
           creator_id?: string | null;
           finish_reason?: string | null;
           id?: string;
+          metadata?: Json | null;
           model?: string | null;
           prompt_tokens?: number;
           role?: Database['public']['Enums']['chat_role'];
+          type?: Database['public']['Enums']['ai_message_type'];
         };
         Relationships: [
           {
@@ -78,6 +84,7 @@ export type Database = {
           is_public: boolean;
           latest_summarized_message_id: string | null;
           model: string | null;
+          pinned: boolean;
           summary: string | null;
           title: string | null;
         };
@@ -88,6 +95,7 @@ export type Database = {
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;
+          pinned?: boolean;
           summary?: string | null;
           title?: string | null;
         };
@@ -98,6 +106,7 @@ export type Database = {
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;
+          pinned?: boolean;
           summary?: string | null;
           title?: string | null;
         };
@@ -215,6 +224,13 @@ export type Database = {
             columns: ['event_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_calendar_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
           {
@@ -507,6 +523,13 @@ export type Database = {
             foreignKeyName: 'external_user_monthly_report_logs_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
@@ -607,6 +630,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
           {
@@ -904,6 +934,13 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
           {
@@ -1209,6 +1246,13 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_healthcare_vitals_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
           {
@@ -1790,9 +1834,7 @@ export type Database = {
       };
       quiz_options: {
         Row: {
-          content: string | null;
           created_at: string;
-          email: string | null;
           id: string;
           is_correct: boolean;
           points: number | null;
@@ -1834,59 +1876,68 @@ export type Database = {
           post_id: string | null;
           receiver_id: string;
           sender_id: string;
+          source_email: string;
+          source_name: string;
+          subject: string;
         };
         Insert: {
-          content?: string | null;
+          content: string;
           created_at?: string;
-          email?: string | null;
+          email: string;
           id?: string;
           post_id?: string | null;
           receiver_id: string;
           sender_id: string;
+          source_email: string;
+          source_name: string;
+          subject: string;
         };
         Update: {
-          content?: string | null;
+          content?: string;
           created_at?: string;
-          email?: string | null;
+          email?: string;
           id?: string;
           post_id?: string | null;
           receiver_id?: string;
           sender_id?: string;
+          source_email?: string;
+          source_name?: string;
+          subject?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'send_emails_post_id_fkey';
+            foreignKeyName: 'sent_emails_post_id_fkey';
             columns: ['post_id'];
             isOneToOne: false;
             referencedRelation: 'user_group_posts';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'send_emails_receiver_id_fkey';
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
             columns: ['receiver_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'send_emails_receiver_id_fkey';
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
             columns: ['receiver_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'send_emails_receiver_id_fkey';
+            foreignKeyName: 'sent_emails_receiver_id_fkey';
             columns: ['receiver_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'send_emails_sender_id_fkey';
+            foreignKeyName: 'sent_emails_sender_id_fkey';
             columns: ['sender_id'];
             isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -2178,6 +2229,13 @@ export type Database = {
             foreignKeyName: 'user_feedbacks_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_feedbacks_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
@@ -2241,6 +2299,13 @@ export type Database = {
             foreignKeyName: 'user_group_attendance_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_attendance_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
@@ -2295,6 +2360,13 @@ export type Database = {
             foreignKeyName: 'user_group_indicators_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_indicators_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
@@ -2338,6 +2410,13 @@ export type Database = {
             foreignKeyName: 'user_group_linked_products_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_linked_products_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
@@ -2367,6 +2446,7 @@ export type Database = {
       user_group_post_checks: {
         Row: {
           created_at: string;
+          email_id: string | null;
           is_completed: boolean;
           notes: string | null;
           post_id: string;
@@ -2374,6 +2454,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          email_id?: string | null;
           is_completed: boolean;
           notes?: string | null;
           post_id: string;
@@ -2381,12 +2462,20 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          email_id?: string | null;
           is_completed?: boolean;
           notes?: string | null;
           post_id?: string;
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'user_group_post_checks_email_id_fkey';
+            columns: ['email_id'];
+            isOneToOne: true;
+            referencedRelation: 'sent_emails';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'user_group_post_checks_post_id_fkey';
             columns: ['post_id'];
@@ -2443,6 +2532,13 @@ export type Database = {
           title?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'user_group_posts_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'user_group_posts_group_id_fkey';
             columns: ['group_id'];
@@ -2504,6 +2600,13 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
           {
@@ -2875,41 +2978,6 @@ export type Database = {
           },
         ];
       };
-      workspace_board_tasks: {
-        Row: {
-          columnId: string | null;
-          content: string | null;
-          created_at: string;
-          id: string;
-          position: number | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          columnId?: string | null;
-          content?: string | null;
-          created_at?: string;
-          id?: string;
-          position?: number | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          columnId?: string | null;
-          content?: string | null;
-          created_at?: string;
-          id?: string;
-          position?: number | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_board_tasks_columnId_fkey';
-            columns: ['columnId'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_boards_columns';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       workspace_boards: {
         Row: {
           archived: boolean | null;
@@ -2951,38 +3019,6 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      workspace_boards_columns: {
-        Row: {
-          boardId: string | null;
-          created_at: string;
-          id: string;
-          potition: number | null;
-          title: string | null;
-        };
-        Insert: {
-          boardId?: string | null;
-          created_at?: string;
-          id?: string;
-          potition?: number | null;
-          title?: string | null;
-        };
-        Update: {
-          boardId?: string | null;
-          created_at?: string;
-          id?: string;
-          potition?: number | null;
-          title?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_boards_columns_boardId_fkey';
-            columns: ['boardId'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_boards';
             referencedColumns: ['id'];
           },
         ];
@@ -3807,6 +3843,13 @@ export type Database = {
             foreignKeyName: 'public_workspace_user_group_tag_groups_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_user_group_tag_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_user_groups';
             referencedColumns: ['id'];
           },
@@ -3922,6 +3965,13 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
             columns: ['group_id'];
@@ -4431,6 +4481,56 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_groups_with_tags: {
+        Row: {
+          archived: boolean | null;
+          created_at: string | null;
+          ending_date: string | null;
+          id: string | null;
+          name: string | null;
+          notes: string | null;
+          sessions: string[] | null;
+          starting_date: string | null;
+          tag_count: number | null;
+          tags: Json | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          archived?: boolean | null;
+          created_at?: string | null;
+          ending_date?: string | null;
+          id?: string | null;
+          name?: string | null;
+          notes?: string | null;
+          sessions?: string[] | null;
+          starting_date?: string | null;
+          tag_count?: never;
+          tags?: never;
+          ws_id?: string | null;
+        };
+        Update: {
+          archived?: boolean | null;
+          created_at?: string | null;
+          ending_date?: string | null;
+          id?: string | null;
+          name?: string | null;
+          notes?: string | null;
+          sessions?: string[] | null;
+          starting_date?: string | null;
+          tag_count?: never;
+          tags?: never;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_roles_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_members_and_invites: {
         Row: {
           avatar_url: string | null;
@@ -4766,6 +4866,18 @@ export type Database = {
           amount: number;
         }[];
       };
+      get_possible_excluded_tags: {
+        Args: {
+          _ws_id: string;
+          included_tags: string[];
+        };
+        Returns: {
+          id: string;
+          name: string;
+          ws_id: string;
+          amount: number;
+        }[];
+      };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -4825,6 +4937,23 @@ export type Database = {
           end_date?: string;
         };
         Returns: number;
+      };
+      get_workspace_user_groups: {
+        Args: {
+          _ws_id: string;
+          included_tags: string[];
+          excluded_tags: string[];
+          search_query: string;
+        };
+        Returns: {
+          id: string;
+          name: string;
+          notes: string;
+          ws_id: string;
+          tags: string[];
+          tag_count: number;
+          created_at: string;
+        }[];
       };
       get_workspace_user_groups_count: {
         Args: {
@@ -4931,6 +5060,7 @@ export type Database = {
         Args: {
           message: string;
           chat_id: string;
+          source: string;
         };
         Returns: undefined;
       };
@@ -5026,6 +5156,14 @@ export type Database = {
       };
     };
     Enums: {
+      ai_message_type:
+        | 'message'
+        | 'file'
+        | 'summary'
+        | 'notes'
+        | 'multi_choice_quiz'
+        | 'paragraph_quiz'
+        | 'flashcards';
       chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -5044,10 +5182,13 @@ export type Database = {
         | 'manage_documents'
         | 'manage_drive'
         | 'manage_users'
+        | 'export_users_data'
         | 'manage_inventory'
         | 'manage_finance'
+        | 'export_finance_data'
         | 'ai_chat'
-        | 'ai_lab';
+        | 'ai_lab'
+        | 'send_user_group_post_emails';
     };
     CompositeTypes: {
       [_ in never]: never;
