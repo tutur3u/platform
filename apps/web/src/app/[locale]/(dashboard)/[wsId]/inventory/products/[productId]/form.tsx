@@ -1,6 +1,7 @@
 'use client';
 
 import { ProductCategoryForm } from '../../categories/form';
+import { ProductWarehouseForm } from '../../warehouses/form';
 import { cn } from '@/lib/utils';
 import { ProductCategory } from '@/types/primitives/ProductCategory';
 import { ProductUnit } from '@/types/primitives/ProductUnit';
@@ -47,7 +48,7 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { Check, ChevronsUpDown, Plus } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -93,6 +94,7 @@ export function ProductForm({
 
   const [loading, setLoading] = useState(false);
   const [showCategoryDialog, setCategoryDialog] = useState(false);
+  const [showWarehouseDialog, setWarehouseDialog] = useState(false);
   const router = useRouter();
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -106,7 +108,7 @@ export function ProductForm({
     },
   });
 
-  const { fields, append } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     name: 'inventory',
     control: form.control,
   });
@@ -119,6 +121,10 @@ export function ProductForm({
       amount: 0,
       price: 0,
     });
+  }
+
+  function removeStock(index: number) {
+    remove(index);
   }
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
@@ -263,32 +269,72 @@ export function ProductForm({
                             <FormLabel>
                               {t('ws-inventory-warehouses.singular')}
                             </FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger
-                                  id="status"
-                                  aria-label={t(
-                                    'ws-inventory-warehouses.placeholder'
-                                  )}
-                                >
-                                  <SelectValue
-                                    placeholder={t(
-                                      'ws-inventory-warehouses.placeholder'
-                                    )}
-                                  />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {warehouses.map((warehouse) => (
-                                  <SelectItem value={warehouse.id}>
-                                    {warehouse.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-full justify-between"
+                                  >
+                                    {field.value
+                                      ? warehouses.find(
+                                          (warehouse) =>
+                                            warehouse.id === field.value
+                                        )?.name
+                                      : t(
+                                          'ws-inventory-warehouses.placeholder'
+                                        )}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0">
+                                <Command>
+                                  <CommandInput placeholder="Search warehouse..." />
+                                  <CommandList>
+                                    <CommandEmpty>
+                                      Warehouse {field.value} not found.
+                                    </CommandEmpty>
+                                    <CommandGroup>
+                                      <CommandItem
+                                        onSelect={() =>
+                                          setWarehouseDialog(true)
+                                        }
+                                      >
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Create new warehouse
+                                      </CommandItem>
+                                    </CommandGroup>
+                                    <CommandSeparator />
+                                    <CommandGroup>
+                                      {warehouses.map((warehouse) => (
+                                        <CommandItem
+                                          value={warehouse.id}
+                                          key={warehouse.id}
+                                          onSelect={() => {
+                                            form.setValue(
+                                              `inventory.${i}.warehouse_id`,
+                                              warehouse.id
+                                            );
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              'mr-2 h-4 w-4',
+                                              warehouse.id === field.value
+                                                ? 'opacity-100'
+                                                : 'opacity-0'
+                                            )}
+                                          />
+                                          {warehouse.name}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -389,7 +435,7 @@ export function ProductForm({
                                 </FormControl>
                                 <SelectContent>
                                   {units.map((unit) => (
-                                    <SelectItem value={unit.id}>
+                                    <SelectItem value={unit.id} key={unit.id}>
                                       {unit.name}
                                     </SelectItem>
                                   ))}
@@ -399,6 +445,20 @@ export function ProductForm({
                             </FormItem>
                           )}
                         />
+                      </div>
+
+                      <div className="text-right">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          onClick={() => {
+                            removeStock(i);
+                          }}
+                        >
+                          <Trash />
+                          <span className="sr-only">Remove stock option</span>
+                        </Button>
                       </div>
 
                       <Separator />
@@ -522,6 +582,15 @@ export function ProductForm({
         editDescription={t('ws-product-categories.create_description')}
         setOpen={setCategoryDialog}
         form={<ProductCategoryForm wsId={wsId} />}
+      />
+
+      <ModifiableDialogTrigger
+        data={data}
+        open={showWarehouseDialog}
+        title={t('ws-product-warehouses.create')}
+        editDescription={t('ws-product-warehouses.create_description')}
+        setOpen={setWarehouseDialog}
+        form={<ProductWarehouseForm wsId={wsId} />}
       />
     </>
   );
