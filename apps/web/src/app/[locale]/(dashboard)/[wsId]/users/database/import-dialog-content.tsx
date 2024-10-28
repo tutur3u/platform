@@ -16,6 +16,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
+  CheckCheck,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
   const [data, setData] = useState<{ fullName: string; email: string }[]>([]);
   const [page, setPage] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [uploaded, setUploaded] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -163,7 +165,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
       for (let i = 0; i < totalBatches; i++) {
         const batch = newData.slice(i * rowsPerBatch, (i + 1) * rowsPerBatch);
         const formattedBatch = batch.map((row) => ({
-          id: generateUUID(row.email.toLowerCase()),
+          id: generateUUID(wsId, row.email.toLowerCase()),
           full_name: row.fullName,
           email: row.email,
           ws_id: wsId,
@@ -181,6 +183,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
       }
 
       setUploading(false);
+      setUploaded(true);
       router.refresh();
     } catch (error: any) {
       setError(error.message);
@@ -212,7 +215,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
             onChange={handleFileChange}
             accept=".xlsx"
             className="input-class w-full pb-4"
-            disabled={uploading}
+            disabled={uploading || uploaded}
           />
           {error && <p className="text-red-500">{error}</p>}
         </div>
@@ -277,7 +280,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
                 </Button>
               </div>
             </div>
-            <Separator className="my-2" />
+            <Separator className="mt-2" />
           </div>
         )}
 
@@ -289,14 +292,24 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
       </div>
 
       <DialogFooter className="justify-between">
-        <DialogClose asChild>
-          <Button type="button" variant="secondary">
-            {t('common.cancel')}
-          </Button>
-        </DialogClose>
+        {uploaded || (
+          <DialogClose asChild>
+            <Button type="button" variant="secondary">
+              {t('common.cancel')}
+            </Button>
+          </DialogClose>
+        )}
 
-        <Button onClick={handleImport} disabled={uploading || !file}>
-          {uploading ? t('common.processing') : t('common.import')}
+        <Button
+          onClick={handleImport}
+          disabled={uploaded || uploading || !file}
+        >
+          {uploaded && <CheckCheck />}
+          {uploaded
+            ? t('common.uploaded')
+            : uploading
+              ? t('common.processing')
+              : t('common.import')}
         </Button>
       </DialogFooter>
     </>
