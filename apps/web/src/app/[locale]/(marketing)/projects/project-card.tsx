@@ -14,6 +14,15 @@ export default function ProjectCard({
   status,
   onClick,
 }: ProjectCardProps) {
+  let isHighlighted = null;
+  if (type && status) {
+    isHighlighted = type === project.type && status === project.status;
+  } else if (type) {
+    isHighlighted = type === project.type;
+  } else if (status) {
+    isHighlighted = status === project.status;
+  }
+
   return (
     <button
       key={project.name}
@@ -22,8 +31,7 @@ export default function ProjectCard({
     >
       <div
         className={`flex h-full justify-center rounded-lg [clip-path:polygon(20%_0,85%_0,100%_15%,100%_85%,85%_100%,0_100%,0_20%,10%_15%)] ${
-          (type && type === project.type) ||
-          (status && status === project.status)
+          isHighlighted
             ? 'bg-gradient-to-br from-[#1AF4E6] via-[#212144] to-[#F4B71A]'
             : 'bg-[#18182F]'
         }`}
@@ -33,8 +41,7 @@ export default function ProjectCard({
             <div className="mx-4 rounded-lg bg-gradient-to-br from-[#F4B71A]/70 via-[#87D580]/60 to-[#1AF4E6]/50 p-[1px] [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)]">
               <p
                 className={`text-md rounded-lg p-2 text-center font-bold text-white [clip-path:polygon(10%_0,100%_0,100%_40%,90%_100%,0_100%,0_60%)] ${
-                  (type && type === project.type) ||
-                  (status && status === project.status)
+                  isHighlighted
                     ? 'bg-gradient-to-r from-[#F4B71A] via-[#87D580] to-[#1AF4E6]'
                     : 'bg-[#212144]'
                 }`}

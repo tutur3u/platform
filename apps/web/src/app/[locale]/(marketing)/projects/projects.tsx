@@ -29,7 +29,7 @@ export default function Projects() {
           PROJECTS
         </p>
         <div className="mt-1 w-2/3 md:w-full">
-          <p className="text-center text-base font-light md:mt-4 md:max-w-2xl md:text-2xl">
+          <p className="text-center text-sm font-light md:mt-4 md:max-w-2xl md:text-2xl">
             The place where you can learn, grow and have fun with technology,
             by building projects.
           </p>
