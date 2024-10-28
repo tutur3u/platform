@@ -150,7 +150,8 @@
     "add_option": "Add option",
     "question": "Question",
     "import": "Import",
-    "invalid-file-type": "Invalid file type"
+    "invalid-file-type": "Invalid file type",
+    "no-sheets-found": "No sheets found."
   },
   "date_helper": {
     "time-unit": "Time unit",

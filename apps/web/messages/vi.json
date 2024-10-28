@@ -150,7 +150,8 @@
     "add_option": "Thêm tùy chọn",
     "question": "Câu hỏi",
     "import": "Nhập dữ liệu",
-    "invalid-file-type": "Loại tệp không hợp lệ"
+    "invalid-file-type": "Loại tệp không hợp lệ",
+    "no-sheets-found": "Không tìm thấy trang tính nào."
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
