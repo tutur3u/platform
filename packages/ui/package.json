@@ -6,7 +6,7 @@
     "ui": "pnpm dlx shadcn-ui@latest",
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@9.12.2",
+  "packageManager": "pnpm@9.12.3",
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.1",
