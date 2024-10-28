@@ -68,7 +68,6 @@ export default async function WorkspaceTransactionsPage({
           report_opt_in: false,
           created_at: false,
         }}
-        enableExport
       />
     </>
   );

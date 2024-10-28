@@ -13,7 +13,6 @@ import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { Table } from '@tanstack/react-table';
 import { Settings2, UserCog } from 'lucide-react';
 import { Fragment } from 'react';
-import React from 'react';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
@@ -40,7 +39,7 @@ export function DataTableViewOptions<TData>({
           size="sm"
           className="ml-auto h-8 w-full md:w-fit"
         >
-          <Settings2 className="mr-2 h-4 w-4" />
+          <Settings2 className="h-4 w-4" />
           {t?.('common.view-options') || 'View Options'}
         </Button>
       </DropdownMenuTrigger>
@@ -75,7 +74,7 @@ export function DataTableViewOptions<TData>({
                     {extraColumns?.some(
                       (extraColumn) => extraColumn.id === column.id
                     ) ? (
-                      <UserCog className="mr-2 h-4 w-4" />
+                      <UserCog className="mr-1 h-4 w-4" />
                     ) : undefined}
 
                     {/* @ts-expect-error */}

@@ -2,6 +2,7 @@ import { getUserColumns } from './columns';
 import ExportDialogContent from './export-dialog-content';
 import Filters from './filters';
 import UserForm from './form';
+import ImportDialogContent from './import-dialog-content';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPermissions } from '@/lib/workspace-helper';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -65,6 +66,11 @@ export default async function WorkspaceUsersPage({
         extraData={{ locale, wsId }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
+        toolbarImportContent={
+          containsPermission('export_users_data') && (
+            <ImportDialogContent wsId={wsId} />
+          )
+        }
         toolbarExportContent={
           containsPermission('export_users_data') && (
             <ExportDialogContent
@@ -91,7 +97,6 @@ export default async function WorkspaceUsersPage({
           // Extra columns
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
         }}
-        enableExport
       />
     </>
   );

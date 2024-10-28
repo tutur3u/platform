@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
 import { Table } from '@tanstack/react-table';
-import { Download, RotateCcw } from 'lucide-react';
+import { Download, RotateCcw, Upload } from 'lucide-react';
 import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
@@ -24,9 +24,9 @@ interface DataTableToolbarProps<TData> {
   extraColumns?: any[];
   defaultQuery?: string;
   disableSearch?: boolean;
-  enableExport?: boolean;
   isEmpty: boolean;
   t?: any;
+  importContent?: ReactNode;
   exportContent?: ReactNode;
   onRefresh: () => void;
   // eslint-disable-next-line no-unused-vars
@@ -43,10 +43,10 @@ export function DataTableToolbar<TData>({
   extraColumns,
   defaultQuery,
   disableSearch = false,
-  enableExport = false,
   isEmpty,
   t,
   namespace,
+  importContent,
   exportContent,
   onRefresh,
   onSearch,
@@ -79,11 +79,24 @@ export function DataTableToolbar<TData>({
             className="h-8 px-2 lg:px-3"
           >
             {t?.('common.reset')}
-            <RotateCcw className="ml-2 h-4 w-4" />
+            <RotateCcw className="h-4 w-4" />
           </Button>
         )}
       </div>
-      {enableExport && exportContent && (
+
+      {importContent && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 w-full md:w-fit">
+              <Upload className="h-4 w-4" />
+              {t?.('common.import')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm">{importContent}</DialogContent>
+        </Dialog>
+      )}
+
+      {exportContent && (
         <Dialog>
           <DialogTrigger asChild>
             <Button
@@ -91,7 +104,7 @@ export function DataTableToolbar<TData>({
               size="sm"
               className="ml-auto h-8 w-full md:w-fit"
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="h-4 w-4" />
               {t?.('common.export')}
             </Button>
           </DialogTrigger>

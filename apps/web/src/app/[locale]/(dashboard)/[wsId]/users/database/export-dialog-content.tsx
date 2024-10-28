@@ -208,7 +208,7 @@ export default function ExportDialogContent({
         </DialogClose>
 
         <Button onClick={handleExport} disabled={isExporting}>
-          {isExporting ? t('common.loading') : t('common.export')}
+          {isExporting ? t('common.processing') : t('common.export')}
         </Button>
       </DialogFooter>
     </>
