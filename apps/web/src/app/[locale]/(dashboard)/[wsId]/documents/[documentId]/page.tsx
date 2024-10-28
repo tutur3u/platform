@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { Globe2, Lock } from 'lucide-react';
+import { CircleCheck, CircleDashed } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { JSONContent } from 'novel';
@@ -58,7 +59,7 @@ export default function DocumentDetailsPage({ params }: Props) {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [document, setDocument] = useState<WorkspaceDocument | null>(null);
-
+  const [saveStatus, setSaveStatus] = useState(t('common.saved'));
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
@@ -105,15 +106,22 @@ export default function DocumentDetailsPage({ params }: Props) {
     }
   };
 
+  const handleNameInputChange = () => {
+    setSaveStatus(t('common.save'));
+  };
+
   const handleNameChange = async () => {
     const newName = nameInputRef.current?.value;
     if (newName && document) {
+      setSaveStatus(t('common.saving'));
       const supabase = createClient();
       await supabase
         .from('workspace_documents')
         .update({ name: newName })
         .eq('id', document.id);
+
       setDocument({ ...document, name: newName });
+      setSaveStatus(t('common.saved'));
     }
   };
 
@@ -130,10 +138,17 @@ export default function DocumentDetailsPage({ params }: Props) {
           type="text"
           defaultValue={document.name || ''}
           className="flex-grow text-2xl"
+          onChange={handleNameInputChange}
           onBlur={handleNameChange}
           onKeyDown={(e) => e.key === 'Enter' && handleNameChange()}
         />
-
+        <div>
+          {saveStatus === t('common.saved') ? (
+            <CircleCheck className="h-7 w-7" />
+          ) : (
+            <CircleDashed className="h-7 w-7" />
+          )}
+        </div>
         <AlertDialog
           open={isDeleteDialogOpen}
           onOpenChange={setIsDeleteDialogOpen}
