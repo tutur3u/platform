@@ -65,6 +65,15 @@ export default async function WorkspaceUsersPage({
         extraData={{ locale, wsId }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
+        toolbarImportContent={
+          containsPermission('export_users_data') && (
+            <ExportDialogContent
+              wsId={wsId}
+              exportType="users"
+              searchParams={await searchParams}
+            />
+          )
+        }
         toolbarExportContent={
           containsPermission('export_users_data') && (
             <ExportDialogContent

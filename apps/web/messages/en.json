@@ -148,7 +148,8 @@
     "option": "Option",
     "correct": "Correct",
     "add_option": "Add option",
-    "question": "Question"
+    "question": "Question",
+    "import": "Import"
   },
   "date_helper": {
     "time-unit": "Time unit",

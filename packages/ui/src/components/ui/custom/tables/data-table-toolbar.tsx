@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
 import { Table } from '@tanstack/react-table';
-import { Download, RotateCcw } from 'lucide-react';
+import { Download, RotateCcw, Upload } from 'lucide-react';
 import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
@@ -79,7 +79,7 @@ export function DataTableToolbar<TData>({
             className="h-8 px-2 lg:px-3"
           >
             {t?.('common.reset')}
-            <RotateCcw className="ml-2 h-4 w-4" />
+            <RotateCcw className="h-4 w-4" />
           </Button>
         )}
       </div>
@@ -92,7 +92,7 @@ export function DataTableToolbar<TData>({
               size="sm"
               className="ml-auto h-8 w-full md:w-fit"
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="h-4 w-4" />
               {t?.('common.export')}
             </Button>
           </DialogTrigger>
@@ -104,7 +104,7 @@ export function DataTableToolbar<TData>({
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="h-8 w-full md:w-fit">
-              <Download className="mr-2 h-4 w-4" />
+              <Upload className="h-4 w-4" />
               {t?.('common.import')}
             </Button>
           </DialogTrigger>

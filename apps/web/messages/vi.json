@@ -148,7 +148,8 @@
     "option": "Lựa chọn",
     "correct": "Chính xác",
     "add_option": "Thêm tùy chọn",
-    "question": "Câu hỏi"
+    "question": "Câu hỏi",
+    "import": "Nhập dữ liệu"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
