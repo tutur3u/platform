@@ -91,7 +91,6 @@ export default async function WorkspaceUsersPage({
           // Extra columns
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
         }}
-        enableExport
       />
     </>
   );

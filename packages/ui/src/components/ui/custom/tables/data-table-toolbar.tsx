@@ -24,9 +24,9 @@ interface DataTableToolbarProps<TData> {
   extraColumns?: any[];
   defaultQuery?: string;
   disableSearch?: boolean;
-  enableExport?: boolean;
   isEmpty: boolean;
   t?: any;
+  importContent?: ReactNode;
   exportContent?: ReactNode;
   onRefresh: () => void;
   // eslint-disable-next-line no-unused-vars
@@ -43,10 +43,10 @@ export function DataTableToolbar<TData>({
   extraColumns,
   defaultQuery,
   disableSearch = false,
-  enableExport = false,
   isEmpty,
   t,
   namespace,
+  importContent,
   exportContent,
   onRefresh,
   onSearch,
@@ -83,7 +83,8 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      {enableExport && exportContent && (
+
+      {exportContent && (
         <Dialog>
           <DialogTrigger asChild>
             <Button
@@ -96,6 +97,18 @@ export function DataTableToolbar<TData>({
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-sm">{exportContent}</DialogContent>
+        </Dialog>
+      )}
+
+      {importContent && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 w-full md:w-fit">
+              <Download className="mr-2 h-4 w-4" />
+              {t?.('common.import')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm">{importContent}</DialogContent>
         </Dialog>
       )}
 
