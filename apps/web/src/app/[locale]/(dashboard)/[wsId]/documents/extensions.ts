@@ -36,8 +36,6 @@ const placeholder = Placeholder.configure({
     }
     return "Press '/' for commands";
   },
-  emptyEditorClass:
-    'cursor-text before:content-[attr(data-placeholder)] before:absolute before:top-0 before:left-0 before:text-mauve-11 before:opacity-50 before-pointer-events-none',
   includeChildren: true,
 });
 
@@ -142,10 +140,64 @@ const codeBlockLowlight = CodeBlockLowlight.configure({
 });
 
 // Configure Youtube embedding with styling
-const youtube = Youtube.configure({
-  HTMLAttributes: {
-    class: cx('rounded-lg border border-muted'),
+// const youtube = Youtube.configure({
+//   HTMLAttributes: {
+//     class: cx('rounded-lg border border-muted'),
+//   },
+//   inline: false,
+// });
+
+function extractVideoId(url: string) {
+  if (!url) return null;
+
+  const match = url.match(
+    /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
+  );
+  return match ? match[1] : null;
+}
+
+const youtube = Youtube.extend({
+  addOptions() {
+    return {
+      ...this.parent?.(),
+      HTMLAttributes: {
+        class: cx('rounded-lg border border-muted overflow-hidden'),
+      },
+    };
   },
+  addNodeView() {
+    return ({ node }) => {
+      const url = node.attrs?.src;
+
+      const container = document.createElement('div');
+      const videoId = extractVideoId(url);
+      container.className = cx(
+        'relative',
+        'rounded-lg border border-muted resize overflow-auto'
+      );
+      container.style.width = '100%';
+      container.style.height = 'auto';
+
+      if (videoId) {
+        const video = document.createElement('iframe');
+        video.src = `https://www.youtube.com/embed/${videoId}`;
+        video.allowFullscreen = true;
+        video.setAttribute('frameborder', '0');
+        video.className = cx('w-full h-full');
+
+        container.appendChild(video);
+      } else {
+        container.innerText = url
+          ? 'Invalid Youtube URL'
+          : 'Youtube URL missing';
+      }
+
+      return {
+        dom: container,
+      };
+    };
+  },
+}).configure({
   inline: false,
 });
 

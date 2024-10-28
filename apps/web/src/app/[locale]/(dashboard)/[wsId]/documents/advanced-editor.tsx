@@ -126,6 +126,7 @@ export const TailwindAdvancedEditor = ({
           )}
         </div>
       )}
+
       <EditorRoot>
         <EditorContent
           editable={!previewMode}
@@ -135,7 +136,7 @@ export const TailwindAdvancedEditor = ({
             'relative w-full',
             previewMode
               ? 'bg-transparent'
-              : 'border-foreground/10 bg-foreground/5 mb-[calc(20vh)] min-h-[500px] rounded-lg border p-2 shadow-lg md:p-4'
+              : 'border-foreground/10 bg-foreground/5 mb-[calc(20vh)] flex h-full flex-col rounded-lg border p-2 shadow-lg md:p-4'
           )}
           editorProps={{
             handleDOMEvents: {
@@ -147,7 +148,7 @@ export const TailwindAdvancedEditor = ({
               handleImageDrop(view, event, moved, uploadFn),
             attributes: {
               class:
-                'prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full',
+                'prose min-h-96 prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full',
             },
           }}
           onCreate={({ editor }) => {
