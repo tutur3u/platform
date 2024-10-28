@@ -27,7 +27,7 @@ export default async function WorkspaceUserGroupsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations('ws-user-groups');
+  const t = await getTranslations();
   const { wsId } = await params;
 
   const { data, count } = await getData(wsId, await searchParams);
@@ -41,11 +41,11 @@ export default async function WorkspaceUserGroupsPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('plural')}
-        singularTitle={t('singular')}
-        description={t('description')}
-        createTitle={t('create')}
-        createDescription={t('create_description')}
+        pluralTitle={t('ws-user-groups.plural')}
+        singularTitle={t('ws-user-groups.singular')}
+        description={t('ws-user-groups.description')}
+        createTitle={t('ws-user-groups.create')}
+        createDescription={t('ws-user-groups.create_description')}
         form={<UserGroupForm wsId={wsId} />}
       />
       <Separator className="my-4" />
@@ -78,9 +78,12 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
-    .select('*', {
-      count: 'exact',
-    })
+    .select(
+      'id, ws_id, name, starting_date, ending_date, archived, notes, amount, created_at',
+      {
+        count: 'exact',
+      }
+    )
     .eq('ws_id', wsId)
     .order('name');
 

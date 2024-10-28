@@ -230,17 +230,30 @@ export const getUserColumns = (
         title={t(`${namespace}.birthday`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {row.getValue('birthday')
-          ? dayjs(row.getValue('birthday'))
-              .locale(extraData?.locale)
-              .format(
-                extraData?.locale === 'vi' ? 'D MMMM, YYYY' : 'MMMM D, YYYY'
-              )
-          : '-'}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const age = moment().diff(row.getValue('birthday'), 'years');
+
+      return (
+        <div className="grid min-w-[8rem] gap-1">
+          <div>
+            {row.getValue('birthday')
+              ? dayjs(row.getValue('birthday'))
+                  .locale(extraData?.locale)
+                  .format(
+                    extraData?.locale === 'vi' ? 'D MMMM, YYYY' : 'MMMM D, YYYY'
+                  )
+              : '-'}
+          </div>
+          {!!row.getValue('birthday') && (
+            <div className="bg-foreground/5 w-fit rounded border px-2 py-0.5 text-sm font-semibold">
+              {row.getValue('birthday')
+                ? `${age} ${age > 1 ? t('common.years_old') : t('common.year_old')}`
+                : '-'}
+            </div>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'ethnicity',

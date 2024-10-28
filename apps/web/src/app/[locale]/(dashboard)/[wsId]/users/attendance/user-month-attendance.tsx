@@ -1,5 +1,6 @@
 'use client';
 
+import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
 import { cn } from '@/lib/utils';
 import {
@@ -15,10 +16,11 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { format, parse } from 'date-fns';
+import { format, isAfter, parse, startOfDay } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 
 export default function UserMonthAttendance({
@@ -33,6 +35,7 @@ export default function UserMonthAttendance({
 }) {
   const locale = useLocale();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const queryMonth = searchParams.get('month');
 
@@ -57,6 +60,7 @@ export default function UserMonthAttendance({
     isPending,
     isError,
     data: queryData,
+    refetch,
   } = useQuery({
     queryKey: [
       'workspaces',
@@ -170,6 +174,50 @@ export default function UserMonthAttendance({
       (group, idx, arr) => arr.findIndex((g) => g.id === group.id) === idx
     );
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [currentStatus, setCurrentStatus] = useState<
+    'PRESENT' | 'ABSENT' | null
+  >(null);
+
+  const today = startOfDay(new Date());
+
+  const handleDateClick = (date: Date) => {
+    if (!isAfter(date, today)) {
+      setSelectedDate(date);
+
+      // Find the attendance record for the selected date
+      const attendanceRecord = data.attendance?.find((attendance) => {
+        const attendanceDate = new Date(attendance.date);
+        return (
+          attendanceDate.getDate() === date.getDate() &&
+          attendanceDate.getMonth() === date.getMonth() &&
+          attendanceDate.getFullYear() === date.getFullYear()
+        );
+      });
+
+      // Set the current status and group ID if an attendance record exists
+      if (attendanceRecord) {
+        setCurrentStatus(attendanceRecord.status as 'PRESENT' | 'ABSENT');
+      } else {
+        setCurrentStatus(null);
+      }
+
+      setIsDialogOpen(true);
+    }
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setSelectedDate(null);
+    setCurrentStatus(null);
+  };
+
+  const handleAttendanceUpdated = () => {
+    refetch();
+    router.refresh();
+  };
+
   return (
     <div className={cn('rounded-lg', noOutline || 'border p-4')}>
       <div className="mb-2 flex w-full items-center border-b pb-2">
@@ -181,7 +229,7 @@ export default function UserMonthAttendance({
                 href={data.href}
                 className="line-clamp-1 font-semibold text-zinc-900 hover:underline dark:text-zinc-200"
               >
-                {data?.full_name || '-'}
+                {data?.display_name || data?.full_name || data?.email || '-'}
               </Link>
             </div>
             <div className="scrollbar-none flex items-center gap-1 overflow-auto">
@@ -288,12 +336,17 @@ export default function UserMonthAttendance({
 
                     if (!isDateAttended(data, day) && !isDateAbsent(data, day))
                       return (
-                        <div
+                        <button
+                          onClick={() => handleDateClick(day)}
                           key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
-                          className="bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg"
+                          className={cn(
+                            'bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg',
+                            isAfter(day, today) &&
+                              'cursor-not-allowed opacity-50 hover:cursor-not-allowed'
+                          )}
                         >
                           {day.getDate()}
-                        </div>
+                        </button>
                       );
 
                     return (
@@ -305,8 +358,9 @@ export default function UserMonthAttendance({
                             disabled={isError || !isCurrentMonth(day)}
                             asChild
                           >
-                            <div
-                              className={`flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
+                            <button
+                              onClick={() => handleDateClick(day)}
+                              className={`flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
                                 isDateAttended(data, day)
                                   ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
                                   : isDateAbsent(data, day)
@@ -315,7 +369,7 @@ export default function UserMonthAttendance({
                               }`}
                             >
                               {day.getDate()}
-                            </div>
+                            </button>
                           </TooltipTrigger>
 
                           <TooltipContent>
@@ -340,6 +394,18 @@ export default function UserMonthAttendance({
                   })}
                 </TooltipProvider>
               </div>
+
+              {selectedDate && (
+                <AttendanceDialog
+                  wsId={wsId}
+                  isOpen={isDialogOpen}
+                  currentStatus={currentStatus}
+                  date={selectedDate}
+                  user={data}
+                  onAttendanceUpdated={handleAttendanceUpdated}
+                  onClose={handleDialogClose}
+                />
+              )}
             </div>
           </div>
         </div>

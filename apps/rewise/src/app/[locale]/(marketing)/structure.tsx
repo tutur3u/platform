@@ -31,6 +31,7 @@ import {
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 
 interface MailProps {
@@ -56,7 +57,9 @@ export function Structure({
   userPopover,
   children,
 }: MailProps) {
+  const router = useRouter();
   const t = useTranslations();
+
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   if (!user) return null;
 
@@ -126,6 +129,10 @@ export function Structure({
           <div className="flex flex-none items-center gap-2">
             <Link
               href="/?refresh=true"
+              onClick={() => {
+                router.push('/?refresh=true');
+                router.refresh();
+              }}
               className="flex flex-none items-center gap-2"
             >
               <Image

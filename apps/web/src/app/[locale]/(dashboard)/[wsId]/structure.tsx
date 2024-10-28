@@ -2,7 +2,7 @@
 
 import LogoTitle from '../../logo-title';
 import WorkspaceSelect from '../../workspace-select';
-import { Nav } from './_components/nav';
+import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,6 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@repo/ui/components/ui/breadcrumb';
 import { Button } from '@repo/ui/components/ui/button';
@@ -289,14 +288,18 @@ export function Structure({
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="flex items-center gap-2">
+                    <BreadcrumbLink
+                      href={
+                        currentLink?.href === pathname ? '#' : currentLink?.href
+                      }
+                      className="flex items-center gap-2"
+                    >
                       {currentLink?.icon}
                       {currentLink?.title}
-                    </BreadcrumbPage>
+                    </BreadcrumbLink>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-
               {children}
             </main>
           </ResizablePanel>

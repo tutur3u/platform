@@ -10,6 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
+import { Input } from '@repo/ui/components/ui/input';
+import { Label } from '@repo/ui/components/ui/label';
 import { Progress } from '@repo/ui/components/ui/progress';
 import {
   Select,
@@ -41,10 +43,12 @@ export default function ExportDialogContent({
   searchParams: SearchParams;
 }) {
   const t = useTranslations();
-
+  const [filename, setFilename] = useState('');
   const [exportFileType, setExportFileType] = useState('excel');
   const [progress, setProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
+
+  const defaultFilename = `${exportType}_export.${getFileExtension(exportFileType)}`;
 
   const downloadCSV = (data: any[], filename: string) => {
     const csv = jsonToCSV(data);
@@ -79,6 +83,8 @@ export default function ExportDialogContent({
 
   const handleExport = async () => {
     setIsExporting(true);
+    setProgress(0);
+
     const allData: WorkspaceUser[] = [];
     let currentPage = 1;
     const pageSize = 100;
@@ -117,14 +123,37 @@ export default function ExportDialogContent({
       currentPage++;
     }
 
+    setProgress(100);
+
     if (exportFileType === 'csv') {
-      downloadCSV(allData, `export_${exportType}.csv`);
+      downloadCSV(
+        allData,
+        `${(filename || defaultFilename)
+          // remove all .csv from the filename
+          .replace(/\.csv/g, '')}.csv`
+      );
     } else if (exportFileType === 'excel') {
-      downloadExcel(allData, `export_${exportType}.xlsx`);
+      downloadExcel(
+        allData,
+        `${(filename || defaultFilename)
+          // remove all .xlsx from the filename
+          .replace(/\.xlsx/g, '')}.xlsx`
+      );
     }
 
     setIsExporting(false);
   };
+
+  function getFileExtension(fileType: string) {
+    switch (fileType) {
+      case 'csv':
+        return 'csv';
+      case 'excel':
+        return 'xlsx';
+      default:
+        return '';
+    }
+  }
 
   return (
     <>
@@ -134,19 +163,35 @@ export default function ExportDialogContent({
       </DialogHeader>
 
       <div className="grid gap-1">
-        <Select
-          value={exportFileType}
-          onValueChange={setExportFileType}
-          disabled={isExporting}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="File type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="excel">Excel</SelectItem>
-            <SelectItem value="csv">CSV</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid w-full max-w-sm items-center gap-2">
+          <Label htmlFor="filename">{t('common.file-name')}</Label>
+          <Input
+            type="text"
+            id="filename"
+            value={filename}
+            placeholder={defaultFilename}
+            onChange={(e) => setFilename(e.target.value)}
+            className="input-class w-full pb-4"
+            disabled={isExporting}
+          />
+        </div>
+
+        <div className="mt-2 grid w-full max-w-sm items-center gap-2">
+          <Label htmlFor="fileType">{t('common.file-type')}</Label>
+          <Select
+            value={exportFileType}
+            onValueChange={setExportFileType}
+            disabled={isExporting}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="File type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="excel">Excel</SelectItem>
+              <SelectItem value="csv">CSV</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {isExporting && (
           <div>

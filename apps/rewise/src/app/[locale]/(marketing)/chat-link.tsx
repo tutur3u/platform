@@ -116,7 +116,7 @@ export default function ChatLink({
         <Button
           size="xs"
           variant={loading ? 'secondary' : link.pinned ? 'ghost' : 'ghost'}
-          className="transition-all duration-300 group-hover:w-auto group-hover:p-2 md:w-0 md:p-0"
+          className="opacity-0 transition-all duration-300 group-hover:w-8 group-hover:p-2 group-hover:opacity-100 md:w-0 md:p-0"
           onClick={handlePin}
           disabled={loading}
         >

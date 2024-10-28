@@ -5,6 +5,7 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale, useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface Props {
@@ -86,9 +87,9 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
     >
       <div className="cursor-default font-semibold transition duration-150">
         <span className="text-foreground/60">{invitedTo} </span>
-        <span className="text-foreground">
+        <Link href={`/${ws.id}`} className="text-foreground hover:underline">
           {ws?.name || `Unnamed Workspace`}
-        </span>
+        </Link>
         {ws?.created_at ? (
           <span className="text-foreground/60 font-normal">
             {' '}

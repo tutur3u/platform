@@ -16,3 +16,14 @@ export interface Product {
   ws_id?: string;
   created_at?: string;
 }
+
+// TODO: deprecate Product type for Product2
+export interface Product2 {
+  id: string;
+  name: string;
+  manufacturer?: string;
+  description?: string;
+  usage?: string;
+  category_id: string;
+  ws_id: string;
+}

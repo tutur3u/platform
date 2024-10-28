@@ -20,11 +20,16 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { error } = await supabase.from('workspace_email_invites').insert({
     ws_id: wsId,
     email: email.toLowerCase(),
     role_title: role,
     role: accessLevel,
+    invited_by: user?.id,
   });
 
   if (error) {

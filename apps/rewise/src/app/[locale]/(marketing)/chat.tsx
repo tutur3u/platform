@@ -68,7 +68,7 @@ const Chat = ({
             description: t('try_again_later'),
           });
       },
-      onError(_) {
+      onError() {
         toast({
           title: t('something_went_wrong'),
           description: t('try_again_later'),

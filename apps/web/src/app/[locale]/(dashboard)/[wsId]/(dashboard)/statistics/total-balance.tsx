@@ -9,7 +9,7 @@ const enabled = true;
 
 export default async function TotalBalanceStatistics({
   wsId,
-  searchParams: { view, startDate, endDate } = {},
+  searchParams: { showFinanceStats, view, startDate, endDate } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
@@ -64,10 +64,14 @@ export default async function TotalBalanceStatistics({
   return (
     <StatisticCard
       title={t('finance-overview.total-balance')}
-      value={Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND',
-      }).format(sum || 0)}
+      value={
+        showFinanceStats
+          ? Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(sum || 0)
+          : '***'
+      }
       className="md:col-span-2"
     />
   );

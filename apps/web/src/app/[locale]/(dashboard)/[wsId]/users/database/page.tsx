@@ -62,7 +62,7 @@ export default async function WorkspaceUsersPage({
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
-        extraData={{ locale }}
+        extraData={{ locale, wsId }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
         toolbarExportContent={

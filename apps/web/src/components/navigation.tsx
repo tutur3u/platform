@@ -22,6 +22,7 @@ export interface NavLink {
   allowedRoles?: string[];
   disabledRoles?: string[];
   shortcut?: string;
+  experimental?: 'alpha' | 'beta';
 }
 
 interface Props {

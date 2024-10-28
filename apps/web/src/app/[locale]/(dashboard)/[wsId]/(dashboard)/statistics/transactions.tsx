@@ -9,7 +9,7 @@ const enabled = true;
 
 export default async function TransactionsStatistics({
   wsId,
-  searchParams: { view, startDate, endDate } = {},
+  searchParams: { showFinanceStats, view, startDate, endDate } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
@@ -56,7 +56,7 @@ export default async function TransactionsStatistics({
   return (
     <StatisticCard
       title={t('workspace-finance-tabs.transactions')}
-      value={transactionsCount}
+      value={showFinanceStats ? transactionsCount : '***'}
       href={`/${wsId}/finance/transactions`}
     />
   );

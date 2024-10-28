@@ -17,7 +17,6 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const secrets = await getSecrets({
     wsId,
-    requiredSecrets: ['ENABLE_EMAIL_SENDING'],
     forceAdmin: true,
   });
 

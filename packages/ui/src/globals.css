@@ -34,13 +34,13 @@
     --input: 240 30% 80%;
     --ring: 240 10% 3.9%;
 
-    --purple: 270 50% 40%;
-    --blue: 220 50% 40%;
-    --sky: 200 50% 40%;
-    --green: 160 50% 40%;
-    --yellow: 40 50% 40%;
-    --orange: 25 50% 40%;
-    --red: 0 50% 40%;
+    --purple: 270 40% 60%;
+    --blue: 220 40% 60%;
+    --sky: 200 40% 60%;
+    --green: 140 40% 60%;
+    --yellow: 40 40% 60%;
+    --orange: 25 40% 60%;
+    --red: 0 40% 60%;
 
     --radius: 0.5rem;
 
@@ -49,6 +49,14 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .light-pink {
@@ -287,6 +295,14 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark-pink {

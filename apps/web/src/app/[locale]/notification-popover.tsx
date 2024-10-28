@@ -66,14 +66,16 @@ export default async function NotificationPopover() {
         <Button
           variant="ghost"
           size="icon"
-          className="hidden flex-none md:flex"
+          className="group relative hidden flex-none transition-all md:flex"
         >
-          <div className="relative">
-            <Bell className="h-5 w-5" />
-            {notifications.length > 0 && (
-              <span className="bg-foreground absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full" />
-            )}
-          </div>
+          <Bell className="h-6 w-6" />
+          {notifications.length > 0 && (
+            <div className="bg-foreground group-hover:text-background text-foreground absolute right-2 top-1 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full p-1 text-center text-xs font-semibold transition-all group-hover:-right-1 group-hover:-top-2 group-hover:h-4 group-hover:w-auto">
+              <div className="relative opacity-0 group-hover:opacity-100">
+                {notifications.length}
+              </div>
+            </div>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="start">
@@ -97,12 +99,12 @@ export default async function NotificationPopover() {
                 key={notification.id}
                 className="bg-foreground/5 mb-2 rounded-lg border p-2 pb-2 last:mb-0"
               >
-                <p className="text-sm font-medium leading-none">
+                <div className="text-sm font-medium leading-none">
                   {notification.title}
-                </p>
-                <p className="text-foreground/80 mb-2 mt-1 text-sm">
+                </div>
+                <div className="text-foreground/80 mb-2 mt-1 text-sm">
                   {notification.description}
-                </p>
+                </div>
 
                 <NotificationActionList actions={notification.actions} />
               </div>
