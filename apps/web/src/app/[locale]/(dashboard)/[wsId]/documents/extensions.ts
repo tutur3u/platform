@@ -1,3 +1,4 @@
+import { extractYoutubeId } from '@/utils/url-helper';
 import { cx } from 'class-variance-authority';
 import { common, createLowlight } from 'lowlight';
 import {
@@ -147,15 +148,6 @@ const codeBlockLowlight = CodeBlockLowlight.configure({
 //   inline: false,
 // });
 
-function extractVideoId(url: string) {
-  if (!url) return null;
-
-  const match = url.match(
-    /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
-  );
-  return match ? match[1] : null;
-}
-
 const youtube = Youtube.extend({
   addOptions() {
     return {
@@ -168,13 +160,14 @@ const youtube = Youtube.extend({
   addNodeView() {
     return ({ node }) => {
       const url = node.attrs?.src;
-
       const container = document.createElement('div');
-      const videoId = extractVideoId(url);
+      const videoId = extractYoutubeId(url);
+
       container.className = cx(
         'relative',
         'rounded-lg border border-muted resize overflow-auto'
       );
+
       container.style.width = '100%';
       container.style.height = 'auto';
 

@@ -2,6 +2,7 @@ import DeleteLinkButton from './delete-link';
 import { YoutubeEmbed } from './embed';
 import YouTubeLinkForm from './form';
 import { createClient } from '@/utils/supabase/server';
+import { extractYoutubeId } from '@/utils/url-helper';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Youtube } from 'lucide-react';
@@ -66,14 +67,7 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
               {link}
             </Link>
             <Separator className="my-2" />
-            <YoutubeEmbed
-              key={index}
-              embedId={
-                link.includes('youtube.com')
-                  ? link.split('v=')[1]
-                  : link.split('youtu.be/')[1]
-              }
-            />
+            <YoutubeEmbed key={index} embedId={extractYoutubeId(link)} />
           </div>
         ))}
     </div>

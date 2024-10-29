@@ -6,6 +6,7 @@ import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
 import { WorkspaceCourseModule } from '@/types/db';
 import { createClient, createDynamicClient } from '@/utils/supabase/server';
+import { extractYoutubeId } from '@/utils/url-helper';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
   BookText,
@@ -118,14 +119,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
           data.youtube_links && data.youtube_links.length > 0 ? (
             <div className="grid gap-4">
               {data.youtube_links.map((link: string, index: number) => (
-                <YoutubeEmbed
-                  key={index}
-                  embedId={
-                    link.includes('youtube.com')
-                      ? link.split('v=')[1]
-                      : link.split('youtu.be/')[1]
-                  }
-                />
+                <YoutubeEmbed key={index} embedId={extractYoutubeId(link)} />
               ))}
             </div>
           ) : undefined
