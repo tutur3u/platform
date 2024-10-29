@@ -52,34 +52,3 @@ export default function WhyUs() {
     </div>
   );
 }
-
-const EventCard = () => {
-  return (
-    <>
-      <div
-        className="rounded-t-2xl py-3"
-        style={{
-          background:
-            'linear-gradient(95.85deg, rgba(251, 200, 33, 0.7) -13.27%, rgba(94, 193, 224, 0.7) 100%)',
-        }}
-      >
-        <p className="text-center text-3xl font-semibold text-white">
-          SPECIAL EVENTS
-        </p>
-      </div>
-      <div
-        className="rounded-b-lg border-2 border-slate-300/30 p-6 text-slate-300/90"
-        style={{
-          background:
-            'linear-gradient(155.48deg, #737373 -231.15%, rgba(255, 255, 255, 0) 78.52%)',
-        }}
-      >
-        <p className="mb-4 font-semibold">
-          Events organized to support you find career paths in technology, gain
-          deeper insights from company trips and alumni, and join coding
-          competitions.
-        </p>
-      </div>
-    </>
-  );
-};

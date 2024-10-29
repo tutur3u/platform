@@ -1,4 +1,3 @@
-import AboutUs from './about';
 import WhatIsNeo from './what-is-neo';
 
 export default function MarketingPage() {

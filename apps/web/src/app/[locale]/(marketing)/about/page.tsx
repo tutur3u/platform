@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React from 'react';
 
-const initalTimelineData = [
+const timelineData = [
   {
     year: '2024',
     description:
@@ -25,8 +25,6 @@ const initalTimelineData = [
 ];
 
 export default function MarketingPage() {
-  const [timelineData, setTimelineData] = useState(initalTimelineData);
-
   return (
     <div className="mb-32 h-screen w-full px-4 pt-20 lg:px-6">
       <div
