@@ -32,12 +32,16 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId: id } = await params;
 
-  const data = await req.json();
+  const { moduleId, quiz_options, ...rest } = await req.json();
 
-  const { error } = await supabase.from('workspace_quizzes').insert({
-    ...data,
-    ws_id: id,
-  });
+  const { data, error } = await supabase
+    .from('workspace_quizzes')
+    .insert({
+      ...rest,
+      ws_id: id,
+    })
+    .select('id')
+    .single();
 
   if (error) {
     console.log(error);
@@ -45,6 +49,19 @@ export async function POST(req: Request, { params }: Params) {
       { message: 'Error creating workspace quiz' },
       { status: 500 }
     );
+  }
+
+  if (moduleId) {
+    await supabase.from('course_module_quizzes').insert({
+      module_id: moduleId,
+      quiz_id: data.id,
+    });
+  }
+
+  if (quiz_options) {
+    await supabase
+      .from('quiz_options')
+      .insert(quiz_options.map((o: any) => ({ ...o, quiz_id: data.id })));
   }
 
   return NextResponse.json({ message: 'success' });

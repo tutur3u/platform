@@ -58,10 +58,10 @@ export default async function ModuleResourcesPage({ params }: Props) {
             </h1>
           </div>
         }
-        singularTitle={t('ws-course-modules.youtube_link')}
-        pluralTitle={t('ws-course-modules.youtube_links')}
-        createTitle={t('ws-course-modules.add_link')}
-        createDescription={t('ws-course-modules.add_youtube_link_description')}
+        singularTitle={t('ws-course-modules.resource')}
+        pluralTitle={t('ws-course-modules.resources')}
+        createTitle={t('ws-course-modules.add_resource')}
+        createDescription={t('ws-course-modules.add_resource_description')}
         form={
           <StorageObjectForm
             wsId={wsId}
@@ -73,9 +73,9 @@ export default async function ModuleResourcesPage({ params }: Props) {
       />
       {resources &&
         resources.length > 0 &&
-        resources.map((file, index) => (
+        resources.map((file) => (
           <div
-            key={`${index}-${file}`}
+            key={file.name}
             className="border-foreground/10 flex flex-wrap items-center gap-2 rounded-lg border p-2 md:p-4"
           >
             <DeleteResourceButton path={`${storagePath}${file.name}`} />

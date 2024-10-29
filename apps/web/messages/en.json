@@ -140,8 +140,19 @@
     "share": "Share",
     "confirm_delete_title": "Delete confirmation",
     "confirm_delete_description": "Are you sure you want to delete this item? This action is permanent and irreversible.",
+    "saved": "Saved",
+    "unsaved": "Unsaved",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "published": "Published",
+    "option": "Option",
+    "correct": "Correct",
+    "add_option": "Add option",
+    "question": "Question",
+    "create_new": "Create new",
+    "import": "Import",
+    "invalid-file-type": "Invalid file type",
+    "no-sheets-found": "No sheets found."
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -549,6 +560,8 @@
   "course-data-table": {
     "id": "ID",
     "name": "Name",
+    "is_public": "Public",
+    "is_published": "Published",
     "modules": "Modules",
     "created_at": "Created At"
   },
@@ -728,12 +741,19 @@
     "ai_chat_playground_discontinued_p2": "has been temporarily disabled for improvement and further testing. Don't worry! We are working on exciting features to bring you a better experience. Stay tuned for a comeback with more features and functionalities. Thank you for your patience and understanding.\n\nBest regards,\nTuturuuu"
   },
   "ws-storage-objects": {
-    "module": "Tuturuuu Drive",
+    "name": "Tuturuuu Drive",
+    "plural": "Tuturuuu Drive",
+    "singular": "Tuturuuu Drive",
+    "upload": "Upload",
+    "upload_description": "Upload multiple files to Tuturuuu Drive",
     "description": "Store workspace files securely, and access them from anywhere.",
     "total_files": "Total Files",
     "total_size": "Total Size",
     "largest_file": "Largest File",
-    "smallest_file": "Smallest File"
+    "smallest_file": "Smallest File",
+    "files": "Files",
+    "folder": "Folder",
+    "folder_create": "Create folder"
   },
   "ws-ai-workflows": {
     "module": "Workflows",
@@ -1262,7 +1282,8 @@
     "total-expense": "Total expense",
     "total-income": "Total income",
     "recent-transactions": "Recent transactions",
-    "no-transaction": "You have no transactions"
+    "no-transaction": "You have no transactions",
+    "show-finance-stats": "Show finance statistics"
   },
   "inventory-overview": {
     "products-with-prices": "Products with prices"
@@ -1659,7 +1680,11 @@
     "youtube_link": "YouTube Link",
     "youtube_links": "YouTube Links",
     "edit_link": "Edit link",
-    "invalid_youtube_link": "Invalid YouTube link"
+    "invalid_youtube_link": "Invalid YouTube link",
+    "resource": "Resource",
+    "resources": "Resources",
+    "add_resource": "Add resource",
+    "add_resource_description": "Add a new resource."
   },
   "ws-flashcards": {
     "plural": "Flashcards",

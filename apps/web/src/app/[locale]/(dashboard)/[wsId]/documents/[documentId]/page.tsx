@@ -17,16 +17,18 @@ import {
   AlertDialogTrigger,
 } from '@repo/ui/components/ui/alert-dialog';
 import { Button } from '@repo/ui/components/ui/button';
+import { Input } from '@repo/ui/components/ui/input';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { Globe2, Lock } from 'lucide-react';
+import { CircleCheck, CircleDashed } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { JSONContent } from 'novel';
-import { use, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   params: Promise<{
@@ -51,36 +53,50 @@ async function deleteDocument(wsId: string, documentId: string) {
 
 export default function DocumentDetailsPage({ params }: Props) {
   const t = useTranslations();
-  const { wsId, documentId } = use(params);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [wsId, setWsId] = useState<string | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [document, setDocument] = useState<WorkspaceDocument | null>();
-
-  useEffect(() => {
-    getData(wsId, documentId).then((data) => {
-      setDocument(data);
-      setLoading(false);
-    });
-  }, [wsId, documentId]);
-
+  const [document, setDocument] = useState<WorkspaceDocument | null>(null);
+  const [saveStatus, setSaveStatus] = useState(t('common.saved'));
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
 
+  useEffect(() => {
+    params.then((resolvedParams) => {
+      setWsId(resolvedParams.wsId);
+      setDocumentId(resolvedParams.documentId);
+    });
+  }, [params]);
+
+  useEffect(() => {
+    if (wsId && documentId) {
+      setLoading(true);
+      getData(wsId, documentId).then((data) => {
+        setDocument(data);
+        setLoading(false);
+      });
+    }
+  }, [wsId, documentId]);
+
   const handleDelete = async () => {
-    if (document) {
+    if (document && wsId && documentId) {
       try {
         setLoading(true);
         await deleteDocument(wsId, document.id);
         router.push(`/${wsId}/documents`);
       } catch (error) {
         console.error(error);
+      } finally {
+        setLoading(false);
       }
     }
   };
 
   const handleUpdateVisibility = async (is_public: boolean) => {
-    if (document) {
+    if (document && documentId) {
       const supabase = createClient();
       await supabase
         .from('workspace_documents')
@@ -90,22 +106,55 @@ export default function DocumentDetailsPage({ params }: Props) {
     }
   };
 
-  if (loading) return <div>{t('common.loading')}...</div>;
+  const handleNameInputChange = () => {
+    setSaveStatus(t('common.save'));
+  };
+
+  const handleNameChange = async () => {
+    const newName = nameInputRef.current?.value;
+    if (newName && document) {
+      setSaveStatus(t('common.saving'));
+      const supabase = createClient();
+      await supabase
+        .from('workspace_documents')
+        .update({ name: newName })
+        .eq('id', document.id);
+
+      setDocument({ ...document, name: newName });
+      setSaveStatus(t('common.saved'));
+    }
+  };
+
+  if (loading || !wsId || !documentId) {
+    return <div>{t('common.loading')}...</div>;
+  }
   if (!document) return null;
 
   return (
     <div className="relative w-full">
-      <div className="mb-4 flex items-center justify-end">
-        <h1 className="flex-grow text-2xl font-bold">{document.name}</h1>
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <Input
+          ref={nameInputRef}
+          type="text"
+          defaultValue={document.name || ''}
+          className="flex-grow text-2xl"
+          onChange={handleNameInputChange}
+          onBlur={handleNameChange}
+          onKeyDown={(e) => e.key === 'Enter' && handleNameChange()}
+        />
+        <div>
+          {saveStatus === t('common.saved') ? (
+            <CircleCheck className="h-7 w-7" />
+          ) : (
+            <CircleDashed className="h-7 w-7" />
+          )}
+        </div>
         <AlertDialog
           open={isDeleteDialogOpen}
           onOpenChange={setIsDeleteDialogOpen}
         >
           <AlertDialogTrigger asChild>
-            <Button
-              className="mr-2"
-              onClick={() => setIsDeleteDialogOpen(true)}
-            >
+            <Button onClick={() => setIsDeleteDialogOpen(true)}>
               {t('common.delete')}
             </Button>
           </AlertDialogTrigger>
@@ -128,6 +177,7 @@ export default function DocumentDetailsPage({ params }: Props) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

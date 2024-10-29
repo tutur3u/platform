@@ -20,18 +20,25 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  data?: WorkspaceFlashcard;
+  moduleId?: string;
+  data?: Partial<WorkspaceFlashcard>;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
 const FormSchema = z.object({
   id: z.string().optional(),
+  moduleId: z.string().optional(),
   front: z.string().min(1),
   back: z.string().min(1),
 });
 
-export default function FlashcardForm({ wsId, data, onFinish }: Props) {
+export default function FlashcardForm({
+  wsId,
+  moduleId,
+  data,
+  onFinish,
+}: Props) {
   const t = useTranslations('ws-flashcards');
   const router = useRouter();
 
@@ -39,6 +46,7 @@ export default function FlashcardForm({ wsId, data, onFinish }: Props) {
     resolver: zodResolver(FormSchema),
     values: {
       id: data?.id,
+      moduleId,
       front: data?.front || '',
       back: data?.back || '',
     },

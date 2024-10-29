@@ -38,9 +38,7 @@ export function DataTableRefreshButton({
       }}
       disabled={isRefreshing || disabled}
     >
-      <RefreshCcw
-        className={cn('mr-2 h-4 w-4', isRefreshing && 'animate-spin')}
-      />
+      <RefreshCcw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
       {refreshText}
     </Button>
   );

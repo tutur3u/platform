@@ -108,7 +108,7 @@ export const getUserColumns = (
                   {row
                     .getValue<WorkspaceUser[]>('linked_users')
                     .map((u, idx) => (
-                      <Fragment key={u.id}>
+                      <Fragment key={`${u.id}-combo`}>
                         <span
                           key={`${u.id}-name`}
                           className="font-semibold hover:underline"
@@ -453,6 +453,7 @@ export const getUserColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader t={t} column={column} title={field.name} />
     ),
+    // eslint-disable-next-line no-unused-vars
     cell: ({ row: _ }) => (
       <div className="line-clamp-1 w-[8rem]">
         {/* {row.getValue(field.id) || '-'} */}-

@@ -1,5 +1,5 @@
 import LinkButton from '../../link-button';
-import { DEV_MODE } from '@/constants/common';
+import ModuleToggles from './toggles';
 import { WorkspaceCourseModule } from '@/types/db';
 import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -38,6 +38,9 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
     path: `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`,
   });
 
+  const flashcards = await getFlashcards(moduleId);
+  const quizzes = await getQuizzes(moduleId);
+
   return (
     <>
       <FeatureSummary
@@ -52,6 +55,12 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 {data.name || t('common.unknown')}
               </div>
             </h1>
+            <ModuleToggles
+              courseId={courseId}
+              moduleId={moduleId}
+              isPublic={data.is_public}
+              isPublished={data.is_published}
+            />
             <Separator className="my-2" />
           </>
         }
@@ -84,17 +93,15 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               />
               <LinkButton
                 href={`${commonHref}/quizzes`}
-                title={`${t('ws-quizzes.plural')} (0)`}
+                title={`${t('ws-quizzes.plural')} (${quizzes || 0})`}
                 icon={<ListTodo className="h-5 w-5" />}
                 className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
-                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/flashcards`}
-                title={`${t('ws-flashcards.plural')} (0)`}
+                title={`${t('ws-flashcards.plural')} (${flashcards || 0})`}
                 icon={<SwatchBook className="h-5 w-5" />}
                 className="border-dynamic-sky/20 bg-dynamic-sky/10 text-dynamic-sky hover:bg-dynamic-sky/20"
-                disabled={!DEV_MODE}
               />
               <LinkButton
                 href={`${commonHref}/extra-content`}
@@ -126,6 +133,30 @@ async function getData(courseId: string, moduleId: string) {
   if (!data) notFound();
 
   return data as WorkspaceCourseModule;
+}
+
+async function getFlashcards(moduleId: string) {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from('course_module_flashcards')
+    .select('*', { count: 'exact', head: true })
+    .eq('module_id', moduleId);
+  if (error) throw error;
+
+  return count;
+}
+
+async function getQuizzes(moduleId: string) {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from('course_module_quizzes')
+    .select('*', { count: 'exact', head: true })
+    .eq('module_id', moduleId);
+  if (error) throw error;
+
+  return count;
 }
 
 async function getResources({ path }: { path: string }) {

@@ -347,6 +347,72 @@ export type Database = {
           },
         ];
       };
+      course_module_flashcards: {
+        Row: {
+          created_at: string;
+          flashcard_id: string;
+          module_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          flashcard_id: string;
+          module_id: string;
+        };
+        Update: {
+          created_at?: string;
+          flashcard_id?: string;
+          module_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_module_flashcards_flashcard_id_fkey';
+            columns: ['flashcard_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_flashcards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_flashcards_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_module_quizzes: {
+        Row: {
+          created_at: string;
+          module_id: string;
+          quiz_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          module_id: string;
+          quiz_id: string;
+        };
+        Update: {
+          created_at?: string;
+          module_id?: string;
+          quiz_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_module_quizzes_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_quizzes_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       credit_wallets: {
         Row: {
           limit: number;
