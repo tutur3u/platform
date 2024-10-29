@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { ChatModelSelector } from './chat-model-selector';
 import LoadingIndicator from './common/LoadingIndicator';
 import { PromptForm, ResponseMode } from './prompt-form';
@@ -146,7 +147,7 @@ export function ChatPanel({
         <div
           className={cn(
             'absolute z-10 -mb-4 flex items-end gap-2 md:-mb-1 md:flex-col lg:mb-4',
-            !!chats
+            chats
               ? 'right-2 md:right-4 lg:-right-4 xl:-right-12'
               : 'right-2 md:right-4'
           )}
