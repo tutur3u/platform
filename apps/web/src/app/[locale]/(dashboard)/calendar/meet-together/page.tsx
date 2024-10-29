@@ -13,11 +13,11 @@ interface Props {
   // params: {
   //   wsId: string;
   // };
-  searchParams: {
+  searchParams: Promise<{
     q: string;
     // page: string;
     // pageSize: string;
-  };
+  }>;
 }
 
 export default async function MeetTogetherPage({
@@ -26,7 +26,7 @@ export default async function MeetTogetherPage({
 }: Props) {
   const locale = await getLocale();
   const t = await getTranslations('meet-together');
-  const { data: plans, user } = await getData(searchParams);
+  const { data: plans, user } = await getData(await searchParams);
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -136,7 +136,7 @@ async function getData(
     // pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -144,7 +144,7 @@ async function getData(
 
   if (!user) return { data: [], count: 0, user };
 
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const createdPlansQuery = sbAdmin
     .from('meet_together_plans')

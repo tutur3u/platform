@@ -2,17 +2,15 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
     configId: string;
-  };
+  }>;
 }
 
-export async function PUT(
-  req: Request,
-  { params: { wsId, configId: id } }: Params
-) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId, configId: id } = await params;
 
   const { value } = await req.json();
 

@@ -1,6 +1,6 @@
 import { cn } from '../../../lib/utils';
-import { ImageIcon } from '@radix-ui/react-icons';
 import { Card, CardDescription, CardTitle } from '@repo/ui/components/ui/card';
+import { Image } from 'lucide-react';
 import React from 'react';
 
 interface EmptyCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
@@ -13,7 +13,7 @@ interface EmptyCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
 export function EmptyCard({
   title,
   description,
-  icon: Icon = ImageIcon,
+  icon: Icon = Image,
   action,
   className,
   ...props

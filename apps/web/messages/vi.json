@@ -122,7 +122,8 @@
     "foreground": "Màu chi tiết",
     "background": "Màu nền",
     "scan_me": "Quét mã QR",
-    "qr_code": "Mã QR"
+    "qr_code": "Mã QR",
+    "current_plan": "Gói hiện tại"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -141,7 +142,7 @@
     "this-week": "Tuần này",
     "last-week": "Tuần trước",
     "next-week": "Tuần sau",
-    "this-month": "Tháng này",
+    "this_month": "Tháng này",
     "last-month": "Tháng trước",
     "next-month": "Tháng sau",
     "this-year": "Năm nay",
@@ -336,7 +337,6 @@
     "home": "Trang chủ",
     "refresh": "Làm mới",
     "chat": "Trò chuyện",
-    "blackbox": "Thí nghiệm",
     "calendar": "Lịch",
     "projects": "Dự án",
     "documents": "Tài liệu",
@@ -363,7 +363,8 @@
     "collapse-sidebar": "Đóng thanh bên",
     "expand-sidebar": "Mở thanh bên",
     "slides": "Trang trình bày",
-    "mailbox": "Hộp thư"
+    "mail": "Hộp thư",
+    "tasks": "Nhiệm vụ"
   },
   "team-tabs": {
     "overview": "Tổng quan",
@@ -503,9 +504,27 @@
     "source_email": "Email nguồn",
     "created_at": "Ngày tạo"
   },
+  "post-email-data-table": {
+    "id": "Mã số",
+    "recipient": "Người nhận",
+    "group_name": "Tên nhóm",
+    "post_title": "Tiêu đề bài viết",
+    "post_content": "Nội dung bài viết",
+    "email": "Email",
+    "subject": "Chủ đề",
+    "is_completed": "Làm xong",
+    "send_email": "Gửi email",
+    "preview": "Xem trước",
+    "notes": "Ghi chú",
+    "created_at": "Ngày tạo"
+  },
   "user-group-data-table": {
     "id": "Mã số",
     "name": "Tên",
+    "attendance_stats": "Thống kê điểm danh",
+    "completed": "Đã hoàn thành",
+    "incomplete": "Chưa hoàn thành",
+    "no_attendance_today": "Không cần điểm danh hôm nay",
     "amount": "Số thành viên",
     "locked": "Bị khoá",
     "created_at": "Tạo lúc",
@@ -608,6 +627,9 @@
     "category": "Danh mục",
     "description": "Mô tả",
     "manufacturer": "Nhà sản xuất",
+    "stock": "Tồn kho",
+    "unit": "Đơn vị",
+    "warehouse": "Kho",
     "usage": "Cách dùng",
     "created_at": "Tạo lúc"
   },
@@ -674,15 +696,13 @@
     "add_new": "Thêm Quy trình mới vào không gian làm việc này.",
     "edit_existing": "Sửa Quy trình đã tồn tại trong không gian làm việc này."
   },
-  "ws-projects": {
-    "projects": "Dự án",
-    "workspace_project": "Dự án",
-    "description": "Quản lý tất cả công việc của không gian làm việc thông qua các dự án.",
-    "name": "Tên",
-    "create_project": "Tạo dự án",
-    "edit_project": "Chỉnh sửa dự án",
-    "add_new_workspace_project": "Thêm dự án mới",
-    "edit_existing_workspace_project": "Chỉnh sửa dự án hiện có cho không gian làm việc này."
+  "ws-task-boards": {
+    "name": "Tên bảng",
+    "plural": "Bảng nhiệm vụ",
+    "singular": "Bảng nhiệm vụ",
+    "create": "Tạo bảng",
+    "create_description": "Tạo bảng nhiệm vụ",
+    "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể."
   },
   "ws-settings": {
     "description": "Quản lý các thiết lập không gian làm việc.",
@@ -777,7 +797,14 @@
     "create_description": "Thêm nhóm mới",
     "edit_description": "Sửa nhóm hiện có",
     "add_user": "Thêm người dùng",
-    "add_user_description": "Thêm người dùng vào nhóm"
+    "add_user_description": "Thêm người dùng vào nhóm",
+    "posts": "Bài viết",
+    "add_post": "Thêm bài viết",
+    "edit_post": "Chỉnh sửa bài viết",
+    "edit_post_description": "Thực hiện thay đổi cho bài viết của bạn ở đây.",
+    "add_post_description": "Thêm một bài viết mới.",
+    "show_post_content": "Hiển thị nội dung bài viết",
+    "show_post_status": "Hiển thị trạng thái bài viết"
   },
   "ws-user-group-tags": {
     "singular": "Gắn thẻ nhóm",
@@ -790,7 +817,9 @@
     "create": "Tạo gắn thẻ",
     "edit": "Sửa gắn thẻ",
     "create_description": "Thêm một gắn thẻ nhóm mới",
-    "edit_description": "Sửa gắn thẻ nhóm"
+    "edit_description": "Sửa gắn thẻ nhóm",
+    "add_group": "Thêm nhóm",
+    "add_group_description": "Thêm nhóm vào gắn thẻ"
   },
   "ws-user-reports": {
     "singular": "Báo cáo người dùng",
@@ -837,6 +866,42 @@
     "edit": "Sửa danh mục",
     "create_description": "Tạo một danh mục giao dịch mới",
     "edit_description": "Sửa danh mục giao dịch hiện có"
+  },
+  "ws-product-categories": {
+    "singular": "Danh mục sản phẩm",
+    "plural": "Danh mục sản phẩm",
+    "description": "Danh mục sản phẩm giúp bạn phân loại tất cả các sản phẩm trong không gian làm việc của bạn.",
+    "create": "Tạo danh mục",
+    "edit": "Sửa danh mục",
+    "create_description": "Tạo một danh mục sản phẩm mới",
+    "edit_description": "Sửa danh mục sản phẩm hiện có"
+  },
+  "ws-product-units": {
+    "singular": "Đơn vị sản phẩm",
+    "plural": "Đơn vị sản phẩm",
+    "description": "Đơn vị sản phẩm giúp bạn quản lý tất cả các đơn vị sản phẩm trong không gian làm việc của bạn.",
+    "create": "Tạo đơn vị",
+    "edit": "Sửa đơn vị",
+    "create_description": "Tạo một đơn vị sản phẩm mới",
+    "edit_description": "Sửa đơn vị sản phẩm hiện có"
+  },
+  "ws-product-suppliers": {
+    "singular": "Nhà cung cấp",
+    "plural": "Nhà cung cấp",
+    "description": "Nhà cung cấp giúp bạn quản lý tất cả các nhà cung cấp trong không gian làm việc của bạn.",
+    "create": "Tạo nhà cung cấp",
+    "edit": "Sửa nhà cung cấp",
+    "create_description": "Tạo một nhà cung cấp mới",
+    "edit_description": "Sửa nhà cung cấp hiện có"
+  },
+  "ws-product-warehouses": {
+    "singular": "Kho hàng",
+    "plural": "Kho hàng",
+    "description": "Kho hàng giúp bạn quản lý vị trí lưu trữ của các sản phẩm trong không gian làm việc của bạn.",
+    "create": "Tạo kho hàng",
+    "edit": "Sửa kho hàng",
+    "create_description": "Tạo một kho hàng mới",
+    "edit_description": "Sửa kho hàng hiện có"
   },
   "ws-user-fields": {
     "module": "Trường thông tin người dùng",
@@ -958,7 +1023,9 @@
     "manage_finance": "Quản lý tài chính",
     "manage_finance_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa giao dịch tài chính trong không gian làm việc.",
     "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",
-    "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng."
+    "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng.",
+    "send_user_group_post_emails": "Gửi nội dung bài viết qua email",
+    "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể."
   },
   "ws-activities": {
     "description": "Xem tất cả các hoạt động trong không gian làm việc của bạn",
@@ -1168,6 +1235,7 @@
     "finance": "Tài chính",
     "unnamed-ws": "Không gian làm việc không tên",
     "invoices": "Hóa đơn",
+    "invoice": "Hóa đơn",
     "show-phone": "Hiển thị số điện thoại",
     "show-gender": "Hiển thị giới tính",
     "show-address": "Hiển thị địa chỉ",
@@ -1187,7 +1255,7 @@
     "note": "Ghi chú",
     "note-placeholder": "Nhập ghi chú cho hoá đơn này",
     "add-note": "Thêm ghi chú",
-    "total": "Số tiền khách cần đưa",
+    "total": "Tổng cộng",
     "total-placeholder": "Nhập số tiền khách cần đưa",
     "reset": "Đặt lại",
     "discount": "Khách hàng sẽ được giảm",
@@ -1200,7 +1268,18 @@
     "reopen-invoice": "Mở lại hoá đơn",
     "close-invoice": "Đóng hoá đơn",
     "save-changes": "Lưu thay đổi",
-    "checkup": "Khám bệnh"
+    "checkup": "Khám bệnh",
+    "bill_to": "Thanh toán cho",
+    "invoice_date": "Ngày tạo hóa đơn",
+    "description": "Mô tả",
+    "quantity": "Số lượng",
+    "price": "Giá",
+    "promotions": "Khuyến mãi",
+    "subtotal": "Tạm tính",
+    "discounts": "Giảm giá",
+    "rounding": "Làm tròn",
+    "print": "In",
+    "download_image": "Tải hình ảnh xuống"
   },
   "ai_chat": {
     "welcome_to": "Chào mừng đến với",
@@ -1264,7 +1343,13 @@
     "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
     "upload_files": "Tải lên tập tin",
     "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
-    "response_language": "Ngôn ngữ phản hồi"
+    "response_language": "Ngôn ngữ phản hồi",
+    "chat_summary": "Tóm tắt",
+    "chat_notes": "Ghi chú",
+    "multiple_choice": "Bộ trắc nghiệm",
+    "paragraph_answers": "Câu hỏi đoạn văn",
+    "ai_models": "Mô hình AI",
+    "quizzes": "Bộ câu hỏi"
   },
   "crud-ops": {
     "ops": "Thao tác",
@@ -1305,7 +1390,11 @@
     "change-password-description": "Đổi mật khẩu của bạn.",
     "delete-account": "Xóa tài khoản",
     "delete-account-description": "Xóa tài khoản của bạn.",
-    "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản."
+    "delete-account-message": "Tài khoản của bạn sẽ bị xoá vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
+    "new_avatar": "Hình đại diện mới",
+    "upload_avatar": "Hình đại diện mới",
+    "remove_avatar": "Xóa hình đại diện",
+    "save_avatar": "Lưu hình đại diện"
   },
   "settings-appearance": {
     "appearance": "Hiển thị",
@@ -1351,18 +1440,93 @@
     "prompt_tokens": "Token lệnh nhắc",
     "completion_tokens": "Token hoàn thành"
   },
-  "workspace-mailbox": {
+  "workspace-mail": {
     "overview": "Tổng quan",
     "emails": "Lịch sử gửi thư",
     "history": "Lịch sử",
-    "send": "Gửi thư"
+    "send": "Gửi thư",
+    "posts": "Bài viết"
   },
-  "dworkspace-mailbox": {
+  "dworkspace-mail": {
     "destination-addresses": "Địa chỉ đích"
   },
   "ws-emails": {
     "plural": "Email",
     "singular": "E-mail",
     "description": "Xem lịch sử gửi thư thuộc không gian làm việc của bạn."
-  }
+  },
+  "ws-invoices": {
+    "singular": "Hóa đơn",
+    "plural": "Hóa đơn",
+    "description": "Hóa đơn được sử dụng để liên kết các giao dịch tài chính và sản phẩm đã mua với các chương trình khuyến mãi được áp dụng từ kho hàng trong không gian làm việc của bạn.",
+    "create": "Tạo hóa đơn",
+    "create_description": "Tạo hóa đơn mới",
+    "edit": "Chỉnh sửa hóa đơn",
+    "edit_description": "Chỉnh sửa hóa đơn hiện có"
+  },
+  "ws-inventory-products": {
+    "plural": "Sản phẩm",
+    "singular": "Sản phẩm",
+    "description": "Sản phẩm được sử dụng dưới dạng loại mặt hàng riêng lẻ mà bạn có trong kho của mình và có thể được sử dụng để liên kết với hóa đơn.",
+    "create": "Tạo sản phẩm",
+    "create_description": "Tạo một sản phẩm mới"
+  },
+  "ws-inventory-categories": {
+    "plural": "Danh mục sản phẩm",
+    "singular": "Danh mục sản phẩm",
+    "description": "Danh mục được sử dụng để nhóm các sản phẩm tồn kho tương tự lại với nhau.",
+    "create": "Tạo danh mục",
+    "create_description": "Tạo một danh mục mới"
+  },
+  "ws-inventory-units": {
+    "plural": "Đơn vị tính",
+    "singular": "Đơn vị tính",
+    "description": "Đơn vị tính được sử dụng để đo lường các sản phẩm tồn kho.",
+    "create": "Tạo đơn vị tính",
+    "create_description": "Tạo một đơn vị tính mới"
+  },
+  "ws-inventory-suppliers": {
+    "plural": "Nhà cung cấp",
+    "singular": "Nhà cung cấp",
+    "description": "Nhà cung cấp được sử dụng để liên kết các sản phẩm tồn kho với nhà cung cấp.",
+    "create": "Tạo nhà cung cấp",
+    "create_description": "Tạo một nhà cung cấp mới"
+  },
+  "ws-inventory-warehouses": {
+    "plural": "Kho hàng",
+    "singular": "Kho hàng",
+    "description": "Kho hàng được sử dụng để lưu trữ các sản phẩm tồn kho.",
+    "create": "Tạo kho hàng",
+    "create_description": "Tạo một kho hàng mới"
+  },
+  "ws-inventory-batches": {
+    "plural": "Lô hàng",
+    "singular": "Lô hàng",
+    "description": "Lô hàng được sử dụng để quản lý các sản phẩm nhập và xuất kho.",
+    "create": "Tạo lô hàng",
+    "create_description": "Tạo một lô hàng mới"
+  },
+  "ws-inventory-promotions": {
+    "plural": "Khuyến mãi",
+    "singular": "Khuyến mãi",
+    "description": "Khuyến mãi được sử dụng để quản lý các sản phẩm khuyến mãi.",
+    "create": "Tạo khuyến mãi",
+    "create_description": "Tạo một khuyến mãi mới"
+  },
+  "ws_post_details": {
+    "check_all": "Đã kiểm tra tất cả"
+  },
+  "ws-documents": {
+    "plural": "Tài liệu",
+    "singular": "Tài liệu",
+    "create_description": "Tạo một tài liệu mới",
+    "create": "Tạo tài liệu",
+    "description": "Tài liệu được sử dụng để hỗ trợ việc chia sẻ thông tin trong không gian làm việc của bạn."
+  },
+  "ws-post-emails": {
+    "plural": "Bài viết",
+    "singular": "Bài viết",
+    "description": "Gửi email cho người dùng mà nhân viên có thẩm quyền đã kiểm tra công việc của họ trong các bài viết của nhóm người dùng cụ thể."
+  },
+  "avatar": "Ảnh đại diện"
 }

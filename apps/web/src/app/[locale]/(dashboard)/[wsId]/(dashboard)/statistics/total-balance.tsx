@@ -14,7 +14,7 @@ export default async function TotalBalanceStatistics({
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const t = await getTranslations();
 
   const { data: income } = enabled
@@ -57,17 +57,6 @@ export default async function TotalBalanceStatistics({
 
   const { permissions } = await getPermissions({
     wsId,
-    requiredPermissions: [
-      'ai_chat',
-      'ai_lab',
-      'manage_calendar',
-      'manage_projects',
-      'manage_documents',
-      'manage_drive',
-      'manage_users',
-      'manage_inventory',
-      'manage_finance',
-    ],
   });
 
   if (!enabled || !permissions.includes('manage_finance')) return null;

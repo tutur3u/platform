@@ -1,7 +1,6 @@
 'use client';
 
 import { MigrationModule, ModulePackage, generateModules } from './modules';
-import { ArrowPathIcon, PlayIcon } from '@heroicons/react/24/solid';
 import { useLocalStorage } from '@mantine/hooks';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
@@ -10,6 +9,7 @@ import { Label } from '@repo/ui/components/ui/label';
 import { Progress } from '@repo/ui/components/ui/progress';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { IconGitMerge } from '@tabler/icons-react';
+import { Play, RefreshCcw } from 'lucide-react';
 import { useState } from 'react';
 
 export default function MigrationDashboard() {
@@ -303,9 +303,9 @@ export default function MigrationDashboard() {
               disabled={disabled || getLoading(module)}
             >
               {getData('external', module) ? (
-                <ArrowPathIcon className="h-4 w-4" />
+                <RefreshCcw className="h-4 w-4" />
               ) : (
-                <PlayIcon className="h-4 w-4" />
+                <Play className="h-4 w-4" />
               )}
             </Button>
           </div>
@@ -446,9 +446,9 @@ export default function MigrationDashboard() {
           >
             {Object.values(migrationData ?? {}).filter((v) => v?.externalData)
               .length ? (
-              <ArrowPathIcon className="h-4 w-4" />
+              <RefreshCcw className="h-4 w-4" />
             ) : (
-              <PlayIcon className="h-4 w-4" />
+              <Play className="h-4 w-4" />
             )}
           </Button>
         </h2>

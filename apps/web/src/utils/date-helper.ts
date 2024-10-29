@@ -146,7 +146,7 @@ export const getDateRangeOptions = (
 
     case 'month':
       return [
-        { label: t('date_helper.this-month'), value: 'present' },
+        { label: t('date_helper.this_month'), value: 'present' },
         { label: t('date_helper.last-month'), value: 'past' },
         { label: t('date_helper.next-month'), value: 'future' },
       ];

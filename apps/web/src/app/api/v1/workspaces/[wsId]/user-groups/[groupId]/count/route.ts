@@ -3,13 +3,15 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
     groupId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { wsId, groupId } }: Params) {
+export async function GET(_: Request, { params }: Params) {
+  const { wsId, groupId } = await params;
+
   if (!groupId)
     return NextResponse.json({ message: 'Invalid group ID' }, { status: 400 });
 
@@ -19,7 +21,7 @@ export async function GET(_: Request, { params: { wsId, groupId } }: Params) {
       { status: 400 }
     );
 
-  const apiKey = headers().get('API_KEY');
+  const apiKey = (await headers()).get('API_KEY');
   return apiKey
     ? getDataWithApiKey({ wsId, groupId, apiKey })
     : getDataFromSession({ wsId, groupId });
@@ -34,7 +36,7 @@ async function getDataWithApiKey({
   groupId: string;
   apiKey: string;
 }) {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const apiCheckQuery = sbAdmin
     .from('workspace_api_keys')
@@ -80,7 +82,7 @@ async function getDataFromSession({
   wsId: string;
   groupId: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('workspace_user_groups_users')

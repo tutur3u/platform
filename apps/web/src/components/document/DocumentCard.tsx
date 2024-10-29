@@ -1,6 +1,6 @@
 import { WorkspaceDocument } from '@/types/db';
-import { DocumentPlusIcon } from '@heroicons/react/24/solid';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { FilePlus } from 'lucide-react';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
@@ -11,9 +11,9 @@ interface Props {
   document: Partial<WorkspaceDocument>;
 }
 
-const DocumentCard = ({ wsId, document }: Props) => {
+const DocumentCard = ({ wsId: _, document }: Props) => {
   const { id, name, content, created_at } = document;
-  const href = id ? `/${wsId}/documents/${id}` : '';
+  // const href = id ? `/${wsId}/documents/${id}` : '';
 
   const locale = useLocale();
 
@@ -21,9 +21,10 @@ const DocumentCard = ({ wsId, document }: Props) => {
 
   return (
     <Link
-      href={href}
+      // href={href}
+      href="#"
       key={`doc-${id}`}
-      className="border-border relative flex items-center justify-between gap-4 rounded-lg border bg-zinc-500/5 p-4 transition hover:bg-zinc-500/10 dark:border-zinc-800/80 dark:bg-zinc-900 dark:hover:bg-zinc-800/80"
+      className="border-border relative grid cursor-default gap-4 rounded-lg border p-4 transition"
     >
       <div>
         <p className="line-clamp-1 font-semibold lg:text-lg xl:text-xl">
@@ -33,22 +34,19 @@ const DocumentCard = ({ wsId, document }: Props) => {
         {content && (
           <>
             <Separator className="my-2" />
-
-            <p className="text-foreground/80">
-              <div
-                className="prose line-clamp-3"
-                dangerouslySetInnerHTML={{
-                  __html: document.content || '',
-                }}
-              />
-            </p>
+            <div
+              className="prose text-foreground line-clamp-3 opacity-80"
+              dangerouslySetInnerHTML={{
+                __html: document.content || '',
+              }}
+            />
           </>
         )}
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center gap-2 justify-self-end text-sm font-semibold">
-        <div className="flex max-w-full items-center gap-1 rounded-lg bg-blue-500/10 px-2 py-1.5 text-blue-600 dark:bg-blue-300/10 dark:text-blue-300">
-          <DocumentPlusIcon className="w-5 flex-none" />
+      <div className="flex flex-wrap items-center gap-2 justify-self-start text-sm font-semibold">
+        <div className="bg-dynamic-blue/5 border-dynamic-blue/20 text-dynamic-blue flex w-full max-w-full items-center gap-1 rounded-lg border px-2 py-1.5">
+          <FilePlus className="w-5 flex-none" />
           <div className="line-clamp-1">{creationDate}</div>
         </div>
       </div>

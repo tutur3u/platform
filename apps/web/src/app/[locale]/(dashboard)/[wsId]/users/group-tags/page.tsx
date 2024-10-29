@@ -1,29 +1,35 @@
 import { groupTagColumns } from './columns';
 import GroupTagForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q?: string;
     page?: string;
     pageSize?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceUserGroupTagsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  const { data: tags, count } = await getGroupTags(wsId, searchParams);
+  const { wsId } = await params;
+  const { data, count } = await getGroupTags(wsId, await searchParams);
   const t = await getTranslations('ws-user-group-tags');
+
+  const tags = data.map((tag) => ({
+    ...tag,
+    href: `/${wsId}/users/group-tags/${tag.id}`,
+  }));
 
   return (
     <>
@@ -59,7 +65,7 @@ async function getGroupTags(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_group_tags')
@@ -88,5 +94,5 @@ async function getGroupTags(
       group_ids: group_ids.map((group) => group.group_id),
     })),
     count,
-  } as { data: WorkspaceApiKey[]; count: number };
+  } as { data: UserGroupTag[]; count: number };
 }

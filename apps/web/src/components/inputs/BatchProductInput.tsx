@@ -1,6 +1,6 @@
 import { Product } from '@/types/primitives/Product';
-import { TrashIcon } from '@heroicons/react/24/solid';
 import { Divider, NumberInput } from '@mantine/core';
+import { Trash } from 'lucide-react';
 
 interface Props {
   warehouseId: string;
@@ -25,7 +25,7 @@ const BatchProductInput = ({
           className="h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4 xl:hidden"
           onClick={removePrice}
         >
-          <TrashIcon className="h-5 w-5" />
+          <Trash className="h-5 w-5" />
         </button>
       </div>
 
@@ -66,7 +66,7 @@ const BatchProductInput = ({
           className="pointer-events-none h-fit rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 opacity-0 transition hover:bg-red-300/20 md:px-4 xl:pointer-events-auto xl:opacity-100"
           onClick={removePrice}
         >
-          <TrashIcon className="h-5 w-5" />
+          <Trash className="h-5 w-5" />
         </button>
       </div>
       {isLast || <Divider className="mt-2 w-full xl:hidden" />}

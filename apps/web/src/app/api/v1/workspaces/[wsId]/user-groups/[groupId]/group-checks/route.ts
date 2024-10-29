@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const data = await req.json();
 
   const { error } = await supabase.from('user_group_post_checks').insert(data);

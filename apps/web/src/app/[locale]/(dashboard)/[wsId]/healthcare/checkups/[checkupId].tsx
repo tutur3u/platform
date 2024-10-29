@@ -7,7 +7,6 @@ import { Diagnosis } from '@/types/primitives/Diagnosis';
 import { Vital } from '@/types/primitives/Vital';
 import { VitalGroup } from '@/types/primitives/VitalGroup';
 import { Checkbox, Divider, Textarea } from '@mantine/core';
-import { DateTimePicker } from '@mantine/dates';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { useRouter } from 'next/router';
@@ -84,7 +83,7 @@ export default function CheckupDetailsPage() {
 
   const [userId, setUserId] = useState<string>('');
 
-  const [checkupAt, setCheckupAt] = useState<Date | null>(new Date());
+  const [, setCheckupAt] = useState<Date | null>(new Date());
   const [nextCheckupAt, setNextCheckupAt] = useState<Date | null>(null);
 
   const [checked, setChecked] = useState<boolean>(false);
@@ -269,7 +268,7 @@ export default function CheckupDetailsPage() {
 
           <Divider className="col-span-full mt-2" />
 
-          <DateTimePicker
+          {/* <DateTimePicker
             label="Khám vào lúc"
             placeholder="Chọn thời gian khám"
             value={checkupAt}
@@ -277,9 +276,9 @@ export default function CheckupDetailsPage() {
             className="md:col-span-2"
             valueFormat="HH:mm - dddd, DD/MM/YYYY"
             locale="vi"
-          />
+          /> */}
 
-          {nextCheckupAt != null ? (
+          {/* {nextCheckupAt != null ? (
             <DateTimePicker
               label="Tái khám vào lúc"
               placeholder="Chọn thời gian tái khám"
@@ -300,7 +299,7 @@ export default function CheckupDetailsPage() {
             >
               + Thêm lịch tái khám
             </button>
-          )}
+          )} */}
 
           <Divider className="col-span-full my-2" />
 

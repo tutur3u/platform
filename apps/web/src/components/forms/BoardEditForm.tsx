@@ -1,8 +1,7 @@
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { Button, TextInput } from '@mantine/core';
 import { closeAllModals } from '@mantine/modals';
-import React, { useState } from 'react';
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface BoardEditFormProps {

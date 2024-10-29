@@ -2,6 +2,7 @@
 
 import { NotificationAction as Action } from './notification-action-list';
 import { Button } from '@repo/ui/components/ui/button';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 interface Props {
@@ -22,6 +23,7 @@ export default function NotificationAction({
   disabled,
 }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleWorkspaceInvite = async ({
     data,
@@ -42,9 +44,10 @@ export default function NotificationAction({
     });
 
     if (res.ok) {
+      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      router.refresh();
       onSuccess?.();
       onEnd?.();
-      router.refresh();
       return;
     }
 

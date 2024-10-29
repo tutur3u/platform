@@ -28,6 +28,7 @@ export default function EditableReportPreview({
   report: Partial<WorkspaceUserReport> & {
     user_name?: string;
     creator_name?: string;
+    group_name?: string;
   };
   configs: WorkspaceConfig[];
   isNew: boolean;
@@ -65,7 +66,7 @@ export default function EditableReportPreview({
         if (key === 'user_name') {
           return (
             <span key={key + index} className="font-semibold">
-              {report.user_name}
+              {report.user_name || '...'}
             </span>
           );
         }
@@ -73,7 +74,7 @@ export default function EditableReportPreview({
         if (key === 'group_name') {
           return (
             <span key={key + index} className="font-semibold">
-              {report.group_id}
+              {report.group_name || '...'}
             </span>
           );
         }
@@ -81,7 +82,7 @@ export default function EditableReportPreview({
         if (key === 'group_manager_name') {
           return (
             <span key={key + index} className="font-semibold">
-              {report.creator_name}
+              {report.creator_name || '...'}
             </span>
           );
         }

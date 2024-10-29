@@ -14,17 +14,6 @@ export default async function FinanceCategoryStatistics({
 
   const { permissions } = await getPermissions({
     wsId,
-    requiredPermissions: [
-      'ai_chat',
-      'ai_lab',
-      'manage_calendar',
-      'manage_projects',
-      'manage_documents',
-      'manage_drive',
-      'manage_users',
-      'manage_inventory',
-      'manage_finance',
-    ],
   });
 
   if (!enabled || !permissions.includes('manage_finance')) return null;

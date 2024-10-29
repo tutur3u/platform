@@ -40,11 +40,17 @@ export function PostEmailStatus({
         .eq('group_id', groupId)
         .eq('workspace_users.user_group_post_checks.post_id', postId);
 
-      console.log(users, count);
+      const { count: emailsCount } = await supabase
+        .from('sent_emails')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('post_id', postId);
 
       if (users) {
         setData({
-          sent: 0,
+          sent: emailsCount,
           checked: users.filter((user) =>
             user?.user_group_post_checks?.find((check) => check?.is_completed)
           ).length,
@@ -70,7 +76,7 @@ export function PostEmailStatus({
           'bg-dynamic-purple/15 text-dynamic-purple border-dynamic-purple/15 flex w-fit items-center gap-1 rounded border px-2 py-1 text-xs font-semibold'
         )}
       >
-        {0}/{data?.count || 0} <Send className="h-4 w-4" />
+        {data?.sent ?? '-'}/{data?.count || 0} <Send className="h-4 w-4" />
       </div>
       <div
         ref={ref}
@@ -78,7 +84,7 @@ export function PostEmailStatus({
           'bg-dynamic-green/15 text-dynamic-green border-dynamic-green/15 flex w-fit items-center gap-1 rounded border px-2 py-1 text-xs font-semibold'
         )}
       >
-        {data?.checked || 0} <Check className="h-4 w-4" />
+        {data?.checked ?? '-'} <Check className="h-4 w-4" />
       </div>
       <div
         ref={ref}
@@ -86,7 +92,7 @@ export function PostEmailStatus({
           'bg-dynamic-red/15 text-dynamic-red border-dynamic-red/15 flex w-fit items-center gap-1 rounded border px-2 py-1 text-xs font-semibold'
         )}
       >
-        {data?.failed || 0} <X className="h-4 w-4" />
+        {data?.failed ?? '-'} <X className="h-4 w-4" />
       </div>
       <div
         ref={ref}
@@ -94,7 +100,7 @@ export function PostEmailStatus({
           'bg-dynamic-blue/15 text-dynamic-blue border-dynamic-blue/15 flex w-fit items-center gap-1 rounded border px-2 py-1 text-xs font-semibold'
         )}
       >
-        {data?.tenative || 0} <CircleHelp className="h-4 w-4" />
+        {data?.tenative ?? '-'} <CircleHelp className="h-4 w-4" />
       </div>
     </div>
   );

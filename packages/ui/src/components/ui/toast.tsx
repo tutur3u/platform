@@ -1,3 +1,5 @@
+'use client';
+
 import { cn } from '../../lib/utils';
 import * as ToastPrimitives from '@radix-ui/react-toast';
 import { type VariantProps, cva } from 'class-variance-authority';

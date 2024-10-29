@@ -1,7 +1,7 @@
 import { UserDatabaseFilter } from '../filters';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
-import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { MinusCircle, PlusCircle } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -38,7 +38,7 @@ export default async function Filters({
           key="included-user-groups-filter"
           tag="includedGroups"
           title={t('included_groups')}
-          icon={<PlusCircledIcon className="mr-2 h-4 w-4" />}
+          icon={<PlusCircle className="mr-2 h-4 w-4" />}
           options={userGroups.map((group) => ({
             label: group.name || 'No name',
             value: group.id,
@@ -51,7 +51,7 @@ export default async function Filters({
           key="excluded-user-groups-filter"
           tag="excludedGroups"
           title={t('excluded_groups')}
-          icon={<MinusCircledIcon className="mr-2 h-4 w-4" />}
+          icon={<MinusCircle className="mr-2 h-4 w-4" />}
           options={excludedUserGroups.map((group) => ({
             label: group.name || 'No name',
             value: group.id,
@@ -64,7 +64,7 @@ export default async function Filters({
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -84,7 +84,7 @@ async function getExcludedUserGroups(
   wsId: string,
   { includedGroups }: SearchParams
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   if (!includedGroups || includedGroups.length === 0) {
     return getUserGroups(wsId);

@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const requestUrl = new URL(req.url);
   const query = requestUrl.searchParams.get('query');

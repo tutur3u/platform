@@ -1,6 +1,6 @@
 import { ProductPrice } from '@/types/primitives/ProductPrice';
-import { XMarkIcon } from '@heroicons/react/24/solid';
 import { Divider, NumberInput } from '@mantine/core';
+import { X } from 'lucide-react';
 
 interface Props {
   price: ProductPrice;
@@ -74,7 +74,7 @@ const ProductPriceInput = ({
         className="mt-[1.6125rem] flex h-fit w-fit items-center justify-center rounded border border-red-300/10 bg-red-300/10 px-1 py-1.5 font-semibold text-red-300 transition hover:bg-red-300/20 md:px-4"
         onClick={removePrice}
       >
-        <XMarkIcon className="h-5 w-5" />
+        <X className="h-5 w-5" />
       </button>
     </div>
   );

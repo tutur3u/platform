@@ -1,6 +1,6 @@
 import { Vital } from '@/types/primitives/Vital';
 import { VitalGroup } from '@/types/primitives/VitalGroup';
-import { TrashIcon } from '@heroicons/react/24/solid';
+import { TrashIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import useSWR from 'swr';
 

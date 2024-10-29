@@ -2,14 +2,15 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     postId: string;
-  };
+  }>;
 }
 
-export async function PUT(req: Request, { params: { postId } }: Params) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { postId } = await params;
 
   const { error } = await supabase
     .from('user_group_posts')
@@ -27,8 +28,9 @@ export async function PUT(req: Request, { params: { postId } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params: { postId } }: Params) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { postId } = await params;
 
   const { error } = await supabase
     .from('user_group_posts')

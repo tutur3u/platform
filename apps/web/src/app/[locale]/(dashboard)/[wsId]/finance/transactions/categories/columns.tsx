@@ -7,7 +7,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 
 export const transactionCategoryColumns = (
-  t: any
+  t: any,
+  namespace: string
 ): ColumnDef<TransactionCategory>[] => [
   // {
   //   id: 'select',
@@ -33,21 +34,33 @@ export const transactionCategoryColumns = (
   {
     accessorKey: 'id',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('id')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.id`)}
+      />
     ),
     cell: ({ row }) => <div className="line-clamp-1">{row.getValue('id')}</div>,
   },
   {
     accessorKey: 'name',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('name')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.name`)}
+      />
     ),
     cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
   },
   {
     accessorKey: 'amount',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('amount')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.amount`)}
+      />
     ),
     cell: ({ row }) => (
       <div className="font-semibold">{row.getValue('amount')}</div>
@@ -56,17 +69,21 @@ export const transactionCategoryColumns = (
   {
     accessorKey: 'is_expense',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('type')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.type`)}
+      />
     ),
     cell: ({ row }) => (
       <div>
         {row.getValue('is_expense') ? (
           <div className="bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20 w-fit rounded border px-1 font-semibold">
-            {t('expense')}
+            {t(`${namespace}.expense`)}
           </div>
         ) : (
           <div className="bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20 w-fit rounded border px-1 font-semibold">
-            {t('income')}
+            {t(`${namespace}.income`)}
           </div>
         )}
       </div>
@@ -75,7 +92,11 @@ export const transactionCategoryColumns = (
   {
     accessorKey: 'created_at',
     header: ({ column }) => (
-      <DataTableColumnHeader t={t} column={column} title={t('created_at')} />
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.created_at`)}
+      />
     ),
     cell: ({ row }) => (
       <div>

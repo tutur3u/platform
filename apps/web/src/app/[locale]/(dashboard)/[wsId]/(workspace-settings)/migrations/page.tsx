@@ -3,14 +3,13 @@ import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function PlatformMigrationsPage({
-  params: { wsId },
-}: Props) {
+export default async function PlatformMigrationsPage({ params }: Props) {
+  const { wsId } = await params;
   if (wsId !== ROOT_WORKSPACE_ID) redirect(`/${wsId}/settings`);
   return <MigrationDashboard />;
 }

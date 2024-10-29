@@ -2,13 +2,14 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     groupId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { groupId } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { groupId } = await params;
 
   const { data, error } = await supabase
     .from('user_group_posts')
@@ -27,9 +28,10 @@ export async function GET(_: Request, { params: { groupId } }: Params) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request, { params: { groupId } }: Params) {
-  const supabase = createClient();
+export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { groupId } = await params;
 
   const { error } = await supabase.from('user_group_posts').insert({
     ...data,

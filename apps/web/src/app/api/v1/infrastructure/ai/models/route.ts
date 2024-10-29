@@ -2,7 +2,7 @@ import { createAdminClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(_: Request) {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin
     .from('ai_models')

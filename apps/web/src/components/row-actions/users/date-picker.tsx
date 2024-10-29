@@ -10,17 +10,27 @@ import {
 import { cn } from '@repo/ui/lib/utils';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Props {
   defaultValue?: Date;
+  value?: Date | null;
   onValueChange?: (date?: Date) => void;
   className?: string;
 }
 
-export function DatePicker({ defaultValue, onValueChange, className }: Props) {
-  const [date, setDate] = useState<Date | undefined>(defaultValue);
+export function DatePicker({
+  defaultValue,
+  value,
+  onValueChange,
+  className,
+}: Props) {
+  const [date, setDate] = useState<Date | null | undefined>(defaultValue);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setDate(value);
+  }, [value]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -40,7 +50,7 @@ export function DatePicker({ defaultValue, onValueChange, className }: Props) {
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
-          selected={date}
+          selected={date || undefined}
           onSelect={(date) => {
             setDate(date);
             onValueChange?.(date);

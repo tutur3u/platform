@@ -8,35 +8,38 @@ import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q?: string;
     page?: string;
     pageSize?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceRolesPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  const supabase = createClient();
+  const supabase = await createClient();
+  const { wsId } = await params;
 
-  await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: ['manage_workspace_roles'],
-    redirectTo: `/${wsId}/settings`,
   });
+
+  if (withoutPermission('manage_workspace_roles'))
+    redirect(`/${wsId}/settings`);
 
   const {
     data: rawData,
     defaultData,
     count,
-  } = await getRoles(wsId, searchParams);
+  } = await getRoles(wsId, await searchParams);
 
   const {
     data: { user },
@@ -95,7 +98,7 @@ async function getRoles(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const rolesQuery = supabase
     .from('workspace_roles')

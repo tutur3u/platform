@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(_: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.from('timezones').select('*');
 
@@ -18,7 +18,7 @@ export async function GET(_: Request) {
 }
 
 export async function POST(req: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const data = await req.json();
 

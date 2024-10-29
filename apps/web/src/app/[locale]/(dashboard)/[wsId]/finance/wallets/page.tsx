@@ -8,26 +8,27 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceWalletsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  const { data: rawData, count } = await getData(wsId, searchParams);
   const t = await getTranslations();
+  const { wsId } = await params;
+  const { data: rawData, count } = await getData(wsId, await searchParams);
 
   const data = rawData.map((d) => ({
     ...d,
-    // href: `/${wsId}/finance/transactions/${d.id}`,
+    href: `/${wsId}/finance/wallets/${d.id}`,
     ws_id: wsId,
   }));
 
@@ -68,7 +69,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_wallets')

@@ -1,26 +1,29 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { promotionColumns } from '@/data/columns/promotions';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { ProductPromotion } from '@/types/primitives/ProductPromotion';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function WorkspacePromotionsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
-  const { data, count } = await getData(wsId, searchParams);
+  const t = await getTranslations();
+  const { wsId } = await params;
+  const { data, count } = await getData(wsId, await searchParams);
 
   const promotions = data.map(({ value, use_ratio, ...rest }) => ({
     ...rest,
@@ -34,16 +37,27 @@ export default async function WorkspacePromotionsPage({
   }));
 
   return (
-    <CustomDataTable
-      data={promotions}
-      columnGenerator={promotionColumns}
-      namespace="promotion-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        created_at: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-inventory-promotions.plural')}
+        singularTitle={t('ws-inventory-promotions.singular')}
+        description={t('ws-inventory-promotions.description')}
+        createTitle={t('ws-inventory-promotions.create')}
+        createDescription={t('ws-inventory-promotions.create_description')}
+        // form={<PromotionForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={promotions}
+        columnGenerator={promotionColumns}
+        namespace="promotion-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
   );
 }
 
@@ -55,7 +69,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_promotions')

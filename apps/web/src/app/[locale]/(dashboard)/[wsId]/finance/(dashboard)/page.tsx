@@ -21,33 +21,35 @@ export interface FinanceDashboardSearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: FinanceDashboardSearchParams;
+  }>;
+  searchParams: Promise<FinanceDashboardSearchParams>;
 }
 
 export default async function WorkspaceFinancePage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
+  const { wsId } = await params;
+  const sp = await searchParams;
   const { data: dailyData } = await getDailyData(wsId);
   const { data: monthlyData } = await getMonthlyData(wsId);
 
   return (
     <>
-      <Filter className="mb-4 flex items-end gap-4 p-2" />
+      <Filter className="mb-4" />
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
-          <TotalBalanceStatistics wsId={wsId} searchParams={searchParams} />
+          <TotalBalanceStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <IncomeStatistics wsId={wsId} searchParams={searchParams} />
+          <IncomeStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <ExpenseStatistics wsId={wsId} searchParams={searchParams} />
+          <ExpenseStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
@@ -59,11 +61,11 @@ export default async function WorkspaceFinancePage({
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <TransactionsStatistics wsId={wsId} searchParams={searchParams} />
+          <TransactionsStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <InvoicesStatistics wsId={wsId} searchParams={searchParams} />
+          <InvoicesStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
@@ -81,7 +83,7 @@ export default async function WorkspaceFinancePage({
 }
 
 async function getDailyData(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase.rpc('get_daily_income_expense', {
     _ws_id: wsId,
@@ -94,7 +96,7 @@ async function getDailyData(wsId: string) {
 }
 
 async function getMonthlyData(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase.rpc('get_monthly_income_expense', {
     _ws_id: wsId,

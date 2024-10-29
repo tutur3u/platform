@@ -11,13 +11,14 @@ import Image from 'next/image';
 import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     handle: string;
-  };
+  }>;
 }
 
-export default async function UserProfilePage({ params: { handle } }: Props) {
-  const supabase = createClient();
+export default async function UserProfilePage({ params }: Props) {
+  const supabase = await createClient();
+  const { handle } = await params;
 
   const {
     data: { user: sbUser },

@@ -6,10 +6,12 @@ import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
-import { createClient } from '@/utils/supabase/client';
-import { generateRandomUUID } from '@/utils/uuid-helper';
+import { createDynamicClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
-import { FileUploader } from '@repo/ui/components/ui/custom/file-uploader';
+import {
+  FileUploader,
+  StatedFile,
+} from '@repo/ui/components/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
@@ -86,7 +88,6 @@ export function ChatPanel({
   setCollapsed,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
-  const supabase = createClient();
 
   const [updating, setUpdating] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -104,40 +105,39 @@ export function ChatPanel({
     if (chatInput) setChatInputHeight(chatInput.clientHeight);
   }, [input]);
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [fileProgresses, setFileProgresses] = useState<
-    Record<string, 'uploading' | 'uploaded' | 'error'>
-  >({});
+  const [files, setFiles] = useState<StatedFile[]>([]);
 
-  const onUpload = async (files: File[]) => {
-    files.forEach(async (file) => {
-      // if the file is already uploaded, skip it
-      if (fileProgresses[file.name] === 'uploaded') return;
+  const onUpload = async (files: StatedFile[]) => {
+    await Promise.all(
+      files.map(async (file) => {
+        // If the file is already uploaded, skip it
+        if (file.status === 'uploaded') return file;
 
-      // Set the status of the file to uploading
-      setFileProgresses((prev) => ({
-        ...prev,
-        [file.name]: 'uploading',
-      }));
+        // Update the status to 'uploading'
+        setFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.url === file.url ? { ...file, status: 'uploading' } : f
+          )
+        );
 
-      const { data: _, error } = await supabase.storage
-        .from('workspaces')
-        .upload(`${wsId}/${file.name}_${generateRandomUUID()}`, file);
+        const { error } = await uploadFile(wsId, file, id);
 
-      if (error) {
-        setFileProgresses((prev) => ({
-          ...prev,
-          [file.name]: 'error',
-        }));
-        return;
-      }
+        if (error) {
+          console.error('File upload error:', error);
+        }
 
-      // Set the status of the file to uploaded
-      setFileProgresses((prev) => ({
-        ...prev,
-        [file.name]: 'uploaded',
-      }));
-    });
+        // Update the status to 'uploaded' or 'error'
+        setFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.url === file.url
+              ? { ...file, status: error ? 'error' : 'uploaded' }
+              : f
+          )
+        );
+
+        return { file, error };
+      })
+    );
   };
 
   return (
@@ -358,9 +358,7 @@ export function ChatPanel({
                 onValueChange={setFiles}
                 maxFileCount={10}
                 maxSize={50 * 1024 * 1024}
-                progresses={fileProgresses}
                 onUpload={onUpload}
-                // disabled={isUploading}
               />
             </div>
           ) : (
@@ -463,4 +461,64 @@ export function ChatPanel({
       </DialogContent>
     </Dialog>
   );
+}
+
+export async function uploadFile(
+  wsId: string,
+  file: StatedFile,
+  id?: string
+): Promise<{ data: any; error: any }> {
+  if (!id) return { data: null, error: 'No chat id provided' };
+
+  const fileName = file.rawFile.name;
+  const hasExtension = fileName.lastIndexOf('.') !== -1;
+  const baseName = hasExtension
+    ? fileName.substring(0, fileName.lastIndexOf('.'))
+    : fileName;
+  const fileExtension = hasExtension
+    ? fileName.substring(fileName.lastIndexOf('.') + 1)
+    : '';
+  let newFileName = fileName;
+
+  const supabase = createDynamicClient();
+
+  // Check if a file with the same name already exists
+  const { data: existingFileName } = await supabase
+    .schema('storage')
+    .from('objects')
+    .select('*')
+    .eq('bucket_id', 'workspaces')
+    .not('owner', 'is', null)
+    .eq('name', `${wsId}/chat/${id}/${fileName}`)
+    .order('name', { ascending: true });
+
+  const { data: existingFileNames } = await supabase
+    .schema('storage')
+    .from('objects')
+    .select('*')
+    .eq('bucket_id', 'workspaces')
+    .not('owner', 'is', null)
+    .ilike('name', `${wsId}/chat/${id}/${baseName}(%).${fileExtension}`)
+    .order('name', { ascending: true });
+
+  if (existingFileName && existingFileName.length > 0) {
+    if (existingFileNames && existingFileNames.length > 0) {
+      const lastFileName = existingFileNames[existingFileNames.length - 1].name;
+      const lastFileNameIndex = parseInt(
+        lastFileName.substring(
+          lastFileName.lastIndexOf('(') + 1,
+          lastFileName.lastIndexOf(')')
+        )
+      );
+      newFileName = `${baseName}(${lastFileNameIndex + 1}).${fileExtension}`;
+    } else {
+      newFileName = `${baseName}(1).${fileExtension}`;
+    }
+  }
+
+  const { data, error } = await supabase.storage
+    .from('workspaces')
+    .upload(`${wsId}/chat/${id}/${newFileName}`, file.rawFile);
+
+  return { data, error };
 }

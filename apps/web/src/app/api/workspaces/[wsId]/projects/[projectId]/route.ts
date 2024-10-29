@@ -2,20 +2,20 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     projectId: string;
-  };
+  }>;
 }
 
-export async function PUT(req: Request, { params: { projectId: id } }: Params) {
-  const supabase = createClient();
-
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { projectId } = await params;
 
   const { error } = await supabase
     .from('workspace_boards')
     .update(data)
-    .eq('id', id);
+    .eq('id', projectId);
 
   if (error) {
     console.log(error);
@@ -28,16 +28,14 @@ export async function PUT(req: Request, { params: { projectId: id } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(
-  _: Request,
-  { params: { projectId: id } }: Params
-) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { projectId } = await params;
 
   const { error } = await supabase
     .from('workspace_boards')
     .delete()
-    .eq('id', id);
+    .eq('id', projectId);
 
   if (error) {
     console.log(error);

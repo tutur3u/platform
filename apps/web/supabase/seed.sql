@@ -248,31 +248,36 @@ update public.users
 set display_name = 'User 4'
 where id = '00000000-0000-0000-0000-000000000005';
 -- Populate workspaces
-insert into public.workspaces (id, name, handle)
+insert into public.workspaces (id, name, handle, creator_id)
 values (
         '00000000-0000-0000-0000-000000000000',
         'Tuturuuu',
-        'tuturuuu'
+        'tuturuuu',
+        '00000000-0000-0000-0000-000000000001'
     ),
     (
         '00000000-0000-0000-0000-000000000001',
         'Prototype All',
-        'prototype-all'
+        'prototype-all',
+        null
     ),
     (
         '00000000-0000-0000-0000-000000000002',
         'Prototype General',
-        'prototype-general'
+        'prototype-general',
+        null
     ),
     (
         '00000000-0000-0000-0000-000000000003',
         'Prototype Pharmacy',
-        'prototype-pharmacy'
+        'prototype-pharmacy',
+        null
     ),
     (
         '00000000-0000-0000-0000-000000000004',
         'Prototype School',
-        'prototype-school'
+        'prototype-school',
+        null
     );
 -- Populate workspace_secrets
 insert into public.workspace_secrets (ws_id, name, value)
@@ -288,32 +293,12 @@ values (
     ),
     (
         '00000000-0000-0000-0000-000000000000',
-        'ENABLE_CALENDAR',
-        'true'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000000',
         'ENABLE_DOCS',
         'true'
     ),
     (
         '00000000-0000-0000-0000-000000000000',
         'ENABLE_DRIVE',
-        'true'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000000',
-        'ENABLE_USERS',
-        'true'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000000',
-        'ENABLE_PROJECTS',
-        'true'
-    ),
-    (
-        '00000000-0000-0000-0000-000000000000',
-        'ENABLE_INVENTORY',
         'true'
     ),
     (

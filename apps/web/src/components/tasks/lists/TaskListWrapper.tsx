@@ -6,7 +6,6 @@ import { TaskList } from '@/types/primitives/TaskList';
 import { Workspace } from '@/types/primitives/Workspace';
 import { Accordion, Button, Loader } from '@mantine/core';
 import { openModal } from '@mantine/modals';
-import React from 'react';
 import useSWR, { mutate } from 'swr';
 
 export interface TaskListWrapperProps {

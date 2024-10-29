@@ -32,7 +32,7 @@ import {
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createAdminClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -41,14 +41,20 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
+export default async function WorkspaceHomePage({ params }: Props) {
   const t = await getTranslations();
+  const { wsId } = await params;
   const workspace = await getWorkspace(wsId);
+
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
   if (!workspace) notFound();
 
   const { data: dailyData } = await getDailyData(wsId);
@@ -175,25 +181,28 @@ export default async function WorkspaceHomePage({ params: { wsId } }: Props) {
         </Suspense>
       </div>
 
-      {wsId === ROOT_WORKSPACE_ID && (
-        <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
-          <div className="col-span-full mb-32">
-            <Separator className="my-4" />
-            <HourlyTotalChart data={hourlyData} />
-            <Separator className="my-4" />
-            <DailyTotalChart data={dailyData} />
-            <Separator className="my-4" />
-            <MonthlyTotalChart data={monthlyData} />
-          </div>
-        </Suspense>
-      )}
+      {containsPermission('manage_workspace_roles') &&
+        wsId === ROOT_WORKSPACE_ID && (
+          <Suspense
+            fallback={<LoadingStatisticCard className="col-span-full" />}
+          >
+            <div className="col-span-full mb-32">
+              <Separator className="my-4" />
+              <HourlyTotalChart data={hourlyData} />
+              <Separator className="my-4" />
+              <DailyTotalChart data={dailyData} />
+              <Separator className="my-4" />
+              <MonthlyTotalChart data={monthlyData} />
+            </div>
+          </Suspense>
+        )}
     </>
   );
 }
 
 async function getHourlyData(wsId: string) {
   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase.rpc('get_hourly_prompt_completion_tokens', {
     past_hours: 24,
@@ -207,7 +216,7 @@ async function getHourlyData(wsId: string) {
 
 async function getDailyData(wsId: string) {
   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase.rpc('get_daily_prompt_completion_tokens');
 
@@ -219,7 +228,7 @@ async function getDailyData(wsId: string) {
 
 async function getMonthlyData(wsId: string) {
   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase.rpc('get_monthly_prompt_completion_tokens');
 

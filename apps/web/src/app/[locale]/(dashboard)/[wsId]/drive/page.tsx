@@ -1,30 +1,38 @@
 import StorageObjectsTable from './table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
+import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { StorageObject } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
 import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceStorageObjectsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
+  const { wsId } = await params;
   const t = await getTranslations('ws-storage-objects');
 
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('manage_drive')) redirect(`/${wsId}`);
+
   await verifyHasSecrets(wsId, ['ENABLE_DRIVE'], `/${wsId}`);
-  const { data, count } = await getData(wsId, searchParams);
+  const { data, count } = await getData(wsId, await searchParams);
 
   const totalSize = await getTotalSize(wsId);
   const largestFile = await getLargestFile(wsId);
@@ -89,7 +97,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createDynamicClient();
+  const supabase = await createDynamicClient();
 
   const queryBuilder = supabase
     .schema('storage')
@@ -122,7 +130,7 @@ async function getData(
 }
 
 async function getTotalSize(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.rpc('get_workspace_drive_size', {
     ws_id: wsId,
@@ -133,7 +141,7 @@ async function getTotalSize(wsId: string) {
 }
 
 async function getLargestFile(wsId: string) {
-  const supabase = createDynamicClient();
+  const supabase = await createDynamicClient();
 
   const { data, error } = await supabase
     .schema('storage')
@@ -151,7 +159,7 @@ async function getLargestFile(wsId: string) {
 }
 
 async function getSmallestFile(wsId: string) {
-  const supabase = createDynamicClient();
+  const supabase = await createDynamicClient();
 
   const { data, error } = await supabase
     .schema('storage')

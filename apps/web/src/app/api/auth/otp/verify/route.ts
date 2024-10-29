@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   const validatedEmail = await validateEmail(email);
   const validatedOtp = await validateOtp(otp);
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.auth.verifyOtp({
     email: validatedEmail,

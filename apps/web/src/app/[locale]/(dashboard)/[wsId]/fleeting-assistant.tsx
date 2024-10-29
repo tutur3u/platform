@@ -2,7 +2,6 @@ import AssistantGradientName from './assistant-gradient-name';
 import { FleetingAssistantMessage } from './fleeting-assistant-message';
 import { AIChat } from '@/types/db';
 import { useChat } from '@ai-sdk/react';
-import { PaperAirplaneIcon } from '@heroicons/react/20/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -15,7 +14,7 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Message } from 'ai';
-import { ArrowDownToLine, Expand, RotateCcw } from 'lucide-react';
+import { ArrowDownToLine, Expand, RotateCcw, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -249,7 +248,7 @@ export default function FleetingAssistant({
                   !!pendingPrompt
                 }
               >
-                <PaperAirplaneIcon className="h-5 w-5" />
+                <Send className="h-5 w-5" />
               </Button>
             </form>
           </Form>

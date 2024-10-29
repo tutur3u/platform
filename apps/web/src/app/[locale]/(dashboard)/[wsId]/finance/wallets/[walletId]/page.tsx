@@ -1,207 +1,203 @@
-'use client';
-
-import MiniPlusButton from '../../../../../../../components/common/MiniPlusButton';
+import { transactionColumns } from '../../transactions/columns';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { Transaction } from '@/types/primitives/Transaction';
-import { Wallet } from '@/types/primitives/Wallet';
-import { Divider } from '@mantine/core';
+import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import 'dayjs/locale/vi';
+import { Calendar, CreditCard, DollarSign, Wallet } from 'lucide-react';
 import moment from 'moment';
-import { useLocale } from 'next-intl';
-import useSWR from 'swr';
+import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     walletId: string;
-  };
+    locale: string;
+  }>;
+  searchParams: Promise<{
+    q: string;
+    page: string;
+    pageSize: string;
+  }>;
 }
 
-export default function WalletDetailsPage({
-  params: { wsId, walletId },
+export default async function WalletDetailsPage({
+  params,
+  searchParams,
 }: Props) {
-  const locale = useLocale();
-  const t = (key: string) => key;
-
-  const apiPath =
-    wsId && walletId
-      ? `/api/workspaces/${wsId}/finance/wallets/${walletId}`
-      : null;
-
-  const { data: wallet } = useSWR<Wallet>(apiPath);
-
-  const activePage = 1;
-  const itemsPerPage = 100;
-
-  const transactionsApiPath = wsId
-    ? `/api/workspaces/${wsId}/finance/transactions?walletIds=${walletId}&page=${activePage}&itemsPerPage=${itemsPerPage}`
-    : null;
-
-  // const countApi = wsId
-  //   ? `/api/workspaces/${wsId}/finance/transactions/count`
-  //   : null;
-
-  const { data: transactions } = useSWR<Transaction[]>(transactionsApiPath);
-  // const { data: count } = useSWR<number>(countApi);
-
-  const transactionsByDate = transactions?.reduce(
-    (acc, cur) => {
-      const date = moment(cur.taken_at).toDate();
-      const localeDate = date.toLocaleDateString();
-
-      if (!acc[localeDate]) acc[localeDate] = { transactions: [], total: 0 };
-
-      acc[localeDate]!.transactions.push(cur);
-      acc[localeDate]!.total += cur?.amount || 0;
-
-      return acc;
-    },
-    {} as Record<string, { transactions: Transaction[]; total: number }>
+  const t = await getTranslations();
+  const { wsId, walletId, locale } = await params;
+  const { wallet } = await getData(walletId);
+  const { data: rawData, count } = await getTransactions(
+    walletId,
+    await searchParams
   );
 
-  const getRelativeDate = (date: string) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const transactions = rawData.map((d) => ({
+    ...d,
+    href: `/${wsId}/finance/transactions/${d.id}`,
+    ws_id: wsId,
+  }));
 
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const dateObj = new Date(date);
-
-    if (dateObj.toDateString() === today.toDateString()) return t('today');
-    if (dateObj.toDateString() === yesterday.toDateString())
-      return t('yesterday');
-    if (dateObj.toDateString() === tomorrow.toDateString())
-      return t('tomorrow');
-
-    // Capitalize the first letter of the day
-    return moment(date)
-      .locale(locale)
-      .format('dddd, DD/MM/YYYY')
-      .replace(/(^\w)|(\s+\w)/g, (letter) => letter.toUpperCase());
-  };
+  if (!wallet) notFound();
 
   return (
-    <div className="mt-2 flex min-h-full w-full flex-col">
-      <div className="grid h-fit gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div
-          className={`rounded border border-orange-500/10 bg-orange-500/10 p-4 text-orange-600 dark:border-orange-300/10 dark:bg-orange-300/10 dark:text-orange-300 ${
-            wallet?.type === 'STANDARD' ? 'md:col-span-2' : ''
-          }`}
-        >
-          <div className="line-clamp-1 text-2xl font-semibold">
-            {t('wallet-name')}
-          </div>
-
-          <div className="line-clamp-1 text-orange-600/70 dark:text-orange-300/70">
-            {wallet?.name}
+    <div className="flex min-h-full w-full flex-col">
+      <FeatureSummary
+        pluralTitle={wallet.name || t('ws-wallets.plural')}
+        singularTitle={wallet.name || t('ws-wallets.singular')}
+        description={wallet.description || t('ws-wallets.description')}
+        createTitle={t('ws-wallets.create')}
+        createDescription={t('ws-wallets.create_description')}
+      />
+      <Separator className="my-4" />
+      <div className="grid h-fit gap-4 md:grid-cols-2">
+        <div className="grid gap-4">
+          <div className="grid h-fit gap-2 rounded-lg border p-4">
+            <div className="text-lg font-semibold">
+              {t('invoices.basic-info')}
+            </div>
+            <Separator />
+            <DetailItem
+              icon={<Wallet className="h-5 w-5" />}
+              label={t('wallet-data-table.name')}
+              value={wallet.name}
+            />
+            <DetailItem
+              icon={<DollarSign className="h-5 w-5" />}
+              label={t('wallet-data-table.balance')}
+              value={Intl.NumberFormat(locale, {
+                style: 'currency',
+                currency: 'VND',
+              }).format(wallet.balance || 0)}
+            />
+            <DetailItem
+              icon={<CreditCard className="h-5 w-5" />}
+              label={t('wallet-data-table.type')}
+              value={t(
+                `wallet-data-table.${(wallet.type as 'CREDIT' | 'STANDARD').toLowerCase() as 'credit' | 'standard'}`
+              )}
+            />
+            <DetailItem
+              icon={<Calendar className="h-5 w-5" />}
+              label={t('wallet-data-table.created_at')}
+              value={
+                wallet.created_at
+                  ? moment(wallet.created_at).format('DD/MM/YYYY, HH:mm:ss')
+                  : '-'
+              }
+            />
           </div>
         </div>
 
-        {wallet?.type === 'CREDIT' && (
-          <>
-            <div className="rounded border border-purple-500/10 bg-purple-500/10 p-4 text-purple-600 dark:border-purple-300/10 dark:bg-purple-300/10 dark:text-purple-300">
-              <div className="line-clamp-1 text-2xl font-semibold">
-                {t('credit-limit')}
+        <div className="grid gap-4">
+          <div className="h-full rounded-lg border p-4">
+            <div className="grid h-full content-start gap-2">
+              <div className="text-lg font-semibold">
+                {t('wallet-data-table.description')}
               </div>
-              <div className="line-clamp-2 text-purple-600/70 dark:text-purple-300/70">
-                {Intl.NumberFormat('vi-VN', {
-                  style: 'currency',
-                  currency: wallet?.currency || 'VND',
-                }).format(wallet?.limit || 0)}
-              </div>
+              <Separator />
+              <p>{wallet.description || t('common.empty')}</p>
             </div>
-            <div className="rounded border border-red-500/10 bg-red-500/10 p-4 text-red-600 dark:border-red-300/10 dark:bg-red-300/10 dark:text-red-300">
-              <div className="line-clamp-1 text-2xl font-semibold">
-                {t('outstanding-balance')}
-              </div>
-              <div className="line-clamp-2 text-red-600/70 dark:text-red-300/70">
-                {Intl.NumberFormat('vi-VN', {
-                  style: 'currency',
-                  currency: wallet?.currency || 'VND',
-                }).format(
-                  Math.max((wallet?.limit || 0) - (wallet?.balance || 0), 0)
-                )}
-              </div>
-            </div>
-          </>
-        )}
-
-        <div
-          className={`rounded border border-green-500/10 bg-green-500/10 p-4 text-green-600 dark:border-green-300/10 dark:bg-green-300/10 dark:text-green-300 ${
-            wallet?.type === 'STANDARD' ? 'md:col-span-2' : ''
-          }`}
-        >
-          <div className="line-clamp-1 text-2xl font-semibold">
-            {wallet?.type === 'STANDARD' ? t('balance') : t('available-credit')}
-          </div>
-          <div className="line-clamp-2 text-green-600/70 dark:text-green-300/70">
-            {Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: wallet?.currency || 'VND',
-            }).format(wallet?.balance || 0)}
           </div>
         </div>
-
-        {wallet?.statement_date && wallet?.payment_date ? (
-          <div className="text-foreground/80 col-span-full dark:text-zinc-400">
-            {t('statement-date-message')}{' '}
-            <span className="font-semibold text-blue-500 underline decoration-blue-500 underline-offset-2 dark:text-blue-200 dark:decoration-blue-300">
-              {wallet?.statement_date}
-            </span>{' '}
-            {t('payment-due-date-message')}{' '}
-            <span className="font-semibold text-blue-500 underline decoration-blue-500 underline-offset-2 dark:text-blue-200 dark:decoration-blue-300">
-              {wallet?.payment_date}
-            </span>{' '}
-            {t('next-month')}.
-          </div>
-        ) : null}
       </div>
-
-      <Divider className="my-4" />
-
-      <div className="mt-8 grid gap-8">
-        {transactionsByDate &&
-          Object.entries(transactionsByDate).length > 0 &&
-          Object.entries(transactionsByDate).map(([date, data]) => (
-            <div
-              key={date}
-              className="border-border group rounded-lg border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-900"
-            >
-              <h3 className="col-span-full flex w-full flex-col justify-between gap-x-4 gap-y-2 text-lg font-semibold text-zinc-700 md:flex-row dark:text-zinc-300">
-                <div className="flex gap-2">
-                  <div>{getRelativeDate(date)}</div>
-                  <MiniPlusButton
-                    href={`/${wsId}/finance/transactions/new?date=${date}`}
-                    className="opacity-0 group-hover:opacity-100"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <div className="rounded bg-purple-500/10 px-2 py-0.5 text-base text-purple-600 dark:bg-purple-300/10 dark:text-purple-300">
-                    {data.transactions.length} {t('transactions').toLowerCase()}
-                  </div>
-                  <div
-                    className={`rounded px-2 py-0.5 text-base ${
-                      data.total < 0
-                        ? 'bg-red-500/10 text-red-600 dark:bg-red-300/10 dark:text-red-300'
-                        : 'bg-green-500/10 text-green-600 dark:bg-green-300/10 dark:text-green-300'
-                    }`}
-                  >
-                    {Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                      signDisplay: 'exceptZero',
-                    }).format(data.total)}
-                  </div>
-                </div>
-              </h3>
-
-              <Divider variant="dashed" className="mb-4 mt-2" />
-            </div>
-          ))}
-      </div>
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={transactions}
+        columnGenerator={transactionColumns}
+        namespace="transaction-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          wallet: false,
+          report_opt_in: false,
+          created_at: false,
+        }}
+      />
     </div>
   );
+}
+
+function DetailItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
+  if (!value) return undefined;
+  return (
+    <div className="flex items-center gap-1">
+      {icon}
+      <span className="font-semibold">{label}:</span> {value}
+    </div>
+  );
+}
+
+async function getData(walletId: string) {
+  const supabase = await createClient();
+
+  const { data: wallet, error: walletError } = await supabase
+    .from('workspace_wallets')
+    .select('*')
+    .eq('id', walletId)
+    .single();
+
+  if (walletError) throw walletError;
+
+  return { wallet };
+}
+
+async function getTransactions(
+  walletId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('wallet_transactions')
+    .select(
+      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('wallet_id', walletId)
+    .order('taken_at', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (q) queryBuilder.ilike('description', `%${q}%`);
+
+  if (page && pageSize) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data: rawData, error, count } = await queryBuilder;
+
+  const data = rawData?.map(
+    ({ workspace_wallets, transaction_categories, ...rest }) => ({
+      ...rest,
+      wallet: workspace_wallets?.name,
+      category: transaction_categories?.name,
+    })
+  );
+  if (error) throw error;
+
+  return { data, count } as {
+    data: Transaction[];
+    count: number;
+  };
 }

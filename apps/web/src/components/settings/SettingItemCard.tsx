@@ -1,4 +1,4 @@
-import { Divider } from '@mantine/core';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { useTranslations } from 'next-intl';
 
 interface Props {
@@ -51,7 +51,7 @@ const SettingItemCard = ({
 
       {extraAction && (
         <>
-          <Divider className="my-4" />
+          <Separator className="my-4" />
           {comingSoon ? (
             <div className="flex cursor-not-allowed items-center justify-center rounded border border-zinc-300/10 bg-zinc-300/5 p-2 font-semibold text-zinc-300/30">
               {comingSoonLabel}

@@ -3,21 +3,19 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     transactionId: string;
-  };
+  }>;
 }
 
-export async function GET(
-  _: Request,
-  { params: { transactionId: id } }: Params
-) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { transactionId } = await params;
 
   const { data, error } = await supabase
     .from('wallet_transactions')
     .select('*')
-    .eq('id', id)
+    .eq('id', transactionId)
     .single();
 
   if (error) {
@@ -31,11 +29,9 @@ export async function GET(
   return NextResponse.json(data);
 }
 
-export async function PUT(
-  req: Request,
-  { params: { transactionId: id } }: Params
-) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { transactionId } = await params;
 
   const data: Transaction & {
     origin_wallet_id?: string;
@@ -53,7 +49,7 @@ export async function PUT(
   const { error } = await supabase
     .from('wallet_transactions')
     .update(newData)
-    .eq('id', id);
+    .eq('id', transactionId);
 
   if (error) {
     console.log(error);
@@ -66,16 +62,14 @@ export async function PUT(
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(
-  _: Request,
-  { params: { transactionId: id } }: Params
-) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { transactionId } = await params;
 
   const { error } = await supabase
     .from('wallet_transactions')
     .delete()
-    .eq('id', id);
+    .eq('id', transactionId);
 
   if (error) {
     console.log(error);

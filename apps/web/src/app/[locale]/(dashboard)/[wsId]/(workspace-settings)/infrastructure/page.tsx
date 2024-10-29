@@ -6,14 +6,13 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function InfrastructureOverviewPage({
-  params: { wsId },
-}: Props) {
+export default async function InfrastructureOverviewPage({ params }: Props) {
+  const { wsId } = await params;
   await enforceRootWorkspaceAdmin(wsId, {
     redirectTo: `/${wsId}/settings`,
   });
@@ -52,7 +51,7 @@ export default async function InfrastructureOverviewPage({
 }
 
 async function getUserCount() {
-  const supabaseAdmin = createAdminClient();
+  const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) notFound();
 
   const { count } = await supabaseAdmin.from('users').select('*', {
@@ -64,7 +63,7 @@ async function getUserCount() {
 }
 
 async function getWorkspaceCount() {
-  const supabaseAdmin = createAdminClient();
+  const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) notFound();
 
   const { count } = await supabaseAdmin.from('workspaces').select('*', {

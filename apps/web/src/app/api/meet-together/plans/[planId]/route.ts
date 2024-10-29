@@ -2,13 +2,14 @@ import { createAdminClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     planId: string;
-  };
+  }>;
 }
 
-export async function PUT(req: Request, { params: { planId: id } }: Params) {
-  const sbAdmin = createAdminClient();
+export async function PUT(req: Request, { params }: Params) {
+  const sbAdmin = await createAdminClient();
+  const { planId: id } = await params;
 
   const data = await req.json();
   const name = data.name;
@@ -29,8 +30,9 @@ export async function PUT(req: Request, { params: { planId: id } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params: { planId: id } }: Params) {
-  const sbAdmin = createAdminClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const sbAdmin = await createAdminClient();
+  const { planId: id } = await params;
 
   const { error } = await sbAdmin
     .from('meet_together_plans')

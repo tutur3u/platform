@@ -5,6 +5,9 @@ export type AIPrompt = Tables<'workspace_ai_prompts'>;
 export type WorkspaceDocument = Tables<'workspace_documents'>;
 export type GroupPostCheck = Tables<'user_group_post_checks'>;
 export type EmailHistoryEntry = Tables<'sent_emails'>;
+export type Invoice = Tables<'finance_invoices'>;
+export type InvoiceProduct = Tables<'finance_invoice_products'>;
+export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
 
 export type PermissionId =
   Database['public']['Enums']['workspace_role_permission'];

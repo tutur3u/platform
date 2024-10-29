@@ -3,7 +3,6 @@
 import { DatePicker } from '../../../../../../components/row-actions/users/date-picker';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
-import { EllipsisHorizontalIcon } from '@heroicons/react/20/solid';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Avatar,
@@ -40,7 +39,7 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
 import dayjs from 'dayjs';
-import { Eye, User as UserIcon } from 'lucide-react';
+import { Ellipsis, Eye, UserIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -61,7 +60,7 @@ const FormSchema = z.object({
   email: z.string().email().optional(),
   phone: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
-  birthday: z.date().optional(),
+  birthday: z.date().nullable().optional(),
   ethnicity: z.string().optional(),
   guardian: z.string().optional(),
   national_id: z.string().optional(),
@@ -146,6 +145,10 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
 
   const [open, setOpen] = useState(false);
 
+  const removeBirthday = () => {
+    form.setValue('birthday', null);
+  };
+
   const updateMember = async (data: z.infer<typeof FormSchema>) => {
     const response = await fetch(
       `/api/v1/workspaces/${user.ws_id}/users/${user.id}`,
@@ -156,7 +159,9 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         },
         body: JSON.stringify({
           ...data,
-          birthday: dayjs(data.birthday).format('YYYY/MM/DD'),
+          birthday: data.birthday
+            ? dayjs(data.birthday).format('YYYY/MM/DD')
+            : null,
         }),
       }
     );
@@ -360,25 +365,38 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="birthday"
-                render={({ field }) => (
-                  <FormItem className="grid w-full">
-                    <FormLabel>Birthday</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        defaultValue={
-                          field.value ? dayjs(field.value).toDate() : undefined
-                        }
-                        onValueChange={field.onChange}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="flex items-end justify-between gap-2">
+                <FormField
+                  control={form.control}
+                  name="birthday"
+                  render={({ field }) => (
+                    <FormItem className="grid w-full">
+                      <FormLabel>Birthday</FormLabel>
+                      <FormControl className="flex">
+                        <DatePicker
+                          value={
+                            field.value
+                              ? dayjs(field.value).toDate()
+                              : undefined
+                          }
+                          onValueChange={field.onChange}
+                          className="w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={removeBirthday}
+                  className="aspect-square"
+                  disabled={!form.watch('birthday')}
+                >
+                  <XIcon className="h-7 w-7"></XIcon>{' '}
+                </Button>
+              </div>
 
               <Separator />
 
@@ -470,7 +488,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
             variant="ghost"
             className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
           >
-            <EllipsisHorizontalIcon className="h-4 w-4" />
+            <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>

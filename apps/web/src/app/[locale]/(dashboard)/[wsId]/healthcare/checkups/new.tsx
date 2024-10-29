@@ -6,7 +6,6 @@ import { Diagnosis } from '@/types/primitives/Diagnosis';
 import { Vital } from '@/types/primitives/Vital';
 import { VitalGroup } from '@/types/primitives/VitalGroup';
 import { Checkbox, Divider, Textarea } from '@mantine/core';
-import { DateTimePicker } from '@mantine/dates';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function NewCheckupPage() {
@@ -37,8 +36,8 @@ export default function NewCheckupPage() {
   const [userId] = useState<string>('');
   const [diagnosis] = useState<Diagnosis | null>(null);
 
-  const [checkupAt, setCheckupAt] = useState<Date | null>(new Date());
-  const [nextCheckupAt, setNextCheckupAt] = useState<Date | null>(null);
+  const [,] = useState<Date | null>(new Date());
+  const [nextCheckupAt] = useState<Date | null>(null);
 
   const [checked, setChecked] = useState<boolean>(false);
   const [nextChecked, setNextChecked] = useState<boolean>(false);
@@ -184,7 +183,7 @@ export default function NewCheckupPage() {
 
           <Divider className="col-span-full mt-2" />
 
-          <DateTimePicker
+          {/* <DateTimePicker
             label="Khám vào lúc"
             placeholder="Chọn thời gian khám"
             value={checkupAt}
@@ -192,9 +191,9 @@ export default function NewCheckupPage() {
             className="md:col-span-2"
             valueFormat="HH:mm - dddd, DD/MM/YYYY"
             locale="vi"
-          />
+          /> */}
 
-          {nextCheckupAt != null ? (
+          {/* {nextCheckupAt != null ? (
             <DateTimePicker
               label="Tái khám vào lúc"
               placeholder="Chọn thời gian tái khám"
@@ -215,7 +214,7 @@ export default function NewCheckupPage() {
             >
               + Thêm lịch tái khám
             </button>
-          )}
+          )} */}
 
           <Divider className="col-span-full my-2" />
 

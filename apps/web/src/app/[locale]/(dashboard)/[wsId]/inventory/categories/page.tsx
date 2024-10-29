@@ -1,38 +1,53 @@
+import { productCategoryColumns } from './columns';
+import { ProductCategoryForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { basicColumns } from '@/data/columns/basic';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { ProductCategory } from '@/types/primitives/ProductCategory';
 import { createClient } from '@/utils/supabase/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceProductCategoriesPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_INVENTORY'], `/${wsId}`);
-  const { data, count } = await getData(wsId, searchParams);
+  const t = await getTranslations();
+  const { wsId } = await params;
+  const { data, count } = await getData(wsId, await searchParams);
 
   return (
-    <CustomDataTable
-      data={data}
-      columnGenerator={basicColumns}
-      namespace="basic-data-table"
-      count={count}
-      defaultVisibility={{
-        id: false,
-        created_at: false,
-      }}
-    />
+    <>
+      <FeatureSummary
+        pluralTitle={t('ws-inventory-categories.plural')}
+        singularTitle={t('ws-inventory-categories.singular')}
+        description={t('ws-inventory-categories.description')}
+        createTitle={t('ws-inventory-categories.create')}
+        createDescription={t('ws-inventory-categories.create_description')}
+        form={<ProductCategoryForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        data={data}
+        columnGenerator={productCategoryColumns}
+        namespace="transaction-category-data-table"
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
   );
 }
 
@@ -44,7 +59,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('product_categories')
@@ -66,5 +81,5 @@ async function getData(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data, count } as { data: ProductCategory[]; count: number };
 }

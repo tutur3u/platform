@@ -8,21 +8,22 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q?: string;
     page?: string;
     pageSize?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceUserGroupTagsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  const { data: tags, count } = await getGroupTags(wsId, searchParams);
+  const { wsId } = await params;
+  const { data: tags, count } = await getGroupTags(wsId, await searchParams);
   const t = await getTranslations('ws-slides');
 
   return (
@@ -59,7 +60,7 @@ async function getGroupTags(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_group_tags')

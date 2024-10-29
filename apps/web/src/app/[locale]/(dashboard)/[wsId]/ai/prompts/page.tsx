@@ -4,23 +4,24 @@ import { AIPrompt } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceAIPromptsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
+  const { wsId } = await params;
   await verifyHasSecrets(wsId, ['ENABLE_AI'], `/${wsId}`);
 
-  const { data, count } = await getData(wsId, searchParams);
+  const { data, count } = await getData(wsId, await searchParams);
   return <AIPromptsTable wsId={wsId} data={data} count={count} />;
 }
 
@@ -32,7 +33,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_ai_prompts')

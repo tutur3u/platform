@@ -23,10 +23,15 @@ interface Props<T> {
   requireExpansion?: boolean;
   primaryTrigger?: ReactNode;
   secondaryTrigger?: ReactNode;
+  secondaryTriggerIcon?: ReactNode;
+  showSecondaryTrigger?: boolean;
+  disableSecondaryTrigger?: boolean;
+  showCustomSecondaryTrigger?: boolean;
   showDefaultFormAsSecondary?: boolean;
   open?: boolean;
   // eslint-disable-next-line no-unused-vars
   setOpen?: (open: boolean) => void;
+  onSecondaryTriggerClick?: () => void;
 }
 
 export default function FeatureSummary<T>({
@@ -52,16 +57,22 @@ export default function FeatureSummary<T>({
       {primaryTriggerTitle}
     </Button>
   ) : undefined,
+  secondaryTriggerIcon,
+  disableSecondaryTrigger,
   secondaryTrigger = (
     <Button
       variant="ghost"
       className="w-full md:w-fit"
-      disabled={!form && !href && !defaultData}
+      disabled={(!form && !href && !defaultData) || disableSecondaryTrigger}
     >
-      <Cog className={cn('h-5 w-5', secondaryTriggerTitle ? 'mr-1' : '')} />
+      {secondaryTriggerIcon || (
+        <Cog className={cn('h-5 w-5', secondaryTriggerTitle ? 'mr-1' : '')} />
+      )}
       {secondaryTriggerTitle}
     </Button>
   ),
+  showSecondaryTrigger,
+  showCustomSecondaryTrigger,
   showDefaultFormAsSecondary,
   setOpen,
 }: Props<T>) {
@@ -71,9 +82,9 @@ export default function FeatureSummary<T>({
         {title || <h1 className="text-2xl font-bold">{pluralTitle}</h1>}
         <p className="text-foreground/80 whitespace-pre-wrap">{description}</p>
       </div>
-
       <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-        {showDefaultFormAsSecondary && (
+        {showDefaultFormAsSecondary ||
+        (showSecondaryTrigger && !showCustomSecondaryTrigger) ? (
           <ModifiableDialogTrigger
             data={defaultData}
             trigger={secondaryTrigger}
@@ -85,6 +96,8 @@ export default function FeatureSummary<T>({
             title={secondaryTitle}
             forceDefault
           />
+        ) : (
+          showSecondaryTrigger && secondaryTrigger
         )}
         {action || (
           <ModifiableDialogTrigger

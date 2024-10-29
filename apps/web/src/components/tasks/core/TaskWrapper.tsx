@@ -2,7 +2,6 @@ import TaskEditForm from '../../forms/TaskEditForm';
 import { Task } from '@/types/primitives/Task';
 import { User } from '@/types/primitives/User';
 import { getInitials } from '@/utils/name-helper';
-import { EllipsisHorizontalIcon } from '@heroicons/react/24/solid';
 import {
   Avatar,
   Checkbox,
@@ -12,6 +11,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { openConfirmModal, openModal } from '@mantine/modals';
+import { Ellipsis } from 'lucide-react';
 import moment from 'moment';
 import useSWR from 'swr';
 
@@ -250,7 +250,7 @@ const TaskWrapper = ({
       <Menu withArrow position="right" trigger="click">
         <Menu.Target>
           <button className="text-foreground/80 m-1 flex h-fit items-start rounded border border-transparent opacity-0 transition duration-300 hover:border-blue-300/30 hover:bg-blue-500/30 hover:text-blue-300 group-hover:opacity-100">
-            <EllipsisHorizontalIcon className="w-6" />
+            <Ellipsis className="w-6" />
           </button>
         </Menu.Target>
 

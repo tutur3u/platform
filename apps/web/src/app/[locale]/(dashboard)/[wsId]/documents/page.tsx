@@ -1,24 +1,34 @@
 import DocumentCard from '../../../../../components/document/DocumentCard';
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { createClient } from '@/utils/supabase/server';
-import { DocumentPlusIcon } from '@heroicons/react/24/solid';
+import { Button } from '@repo/ui/components/ui/button';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { FilePlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export default async function DocumentsPage({ params: { wsId } }: Props) {
+export default async function DocumentsPage({ params }: Props) {
+  const { wsId } = await params;
   const ws = await getWorkspace(wsId);
   const documents = await getDocuments(wsId);
 
-  const t = await getTranslations('documents');
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
 
-  const newDocumentLabel = t('new-document');
-  const noDocumentsLabel = t('no-documents');
+  if (withoutPermission('manage_documents')) redirect(`/${wsId}`);
+
+  const t = await getTranslations();
+
+  const newDocumentLabel = t('documents.new-document');
+  const noDocumentsLabel = t('documents.no-documents');
   // const createDocumentErrorLabel = t('create-document-error');
   // const createNewDocumentLabel = t('create-new-document');
 
@@ -68,15 +78,21 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
 
   return (
     <>
-      <div className="flex flex-col items-center gap-4 md:flex-row">
-        <button
+      <FeatureSummary
+        pluralTitle={t('ws-documents.plural')}
+        singularTitle={t('ws-documents.singular')}
+        description={t('ws-documents.description')}
+        createTitle={t('ws-documents.create')}
+        createDescription={t('ws-documents.create_description')}
+        action={
+          <Button
           // onClick={showDocumentEditForm}
-          className="flex flex-none items-center gap-1 rounded bg-blue-500/10 p-4 font-semibold text-blue-600 transition hover:bg-blue-500/20 dark:bg-blue-300/20 dark:text-blue-300 dark:hover:bg-blue-300/10"
-        >
-          {newDocumentLabel} <DocumentPlusIcon className="h-4 w-4" />
-        </button>
-      </div>
-
+          >
+            <FilePlus className="mr-2 h-4 w-4" />
+            {newDocumentLabel}
+          </Button>
+        }
+      />
       <Separator className="my-4" />
 
       <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -97,7 +113,7 @@ export default async function DocumentsPage({ params: { wsId } }: Props) {
 }
 
 async function getDocuments(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data } = await supabase
     .from('workspace_documents')

@@ -1,50 +1,53 @@
 import { NavLink, Navigation } from '@/components/navigation';
-import { getSecrets, verifySecret } from '@/lib/workspace-helper';
+import { getPermissions } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import React from 'react';
 
 interface LayoutProps {
-  params: {
-    wsId?: string;
-  };
+  params: Promise<{
+    wsId: string;
+  }>;
   children: React.ReactNode;
 }
 
-export default async function Layout({
-  children,
-  params: { wsId },
-}: LayoutProps) {
+export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations('workspace-finance-tabs');
+  const { wsId } = await params;
 
-  const secrets = await getSecrets({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredSecrets: ['ENABLE_INVOICES'],
-    forceAdmin: true,
   });
+
+  if (withoutPermission('manage_finance')) redirect(`/${wsId}`);
 
   const navLinks: NavLink[] = [
     {
       title: t('overview'),
       href: `/${wsId}/finance`,
       matchExact: true,
+      disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('transactions'),
       href: `/${wsId}/finance/transactions`,
       matchExact: true,
+      disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('wallets'),
       href: `/${wsId}/finance/wallets`,
+      disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('categories'),
       href: `/${wsId}/finance/transactions/categories`,
+      disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('invoices'),
       href: `/${wsId}/finance/invoices`,
-      disabled: !verifySecret('ENABLE_INVOICES', 'true', secrets),
+      disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('settings'),

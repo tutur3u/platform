@@ -13,5 +13,6 @@ export interface Product {
   warehouse_id?: string;
   batch_id?: string;
   unit_id?: string;
+  ws_id?: string;
   created_at?: string;
 }

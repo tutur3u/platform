@@ -4,9 +4,26 @@ import LogoTitle from '../../logo-title';
 import WorkspaceSelect from '../../workspace-select';
 import { Nav } from './_components/nav';
 import { NavLink } from '@/components/navigation';
+import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { cn } from '@/lib/utils';
+import { Workspace } from '@/types/primitives/Workspace';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@repo/ui/components/ui/breadcrumb';
 import { Button } from '@repo/ui/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@repo/ui/components/ui/dropdown-menu';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -15,6 +32,7 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
 import { Menu, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -22,6 +40,7 @@ import { ReactNode, Suspense, useState } from 'react';
 
 interface MailProps {
   wsId: string;
+  workspace: Workspace | null;
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
@@ -34,7 +53,8 @@ interface MailProps {
 
 export function Structure({
   wsId,
-  defaultLayout = [20, 32, 48],
+  workspace,
+  defaultLayout = [20, 80],
   defaultCollapsed = false,
   navCollapsedSize,
   user,
@@ -43,16 +63,39 @@ export function Structure({
   userPopover,
   children,
 }: MailProps) {
+  const t = useTranslations();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
+
+  const filteredLinks = links.filter((link) => {
+    // If the link is disabled, don't render it
+    if (link?.disabled) return null;
+
+    // If the link is disabled on production, don't render it
+    if (link?.disableOnProduction && PROD_MODE) return null;
+
+    // If the link requires root membership, check if user email ends with @tuturuuu.com
+    if (link?.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
+      return null;
+
+    // If the link requires the root workspace, check if the current workspace is the root workspace
+    if (link?.requireRootWorkspace && !isRootWorkspace) return null;
+
+    // If the link is only allowed for certain roles, check if the current role is allowed
+    if (link?.allowedRoles && link.allowedRoles.length > 0) return null;
+
+    return link;
+  });
 
   return (
     <>
       <nav
         id="navbar"
-        className="flex flex-none items-center justify-between gap-2 border-b px-4 py-2 md:hidden"
+        className="bg-background/70 fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex h-[52px] items-center gap-2">
           <div className="flex flex-none items-center gap-2">
             <Link href="/" className="flex flex-none items-center gap-2">
               <Image
@@ -73,7 +116,7 @@ export function Structure({
             }
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex h-[52px] items-center gap-2">
           {userPopover}
           <Button
             size="icon"
@@ -85,22 +128,26 @@ export function Structure({
           </Button>
         </div>
       </nav>
+
       <TooltipProvider delayDuration={0}>
         <ResizablePanelGroup
           direction="horizontal"
           onLayout={(sizes: number[]) => {
-            document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
+            document.cookie = `react-resizable-panels:layout:default=${JSON.stringify(
               sizes
             )}`;
           }}
-          className="h-screen max-h-screen items-stretch"
+          className={cn(
+            'fixed h-screen max-h-screen items-stretch',
+            isCollapsed ? 'z-0' : 'z-20'
+          )}
         >
           <ResizablePanel
             defaultSize={defaultLayout[0]}
             collapsedSize={navCollapsedSize}
             collapsible={true}
             minSize={15}
-            maxSize={20}
+            maxSize={40}
             onCollapse={() => {
               setIsCollapsed(true);
               document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
@@ -116,7 +163,7 @@ export function Structure({
             className={cn(
               isCollapsed
                 ? 'hidden min-w-[50px] md:flex'
-                : 'bg-foreground/5 absolute inset-0 z-40 flex md:static md:bg-transparent',
+                : 'bg-background/70 absolute inset-0 z-40 flex md:static md:bg-transparent',
               'flex-col justify-between backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
@@ -187,8 +234,69 @@ export function Structure({
           <ResizablePanel defaultSize={defaultLayout[1]}>
             <main
               id="main-content"
-              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-48 md:pb-64 lg:px-8 lg:pb-96 xl:px-16"
+              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 md:pt-4 lg:px-8 xl:px-16"
             >
+              <Breadcrumb className="mb-4 hidden md:block">
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink
+                      href={pathname === `/${wsId}` ? '#' : `/${wsId}`}
+                    >
+                      {workspace?.name || t('common.unnamed-workspace')}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="flex items-center gap-1">
+                        <BreadcrumbEllipsis className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        {filteredLinks.map((link, index) => (
+                          <Link
+                            key={index}
+                            href={link.href === pathname ? '#' : link.href}
+                            className={cn(
+                              link.disabled || link.href === pathname
+                                ? 'pointer-events-none'
+                                : ''
+                            )}
+                            passHref
+                            replace
+                          >
+                            <DropdownMenuItem
+                              className="flex items-center gap-2"
+                              disabled={link.disabled || link.href === pathname}
+                            >
+                              {link.icon}
+                              {link.title}
+                            </DropdownMenuItem>
+                          </Link>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="flex items-center gap-2">
+                      {
+                        filteredLinks
+                          .filter((link) => pathname.startsWith(link.href))
+                          .sort((a, b) => b.href.length - a.href.length)[0]
+                          ?.icon
+                      }
+                      {
+                        filteredLinks
+                          .filter((link) => pathname.startsWith(link.href))
+                          .sort((a, b) => b.href.length - a.href.length)[0]
+                          ?.title
+                      }
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+
               {children}
             </main>
           </ResizablePanel>

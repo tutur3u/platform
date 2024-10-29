@@ -6,15 +6,15 @@ import { createAdminClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  searchParams: {
+  searchParams: Promise<{
     q?: string;
     page?: string;
     pageSize?: string;
-  };
+  }>;
 }
 
 export default async function WorkspaceUsersPage({ searchParams }: Props) {
-  const { data, count } = await getData(searchParams);
+  const { data, count } = await getData(await searchParams);
 
   return (
     <CustomDataTable
@@ -37,7 +37,7 @@ async function getData({
   page = '1',
   pageSize = '10',
 }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}) {
-  const supabaseAdmin = createAdminClient();
+  const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) notFound();
 
   let filteredTimezones = timezones;

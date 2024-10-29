@@ -2,7 +2,6 @@ import { getUserColumns } from './columns';
 import Filters from './filters';
 import UserForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
@@ -19,21 +18,21 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     locale: string;
     wsId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function WorkspaceUsersPage({
-  params: { locale, wsId },
+  params,
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
-  const t = await getTranslations('ws-users');
+  const t = await getTranslations();
+  const { locale, wsId } = await params;
 
-  const { data, count } = await getData(wsId, searchParams);
+  const { data, count } = await getData(wsId, await searchParams);
   const { data: extraFields } = await getUserFields(wsId);
 
   const users = data.map((u) => ({
@@ -44,11 +43,11 @@ export default async function WorkspaceUsersPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('plural')}
-        singularTitle={t('singular')}
-        description={t('description')}
-        createTitle={t('create')}
-        createDescription={t('create_description')}
+        pluralTitle={t('ws-users.plural')}
+        singularTitle={t('ws-users.singular')}
+        description={t('ws-users.description')}
+        createTitle={t('ws-users.create')}
+        createDescription={t('ws-users.create_description')}
         form={<UserForm wsId={wsId} />}
       />
       <Separator className="my-4" />
@@ -59,7 +58,7 @@ export default async function WorkspaceUsersPage({
         extraColumns={extraFields}
         extraData={{ locale }}
         count={count}
-        filters={<Filters wsId={wsId} searchParams={searchParams} />}
+        filters={<Filters wsId={wsId} searchParams={await searchParams} />}
         defaultVisibility={{
           id: false,
           gender: false,
@@ -94,7 +93,7 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .rpc(
@@ -135,7 +134,7 @@ async function getData(
 }
 
 async function getUserFields(wsId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_fields')

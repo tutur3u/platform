@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function PUT(req: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const json = await req.json();
 

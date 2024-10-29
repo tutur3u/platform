@@ -4,10 +4,10 @@ import { createBrowserClient } from '@supabase/ssr';
 
 const { url, key } = checkEnvVariables({ useServiceKey: false });
 
-export const createDynamicClient = () => {
+export function createDynamicClient() {
   return createBrowserClient(url, key);
-};
+}
 
-export const createClient = () => {
+export function createClient() {
   return createBrowserClient<Database>(url, key);
-};
+}

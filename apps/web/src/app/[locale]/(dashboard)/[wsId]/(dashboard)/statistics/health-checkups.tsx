@@ -7,7 +7,7 @@ export default async function HealthCheckupsStatistics({
 }: {
   wsId: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const enabled = await verifyHasSecrets(wsId, ['ENABLE_HEALTHCARE']);
 

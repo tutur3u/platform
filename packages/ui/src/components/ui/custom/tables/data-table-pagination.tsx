@@ -10,13 +10,13 @@ import {
   SelectValue,
 } from '../../select';
 import { Separator } from '../../separator';
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  DoubleArrowLeftIcon,
-  DoubleArrowRightIcon,
-} from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
+import {
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 
 interface DataTablePaginationProps<TData> {
   table?: Table<TData>;
@@ -162,7 +162,7 @@ export function DataTablePagination<TData>({
               }
             >
               <span className="sr-only">Go to first page</span>
-              <DoubleArrowLeftIcon className="h-4 w-4" />
+              <ArrowLeftToLine className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
@@ -185,7 +185,7 @@ export function DataTablePagination<TData>({
               }
             >
               <span className="sr-only">Go to previous page</span>
-              <ChevronLeftIcon className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
@@ -211,7 +211,7 @@ export function DataTablePagination<TData>({
               }
             >
               <span className="sr-only">Go to next page</span>
-              <ChevronRightIcon className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
@@ -233,7 +233,7 @@ export function DataTablePagination<TData>({
               }
             >
               <span className="sr-only">Go to last page</span>
-              <DoubleArrowRightIcon className="h-4 w-4" />
+              <ArrowRightToLine className="h-4 w-4" />
             </Button>
           </div>
         )}

@@ -1,6 +1,8 @@
+import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import type { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
+import { StatedFile } from '@repo/ui/components/ui/custom/file-uploader';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { IconArrowElbow } from '@repo/ui/components/ui/icons';
 import {
@@ -14,6 +16,7 @@ import type { UseChatHelpers } from 'ai/react';
 import {
   ArrowDownWideNarrow,
   Bolt,
+  File,
   FileText,
   Globe,
   ImageIcon,
@@ -21,7 +24,6 @@ import {
   Lock,
   NotebookPen,
   NotebookTabs,
-  Package,
   Paperclip,
   PencilLine,
   RefreshCw,
@@ -38,8 +40,8 @@ export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
   id: string | undefined;
   chat: Partial<AIChat> | undefined;
-  files: File[];
-  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  files: StatedFile[];
+  setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
   inputRef: React.RefObject<HTMLTextAreaElement>;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
@@ -74,6 +76,12 @@ export function PromptForm({
   useEffect(() => {
     setIsInternalLoading(isLoading);
   }, [isLoading]);
+
+  const pdfs = files.filter((f) =>
+    f.rawFile.type.startsWith('application/pdf')
+  );
+  const images = files.filter((f) => f.rawFile.type.startsWith('image/'));
+  const others = files.filter((f) => !pdfs.includes(f) && !images.includes(f));
 
   // const [caption, setCaption] = useState<string | undefined>();
   // const {
@@ -191,6 +199,19 @@ export function PromptForm({
     flashcards?: boolean;
   }>({});
 
+  const [element, setElement] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setElement(document.getElementById('main-content'));
+    return () => {
+      setElement(null);
+    };
+  }, []);
+
+  if (!element) return null;
+
+  const ENABLE_NEW_UI = DEV_MODE;
+
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
       <form
@@ -198,6 +219,10 @@ export function PromptForm({
           e.preventDefault();
           if (!input?.trim()) return;
           setInput('');
+          element.scrollTo({
+            top: element.scrollHeight,
+            behavior: 'smooth',
+          });
           await onSubmit(input);
         }}
         ref={formRef}
@@ -212,8 +237,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.summary
-                  ? 'border-pink-500/20 bg-pink-500/10 text-pink-700 hover:bg-pink-500/20 dark:border-pink-300/20 dark:bg-pink-300/20 dark:text-pink-300 dark:hover:bg-pink-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -221,10 +246,10 @@ export function PromptForm({
                   summary: !types.summary,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <ArrowDownWideNarrow className="mr-1 h-4 w-4" />
-              Chat Summary
+              {t('ai_chat.chat_summary')}
             </Button>
             <Button
               size="xs"
@@ -233,8 +258,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.notes
-                  ? 'border-purple-500/20 bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 dark:border-purple-300/20 dark:bg-purple-300/20 dark:text-purple-300 dark:hover:bg-purple-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -242,10 +267,10 @@ export function PromptForm({
                   notes: !types.notes,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <NotebookPen className="mr-1 h-4 w-4" />
-              Chat Notes
+              {t('ai_chat.chat_notes')}
             </Button>
             <Button
               size="xs"
@@ -254,8 +279,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.multiChoiceQuiz
-                  ? 'border-green-500/20 bg-green-500/10 text-green-700 hover:bg-green-500/20 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300 dark:hover:bg-green-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -263,10 +288,10 @@ export function PromptForm({
                   multiChoiceQuiz: !types.multiChoiceQuiz,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <SquareStack className="mr-1 h-4 w-4" />
-              Multiple Choice
+              {t('ai_chat.multiple_choice')}
             </Button>
             <Button
               size="xs"
@@ -275,8 +300,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.paragraphQuiz
-                  ? 'border-orange-500/20 bg-orange-500/10 text-orange-700 hover:bg-orange-500/20 dark:border-orange-300/20 dark:bg-orange-300/20 dark:text-orange-300 dark:hover:bg-orange-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -284,10 +309,10 @@ export function PromptForm({
                   paragraphQuiz: !types.paragraphQuiz,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <PencilLine className="mr-1 h-4 w-4" />
-              Paragraph Answers
+              {t('ai_chat.paragraph_answers')}
             </Button>
             <Button
               size="xs"
@@ -296,8 +321,8 @@ export function PromptForm({
               className={cn(
                 'border text-xs',
                 responseTypes.flashcards
-                  ? 'border-blue-500/20 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:border-blue-300/20 dark:bg-blue-300/20 dark:text-blue-300 dark:hover:bg-blue-300/30'
-                  : 'bg-background'
+                  ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
               )}
               onClick={() =>
                 setResponseTypes((types) => ({
@@ -305,12 +330,13 @@ export function PromptForm({
                   flashcards: !types.flashcards,
                 }))
               }
-              disabled
+              disabled={!ENABLE_NEW_UI}
             >
               <NotebookTabs className="mr-1 h-4 w-4" />
-              Flashcards
+              {t('ai_chat.flashcards')}
             </Button>
           </div>
+
           <div className="flex items-center">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -319,7 +345,7 @@ export function PromptForm({
                   size="icon"
                   variant="ghost"
                   className={cn('mr-1 transition duration-300')}
-                  disabled
+                  disabled={!ENABLE_NEW_UI}
                 >
                   <Languages />
                 </Button>
@@ -335,7 +361,7 @@ export function PromptForm({
                   variant="ghost"
                   className={cn('transition duration-300')}
                   onClick={toggleChatFileUpload}
-                  disabled
+                  disabled={!ENABLE_NEW_UI}
                 >
                   <Paperclip />
                 </Button>
@@ -514,178 +540,128 @@ export function PromptForm({
           </div>
         </div>
 
-        {files && files.length > 0 && (
+        {files.length > 0 && (
           <TooltipProvider>
             <div className="mb-2 flex items-center gap-1 text-xs">
-              {files.filter((f) => f.name.endsWith('.pdf')).length > 0 && (
+              {pdfs.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
                     <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
                       <FileText className="h-4 w-4" />
-                      {files.filter((f) => f.name.endsWith('.pdf')).length} PDFs
+                      {pdfs.length} PDFs
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <div className="grid gap-1">
-                      {files
-                        .filter((f) => f.name.endsWith('.pdf'))
-                        .map((f) => (
-                          <div
-                            key={f.name}
-                            className="group flex items-center gap-2 rounded"
+                      {pdfs.map((f) => (
+                        <div
+                          key={f.url}
+                          className="group flex items-center gap-2 rounded"
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span className="line-clamp-1 w-full max-w-xs">
+                            {f.rawFile.name}
+                          </span>
+                          <Button
+                            size="xs"
+                            type="button"
+                            variant="ghost"
+                            onClick={() => {
+                              const newFiles = files.filter((file) => {
+                                return file.url !== f.url;
+                              });
+                              setFiles(newFiles);
+                            }}
+                            className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                           >
-                            <FileText className="h-4 w-4" />
-                            <span className="line-clamp-1 w-full max-w-xs">
-                              {f.name}
-                            </span>
-                            <Button
-                              size="xs"
-                              type="button"
-                              variant="ghost"
-                              onClick={() => {
-                                const newFiles = files.filter((file) => {
-                                  return file.name !== f.name;
-                                });
-                                setFiles(newFiles);
-                              }}
-                              className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                            >
-                              <X />
-                            </Button>
-                          </div>
-                        ))}
+                            <X />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </TooltipContent>
                 </Tooltip>
               )}
-              {files.filter(
-                (f) =>
-                  f.name.endsWith('.png') ||
-                  f.name.endsWith('.jpg') ||
-                  f.name.endsWith('.jpeg')
-              ).length > 0 && (
+              {images.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
                     <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
                       <ImageIcon className="h-4 w-4" />
-                      {
-                        files.filter(
-                          (f) =>
-                            f.name.endsWith('.png') ||
-                            f.name.endsWith('.jpg') ||
-                            f.name.endsWith('.jpeg') ||
-                            f.name.endsWith('.webp')
-                        ).length
-                      }{' '}
-                      Images
+                      {images.length} Images
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <div className="grid gap-1">
-                      {files
-                        .filter(
-                          (f) =>
-                            f.name.endsWith('.png') ||
-                            f.name.endsWith('.jpg') ||
-                            f.name.endsWith('.jpeg') ||
-                            f.name.endsWith('.webp')
-                        )
-                        .map((f) => (
-                          <div
-                            key={f.name}
-                            className="group flex items-center gap-2 rounded"
-                          >
-                            <div className="size-8">
-                              <img
-                                src={URL.createObjectURL(f)}
-                                alt={f.name}
-                                className="h-8 w-8 rounded object-cover"
-                              />
-                            </div>
-                            <span className="line-clamp-1 w-full max-w-xs">
-                              {f.name}
-                            </span>
-                            <Button
-                              size="xs"
-                              type="button"
-                              variant="ghost"
-                              onClick={() => {
-                                const newFiles = files.filter((file) => {
-                                  return file.name !== f.name;
-                                });
-                                setFiles(newFiles);
-                              }}
-                              className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                            >
-                              <X />
-                            </Button>
+                      {images.map((f) => (
+                        <div
+                          key={f.url}
+                          className="group flex items-center gap-2 rounded"
+                        >
+                          <div className="size-8">
+                            <img
+                              src={URL.createObjectURL(f.rawFile)}
+                              alt={f.rawFile.name}
+                              className="h-8 w-8 rounded object-cover"
+                            />
                           </div>
-                        ))}
+                          <span className="line-clamp-1 w-full max-w-xs">
+                            {f.rawFile.name}
+                          </span>
+                          <Button
+                            size="xs"
+                            type="button"
+                            variant="ghost"
+                            onClick={() => {
+                              const newFiles = files.filter((file) => {
+                                return file.url !== f.url;
+                              });
+                              setFiles(newFiles);
+                            }}
+                            className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                          >
+                            <X />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </TooltipContent>
                 </Tooltip>
               )}
-              {files.filter(
-                (f) =>
-                  !f.name.endsWith('.pdf') &&
-                  !f.name.endsWith('.png') &&
-                  !f.name.endsWith('.jpg') &&
-                  !f.name.endsWith('.jpeg') &&
-                  !f.name.endsWith('.webp')
-              ).length > 0 && (
+              {others.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
                     <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
-                      <Package className="h-4 w-4" />
-                      {
-                        files.filter(
-                          (f) =>
-                            !f.name.endsWith('.pdf') &&
-                            !f.name.endsWith('.png') &&
-                            !f.name.endsWith('.jpg') &&
-                            !f.name.endsWith('.jpeg') &&
-                            !f.name.endsWith('.webp')
-                        ).length
-                      }{' '}
-                      Files
+                      <File className="h-4 w-4" />
+                      {others.length} Files
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <div className="grid gap-1">
-                      {files
-                        .filter(
-                          (f) =>
-                            !f.name.endsWith('.pdf') &&
-                            !f.name.endsWith('.png') &&
-                            !f.name.endsWith('.jpg') &&
-                            !f.name.endsWith('.jpeg') &&
-                            !f.name.endsWith('.webp')
-                        )
-                        .map((f) => (
-                          <div
-                            key={f.name}
-                            className="group flex items-center gap-2 rounded"
+                      {others.map((f) => (
+                        <div
+                          key={f.url}
+                          className="group flex items-center gap-2 rounded"
+                        >
+                          <File className="h-4 w-4" />
+                          <span className="line-clamp-1 w-full max-w-xs">
+                            {f.rawFile.name}
+                          </span>
+                          <Button
+                            size="xs"
+                            type="button"
+                            variant="ghost"
+                            onClick={() => {
+                              const newFiles = files.filter((file) => {
+                                return file.url !== f.url;
+                              });
+                              setFiles(newFiles);
+                            }}
+                            className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                           >
-                            <Package className="h-4 w-4" />
-                            <span className="line-clamp-1 w-full max-w-xs">
-                              {f.name}
-                            </span>
-                            <Button
-                              size="xs"
-                              type="button"
-                              variant="ghost"
-                              onClick={() => {
-                                const newFiles = files.filter((file) => {
-                                  return file.name !== f.name;
-                                });
-                                setFiles(newFiles);
-                              }}
-                              className="opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                            >
-                              <X />
-                            </Button>
-                          </div>
-                        ))}
+                            <X />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </TooltipContent>
                 </Tooltip>

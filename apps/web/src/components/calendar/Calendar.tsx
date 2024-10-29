@@ -144,7 +144,7 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
 
   return (
     <CalendarProvider ws={workspace}>
-      <div className="grid h-full w-full md:pb-4">
+      <div className="grid h-[calc(100%-4rem)] w-full md:pb-4">
         <CalendarHeader
           availableViews={availableViews}
           date={date}

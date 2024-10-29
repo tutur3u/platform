@@ -1,5 +1,5 @@
-import { ArrowUpCircleIcon } from '@heroicons/react/24/solid';
 import { Button } from '@mantine/core';
+import { ArrowUp } from 'lucide-react';
 
 interface Props {
   elementId: string;
@@ -18,7 +18,7 @@ const ScrollToTopButton = ({ elementId, prevScrollPos }: Props) => {
         document?.getElementById(elementId)?.scrollTo(0, 0);
       }}
     >
-      <ArrowUpCircleIcon className="h-6 w-6" />
+      <ArrowUp className="h-6 w-6" />
     </Button>
   );
 };

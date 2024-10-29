@@ -3,7 +3,6 @@
 import { User } from '@/types/primitives/User';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
-import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
@@ -157,7 +156,7 @@ export default function InviteMemberButton({
                   disabled={currentUser?.role === 'ADMIN'}
                 />
 
-                <Separator />
+                {/* <Separator />
 
                 <FormField
                   control={form.control}
@@ -197,7 +196,7 @@ export default function InviteMemberButton({
                       </FormDescription>
                     </FormItem>
                   )}
-                />
+                /> */}
 
                 <Button type="submit" className="w-full">
                   Invite Member

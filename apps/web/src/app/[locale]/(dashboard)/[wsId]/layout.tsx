@@ -3,10 +3,12 @@ import { UserNav } from '../../user-nav';
 import FleetingNavigator from './fleeting-navigator';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getSecrets,
+  getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
 import {
@@ -16,7 +18,6 @@ import {
   ChartArea,
   CheckCheck,
   Cog,
-  Gamepad,
   HardDrive,
   HeartPulse,
   Mail,
@@ -31,17 +32,15 @@ import { cookies } from 'next/headers';
 import { type ReactNode, Suspense } from 'react';
 
 interface LayoutProps {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
   children: ReactNode;
 }
 
-export default async function Layout({
-  children,
-  params: { wsId },
-}: LayoutProps) {
+export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
+  const { wsId } = await params;
 
   const secrets = await getSecrets({
     wsId,
@@ -49,32 +48,18 @@ export default async function Layout({
       'ENABLE_X',
       'ENABLE_AI',
       'ENABLE_CHAT',
+      'ENABLE_TASKS',
       'ENABLE_SLIDES',
-      'ENABLE_MAILBOX',
-      'ENABLE_CALENDAR',
-      'ENABLE_USERS',
-      'ENABLE_PROJECTS',
       'ENABLE_DOCS',
       'ENABLE_DRIVE',
-      'ENABLE_INVENTORY',
       'ENABLE_HEALTHCARE',
+      'ENABLE_EMAIL_SENDING',
     ],
     forceAdmin: true,
   });
 
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
-    requiredPermissions: [
-      'ai_chat',
-      'ai_lab',
-      'manage_calendar',
-      'manage_projects',
-      'manage_documents',
-      'manage_drive',
-      'manage_users',
-      'manage_inventory',
-      'manage_finance',
-    ],
   });
 
   const navLinks: NavLink[] = [
@@ -85,13 +70,15 @@ export default async function Layout({
       forceRefresh: true,
       disabled:
         !verifySecret('ENABLE_CHAT', 'true', secrets) ||
-        !permissions.includes('ai_chat'),
+        withoutPermission('ai_chat'),
+      shortcut: 'X',
     },
     {
       title: t('common.dashboard'),
       href: `/${wsId}`,
       icon: <ChartArea className="h-4 w-4" />,
       matchExact: true,
+      shortcut: 'D',
     },
     {
       title: t('sidebar_tabs.ai'),
@@ -99,41 +86,41 @@ export default async function Layout({
       icon: <Sparkles className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_AI', 'true', secrets) ||
-        !permissions.includes('ai_lab'),
-    },
-    {
-      title: t('sidebar_tabs.blackbox'),
-      href: `/${wsId}/blackbox`,
-      icon: <Gamepad className="h-4 w-4" />,
-      disabled: true,
+        withoutPermission('ai_lab'),
+      shortcut: 'A',
     },
     {
       title: t('sidebar_tabs.slides'),
       href: `/${wsId}/slides`,
       icon: <Presentation className="h-4 w-4" />,
       disabled: !verifySecret('ENABLE_SLIDES', 'true', secrets),
+      shortcut: 'S',
     },
     {
-      title: t('sidebar_tabs.mailbox'),
-      href: `/${wsId}/mailbox/history`,
+      title: t('sidebar_tabs.mail'),
+      href:
+        wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/posts`,
       icon: <Mail className="h-4 w-4" />,
-      disabled: !verifySecret('ENABLE_MAILBOX', 'true', secrets),
+      disabled:
+        !verifySecret('ENABLE_EMAIL_SENDING', 'true', secrets) ||
+        withoutPermission('send_user_group_post_emails'),
+      shortcut: 'M',
     },
     {
       title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
       icon: <Calendar className="h-4 w-4" />,
-      disabled:
-        !verifySecret('ENABLE_CALENDAR', 'true', secrets) ||
-        !permissions.includes('manage_calendar'),
+      disabled: withoutPermission('manage_calendar'),
+      shortcut: 'C',
     },
     {
-      title: t('sidebar_tabs.projects'),
-      href: `/${wsId}/projects`,
+      title: t('sidebar_tabs.tasks'),
+      href: `/${wsId}/tasks/boards`,
       icon: <CheckCheck className="h-4 w-4" />,
       disabled:
-        !verifySecret('ENABLE_PROJECTS', 'true', secrets) ||
-        !permissions.includes('manage_projects'),
+        !verifySecret('ENABLE_TASKS', 'true', secrets) ||
+        withoutPermission('manage_projects'),
+      shortcut: 'T',
     },
     {
       title: t('sidebar_tabs.documents'),
@@ -141,7 +128,8 @@ export default async function Layout({
       icon: <NotebookPen className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_DOCS', 'true', secrets) ||
-        !permissions.includes('manage_documents'),
+        withoutPermission('manage_documents'),
+      shortcut: 'O',
     },
     {
       title: t('sidebar_tabs.drive'),
@@ -149,37 +137,38 @@ export default async function Layout({
       icon: <HardDrive className="h-4 w-4" />,
       disabled:
         !verifySecret('ENABLE_DRIVE', 'true', secrets) ||
-        !permissions.includes('manage_drive'),
+        withoutPermission('manage_drive'),
+      shortcut: 'R',
     },
     {
       title: t('sidebar_tabs.users'),
       aliases: [`/${wsId}/users`],
       href: `/${wsId}/users/database`,
       icon: <Users className="h-4 w-4" />,
-      disabled:
-        !verifySecret('ENABLE_USERS', 'true', secrets) ||
-        !permissions.includes('manage_users'),
+      disabled: withoutPermission('manage_users'),
+      shortcut: 'U',
     },
     {
       title: t('sidebar_tabs.inventory'),
       href: `/${wsId}/inventory`,
       icon: <Archive className="h-4 w-4" />,
-      disabled:
-        !verifySecret('ENABLE_INVENTORY', 'true', secrets) ||
-        !permissions.includes('manage_inventory'),
+      disabled: withoutPermission('manage_inventory'),
+      shortcut: 'I',
     },
     {
       title: t('sidebar_tabs.healthcare'),
       href: `/${wsId}/healthcare`,
       icon: <HeartPulse className="h-4 w-4" />,
       disabled: !verifySecret('ENABLE_HEALTHCARE', 'true', secrets),
+      shortcut: 'H',
     },
     {
       title: t('sidebar_tabs.finance'),
       aliases: [`/${wsId}/finance`],
       href: `/${wsId}/finance/transactions`,
       icon: <Banknote className="h-4 w-4" />,
-      disabled: !permissions.includes('manage_finance'),
+      disabled: withoutPermission('manage_finance'),
+      shortcut: 'F',
     },
     {
       title: t('common.settings'),
@@ -193,13 +182,15 @@ export default async function Layout({
         `/${wsId}/migrations`,
         `/${wsId}/activities`,
       ],
+      shortcut: ',',
     },
   ];
 
+  const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
-  const layout = cookies().get('react-resizable-panels:layout:mail');
-  const collapsed = cookies().get('react-resizable-panels:collapsed');
+  const layout = (await cookies()).get('react-resizable-panels:layout:default');
+  const collapsed = (await cookies()).get('react-resizable-panels:collapsed');
 
   const defaultLayout = layout ? JSON.parse(layout.value) : undefined;
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
@@ -209,6 +200,7 @@ export default async function Layout({
       <Structure
         wsId={wsId}
         user={user}
+        workspace={workspace}
         defaultLayout={defaultLayout}
         defaultCollapsed={defaultCollapsed}
         navCollapsedSize={4}

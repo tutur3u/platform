@@ -2,7 +2,6 @@ import { getUserGroupColumns } from './columns';
 import Filters from './filters';
 import UserGroupForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { verifyHasSecrets } from '@/lib/workspace-helper';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -18,20 +17,20 @@ interface SearchParams {
 }
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
-  searchParams: SearchParams;
+  }>;
+  searchParams: Promise<SearchParams>;
 }
 
 export default async function WorkspaceUserGroupsPage({
-  params: { wsId },
+  params,
   searchParams,
 }: Props) {
-  await verifyHasSecrets(wsId, ['ENABLE_USERS'], `/${wsId}`);
   const t = await getTranslations('ws-user-groups');
+  const { wsId } = await params;
 
-  const { data, count } = await getData(wsId, searchParams);
+  const { data, count } = await getData(wsId, await searchParams);
 
   const groups = data.map((g) => ({
     ...g,
@@ -54,7 +53,7 @@ export default async function WorkspaceUserGroupsPage({
         columnGenerator={getUserGroupColumns}
         namespace="user-group-data-table"
         count={count}
-        filters={<Filters wsId={wsId} searchParams={searchParams} />}
+        filters={<Filters wsId={wsId} searchParams={await searchParams} />}
         defaultVisibility={{
           id: false,
           locked: false,
@@ -74,7 +73,7 @@ async function getData(
     retry = true,
   }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')

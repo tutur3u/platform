@@ -10,4 +10,5 @@ export interface Invoice {
   completed_at?: string;
   transaction_id?: string;
   created_at?: string;
+  href?: string;
 }

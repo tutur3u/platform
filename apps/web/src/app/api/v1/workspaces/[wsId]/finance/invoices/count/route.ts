@@ -3,13 +3,15 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { wsId } }: Params) {
-  const apiKey = headers().get('API_KEY');
+export async function GET(_: Request, { params }: Params) {
+  const { wsId } = await params;
+
+  const apiKey = (await headers()).get('API_KEY');
   return apiKey
     ? getDataWithApiKey({ wsId, apiKey })
     : getDataFromSession({ wsId });
@@ -22,7 +24,7 @@ async function getDataWithApiKey({
   wsId: string;
   apiKey: string;
 }) {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const apiCheckQuery = sbAdmin
     .from('workspace_api_keys')
@@ -61,7 +63,7 @@ async function getDataWithApiKey({
 }
 
 async function getDataFromSession({ wsId }: { wsId: string }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('finance_invoices')

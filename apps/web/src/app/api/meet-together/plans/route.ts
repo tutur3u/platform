@@ -2,7 +2,7 @@ import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(_: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('meet_together_plans')
@@ -20,10 +20,10 @@ export async function GET(_: Request) {
 }
 
 export async function POST(req: Request) {
-  const sbAdmin = createAdminClient();
+  const sbAdmin = await createAdminClient();
 
   const data = await req.json();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },

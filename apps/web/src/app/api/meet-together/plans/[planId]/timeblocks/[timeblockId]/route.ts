@@ -2,17 +2,15 @@ import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     planId: string;
     timeblockId: string;
-  };
+  }>;
 }
 
-export async function DELETE(
-  req: Request,
-  { params: { planId, timeblockId: id } }: Params
-) {
-  const supabase = createClient();
+export async function DELETE(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { planId, timeblockId: id } = await params;
 
   const data = await req.json();
 
@@ -44,7 +42,7 @@ export async function DELETE(
       );
     }
   } else {
-    const sbAdmin = createAdminClient();
+    const sbAdmin = await createAdminClient();
 
     const userId = data.user_id;
 

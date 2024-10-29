@@ -1,12 +1,10 @@
 import ColorPallete from '../../../../web/src/components/color/ColorPallete';
 import { useCalendar } from '@/hooks/useCalendar';
 import { SupportedColor } from '@/types/primitives/SupportedColors';
-import { TrashIcon } from '@heroicons/react/24/solid';
 import { Button, Divider, TextInput, Textarea } from '@mantine/core';
-import { DateTimePicker } from '@mantine/dates';
 import 'dayjs/locale/vi';
+import { Trash } from 'lucide-react';
 import moment from 'moment';
-import { useLocale } from 'next-intl';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
@@ -23,7 +21,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
   const { getEvent, updateEvent, deleteEvent } = useCalendar();
   const event = getEvent(id);
 
-  const [startDate, setStartDate] = useState<Date | null>(
+  const [startDate] = useState<Date | null>(
     event?.start_at ? moment(event.start_at).toDate() : null
   );
 
@@ -126,31 +124,30 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
     }
   };
 
-  const generateColor = () => {
-    const colors: {
-      [key: string]: string;
-    } = {
-      red: 'bg-[#fcdada] dark:bg-[#302729] border-red-500/80 text-red-600 dark:border-red-300/80 dark:text-red-200',
-      blue: 'bg-[#d8e6fd] dark:bg-[#252a32] border-blue-500/80 text-blue-600 dark:border-blue-300/80 dark:text-blue-200',
-      green:
-        'bg-[#d3f3df] dark:bg-[#242e2a] border-green-500/80 text-green-600 dark:border-green-300/80 dark:text-green-200',
-      yellow:
-        'bg-[#fbf0ce] dark:bg-[#302d1f] border-yellow-500/80 text-yellow-600 dark:border-yellow-300/80 dark:text-yellow-200',
-      orange:
-        'bg-[#fee3d0] dark:bg-[#302924] border-orange-500/80 text-orange-600 dark:border-orange-300/80 dark:text-orange-200',
-      purple:
-        'bg-[#eeddfd] dark:bg-[#2c2832] border-purple-500/80 text-purple-600 dark:border-purple-300/80 dark:text-purple-200',
-      pink: 'bg-[#fbdaeb] dark:bg-[#2f272e] border-pink-500/80 text-pink-600 dark:border-pink-300/80 dark:text-pink-200',
-      indigo:
-        'bg-[#e0e0fc] dark:bg-[#272832] border-indigo-500/80 text-indigo-600 dark:border-indigo-300/80 dark:text-indigo-200',
-      cyan: 'bg-[#cdf0f6] dark:bg-[#212e31] border-cyan-500/80 text-cyan-600 dark:border-cyan-300/80 dark:text-cyan-200',
-      gray: 'bg-[#e1e3e6] dark:bg-[#2b2c2e] border-gray-500/80 text-gray-600 dark:border-gray-300/80 dark:text-gray-200',
-    };
+  // const generateColor = () => {
+  //   const colors: {
+  //     [key: string]: string;
+  //   } = {
+  //     red: 'bg-[#fcdada] dark:bg-[#302729] border-red-500/80 text-red-600 dark:border-red-300/80 dark:text-red-200',
+  //     blue: 'bg-[#d8e6fd] dark:bg-[#252a32] border-blue-500/80 text-blue-600 dark:border-blue-300/80 dark:text-blue-200',
+  //     green:
+  //       'bg-[#d3f3df] dark:bg-[#242e2a] border-green-500/80 text-green-600 dark:border-green-300/80 dark:text-green-200',
+  //     yellow:
+  //       'bg-[#fbf0ce] dark:bg-[#302d1f] border-yellow-500/80 text-yellow-600 dark:border-yellow-300/80 dark:text-yellow-200',
+  //     orange:
+  //       'bg-[#fee3d0] dark:bg-[#302924] border-orange-500/80 text-orange-600 dark:border-orange-300/80 dark:text-orange-200',
+  //     purple:
+  //       'bg-[#eeddfd] dark:bg-[#2c2832] border-purple-500/80 text-purple-600 dark:border-purple-300/80 dark:text-purple-200',
+  //     pink: 'bg-[#fbdaeb] dark:bg-[#2f272e] border-pink-500/80 text-pink-600 dark:border-pink-300/80 dark:text-pink-200',
+  //     indigo:
+  //       'bg-[#e0e0fc] dark:bg-[#272832] border-indigo-500/80 text-indigo-600 dark:border-indigo-300/80 dark:text-indigo-200',
+  //     cyan: 'bg-[#cdf0f6] dark:bg-[#212e31] border-cyan-500/80 text-cyan-600 dark:border-cyan-300/80 dark:text-cyan-200',
+  //     gray: 'bg-[#e1e3e6] dark:bg-[#2b2c2e] border-gray-500/80 text-gray-600 dark:border-gray-300/80 dark:text-gray-200',
+  //   };
 
-    return colors[eventColor];
-  };
+  //   return colors[eventColor];
+  // };
 
-  const locale = useLocale();
   const t = (key: string) => key;
 
   const countApiPath =
@@ -209,7 +206,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
 
       <Divider mt="sm" mb="xs" className={getInputColor()} />
 
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      {/* <div className="mt-2 grid grid-cols-2 gap-2">
         <DateTimePicker
           label={t('start-at')}
           value={startDate}
@@ -269,7 +266,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
             },
           }}
         />
-      </div>
+      </div> */}
 
       <Divider mt="sm" mb="xs" className={getInputColor()} />
       <ColorPallete
@@ -314,7 +311,7 @@ const CalendarEventEditForm = ({ id }: CalendarEventEditFormProps) => {
           color="red"
           onClick={() => deleteEvent(event?.id || '')}
         >
-          <TrashIcon className="h-5 w-5" />
+          <Trash className="h-5 w-5" />
         </Button>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { createAdminClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(_: Request) {
-  const supabase = createAdminClient();
+  const supabase = await createAdminClient();
 
   if (!supabase) {
     return NextResponse.json(

@@ -2,19 +2,20 @@ import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     groupId: string;
-  };
+  }>;
 }
 
-export async function PUT(req: Request, { params: { groupId: id } }: Params) {
-  const supabase = createClient();
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
   const data = await req.json();
+  const { groupId } = await params;
 
   const { error } = await supabase
     .from('workspace_user_groups')
     .update(data)
-    .eq('id', id);
+    .eq('id', groupId);
 
   if (error) {
     console.log(error);
@@ -27,13 +28,14 @@ export async function PUT(req: Request, { params: { groupId: id } }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params: { groupId: id } }: Params) {
-  const supabase = createClient();
+export async function DELETE(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { groupId } = await params;
 
   const { error } = await supabase
     .from('workspace_user_groups')
     .delete()
-    .eq('id', id);
+    .eq('id', groupId);
 
   if (error) {
     console.log(error);

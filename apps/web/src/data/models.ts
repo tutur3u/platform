@@ -295,28 +295,13 @@ export const models: {
   },
 
   {
-    value: 'gpt-3.5-turbo',
-    label: 'gpt-3.5-turbo',
-    provider: 'OpenAI',
-    description:
-      "OpenAI's most capable and cost effective model in the GPT-3.5 family optimized for chat purposes, but also works well for traditional completions tasks.",
-    context: 4096,
-  },
-  {
-    value: 'gpt-3.5-turbo-instruct',
-    label: 'gpt-3.5-turbo-instruct',
-    provider: 'OpenAI',
-    description:
-      'Similar capabilities as GPT-3 era models. Compatible with legacy Completions endpoint and not Chat Completions.',
-    context: 4096,
-  },
-  {
     value: 'gpt-4',
     label: 'gpt-4',
     provider: 'OpenAI',
     description:
       'GPT-4 from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately.',
     context: 8192,
+    disabled: true,
   },
   {
     value: 'gpt-4-turbo',

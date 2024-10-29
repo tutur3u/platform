@@ -8,13 +8,14 @@ import {
 import { NextResponse } from 'next/server';
 
 interface Params {
-  params: {
+  params: Promise<{
     wsId: string;
-  };
+  }>;
 }
 
-export async function GET(_: Request, { params: { wsId } }: Params) {
-  const supabase = createClient();
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId } = await params;
 
   const { data, error } = await supabase
     .from('workspace_ai_prompts')
@@ -66,8 +67,9 @@ const safetySettings = [
   },
 ];
 
-export async function POST(req: Request, { params: { wsId } }: Params) {
-  const supabase = createClient();
+export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { wsId } = await params;
   const data: AIPrompt = await req.json();
 
   if (!data) {

@@ -3,13 +3,11 @@ import {
   DateRangeOption,
   DateRangeUnit,
   getDateRange,
-  getDateRangeOptions,
   getDateRangeUnits,
 } from '@/utils/date-helper';
 import { Select } from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
 import 'dayjs/locale/vi';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -21,21 +19,19 @@ interface Props {
 }
 
 const DateRangePicker = ({
-  value,
+  value: _,
   onChange,
   defaultUnit = 'custom',
   defaultOption = 'present',
 }: Props) => {
-  const locale = useLocale();
-
   const [unit, setUnit] = useState<DateRangeUnit>(defaultUnit);
-  const [option, setOption] = useState<DateRangeOption>(defaultOption);
+  const [option] = useState<DateRangeOption>(defaultOption);
 
   const t = useTranslations('date_helper');
   const timeUnit = t('time-unit');
   const timeUnitPlaceholder = t('time-unit-placeholder');
-  const timeRange = t('time-range');
-  const timeRangePlaceholder = t('time-range-placeholder');
+  // const timeRange = t('time-range');
+  // const timeRangePlaceholder = t('time-range-placeholder');
 
   const dateRangeUnits = getDateRangeUnits(t);
 
@@ -61,7 +57,7 @@ const DateRangePicker = ({
         data={dateRangeUnits}
       />
 
-      {unit === 'custom' ? (
+      {/* {unit === 'custom' ? (
         <DatePickerInput
           type="range"
           label={timeRange}
@@ -81,7 +77,7 @@ const DateRangePicker = ({
           onChange={(value) => setOption((value || 'today') as DateRangeOption)}
           data={getDateRangeOptions(unit, t)}
         />
-      )}
+      )} */}
     </>
   );
 };

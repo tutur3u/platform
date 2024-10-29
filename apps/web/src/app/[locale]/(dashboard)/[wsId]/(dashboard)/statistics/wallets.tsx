@@ -6,7 +6,7 @@ import { getTranslations } from 'next-intl/server';
 const enabled = true;
 
 export default async function WalletsStatistics({ wsId }: { wsId: string }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const t = await getTranslations();
 
   const { count: walletsCount } = enabled
@@ -21,17 +21,6 @@ export default async function WalletsStatistics({ wsId }: { wsId: string }) {
 
   const { permissions } = await getPermissions({
     wsId,
-    requiredPermissions: [
-      'ai_chat',
-      'ai_lab',
-      'manage_calendar',
-      'manage_projects',
-      'manage_documents',
-      'manage_drive',
-      'manage_users',
-      'manage_inventory',
-      'manage_finance',
-    ],
   });
 
   if (!enabled || !permissions.includes('manage_finance')) return null;
