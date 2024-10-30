@@ -101,7 +101,7 @@
     "react-qrcode-logo": "^3.0.0",
     "react-quizlet-flashcard": "^3.0.0",
     "react-textarea-autosize": "^8.5.4",
-    "recharts": "^2.13.1",
+    "recharts": "^2.13.2",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
