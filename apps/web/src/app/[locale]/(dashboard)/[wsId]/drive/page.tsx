@@ -17,10 +17,10 @@ interface Props {
     wsId: string;
   }>;
   searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-    path: string;
+    q?: string;
+    page?: string;
+    pageSize?: string;
+    path?: string;
   }>;
 }
 
@@ -114,7 +114,7 @@ async function getData(
     pageSize = '10',
     // with trailing slash
     path = '',
-  }: { q?: string; page?: string; pageSize?: string; path?: string }
+  }: Awaited<Props['searchParams']>
 ) {
   const supabase = await createDynamicClient();
 
