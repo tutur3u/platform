@@ -34,6 +34,7 @@ export default async function WorkspaceStorageObjectsPage({
   const { withoutPermission } = await getPermissions({
     wsId,
   });
+  const { path } = await searchParams;
 
   if (withoutPermission('manage_drive')) redirect(`/${wsId}`);
 
@@ -100,6 +101,7 @@ export default async function WorkspaceStorageObjectsPage({
           ...t,
           ws_id: wsId,
         }))}
+        path={path}
         count={count ?? 0}
       />
     </>
