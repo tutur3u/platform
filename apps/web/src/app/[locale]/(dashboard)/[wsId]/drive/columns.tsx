@@ -14,7 +14,8 @@ export const storageObjectsColumns = (
   t: any,
   namespace: string,
   setStorageObject: (value: StorageObject | undefined) => void,
-  wsId: string
+  wsId: string,
+  path?: string
 ): ColumnDef<StorageObject>[] => [
   // {
   //   id: 'select',
@@ -140,6 +141,7 @@ export const storageObjectsColumns = (
       <StorageObjectRowActions
         wsId={wsId}
         row={row}
+        path={path}
         setStorageObject={setStorageObject}
       />
     ),
