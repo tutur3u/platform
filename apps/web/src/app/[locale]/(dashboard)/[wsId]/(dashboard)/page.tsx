@@ -75,7 +75,6 @@ export default async function WorkspaceHomePage({
       />
 
       <FinanceStatistics wsId={wsId} searchParams={searchParams} />
-
       <HealthcareCategoryStatistics wsId={wsId} />
 
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">

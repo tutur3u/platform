@@ -1,3 +1,4 @@
+import FinanceToggle from '../../(dashboard)/finance-toggle';
 import {
   ExpenseStatistics,
   IncomeStatistics,
@@ -40,6 +41,7 @@ export default async function WorkspaceFinancePage({
   return (
     <>
       <Filter className="mb-4" />
+      <FinanceToggle />
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
           <TotalBalanceStatistics wsId={wsId} searchParams={sp} />
@@ -54,11 +56,11 @@ export default async function WorkspaceFinancePage({
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <WalletsStatistics wsId={wsId} />
+          <WalletsStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <TransactionCategoriesStatistics wsId={wsId} />
+          <TransactionCategoriesStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
