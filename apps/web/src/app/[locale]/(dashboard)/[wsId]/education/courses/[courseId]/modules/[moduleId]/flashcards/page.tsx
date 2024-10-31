@@ -1,8 +1,9 @@
 import FlashcardForm from '../../../../../flashcards/form';
 import ClientFlashcards from './client-flashcards';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { SwatchBook } from 'lucide-react';
+import { Sparkles, SwatchBook } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -59,6 +60,13 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
         createTitle={t('ws-flashcards.create')}
         createDescription={t('ws-flashcards.create_description')}
         form={<FlashcardForm wsId={wsId} moduleId={moduleId} />}
+        secondaryTrigger={
+          <Button size="xs" variant="ghost" disabled>
+            <Sparkles />
+            {t('common.generate_with_ai')}
+          </Button>
+        }
+        showSecondaryTrigger
       />
       <div className="grid gap-4 md:grid-cols-2">
         {flashcards && flashcards.length > 0 && (

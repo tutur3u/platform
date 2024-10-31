@@ -152,7 +152,8 @@
     "create_new": "Tạo mới",
     "import": "Nhập dữ liệu",
     "invalid-file-type": "Loại tệp không hợp lệ",
-    "no-sheets-found": "Không tìm thấy trang tính nào."
+    "no-sheets-found": "Không tìm thấy trang tính nào.",
+    "generate_with_ai": "Tạo với AI"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

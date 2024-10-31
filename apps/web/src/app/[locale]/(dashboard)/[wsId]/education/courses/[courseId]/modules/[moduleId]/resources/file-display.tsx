@@ -47,7 +47,9 @@ export default function FileDisplay({
 
   if (!signedUrl) return null;
 
-  if (imageExtensions.includes(file.name?.split('.').pop() || ''))
+  if (
+    imageExtensions.includes(file.name?.split('.').pop()?.toLowerCase() || '')
+  )
     return (
       <Image
         src={signedUrl}
