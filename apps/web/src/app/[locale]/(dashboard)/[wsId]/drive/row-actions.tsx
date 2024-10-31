@@ -19,23 +19,24 @@ import { useRouter } from 'next/navigation';
 interface Props {
   wsId: string;
   row: Row<StorageObject>;
+  path?: string;
   // eslint-disable-next-line no-unused-vars
   setStorageObject: (value: StorageObject | undefined) => void;
 }
 
-export function StorageObjectRowActions(props: Props) {
+export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
   const supabase = createClient();
   const t = useTranslations();
 
   const router = useRouter();
-  const storageObj = props.row.original;
+  const storageObj = row.original;
 
   const deleteStorageObject = async () => {
     if (!storageObj.name) return;
 
     const { error } = await supabase.storage
       .from('workspaces')
-      .remove([`${props.wsId}/${storageObj.name}`]);
+      .remove([`${wsId}/${path}${storageObj.name}`]);
 
     if (!error) {
       router.refresh();
@@ -52,7 +53,7 @@ export function StorageObjectRowActions(props: Props) {
 
     const newName = prompt(
       'Enter new name',
-      storageObj.name.split(`${props.wsId}/`)[1]
+      storageObj.name.split(`${wsId}/`)[1]
     );
 
     if (!newName) return;
@@ -66,7 +67,10 @@ export function StorageObjectRowActions(props: Props) {
 
     const { error } = await supabase.storage
       .from('workspaces')
-      .move(`${props.wsId}/${storageObj.name}`, `${props.wsId}/${safeNewName}`);
+      .move(
+        `${wsId}/${path}${storageObj.name}`,
+        `${wsId}/${path}${safeNewName}`
+      );
 
     if (!error) {
       router.refresh();
@@ -83,7 +87,7 @@ export function StorageObjectRowActions(props: Props) {
 
     const { data, error } = await supabase.storage
       .from('workspaces')
-      .download(`${props.wsId}/${storageObj.name}`);
+      .download(`${wsId}/${path}${storageObj.name}`);
 
     if (error) {
       toast({
@@ -97,7 +101,7 @@ export function StorageObjectRowActions(props: Props) {
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = storageObj.name.split(`${props.wsId}/`).pop() || '';
+    a.download = storageObj.name.split(`${wsId}/`).pop() || '';
     a.click();
 
     URL.revokeObjectURL(url);

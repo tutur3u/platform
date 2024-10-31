@@ -11,10 +11,16 @@ import { useState } from 'react';
 interface Props {
   wsId: string;
   data: StorageObject[];
+  path?: string;
   count: number;
 }
 
-export default function StorageObjectsTable({ wsId, data, count }: Props) {
+export default function StorageObjectsTable({
+  wsId,
+  data,
+  path,
+  count,
+}: Props) {
   const t = useTranslations('common');
 
   const [storageObj, setStorageObject] = useState<StorageObject>();
@@ -33,7 +39,7 @@ export default function StorageObjectsTable({ wsId, data, count }: Props) {
       <CustomDataTable
         data={data}
         columnGenerator={(t: any, namespace: string) =>
-          storageObjectsColumns(t, namespace, setStorageObject, wsId)
+          storageObjectsColumns(t, namespace, setStorageObject, wsId, path)
         }
         namespace="storage-object-data-table"
         count={count}
