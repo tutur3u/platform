@@ -153,7 +153,12 @@
     "import": "Nhập dữ liệu",
     "invalid-file-type": "Loại tệp không hợp lệ",
     "no-sheets-found": "Không tìm thấy trang tính nào.",
-    "generate_with_ai": "Tạo với AI"
+    "generate_with_ai": "Tạo với AI",
+    "accept": "Chấp nhận",
+    "regenerate": "Tạo lại",
+    "context": "Bối cảnh",
+    "enter_context": "Nhập ngữ cảnh",
+    "generate": "Tạo nội dung"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1696,7 +1701,9 @@
     "edit": "Chỉnh sửa thẻ từ vựng",
     "front": "Mặt trước",
     "back": "Mặt sau",
-    "edit_description": "Chỉnh sửa thẻ từ vựng hiện có"
+    "edit_description": "Chỉnh sửa thẻ từ vựng hiện có",
+    "generation_error": "Đã xảy ra lỗi khi tạo thẻ từ.",
+    "generation_accepted": "Thẻ từ do AI tạo đã được chấp nhận!"
   },
   "ws-quizzes": {
     "plural": "Bộ trắc nghiệm",
@@ -1707,7 +1714,9 @@
     "edit": "Chỉnh sửa bộ trắc nghiệm",
     "question": "Câu hỏi",
     "answer": "Câu trả lời",
-    "edit_description": "Chỉnh sửa bài kiểm tra hiện có"
+    "edit_description": "Chỉnh sửa bài kiểm tra hiện có",
+    "generation_error": "Đã xảy ra lỗi khi tạo bộ câu hỏi.",
+    "generation_accepted": "Các bộ câu hỏi do AI tạo ra đã được chấp nhận!"
   },
   "course-details-tabs": {
     "preview": "Xem trước",

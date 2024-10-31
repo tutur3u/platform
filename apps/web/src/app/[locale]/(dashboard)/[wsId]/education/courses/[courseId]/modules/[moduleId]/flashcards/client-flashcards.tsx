@@ -29,27 +29,31 @@ export default function ClientFlashcards({
 }: {
   wsId: string;
   moduleId: string;
-  cards: Array<{
-    id: string;
-    front: string;
-    back: string;
-    frontHTML: string | JSX.Element;
-    backHTML: string | JSX.Element;
-    frontCardStyle?: React.CSSProperties;
-    frontContentStyle?: React.CSSProperties;
-    backCardStyle?: React.CSSProperties;
-    backContentStyle?: React.CSSProperties;
-    className?: string;
-    height?: string;
-    width?: string;
-    borderRadius?: string;
-    style?: React.CSSProperties;
-  }>;
+  cards: Array<
+    | {
+        id: string;
+        front: string;
+        back: string;
+        frontHTML: string | JSX.Element;
+        backHTML: string | JSX.Element;
+        frontCardStyle?: React.CSSProperties;
+        frontContentStyle?: React.CSSProperties;
+        backCardStyle?: React.CSSProperties;
+        backContentStyle?: React.CSSProperties;
+        className?: string;
+        height?: string;
+        width?: string;
+        borderRadius?: string;
+        style?: React.CSSProperties;
+      }
+    | undefined
+  >;
   previewMode?: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations();
   const supabase = createClient();
+
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
 
   const onDelete = async (id: string) => {
@@ -68,15 +72,15 @@ export default function ClientFlashcards({
 
   return (
     <>
-      {cards.map((card) => (
+      {cards.map((card, idx) => (
         <div
-          key={card.id}
+          key={card?.id || idx}
           className={cn(
             previewMode ||
               'bg-foreground/5 border-foreground/5 rounded-lg border p-2 md:p-4'
           )}
         >
-          {editingCardId === card.id ? (
+          {editingCardId === card?.id ? (
             <>
               <FlashcardForm
                 wsId={wsId}
@@ -98,22 +102,28 @@ export default function ClientFlashcards({
             </>
           ) : (
             <>
-              <Flashcard
-                frontHTML={card.frontHTML}
-                backHTML={card.backHTML}
-                frontCardStyle={card.frontCardStyle}
-                frontContentStyle={card.frontContentStyle}
-                backCardStyle={card.backCardStyle}
-                backContentStyle={card.backContentStyle}
-                className={card.className}
-                height={card.height}
-                width={card.width}
-                borderRadius={card.borderRadius}
-                style={card.style}
-              />
+              {card && (
+                <Flashcard
+                  frontHTML={card.frontHTML}
+                  backHTML={card.backHTML}
+                  frontCardStyle={card.frontCardStyle}
+                  frontContentStyle={card.frontContentStyle}
+                  backCardStyle={card.backCardStyle}
+                  backContentStyle={card.backContentStyle}
+                  className={card.className}
+                  height={card.height}
+                  width={card.width}
+                  borderRadius={card.borderRadius}
+                  style={card.style}
+                />
+              )}
               {previewMode || (
                 <div className="mt-4 flex items-center justify-end gap-2">
-                  <Button onClick={() => setEditingCardId(card.id)}>
+                  <Button
+                    onClick={
+                      card?.id ? () => setEditingCardId(card.id) : undefined
+                    }
+                  >
                     <Pencil className="h-5 w-5" />
                     {t('common.edit')}
                   </Button>
@@ -137,7 +147,11 @@ export default function ClientFlashcards({
                         <AlertDialogCancel>
                           {t('common.cancel')}
                         </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(card.id)}>
+                        <AlertDialogAction
+                          onClick={
+                            card?.id ? () => onDelete(card.id) : undefined
+                          }
+                        >
                           {t('common.continue')}
                         </AlertDialogAction>
                       </AlertDialogFooter>

@@ -153,7 +153,12 @@
     "import": "Import",
     "invalid-file-type": "Invalid file type",
     "no-sheets-found": "No sheets found.",
-    "generate_with_ai": "Generate with AI"
+    "generate_with_ai": "Generate with AI",
+    "regenerate": "Regenerate",
+    "accept": "Accept",
+    "context": "Context",
+    "enter_context": "Enter context",
+    "generate": "Generate"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1696,7 +1701,9 @@
     "edit": "Edit flashcard",
     "front": "Front",
     "back": "Back",
-    "edit_description": "Edit an existing flashcard"
+    "edit_description": "Edit an existing flashcard",
+    "generation_error": "An error has occured when generating flashcards.",
+    "generation_accepted": "AI-generated flashcards are accepted!"
   },
   "ws-quizzes": {
     "plural": "Quizzes",
@@ -1707,7 +1714,9 @@
     "edit": "Edit quiz",
     "question": "Question",
     "answer": "Answer",
-    "edit_description": "Edit an existing quiz"
+    "edit_description": "Edit an existing quiz",
+    "generation_error": "An error has occured when generating quizzes.",
+    "generation_accepted": "AI-generated quizzes are accepted!"
   },
   "course-details-tabs": {
     "preview": "Preview",

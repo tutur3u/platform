@@ -28,7 +28,10 @@ interface Props {
   moduleId?: string;
   data?: Partial<
     WorkspaceQuiz & {
-      quiz_options: { id: string; value: string; is_correct: boolean }[];
+      quiz_options: (
+        | { id?: string; value?: string; is_correct?: boolean }
+        | undefined
+      )[];
     }
   >;
   // eslint-disable-next-line no-unused-vars

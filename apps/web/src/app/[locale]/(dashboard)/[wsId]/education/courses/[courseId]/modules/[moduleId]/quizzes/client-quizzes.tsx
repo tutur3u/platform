@@ -29,20 +29,26 @@ export default function ClientQuizzes({
 }: {
   wsId: string;
   moduleId: string;
-  quizzes: Array<{
-    created_at: string;
-    id: string;
-    question: string;
-    ws_id: string;
-    quiz_options: {
-      created_at: string;
-      id: string;
-      is_correct: boolean;
-      points: number | null;
-      quiz_id: string;
-      value: string;
-    }[];
-  }>;
+  quizzes: Array<
+    | {
+        created_at?: string;
+        id?: string;
+        question?: string;
+        ws_id?: string;
+        quiz_options?: (
+          | {
+              created_at?: string;
+              id?: string;
+              is_correct?: boolean;
+              points?: number | null;
+              quiz_id?: string;
+              value?: string;
+            }
+          | undefined
+        )[];
+      }
+    | undefined
+  >;
   previewMode?: boolean;
 }) {
   const router = useRouter();
@@ -66,15 +72,15 @@ export default function ClientQuizzes({
 
   return (
     <>
-      {quizzes.map((quiz) => (
+      {quizzes.map((quiz, idx) => (
         <div
-          key={quiz.id}
+          key={quiz?.id || idx}
           className={cn(
             'rounded-lg border p-4 shadow-md md:p-6',
             previewMode && 'bg-foreground/5'
           )}
         >
-          {editingQuizId === quiz.id ? (
+          {editingQuizId === quiz?.id ? (
             <>
               <QuizForm
                 wsId={wsId}
@@ -97,20 +103,22 @@ export default function ClientQuizzes({
           ) : (
             <>
               <div className="quiz-question">
-                <h3 className="text-lg font-semibold">{quiz.question}</h3>
+                <h3 className="text-lg font-semibold">
+                  {quiz?.question || '...'}
+                </h3>
                 <Separator className="my-2" />
                 <ul className="mt-4 grid gap-2">
-                  {quiz.quiz_options.map((option) => (
+                  {quiz?.quiz_options?.map((option, oidx) => (
                     <li
-                      key={option.id}
+                      key={option?.id || oidx}
                       className={cn(
                         'rounded-md border p-2',
-                        option.is_correct
+                        option?.is_correct
                           ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
                           : 'bg-foreground/5 border-foreground/5'
                       )}
                     >
-                      {option.value} {option.is_correct && '(Correct)'}
+                      {option?.value} {option?.is_correct && '(Correct)'}
                     </li>
                   ))}
                 </ul>
@@ -119,7 +127,9 @@ export default function ClientQuizzes({
                 <div className="mt-4 flex items-center justify-end gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => setEditingQuizId(quiz.id)}
+                    onClick={
+                      quiz?.id ? () => setEditingQuizId(quiz.id!) : undefined
+                    }
                   >
                     <Pencil className="h-5 w-5" />
                     {t('common.edit')}
@@ -144,7 +154,11 @@ export default function ClientQuizzes({
                         <AlertDialogCancel>
                           {t('common.cancel')}
                         </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(quiz.id)}>
+                        <AlertDialogAction
+                          onClick={
+                            quiz?.id ? () => onDelete(quiz.id!) : undefined
+                          }
+                        >
                           {t('common.continue')}
                         </AlertDialogAction>
                       </AlertDialogFooter>

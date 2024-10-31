@@ -44,21 +44,23 @@ export default async function UserGroupDetailsPage({ params }: Props) {
     back: fc.back,
     width: '100%',
     frontCardStyle: {
-      color: 'var(--foreground)',
-      backgroundColor: 'hsl(var(--foreground) / 0.05)',
+      color: 'hsl(var(--green))',
+      backgroundColor: 'hsl(var(--green) / 0.05)',
+      borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="flex h-full w-full items-center justify-center rounded-xl border p-4 text-center text-lg font-semibold md:text-2xl">
-        {fc.front}
+      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+        {fc?.front || '...'}
       </div>
     ),
     backCardStyle: {
-      color: 'var(--foreground)',
-      backgroundColor: 'hsl(var(--foreground) / 0.05)',
+      color: 'hsl(var(--purple))',
+      backgroundColor: 'hsl(var(--purple) / 0.05)',
+      borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="flex h-full w-full items-center justify-center rounded-xl border p-4 text-center text-lg font-semibold md:text-2xl">
-        {fc.back}
+      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+        {fc?.back || '...'}
       </div>
     ),
   }));

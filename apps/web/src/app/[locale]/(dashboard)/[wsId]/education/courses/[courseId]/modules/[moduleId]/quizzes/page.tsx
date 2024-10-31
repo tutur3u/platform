@@ -1,9 +1,9 @@
 import QuizForm from '../../../../../quizzes/form';
+import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
 import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { ListTodo, Sparkles } from 'lucide-react';
+import { ListTodo } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -35,17 +35,13 @@ export default async function ModuleQuizzesPage({ params }: Props) {
         createTitle={t('ws-quizzes.create')}
         createDescription={t('ws-quizzes.create_description')}
         form={<QuizForm wsId={wsId} moduleId={moduleId} />}
-        secondaryTrigger={
-          <Button size="xs" variant="ghost" disabled>
-            <Sparkles />
-            {t('common.generate_with_ai')}
-          </Button>
-        }
-        showSecondaryTrigger
       />
+
       <div className="grid gap-4 md:grid-cols-2">
         <ClientQuizzes wsId={wsId} moduleId={moduleId} quizzes={quizzes} />
       </div>
+
+      <AIQuizzes wsId={wsId} moduleId={moduleId} />
     </div>
   );
 }

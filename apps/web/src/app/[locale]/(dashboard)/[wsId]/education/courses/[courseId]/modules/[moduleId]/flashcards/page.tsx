@@ -1,9 +1,9 @@
 import FlashcardForm from '../../../../../flashcards/form';
+import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
 import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Sparkles, SwatchBook } from 'lucide-react';
+import { SwatchBook } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -25,21 +25,23 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
     back: fc.back,
     width: '100%',
     frontCardStyle: {
-      color: 'var(--foreground)',
-      backgroundColor: 'hsl(var(--foreground) / 0.05)',
+      color: 'hsl(var(--green))',
+      backgroundColor: 'hsl(var(--green) / 0.05)',
+      borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="flex h-full w-full items-center justify-center rounded-xl border p-4 text-center text-lg font-semibold md:text-2xl">
-        {fc.front}
+      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+        {fc?.front || '...'}
       </div>
     ),
     backCardStyle: {
-      color: 'var(--foreground)',
-      backgroundColor: 'hsl(var(--foreground) / 0.05)',
+      color: 'hsl(var(--purple))',
+      backgroundColor: 'hsl(var(--purple) / 0.05)',
+      borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="flex h-full w-full items-center justify-center rounded-xl border p-4 text-center text-lg font-semibold md:text-2xl">
-        {fc.back}
+      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+        {fc?.back || '...'}
       </div>
     ),
   }));
@@ -60,19 +62,15 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
         createTitle={t('ws-flashcards.create')}
         createDescription={t('ws-flashcards.create_description')}
         form={<FlashcardForm wsId={wsId} moduleId={moduleId} />}
-        secondaryTrigger={
-          <Button size="xs" variant="ghost" disabled>
-            <Sparkles />
-            {t('common.generate_with_ai')}
-          </Button>
-        }
-        showSecondaryTrigger
       />
+
       <div className="grid gap-4 md:grid-cols-2">
         {flashcards && flashcards.length > 0 && (
           <ClientFlashcards wsId={wsId} moduleId={moduleId} cards={cards} />
         )}
       </div>
+
+      <AIFlashcards wsId={wsId} moduleId={moduleId} />
     </div>
   );
 }
