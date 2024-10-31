@@ -768,7 +768,10 @@
     "create": "Tạo Quy trình",
     "edit": "Sửa Quy trình",
     "add_new": "Thêm Quy trình mới vào không gian làm việc này.",
-    "edit_existing": "Sửa Quy trình đã tồn tại trong không gian làm việc này."
+    "edit_existing": "Sửa Quy trình đã tồn tại trong không gian làm việc này.",
+    "include_resources": "Bao gồm các tài nguyên tải lên",
+    "include_youtube_links": "Bao gồm các liên kết YouTube",
+    "include_module_content": "Bao gồm nội dung mô-đun"
   },
   "ws-task-boards": {
     "name": "Tên bảng",

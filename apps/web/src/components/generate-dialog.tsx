@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
+import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -83,6 +84,37 @@ export function GenerateDialog({
                 </FormItem>
               )}
             />
+
+            <div className="flex items-center space-x-2">
+              <Checkbox id="include-content" disabled />
+              <label
+                htmlFor="include-content"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                {t('ws-ai-workflows.include_module_content')}
+              </label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox id="include-resources" disabled />
+              <label
+                htmlFor="include-resources"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                {t('ws-ai-workflows.include_resources')}
+              </label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox id="include-youtube-links" disabled />
+              <label
+                htmlFor="include-youtube-links"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                {t('ws-ai-workflows.include_youtube_links')}
+              </label>
+            </div>
+
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}

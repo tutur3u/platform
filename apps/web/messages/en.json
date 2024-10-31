@@ -768,7 +768,10 @@
     "create": "Create Workflow",
     "edit": "Edit Workflow",
     "add_new": "Add a new workflow to this workspace.",
-    "edit_existing": "Edit an existing workflow in this workspace."
+    "edit_existing": "Edit an existing workflow in this workspace.",
+    "include_resources": "Include uploaded resources",
+    "include_youtube_links": "Include YouTube links",
+    "include_module_content": "Include module content"
   },
   "ws-task-boards": {
     "name": "Board name",
