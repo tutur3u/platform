@@ -8,6 +8,7 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { experimental_useObject as useObject } from 'ai/react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export function AIFlashcards({
   wsId,
@@ -22,6 +23,9 @@ export function AIFlashcards({
     api: '/api/ai/objects/flashcards',
     schema: flashcardSchema,
   });
+
+  const [context, setContext] = useState('');
+  const [accepted, setAccepted] = useState(false);
 
   const acceptFlashcards = async () => {
     if (!object?.flashcards?.length) return;
@@ -46,6 +50,7 @@ export function AIFlashcards({
       });
 
       router.refresh();
+      setAccepted(true);
     } catch (e) {
       console.log(e);
       toast({
@@ -88,15 +93,19 @@ export function AIFlashcards({
         title={t('common.generate_with_ai')}
         description={t('ws-quizzes.create_description')}
         isLoading={isLoading}
-        onGenerate={(context) => submit({ wsId, context })}
+        onGenerate={(context) => {
+          setAccepted(false);
+          setContext(context);
+          submit({ wsId, context });
+        }}
       />
 
-      {cards && cards.length > 0 && (
+      {!accepted && cards && cards.length > 0 && (
         <>
           <div className="flex justify-end gap-2">
             <Button
-              variant="outline"
-              onClick={() => submit({ wsId, context: 'RMIT University' })}
+              variant="destructive"
+              onClick={() => submit({ wsId, context })}
             >
               {t('common.regenerate')}
             </Button>

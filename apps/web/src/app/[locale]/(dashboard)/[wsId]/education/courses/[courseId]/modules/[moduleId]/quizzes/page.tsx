@@ -3,6 +3,7 @@ import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { ListTodo } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
@@ -38,10 +39,17 @@ export default async function ModuleQuizzesPage({ params }: Props) {
       />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <ClientQuizzes wsId={wsId} moduleId={moduleId} quizzes={quizzes} />
-      </div>
+        {quizzes && quizzes.length > 0 && (
+          <>
+            <ClientQuizzes wsId={wsId} moduleId={moduleId} quizzes={quizzes} />
+            <Separator className="col-span-full my-2" />
+          </>
+        )}
 
-      <AIQuizzes wsId={wsId} moduleId={moduleId} />
+        <div className="col-span-full">
+          <AIQuizzes wsId={wsId} moduleId={moduleId} />
+        </div>
+      </div>
     </div>
   );
 }

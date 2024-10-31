@@ -8,6 +8,7 @@ import { toast } from '@repo/ui/hooks/use-toast';
 import { experimental_useObject as useObject } from 'ai/react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function AIQuizzes({
   wsId,
@@ -18,10 +19,14 @@ export default function AIQuizzes({
 }) {
   const t = useTranslations();
   const router = useRouter();
+
   const { object, submit, isLoading } = useObject({
     api: '/api/ai/objects/quizzes',
     schema: quizSchema,
   });
+
+  const [context, setContext] = useState('');
+  const [accepted, setAccepted] = useState(false);
 
   const acceptQuizzes = async () => {
     if (!object?.quizzes?.length) return;
@@ -46,6 +51,7 @@ export default function AIQuizzes({
       });
 
       router.refresh();
+      setAccepted(true);
     } catch (e) {
       console.log(e);
       toast({
@@ -61,15 +67,19 @@ export default function AIQuizzes({
         title={t('common.generate_with_ai')}
         description={t('ws-quizzes.create_description')}
         isLoading={isLoading}
-        onGenerate={(context) => submit({ wsId, context })}
+        onGenerate={(context) => {
+          setAccepted(false);
+          setContext(context);
+          submit({ wsId, context });
+        }}
       />
 
-      {object?.quizzes && object.quizzes.length > 0 && (
+      {!accepted && object?.quizzes && object.quizzes.length > 0 && (
         <>
           <div className="flex justify-end gap-2">
             <Button
-              variant="outline"
-              onClick={() => submit({ wsId, context: 'RMIT University' })}
+              variant="destructive"
+              onClick={() => submit({ wsId, context })}
             >
               {t('common.regenerate')}
             </Button>

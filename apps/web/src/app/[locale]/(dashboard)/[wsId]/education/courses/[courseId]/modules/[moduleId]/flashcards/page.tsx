@@ -3,6 +3,7 @@ import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { SwatchBook } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
@@ -66,11 +67,16 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
 
       <div className="grid gap-4 md:grid-cols-2">
         {flashcards && flashcards.length > 0 && (
-          <ClientFlashcards wsId={wsId} moduleId={moduleId} cards={cards} />
+          <>
+            <ClientFlashcards wsId={wsId} moduleId={moduleId} cards={cards} />
+            <Separator className="col-span-full my-2" />
+          </>
         )}
-      </div>
 
-      <AIFlashcards wsId={wsId} moduleId={moduleId} />
+        <div className="col-span-full">
+          <AIFlashcards wsId={wsId} moduleId={moduleId} />
+        </div>
+      </div>
     </div>
   );
 }

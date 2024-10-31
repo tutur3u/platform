@@ -59,8 +59,8 @@ export function GenerateDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="xs" variant="ghost">
-          <Sparkles className="mr-2 h-4 w-4" />
+        <Button variant="outline">
+          <Sparkles className="h-4 w-4" />
           {t('common.generate_with_ai')}
         </Button>
       </DialogTrigger>
@@ -85,7 +85,7 @@ export function GenerateDialog({
             />
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {t('common.generate')}
               </Button>
             </DialogFooter>
