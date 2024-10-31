@@ -18,7 +18,7 @@ const getDocument = async (documentId: string) => {
 
     const { data, error } = await supabase
       .from('workspace_documents')
-      .select('*')
+      .select('id')
       .eq('id', documentId)
       .eq('is_public', true)
       .single();

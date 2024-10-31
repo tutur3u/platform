@@ -3,6 +3,7 @@
 import { TailwindAdvancedEditor } from '@/app/[locale]/(dashboard)/[wsId]/documents/advanced-editor';
 import { WorkspaceDocument } from '@/types/db';
 import { Card } from '@repo/ui/components/ui/card';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { JSONContent } from 'novel';
 
 interface Props {
@@ -19,8 +20,9 @@ function DocumentPageContent({ document }: Props) {
               <h1 className="text-3xl font-bold">{document.name}</h1>
             </div>
           </div>
+          <Separator />
 
-          <div className="bg-background/50 relative min-h-[500px] w-full rounded-lg border">
+          <div className="bg-background/50 relative min-h-[500px] w-full rounded-lg">
             <TailwindAdvancedEditor
               content={document.content as JSONContent}
               disableLocalStorage

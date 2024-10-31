@@ -1,6 +1,6 @@
+import DocumentPageContent from './document-content';
 import { createAdminClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import DocumentPageContent from './document-content';
 
 interface Props {
   params: Promise<{
@@ -36,6 +36,5 @@ export default async function PublicDocumentPage({ params }: Props) {
   if (!documentId) notFound();
 
   const document = await getDocument(documentId);
-
   return <DocumentPageContent document={document} />;
 }
