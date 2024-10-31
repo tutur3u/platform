@@ -1,4 +1,4 @@
-import { locales } from '@/config';
+import { supportedLocales } from '@/i18n/routing';
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';
@@ -34,7 +34,9 @@ export const PUBLIC_PATHS = ['/login', '/chats'].reduce(
     acc.push(path);
 
     // Add localized paths
-    const localizedPaths = locales.map((locale) => `/${locale}${path}`);
+    const localizedPaths = supportedLocales.map(
+      (locale) => `/${locale}${path}`
+    );
     acc.push(...localizedPaths);
 
     return acc;

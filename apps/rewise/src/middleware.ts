@@ -1,5 +1,5 @@
-import { Locales, defaultLocale, locales } from './config';
 import { LOCALE_COOKIE_NAME } from './constants/common';
+import { type Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { updateSession } from './utils/supabase/middleware';
 import { match } from '@formatjs/intl-localematcher';
 import { User } from '@supabase/supabase-js';
@@ -81,14 +81,14 @@ const handleRedirect = ({
   return { res, redirect: false };
 };
 
-const getSupportedLocale = (locale: string): Locales | null => {
-  return locales.includes(locale as any) ? (locale as Locales) : null;
+const getSupportedLocale = (locale: string): Locale | null => {
+  return supportedLocales.includes(locale as any) ? (locale as Locale) : null;
 };
 
 const getExistingLocale = (
   req: NextRequest
 ): {
-  locale: Locales | null;
+  locale: Locale | null;
   cookie: string | null;
   pathname: string | null;
 } => {
@@ -112,7 +112,7 @@ const getExistingLocale = (
 const getDefaultLocale = (
   req: NextRequest
 ): {
-  locale: Locales;
+  locale: Locale;
 } => {
   // Get browser languages
   const headers = {
@@ -120,11 +120,11 @@ const getDefaultLocale = (
   };
 
   const languages = new Negotiator({ headers }).languages();
-  const detectedLocale = match(languages, locales, defaultLocale);
+  const detectedLocale = match(languages, supportedLocales, defaultLocale);
 
   return {
-    locale: locales.includes(detectedLocale as any)
-      ? (detectedLocale as Locales)
+    locale: supportedLocales.includes(detectedLocale as any)
+      ? (detectedLocale as Locale)
       : defaultLocale,
   };
 };
@@ -179,8 +179,8 @@ const handleLocale = ({
   NextResponse.rewrite(req.nextUrl, res);
 
   const nextIntlMiddleware = createIntlMiddleware({
-    locales,
-    defaultLocale: locale as Locales,
+    locales: supportedLocales,
+    defaultLocale: locale as Locale,
     localeDetection: false,
   });
 

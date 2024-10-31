@@ -11,12 +11,6 @@ const nextConfig: NextConfig = {
     // reactCompiler: true,
     optimizeServerReact: true,
   },
-  // logging: {
-  //   fetches: {
-  //     fullUrl: true,
-  //     hmrRefreshes: true,
-  //   },
-  // },
   transpilePackages: ['@repo/ui'],
   images: {
     remotePatterns: [

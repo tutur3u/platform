@@ -1,7 +1,7 @@
 'use client';
 
 import LoadingIndicator from '@/components/common/LoadingIndicator';
-import { locales } from '@/config';
+import type { Locale } from '@/i18n/routing';
 import { Button } from '@repo/ui/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -11,7 +11,7 @@ export function LanguageToggle({
   currentLocale,
 }: {
   forceDisplay?: boolean;
-  currentLocale: (typeof locales)[number];
+  currentLocale: Locale;
 }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
