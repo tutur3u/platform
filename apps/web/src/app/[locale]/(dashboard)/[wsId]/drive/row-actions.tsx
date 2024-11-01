@@ -1,6 +1,7 @@
 'use client';
 
 import { StorageObject } from '@/types/primitives/StorageObject';
+import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -36,7 +37,7 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
 
     const { error } = await supabase.storage
       .from('workspaces')
-      .remove([`${wsId}/${path}${storageObj.name}`]);
+      .remove([joinPath(wsId, path, storageObj.name)]);
 
     if (!error) {
       router.refresh();
@@ -68,8 +69,8 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
     const { error } = await supabase.storage
       .from('workspaces')
       .move(
-        `${wsId}/${path}${storageObj.name}`,
-        `${wsId}/${path}${safeNewName}`
+        joinPath(wsId, path, storageObj.name),
+        joinPath(wsId, path, safeNewName)
       );
 
     if (!error) {
@@ -87,7 +88,7 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
 
     const { data, error } = await supabase.storage
       .from('workspaces')
-      .download(`${wsId}/${path}${storageObj.name}`);
+      .download(joinPath(wsId, path, storageObj.name));
 
     if (error) {
       toast({

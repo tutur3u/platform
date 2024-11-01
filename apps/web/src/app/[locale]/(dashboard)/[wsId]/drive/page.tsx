@@ -6,6 +6,7 @@ import {
   StorageObject,
 } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
+import { joinPath } from '@/utils/path-helper';
 import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -110,19 +111,13 @@ export default async function WorkspaceStorageObjectsPage({
 
 async function getData(
   wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-    // with trailing slash
-    path = '',
-  }: Awaited<Props['searchParams']>
+  { q, page = '1', pageSize = '10', path = '' }: Awaited<Props['searchParams']>
 ) {
   const supabase = await createDynamicClient();
 
   const { data, error } = await supabase.storage
     .from('workspaces')
-    .list(`${wsId}/${path}`, {
+    .list(joinPath(wsId, path), {
       limit: parseInt(pageSize),
       offset: (parseInt(page) - 1) * parseInt(pageSize),
       sortBy: { column: 'created_at', order: 'desc' },

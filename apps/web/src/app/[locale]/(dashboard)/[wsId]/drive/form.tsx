@@ -1,6 +1,7 @@
 'use client';
 
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@/types/primitives/StorageObject';
+import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@/utils/supabase/client';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -83,7 +84,7 @@ export function StorageFolderForm({
     const { error } = await supabase.storage
       .from('workspaces')
       .upload(
-        `${wsId}/${uploadPath}${data.name}/${placeholderFile.name}`,
+        joinPath(wsId, uploadPath, data.name, placeholderFile.name),
         placeholderFile
       );
 
@@ -180,7 +181,8 @@ export function StorageObjectForm({
       const { error } = await supabase.storage
         .from('workspaces')
         .upload(
-          `${path || `${wsId}/${uploadPath}`}${generateRandomUUID()}_${file.name}`,
+          path ||
+            joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
           file
         );
 

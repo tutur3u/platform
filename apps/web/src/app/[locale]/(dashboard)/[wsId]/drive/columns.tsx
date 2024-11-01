@@ -3,6 +3,7 @@
 import { StorageObjectRowActions } from './row-actions';
 import { StorageObject } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
+import { joinPath } from '@/utils/path-helper';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
@@ -92,7 +93,10 @@ export const storageObjectsColumns = (
             href={
               pathname +
               '?' +
-              createQueryString('path', basePath + row.getValue('name') + '/')
+              createQueryString(
+                'path',
+                joinPath(basePath, row.getValue('name'))
+              )
             }
           >
             {row.getValue('name')}
