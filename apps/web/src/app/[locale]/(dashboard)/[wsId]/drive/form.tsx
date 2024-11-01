@@ -1,6 +1,7 @@
 'use client';
 
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@/types/primitives/StorageObject';
+import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@/utils/supabase/client';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,13 +19,14 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Check, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 interface FolderProps {
   wsId: string;
+  uploadPath?: string;
   data?: {
     name: string;
   };
@@ -34,6 +36,7 @@ interface FolderProps {
 interface Props {
   wsId: string;
   path?: string;
+  uploadPath?: string;
   accept?: string;
   onComplete?: () => void;
   submitLabel?: string;
@@ -53,14 +56,16 @@ const ObjectFormSchema = z.object({
   }),
 });
 
-export function StorageFolderForm({ wsId, data, onComplete }: FolderProps) {
+export function StorageFolderForm({
+  wsId,
+  uploadPath = '',
+  data,
+  onComplete,
+}: FolderProps) {
   const t = useTranslations();
 
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
-
-  const path = searchParams.get('path') ?? '';
 
   const [loading, setLoading] = useState(false);
 
@@ -79,7 +84,7 @@ export function StorageFolderForm({ wsId, data, onComplete }: FolderProps) {
     const { error } = await supabase.storage
       .from('workspaces')
       .upload(
-        `${wsId}/${path}${data.name}/${placeholderFile.name}`,
+        joinPath(wsId, uploadPath, data.name, placeholderFile.name),
         placeholderFile
       );
 
@@ -134,6 +139,7 @@ export function StorageFolderForm({ wsId, data, onComplete }: FolderProps) {
 export function StorageObjectForm({
   wsId,
   path,
+  uploadPath = '',
   accept = 'image/*',
   onComplete,
   submitLabel,
@@ -141,10 +147,7 @@ export function StorageObjectForm({
   const t = useTranslations();
 
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
-
-  const uploadPath = searchParams.get('path') || '';
 
   const [loading, setLoading] = useState(false);
 
@@ -178,7 +181,8 @@ export function StorageObjectForm({
       const { error } = await supabase.storage
         .from('workspaces')
         .upload(
-          `${path || `${wsId}/${uploadPath}`}${generateRandomUUID()}_${file.name}`,
+          path ||
+            joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
           file
         );
 
