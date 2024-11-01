@@ -53,6 +53,7 @@
     "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^3.9.0",
     "@liveblocks/client": "^2.10.0",
+    "@liveblocks/node": "^2.10.2",
     "@liveblocks/react": "^2.10.0",
     "@liveblocks/yjs": "^2.10.0",
     "@mantine/core": "^7.13.4",

@@ -9,7 +9,12 @@ const LiveblockContainer = ({ children }: { children: React.ReactNode }) => {
   if (!API_KEY) return <div>{API_KEY_MISSING}</div>;
 
   return (
-    <LiveblocksProvider publicApiKey={API_KEY}>{children}</LiveblocksProvider>
+    <LiveblocksProvider
+      // authEndpoint="/api/liveblocks-auth"
+      publicApiKey={API_KEY}
+    >
+      {children}
+    </LiveblocksProvider>
   );
 };
 
