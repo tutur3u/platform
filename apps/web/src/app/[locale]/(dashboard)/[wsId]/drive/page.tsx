@@ -54,7 +54,7 @@ export default async function WorkspaceStorageObjectsPage({
         description={t('ws-storage-objects.description')}
         createTitle={t('ws-storage-objects.upload')}
         createDescription={t('ws-storage-objects.upload_description')}
-        action={<NewActions wsId={wsId} />}
+        action={<NewActions wsId={wsId} path={path} />}
       />
 
       <div className="mb-8 mt-4 grid gap-4 text-center md:grid-cols-2 xl:grid-cols-4">

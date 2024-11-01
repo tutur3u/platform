@@ -53,6 +53,7 @@ export default function StorageObjectsTable({
             <StorageObjectForm
               wsId={wsId}
               onComplete={onComplete}
+              uploadPath={path}
               submitLabel={storageObj?.id ? t('edit') : t('upload')}
             />
           </>
