@@ -1,6 +1,8 @@
 'use client';
 
-import LiveblockContainer from '../components/text-editor/liveblock-container';
+import LiveblockContainer from '../components/text-editor/liveblocks-container';
+import LiveBlocksRoom from '../components/text-editor/liveblocks-room';
+import LiveblocksTipTapEditor from '../components/text-editor/liveblocks-tiptap-editor';
 import DocumentShareDialog from '../document-share-dialog';
 import { cn } from '@/lib/utils';
 import { WorkspaceDocument } from '@/types/db';
@@ -148,17 +150,11 @@ export default function DocumentDetailsPage({ params }: Props) {
         </Tooltip>
       </div>
 
-      {/* LiveBlock Collaborative Text Editor */}
-      {/* <LiveblocksProvider>
-        <Room wsID={wsId} documentID={documentId}>
-          <DocumentEditor
-            wsId={wsId}
-            docId={documentId}
-            content={document.content as JSONContent}
-          />
-        </Room>
-      </LiveblocksProvider> */}
-      <LiveblockContainer />
+      <LiveblockContainer>
+        <LiveBlocksRoom wsID={wsId} documentID={documentId}>
+          <LiveblocksTipTapEditor wsId={wsId} documentId={documentId} />
+        </LiveBlocksRoom>
+      </LiveblockContainer>
 
       <DocumentShareDialog
         isOpen={isShareDialogOpen}
