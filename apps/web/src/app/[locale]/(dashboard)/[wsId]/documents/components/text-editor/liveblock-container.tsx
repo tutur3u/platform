@@ -1,25 +1,17 @@
 'use client';
 
-import { CollaborativeEditor } from './liveblock-colab-editor';
-import {
-  ClientSideSuspense,
-  LiveblocksProvider,
-  RoomProvider,
-} from '@liveblocks/react';
+import { API_KEY_MISSING } from '../../data/strings';
+import { LiveblocksProvider } from '@liveblocks/react';
+import process from 'process';
 
-export default function LiveblockContainer() {
-  if (!process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_API_KEY)
-    return <div>Missing Liveblocks public API key.</div>;
+const API_KEY = process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_API_KEY;
+
+const LiveblockContainer = ({ children }: { children: React.ReactNode }) => {
+  if (!API_KEY) return <div>{API_KEY_MISSING}</div>;
 
   return (
-    <LiveblocksProvider
-      publicApiKey={process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_API_KEY}
-    >
-      <RoomProvider id="my-room">
-        <ClientSideSuspense fallback={<div>Loading…</div>}>
-          <CollaborativeEditor />
-        </ClientSideSuspense>
-      </RoomProvider>
-    </LiveblocksProvider>
+    <LiveblocksProvider publicApiKey={API_KEY}>{children}</LiveblocksProvider>
   );
-}
+};
+
+export default LiveblockContainer;
