@@ -112,7 +112,7 @@
     "tiptap-extension-global-drag-handle": "^0.1.15",
     "use-debounce": "^10.0.4",
     "uuid": "^11.0.2",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "xlsx": "file:vendor/xlsx-0.20.3.tgz",
     "zod": "^3.23.8"
   },
   "devDependencies": {
