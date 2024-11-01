@@ -1,32 +1,17 @@
 'use client';
 
-import { AdvancedEditor } from './advanced-editor';
-import { createClient } from '@/utils/supabase/client';
-import { JSONContent } from 'novel';
-import { FC, useCallback } from 'react';
+import { Editor, EditorContent } from '@tiptap/react';
+import { FC} from 'react';
 
 interface DocumentEditorProps {
-  wsId: string;
-  docId: string;
-  content: JSONContent;
+  editor: Editor;
 }
 
-const DocumentEditor: FC<DocumentEditorProps> = ({ wsId, docId, content }) => {
-  const onSave = useCallback(
-    async (data: JSONContent) => {
-      const { error } = await createClient()
-        .from('workspace_documents')
-        .update({ content: data })
-        .eq('id', docId)
-        .eq('ws_id', wsId);
-
-      if (error) console.error('Save error:', error.message + ' ' + "wsId:", wsId + ' ' + "docId:", docId);
-    },
-    [wsId, docId]
-  );
-
+const DocumentEditor: FC<DocumentEditorProps> = ({
+  editor,
+}) => {
   return (
-    <AdvancedEditor content={content} onSave={onSave} disableLocalStorage />
+    <EditorContent editor={editor} />
   );
 };
 

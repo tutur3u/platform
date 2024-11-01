@@ -1,10 +1,10 @@
-import { Liveblocks } from "@liveblocks/node";
+// import { Liveblocks } from "@liveblocks/node";
 
-const LIVEBLOCKS_SECRET = process.env.LIVEBLOCKS_SECRET_API_KEY
+// const LIVEBLOCKS_SECRET = process.env.LIVEBLOCKS_SECRET_API_KEY
 
-const liveblocks = new Liveblocks({
-    secret: LIVEBLOCKS_SECRET || ''
-});
+// const liveblocks = new Liveblocks({
+//     secret: LIVEBLOCKS_SECRET || ''
+// });
 
 export const createRoomId = (wsId: string, documentId: string) => `${wsId}:${documentId}`;
 
@@ -48,22 +48,22 @@ export const createTextEditorRoom = async (roomId: string, defaultAccess: string
     return fetchAPI(url, options);
 };
 
-type RoomPermission = ["room:read", "room:presence:write"];
+// type RoomPermission = ["room:read", "room:presence:write"];
 
-export const createRoom = async (
-    roomID: string,
-    defaultAccess: RoomPermission = ["room:read", "room:presence:write"],
-    creatorId: string
-) => {
-    try {
-        await liveblocks.createRoom(roomID, {
-            defaultAccesses: defaultAccess,
-            usersAccesses: {
-                [creatorId]: ["room:write"],
-            },
-        });
-        console.log(`Room ${roomID} created successfully.`);
-    } catch (error) {
-        console.error("Error creating room:", error);
-    }
-}
+// export const createRoom = async (
+//     roomID: string,
+//     defaultAccess: RoomPermission = ["room:read", "room:presence:write"],
+//     creatorId: string
+// ) => {
+//     try {
+//         await liveblocks.createRoom(roomID, {
+//             defaultAccesses: defaultAccess,
+//             usersAccesses: {
+//                 [creatorId]: ["room:write"],
+//             },
+//         });
+//         console.log(`Room ${roomID} created successfully.`);
+//     } catch (error) {
+//         console.error("Error creating room:", error);
+//     }
+// }

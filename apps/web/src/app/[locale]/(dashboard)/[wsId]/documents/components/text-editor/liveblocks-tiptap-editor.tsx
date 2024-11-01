@@ -10,19 +10,12 @@ import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useState } from 'react';
 import * as Y from 'yjs';
 
-interface LiveblocksTipTapEditorProps {
-  wsId: string;
-  documentId: string;
-}
-
-const LiveblocksTipTapEditor: React.FC<LiveblocksTipTapEditorProps> = ({
-  wsId,
-  documentId,
-}) => {
+const LiveblocksTipTapEditor = ({}) => {
   const room = useRoom();
-  const [doc, setDoc] = useState<Y.Doc>();
-  const [provider, setProvider] = useState<LiveblocksYjsProvider>();
+  const [doc, setDoc] = useState<Y.Doc | null>(null);
+  const [provider, setProvider] = useState<LiveblocksYjsProvider | null>(null);
 
+  // Set up Liveblocks Yjs provider
   useEffect(() => {
     const yDoc = new Y.Doc();
     const yProvider = new LiveblocksYjsProvider(room, yDoc);
@@ -35,33 +28,45 @@ const LiveblocksTipTapEditor: React.FC<LiveblocksTipTapEditorProps> = ({
     };
   }, [room]);
 
-  return doc && provider ? (
-    <TiptapEditor
-      doc={doc}
-      provider={provider}
-      wsId={wsId}
-      documentId={documentId}
-    />
-  ) : null;
+  if (!doc || !provider) {
+    return null;
+  }
+
+  return <TiptapEditor doc={doc} provider={provider} />;
 };
 
 const TiptapEditor: React.FC<{
   doc: Y.Doc;
   provider: LiveblocksYjsProvider;
-  wsId: string;
-  documentId: string;
-}> = ({ doc, provider, wsId, documentId }) => {
-  useEditor({
+}> = ({ doc, provider }) => {
+  // Set up editor with plugins, and place user info into Yjs awareness and cursors
+  const editor = useEditor({
+    editorProps: {
+      attributes: {
+        // Add styles to editor element
+      },
+    },
     extensions: [
-      StarterKit.configure({ history: false }),
-      Collaboration.configure({ document: doc }),
-      CollaborationCursor.configure({ provider }),
+      StarterKit.configure({
+        // The Collaboration extension comes with its own history handling
+        history: false,
+      }),
+      // Register the document with Tiptap
+      Collaboration.configure({
+        document: doc,
+      }),
+      // Attach provider and user info
+      CollaborationCursor.configure({
+        provider: provider,
+      }),
     ],
   });
 
-  return (
-    <DocumentEditor wsId={wsId} docId={documentId} content={doc.toJSON()} />
-  );
+  if (!editor) {
+    return null;
+  }
+
+  return <DocumentEditor editor={editor} />;
 };
 
 export default LiveblocksTipTapEditor;
