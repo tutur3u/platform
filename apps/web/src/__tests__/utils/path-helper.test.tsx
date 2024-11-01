@@ -32,3 +32,7 @@ it('should not consists empty path', () => {
 it('should not duplicate separator', () => {
   expect(joinPath('//base', '//child')).toBe('/base/child');
 });
+
+it('should handle empty string as empty path', () => {
+  expect(joinPath('base', '', '//child')).toBe('base/child');
+});
