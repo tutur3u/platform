@@ -14,6 +14,7 @@ import { useCallback } from 'react';
 export const storageObjectsColumns = (
   t: any,
   namespace: string,
+  // eslint-disable-next-line no-unused-vars
   setStorageObject: (value: StorageObject | undefined) => void,
   wsId: string,
   path?: string
@@ -65,7 +66,10 @@ export const storageObjectsColumns = (
       if (row.getValue('id'))
         return (
           <div className="min-w-[8rem] font-semibold">
-            {row.getValue('name')}
+            {(row.getValue('name') as string | undefined)?.replace(
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
+              ''
+            )}
           </div>
         );
 
