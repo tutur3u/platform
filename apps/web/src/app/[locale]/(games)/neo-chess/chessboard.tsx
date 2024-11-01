@@ -16,7 +16,7 @@ import React, { useCallback, useState } from 'react';
 
 export default function ChessBoard() {
   const [pieces, setPieces] = useState<Piece[]>(initialPieces);
-  const [isCheckmate, setIsCheckmate] = useState<{ team: TeamType | null }>({
+  const [, setIsCheckmate] = useState<{ team: TeamType | null }>({
     team: null,
   });
 
@@ -51,8 +51,8 @@ export default function ChessBoard() {
   }, []);
 
   const checkmate = useCallback((team: TeamType) => {
-      handleCheckmate(team);
-    }, []);
+    setIsCheckmate({ team });
+  }, []);
 
   const {
     grabPiece,
@@ -63,8 +63,18 @@ export default function ChessBoard() {
     handlePromotion,
     turnAnnouncement,
     checkmateInfo,
-    handleCheckmate,
-  } = useDragAndDrop(removePieceById, updatePiecePosition, promotePawn, checkmate);
+  } = useDragAndDrop(
+    removePieceById,
+    updatePiecePosition,
+    promotePawn,
+    checkmate
+  );
+
+  const handleRestart = () => {
+    setPieces(initialPieces);
+    setIsCheckmate({ team: null });
+    window.location.reload(); // Reload the page to reset the useDragAndDrop hook
+  };
 
   // Create the board
   let board: React.ReactNode[] = [];
@@ -162,11 +172,14 @@ export default function ChessBoard() {
             )}
             {checkmateInfo && (
               <CheckmateModal
-                team={isCheckmate.team === TeamType.OURS ? 'White' : 'Black'}
-                onRestart={() => {
-                  setPieces(initialPieces);
-                  setIsCheckmate({ team: null });
-                }}
+                team={
+                  checkmateInfo.team === null
+                    ? 'Stalemate'
+                    : checkmateInfo.team === TeamType.OURS
+                      ? 'White'
+                      : 'Black'
+                }
+                onRestart={handleRestart}
               />
             )}
           </div>
@@ -177,7 +190,7 @@ export default function ChessBoard() {
           ></div>
           <button
             className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-10 w-full items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-            onClick={() => setPieces(initialPieces)}
+            onClick={handleRestart}
           >
             Restart
           </button>

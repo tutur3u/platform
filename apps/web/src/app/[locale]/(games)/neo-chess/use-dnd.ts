@@ -27,7 +27,8 @@ export function useDragAndDrop(
   const [currentTurn, setCurrentTurn] = useState<TeamType>(
     Math.random() < 0.5 ? TeamType.OURS : TeamType.OPPONENT
   );
-  const [turnAnnouncement, setTurnAnnouncement] = useState<string>('');
+  const [turnAnnouncement, setTurnAnnouncement] =
+    useState<string>('Initializing...');
   useEffect(() => {
     const startingTeam = currentTurn;
     setTurnAnnouncement(
@@ -305,13 +306,23 @@ export function useDragAndDrop(
             firstMove: false,
           };
 
-          // Check for checkmate
+          // Check for checkmate or stalemate
           const checkmateTeam = referee.checkForCheckmate(
             pieceTeam === TeamType.OURS ? TeamType.OPPONENT : TeamType.OURS,
             validMove.updatedBoardState
           );
           if (checkmateTeam) {
-            setCheckmateInfo({ team: pieceTeam });
+            setCheckmateInfo({ team: checkmateTeam });
+            checkmate(checkmateTeam); // Call the checkmate function
+            return;
+          }
+
+          const stalemateTeam = referee.checkForStalemate(
+            pieceTeam === TeamType.OURS ? TeamType.OPPONENT : TeamType.OURS,
+            validMove.updatedBoardState
+          );
+          if (stalemateTeam) {
+            setCheckmateInfo({ team: '' });
             return;
           }
         } else {
