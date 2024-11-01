@@ -27,7 +27,7 @@ declare global {
     // Custom events, for useBroadcastEvent, useEventListener
     RoomEvent: {};
       // Example has two events, using a union
-      // | { type: "PLAY" } 
+      // | { type: "PLAY" }
       // | { type: "REACTION"; emoji: "🔥" };
 
     // Custom metadata set on threads, for useThreads, useCreateThread, etc.

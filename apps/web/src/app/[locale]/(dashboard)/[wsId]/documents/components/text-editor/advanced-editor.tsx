@@ -32,7 +32,7 @@ const hljs = require('highlight.js');
 
 const extensions = [...defaultExtensions, slashCommand];
 
-export const TailwindAdvancedEditor = ({
+export const AdvancedEditor = ({
   content,
   previewMode = false,
   disableLocalStorage,

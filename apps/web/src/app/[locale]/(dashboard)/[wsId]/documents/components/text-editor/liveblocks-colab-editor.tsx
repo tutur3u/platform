@@ -1,4 +1,4 @@
-import { TailwindAdvancedEditor } from './advanced-editor';
+import { AdvancedEditor } from './advanced-editor';
 import { useRoom } from '@liveblocks/react/suspense';
 import { LiveblocksYjsProvider } from '@liveblocks/yjs';
 import { useEffect, useState } from 'react';
@@ -26,5 +26,5 @@ export function CollaborativeEditor() {
     return <div>Loading...</div>;
   }
 
-  return <TailwindAdvancedEditor />;
+  return <AdvancedEditor />;
 }

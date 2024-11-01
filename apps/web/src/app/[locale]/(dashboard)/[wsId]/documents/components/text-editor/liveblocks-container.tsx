@@ -2,7 +2,6 @@
 
 import { API_KEY_MISSING } from '../../data/strings';
 import { LiveblocksProvider } from '@liveblocks/react';
-import process from 'process';
 
 const API_KEY = process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_API_KEY;
 
