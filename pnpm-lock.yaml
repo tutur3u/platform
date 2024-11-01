@@ -851,8 +851,8 @@ importers:
         specifier: 19.0.0-rc-603e6108-20241029
         version: 19.0.0-rc-603e6108-20241029(react@19.0.0-rc-603e6108-20241029)
       react-dropzone:
-        specifier: ^14.2.10
-        version: 14.2.10(react@19.0.0-rc-603e6108-20241029)
+        specifier: ^14.3.1
+        version: 14.3.1(react@19.0.0-rc-603e6108-20241029)
       react-hook-form:
         specifier: ^7.53.1
         version: 7.53.1(react@19.0.0-rc-603e6108-20241029)
@@ -5229,8 +5229,8 @@ packages:
   file-saver@2.0.5:
     resolution: {integrity: sha512-P9bmyZ3h/PRG+Nzga+rbdI4OEpNDzAVyy74uVO9ATgzLK6VtAsYybF/+TOCvrc0MO793d6+42lLyZTw7/ArVzA==}
 
-  file-selector@0.6.0:
-    resolution: {integrity: sha512-QlZ5yJC0VxHxQQsQhXvBaC7VRJ2uaxTf+Tfpu4Z/OcVQJVpZO+DGU0rkoVW5ce2SccxugvpBJoMvUs59iILYdw==}
+  file-selector@1.2.0:
+    resolution: {integrity: sha512-49855884Jfcij/ec+RGkUYmZo45CwBpN+gfxuOTiOGCBTwvr5p8ZpfBQo1n2sdJz8Pl6FCmNDxyltjptHVPFNQ==}
     engines: {node: '>= 12'}
 
   fill-range@7.1.1:
@@ -7114,8 +7114,8 @@ packages:
       react: '>= 16.3.0'
       react-dom: '>= 16.3.0'
 
-  react-dropzone@14.2.10:
-    resolution: {integrity: sha512-Y98LOCYxGO2jOFWREeKJlL7gbrHcOlTBp+9DCM1dh9XQ8+P/8ThhZT7kFb05C+bPcTXq/rixpU+5+LzwYrFLUw==}
+  react-dropzone@14.3.1:
+    resolution: {integrity: sha512-0Rq5g35SMcHneTPlKKBEpxh91N59XNhu5z2Xreoh1xB0EGTWUaS4ESS346qMLWQi9Y1T3SUU7JMKmB0/VaFggQ==}
     engines: {node: '>= 10.13'}
     peerDependencies:
       react: '>= 16.8 || 18.0.0'
@@ -7849,8 +7849,8 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
-    resolution: {tarball: https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e}
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
+    resolution: {commit: 32f550d3b3bdb1b781aabe100683311cd982c98e, repo: git@github.com:securedeveloper/js-xlsx.git, type: git}
     version: 0.8.20
     engines: {node: '>=0.8'}
     hasBin: true
@@ -13697,7 +13697,7 @@ snapshots:
 
   file-saver@2.0.5: {}
 
-  file-selector@0.6.0:
+  file-selector@1.2.0:
     dependencies:
       tslib: 2.8.1
 
@@ -16054,10 +16054,10 @@ snapshots:
       react: 19.0.0-rc-603e6108-20241029
       react-dom: 19.0.0-rc-603e6108-20241029(react@19.0.0-rc-603e6108-20241029)
 
-  react-dropzone@14.2.10(react@19.0.0-rc-603e6108-20241029):
+  react-dropzone@14.3.1(react@19.0.0-rc-603e6108-20241029):
     dependencies:
       attr-accept: 2.2.4
-      file-selector: 0.6.0
+      file-selector: 1.2.0
       prop-types: 15.8.1
       react: 19.0.0-rc-603e6108-20241029
 
@@ -16118,7 +16118,7 @@ snapshots:
   react-export-excel@0.5.3:
     dependencies:
       file-saver: 1.3.8
-      xlsx: tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e
+      xlsx: tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e
 
   react-hook-form@7.53.1(react@19.0.0-rc-603e6108-20241029):
     dependencies:
@@ -17115,7 +17115,7 @@ snapshots:
       mkdirp: 3.0.1
       yallist: 5.0.0
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
     dependencies:
       adler-32: 1.3.1
       cfb: 1.2.2
