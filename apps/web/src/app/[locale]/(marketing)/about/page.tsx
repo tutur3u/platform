@@ -32,7 +32,7 @@ export default function MarketingPage() {
   //   const newOrder = timelineData.sort((a) => (a.year === year ? -1 : 1));
   //   setTimelineData([...newOrder]);
   // };
-  const handleClick = (year) => {
+  const handleClick = (year: string) => {
     // Find the index of the clicked year
     const clickedIndex = timelineData.findIndex((data) => data.year === year);
 

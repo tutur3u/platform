@@ -26,7 +26,7 @@ export default function ProjectCard({
   return (
     <button
       key={project.name}
-      className="h-full w-5/6 flex-col rounded-bl-lg bg-gradient-to-br from-[#F4B71A] via-white to-[#1AF4E6] p-[1px] transition duration-300 [clip-path:polygon(20%_0,85%_0,100%_15%,100%_85%,85%_100%,0_100%,0_20%,10%_15%)] hover:-translate-y-2 md:w-full"
+      className="h-full max-w-80 rounded-bl-lg bg-gradient-to-br from-[#F4B71A] via-white to-[#1AF4E6] p-[1px] transition duration-300 [clip-path:polygon(20%_0,85%_0,100%_15%,100%_85%,85%_100%,0_100%,0_20%,10%_15%)] hover:-translate-y-2"
       onClick={onClick}
     >
       <div

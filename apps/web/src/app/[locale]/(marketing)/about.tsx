@@ -67,17 +67,17 @@ const BackgroundAndFont = () => {
         }
 
         /* Scrollbar styles */
-  .custom-scrollbar {
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
-  -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
-  scrollbar-width: none;     /* Hide scrollbar for Firefox */
-}
+        .custom-scrollbar {
+          scroll-behavior: smooth;
+          scroll-snap-type: x mandatory;
+          -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+          scrollbar-width: none;     /* Hide scrollbar for Firefox */
+        }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-.custom-scrollbar::-webkit-scrollbar {
-  display: none;
-}
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .custom-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(255, 255, 255, 0.3);
@@ -85,21 +85,21 @@ const BackgroundAndFont = () => {
         }
 
         @keyframes fadeInOut {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 1; }
-}
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
+        }
 
-.chevron {
-  animation: fadeInOut 3s infinite;
-}
+        .chevron {
+          animation: fadeInOut 3s infinite;
+        }
 
-.chevron-1 {
-  animation-delay: 0s;
-}
+        .chevron-1 {
+          animation-delay: 0s;
+        }
 
-.chevron-2 {
-  animation-delay: 1.5s;
-}
+        .chevron-2 {
+          animation-delay: 1.5s;
+        }
       `}
     </style>
   );

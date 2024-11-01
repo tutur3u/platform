@@ -98,7 +98,7 @@ export default function Projects() {
             </motion.button>
           ))}
         </div>
-        <div className="mt-6 flex flex-col items-center gap-6 md:grid md:grid-cols-2 md:gap-8 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-6 flex flex-col items-center gap-6 md:grid md:grid-cols-2 md:gap-8 lg:grid-cols-3">
           {projects.map((project) => (
             <ProjectCard
               key={project.name}
