@@ -163,9 +163,9 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
               <DropdownMenuItem onClick={downloadStorageObject}>
                 {t('common.download')}
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={storageObj.id ? deleteStorageObject : deleteStorageFolder}
           >
