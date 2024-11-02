@@ -2,7 +2,7 @@
 
 import { StorageObject } from '@/types/primitives/StorageObject';
 import { joinPath } from '@/utils/path-helper';
-import { createClient } from '@/utils/supabase/client';
+import { createDynamicClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,
@@ -26,7 +26,7 @@ interface Props {
 }
 
 export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
-  const supabase = createClient();
+  const supabase = createDynamicClient();
   const t = useTranslations();
 
   const router = useRouter();
@@ -44,6 +44,38 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
     } else {
       toast({
         title: 'Failed to delete file',
+        description: error.message,
+      });
+    }
+  };
+
+  const deleteStorageFolder = async () => {
+    if (!storageObj.name) return;
+
+    // get all inside contents using query
+    const objects = await supabase
+      .schema('storage')
+      .from('objects')
+      .select()
+      .ilike('name', joinPath(wsId, path, storageObj.name, '%'));
+
+    if (objects.error) {
+      toast({
+        title: 'Failed to get folder files',
+        description: objects.error.message,
+      });
+      return;
+    }
+
+    const { error } = await supabase.storage
+      .from('workspaces')
+      .remove(objects.data.map((object) => object.name));
+
+    if (!error) {
+      router.refresh();
+    } else {
+      toast({
+        title: 'Failed to delete files from folder',
         description: error.message,
       });
     }
@@ -108,8 +140,6 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
     URL.revokeObjectURL(url);
   };
 
-  if (!storageObj.id) return null;
-
   return (
     <>
       <DropdownMenu modal={false}>
@@ -123,15 +153,22 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={renameStorageObject}>
-            {t('common.rename')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={downloadStorageObject}>
-            {t('common.download')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteStorageObject}>
+          {storageObj.id && (
+            // only allows rename & download on onject
+            <>
+              <DropdownMenuItem onClick={renameStorageObject}>
+                {t('common.rename')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={downloadStorageObject}>
+                {t('common.download')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+          <DropdownMenuItem
+            onClick={storageObj.id ? deleteStorageObject : deleteStorageFolder}
+          >
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
