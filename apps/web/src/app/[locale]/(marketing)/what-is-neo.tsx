@@ -1,7 +1,7 @@
 export default function WhatIsNeo() {
   return (
-    <div className="relative z-40 mt-5 flex h-[50vh] w-full flex-col items-center text-center md:h-screen">
-      <p className="text-2xl font-extrabold md:text-5xl lg:text-6xl">
+    <div className="relative z-40 flex min-h-[50vh] w-full flex-col items-center justify-center px-14 text-center md:min-h-screen">
+      <p className="text-4xl font-extrabold md:text-5xl lg:text-6xl">
         What is
         <span className="border-b-4 border-[#FBC721] text-[#5FC6E5]">
           {' '}
@@ -9,7 +9,7 @@ export default function WhatIsNeo() {
         </span>
         Tech?
       </p>
-      <div className="h-32 lg:w-2/3">
+      <div className="mb-2 lg:w-2/3">
         <p className="mt-6 text-lg font-semibold tracking-wide md:text-xl lg:mt-10 lg:text-3xl">
           Founded in 2019, we are the best club for
           <span className="text-[#5FC6E5]"> SSET students </span>
@@ -37,9 +37,9 @@ export default function WhatIsNeo() {
         ))}
       </div>
 
-      <div className="absolute left-0 top-0 -z-50 hidden w-1/3 sm:w-1/4 md:top-36 md:block md:w-1/5 lg:w-1/6">
+      <div className="absolute left-0 top-0 -z-50 aspect-[1/2] w-1/3 p-4 sm:w-1/4 md:w-1/5 lg:w-1/6">
         <svg
-          className="h-auto w-full"
+          className="h-full w-full"
           viewBox="0 0 255 491"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -87,9 +87,9 @@ export default function WhatIsNeo() {
         </svg>
       </div>
 
-      <div className="absolute right-0 top-36 -z-50 hidden w-1/3 sm:w-1/4 md:block md:w-1/5 lg:w-1/6">
+      <div className="absolute bottom-0 right-0 -z-50 aspect-[1/2] w-1/3 p-4 sm:w-1/4 md:w-1/5 lg:w-1/6">
         <svg
-          className="h-auto w-full"
+          className="h-full w-full"
           viewBox="0 0 259 760"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
