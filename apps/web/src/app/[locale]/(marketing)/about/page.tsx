@@ -1,7 +1,7 @@
 'use client';
 
 import { members } from '../data';
-import demoImage from '../projects/people.png';
+import peopleImage from './people.png';
 import Image, { StaticImageData } from 'next/image';
 import React, { useState } from 'react';
 
@@ -186,7 +186,7 @@ export default function MarketingPage() {
                   : 'opacity-100'
               }`}
             >
-              <HumanCard name={p.name} role={p.role} imageLink={demoImage} />
+              <HumanCard name={p.name} role={p.role} imageLink={peopleImage} />
             </div>
           ))}
         </div>
