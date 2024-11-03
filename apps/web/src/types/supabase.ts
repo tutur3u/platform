@@ -184,6 +184,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_whitelisted_emails: {
+        Row: {
+          created_at: string;
+          email: string;
+          enabled: boolean;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          enabled?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          enabled?: boolean;
+        };
+        Relationships: [];
+      };
       calendar_event_colors: {
         Row: {
           value: string;

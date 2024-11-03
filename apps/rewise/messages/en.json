@@ -1,5 +1,7 @@
 {
   "common": {
+    "not_whitelisted": "Not whitelisted",
+    "not_whitelisted_desc": "This feature is not available for your account. Please contact the workspace owner for more information.",
     "and": "and",
     "login": "Login",
     "maximize": "Maximize",

@@ -4,6 +4,7 @@ import { getChats } from './helper';
 import { Structure } from './structure';
 import { NavLink } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
+import { createAdminClient } from '@/utils/supabase/server';
 import { MessageSquare } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cookies as c } from 'next/headers';
@@ -20,6 +21,18 @@ export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
   const user = await getCurrentUser();
   const { data: chats } = await getChats();
+
+  const adminSb = await createAdminClient();
+
+  if (user?.email) {
+    const { data: whitelisted, error } = await adminSb
+      .from('ai_whitelisted_emails')
+      .select('enabled')
+      .eq('email', user?.email)
+      .maybeSingle();
+
+    if (error || !whitelisted?.enabled) return children;
+  }
 
   const navLinks = chats.map((chat) => ({
     title: chat.title || t('common.untitled'),

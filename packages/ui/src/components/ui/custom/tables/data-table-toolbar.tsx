@@ -18,7 +18,7 @@ interface DataTableToolbarProps<TData> {
   hasData: boolean;
   newObjectTitle?: string;
   editContent?: ReactNode;
-  namespace: string;
+  namespace: string | undefined;
   table: Table<TData>;
   filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];

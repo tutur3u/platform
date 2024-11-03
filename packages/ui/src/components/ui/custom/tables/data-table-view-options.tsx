@@ -17,7 +17,7 @@ import { Fragment } from 'react';
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
   extraColumns?: any[];
-  namespace: string;
+  namespace: string | undefined;
   t?: any;
 }
 
@@ -81,7 +81,9 @@ export function DataTableViewOptions<TData>({
                     {extraColumns?.findLast(
                       (extraColumn: { id: string; name?: string }) =>
                         extraColumn.id === column.id
-                    )?.name || t?.(`${namespace}.${column.id}`)}
+                    )?.name || namespace
+                      ? t?.(`${namespace}.${column.id}`)
+                      : column.id}
                   </DropdownMenuCheckboxItem>
                 </Fragment>
               );

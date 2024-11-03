@@ -1,5 +1,7 @@
 {
   "common": {
+    "not_whitelisted": "Chưa được phê duyệt",
+    "not_whitelisted_desc": "Tài khoản của bạn chưa được phê duyệt để sử dụng Tuturuuu. Vui lòng liên hệ với quản trị viên của bạn để biết thêm thông tin.",
     "and": "và",
     "login": "Đăng nhập",
     "maximize": "Tối ưu hóa",

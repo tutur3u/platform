@@ -158,7 +158,8 @@
     "regenerate": "Tạo lại",
     "context": "Bối cảnh",
     "enter_context": "Nhập ngữ cảnh",
-    "generate": "Tạo nội dung"
+    "generate": "Tạo nội dung",
+    "enabled": "Đã bật"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -471,7 +472,8 @@
     "features": "Tính năng",
     "monitoring": "Giám sát",
     "backups": "Sao lưu",
-    "integrations": "Dịch vụ tích hợp"
+    "integrations": "Dịch vụ tích hợp",
+    "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI"
   },
   "basic-data-table": {
     "id": "Mã số",

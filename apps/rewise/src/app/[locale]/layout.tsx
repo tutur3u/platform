@@ -102,6 +102,7 @@ export function generateStaticParams() {
 export default async function RootLayout({ children, params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+
   const messages = await getMessages();
 
   return (

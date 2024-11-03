@@ -2,6 +2,7 @@ import { Database, Tables } from '../supabase';
 
 export type AIChat = Tables<'ai_chats'>;
 export type AIPrompt = Tables<'workspace_ai_prompts'>;
+export type AIWhitelistEmail = Tables<'ai_whitelisted_emails'>;
 export type WorkspaceDocument = Tables<'workspace_documents'>;
 export type GroupPostCheck = Tables<'user_group_post_checks'>;
 export type EmailHistoryEntry = Tables<'sent_emails'>;

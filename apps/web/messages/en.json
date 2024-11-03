@@ -158,7 +158,8 @@
     "accept": "Accept",
     "context": "Context",
     "enter_context": "Enter context",
-    "generate": "Generate"
+    "generate": "Generate",
+    "enabled": "Enabled"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -471,7 +472,8 @@
     "features": "Features",
     "monitoring": "Monitoring",
     "backups": "Backups",
-    "integrations": "Integrations"
+    "integrations": "Integrations",
+    "ai_whitelisted_emails": "AI Whitelisted Emails"
   },
   "basic-data-table": {
     "id": "ID",

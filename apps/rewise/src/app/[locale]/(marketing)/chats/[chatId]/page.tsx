@@ -1,8 +1,9 @@
 import Chat from '../../chat';
+import { getCurrentUser } from '@/lib/user-helper';
 import { AIChat } from '@/types/db';
 import { createAdminClient } from '@/utils/supabase/server';
 import { Message } from 'ai';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -21,6 +22,19 @@ export default async function AIPage({ params, searchParams }: Props) {
 
   const chat = await getChat(chatId);
   const messages = await getMessages(chatId);
+
+  const user = await getCurrentUser();
+  if (!user?.email) redirect('/login');
+
+  const adminSb = await createAdminClient();
+
+  const { data: whitelisted, error } = await adminSb
+    .from('ai_whitelisted_emails')
+    .select('enabled')
+    .eq('email', user?.email)
+    .maybeSingle();
+
+  if (error || !whitelisted?.enabled) redirect('/not-whitelisted');
 
   return (
     <div className="h-full p-4 lg:p-0">
