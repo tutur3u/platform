@@ -1732,5 +1732,12 @@
     "module_content": "Module Content",
     "no_youtube_links": "No YouTube links yet.",
     "resource_preview_unavailable": "Resource preview is unavailable"
+  },
+  "ws-ai-whitelist-emails": {
+    "plural": "Whitelisted emails",
+    "singular": "Whitelisted email",
+    "description": "Whitelisted emails are used to allow specific email addresses to access AI features.",
+    "create": "Create whitelisted email",
+    "create_description": "Create a new whitelisted email"
   }
 }

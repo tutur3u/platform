@@ -47,7 +47,7 @@ export default async function InfrastructureOverviewPage({ params }: Props) {
       <StatisticCard
         title={t('infrastructure-tabs.ai_whitelisted_emails')}
         value={aiWhitelistedEmails}
-        href={`/${wsId}/ai/whitelist`}
+        href={`/${wsId}/infrastructure/ai/whitelist`}
       />
     </div>
   );

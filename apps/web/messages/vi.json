@@ -1732,5 +1732,12 @@
     "module_content": "Nội dung mô-đun",
     "no_youtube_links": "Chưa có liên kết YouTube nào.",
     "resource_preview_unavailable": "Bản xem trước tài nguyên không có sẵn"
+  },
+  "ws-ai-whitelist-emails": {
+    "plural": "Email thuộc danh sách trắng",
+    "singular": "Email được đưa vào danh sách trắng",
+    "description": "Email được đưa vào danh sách trắng được sử dụng để cho phép các địa chỉ email cụ thể truy cập các tính năng AI.",
+    "create": "Tạo email được đưa vào danh sách trắng",
+    "create_description": "Tạo một email được đưa vào danh sách trắng mới"
   }
 }

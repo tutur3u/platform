@@ -31,11 +31,11 @@ export default async function WorkspaceCoursesPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-courses.plural')}
-        singularTitle={t('ws-courses.singular')}
-        description={t('ws-courses.description')}
-        createTitle={t('ws-courses.create')}
-        createDescription={t('ws-courses.create_description')}
+        pluralTitle={t('ws-ai-whitelist-emails.plural')}
+        singularTitle={t('ws-ai-whitelist-emails.singular')}
+        description={t('ws-ai-whitelist-emails.description')}
+        createTitle={t('ws-ai-whitelist-emails.create')}
+        createDescription={t('ws-ai-whitelist-emails.create_description')}
         // form={<CourseForm wsId={wsId} />}
       />
       <Separator className="my-4" />
