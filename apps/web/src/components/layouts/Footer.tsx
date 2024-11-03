@@ -60,7 +60,7 @@ export default async function Footer() {
       <div className="flex flex-col justify-between gap-4 px-4 py-0 md:gap-8 md:px-32 lg:flex-row lg:gap-16 xl:px-64">
         <div className="flex flex-col gap-5">
           <div>
-            <div className="mb-4 text-center text-white/50 md:text-start">
+            <div className="mb-4 text-center md:text-start">
               Feel free to reach out if you want to collaborate with us, or
               simply have a chat.
             </div>

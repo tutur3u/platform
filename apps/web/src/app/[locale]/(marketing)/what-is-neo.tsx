@@ -37,7 +37,7 @@ export default function WhatIsNeo() {
         ))}
       </div>
 
-      <div className="absolute left-0 top-0 -z-50 aspect-[1/2] w-1/3 p-4 sm:w-1/4 md:w-1/5 lg:w-1/6">
+      <div className="absolute left-0 top-0 -z-50 aspect-[1/2] w-1/3 sm:w-1/4 md:w-1/5 lg:w-1/6">
         <svg
           className="h-full w-full"
           viewBox="0 0 255 491"
@@ -48,24 +48,21 @@ export default function WhatIsNeo() {
             cx="129"
             cy="31"
             r="26"
-            stroke="white"
-            strokeOpacity="0.6"
             strokeWidth="10"
+            className="stroke-foreground/50"
           />
           <circle
             cx="54"
             cy="285"
             r="49"
-            stroke="white"
-            strokeOpacity="0.6"
+            className="stroke-foreground/50"
             strokeWidth="10"
           />
           <circle
             cx="221"
             cy="457"
             r="29"
-            stroke="white"
-            strokeOpacity="0.6"
+            className="stroke-foreground/50"
             strokeWidth="10"
           />
           <rect
@@ -74,7 +71,7 @@ export default function WhatIsNeo() {
             width="5"
             height="190.09"
             transform="rotate(16.4241 120.747 57)"
-            fill="#A59CB8"
+            className="fill-foreground/50"
           />
           <rect
             x="81.8484"
@@ -82,12 +79,12 @@ export default function WhatIsNeo() {
             width="5"
             height="162.89"
             transform="rotate(-44.9846 81.8484 323.221)"
-            fill="#A59CB8"
+            className="fill-foreground/50"
           />
         </svg>
       </div>
 
-      <div className="absolute bottom-0 right-0 -z-50 aspect-[1/2] w-1/3 p-4 sm:w-1/4 md:w-1/5 lg:w-1/6">
+      <div className="absolute bottom-0 right-0 -z-50 aspect-[1/2] w-1/3 sm:w-1/4 md:w-1/5 lg:w-1/6">
         <svg
           className="h-full w-full"
           viewBox="0 0 259 760"
@@ -98,36 +95,28 @@ export default function WhatIsNeo() {
             cx="33.6159"
             cy="726.056"
             r="26"
-            transform="rotate(-158.903 33.6159 726.056)"
-            stroke="white"
-            strokeOpacity="0.6"
+            className="stroke-foreground/50"
             strokeWidth="10"
           />
           <circle
             cx="195.015"
             cy="516.077"
             r="49"
-            transform="rotate(-158.903 195.015 516.077)"
-            stroke="white"
-            strokeOpacity="0.6"
+            className="stroke-foreground/50"
             strokeWidth="10"
           />
           <circle
             cx="183.185"
             cy="44.1847"
             r="34.1746"
-            transform="rotate(-158.903 183.185 44.1847)"
-            stroke="white"
-            strokeOpacity="0.6"
+            className="stroke-foreground/50"
             strokeWidth="10"
           />
           <circle
             cx="101.118"
             cy="295.495"
             r="29"
-            transform="rotate(-158.903 101.118 295.495)"
-            stroke="white"
-            strokeOpacity="0.6"
+            className="stroke-foreground/50"
             strokeWidth="10"
           />
           <rect
@@ -136,7 +125,7 @@ export default function WhatIsNeo() {
             width="5"
             height="190.09"
             transform="rotate(-142.479 50.6743 704.77)"
-            fill="#A59CB8"
+            className="fill-foreground/50"
           />
           <rect
             x="112.711"
@@ -144,7 +133,7 @@ export default function WhatIsNeo() {
             width="5"
             height="197.245"
             transform="rotate(-161.276 112.711 268.638)"
-            fill="#A59CB8"
+            className="fill-foreground/50"
           />
           <rect
             x="182.79"
@@ -152,7 +141,7 @@ export default function WhatIsNeo() {
             width="5"
             height="162.89"
             transform="rotate(156.112 182.79 470.393)"
-            fill="#A59CB8"
+            className="fill-foreground/50"
           />
         </svg>
       </div>

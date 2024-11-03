@@ -22,14 +22,14 @@ export default function Projects() {
   return (
     <>
       <div className="mt-[9.5rem] flex flex-col items-center md:mt-72">
-        <p className="text-xl tracking-wider sm:text-3xl md:text-6xl">
-          NEO Culture Tech Club
+        <p className="text-xl tracking-wider text-white sm:text-3xl md:text-6xl">
+          NEO Culture Tech
         </p>
         <p className="mt-1 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-4xl font-bold tracking-widest text-transparent md:mt-6 md:text-7xl">
           PROJECTS
         </p>
         <div className="mt-1 w-2/3 md:w-full">
-          <p className="text-center text-sm font-light md:mt-4 md:max-w-2xl md:text-2xl">
+          <p className="text-center text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
             The place where you can learn, grow and have fun with technology,
             by building projects.
           </p>
@@ -62,7 +62,7 @@ export default function Projects() {
                 stiffness: 300,
                 damping: 20,
               }}
-              className="whitespace-nowrap rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] md:text-base"
+              className="whitespace-nowrap rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] text-white md:text-base"
             >
               {p.label}
             </motion.button>
@@ -92,7 +92,7 @@ export default function Projects() {
                 stiffness: 300,
                 damping: 20,
               }}
-              className="whitespace-nowrap rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] md:text-base"
+              className="whitespace-nowrap rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] text-white md:text-base"
             >
               {p.label}
             </motion.button>
