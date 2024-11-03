@@ -77,7 +77,7 @@ export default class Referee {
     return king ? { x: king.x, y: king.y } : null;
   }
 
-  private isKingInDanger(team: TeamType, boardState: Piece[]): boolean {
+  public isKingInDanger(team: TeamType, boardState: Piece[]): boolean {
     const kingPosition = this.findKingPosition(team, boardState);
     if (!kingPosition) return false;
 

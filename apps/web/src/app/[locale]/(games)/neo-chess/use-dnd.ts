@@ -365,7 +365,10 @@ export function useDragAndDrop(
               : p
           )
         );
+
+        referee.isKingInDanger(piece!.team, boardState);
       }
+
       setPromotionInfo(null);
     }
   }
