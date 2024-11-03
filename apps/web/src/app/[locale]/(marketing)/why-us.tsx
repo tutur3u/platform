@@ -17,14 +17,14 @@ export default function WhyUs() {
               Special Events
             </p>
           </div>
-          <div className="text-foreground bg-brand-dark-blue/20 flex-auto p-6">
+          <div className="text-foreground flex-auto bg-slate-400/30 p-6 dark:bg-slate-700/50">
             <p className="text-base md:text-sm lg:text-lg">
               Events organized to support you in finding career paths in
               technology, gaining deeper insights from company trips and alumni,
               and joining coding competitions.
             </p>
           </div>
-          <div className="bg-brand-dark-blue/20 h-1/5 rounded-b-xl md:[clip-path:polygon(0_0,90%_0,73%_80%,73%_100%,0_100%)]"></div>
+          <div className="h-1/5 rounded-b-2xl bg-slate-400/30 md:[clip-path:polygon(0_0,90%_0,73%_80%,73%_100%,0_100%)] dark:bg-slate-700/50"></div>
         </div>
         <div className="flex aspect-square flex-1 flex-col md:aspect-[3/4]">
           <div
@@ -38,15 +38,15 @@ export default function WhyUs() {
               Networking
             </p>
           </div>
-          <div className="text-foreground bg-brand-dark-blue/20 relative flex-auto p-6">
+          <div className="text-foreground relative flex-auto bg-slate-400/30 p-6 dark:bg-slate-700/50">
             <p className="text-base md:text-sm lg:text-lg">
               Our network is the most valuable asset for our members. We connect
               you with the right people to help you achieve your goals.
             </p>
           </div>
-          <div className="bg-brand-dark-blue/20 relative h-1/5">
-            <div className="bg-brand-dark-blue/20 absolute bottom-0 left-0 hidden h-4/5 w-1/6 -translate-x-full [clip-path:polygon(50%_0%,100%_0,100%_100%,0_100%,0_50%)] md:block"></div>
-            <div className="bg-brand-dark-blue/20 absolute bottom-0 right-0 hidden h-4/5 w-1/12 translate-x-full [clip-path:polygon(0_0,100%_30%,100%_100%,0%_100%)] md:block"></div>
+          <div className="relative h-1/5 bg-slate-400/30 dark:bg-slate-700/50">
+            <div className="absolute bottom-0 left-0 hidden h-4/5 w-1/6 -translate-x-full bg-slate-400/30 [clip-path:polygon(50%_0%,100%_0,100%_100%,0_100%,0_50%)] md:block dark:bg-slate-700/50"></div>
+            <div className="absolute bottom-0 right-0 hidden h-4/5 w-1/12 translate-x-full bg-slate-400/30 [clip-path:polygon(0_0,100%_30%,100%_100%,0%_100%)] md:block dark:bg-slate-700/50"></div>
           </div>
         </div>
         <div className="flex aspect-square flex-1 flex-col md:aspect-[3/4]">
@@ -61,14 +61,14 @@ export default function WhyUs() {
               Visions
             </p>
           </div>
-          <div className="text-foreground bg-brand-dark-blue/20 flex-auto p-6">
+          <div className="text-foreground flex-auto bg-slate-400/30 p-6 dark:bg-slate-700/50">
             <p className="text-base md:text-sm lg:text-lg">
               We create an environment not only for students from SSET students
               but also others to learn new knowledge, have fun, and expand their
               network.
             </p>
           </div>
-          <div className="bg-brand-dark-blue/20 h-1/5 rounded-b-xl md:[clip-path:polygon(0_0,100%_0,100%_100%,15%_100%,10%_100%,10%_30%)]"></div>
+          <div className="h-1/5 rounded-b-2xl bg-slate-400/30 md:[clip-path:polygon(0_0,100%_0,100%_100%,15%_100%,10%_100%,10%_30%)] dark:bg-slate-700/50"></div>
         </div>
       </div>
     </div>

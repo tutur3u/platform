@@ -1,5 +1,6 @@
 'use client';
 
+import Canvas from './canvas';
 import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
@@ -21,22 +22,23 @@ export default function Projects() {
 
   return (
     <>
-      <div className="mt-[9.5rem] flex flex-col items-center md:mt-72">
-        <p className="text-xl tracking-wider text-white sm:text-3xl md:text-6xl">
-          NEO Culture Tech
-        </p>
-        <p className="mt-1 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-4xl font-bold tracking-widest text-transparent md:mt-6 md:text-7xl">
-          PROJECTS
-        </p>
-        <div className="mt-1 w-2/3 md:w-full">
-          <p className="text-center text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
-            The place where you can learn, grow and have fun with technology,
-            by building projects.
+      <div className="relative mt-96 flex flex-col items-center text-center md:mt-72">
+        <div className="flex flex-col items-center text-center">
+          <p className="text-4xl tracking-wider text-white md:text-6xl">
+            NEO Culture Tech
           </p>
+          <p className="mt-1 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-5xl font-bold tracking-widest text-transparent md:mt-6 md:text-7xl">
+            PROJECTS
+          </p>
+          <div className="mt-1 w-2/3 md:w-full">
+            <p className="text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
+              The place where you can learn, grow and have fun with technology,
+              by building projects.
+            </p>
+          </div>
         </div>
-      </div>
-      <div className="mt-0 flex flex-col items-center pt-2 md:pt-4">
-        <div className="mt-20 grid max-w-4xl grid-cols-3 gap-2 text-center md:mt-4">
+
+        <div className="mt-4 grid max-w-4xl grid-cols-3 gap-2 text-center">
           {[
             { key: 'web', label: 'Web Development' },
             { key: 'software', label: 'Software' },
@@ -98,30 +100,33 @@ export default function Projects() {
             </motion.button>
           ))}
         </div>
-        <div className="mt-6 flex flex-col items-center gap-6 md:grid md:grid-cols-2 md:gap-8 lg:grid-cols-3">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.name}
-              project={project}
-              type={type}
-              status={status}
-              onClick={() => {
-                setProjectDetail(project);
-                setIsModalOpen(true);
+
+        <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" />
+      </div>
+
+      <div className="mt-6 flex flex-col items-center gap-6 md:grid md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+        {projects.map((project) => (
+          <ProjectCard
+            key={project.name}
+            project={project}
+            type={type}
+            status={status}
+            onClick={() => {
+              setProjectDetail(project);
+              setIsModalOpen(true);
+            }}
+          />
+        ))}
+        <AnimatePresence>
+          {isModalOpen && (
+            <ProjectDetail
+              data={projectDetail}
+              onClose={() => {
+                setIsModalOpen(false);
               }}
             />
-          ))}
-          <AnimatePresence>
-            {isModalOpen && (
-              <ProjectDetail
-                data={projectDetail}
-                onClose={() => {
-                  setIsModalOpen(false);
-                }}
-              />
-            )}
-          </AnimatePresence>
-        </div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

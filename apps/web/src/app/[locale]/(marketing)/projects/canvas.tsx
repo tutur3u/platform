@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 
-export default function Canvas() {
+export default function Canvas({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -88,10 +88,5 @@ export default function Canvas() {
     }
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute -z-10 mt-12 aspect-square w-[80%] md:mt-8"
-    />
-  );
+  return <canvas ref={canvasRef} className={className} />;
 }

@@ -1,13 +1,121 @@
+import peopleImage from './people.png';
+import Image from 'next/image';
+
 export default function Event() {
   return (
-    <div className="relative w-full px-2 py-8 md:px-12">
-      <div className="bg-foreground/10 aspect-square rounded-3xl p-4 backdrop-blur-xl md:aspect-video md:p-8">
-        <div className="grid h-full grid-cols-7 grid-rows-2 gap-10">
-          <div className="col-span-2 h-2/3 rounded-xl bg-black/20"></div>
-          <div className="col-span-3 row-span-2 h-2/3 rounded-xl bg-black/20"></div>
-          <div className="col-span-2 h-2/3 rounded-xl bg-black/20"></div>
-          <div className="col-span-2 h-2/3 self-end rounded-xl bg-black/20"></div>
-          <div className="col-span-2 h-2/3 self-end rounded-xl bg-black/20"></div>
+    <div className="relative w-full py-8">
+      <div className="bg-foreground/10 rounded-3xl p-4 backdrop-blur-xl md:p-8">
+        <div className="flex grid-cols-7 grid-rows-2 flex-col gap-10 md:grid">
+          <div className="col-span-2 rounded-xl bg-black/20">
+            <div className="flex h-full flex-col gap-2 p-4">
+              <div className="relative aspect-video overflow-hidden rounded-lg">
+                <Image
+                  src={peopleImage}
+                  alt="people"
+                  className="object-cover"
+                  fill
+                />
+              </div>
+              <div className="flex flex-1 flex-col justify-between">
+                <div className="flex flex-col gap-2 p-2">
+                  <h3 className="text-lg font-semibold">Title</h3>
+                  <p className="text-muted-foreground text-sm">Description</p>
+                </div>
+                <div className="flex flex-col p-2">
+                  <p className="text-muted-foreground text-sm">Date</p>
+                  <p className="text-muted-foreground text-sm">Location</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-span-3 row-span-2 rounded-xl bg-black/20 md:h-2/3">
+            <div className="flex h-full flex-col gap-2 p-4">
+              <div className="relative aspect-video overflow-hidden rounded-lg">
+                <Image
+                  src={peopleImage}
+                  alt="people"
+                  className="object-cover"
+                  fill
+                />
+              </div>
+              <div className="flex flex-1 flex-col justify-between">
+                <div className="flex flex-col gap-2 p-2">
+                  <h3 className="text-lg font-semibold">Title</h3>
+                  <p className="text-muted-foreground text-sm">Description</p>
+                </div>
+                <div className="flex flex-col p-2">
+                  <p className="text-muted-foreground text-sm">Date</p>
+                  <p className="text-muted-foreground text-sm">Location</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-span-2 rounded-xl bg-black/20">
+            <div className="flex h-full flex-col gap-2 p-4">
+              <div className="relative aspect-video overflow-hidden rounded-lg">
+                <Image
+                  src={peopleImage}
+                  alt="people"
+                  className="object-cover"
+                  fill
+                />
+              </div>
+              <div className="flex flex-1 flex-col justify-between">
+                <div className="flex flex-col gap-2 p-2">
+                  <h3 className="text-lg font-semibold">Title</h3>
+                  <p className="text-muted-foreground text-sm">Description</p>
+                </div>
+                <div className="flex flex-col p-2">
+                  <p className="text-muted-foreground text-sm">Date</p>
+                  <p className="text-muted-foreground text-sm">Location</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-span-2 rounded-xl bg-black/20">
+            <div className="flex h-full flex-col gap-2 p-4">
+              <div className="relative aspect-video overflow-hidden rounded-lg">
+                <Image
+                  src={peopleImage}
+                  alt="people"
+                  className="object-cover"
+                  fill
+                />
+              </div>
+              <div className="flex flex-1 flex-col justify-between">
+                <div className="flex flex-col gap-2 p-2">
+                  <h3 className="text-lg font-semibold">Title</h3>
+                  <p className="text-muted-foreground text-sm">Description</p>
+                </div>
+                <div className="flex flex-col p-2">
+                  <p className="text-muted-foreground text-sm">Date</p>
+                  <p className="text-muted-foreground text-sm">Location</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-span-2 rounded-xl bg-black/20">
+            <div className="flex h-full flex-col gap-2 p-4">
+              <div className="relative aspect-video overflow-hidden rounded-lg">
+                <Image
+                  src={peopleImage}
+                  alt="people"
+                  className="object-cover"
+                  fill
+                />
+              </div>
+              <div className="flex flex-1 flex-col justify-between">
+                <div className="flex flex-col gap-2 p-2">
+                  <h3 className="text-lg font-semibold">Title</h3>
+                  <p className="text-muted-foreground text-sm">Description</p>
+                </div>
+                <div className="flex flex-col p-2">
+                  <p className="text-muted-foreground text-sm">Date</p>
+                  <p className="text-muted-foreground text-sm">Location</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div className="absolute inset-0 -z-10 flex items-center justify-center">
