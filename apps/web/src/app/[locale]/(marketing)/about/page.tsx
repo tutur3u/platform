@@ -190,21 +190,6 @@ export default function MarketingPage() {
             </div>
           ))}
         </div>
-        {/* <div className="mt-4 grid w-full grid-cols-2 gap-0 px-16 md:grid-cols-3">
-          {members.map((p, index) => (
-            <div
-              key={index}
-              className={`flex items-center justify-center p-4 transition duration-300 ${
-                highlightedDepartment &&
-                !p.departments.includes(highlightedDepartment)
-                  ? 'opacity-30'
-                  : 'opacity-100'
-              }`}
-            >
-              <HumanCard name={p.name} role={p.role} imageLink={demoImage} />
-            </div>
-          ))}
-        </div> */}
       </div>
     </>
   );
@@ -222,7 +207,7 @@ const HumanCard: React.FC<HumanCardProps> = ({ name, role, imageLink }) => {
         <Image
           src={imageLink}
           alt=""
-          className="w-5/6 md:w-2/3 rounded-lg object-cover"
+          className="w-5/6 rounded-lg object-cover md:w-2/3"
         />
       </div>
       <p className="mt-3 text-center text-xl font-black md:text-xl">{name}</p>
