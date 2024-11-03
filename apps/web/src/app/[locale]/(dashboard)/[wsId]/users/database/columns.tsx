@@ -20,7 +20,7 @@ import { Fragment } from 'react';
 
 export const getUserColumns = (
   t: any,
-  namespace: string,
+  namespace: string | undefined,
   extraFields?: WorkspaceUserField[],
   extraData?: any
 ): ColumnDef<WorkspaceUser>[] => [

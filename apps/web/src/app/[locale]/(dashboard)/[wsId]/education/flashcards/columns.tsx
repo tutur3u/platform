@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const getWorkspaceFlashcardColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<WorkspaceFlashcard>[] => [
   // {
   //   id: 'select',

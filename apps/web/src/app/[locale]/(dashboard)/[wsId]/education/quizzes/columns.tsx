@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const getWorkspaceQuizColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<WorkspaceQuiz>[] => [
   // {
   //   id: 'select',

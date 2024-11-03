@@ -38,7 +38,7 @@ export default function StorageObjectsTable({
     >
       <CustomDataTable
         data={data}
-        columnGenerator={(t: any, namespace: string) =>
+        columnGenerator={(t: any, namespace: string | undefined) =>
           storageObjectsColumns(t, namespace, setStorageObject, wsId, path)
         }
         namespace="storage-object-data-table"

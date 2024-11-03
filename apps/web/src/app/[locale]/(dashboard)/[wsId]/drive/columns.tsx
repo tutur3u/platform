@@ -13,7 +13,7 @@ import { useCallback } from 'react';
 
 export const storageObjectsColumns = (
   t: any,
-  namespace: string,
+  namespace: string | undefined,
   // eslint-disable-next-line no-unused-vars
   setStorageObject: (value: StorageObject | undefined) => void,
   wsId: string,

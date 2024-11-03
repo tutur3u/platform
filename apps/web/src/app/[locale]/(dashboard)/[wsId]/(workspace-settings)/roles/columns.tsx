@@ -9,7 +9,7 @@ import moment from 'moment';
 
 export const roleColumns = (
   t: any,
-  namespace: string,
+  namespace: string | undefined,
   _?: any[],
   extraData?: any
 ): ColumnDef<WorkspaceRole>[] => [

@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const getPromotionColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<ProductPromotion>[] => [
   // {
   //   id: 'select',

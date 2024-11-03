@@ -10,7 +10,7 @@ import Link from 'next/link';
 
 export const getWorkspaceCourseModuleColumns = (
   t: any,
-  namespace: string,
+  namespace: string | undefined,
   _: any,
   extraData?: any
 ): ColumnDef<WorkspaceCourseModule>[] => [

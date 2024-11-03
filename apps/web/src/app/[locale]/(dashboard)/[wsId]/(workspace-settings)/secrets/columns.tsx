@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const secretColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<WorkspaceSecret>[] => [
   // {
   //   id: 'select',

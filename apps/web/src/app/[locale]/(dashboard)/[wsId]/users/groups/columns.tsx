@@ -11,7 +11,7 @@ import Link from 'next/link';
 
 export const getUserGroupColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<UserGroup>[] => [
   // {
   //   id: 'select',

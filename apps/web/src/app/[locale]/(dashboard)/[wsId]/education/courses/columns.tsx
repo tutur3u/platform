@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 export const getWorkspaceCourseColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<WorkspaceCourse>[] => [
   // {
   //   id: 'select',

@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const projectColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<TaskBoard>[] => [
   // {
   //   id: 'select',

@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const productColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<Product>[] => [
   // {
   //   id: 'select',

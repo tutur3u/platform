@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 export const getUserReportColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<WorkspaceUserReport>[] => [
   // {
   //   id: 'select',

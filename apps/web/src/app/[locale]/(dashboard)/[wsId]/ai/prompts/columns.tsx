@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const aiPromptsColumns = (
   t: any,
-  namespace: string,
+  namespace: string | undefined,
   setAIPrompt: (value: AIPrompt | undefined) => void
 ): ColumnDef<AIPrompt>[] => [
   // {
