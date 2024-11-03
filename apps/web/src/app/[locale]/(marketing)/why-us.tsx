@@ -18,13 +18,13 @@ export default function WhyUs() {
             </p>
           </div>
           <div className="text-foreground bg-brand-dark-blue/20 flex-auto p-6">
-            <p className="text-base font-semibold md:text-sm lg:text-lg">
+            <p className="text-base md:text-sm lg:text-lg">
               Events organized to support you in finding career paths in
               technology, gaining deeper insights from company trips and alumni,
               and joining coding competitions.
             </p>
           </div>
-          <div className="bg-brand-dark-blue/20 h-1/5 md:[clip-path:polygon(0_0,90%_0,73%_80%,73%_100%,0_100%)]"></div>
+          <div className="bg-brand-dark-blue/20 h-1/5 rounded-b-xl md:[clip-path:polygon(0_0,90%_0,73%_80%,73%_100%,0_100%)]"></div>
         </div>
         <div className="flex aspect-square flex-1 flex-col md:aspect-[3/4]">
           <div
@@ -39,7 +39,7 @@ export default function WhyUs() {
             </p>
           </div>
           <div className="text-foreground bg-brand-dark-blue/20 relative flex-auto p-6">
-            <p className="text-base font-semibold md:text-sm lg:text-lg">
+            <p className="text-base md:text-sm lg:text-lg">
               Our network is the most valuable asset for our members. We connect
               you with the right people to help you achieve your goals.
             </p>
@@ -62,13 +62,13 @@ export default function WhyUs() {
             </p>
           </div>
           <div className="text-foreground bg-brand-dark-blue/20 flex-auto p-6">
-            <p className="text-base font-semibold md:text-sm lg:text-lg">
+            <p className="text-base md:text-sm lg:text-lg">
               We create an environment not only for students from SSET students
               but also others to learn new knowledge, have fun, and expand their
               network.
             </p>
           </div>
-          <div className="bg-brand-dark-blue/20 h-1/5 md:[clip-path:polygon(0_0,100%_0,100%_100%,15%_100%,10%_100%,10%_30%)]"></div>
+          <div className="bg-brand-dark-blue/20 h-1/5 rounded-b-xl md:[clip-path:polygon(0_0,100%_0,100%_100%,15%_100%,10%_100%,10%_30%)]"></div>
         </div>
       </div>
     </div>

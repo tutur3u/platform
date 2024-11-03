@@ -1,7 +1,7 @@
 export default function Event() {
   return (
-    <div className="relative w-full px-12 py-8">
-      <div className="bg-foreground/10 aspect-square rounded-3xl p-8 backdrop-blur-xl md:aspect-video">
+    <div className="relative w-full px-2 py-8 md:px-12">
+      <div className="bg-foreground/10 aspect-square rounded-3xl p-4 backdrop-blur-xl md:aspect-video md:p-8">
         <div className="grid h-full grid-cols-7 grid-rows-2 gap-10">
           <div className="col-span-2 h-2/3 rounded-xl bg-black/20"></div>
           <div className="col-span-3 row-span-2 h-2/3 rounded-xl bg-black/20"></div>

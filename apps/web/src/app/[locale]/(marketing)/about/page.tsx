@@ -27,11 +27,6 @@ const initialTimelineData = [
 export default function MarketingPage() {
   const [timelineData, setTimelineData] = useState(initialTimelineData);
 
-  // const handleClick = (year) => {
-  //   // Move the clicked year to the front of the array
-  //   const newOrder = timelineData.sort((a) => (a.year === year ? -1 : 1));
-  //   setTimelineData([...newOrder]);
-  // };
   const handleClick = (year: string) => {
     // Find the index of the clicked year
     const clickedIndex = timelineData.findIndex((data) => data.year === year);
@@ -65,7 +60,7 @@ export default function MarketingPage() {
         </div>
 
         <div
-          className="relative m-8 rounded-lg p-0.5 [clip-path:polygon(100%_0,_100%_100%,_10%_100%,_0_90%,_0_10%,_10%_0)]"
+          className="relative m-0 rounded-lg p-0.5 [clip-path:polygon(100%_0,_100%_100%,_10%_100%,_0_90%,_0_10%,_10%_0)] md:m-8"
           style={{
             background:
               'linear-gradient(to bottom, #1AF4E6 0%, #FFFFFF 50%, #F4B71A 100%)',
@@ -77,12 +72,11 @@ export default function MarketingPage() {
             <div className="flex flex-col items-center justify-center gap-8 py-12 lg:gap-14 lg:pt-14">
               {timelineData.map((data) => (
                 <div
-                  // className="flex w-full items-center justify-between gap-1 lg:gap-5"
                   className="flex w-full transform cursor-pointer items-center justify-between gap-1 transition-transform duration-500 hover:scale-95 lg:gap-5"
                   key={data.year}
                   onClick={() => handleClick(data.year)}
                 >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#5FC6E5] text-center text-base font-black text-white lg:h-28 lg:w-28 lg:text-3xl">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#5FC6E5] text-center text-sm font-black text-white lg:h-28 lg:w-28 lg:text-3xl">
                     {data.year}
                   </div>
                   <p className="w-[90%] text-xs font-semibold text-white lg:text-3xl">
@@ -98,11 +92,11 @@ export default function MarketingPage() {
             <div className="absolute right-6 top-9 h-0.5 w-3/4 bg-[#1AF4E6] bg-opacity-30 lg:right-20 lg:top-12 lg:h-1 lg:w-4/5"></div>
             <div className="absolute right-6 top-11 h-0.5 w-3/4 bg-[#1AF4E6] bg-opacity-10 lg:right-20 lg:top-[3.75rem] lg:h-1 lg:w-4/5"></div>
 
-            <div className="absolute right-6 top-[7rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-10 lg:right-20 lg:top-[11rem] lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-[7.5rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-30 lg:right-20 lg:top-[11.75rem] lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-[8rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-50 lg:right-20 lg:top-[12.5rem] lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-[8.5rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-70 lg:right-20 lg:top-[13.25rem] lg:h-1 lg:w-4/5"></div>
-            <div className="absolute right-6 top-[9rem] h-0.5 w-3/4 bg-[#FBC721] lg:right-20 lg:top-[14rem] lg:h-1 lg:w-4/5"></div>
+            <div className="absolute right-6 top-[6rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-10 lg:right-20 lg:top-[11rem] lg:h-1 lg:w-4/5"></div>
+            <div className="absolute right-6 top-[6.5rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-30 lg:right-20 lg:top-[11.75rem] lg:h-1 lg:w-4/5"></div>
+            <div className="absolute right-6 top-[7rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-50 lg:right-20 lg:top-[12.5rem] lg:h-1 lg:w-4/5"></div>
+            <div className="absolute right-6 top-[7.5rem] h-0.5 w-3/4 bg-[#FBC721] bg-opacity-70 lg:right-20 lg:top-[13.25rem] lg:h-1 lg:w-4/5"></div>
+            <div className="absolute right-6 top-[8rem] h-0.5 w-3/4 bg-[#FBC721] lg:right-20 lg:top-[14rem] lg:h-1 lg:w-4/5"></div>
           </div>
         </div>
       </div>
