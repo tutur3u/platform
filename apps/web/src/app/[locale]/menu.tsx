@@ -60,7 +60,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
     href: item.href,
     className: cn(
       'transition-opacity duration-200',
-      isActive ? 'opacity-100' : 'opacity-50 hover:opacity-100',
+      isActive ? 'opacity-100' : 'opacity-70 hover:opacity-100',
       className
     ),
     onClick: onClick,
@@ -81,7 +81,7 @@ const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
     return null;
 
   return (
-    <div className="hidden w-full gap-12 rounded-2xl border-[0.5px] border-white bg-black bg-opacity-50 px-6 py-3 font-semibold md:flex">
+    <div className="bg-primary-foreground hidden w-full gap-12 rounded-2xl border-[0.5px] border-gray-700/50 px-6 py-3 font-semibold md:flex">
       {navItems(t).map((item) => (
         <NavLink key={item.href} item={item} />
       ))}
