@@ -7,7 +7,7 @@ import moment from 'moment';
 
 export const batchColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<ProductBatch>[] => [
   // {
   //   id: 'select',

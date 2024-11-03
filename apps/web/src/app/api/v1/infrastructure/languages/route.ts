@@ -1,5 +1,5 @@
-import { locales } from '@/config';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
+import { supportedLocales } from '@/i18n/routing';
 import { cookies as c } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   }
 
   // Check if locale is supported
-  if (!locales.includes(locale))
+  if (!supportedLocales.includes(locale))
     return NextResponse.json(
       { message: 'Locale is not supported' },
       { status: 500 }

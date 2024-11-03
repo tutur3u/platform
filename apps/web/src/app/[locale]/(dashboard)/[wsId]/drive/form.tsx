@@ -1,5 +1,7 @@
 'use client';
 
+import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@/types/primitives/StorageObject';
+import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@/utils/supabase/client';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,20 +16,37 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Check, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
+interface FolderProps {
+  wsId: string;
+  uploadPath?: string;
+  data?: {
+    name: string;
+  };
+  onComplete?: () => unknown;
+}
+
 interface Props {
   wsId: string;
+  path?: string;
+  uploadPath?: string;
+  accept?: string;
   onComplete?: () => void;
   submitLabel?: string;
 }
 
-const FormSchema = z.object({
+const FolderFormSchema = z.object({
+  name: z.string().min(1).max(255),
+});
+
+const ObjectFormSchema = z.object({
   files: z.custom<File[]>((value) => {
     if (value.length === 0) {
       throw new Error('At least one file is required');
@@ -37,7 +56,12 @@ const FormSchema = z.object({
   }),
 });
 
-export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
+export function StorageFolderForm({
+  wsId,
+  uploadPath = '',
+  data,
+  onComplete,
+}: FolderProps) {
   const t = useTranslations();
 
   const router = useRouter();
@@ -45,8 +69,90 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
 
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+  const form = useForm<z.infer<typeof FolderFormSchema>>({
+    resolver: zodResolver(FolderFormSchema),
+    defaultValues: {
+      name: '',
+    },
+  });
+
+  async function onSubmit(data: z.infer<typeof FolderFormSchema>) {
+    setLoading(true);
+
+    const placeholderFile = new File([''], EMPTY_FOLDER_PLACEHOLDER_NAME);
+
+    const { error } = await supabase.storage
+      .from('workspaces')
+      .upload(
+        joinPath(wsId, uploadPath, data.name, placeholderFile.name),
+        placeholderFile
+      );
+
+    if (!error) {
+      onComplete?.();
+      setLoading(false);
+      router.refresh();
+    } else {
+      setLoading(false);
+      toast({
+        title: 'Error creating folder',
+        description: 'An error occurred while creating the folder',
+      });
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+        <FormField
+          control={form.control}
+          name="name"
+          disabled={loading}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {t('storage-object-data-table.folder.name')}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder={t('storage-object-data-table.folder.name')}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading
+            ? t('common.processing')
+            : data?.name
+              ? t('common.edit')
+              : t('common.create')}
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
+export function StorageObjectForm({
+  wsId,
+  path,
+  uploadPath = '',
+  accept = 'image/*',
+  onComplete,
+  submitLabel,
+}: Props) {
+  const t = useTranslations();
+
+  const router = useRouter();
+  const supabase = createClient();
+
+  const [loading, setLoading] = useState(false);
+
+  const form = useForm<z.infer<typeof ObjectFormSchema>>({
+    resolver: zodResolver(ObjectFormSchema),
     defaultValues: {
       files: [],
     },
@@ -57,7 +163,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
   const [editingFile, setEditingFile] = useState<File | null>(null);
   const [newFileName, setNewFileName] = useState<string>('');
 
-  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+  async function onSubmit(formData: z.infer<typeof ObjectFormSchema>) {
     if (loading || editingFile) return;
 
     setLoading(true);
@@ -72,9 +178,13 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
         [file.name]: 'uploading',
       }));
 
-      const { data: _, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('workspaces')
-        .upload(`${wsId}/${generateRandomUUID()}_${file.name}`, file);
+        .upload(
+          path ||
+            joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
+          file
+        );
 
       if (error) {
         setFileStatuses((prev) => ({
@@ -119,7 +229,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
           control={form.control}
           name="files"
           disabled={loading}
-          render={({ field: { value, onChange, ...fieldProps } }) => (
+          render={({ field: { onChange, ...fieldProps } }) => (
             <FormItem>
               <FormLabel>
                 {t('storage-object-data-table.files')}
@@ -129,9 +239,10 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
                 <FormControl>
                   <Input
                     {...fieldProps}
+                    value={undefined}
                     type="file"
                     placeholder="Files"
-                    accept="image/*"
+                    accept={accept}
                     onChange={(e) => {
                       onChange(e.target.files && Array.from(e.target.files));
                     }}
@@ -152,11 +263,8 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
                       return a.name.localeCompare(b.name);
                     })
                     .map((file, i) => (
-                      <>
-                        <div
-                          key={i}
-                          className="flex items-center justify-between gap-2 p-2"
-                        >
+                      <Fragment key={file.name}>
+                        <div className="flex items-center justify-between gap-2 p-2">
                           <div>
                             {editingFile?.name === file.name ? (
                               <input
@@ -255,7 +363,7 @@ export function StorageObjectForm({ wsId, onComplete, submitLabel }: Props) {
                           )}
                         </div>
                         {i !== files.length - 1 && <div className="border-b" />}
-                      </>
+                      </Fragment>
                     ))}
                 </ScrollArea>
               )}

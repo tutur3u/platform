@@ -1,7 +1,8 @@
 # NCT Hub Monorepo
 
-[![Tests](https://github.com/tutur3u/platform/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/test.yaml)
-[![Supabase](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml)
+[![CodeQL](https://github.com/tutur3u/platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/codeql.yml)
+[![Test](https://github.com/tutur3u/platform/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/test.yaml)
+[![Supabase CI](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml)
 
 This repository is a monorepo for all of NCT Hub's services, powered by Turborepo. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
 

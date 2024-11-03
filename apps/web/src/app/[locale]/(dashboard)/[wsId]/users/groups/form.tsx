@@ -21,6 +21,7 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   data?: UserGroup;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -95,7 +96,7 @@ export default function UserGroupForm({ wsId, data, onFinish }: Props) {
         />
 
         <Button type="submit" className="w-full" disabled={disabled}>
-          {!!data?.id ? t('edit') : t('create')}
+          {data?.id ? t('edit') : t('create')}
         </Button>
       </form>
     </Form>

@@ -20,18 +20,20 @@ export async function getWorkspace(id?: string) {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, created_at, workspace_members(role)'
     )
     .eq('id', id)
-    .eq('workspace_members.user_id', user.id)
     .single();
 
-  if (error || !data?.workspace_members[0]?.role) notFound();
+  const workspaceJoined = !!data?.workspace_members[0]?.role;
+
+  if (error) notFound();
   const { workspace_members, ...rest } = data;
 
   const ws = {
     ...rest,
     role: workspace_members[0]?.role,
+    joined: workspaceJoined,
   };
 
   return ws as Workspace;
@@ -141,18 +143,15 @@ export async function enforceRootWorkspaceAdmin(
 
 export async function getSecrets({
   wsId,
-  requiredSecrets,
   forceAdmin = false,
 }: {
   wsId?: string;
-  requiredSecrets?: string[];
   forceAdmin?: boolean;
 }) {
   const supabase = await (forceAdmin ? createAdminClient() : createClient());
   const queryBuilder = supabase.from('workspace_secrets').select('*');
 
   if (wsId) queryBuilder.eq('ws_id', wsId);
-  if (requiredSecrets) queryBuilder.in('name', requiredSecrets);
 
   const { data, error } = await queryBuilder.order('created_at', {
     ascending: false,
@@ -171,7 +170,7 @@ export async function verifyHasSecrets(
   requiredSecrets: string[],
   redirectPath?: string
 ) {
-  const secrets = await getSecrets({ wsId, requiredSecrets, forceAdmin: true });
+  const secrets = await getSecrets({ wsId, forceAdmin: true });
 
   const allSecretsVerified = requiredSecrets.every((secret) => {
     const { value } = getSecret(secret, secrets) || {};
@@ -189,13 +188,20 @@ export function getSecret(
   return secrets.find(({ name }) => name === secretName);
 }
 
-export function verifySecret(
-  secretName: string,
-  secretValue: string,
-  secrets: WorkspaceSecret[]
-) {
-  const secret = getSecret(secretName, secrets);
-  return secret?.value === secretValue;
+export async function verifySecret({
+  wsId,
+  forceAdmin = false,
+  name,
+  value,
+}: {
+  wsId: string;
+  forceAdmin?: boolean;
+  name: string;
+  value: string;
+}) {
+  const secrets = await getSecrets({ wsId, forceAdmin });
+  const secret = getSecret(name, secrets);
+  return secret?.value === value;
 }
 
 export async function getPermissions({
@@ -285,4 +291,20 @@ export async function getPermissions({
     !containsPermission(permission);
 
   return { permissions, containsPermission, withoutPermission };
+}
+
+export async function getWorkspaceUser(id: string, userId: string) {
+  const supabase = await createClient();
+
+  // TODO: this could be expand to back-relate platform_user_id -> auth.user
+  const { data, error } = await supabase
+    .from('workspace_user_linked_users')
+    .select('*')
+    .eq('ws_id', id)
+    .eq('platform_user_id', userId)
+    .single();
+
+  if (error) notFound();
+
+  return data;
 }

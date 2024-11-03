@@ -14,7 +14,7 @@ import moment from 'moment';
 
 export const invoiceColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<Invoice>[] => [
   // {
   //   id: 'select',

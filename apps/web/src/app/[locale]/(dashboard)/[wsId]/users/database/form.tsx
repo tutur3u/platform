@@ -3,6 +3,8 @@
 import { DatePicker } from '@/components/row-actions/users/date-picker';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
+import { createClient } from '@/utils/supabase/client';
+import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Avatar,
@@ -25,8 +27,10 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import dayjs from 'dayjs';
-import { UserIcon } from 'lucide-react';
+import { Loader2, UserIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -52,8 +56,13 @@ const FormSchema = z.object({
 });
 
 export default function UserForm({ wsId, data, onFinish }: Props) {
-  // const t = useTranslations('ws-user-group-tags');
+  const t = useTranslations();
   const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const [previewSrc, setPreviewSrc] = useState<string | null>(
+    data?.avatar_url || null
+  );
+  const [file, setFile] = useState<File | null>(null); // Track the file selected
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -77,36 +86,91 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+  const handleFileSelect = (file: File) => {
+    const fileURL = URL.createObjectURL(file);
+    setPreviewSrc(fileURL);
+    setFile(file);
+  };
+
+  const removeAvatar = async () => {
+    setSaving(true);
+    setPreviewSrc(null);
+    setFile(null);
+
+    if (!data?.avatar_url) {
+      setSaving(false);
+      return;
+    }
+
+    router.refresh();
+    setSaving(false);
+  };
+
+  async function uploadImageToSupabase(file: File, wsId: string) {
+    const supabase = createClient();
+    const filePath = `${wsId}/users/${generateRandomUUID()}`;
+
+    const { error } = await supabase.storage
+      .from('workspaces')
+      .upload(filePath, file);
+
+    if (error) {
+      console.error('Error uploading file:', error.message);
+      throw new Error('Failed to upload image');
+    }
+
+    const { data, error: signedURLError } = await supabase.storage
+      .from('workspaces')
+      .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+
+    if (signedURLError) {
+      console.error('Error generating signed URL:', signedURLError.message);
+      throw new Error('Failed to generate signed URL');
+    }
+
+    return data.signedUrl;
+  }
+
+  const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
+    setSaving(true);
     try {
+      let avatarUrl = previewSrc;
+
+      if (file) {
+        avatarUrl = await uploadImageToSupabase(file, wsId);
+      }
+
       const res = await fetch(
-        data.id
-          ? `/api/v1/workspaces/${wsId}/users/${data.id}`
+        formData.id
+          ? `/api/v1/workspaces/${wsId}/users/${formData.id}`
           : `/api/v1/workspaces/${wsId}/users`,
         {
-          method: data.id ? 'PUT' : 'POST',
+          method: formData.id ? 'PUT' : 'POST',
           body: JSON.stringify({
-            ...data,
-            birthday: dayjs(data.birthday).format('YYYY/MM/DD'),
+            ...formData,
+            avatar_url: avatarUrl,
+            birthday: dayjs(formData.birthday).format('YYYY/MM/DD'),
           }),
         }
       );
 
       if (res.ok) {
-        onFinish?.(data);
+        onFinish?.(formData);
         router.refresh();
       } else {
-        const data = await res.json();
+        const resData = await res.json();
         toast({
-          title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
-          description: data.message,
+          title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
+          description: resData.message,
         });
       }
     } catch (error) {
       toast({
-        title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
+        title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
         description: error instanceof Error ? error.message : String(error),
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -114,28 +178,6 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
 
   return (
     <>
-      <div className="mb-2 flex items-center gap-2 rounded-md border p-4">
-        <Avatar>
-          <AvatarImage src={data?.avatar_url || undefined} />
-          <AvatarFallback className="font-semibold">
-            {name ? getInitials(name) : <UserIcon className="h-5 w-5" />}
-          </AvatarFallback>
-        </Avatar>
-
-        <div className="flex-1 space-y-1">
-          <p className="line-clamp-1 text-sm font-medium leading-none">
-            {name ? name : <span className="opacity-50">Unknown</span>}{' '}
-          </p>
-
-          <p className="text-foreground/60 line-clamp-1 text-sm">
-            {data?.email ||
-              (data?.handle
-                ? `@${data.handle}`
-                : data?.id?.replace(/-/g, '') || form.watch('email'))}
-          </p>
-        </div>
-      </div>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
           <ScrollArea className="grid h-[50vh] gap-3 border-b">
@@ -159,10 +201,48 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
                     </FormItem>
                   )}
                 />
-
                 <Separator />
               </>
             )}
+
+            <div className="flex items-center gap-2 rounded-md border p-4">
+              <Avatar>
+                <AvatarImage src={previewSrc || data?.avatar_url || ''} />
+                <AvatarFallback className="font-semibold">
+                  {name ? getInitials(name) : <UserIcon className="h-5 w-5" />}
+                </AvatarFallback>
+              </Avatar>
+
+              <div>
+                <Button variant="ghost" type="button" className="mt-2">
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    {previewSrc
+                      ? t('settings-account.new_avatar')
+                      : t('settings-account.upload_avatar')}
+                  </label>
+                </Button>
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleFileSelect(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+                {previewSrc && (
+                  <Button variant="destructive" onClick={removeAvatar}>
+                    {saving ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      t('settings-account.remove_avatar')
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
 
             <FormField
               control={form.control}
@@ -242,18 +322,9 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
                       defaultValue={field.value}
                       onValueChange={field.onChange}
                       options={[
-                        {
-                          value: 'MALE',
-                          label: 'Male',
-                        },
-                        {
-                          value: 'FEMALE',
-                          label: 'Female',
-                        },
-                        {
-                          value: 'OTHER',
-                          label: 'Other',
-                        },
+                        { value: 'MALE', label: 'Male' },
+                        { value: 'FEMALE', label: 'Female' },
+                        { value: 'OTHER', label: 'Other' },
                       ]}
                     />
                   </FormControl>

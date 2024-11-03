@@ -30,7 +30,7 @@ export default function AIPromptsTable({ wsId, data, count }: Props) {
     >
       <CustomDataTable
         data={data}
-        columnGenerator={(t: any, namespace: string) =>
+        columnGenerator={(t: any, namespace: string | undefined) =>
           aiPromptsColumns(t, namespace, setPrompt)
         }
         namespace="ai-prompts-data-table"

@@ -1,6 +1,5 @@
 import { Workspace } from '@/types/primitives/Workspace';
 import { Button, TextInput } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
 import { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -43,7 +42,7 @@ const WorkspaceEditForm = ({ ws, onSubmit, onDelete }: Props) => {
             const newWorkspace = { id: ws?.id || uuidv4(), name } as Workspace;
 
             onSubmit(newWorkspace);
-            closeAllModals();
+            // closeAllModals();
           }}
           mt="md"
         >

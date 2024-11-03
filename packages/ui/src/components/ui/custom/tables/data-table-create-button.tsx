@@ -16,7 +16,7 @@ export function DataTableCreateButton(props: DataTableCreateButtonProps) {
     <>
       <DialogTrigger asChild>
         <Button size="sm" className="col-span-full ml-auto h-8 w-full md:w-fit">
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           {props.newObjectTitle || props.createButtonText}
         </Button>
       </DialogTrigger>

@@ -1,13 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
 
 export default function Slogan() {
   const t = useTranslations('common');
-  const { resolvedTheme } = useTheme();
-
-  const isDark = resolvedTheme?.includes('dark');
 
   const maximize = t('maximize');
   const productivity = t('productivity');

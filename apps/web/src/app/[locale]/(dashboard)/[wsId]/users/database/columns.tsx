@@ -20,7 +20,7 @@ import { Fragment } from 'react';
 
 export const getUserColumns = (
   t: any,
-  namespace: string,
+  namespace: string | undefined,
   extraFields?: WorkspaceUserField[],
   extraData?: any
 ): ColumnDef<WorkspaceUser>[] => [
@@ -67,7 +67,7 @@ export const getUserColumns = (
         title={t(`${namespace}.avatar_url`)}
       />
     ),
-    cell: async ({ row }) => {
+    cell: ({ row }) => {
       const avatarUrl = row.getValue('avatar_url') as string | undefined;
       if (!avatarUrl) return <div className="min-w-[8rem]">-</div>;
 
@@ -108,7 +108,7 @@ export const getUserColumns = (
                   {row
                     .getValue<WorkspaceUser[]>('linked_users')
                     .map((u, idx) => (
-                      <Fragment key={u.id}>
+                      <Fragment key={`${u.id}-combo`}>
                         <span
                           key={`${u.id}-name`}
                           className="font-semibold hover:underline"
@@ -230,17 +230,30 @@ export const getUserColumns = (
         title={t(`${namespace}.birthday`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {row.getValue('birthday')
-          ? dayjs(row.getValue('birthday'))
-              .locale(extraData?.locale)
-              .format(
-                extraData?.locale === 'vi' ? 'D MMMM, YYYY' : 'MMMM D, YYYY'
-              )
-          : '-'}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const age = moment().diff(row.getValue('birthday'), 'years');
+
+      return (
+        <div className="grid min-w-[8rem] gap-1">
+          <div>
+            {row.getValue('birthday')
+              ? dayjs(row.getValue('birthday'))
+                  .locale(extraData?.locale)
+                  .format(
+                    extraData?.locale === 'vi' ? 'D MMMM, YYYY' : 'MMMM D, YYYY'
+                  )
+              : '-'}
+          </div>
+          {!!row.getValue('birthday') && (
+            <div className="bg-foreground/5 w-fit rounded border px-2 py-0.5 text-sm font-semibold">
+              {row.getValue('birthday')
+                ? `${age} ${age > 1 ? t('common.years_old') : t('common.year_old')}`
+                : '-'}
+            </div>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'ethnicity',
@@ -440,6 +453,7 @@ export const getUserColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader t={t} column={column} title={field.name} />
     ),
+    // eslint-disable-next-line no-unused-vars
     cell: ({ row: _ }) => (
       <div className="line-clamp-1 w-[8rem]">
         {/* {row.getValue(field.id) || '-'} */}-

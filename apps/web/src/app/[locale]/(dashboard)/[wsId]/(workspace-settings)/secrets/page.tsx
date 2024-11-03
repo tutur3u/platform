@@ -1,11 +1,10 @@
-import SecretEditDialog from './_components/secret-edit-dialog';
+import { secretColumns } from './columns';
+import SecretForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { secretColumns } from '@/data/columns/secrets';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -25,31 +24,18 @@ export default async function WorkspaceSecretsPage({
 }: Props) {
   const { wsId } = await params;
   const { data: secrets, count } = await getSecrets(wsId, await searchParams);
-  const t = await getTranslations('ws-secrets');
+  const t = await getTranslations();
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{t('secrets')}</h1>
-          <p className="text-foreground/80">{t('description')}</p>
-        </div>
-
-        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <SecretEditDialog
-            data={{
-              ws_id: wsId,
-            }}
-            trigger={
-              <Button>
-                <Plus className="mr-2 h-5 w-5" />
-                {t('create_secret')}
-              </Button>
-            }
-            submitLabel={t('create_secret')}
-          />
-        </div>
-      </div>
+      <FeatureSummary
+        pluralTitle={t('ws-secrets.plural')}
+        singularTitle={t('ws-secrets.singular')}
+        description={t('ws-secrets.description')}
+        createTitle={t('ws-secrets.create')}
+        createDescription={t('ws-secrets.create_description')}
+        form={<SecretForm wsId={wsId} />}
+      />
       <Separator className="my-4" />
       <CustomDataTable
         columnGenerator={secretColumns}

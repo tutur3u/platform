@@ -17,34 +17,37 @@ export default async function InfrastructureOverviewPage({ params }: Props) {
     redirectTo: `/${wsId}/settings`,
   });
 
-  const t = await getTranslations('infrastructure-tabs');
-
-  const usersLabel = t('users');
-  const workspacesLabel = t('workspaces');
-  const timezonesLabel = t('timezones');
+  const t = await getTranslations();
 
   const users = await getUserCount();
   const workspaces = await getWorkspaceCount();
   const timezones = tzs.length;
+  const aiWhitelistedEmails = await getAIWhitelistedEmailsCount();
 
   return (
     <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
       <StatisticCard
-        title={usersLabel}
+        title={t('infrastructure-tabs.users')}
         value={users}
         href={`/${wsId}/infrastructure/users`}
       />
 
       <StatisticCard
-        title={workspacesLabel}
+        title={t('infrastructure-tabs.workspaces')}
         value={workspaces}
         href={`/${wsId}/infrastructure/workspaces`}
       />
 
       <StatisticCard
-        title={timezonesLabel}
+        title={t('infrastructure-tabs.timezones')}
         value={timezones}
         href={`/${wsId}/infrastructure/timezones`}
+      />
+
+      <StatisticCard
+        title={t('infrastructure-tabs.ai_whitelisted_emails')}
+        value={aiWhitelistedEmails}
+        href={`/${wsId}/ai/whitelist`}
       />
     </div>
   );
@@ -70,6 +73,20 @@ async function getWorkspaceCount() {
     count: 'exact',
     head: true,
   });
+
+  return count;
+}
+
+async function getAIWhitelistedEmailsCount() {
+  const supabaseAdmin = await createAdminClient();
+  if (!supabaseAdmin) notFound();
+
+  const { count } = await supabaseAdmin
+    .from('ai_whitelisted_emails')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    });
 
   return count;
 }

@@ -1,6 +1,5 @@
 import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { Button, TextInput } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
 import { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -43,7 +42,7 @@ const BoardEditForm = ({ board, onSubmit, onDelete }: BoardEditFormProps) => {
           onClick={() => {
             const newBoard = { id: board?.id || uuidv4(), name, lists: [] };
             if (onSubmit) onSubmit(newBoard);
-            closeAllModals();
+            // closeAllModals();
           }}
           mt="md"
         >

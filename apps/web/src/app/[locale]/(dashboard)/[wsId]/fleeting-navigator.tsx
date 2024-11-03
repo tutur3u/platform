@@ -16,6 +16,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
     `/${wsId}/mail`,
     `/${wsId}/calendar`,
     `/${wsId}/documents`,
+    `/${wsId}/education`,
     `/${wsId}/ai/playground`,
   ];
 
@@ -46,7 +47,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
           description: t('ai_chat.try_again_later'),
         });
     },
-    onError(_) {
+    onError() {
       toast({
         title: t('ai_chat.something_went_wrong'),
         description: t('ai_chat.try_again_later'),

@@ -50,11 +50,17 @@ export default async function WorkspaceUserDetailsPage({
     userId,
   });
 
-  const { data: invoiceData, count: invoiceCount } = await getInvoiceData(
+  const { data: rawInvoiceData, count: invoiceCount } = await getInvoiceData(
     wsId,
     userId,
     await searchParams
   );
+
+  const invoiceData = rawInvoiceData.map((d) => ({
+    ...d,
+    href: `/${wsId}/finance/invoices/${d.id}`,
+    ws_id: wsId,
+  }));
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -386,7 +392,7 @@ async function getInvoiceData(
     .eq('customer_id', userId)
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('notice', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);

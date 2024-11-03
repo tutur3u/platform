@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const configColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<WorkspaceConfig>[] => [
   // {
   //   id: 'select',

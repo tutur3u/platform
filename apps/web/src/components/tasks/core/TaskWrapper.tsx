@@ -1,16 +1,7 @@
-import TaskEditForm from '../../forms/TaskEditForm';
 import { Task } from '@/types/primitives/Task';
 import { User } from '@/types/primitives/User';
 import { getInitials } from '@/utils/name-helper';
-import {
-  Avatar,
-  Checkbox,
-  Divider,
-  Menu,
-  Tooltip,
-  useMantineTheme,
-} from '@mantine/core';
-import { openConfirmModal, openModal } from '@mantine/modals';
+import { Avatar, Checkbox, Divider, Menu, Tooltip } from '@mantine/core';
 import { Ellipsis } from 'lucide-react';
 import moment from 'moment';
 import useSWR from 'swr';
@@ -25,7 +16,7 @@ export interface TaskWrapperProps {
 
 const TaskWrapper = ({
   task,
-  listId,
+  // listId,
   showCompleted,
   highlight = true,
   onUpdated,
@@ -38,34 +29,34 @@ const TaskWrapper = ({
 
   const isMyTask = assignees?.some((assignee) => assignee.id === user?.id);
 
-  const deleteTask = async (taskId: string) => {
-    if (!task?.id) return;
+  // const deleteTask = async (taskId: string) => {
+  //   if (!task?.id) return;
 
-    const res = await fetch(`/api/tasks/${taskId}`, {
-      method: 'DELETE',
-    });
+  //   const res = await fetch(`/api/tasks/${taskId}`, {
+  //     method: 'DELETE',
+  //   });
 
-    if (res.ok) onUpdated();
-  };
+  //   if (res.ok) onUpdated();
+  // };
 
-  const theme = useMantineTheme();
+  // const theme = useMantineTheme();
 
-  const showEditTaskModal = (task?: Task) => {
-    openModal({
-      title: (
-        <div className="font-semibold">{task ? 'Edit task' : 'New task'}</div>
-      ),
-      centered: true,
-      size: 'xl',
-      overlayProps: {
-        color: theme.colors.dark[9],
-        opacity: 0.55,
-        blur: 3,
-      },
-      children: (
-        <TaskEditForm task={task} listId={listId} onUpdated={onUpdated} />
-      ),
-    });
+  const showEditTaskModal = (_?: Task) => {
+    // openModal({
+    //   title: (
+    //     <div className="font-semibold">{task ? 'Edit task' : 'New task'}</div>
+    //   ),
+    //   centered: true,
+    //   size: 'xl',
+    //   overlayProps: {
+    //     color: theme.colors.dark[9],
+    //     opacity: 0.55,
+    //     blur: 3,
+    //   },
+    //   children: (
+    //     <TaskEditForm task={task} listId={listId} onUpdated={onUpdated} />
+    //   ),
+    // });
   };
 
   const setTaskCompletion = async (task: Task) => {
@@ -86,34 +77,34 @@ const TaskWrapper = ({
 
   const showDeleteTaskModal = (task: Task) => {
     if (!task) return;
-    openConfirmModal({
-      title: (
-        <div className="font-semibold">
-          Delete {'"'}
-          <span className="font-bold text-purple-300">{task.name}</span>
-          {'" '}
-          task
-        </div>
-      ),
-      centered: true,
-      children: (
-        <div className="p-4 text-center">
-          <p className="text-lg font-medium text-zinc-300">
-            Are you sure you want to delete this task?
-          </p>
-          <p className="text-foreground/80 text-sm">
-            All of your data will be permanently removed. This action cannot be
-            undone.
-          </p>
-        </div>
-      ),
-      onConfirm: () => deleteTask(task.id),
-      closeOnConfirm: true,
-      labels: {
-        confirm: 'Delete',
-        cancel: 'Cancel',
-      },
-    });
+    // openConfirmModal({
+    //   title: (
+    //     <div className="font-semibold">
+    //       Delete {'"'}
+    //       <span className="font-bold text-purple-300">{task.name}</span>
+    //       {'" '}
+    //       task
+    //     </div>
+    //   ),
+    //   centered: true,
+    //   children: (
+    //     <div className="p-4 text-center">
+    //       <p className="text-lg font-medium text-zinc-300">
+    //         Are you sure you want to delete this task?
+    //       </p>
+    //       <p className="text-foreground/80 text-sm">
+    //         All of your data will be permanently removed. This action cannot be
+    //         undone.
+    //       </p>
+    //     </div>
+    //   ),
+    //   onConfirm: () => deleteTask(task.id),
+    //   closeOnConfirm: true,
+    //   labels: {
+    //     confirm: 'Delete',
+    //     cancel: 'Cancel',
+    //   },
+    // });
   };
 
   const getPriorityText = (priority: number) => {
