@@ -10,7 +10,8 @@ import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useState } from 'react';
 import * as Y from 'yjs';
 
-const LiveblocksTipTapEditor = ({}) => {
+// eslint-disable-next-line no-unused-vars
+const LiveblocksTipTapEditor = (_: { wsId: string; documentId: string }) => {
   const room = useRoom();
   const [doc, setDoc] = useState<Y.Doc | null>(null);
   const [provider, setProvider] = useState<LiveblocksYjsProvider | null>(null);
