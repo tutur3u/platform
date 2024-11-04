@@ -1,6 +1,6 @@
 'use client';
 
-import { members as mbs } from './data';
+import { members as mbs } from './about/data';
 import { useState } from 'react';
 
 export default function Members() {

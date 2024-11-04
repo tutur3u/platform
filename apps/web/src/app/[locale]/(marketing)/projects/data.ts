@@ -10,6 +10,17 @@ export type Project = {
 
 export const projects: Project[] = [
   {
+    name: 'Neo ID Scanner Lite',
+    description:
+      "A ID scanner hosted locally to retrieve student's name and ID in RMIT Sem C 2024's Club Day.",
+    type: 'software',
+    techStack: ['Python', 'React.js'],
+    status: 'completed',
+    manager: 'Nguyen Ngoc Luong',
+    purpose:
+      "Automatically retrieve the student's name and ID from their card.",
+  },
+  {
     name: 'Neo Micromouse',
     description:
       "A micromouse robot that is planned for RMIT Sem C 2024's Club Day.",

@@ -1,6 +1,4 @@
 import { Project } from './data';
-import DemoProjectImage from './demo.png';
-import peopleImage from './people.png';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -10,7 +8,7 @@ interface ProjectDetailProps {
   data: Project | undefined;
 }
 
-const sampleData = [
+const contributors = [
   {
     name: 'Nguyen Nguyen Nguyen',
     role: 'Project Leader',
@@ -47,7 +45,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
       onClick={onClose}
     >
       <motion.div
-        className="relative mx-auto h-[90%] w-[98%] max-w-3xl overflow-y-auto rounded-lg bg-[#262A3A] p-6 text-center md:w-[90%]"
+        className="bg-background relative mx-auto h-[90%] w-[98%] max-w-3xl overflow-y-auto rounded-lg p-6 text-center md:w-[90%]"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
@@ -55,18 +53,20 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <p
-          className="absolute right-4 top-4 cursor-pointer text-black"
+          className="absolute right-4 top-2 cursor-pointer text-2xl"
           onClick={onClose}
         >
           x
         </p>
 
         <Image
-          src={DemoProjectImage}
+          src="/media/background/demo.png"
+          width={1000}
+          height={1000}
           alt="Demo Project"
-          className="grounded-lg rounded-lg object-cover pt-7"
+          className="rounded-lg pt-7"
         />
-        <p className="my-4 text-2xl font-extrabold text-white md:text-3xl lg:text-4xl">
+        <p className="my-4 text-2xl font-extrabold md:text-3xl lg:text-4xl">
           {name}
         </p>
         <Separator className="my-2" />
@@ -74,7 +74,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           {description}
         </p>
         <Separator className="my-2" />
-        <p className="my-4 text-lg font-semibold text-white md:text-xl lg:text-2xl">
+        <p className="my-4 text-lg font-semibold md:text-xl lg:text-2xl">
           Technologies
         </p>
         <div className="flex flex-wrap justify-center gap-5">
@@ -92,18 +92,20 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           ))}
         </div>
 
-        <p className="mt-6 text-lg font-semibold text-white md:text-xl lg:text-2xl">
-          Our Contributors
+        <p className="mt-6 text-lg font-semibold md:text-xl lg:text-2xl">
+          Contributors
         </p>
         <Separator className="my-2" />
         <div className="flex flex-col gap-4 py-4 md:px-6">
-          {sampleData.map((person, index) => {
+          {contributors.map((person, index) => {
             return (
               <div className="flex items-center justify-between" key={index}>
                 <div className="flex items-center gap-4 md:gap-6">
                   <Image
                     className="h-10 w-10 rounded-full object-cover md:h-12 md:w-12"
-                    src={peopleImage}
+                    src="/members/people.png"
+                    width={1000}
+                    height={1000}
                     alt="Contributor"
                   />
                   <p className="text-sm md:text-lg">{person.name}</p>

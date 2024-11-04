@@ -57,6 +57,7 @@ export default function Projects() {
                   p.key === type
                     ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
                     : 'transparent',
+                color: p.key === type ? '#0F172A' : '',
                 scale: p.key === type ? 1.05 : 1,
               }}
               transition={{
@@ -87,6 +88,7 @@ export default function Projects() {
                   p.key === status
                     ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
                     : 'transparent',
+                color: p.key === status ? '#0F172A' : '',
                 scale: p.key === status ? 1.05 : 1,
               }}
               transition={{

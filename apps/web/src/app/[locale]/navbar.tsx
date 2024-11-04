@@ -30,7 +30,6 @@ export default function Navbar({
                 height={32}
                 alt="logo"
               />
-              {/* <LogoTitle /> */}
             </Link>
 
             <Suspense
