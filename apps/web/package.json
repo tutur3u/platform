@@ -52,7 +52,7 @@
     "@mantine/core": "^7.13.4",
     "@mantine/hooks": "^7.13.4",
     "@react-email/components": "0.0.26",
-    "@react-email/tailwind": "1.0.0",
+    "@react-email/tailwind": "1.0.1",
     "@repo/ui": "workspace:*",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "2.46.1",
