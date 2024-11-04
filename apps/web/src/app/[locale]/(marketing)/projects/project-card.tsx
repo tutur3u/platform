@@ -33,7 +33,7 @@ export default function ProjectCard({
         className={`flex h-full justify-center rounded-lg text-center [clip-path:polygon(20%_0,85%_0,100%_15%,100%_85%,85%_100%,0_100%,0_20%,10%_15%)] ${
           isHighlighted
             ? 'bg-gradient-to-br from-[#1AF4E6] via-[#212144] to-[#F4B71A]'
-            : 'bg-[#c6d9e3] dark:bg-[#18182F]'
+            : 'bg-[#C6D9E3] dark:bg-[#18182F]'
         }`}
       >
         <div className="flex w-full flex-col px-6 py-4">

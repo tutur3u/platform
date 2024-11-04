@@ -59,16 +59,10 @@ export default function History() {
           </p>
         </div>
 
-        <div
-          className="relative m-0 rounded-lg p-0.5 [clip-path:polygon(100%_0,_100%_100%,_10%_100%,_0_90%,_0_10%,_10%_0)] md:m-8"
-          style={{
-            background:
-              'linear-gradient(to bottom, #1AF4E6 0%, #FFFFFF 50%, #F4B71A 100%)',
-          }}
-        >
-          <div className="pointer-events-none absolute top-60 z-10 h-full w-full rounded-lg bg-black/70 bg-gradient-to-b from-transparent to-[#0a0515] opacity-30" />
+        <div className="relative m-0 rounded-lg bg-gradient-to-b from-[#1AF4E6] via-white/50 to-[#F4B71A] p-0.5 [clip-path:polygon(100%_0,_100%_100%,_10%_100%,_0_90%,_0_10%,_10%_0)] md:m-8">
+          <div className="pointer-events-none absolute top-60 z-10 h-full w-full rounded-lg bg-gradient-to-b from-white/70 to-[#C6D9E3] opacity-30 dark:from-black/70 dark:to-[#0A0515]" />
 
-          <div className="relative rounded-lg bg-gradient-to-b from-[#100921] to-black px-3 [clip-path:polygon(100%_0,_100%_100%,_10%_100%,_0_90%,_0_10%,_10%_0)] lg:px-20">
+          <div className="relative rounded-lg bg-gradient-to-b from-[#C6D9E3] to-white px-3 [clip-path:polygon(100%_0,_100%_100%,_10%_100%,_0_90%,_0_10%,_10%_0)] lg:px-20 dark:from-[#100921] dark:to-black">
             <div className="flex flex-col items-center justify-center gap-8 py-12 lg:gap-14 lg:pt-14">
               {timelineData.map((data) => (
                 <div
@@ -76,10 +70,10 @@ export default function History() {
                   key={data.year}
                   onClick={() => handleClick(data.year)}
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#5FC6E5] text-center text-sm font-black text-white lg:h-28 lg:w-28 lg:text-3xl">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#5FC6E5] text-center text-sm font-black lg:h-28 lg:w-28 lg:text-3xl">
                     {data.year}
                   </div>
-                  <p className="w-[90%] text-xs font-semibold text-white lg:text-3xl">
+                  <p className="w-[90%] text-xs font-semibold lg:text-3xl">
                     {data.description}
                   </p>
                 </div>

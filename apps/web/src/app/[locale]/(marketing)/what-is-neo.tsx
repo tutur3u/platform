@@ -1,6 +1,8 @@
+import GetStartedButton from './get-started-button';
+
 export default function WhatIsNeo() {
   return (
-    <div className="relative z-40 flex w-full flex-col items-center justify-center px-2 pt-20 text-center md:px-14 md:pt-28">
+    <div className="mt-32 flex w-full flex-col items-center justify-center text-center md:mt-28">
       <p className="text-4xl font-extrabold leading-normal md:text-5xl lg:text-6xl">
         What is{' '}
         <span className="whitespace-nowrap border-b-4 border-[#FBC721] text-[#5FC6E5]">
@@ -15,7 +17,7 @@ export default function WhatIsNeo() {
           to explore the world of technology at RMIT University.
         </p>
       </div>
-      <div className="mt-6 flex w-full flex-col justify-between gap-12 sm:flex-row md:gap-24">
+      <div className="my-8 flex w-full justify-center gap-12 md:gap-24">
         {[
           { number: '100+', content: 'Active Members' },
           { number: '70+', content: 'Student Projects' },
@@ -35,6 +37,8 @@ export default function WhatIsNeo() {
           </div>
         ))}
       </div>
+
+      <GetStartedButton href="/login" />
     </div>
   );
 }

@@ -4,7 +4,7 @@ export default function WhyUs() {
       <p className="mb-12 mt-3 px-10 text-3xl font-bold md:px-32 md:text-5xl lg:text-8xl">
         Why us?
       </p>
-      <div className="flex flex-col justify-center gap-8 px-14 text-center md:flex-row">
+      <div className="flex flex-col justify-between gap-8 text-center md:flex-row">
         <div className="flex aspect-square flex-1 flex-col md:aspect-[3/4]">
           <div
             className="flex h-1/5 items-center justify-center rounded-t-2xl py-3"
@@ -17,7 +17,7 @@ export default function WhyUs() {
               Special Events
             </p>
           </div>
-          <div className="text-foreground flex-auto bg-slate-400/30 p-6 dark:bg-slate-700/50">
+          <div className="text-foreground flex-auto bg-slate-400/30 p-4 dark:bg-slate-700/50">
             <p className="text-base md:text-sm lg:text-lg">
               Events organized to support you in finding career paths in
               technology, gaining deeper insights from company trips and alumni,
@@ -38,7 +38,7 @@ export default function WhyUs() {
               Networking
             </p>
           </div>
-          <div className="text-foreground relative flex-auto bg-slate-400/30 p-6 dark:bg-slate-700/50">
+          <div className="text-foreground relative flex-auto bg-slate-400/30 p-4 dark:bg-slate-700/50">
             <p className="text-base md:text-sm lg:text-lg">
               Our network is the most valuable asset for our members. We connect
               you with the right people to help you achieve your goals.
@@ -61,7 +61,7 @@ export default function WhyUs() {
               Visions
             </p>
           </div>
-          <div className="text-foreground flex-auto bg-slate-400/30 p-6 dark:bg-slate-700/50">
+          <div className="text-foreground flex-auto bg-slate-400/30 p-4 dark:bg-slate-700/50">
             <p className="text-base md:text-sm lg:text-lg">
               We create an environment not only for students from SSET students
               but also others to learn new knowledge, have fun, and expand their
