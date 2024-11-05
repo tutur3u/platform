@@ -6,12 +6,12 @@ export function joinPath(...paths: string[]) {
 
 export function popPath(path: string) {
   // parse badly formatted path
-  const parsedPath = joinPath(path);
+  const parsedPath = joinPath(path).trim();
 
   const indexOfLast = parsedPath.lastIndexOf('/');
 
-  // guard: empty path (index of / is 1) or empty string (index of / is 0 = none)
-  if (indexOfLast <= 1) return parsedPath;
+  // guard: empty path or empty string or top-level path (index = 0)
+  if (parsedPath === '/' || parsedPath === '' || indexOfLast === 0) return '/';
 
   if (indexOfLast === parsedPath.length - 1) {
     // trailing slash, therefore remove trailing slash and continue pop

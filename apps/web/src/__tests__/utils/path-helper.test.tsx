@@ -49,6 +49,10 @@ it('should pop path by traverse to parent path with duplicate separator', () => 
   expect(popPath('//base-path//child-path//')).toBe('/base-path');
 });
 
+it('should pop top-level path', () => {
+  expect(popPath('/base-path')).toBe('/');
+});
+
 it('should not pop path that is empty', () => {
   expect(popPath('//')).toBe('/');
 });
