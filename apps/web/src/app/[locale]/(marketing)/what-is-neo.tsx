@@ -2,7 +2,7 @@ import GetStartedButton from './get-started-button';
 
 export default function WhatIsNeo() {
   return (
-    <div className="mt-32 flex w-full flex-col items-center justify-center text-center md:mt-28">
+    <div className="mt-4 flex w-full flex-col items-center justify-center text-center md:mt-28">
       <p className="text-4xl font-extrabold leading-normal md:text-5xl lg:text-6xl">
         What is{' '}
         <span className="whitespace-nowrap border-b-4 border-[#FBC721] text-[#5FC6E5]">
