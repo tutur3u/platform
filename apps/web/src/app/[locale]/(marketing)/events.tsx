@@ -1,50 +1,25 @@
 import Image from 'next/image';
 
+const EventImages = [
+  '/club-day/sem-c.jpg',
+  '/media/marketing/award-day.jpg',
+  '/media/marketing/gft.jpg',
+  '/media/marketing/netcompany.jpg',
+  '/media/marketing/club-day-sem-b.jpg',
+];
+
 export default function Events() {
   return (
     <div className="relative w-full py-8">
       <div className="bg-foreground/10 rounded-3xl p-4 backdrop-blur-xl md:p-8">
         <div className="flex grid-cols-7 grid-rows-2 flex-col gap-10 md:grid">
-          <div className="relative col-span-2 min-h-60 overflow-hidden rounded-xl">
-            <Image
-              src="/members/people.png"
-              alt="people"
-              className="object-cover"
-              fill
-            />
-          </div>
-          <div className="relative col-span-3 row-span-2 min-h-60 overflow-hidden rounded-xl md:h-2/3">
-            <Image
-              src="/members/people.png"
-              alt="people"
-              className="object-cover"
-              fill
-            />
-          </div>
-          <div className="relative col-span-2 min-h-60 overflow-hidden rounded-xl">
-            <Image
-              src="/members/people.png"
-              alt="people"
-              className="object-cover"
-              fill
-            />
-          </div>
-          <div className="relative col-span-2 min-h-60 overflow-hidden rounded-xl">
-            <Image
-              src="/members/people.png"
-              alt="people"
-              className="object-cover"
-              fill
-            />
-          </div>
-          <div className="relative col-span-2 min-h-60 overflow-hidden rounded-xl">
-            <Image
-              src="/members/people.png"
-              alt="people"
-              className="object-cover"
-              fill
-            />
-          </div>
+          {EventImages.slice(0, 5).map((link, index) =>
+            index === 0 ? (
+              <PrimaryEventCard key={index} link={link} />
+            ) : (
+              <EventCard key={index} link={link} />
+            )
+          )}
         </div>
       </div>
       <div className="absolute inset-0 -z-10 flex items-center justify-center">
@@ -53,3 +28,19 @@ export default function Events() {
     </div>
   );
 }
+
+const PrimaryEventCard = ({ link }: { link: string }) => {
+  return (
+    <div className="relative col-span-3 col-start-3 row-span-2 row-start-1 aspect-square overflow-hidden rounded-xl">
+      <Image src={link} alt="image" className="object-cover" fill />
+    </div>
+  );
+};
+
+const EventCard = ({ link }: { link: string }) => {
+  return (
+    <div className="relative col-span-2 aspect-square overflow-hidden rounded-xl">
+      <Image src={link} alt="image" className="object-cover" fill />
+    </div>
+  );
+};

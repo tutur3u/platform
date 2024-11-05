@@ -10,48 +10,31 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    name: 'Neo ID Scanner Lite',
+    name: 'Neo ID Scanner',
     description:
-      "A ID scanner hosted locally to retrieve student's name and ID in RMIT Sem C 2024's Club Day.",
+      "An ID scanner used to retrieve student's name and ID in events.",
     type: 'software',
     techStack: ['Python', 'React.js'],
-    status: 'completed',
+    status: 'ongoing',
     manager: 'Nguyen Ngoc Luong',
     purpose:
-      "Automatically retrieve the student's name and ID from their card.",
+      "This project aims to save time for gathering participant's information.",
   },
   {
     name: 'Neo Micromouse',
     description:
-      "A micromouse robot that is planned for RMIT Sem C 2024's Club Day.",
+      'A micromouse robot with manual control and automatic navigation.',
     type: 'hardware',
     techStack: ['Arduino', 'C++', 'PlatformIO'],
-    status: 'completed',
+    status: 'ongoing',
     manager: 'Huynh Hoang Duc',
     purpose:
       'This project aims to create a sophisticated micromouse capable of navigating mazes efficiently.',
   },
   {
-    name: 'Neo Crush',
-    description:
-      'The first stable release of Neo Crush with new features and improvements.',
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase Realtime',
-      'Shadcn UI',
-    ],
-    status: 'planning',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
-  },
-  {
     name: 'Neo Chess',
     description:
-      "An in-house chess game that is planned for RMIT Sem C 2024's Club Day.",
+      'An in-house chess game with multiplayer and AI-based opponent.',
     type: 'web',
     techStack: [
       'Next.js',
@@ -60,7 +43,7 @@ export const projects: Project[] = [
       'Supabase Realtime',
       'Shadcn UI',
     ],
-    status: 'completed',
+    status: 'ongoing',
     manager: 'Luong Ngoc Bao Tran',
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
@@ -82,18 +65,24 @@ export const projects: Project[] = [
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
   },
   {
-    name: 'NCT Landing Page',
+    name: 'Neo Crush',
     description:
-      "The landing page for RMIT Sem C 2024's Club Day, showcasing the club's projects and activities.",
+      'The first stable release of Neo Crush with new features and improvements.',
     type: 'web',
-    techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
-    status: 'completed',
-    manager: 'Ngo Van Tai',
+    techStack: [
+      'Next.js',
+      'Typescript',
+      'Tailwind CSS',
+      'Supabase Realtime',
+      'Shadcn UI',
+    ],
+    status: 'planning',
+    manager: 'Vo Hoang Phuc',
     purpose:
-      'A revamp of the club landing page to showcase the club projects and activities.',
+      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
   },
   {
-    name: 'NCT AI Chatbot',
+    name: 'Neo AI Chatbot',
     description: 'An AI chatbot that is planning.',
     type: 'web',
     techStack: [
@@ -107,6 +96,17 @@ export const projects: Project[] = [
     manager: 'Vo Hoang Phuc',
     purpose:
       'A short-term project to demonstrate AI chatbot development with cutting-edge technologies.',
+  },
+  {
+    name: 'NCT Hub Landing Page',
+    description:
+      "The landing page showcasing the club's projects and activities.",
+    type: 'web',
+    techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
+    status: 'completed',
+    manager: 'Ngo Van Tai',
+    purpose:
+      'A revamp of the club landing page to showcase the club projects and activities.',
   },
   {
     name: 'Neo Crush Alpha',

@@ -58,9 +58,8 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         >
           x
         </p>
-
         <Image
-          src="/media/background/demo.png"
+          src="/media/background/demo.jpg"
           width={1000}
           height={1000}
           alt="Demo Project"
@@ -103,7 +102,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                 <div className="flex items-center gap-4 md:gap-6">
                   <Image
                     className="h-10 w-10 rounded-full object-cover md:h-12 md:w-12"
-                    src="/members/people.png"
+                    src="/members/people.jpg"
                     width={1000}
                     height={1000}
                     alt="Contributor"

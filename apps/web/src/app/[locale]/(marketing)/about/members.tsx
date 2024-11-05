@@ -100,7 +100,7 @@ export default function Members() {
                 : 'opacity-100'
             }`}
           >
-            <MemberCard name={p.name} role={p.role} />
+            <MemberCard name={p.name} role={p.role} image={p.image} />
           </div>
         ))}
       </div>

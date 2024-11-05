@@ -3,18 +3,19 @@ import Image from 'next/image';
 interface MemberCardProps {
   name: string;
   role: string;
+  image: string;
 }
 
-export default function MemberCard({ name, role }: MemberCardProps) {
+export default function MemberCard({ name, role, image }: MemberCardProps) {
   return (
     <div className="flex flex-col items-center">
-      <div className="flex w-full justify-center">
+      <div className="flex h-full w-full justify-center">
         <Image
-          src="/members/people.png"
+          src={image}
           width={1000}
           height={1000}
-          alt="people"
-          className="w-5/6 rounded-lg md:w-2/3"
+          alt={name}
+          className="w-5/6 rounded-lg object-cover md:w-2/3"
         />
       </div>
       <p className="mt-3 text-center text-xl font-black md:text-xl">{name}</p>
