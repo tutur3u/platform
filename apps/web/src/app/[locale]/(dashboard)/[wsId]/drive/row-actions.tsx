@@ -203,13 +203,15 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
+          <DropdownMenuItem
+            onClick={storageObj.id ? renameStorageObject : renameStorageFolder}
+          >
+            {t('common.rename')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           {storageObj.id && (
             // only allows rename & download on onject
             <>
-              <DropdownMenuItem onClick={renameStorageObject}>
-                {t('common.rename')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={downloadStorageObject}>
                 {t('common.download')}
               </DropdownMenuItem>
