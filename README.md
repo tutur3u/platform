@@ -1,34 +1,13 @@
 # NCT Hub Monorepo
 
-[![CodeQL](https://github.com/tutur3u/platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/codeql.yml)
-[![Test](https://github.com/tutur3u/platform/actions/workflows/test.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/test.yaml)
-[![Supabase CI](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml)
-
 This repository is a monorepo for all of NCT Hub's services, powered by Turborepo. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
-
-This monorepo contains multiple applications and services that make up the Tuturuuu ecosystem. It's powered by Turborepo for efficient management of multiple packages. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
 
 ## Project Structure
 
-- `apps/web`: Main application (tuturuuu.com)
-- `apps/rewise`: AI-powered chatbot assistant (similar to claude.ai and chatgpt.com)
+- `apps/web`: Main application (rmitnct.club)
 - `apps/docs`: Documentation website powered by Mintlify
 
 - `app`: a [Next.js](https://nextjs.org/) app with [Tailwind CSS](https://tailwindcss.com/) support that contains all public information about NCT Hub, including the landing page, pricing plans, branding-related resources and NCT Hub's services through a web application interface. On production, this app is located at [**rmitnct.club**](https://rmitnct.club).
-
-Tuturuuu services include:
-
-- Task management (upcoming)
-- Calendar scheduling and management (upcoming)
-- Finance management
-- User management (personal and enterprise, internal and external)
-- Inventory management
-- Mailing services (integrated with user management for group-scoped post notifications)
-- Workspace permission management
-- Granular permission control
-- API & Secrets system
-- External migration support
-- AI chat with deep integration across all features and products
 
 ## Prerequisites
 
