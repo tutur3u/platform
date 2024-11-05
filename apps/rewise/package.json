@@ -22,7 +22,7 @@
     "@ai-sdk/google": "^0.0.55",
     "@ai-sdk/google-vertex": "^0.0.43",
     "@ai-sdk/mistral": "^0.0.46",
-    "@ai-sdk/openai": "^0.0.71",
+    "@ai-sdk/openai": "^0.0.72",
     "@ai-sdk/react": "^0.0.70",
     "@anthropic-ai/sdk": "^0.32.0",
     "@aws-sdk/client-ses": "^3.682.0",
