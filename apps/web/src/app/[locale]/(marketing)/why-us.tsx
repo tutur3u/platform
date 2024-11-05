@@ -1,7 +1,17 @@
+'use client';
+
+import { motion } from 'framer-motion';
+
 export default function WhyUs() {
   return (
-    <div className="flex flex-col">
-      <p className="mb-12 mt-3 px-10 text-4xl font-bold md:px-32 md:text-5xl lg:text-8xl">
+    <motion.div
+      className="flex flex-col"
+      initial={{ opacity: 0, y: 50 }}
+      transition={{ duration: 1 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+    >
+      <p className="mb-12 mt-3 bg-gradient-to-r from-yellow-400 to-yellow-900/80 bg-clip-text px-10 py-2 text-4xl font-bold text-transparent md:px-32 md:text-5xl lg:text-8xl">
         Why us?
       </p>
       <div className="flex flex-col justify-between gap-8 text-center md:flex-row">
@@ -17,7 +27,7 @@ export default function WhyUs() {
               SPECIAL EVENTS
             </p>
           </div>
-          <div className="text-foreground flex flex-auto items-center justify-center bg-slate-400/30 p-4 dark:bg-slate-700/50">
+          <div className="text-foreground flex flex-1 items-center justify-center bg-slate-400/30 p-4 dark:bg-slate-700/50">
             <p className="text-center text-base md:text-sm lg:text-xl">
               Events organized to support you in finding career paths in
               technology, gaining deeper insights from company trips and alumni,
@@ -38,7 +48,7 @@ export default function WhyUs() {
               NETWORKING
             </p>
           </div>
-          <div className="text-foreground justify-ceter relative flex flex-auto items-center bg-slate-400/30 p-4 dark:bg-slate-700/50">
+          <div className="text-foreground flex flex-1 items-center justify-center bg-slate-400/30 p-4 dark:bg-slate-700/50">
             <p className="text-base md:text-sm lg:text-xl">
               Our network is the most valuable asset for our members. We connect
               you with the right people to help you achieve your goals.
@@ -61,7 +71,7 @@ export default function WhyUs() {
               VISIONS
             </p>
           </div>
-          <div className="text-foreground flex flex-auto items-center justify-center bg-slate-400/30 p-4 dark:bg-slate-700/50">
+          <div className="text-foreground flex flex-1 items-center justify-center bg-slate-400/30 p-4 dark:bg-slate-700/50">
             <p className="text-base md:text-sm lg:text-xl">
               We create an environment not only for students from SSET students
               but also others to learn new knowledge, have fun, and expand their
@@ -71,6 +81,6 @@ export default function WhyUs() {
           <div className="h-1/5 rounded-b-2xl bg-slate-400/30 md:[clip-path:polygon(0_0,100%_0,100%_100%,15%_100%,10%_100%,10%_30%)] dark:bg-slate-700/50"></div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

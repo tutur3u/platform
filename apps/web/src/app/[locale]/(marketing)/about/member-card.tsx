@@ -7,7 +7,7 @@ interface MemberCardProps {
 
 export default function MemberCard({ name, role }: MemberCardProps) {
   return (
-    <div className="flex flex-col items-center md:w-5/6">
+    <div className="flex flex-col items-center">
       <div className="flex w-full justify-center">
         <Image
           src="/members/people.png"

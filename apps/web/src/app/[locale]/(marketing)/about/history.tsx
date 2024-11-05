@@ -55,7 +55,7 @@ export default function History() {
           }}
         >
           <p className="bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text p-3 text-3xl font-black tracking-normal text-transparent md:text-5xl lg:text-6xl lg:tracking-wide">
-            NEO Culture Tech history
+            NEO Culture Tech History
           </p>
         </div>
 

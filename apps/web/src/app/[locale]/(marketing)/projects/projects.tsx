@@ -33,7 +33,7 @@ export default function Projects() {
           <div className="mt-1 w-2/3 md:w-full">
             <p className="text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
               The place where you can learn, grow and have fun with technology,
-              by building projects.
+              by building projects.
             </p>
           </div>
         </div>
