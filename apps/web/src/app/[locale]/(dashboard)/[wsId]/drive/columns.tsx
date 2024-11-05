@@ -78,7 +78,6 @@ export const storageObjectsColumns = (
       const pathname = usePathname();
       const searchParams = useSearchParams();
       const basePath = searchParams.get('path') ?? '';
-      const name = row.getValue('name');
 
       // merging current params with newly added param
       // see: https://nextjs.org/docs/app/api-reference/functions/use-search-params#updating-searchparams
@@ -100,7 +99,7 @@ export const storageObjectsColumns = (
               '?' +
               createQueryString(
                 'path',
-                name === '...'
+                row.getValue('name') === '...'
                   ? popPath(basePath)
                   : joinPath(basePath, row.getValue('name'))
               )
