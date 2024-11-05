@@ -1,4 +1,5 @@
-import { Button } from '@mantine/core';
+import { Button } from '@repo/ui/components/ui/button';
+import { Check, X } from 'lucide-react';
 
 interface Props {
   label: string;
@@ -10,15 +11,13 @@ interface Props {
 const FeatureToggle = ({ label, checked, onCheck, disabled }: Props) => {
   return (
     <Button
-      className={`flex w-full items-center justify-center rounded border p-2 font-semibold transition ${
-        checked
-          ? 'border-blue-500/20 bg-blue-500/20 text-blue-600 hover:bg-blue-500/10 dark:border-blue-300/20 dark:bg-blue-300/5 dark:text-blue-300 dark:hover:bg-blue-300/10'
-          : 'text-foreground/80 border-zinc-500/10 bg-zinc-500/5 hover:bg-zinc-500/10 dark:border-zinc-300/10 dark:bg-zinc-400/5 dark:text-zinc-300/70 dark:hover:bg-zinc-300/5'
-      }`}
+      variant={checked ? undefined : 'outline'}
       onClick={onCheck ? () => onCheck(!checked) : undefined}
       disabled={disabled}
+      className="flex items-center justify-between gap-2"
     >
       {label}
+      {checked ? <Check /> : <X />}
     </Button>
   );
 };

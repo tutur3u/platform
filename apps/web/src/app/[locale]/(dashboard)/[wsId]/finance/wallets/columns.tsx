@@ -9,7 +9,7 @@ import moment from 'moment';
 
 export const walletColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<Wallet>[] => {
   return [
     // {

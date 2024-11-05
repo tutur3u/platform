@@ -184,6 +184,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_whitelisted_emails: {
+        Row: {
+          created_at: string;
+          email: string;
+          enabled: boolean;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          enabled?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          enabled?: boolean;
+        };
+        Relationships: [];
+      };
       calendar_event_colors: {
         Row: {
           value: string;
@@ -343,6 +361,72 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_module_flashcards: {
+        Row: {
+          created_at: string;
+          flashcard_id: string;
+          module_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          flashcard_id: string;
+          module_id: string;
+        };
+        Update: {
+          created_at?: string;
+          flashcard_id?: string;
+          module_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_module_flashcards_flashcard_id_fkey';
+            columns: ['flashcard_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_flashcards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_flashcards_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_module_quizzes: {
+        Row: {
+          created_at: string;
+          module_id: string;
+          quiz_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          module_id: string;
+          quiz_id: string;
+        };
+        Update: {
+          created_at?: string;
+          module_id?: string;
+          quiz_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_module_quizzes_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_module_quizzes_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
             referencedColumns: ['id'];
           },
         ];
@@ -1766,23 +1850,40 @@ export type Database = {
           },
         ];
       };
-      quizzes: {
+      quiz_options: {
         Row: {
           created_at: string;
           id: string;
-          name: string | null;
+          is_correct: boolean;
+          points: number | null;
+          quiz_id: string;
+          value: string;
         };
         Insert: {
           created_at?: string;
           id?: string;
-          name?: string | null;
+          is_correct: boolean;
+          points?: number | null;
+          quiz_id: string;
+          value: string;
         };
         Update: {
           created_at?: string;
           id?: string;
-          name?: string | null;
+          is_correct?: boolean;
+          points?: number | null;
+          quiz_id?: string;
+          value?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'quiz_options_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       sent_emails: {
         Row: {
@@ -1852,13 +1953,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'sent_emails_sender_id_fkey';
-            columns: ['sender_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'sent_emails_sender_id_fkey1';
             columns: ['sender_id'];
             isOneToOne: false;
             referencedRelation: 'users';
@@ -3027,6 +3121,85 @@ export type Database = {
           },
         ];
       };
+      workspace_course_modules: {
+        Row: {
+          content: Json | null;
+          course_id: string;
+          created_at: string;
+          extra_content: Json | null;
+          id: string;
+          is_public: boolean;
+          is_published: boolean;
+          name: string;
+          youtube_links: string[] | null;
+        };
+        Insert: {
+          content?: Json | null;
+          course_id: string;
+          created_at?: string;
+          extra_content?: Json | null;
+          id?: string;
+          is_public?: boolean;
+          is_published?: boolean;
+          name?: string;
+          youtube_links?: string[] | null;
+        };
+        Update: {
+          content?: Json | null;
+          course_id?: string;
+          created_at?: string;
+          extra_content?: Json | null;
+          id?: string;
+          is_public?: boolean;
+          is_published?: boolean;
+          name?: string;
+          youtube_links?: string[] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_course_modules_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_courses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_courses: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_public: boolean;
+          is_published: boolean;
+          name: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_public?: boolean;
+          is_published?: boolean;
+          name?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_public?: boolean;
+          is_published?: boolean;
+          name?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_courses_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_default_permissions: {
         Row: {
           created_at: string;
@@ -3070,25 +3243,31 @@ export type Database = {
       };
       workspace_documents: {
         Row: {
-          content: string | null;
-          created_at: string | null;
+          content: Json | null;
+          created_at: string;
           id: string;
+          is_public: boolean | null;
+          legacy_content: string | null;
           name: string | null;
-          ws_id: string;
+          ws_id: string | null;
         };
         Insert: {
-          content?: string | null;
-          created_at?: string | null;
+          content?: Json | null;
+          created_at?: string;
           id?: string;
+          is_public?: boolean | null;
+          legacy_content?: string | null;
           name?: string | null;
-          ws_id: string;
+          ws_id?: string | null;
         };
         Update: {
-          content?: string | null;
-          created_at?: string | null;
+          content?: Json | null;
+          created_at?: string;
           id?: string;
+          is_public?: boolean | null;
+          legacy_content?: string | null;
           name?: string | null;
-          ws_id?: string;
+          ws_id?: string | null;
         };
         Relationships: [
           {
@@ -3104,6 +3283,7 @@ export type Database = {
         Row: {
           created_at: string;
           email: string;
+          invited_by: string | null;
           role: string;
           role_title: string;
           ws_id: string;
@@ -3111,6 +3291,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           email: string;
+          invited_by?: string | null;
           role?: string;
           role_title?: string;
           ws_id: string;
@@ -3118,11 +3299,19 @@ export type Database = {
         Update: {
           created_at?: string;
           email?: string;
+          invited_by?: string | null;
           role?: string;
           role_title?: string;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_email_invites_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_email_invites_role_fkey';
             columns: ['role'];
@@ -3132,6 +3321,38 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_email_invites_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_flashcards: {
+        Row: {
+          back: string;
+          created_at: string;
+          front: string;
+          id: string;
+          ws_id: string;
+        };
+        Insert: {
+          back: string;
+          created_at?: string;
+          front: string;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          back?: string;
+          created_at?: string;
+          front?: string;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_flashcards_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -3367,6 +3588,35 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_promotions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_quizzes: {
+        Row: {
+          created_at: string;
+          id: string;
+          question: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          question: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          question?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_quizzes_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -4421,14 +4671,14 @@ export type Database = {
             foreignKeyName: 'public_workspace_users_updated_by_fkey';
             columns: ['updated_by'];
             isOneToOne: false;
-            referencedRelation: 'workspace_users';
+            referencedRelation: 'distinct_invoice_creators';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'public_workspace_users_updated_by_fkey';
             columns: ['updated_by'];
             isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
+            referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
@@ -4442,14 +4692,14 @@ export type Database = {
             foreignKeyName: 'workspace_users_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
-            referencedRelation: 'workspace_users';
+            referencedRelation: 'distinct_invoice_creators';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'workspace_users_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
+            referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
@@ -4950,8 +5200,10 @@ export type Database = {
         | 'manage_documents'
         | 'manage_drive'
         | 'manage_users'
+        | 'export_users_data'
         | 'manage_inventory'
         | 'manage_finance'
+        | 'export_finance_data'
         | 'ai_chat'
         | 'ai_lab'
         | 'send_user_group_post_emails';
@@ -5042,4 +5294,19 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions['schema']]['Enums'][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema['Enums']
     ? PublicSchema['Enums'][PublicEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema['CompositeTypes']
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database;
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema['CompositeTypes']
+    ? PublicSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never;

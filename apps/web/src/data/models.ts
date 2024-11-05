@@ -24,6 +24,14 @@ export const models: {
   },
 
   {
+    value: 'claude-3-5-sonnet-20241022',
+    label: 'claude-3.5-sonnet (2024-10-22)',
+    provider: 'Anthropic',
+    description:
+      'Claude 3.5 Sonnet strikes the ideal balance between intelligence and speed—particularly for enterprise workloads. It delivers strong performance at a lower cost compared to its peers, and is engineered for high endurance in large-scale AI deployments.',
+    context: 200000,
+  },
+  {
     value: 'claude-3-5-sonnet-20240620',
     label: 'claude-3.5-sonnet (2024-06-20)',
     provider: 'Anthropic',

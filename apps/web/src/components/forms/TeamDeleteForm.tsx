@@ -1,6 +1,5 @@
 import { Team } from '@/types/primitives/Team';
 import { Button, Divider, TextInput } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
 import { useState } from 'react';
 
 interface Props {
@@ -34,7 +33,7 @@ export default function TeamDeleteForm({ team, onDelete }: Props) {
           disabled={isDisabled}
           onClick={() => {
             onDelete(team);
-            closeAllModals();
+            // closeAllModals();
           }}
         >
           Delete this team and all of its data

@@ -10,7 +10,7 @@ import Link from 'next/link';
 
 export const groupTagColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<UserGroupTag>[] => [
   // {
   //   id: 'select',

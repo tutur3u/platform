@@ -1,8 +1,0 @@
-**/node_modules/
-**/dist/
-**/.next/
-**/.turbo/
-**/coverage/
-**/package-lock.json
-**/pnpm-lock.yaml
-**/yarn.lock

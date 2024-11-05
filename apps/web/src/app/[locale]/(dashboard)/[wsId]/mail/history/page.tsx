@@ -1,3 +1,4 @@
+import Filters from '../posts/filters';
 import { getEmailColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@/utils/supabase/server';
@@ -6,9 +7,11 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
-  q?: string;
   page?: string;
   pageSize?: string;
+  includedGroups?: string | string[];
+  excludedGroups?: string | string[];
+  userId?: string;
 }
 
 interface Props {
@@ -48,6 +51,10 @@ export default async function WorkspaceUsersPage({
           source_name: false,
           source_email: false,
         }}
+        filters={
+          <Filters wsId={wsId} searchParams={await searchParams} noExclude />
+        }
+        disableSearch
       />
     </>
   );
@@ -56,19 +63,44 @@ export default async function WorkspaceUsersPage({
 async function getData(
   wsId: string,
   {
-    q,
     page = '1',
     pageSize = '10',
+    includedGroups = [],
+    excludedGroups = [],
+    userId,
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
 
+  const hasFilters =
+    includedGroups.length > 0 || excludedGroups.length > 0 || userId;
+
   const queryBuilder = supabase
     .from('sent_emails')
     .select(
-      '*, ...users(sender:display_name), recipient:workspace_users(display_name, full_name)'
+      `*, ...users(sender:display_name), recipient:workspace_users(display_name, full_name), ...user_group_posts${
+        hasFilters ? '!inner' : ''
+      }(workspace_user_groups(group_id:id))`,
+      {
+        count: 'exact',
+      }
     );
+
+  if (includedGroups.length > 0) {
+    queryBuilder.in(
+      'user_group_posts.group_id',
+      Array.isArray(includedGroups) ? includedGroups : [includedGroups]
+    );
+  }
+
+  if (excludedGroups.length > 0) {
+    queryBuilder.not('user_group_posts.group_id', 'in', excludedGroups);
+  }
+
+  if (userId) {
+    queryBuilder.eq('receiver_id', userId);
+  }
 
   if (page && pageSize) {
     const parsedPage = Number.parseInt(page);
@@ -84,7 +116,7 @@ async function getData(
 
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(wsId, { pageSize, retry: false });
   }
 
   return {

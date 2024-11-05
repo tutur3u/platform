@@ -1,7 +1,12 @@
 {
   "common": {
+    "alpha": "Alpha",
+    "beta": "Beta",
     "and": "and",
     "login": "Login",
+    "export-content": "Please choose file type to export",
+    "export": "Export",
+    "file-type": "File Type",
     "maximize": "Maximize",
     "productivity": "productivity",
     "minimize": "minimize",
@@ -123,7 +128,40 @@
     "background": "Background",
     "scan_me": "Scan me",
     "qr_code": "QR Code",
-    "current_plan": "Current plan"
+    "current_plan": "Current plan",
+    "incomplete": "Incomplete",
+    "file-name": "File Name",
+    "date": "Date",
+    "status": "Status",
+    "years_old": "years old",
+    "year_old": "year old",
+    "average": "Average",
+    "no_content_yet": "No content yet",
+    "words": "words",
+    "word": "word",
+    "share": "Share",
+    "confirm_delete_title": "Delete confirmation",
+    "confirm_delete_description": "Are you sure you want to delete this item? This action is permanent and irreversible.",
+    "saved": "Saved",
+    "unsaved": "Unsaved",
+    "previous": "Previous",
+    "next": "Next",
+    "published": "Published",
+    "option": "Option",
+    "correct": "Correct",
+    "add_option": "Add option",
+    "question": "Question",
+    "create_new": "Create new",
+    "import": "Import",
+    "invalid-file-type": "Invalid file type",
+    "no-sheets-found": "No sheets found.",
+    "generate_with_ai": "Generate with AI",
+    "regenerate": "Regenerate",
+    "accept": "Accept",
+    "context": "Context",
+    "enter_context": "Enter context",
+    "generate": "Generate",
+    "enabled": "Enabled"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -263,7 +301,11 @@
     "accept-invite-error-title": "There was an error accepting the invite.",
     "accept-invite-error-msg": "Please try again later.",
     "decline-invite-error-title": "There was an error declining the invite.",
-    "decline-invite-error-msg": "Please try again later."
+    "decline-invite-error-msg": "Please try again later.",
+    "invited-you": "invited you",
+    "workspace-invitation": "Workspace invitation",
+    "you-been-invited-to-join-the": "You've been invited to join the",
+    "accept-to-start-collaborating": " workspace. Accept to start collaborating!"
   },
   "auth": {
     "password": "Password",
@@ -336,7 +378,7 @@
     "new": "New",
     "home": "Home",
     "refresh": "Refresh",
-    "chat": "Chat",
+    "chat_with_ai": "Chat with AI",
     "calendar": "Calendar",
     "projects": "Projects",
     "documents": "Documents",
@@ -364,7 +406,8 @@
     "expand-sidebar": "Expand Sidebar",
     "slides": "Slides",
     "mail": "Mail",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "education": "Education"
   },
   "team-tabs": {
     "overview": "Overview",
@@ -431,7 +474,8 @@
     "features": "Features",
     "monitoring": "Monitoring",
     "backups": "Backups",
-    "integrations": "Integrations"
+    "integrations": "Integrations",
+    "ai_whitelisted_emails": "AI Whitelisted Emails"
   },
   "basic-data-table": {
     "id": "ID",
@@ -444,7 +488,10 @@
     "size": "Size",
     "created_at": "Created at",
     "files": "Files",
-    "clear_files": "Clear files"
+    "clear_files": "Clear files",
+    "folder": {
+      "name": "Folder name"
+    }
   },
   "ai-prompts-data-table": {
     "id": "ID",
@@ -492,7 +539,9 @@
     "revert_changes": "Revert Changes",
     "apply_changes": "Apply Changes",
     "applying": "Applying...",
-    "selected": "Selected"
+    "selected": "Selected",
+    "linked_products": "Linked products",
+    "remove-from-group": "Remove from group"
   },
   "email-data-table": {
     "id": "ID",
@@ -518,6 +567,26 @@
     "notes": "Notes",
     "created_at": "Created At"
   },
+  "course-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "is_public": "Public",
+    "is_published": "Published",
+    "modules": "Modules",
+    "created_at": "Created At"
+  },
+  "quiz-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "question": "Question",
+    "created_at": "Created At"
+  },
+  "flashcard-data-table": {
+    "id": "ID",
+    "front": "Front",
+    "back": "Back",
+    "created_at": "Created At"
+  },
   "user-group-data-table": {
     "id": "ID",
     "name": "Name",
@@ -529,7 +598,8 @@
     "locked": "Locked",
     "created_at": "Created At",
     "included_tags": "Included Tags",
-    "excluded_tags": "Excluded Tags"
+    "excluded_tags": "Excluded Tags",
+    "special_users": "Special users"
   },
   "user-group-tag-data-table": {
     "id": "ID",
@@ -631,6 +701,7 @@
     "unit": "Unit",
     "warehouse": "Warehouse",
     "usage": "Usage",
+    "price": "Price",
     "created_at": "Created at"
   },
   "batch-data-table": {
@@ -680,12 +751,24 @@
     "ai_chat_playground_discontinued_p2": "has been temporarily disabled for improvement and further testing. Don't worry! We are working on exciting features to bring you a better experience. Stay tuned for a comeback with more features and functionalities. Thank you for your patience and understanding.\n\nBest regards,\nNCT Hub"
   },
   "ws-storage-objects": {
+    "name": "Tuturuuu Drive",
+    "plural": "Tuturuuu Drive",
+    "singular": "Tuturuuu Drive",
+    "upload_description": "Upload multiple files to N Drive",
     "module": "NCT Hub Drive",
+    "name": "Tuturuuu Drive",
+    "plural": "Tuturuuu Drive",
+    "singular": "Tuturuuu Drive",
+    "upload": "Upload",
+    "upload_description": "Upload multiple files to Tuturuuu Drive",
     "description": "Store workspace files securely, and access them from anywhere.",
     "total_files": "Total Files",
     "total_size": "Total Size",
     "largest_file": "Largest File",
-    "smallest_file": "Smallest File"
+    "smallest_file": "Smallest File",
+    "files": "Files",
+    "folder": "Folder",
+    "folder_create": "Create folder"
   },
   "ws-ai-workflows": {
     "module": "Workflows",
@@ -694,7 +777,10 @@
     "create": "Create Workflow",
     "edit": "Edit Workflow",
     "add_new": "Add a new workflow to this workspace.",
-    "edit_existing": "Edit an existing workflow in this workspace."
+    "edit_existing": "Edit an existing workflow in this workspace.",
+    "include_resources": "Include uploaded resources",
+    "include_youtube_links": "Include YouTube links",
+    "include_module_content": "Include module content"
   },
   "ws-task-boards": {
     "name": "Board name",
@@ -732,7 +818,11 @@
     "create_secret": "Create Secret",
     "edit_secret": "Edit Secret",
     "add_new_workspace_secret": "Add a new secret for this workspace.",
-    "edit_existing_workspace_secret": "Edit an existing secret for this workspace."
+    "edit_existing_workspace_secret": "Edit an existing secret for this workspace.",
+    "plural": "Secrets",
+    "singular": "Secret",
+    "create": "Create secret",
+    "create_description": "Create a new secret"
   },
   "ws-api-keys": {
     "api_key": "API Key",
@@ -785,7 +875,14 @@
     "create": "Add attendance",
     "edit": "Edit attendance",
     "create_description": "Add a new attendance",
-    "edit_description": "Edit an existing attendance"
+    "edit_description": "Edit an existing attendance",
+    "present": "Present",
+    "absent": "Absent",
+    "not-set": "Not set",
+    "no_groups": "No group found",
+    "select_group": "Select a group",
+    "update_error": "Attendance update error",
+    "update_success": "Attendance updated"
   },
   "ws-user-groups": {
     "singular": "User group",
@@ -1025,7 +1122,11 @@
     "manage_user_report_templates": "Manage user report templates",
     "manage_user_report_templates_description": "Allows members to edit user report templates.",
     "send_user_group_post_emails": "Send post content via emails",
-    "send_user_group_post_emails_description": "Allows members to send emails to virtual users created in your workspace about specific user group post content."
+    "send_user_group_post_emails_description": "Allows members to send emails to virtual users created in your workspace about specific user group post content.",
+    "export_users_data": "Allow exporting users data",
+    "export_users_data_description": "Allows members to export users data in the workspace.",
+    "export_finance_data": "Allow exporting finance data",
+    "export_finance_data_description": "Allows members to export finance data in the workspace."
   },
   "ws-activities": {
     "description": "View all activities in your workspace",
@@ -1199,7 +1300,8 @@
     "total-expense": "Total expense",
     "total-income": "Total income",
     "recent-transactions": "Recent transactions",
-    "no-transaction": "You have no transactions"
+    "no-transaction": "You have no transactions",
+    "show-finance-stats": "Show finance statistics"
   },
   "inventory-overview": {
     "products-with-prices": "Products with prices"
@@ -1469,21 +1571,36 @@
     "singular": "Product",
     "description": "Products are used as individual type of item that you have in your inventory and could be used to link with invoices.",
     "create": "Create product",
-    "create_description": "Create a new product"
+    "create_description": "Create a new product",
+    "form": {
+      "details": "Details",
+      "name": "Product name",
+      "manufacturer": "Manufacturer",
+      "description": "Description",
+      "usage": "Usage",
+      "price": "Price",
+      "stock": "Stock",
+      "add_warehouse": "Add warehouse",
+      "amount": "Amount",
+      "min_amount": "Min amount",
+      "category": "Category"
+    }
   },
   "ws-inventory-categories": {
     "plural": "Categories",
     "singular": "Category",
     "description": "Categories are used to group similar inventory products together.",
     "create": "Create category",
-    "create_description": "Create a new category"
+    "create_description": "Create a new category",
+    "placeholder": "Choose a category"
   },
   "ws-inventory-units": {
     "plural": "Units",
     "singular": "Unit",
     "description": "Units are used to measure inventory products.",
     "create": "Create unit",
-    "create_description": "Create a new unit"
+    "create_description": "Create a new unit",
+    "placeholder": "Choose a unit"
   },
   "ws-inventory-suppliers": {
     "plural": "Suppliers",
@@ -1497,7 +1614,8 @@
     "singular": "Warehouse",
     "description": "Warehouses are used to store inventory products.",
     "create": "Create warehouse",
-    "create_description": "Create a new warehouse"
+    "create_description": "Create a new warehouse",
+    "placeholder": "Choose a warehouse"
   },
   "ws-inventory-batches": {
     "plural": "Batches",
@@ -1511,7 +1629,19 @@
     "singular": "Promotion",
     "description": "Promotions are used to manage product discounts and promotions.",
     "create": "Create promotion",
-    "create_description": "Create a new promotion"
+    "create_description": "Create a new promotion",
+    "update": "Update promotion",
+    "form": {
+      "name": "Name",
+      "description": "Decription",
+      "code": "Coupon code",
+      "value": "Discount value",
+      "unit": {
+        "placeholder": "Unit",
+        "currency": "Currency",
+        "percentage": "Percentage"
+      }
+    }
   },
   "ws_post_details": {
     "check_all": "Check all"
@@ -1526,7 +1656,88 @@
   "ws-post-emails": {
     "plural": "Posts",
     "singular": "Post",
-    "description": "Send emails to users that have their work checked by authorized staff in specific user group posts."
+    "description": "Send emails to users that have their work checked by authorized staff in specific user group posts.",
+    "sent_emails": "Sent emails",
+    "pending_emails": "Pending emails"
   },
-  "avatar": "Avatar"
+  "avatar": "Avatar",
+  "ws-user-group-details": {
+    "schedule": "Group Schedule",
+    "attendance": "Group Attendance",
+    "reports": "Group Reports",
+    "metrics": "Group Metrics"
+  },
+  "workspace-education-tabs": {
+    "overview": "Overview",
+    "courses": "Courses",
+    "materials": "Learning Materials",
+    "quizzes": "Quizzes",
+    "flashcards": "Flashcards"
+  },
+  "ws-courses": {
+    "plural": "Courses",
+    "singular": "Course",
+    "create": "Create course",
+    "create_description": "Create a new course",
+    "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
+    "edit": "Edit course",
+    "name": "Course name",
+    "edit_description": "Edit an existing course"
+  },
+  "ws-course-modules": {
+    "plural": "Course Modules",
+    "singular": "Course Module",
+    "create": "Create module",
+    "create_description": "Create a new module",
+    "description": "Manage modules in your workspace that are part of a course.",
+    "edit": "Edit module",
+    "name": "Module name",
+    "edit_description": "Edit an existing module",
+    "add_link": "Add link",
+    "add_youtube_link_description": "Add a new YouTube link.",
+    "youtube_link": "YouTube Link",
+    "youtube_links": "YouTube Links",
+    "edit_link": "Edit link",
+    "invalid_youtube_link": "Invalid YouTube link",
+    "resource": "Resource",
+    "resources": "Resources",
+    "add_resource": "Add resource",
+    "add_resource_description": "Add a new resource."
+  },
+  "ws-flashcards": {
+    "plural": "Flashcards",
+    "singular": "Flashcard",
+    "create": "Create flashcard",
+    "create_description": "Create a new flashcard",
+    "description": "Manage flashcards in your workspace that have a front and back side for learning purposes.",
+    "edit": "Edit flashcard",
+    "front": "Front",
+    "back": "Back",
+    "edit_description": "Edit an existing flashcard",
+    "generation_error": "An error has occured when generating flashcards.",
+    "generation_accepted": "AI-generated flashcards are accepted!"
+  },
+  "ws-quizzes": {
+    "plural": "Quizzes",
+    "singular": "Quiz",
+    "create": "Create quiz",
+    "create_description": "Create a new quiz",
+    "description": "Manage quizzes in your workspace that have multiple choice questions for learning purposes.",
+    "edit": "Edit quiz",
+    "question": "Question",
+    "answer": "Answer",
+    "edit_description": "Edit an existing quiz",
+    "generation_error": "An error has occured when generating quizzes.",
+    "generation_accepted": "AI-generated quizzes are accepted!"
+  },
+  "course-details-tabs": {
+    "preview": "Preview",
+    "module_objectives": "Module Objectives",
+    "resources": "Resources",
+    "youtube_links": "YouTube Links",
+    "extra_reading": "Extra Reading",
+    "module_content": "Module Content",
+    "no_youtube_links": "No YouTube links yet.",
+    "resource_preview_unavailable": "Resource preview is unavailable"
+  }
 }

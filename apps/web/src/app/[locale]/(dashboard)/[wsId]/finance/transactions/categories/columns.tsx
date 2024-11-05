@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const transactionCategoryColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<TransactionCategory>[] => [
   // {
   //   id: 'select',

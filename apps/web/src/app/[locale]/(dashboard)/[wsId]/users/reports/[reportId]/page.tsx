@@ -127,18 +127,20 @@ export default async function WorkspaceUserDetailsPage({
         )}
       </div>
 
-      <EditableReportPreview
-        wsId={wsId}
-        report={{
-          ...report,
-          group_name:
-            report.group_name ||
-            userGroups?.find((group) => group.id === report.group_id)?.name ||
-            'No group',
-        }}
-        configs={configs}
-        isNew={reportId === 'new'}
-      />
+      {(reportId !== 'new' || (!!groupId && !!userId)) && (
+        <EditableReportPreview
+          wsId={wsId}
+          report={{
+            ...report,
+            group_name:
+              report.group_name ||
+              userGroups?.find((group) => group.id === report.group_id)?.name ||
+              'No group',
+          }}
+          configs={configs}
+          isNew={reportId === 'new'}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { transactionColumns } from './columns';
+import ExportDialogContent from './export-dialog-content';
 import { TransactionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { getPermissions } from '@/lib/workspace-helper';
 import { Transaction } from '@/types/primitives/Transaction';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
@@ -26,6 +28,10 @@ export default async function WorkspaceTransactionsPage({
   const { data: rawData, count } = await getData(wsId, await searchParams);
   const t = await getTranslations();
 
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
   const data = rawData.map((d) => ({
     ...d,
     href: `/${wsId}/finance/transactions/${d.id}`,
@@ -46,6 +52,15 @@ export default async function WorkspaceTransactionsPage({
       <CustomDataTable
         data={data}
         columnGenerator={transactionColumns}
+        toolbarExportContent={
+          containsPermission('export_finance_data') && (
+            <ExportDialogContent
+              wsId={wsId}
+              exportType="transactions"
+              searchParams={await searchParams}
+            />
+          )
+        }
         namespace="transaction-data-table"
         count={count}
         defaultVisibility={{
@@ -80,7 +95,7 @@ async function getData(
     .order('taken_at', { ascending: false })
     .order('created_at', { ascending: false });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
+  if (q) queryBuilder.ilike('description', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);

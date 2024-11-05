@@ -5,7 +5,7 @@ function Loading() {
   return (
     <>
       <FeatureSummary
-        title={<div className="text-2xl font-bold hover:underline">...</div>}
+        title={<div className="text-2xl font-bold">...</div>}
         description="..."
       />
       <Separator className="my-4" />

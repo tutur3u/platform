@@ -9,7 +9,7 @@ const enabled = true;
 
 export default async function ExpenseStatistics({
   wsId,
-  searchParams: { view, startDate, endDate } = {},
+  searchParams: { showFinanceStats, view, startDate, endDate } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
@@ -44,11 +44,15 @@ export default async function ExpenseStatistics({
   return (
     <StatisticCard
       title={t('finance-overview.total-expense')}
-      value={Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND',
-        signDisplay: 'exceptZero',
-      }).format(expense || 0)}
+      value={
+        showFinanceStats
+          ? Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+              signDisplay: 'exceptZero',
+            }).format(expense || 0)
+          : '***'
+      }
     />
   );
 }

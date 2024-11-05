@@ -5,6 +5,7 @@ import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
 import Image from 'next/image';
@@ -37,6 +38,7 @@ export default function NeoCrushGamePage() {
         </div>
       </div>
       <Dialog>
+        <DialogTitle>Neo Crush</DialogTitle>
         <DialogTrigger asChild>
           <Button className="w-full max-w-sm">Start Game</Button>
         </DialogTrigger>

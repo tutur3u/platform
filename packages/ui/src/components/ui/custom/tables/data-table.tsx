@@ -32,7 +32,7 @@ export interface DataTableProps<TData, TValue> {
   extraData?: any;
   newObjectTitle?: string;
   editContent?: ReactNode;
-  namespace?: string;
+  namespace?: string | undefined;
   data?: TData[];
   count?: number | null;
   pageIndex?: number;
@@ -41,6 +41,8 @@ export interface DataTableProps<TData, TValue> {
   defaultVisibility?: VisibilityState;
   disableSearch?: boolean;
   isEmpty?: boolean;
+  toolbarImportContent?: ReactNode;
+  toolbarExportContent?: ReactNode;
   onRefresh?: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch?: (query: string) => void;
@@ -52,7 +54,7 @@ export interface DataTableProps<TData, TValue> {
     // eslint-disable-next-line no-unused-vars
     t: any,
     // eslint-disable-next-line no-unused-vars
-    namespace: string,
+    namespace: string | undefined,
     // eslint-disable-next-line no-unused-vars
     extraColumns?: any[],
     // eslint-disable-next-line no-unused-vars
@@ -67,7 +69,7 @@ export function DataTable<TData, TValue>({
   extraData,
   newObjectTitle,
   editContent,
-  namespace = 'common',
+  namespace,
   data,
   count,
   pageIndex = 0,
@@ -77,6 +79,8 @@ export function DataTable<TData, TValue>({
   disableSearch,
   isEmpty,
   t,
+  toolbarImportContent,
+  toolbarExportContent,
   onRefresh,
   onSearch,
   setParams,
@@ -137,6 +141,8 @@ export function DataTable<TData, TValue>({
         onSearch={onSearch || (() => {})}
         onRefresh={onRefresh || (() => {})}
         resetParams={resetParams || (() => {})}
+        importContent={toolbarImportContent}
+        exportContent={toolbarExportContent}
       />
       <div className="rounded-md border">
         <Table>
@@ -179,7 +185,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={
-                    columnGenerator?.(t, namespace)?.length ||
+                    (namespace && columnGenerator?.(t, namespace)?.length) ||
                     columns?.length ||
                     1
                   }

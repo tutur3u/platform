@@ -9,6 +9,7 @@ import {
 } from '@repo/ui/components/ui/accordion';
 import { FormField, FormItem } from '@repo/ui/components/ui/form';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 
@@ -29,6 +30,7 @@ export default function RoleFormPermissionsSection({
 
       <div className="rounded border p-4">
         <RolePermission
+          icon={<ShieldCheck />}
           title={t('ws-roles.admin')}
           description={t('ws-roles.admin_description')}
           value={groups.every((group) =>
@@ -60,18 +62,21 @@ export default function RoleFormPermissionsSection({
           <Fragment key={`group-${group.id}`}>
             <AccordionItem value={`group-${group.id}`}>
               <AccordionTrigger>
-                <div className="flex flex-wrap items-center gap-2">
-                  {group.title}
-                  <span className="flex items-center gap-1 rounded border px-1 text-sm font-bold">
-                    <span className="text-dynamic-orange">
-                      {enabledPermissionsCount.find((x) => x.id === group.id)
-                        ?.count || 0}
+                <div className="flex items-start justify-start gap-2">
+                  {group.icon}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {group.title}
+                    <span className="flex items-center gap-1 rounded border px-1 text-sm font-bold">
+                      <span className="text-dynamic-orange">
+                        {enabledPermissionsCount.find((x) => x.id === group.id)
+                          ?.count || 0}
+                      </span>
+                      <span className="opacity-50">/</span>
+                      <span className="text-dynamic-blue">
+                        {group.permissions.length}
+                      </span>
                     </span>
-                    <span className="opacity-50">/</span>
-                    <span className="text-dynamic-blue">
-                      {group.permissions.length}
-                    </span>
-                  </span>
+                  </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -85,6 +90,7 @@ export default function RoleFormPermissionsSection({
                       render={({ field }) => (
                         <FormItem>
                           <RolePermission
+                            icon={permission.icon}
                             title={permission.title}
                             description={permission.description}
                             value={field.value}
