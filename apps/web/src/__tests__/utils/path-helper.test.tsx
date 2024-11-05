@@ -1,4 +1,4 @@
-import { joinPath } from '@/utils/path-helper';
+import { joinPath, popPath } from '@/utils/path-helper';
 import { expect, it } from 'vitest';
 
 it('should join path without duplicate separator', () => {
@@ -35,4 +35,20 @@ it('should not duplicate separator', () => {
 
 it('should handle empty string as empty path', () => {
   expect(joinPath('base', '', '//child')).toBe('base/child');
+});
+
+it('should pop path by traverse to parent path', () => {
+  expect(popPath('/base-path/child-path')).toBe('/base-path');
+});
+
+it('should pop path by traverse to parent path with trailing slash', () => {
+  expect(popPath('/base-path/child-path/')).toBe('/base-path');
+});
+
+it('should pop path by traverse to parent path with duplicate separator', () => {
+  expect(popPath('//base-path//child-path//')).toBe('/base-path');
+});
+
+it('should not pop path that is empty', () => {
+  expect(popPath('//')).toBe('/');
 });
