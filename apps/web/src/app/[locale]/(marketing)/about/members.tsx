@@ -26,6 +26,8 @@ export default function Members() {
     DepartmentName | undefined
   >(undefined);
 
+  const [pinState, setPinState] = useState<boolean>(false);
+
   return (
     <div className="flex flex-col items-center px-2">
       <p className="mt-8 w-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text p-3 text-center text-3xl font-black tracking-normal text-transparent md:text-5xl lg:text-6xl lg:tracking-wide">
@@ -53,8 +55,13 @@ export default function Members() {
                     ? 'opacity-30'
                     : ''
                 }`}
-                onMouseEnter={() => setHighlightedDepartment(department.name)}
-                onMouseLeave={() => setHighlightedDepartment(undefined)}
+                onMouseEnter={() => {
+                  if (!pinState) setHighlightedDepartment(department.name);
+                }}
+                onMouseLeave={() => {
+                  if (!pinState) setHighlightedDepartment(undefined);
+                }}
+                onClick={() => setPinState(!pinState)}
               >
                 {department.name}
               </button>
@@ -69,8 +76,13 @@ export default function Members() {
                 ? 'opacity-30'
                 : ''
             }`}
-            onMouseEnter={() => setHighlightedDepartment('Executive Board')}
-            onMouseLeave={() => setHighlightedDepartment(undefined)}
+            onMouseEnter={() => {
+              if (!pinState) setHighlightedDepartment('Executive Board');
+            }}
+            onMouseLeave={() => {
+              if (!pinState) setHighlightedDepartment(undefined);
+            }}
+            onClick={() => setPinState(!pinState)}
           >
             Executive Board
           </button>{' '}

@@ -44,11 +44,6 @@ const navItems = (t: any) => {
     { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/neo-chess', label: 'Neo Chess' },
     { href: '/calendar/meet-together', label: t('common.meet-together') },
-    // {
-    //   href: 'https://docs.tuturuuu.com',
-    //   label: t('common.docs'),
-    //   external: true,
-    // },
   ] as NavItem[];
 };
 
@@ -81,9 +76,13 @@ const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
     return null;
 
   return (
-    <div className="bg-primary-foreground hidden w-full gap-12 rounded-2xl border-[0.5px] border-gray-700/50 px-6 py-3 font-semibold md:flex">
+    <div className="bg-primary-foreground hidden w-full items-center rounded-2xl border-[0.5px] border-gray-700/50 px-6 py-3 font-semibold md:flex md:gap-6 lg:gap-8">
       {navItems(t).map((item) => (
-        <NavLink key={item.href} item={item} />
+        <NavLink
+          key={item.href}
+          item={item}
+          className="md:text-sm lg:text-base"
+        />
       ))}
     </div>
   );

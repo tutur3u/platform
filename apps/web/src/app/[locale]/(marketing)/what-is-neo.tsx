@@ -1,8 +1,17 @@
+'use client';
+
 import GetStartedButton from './get-started-button';
+import { motion } from 'framer-motion';
 
 export default function WhatIsNeo() {
   return (
-    <div className="mt-4 flex flex-col items-center text-center md:mt-28">
+    <motion.div
+      className="mt-4 flex flex-col items-center text-center md:mt-28"
+      initial={{ opacity: 0, y: 50 }}
+      transition={{ duration: 1 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+    >
       <p className="text-4xl font-extrabold leading-normal md:text-5xl lg:text-6xl">
         What is{' '}
         <span className="whitespace-nowrap border-b-4 border-[#FBC721] text-[#5FC6E5]">
@@ -39,6 +48,6 @@ export default function WhatIsNeo() {
       </div>
 
       <GetStartedButton href="/login" />
-    </div>
+    </motion.div>
   );
 }
