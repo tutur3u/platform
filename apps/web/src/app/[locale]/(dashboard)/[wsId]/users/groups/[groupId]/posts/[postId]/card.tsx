@@ -11,7 +11,16 @@ import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
 import { Textarea } from '@repo/ui/components/ui/textarea';
-import { Check, Mail, MailCheck, MoveRight, Save, Send, X } from 'lucide-react';
+import {
+  Check,
+  CircleSlash,
+  Mail,
+  MailCheck,
+  MoveRight,
+  Save,
+  Send,
+  X,
+} from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -96,7 +105,7 @@ function UserCard({
     isCompleted,
     notes,
   }: {
-    isCompleted?: boolean;
+    isCompleted?: boolean | null;
     notes: string;
   }) {
     if (
@@ -125,20 +134,28 @@ function UserCard({
         ...check,
         user_id: user.id,
         post_id: post.id,
-        is_completed: isCompleted ?? check?.is_completed ?? true,
+        is_completed: isCompleted,
         notes,
       }),
     });
 
     if (response.ok) {
       console.log('Data saved/updated successfully');
-      setCheck((prev) => ({
-        ...prev,
-        user_id: user.id,
-        post_id: post.id,
-        is_completed: isCompleted ?? check?.is_completed ?? true,
-        notes,
-      }));
+      if (isCompleted == null)
+        setCheck({
+          user_id: user.id,
+          post_id: post.id,
+          notes,
+        });
+      else
+        setCheck((prev) => ({
+          ...prev,
+          user_id: user.id,
+          post_id: post.id,
+          is_completed: isCompleted ?? check?.is_completed ?? true,
+          notes,
+        }));
+
       router.refresh();
     } else {
       console.error('Error saving/updating data');
@@ -214,7 +231,7 @@ function UserCard({
           hideEmailSending && 'justify-end'
         )}
       >
-        {hideEmailSending ? (
+        {disableEmailSending || hideEmailSending ? null : hideEmailSending ? (
           <div>
             <Button variant="secondary" disabled>
               {disableEmailSending || success ? (
@@ -269,7 +286,7 @@ function UserCard({
           </div>
         )}
 
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex w-full items-center justify-center gap-2">
           {check && check.notes !== notes ? (
             <Button
               onClick={() =>
@@ -299,24 +316,38 @@ function UserCard({
                   check?.is_completed != null && !check.is_completed
                     ? 'bg-dynamic-red/10 border-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
                     : '',
-                  'border'
+                  'w-full border'
                 )}
                 disabled={saving || !check}
               >
                 <X />
               </Button>
               <Button
-                variant={
-                  check?.is_completed != null && !check.is_completed
-                    ? 'outline'
-                    : 'ghost'
+                variant={check?.is_completed != null ? 'outline' : 'ghost'}
+                onClick={() =>
+                  handleSaveStatus({
+                    isCompleted: null,
+                    notes,
+                  })
                 }
+                className={cn(
+                  check?.is_completed == null
+                    ? 'bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
+                    : '',
+                  'w-full border'
+                )}
+                disabled={saving || !check}
+              >
+                <CircleSlash />
+              </Button>
+              <Button
+                variant={check?.is_completed == null ? 'outline' : 'ghost'}
                 onClick={() => handleSaveStatus({ isCompleted: true, notes })}
                 className={cn(
                   check?.is_completed != null && check.is_completed
                     ? 'bg-dynamic-green/10 border-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
                     : '',
-                  'border'
+                  'w-full border'
                 )}
                 disabled={saving || !check}
               >

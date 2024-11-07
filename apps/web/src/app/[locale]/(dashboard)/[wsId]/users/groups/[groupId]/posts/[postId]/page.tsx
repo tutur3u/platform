@@ -166,7 +166,8 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               group_name: group.name,
             }}
             disableEmailSending={status.sent?.includes(user.id)}
-            hideEmailSending={!hasEmailSendingPermission}
+            // hideEmailSending={!hasEmailSendingPermission}
+            hideEmailSending
           />
         ))}
       </div>
