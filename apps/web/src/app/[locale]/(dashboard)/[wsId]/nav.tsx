@@ -204,7 +204,10 @@ export function Nav({
           ) : (
             <Link
               key={index}
-              href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
+              href={{
+                pathname: link.href,
+                query: link.forceRefresh ? { refresh: true } : undefined,
+              }}
               className={cn(
                 buttonVariants({
                   variant: isActive ? 'secondary' : 'ghost',

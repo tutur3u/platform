@@ -143,7 +143,10 @@ export function Navigation({
               setUrlToLoad(link.href);
               if (isActive) scrollActiveLinksIntoView();
             }}
-            href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
+            href={{
+              pathname: link.href,
+              query: link.forceRefresh ? { refresh: true } : undefined,
+            }}
           >
             {link.title}
           </Link>
