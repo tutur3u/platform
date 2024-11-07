@@ -6,6 +6,7 @@ import { formatBytes } from '@/utils/file-helper';
 import { joinPath, popPath } from '@/utils/path-helper';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { ChevronLeft, FileText, Folder } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -65,7 +66,8 @@ export const storageObjectsColumns = (
     cell: ({ row }) => {
       if (row.getValue('id'))
         return (
-          <div className="min-w-[8rem] font-semibold">
+          <div className="flex min-w-[8rem] items-center gap-1 font-semibold">
+            <FileText className="h-4 w-4" />
             {(row.getValue('name') as string | undefined)?.replace(
               /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
               ''
@@ -104,8 +106,19 @@ export const storageObjectsColumns = (
                   : joinPath(basePath, row.getValue('name'))
               )
             }
+            className="flex items-center gap-1"
           >
-            {row.getValue('name')}
+            {row.getValue('name') === '...' ? (
+              <>
+                <ChevronLeft className="h-4 w-4" />
+                {t('common.back')}
+              </>
+            ) : (
+              <>
+                <Folder className="h-4 w-4" />
+                {row.getValue('name')}
+              </>
+            )}
           </Link>
         </div>
       );
@@ -120,13 +133,14 @@ export const storageObjectsColumns = (
         title={t(`${namespace}.size`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {row.original?.metadata?.size !== undefined
-          ? formatBytes(row.original.metadata.size)
-          : '-'}
-      </div>
-    ),
+    cell: ({ row }) =>
+      row.getValue('name') === '...' ? null : (
+        <div className="min-w-[8rem]">
+          {row.original?.metadata?.size !== undefined
+            ? formatBytes(row.original.metadata.size)
+            : '-'}
+        </div>
+      ),
   },
   {
     accessorKey: 'created_at',
@@ -137,13 +151,14 @@ export const storageObjectsColumns = (
         title={t(`${namespace}.created_at`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {row.getValue('created_at')
-          ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
-          : '-'}
-      </div>
-    ),
+    cell: ({ row }) =>
+      row.getValue('name') === '...' ? null : (
+        <div className="min-w-[8rem]">
+          {row.getValue('created_at')
+            ? moment(row.getValue('created_at')).format('DD/MM/YYYY, HH:mm:ss')
+            : '-'}
+        </div>
+      ),
   },
   {
     id: 'actions',
