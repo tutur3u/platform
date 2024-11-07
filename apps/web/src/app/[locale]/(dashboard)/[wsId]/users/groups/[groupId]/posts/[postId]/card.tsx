@@ -231,61 +231,6 @@ function UserCard({
           hideEmailSending && 'justify-end'
         )}
       >
-        {disableEmailSending || hideEmailSending ? null : hideEmailSending ? (
-          <div>
-            <Button variant="secondary" disabled>
-              {disableEmailSending || success ? (
-                <MailCheck className="h-6 w-6" />
-              ) : (
-                <Send className="h-6 w-6" />
-              )}
-            </Button>
-          </div>
-        ) : (
-          <div>
-            <Button
-              onClick={handleSendEmail}
-              disabled={
-                disableEmailSending ||
-                success ||
-                loading ||
-                !user.email ||
-                !isEmail(user.email) ||
-                user.email.endsWith('@easy.com') ||
-                check?.is_completed == null ||
-                saving ||
-                !check ||
-                (check?.notes != null && check?.notes !== notes)
-              }
-              variant={
-                loading || disableEmailSending || success
-                  ? 'secondary'
-                  : undefined
-              }
-            >
-              <Mail className="mr-2" />
-              <span className="flex items-center justify-center opacity-70">
-                {loading ? (
-                  <LoadingIndicator />
-                ) : disableEmailSending || success ? (
-                  'Email sent'
-                ) : (
-                  'Send email'
-                )}
-              </span>
-              {user.email && (
-                <>
-                  <MoveRight className="mx-2 hidden h-4 w-4 opacity-70 md:inline-block" />
-                  <span className="hidden underline md:inline-block">
-                    {user.email}
-                  </span>
-                </>
-              )}
-            </Button>
-            {error && <p>Error: {error}</p>}
-          </div>
-        )}
-
         <div className="flex w-full items-center justify-center gap-2">
           {check && check.notes !== notes ? (
             <Button
@@ -356,6 +301,62 @@ function UserCard({
             </>
           )}
         </div>
+
+        {hideEmailSending ? (
+          <div>
+            <Button variant="secondary" disabled>
+              {disableEmailSending || success ? (
+                <MailCheck className="h-6 w-6" />
+              ) : (
+                <Send className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
+        ) : (
+          <div className="w-full">
+            <Button
+              onClick={handleSendEmail}
+              disabled={
+                disableEmailSending ||
+                success ||
+                loading ||
+                !user.email ||
+                !isEmail(user.email) ||
+                user.email.endsWith('@easy.com') ||
+                check?.is_completed == null ||
+                saving ||
+                !check ||
+                (check?.notes != null && check?.notes !== notes)
+              }
+              variant={
+                loading || disableEmailSending || success
+                  ? 'secondary'
+                  : undefined
+              }
+              className="w-full"
+            >
+              <Mail className="mr-2" />
+              <span className="flex items-center justify-center opacity-70">
+                {loading ? (
+                  <LoadingIndicator />
+                ) : disableEmailSending || success ? (
+                  'Email sent'
+                ) : (
+                  'Send email'
+                )}
+              </span>
+              {user.email && (
+                <>
+                  <MoveRight className="mx-2 hidden h-4 w-4 opacity-70 md:inline-block" />
+                  <span className="hidden underline md:inline-block">
+                    {user.email}
+                  </span>
+                </>
+              )}
+            </Button>
+            {error && <p>Error: {error}</p>}
+          </div>
+        )}
       </div>
     </Card>
   );
