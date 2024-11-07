@@ -1389,6 +1389,8 @@
     "example_4_prompt": "Summarize the following article for a 2nd grader: \n\n",
     "example_5": "Draft an email",
     "example_5_prompt": "Draft an email to my boss about the following: \n\n",
+    "example_6": "Generate a poem",
+    "example_6_prompt": "Generate a poem about the following: \n\n",
     "prompt": "Enter a prompt to start chatting with Tuturuuu AI.",
     "prompt_placeholder": "Type your prompt here...",
     "chats": "Chats",

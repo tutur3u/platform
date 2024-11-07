@@ -131,9 +131,10 @@ export function Nav({
             <Tooltip key={index} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
-                  href={
-                    link.forceRefresh ? `${link.href}?refresh=true` : link.href
-                  }
+                  href={{
+                    pathname: link.href,
+                    query: { refresh: link.forceRefresh ? true : undefined },
+                  }}
                   className={cn(
                     buttonVariants({
                       variant: isActive ? 'secondary' : 'ghost',

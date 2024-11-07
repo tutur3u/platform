@@ -1389,6 +1389,8 @@
     "example_4_prompt": "Tóm tắt bài viết sau cho học sinh lớp 2: \n\n",
     "example_5": "Viết một email",
     "example_5_prompt": "Viết một email cho sếp tôi về vấn đề sau: \n\n",
+    "example_6": "Tạo một bài thơ",
+    "example_6_prompt": "Tạo một bài thơ về vấn đề sau: \n\n",
     "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
     "prompt_placeholder": "Nhập yêu cầu của bạn...",
     "chats": "Các cuộc trò chuyện",
