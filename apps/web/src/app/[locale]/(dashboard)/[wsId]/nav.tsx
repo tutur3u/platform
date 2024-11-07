@@ -133,7 +133,7 @@ export function Nav({
                 <Link
                   href={{
                     pathname: link.href,
-                    query: { refresh: link.forceRefresh ? true : undefined },
+                    query: link.forceRefresh ? { refresh: true } : undefined,
                   }}
                   className={cn(
                     buttonVariants({
