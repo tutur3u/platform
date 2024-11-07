@@ -162,13 +162,14 @@ export const storageObjectsColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <StorageObjectRowActions
-        wsId={wsId}
-        row={row}
-        path={path}
-        setStorageObject={setStorageObject}
-      />
-    ),
+    cell: ({ row }) =>
+      row.getValue('name') === '...' ? null : (
+        <StorageObjectRowActions
+          wsId={wsId}
+          row={row}
+          path={path}
+          setStorageObject={setStorageObject}
+        />
+      ),
   },
 ];
