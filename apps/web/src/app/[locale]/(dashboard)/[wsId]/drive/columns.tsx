@@ -66,7 +66,7 @@ export const storageObjectsColumns = (
     cell: ({ row }) => {
       if (row.getValue('id'))
         return (
-          <div className="flex min-w-[8rem] items-center gap-1 font-semibold">
+          <div className="flex min-w-[8rem] items-center gap-2 font-semibold">
             <FileText className="h-4 w-4" />
             {(row.getValue('name') as string | undefined)?.replace(
               /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
@@ -106,7 +106,7 @@ export const storageObjectsColumns = (
                   : joinPath(basePath, row.getValue('name'))
               )
             }
-            className="flex items-center gap-1"
+            className="flex items-center gap-2"
           >
             {row.getValue('name') === '...' ? (
               <>

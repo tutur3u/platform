@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
-import { File, Folder, Plus } from 'lucide-react';
+import { FileText, Folder, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -34,13 +34,13 @@ export default function NewActions({ wsId, path }: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onSelect={() => setFileUploadDialog(true)}>
-            <File className="mr-2 h-4 w-4" />
-            {t('ws-storage-objects.files')}
-          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setFolderCreateDialog(true)}>
             <Folder className="mr-2 h-4 w-4" />
             {t('ws-storage-objects.folder')}
+          </DropdownMenuItem>{' '}
+          <DropdownMenuItem onSelect={() => setFileUploadDialog(true)}>
+            <FileText className="mr-2 h-4 w-4" />
+            {t('ws-storage-objects.files')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
