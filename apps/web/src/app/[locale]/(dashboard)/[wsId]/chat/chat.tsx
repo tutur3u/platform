@@ -19,7 +19,6 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
   wsId?: string;
   initialMessages?: Message[];
-  previousMessages?: Message[];
   chats?: AIChat[];
   count?: number | null;
   hasKeys: { openAI: boolean; anthropic: boolean; google: boolean };
@@ -30,7 +29,6 @@ const Chat = ({
   defaultChat,
   wsId,
   initialMessages,
-  previousMessages,
   chats,
   count,
   className,
@@ -332,9 +330,7 @@ const Chat = ({
           <EmptyScreen
             wsId={wsId}
             chats={chats}
-            count={count}
             setInput={setInput}
-            previousMessages={previousMessages}
             locale={locale}
           />
         )}

@@ -23,10 +23,12 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export function EmptyScreen({
+  wsId,
   chats,
   setInput,
   locale,
 }: Pick<UseChatHelpers, 'setInput'> & {
+  wsId?: string;
   chats?: AIChat[];
   locale: string;
 }) {
@@ -127,7 +129,7 @@ export function EmptyScreen({
                     <MessageCircle className="text-foreground/80 shrink-0" />
                     <div className="flex w-full flex-col items-start">
                       <Link
-                        href={`/c/${chat.id}`}
+                        href={`/${wsId}/chat/${chat.id}`}
                         className="line-clamp-1 text-sm hover:underline md:text-base"
                       >
                         {chat.title}
