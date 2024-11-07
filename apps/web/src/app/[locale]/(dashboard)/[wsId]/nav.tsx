@@ -131,6 +131,7 @@ export function Nav({
             <Tooltip key={index} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
+                  scroll={false}
                   href={{
                     pathname: link.href,
                     query: link.forceRefresh ? { refresh: true } : undefined,

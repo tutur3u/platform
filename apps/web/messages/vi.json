@@ -1446,7 +1446,11 @@
     "multiple_choice": "Bộ trắc nghiệm",
     "paragraph_answers": "Câu hỏi đoạn văn",
     "ai_models": "Mô hình AI",
-    "quizzes": "Bộ câu hỏi"
+    "quizzes": "Bộ câu hỏi",
+    "chatbots": "Thư viện chatbot",
+    "my_chatbots": "Chatbot của tôi",
+    "my_chatbots_description": "Quản lý chatbot tùy chỉnh của bạn với các lệnh nhắc và câu trả lời của riêng bạn.",
+    "new_chatbot": "Chatbot mới"
   },
   "crud-ops": {
     "ops": "Thao tác",
@@ -1741,5 +1745,12 @@
     "description": "Email được đưa vào danh sách trắng được sử dụng để cho phép các địa chỉ email cụ thể truy cập các tính năng AI.",
     "create": "Tạo email được đưa vào danh sách trắng",
     "create_description": "Tạo một email được đưa vào danh sách trắng mới"
+  },
+  "ws-ai-chatbots": {
+    "plural": "Thư viện chatbot",
+    "singular": "Chatbot",
+    "description": "Xem các chatbot tùy chỉnh được tạo bởi cộng đồng.",
+    "create": "Tạo chatbot",
+    "create_description": "Tạo một chatbot mới"
   }
 }

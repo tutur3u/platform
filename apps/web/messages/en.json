@@ -1446,7 +1446,11 @@
     "multiple_choice": "Multiple choice",
     "paragraph_answers": "Paragraph answers",
     "ai_models": "AI Models",
-    "quizzes": "Quizzes"
+    "quizzes": "Quizzes",
+    "chatbots": "Chatbots",
+    "my_chatbots": "My Chatbots",
+    "my_chatbots_description": "Manage your custom chatbots with your own prompts and responses.",
+    "new_chatbot": "New chatbot"
   },
   "crud-ops": {
     "ops": "Operations",
@@ -1741,5 +1745,12 @@
     "description": "Whitelisted emails are used to allow specific email addresses to access AI features.",
     "create": "Create whitelisted email",
     "create_description": "Create a new whitelisted email"
+  },
+  "ws-ai-chatbots": {
+    "plural": "Chatbots",
+    "singular": "Chatbot",
+    "description": "View custom chatbots created by the community.",
+    "create": "Create chatbot",
+    "create_description": "Create a new chatbot"
   }
 }
