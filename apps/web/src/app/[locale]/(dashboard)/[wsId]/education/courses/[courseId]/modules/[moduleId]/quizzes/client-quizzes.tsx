@@ -40,6 +40,7 @@ export default function ClientQuizzes({
               created_at?: string;
               id?: string;
               is_correct?: boolean;
+              explaination?: string;
               points?: number | null;
               quiz_id?: string;
               value?: string;
@@ -109,7 +110,7 @@ export default function ClientQuizzes({
                 <Separator className="my-2" />
                 <ul className="mt-4 grid gap-2">
                   {quiz?.quiz_options?.map((option, oidx) => (
-                    <li
+                    <div
                       key={option?.id || oidx}
                       className={cn(
                         'rounded-md border p-2',
@@ -119,7 +120,21 @@ export default function ClientQuizzes({
                       )}
                     >
                       {option?.value} {option?.is_correct && '(Correct)'}
-                    </li>
+                      {option?.explaination && (
+                        <>
+                          <Separator
+                            className={cn(
+                              option?.is_correct
+                                ? 'bg-dynamic-green/10'
+                                : 'bg-foreground/10'
+                            )}
+                          />
+                          <div className="mt-2 text-sm opacity-80">
+                            {option.explaination}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   ))}
                 </ul>
               </div>

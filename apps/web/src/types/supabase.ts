@@ -1853,6 +1853,7 @@ export type Database = {
       quiz_options: {
         Row: {
           created_at: string;
+          explaination: string | null;
           id: string;
           is_correct: boolean;
           points: number | null;
@@ -1861,6 +1862,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          explaination?: string | null;
           id?: string;
           is_correct: boolean;
           points?: number | null;
@@ -1869,6 +1871,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          explaination?: string | null;
           id?: string;
           is_correct?: boolean;
           points?: number | null;

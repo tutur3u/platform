@@ -87,34 +87,34 @@ export async function POST(req: Request) {
       // output: 'array',
       prompt: `Generate 10 flashcards with the following context: ` + context,
       schema: flashcardSchema,
-      onFinish: async (response) => {
-        console.log('AI Response:', response);
+      // onFinish: async (response) => {
+      // console.log('AI Response:', response);
 
-        // if (!response.object) {
-        //   console.log('No content found');
-        //   throw new Error('No content found');
-        // }
+      // if (!response.object) {
+      //   console.log('No content found');
+      //   throw new Error('No content found');
+      // }
 
-        // const { error } = await sbAdmin.from('ai_chat_messages').insert({
-        //   chat_id: chatId,
-        //   creator_id: user.id,
-        //   content: response.text,
-        //   role: 'ASSISTANT',
-        //   model: model.toLowerCase(),
-        //   finish_reason: response.finishReason,
-        //   prompt_tokens: response.usage.promptTokens,
-        //   completion_tokens: response.usage.completionTokens,
-        //   metadata: { source: 'Tuturuuu' },
-        // });
+      // const { error } = await sbAdmin.from('ai_chat_messages').insert({
+      //   chat_id: chatId,
+      //   creator_id: user.id,
+      //   content: response.text,
+      //   role: 'ASSISTANT',
+      //   model: model.toLowerCase(),
+      //   finish_reason: response.finishReason,
+      //   prompt_tokens: response.usage.promptTokens,
+      //   completion_tokens: response.usage.completionTokens,
+      //   metadata: { source: 'Tuturuuu' },
+      // });
 
-        // if (error) {
-        //   console.log('ERROR ORIGIN: ROOT COMPLETION');
-        //   console.log(error);
-        //   throw new Error(error.message);
-        // }
+      // if (error) {
+      //   console.log('ERROR ORIGIN: ROOT COMPLETION');
+      //   console.log(error);
+      //   throw new Error(error.message);
+      // }
 
-        // console.log('AI Response saved to database');
-      },
+      // console.log('AI Response saved to database');
+      // },
     });
 
     return result.toTextStreamResponse();
