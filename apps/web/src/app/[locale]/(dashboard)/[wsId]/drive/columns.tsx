@@ -10,7 +10,6 @@ import { ChevronLeft, FileText, Folder } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
 
 export const storageObjectsColumns = (
   t: any,
@@ -81,31 +80,18 @@ export const storageObjectsColumns = (
       const searchParams = useSearchParams();
       const basePath = searchParams.get('path') ?? '';
 
-      // merging current params with newly added param
-      // see: https://nextjs.org/docs/app/api-reference/functions/use-search-params#updating-searchparams
-      const createQueryString = useCallback(
-        (name: string, value: string) => {
-          const params = new URLSearchParams(searchParams.toString());
-          params.set(name, value);
-
-          return params.toString();
-        },
-        [searchParams]
-      );
-
       return (
         <div className="min-w-[8rem] font-semibold">
           <Link
-            href={
-              pathname +
-              '?' +
-              createQueryString(
-                'path',
-                row.getValue('name') === '...'
-                  ? popPath(basePath)
-                  : joinPath(basePath, row.getValue('name'))
-              )
-            }
+            href={{
+              pathname,
+              query: {
+                path:
+                  row.getValue('name') === '...'
+                    ? popPath(basePath)
+                    : joinPath(basePath, row.getValue('name')),
+              },
+            }}
             className="flex items-center gap-2"
           >
             {row.getValue('name') === '...' ? (
