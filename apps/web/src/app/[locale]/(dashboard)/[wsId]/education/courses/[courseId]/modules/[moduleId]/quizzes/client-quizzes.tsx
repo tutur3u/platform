@@ -40,7 +40,7 @@ export default function ClientQuizzes({
               created_at?: string;
               id?: string;
               is_correct?: boolean;
-              explaination?: string;
+              explaination?: string | null;
               points?: number | null;
               quiz_id?: string;
               value?: string;
