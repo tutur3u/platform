@@ -27,3 +27,11 @@ export const quizSchema = z.object({
     })
   ),
 });
+
+export const quizOptionExplanationSchema = z.object({
+  explanation: z
+    .string()
+    .describe(
+      'Explain why this option is correct or incorrect, if it is incorrect, explain possible misconceptions and what made the option wrong with respect to the question, if it is correct, explain why it is correct. Be as detailed as possible.'
+    ),
+});

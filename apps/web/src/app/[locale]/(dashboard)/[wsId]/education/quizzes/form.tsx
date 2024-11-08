@@ -17,7 +17,7 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { Pencil, Plus, PlusCircle } from 'lucide-react';
+import { Pencil, Plus, PlusCircle, Wand } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Fragment } from 'react';
@@ -118,6 +118,33 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
     }
   };
 
+  const generateExplanation = async (index: number) => {
+    const question = form.getValues('question');
+    const option = form.getValues(`quiz_options.${index}`);
+
+    try {
+      const res = await fetch('/api/ai/objects/quizzes/explanation', {
+        method: 'POST',
+        body: JSON.stringify({ wsId, question, option }),
+      });
+
+      if (res.ok) {
+        const { explanation } = await res.json();
+        form.setValue(`quiz_options.${index}.explanation`, explanation);
+      } else {
+        toast({
+          title: t('common.error'),
+          description: t('ws-quizzes.generation_error'),
+        });
+      }
+    } catch (error) {
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -206,6 +233,16 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                     </FormItem>
                   )}
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => generateExplanation(index)}
+                  className="w-full"
+                  disabled={!form.getValues(`quiz_options.${index}.value`)}
+                >
+                  <Wand />
+                  {t('common.generate_explanation')}
+                </Button>
                 {index < fields.length - 1 && <Separator />}
               </Fragment>
             ))}

@@ -160,7 +160,8 @@
     "enter_context": "Nhập ngữ cảnh",
     "generate": "Tạo nội dung",
     "enabled": "Đã bật",
-    "explanation": "Giải thích"
+    "explanation": "Giải thích",
+    "generate_explanation": "Tạo lời giải thích"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

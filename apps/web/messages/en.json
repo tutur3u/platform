@@ -160,7 +160,8 @@
     "enter_context": "Enter context",
     "generate": "Generate",
     "enabled": "Enabled",
-    "explanation": "Explanation"
+    "explanation": "Explanation",
+    "generate_explanation": "Generate explanation"
   },
   "date_helper": {
     "time-unit": "Time unit",
