@@ -24,7 +24,8 @@ export default async function Layout({ children, params }: LayoutProps) {
   const navLinks: NavLink[] = [
     {
       title: t('ai_chat.new_chat'),
-      href: `/${wsId}/chat`,
+      href: `/${wsId}/chat/new`,
+      aliases: [`/${wsId}/chat`],
       matchExact: true,
       disabled: withoutPermission('ai_chat'),
     },
