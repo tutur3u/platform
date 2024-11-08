@@ -44,7 +44,7 @@ export function Nav({
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
-    if (urlToLoad) setUrlToLoad(undefined);
+    if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
   }, [pathname, searchParams]);
 
   function hasFocus(selector: string) {
@@ -95,7 +95,7 @@ export function Nav({
       className="group flex flex-col gap-4 py-2 data-[collapsed=true]:py-2"
     >
       <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
-        {links.map((link, index) => {
+        {links.map((link) => {
           // If the link is disabled, don't render it
           if (link?.disabled) return null;
 
@@ -128,7 +128,7 @@ export function Nav({
               .filter(Boolean).length > 0;
 
           return isCollapsed ? (
-            <Tooltip key={index} delayDuration={0}>
+            <Tooltip key={link.href} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
                   scroll={false}
@@ -203,7 +203,7 @@ export function Nav({
             </Tooltip>
           ) : (
             <Link
-              key={index}
+              key={link.href + 'no-tooltip'}
               href={{
                 pathname: link.href,
                 query: link.forceRefresh ? { refresh: true } : undefined,
