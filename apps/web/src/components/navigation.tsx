@@ -12,7 +12,6 @@ export interface NavLink {
   icon?: ReactNode;
   href: string;
   newTab?: boolean;
-  forceRefresh?: boolean;
   matchExact?: boolean;
   aliases?: string[];
   disabled?: boolean;
@@ -143,10 +142,7 @@ export function Navigation({
               setUrlToLoad(link.href);
               if (isActive) scrollActiveLinksIntoView();
             }}
-            href={{
-              pathname: link.href,
-              query: link.forceRefresh ? { refresh: true } : undefined,
-            }}
+            href={link.href}
           >
             {link.title}
           </Link>

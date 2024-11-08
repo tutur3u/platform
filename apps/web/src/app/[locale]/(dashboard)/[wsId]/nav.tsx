@@ -132,10 +132,7 @@ export function Nav({
               <TooltipTrigger asChild>
                 <Link
                   scroll={false}
-                  href={{
-                    pathname: link.href,
-                    query: link.forceRefresh ? { refresh: true } : undefined,
-                  }}
+                  href={link.href}
                   className={cn(
                     buttonVariants({
                       variant: isActive ? 'secondary' : 'ghost',
@@ -204,10 +201,7 @@ export function Nav({
           ) : (
             <Link
               key={link.href + 'no-tooltip'}
-              href={{
-                pathname: link.href,
-                query: link.forceRefresh ? { refresh: true } : undefined,
-              }}
+              href={link.href}
               className={cn(
                 buttonVariants({
                   variant: isActive ? 'secondary' : 'ghost',
