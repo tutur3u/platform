@@ -40,7 +40,7 @@ export default function ClientQuizzes({
               created_at?: string;
               id?: string;
               is_correct?: boolean;
-              explaination?: string | null;
+              explanation?: string | null;
               points?: number | null;
               quiz_id?: string;
               value?: string;
@@ -119,8 +119,8 @@ export default function ClientQuizzes({
                           : 'bg-foreground/5 border-foreground/5'
                       )}
                     >
-                      {option?.value} {option?.is_correct && '(Correct)'}
-                      {option?.explaination && (
+                      <span className="font-semibold">{option?.value}</span>
+                      {option?.explanation && (
                         <>
                           <Separator
                             className={cn(
@@ -130,7 +130,7 @@ export default function ClientQuizzes({
                             )}
                           />
                           <div className="mt-2 text-sm opacity-80">
-                            {option.explaination}
+                            {option.explanation}
                           </div>
                         </>
                       )}

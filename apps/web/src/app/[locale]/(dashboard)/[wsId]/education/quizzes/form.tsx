@@ -15,6 +15,7 @@ import {
 import { Input } from '@repo/ui/components/ui/input';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Pencil, Plus, PlusCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -29,7 +30,12 @@ interface Props {
   data?: Partial<
     WorkspaceQuiz & {
       quiz_options: (
-        | { id?: string; value?: string; is_correct?: boolean }
+        | {
+            id?: string;
+            value?: string;
+            is_correct?: boolean;
+            explanation?: string | null;
+          }
         | undefined
       )[];
     }
@@ -42,6 +48,7 @@ const QuizOptionSchema = z.object({
   id: z.string().optional(),
   value: z.string().min(1),
   is_correct: z.boolean(),
+  explanation: z.string().optional(), // Add explanation field
 });
 
 const FormSchema = z.object({
@@ -61,7 +68,11 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
       id: data?.id,
       moduleId,
       question: data?.question || '',
-      quiz_options: data?.quiz_options || [{ value: '', is_correct: false }],
+      quiz_options: data?.quiz_options?.map((option) => ({
+        value: option?.value || '',
+        is_correct: option?.is_correct || false,
+        explanation: option?.explanation || '',
+      })) || [{ value: '', is_correct: false, explanation: '' }], // Ensure explanation values are included
     },
   });
 
@@ -167,7 +178,6 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                       </FormItem>
                     )}
                   />
-
                   <Button
                     type="button"
                     variant="destructive"
@@ -177,6 +187,24 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                     {t('common.remove')}
                   </Button>
                 </div>
+                <FormField
+                  control={form.control}
+                  name={`quiz_options.${index}.explanation`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('common.explanation')}</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder={t('common.explanation')}
+                          autoComplete="off"
+                          {...field}
+                          className="border-foreground/20 rounded-md shadow-sm"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 {index < fields.length - 1 && <Separator />}
               </Fragment>
             ))}
@@ -186,7 +214,9 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => append({ value: '', is_correct: false })}
+          onClick={() =>
+            append({ value: '', is_correct: false, explanation: '' })
+          }
           className="w-full"
         >
           <PlusCircle />

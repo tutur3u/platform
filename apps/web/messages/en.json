@@ -159,7 +159,8 @@
     "context": "Context",
     "enter_context": "Enter context",
     "generate": "Generate",
-    "enabled": "Enabled"
+    "enabled": "Enabled",
+    "explanation": "Explanation"
   },
   "date_helper": {
     "time-unit": "Time unit",

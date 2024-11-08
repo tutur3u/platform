@@ -159,7 +159,8 @@
     "context": "Bối cảnh",
     "enter_context": "Nhập ngữ cảnh",
     "generate": "Tạo nội dung",
-    "enabled": "Đã bật"
+    "enabled": "Đã bật",
+    "explanation": "Giải thích"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

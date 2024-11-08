@@ -16,10 +16,10 @@ export const quizSchema = z.object({
       quiz_options: z.array(
         z.object({
           value: z.string().describe('Option. Do not use emojis or links.'),
-          explaination: z
+          explanation: z
             .string()
             .describe(
-              'Explains why this option is correct or incorrect, if it is incorrect, explain possible misconceptions and what made the option wrong with respect to the question, if it is correct, explain why it is correct. Be as detailed as possible.'
+              'Explain why this option is correct or incorrect, if it is incorrect, explain possible misconceptions and what made the option wrong with respect to the question, if it is correct, explain why it is correct. Be as detailed as possible.'
             ),
           is_correct: z.boolean().describe('This option is a correct answer.'),
         })
