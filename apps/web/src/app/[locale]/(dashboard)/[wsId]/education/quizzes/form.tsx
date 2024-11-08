@@ -17,10 +17,10 @@ import { Input } from '@repo/ui/components/ui/input';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { Pencil, Plus, PlusCircle, Wand } from 'lucide-react';
+import { Loader, Pencil, Plus, PlusCircle, Wand } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -61,6 +61,7 @@ const FormSchema = z.object({
 export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -122,6 +123,8 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
     const question = form.getValues('question');
     const option = form.getValues(`quiz_options.${index}`);
 
+    setLoadingIndex(index);
+
     try {
       const res = await fetch('/api/ai/objects/quizzes/explanation', {
         method: 'POST',
@@ -142,6 +145,8 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
         title: t('common.error'),
         description: error instanceof Error ? error.message : String(error),
       });
+    } finally {
+      setLoadingIndex(null);
     }
   };
 
@@ -228,11 +233,18 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                           onClick={() => generateExplanation(index)}
                           disabled={
                             !form.getValues(`quiz_options.${index}.value`) ||
-                            !!field.value
+                            !!field.value ||
+                            loadingIndex === index
                           }
                         >
-                          {t('common.generate_explanation')}
-                          <Wand />
+                          {loadingIndex === index ? (
+                            <Loader className="animate-spin" />
+                          ) : (
+                            <>
+                              {t('common.generate_explanation')}
+                              <Wand />
+                            </>
+                          )}
                         </Button>
                       </FormLabel>
                       <FormControl>

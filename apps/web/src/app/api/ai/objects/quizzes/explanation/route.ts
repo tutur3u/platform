@@ -90,7 +90,7 @@ export async function POST(req: Request) {
         ],
       }),
       // output: 'array',
-      prompt: `Generate an explanation with the following context: \n\n"""Question: ${question}""" \n\n"""Option: ${option.value}"""\n\nIs this option correct? ${option.is_correct ? 'Yes' : 'No'}\n\nNOTE: Provide it in the same language as the question and option.`,
+      prompt: `Generate an explanation with the following context: \n\n"""Question: ${question}""" \n\n"""Option: ${option.value}"""\n\nIs this option correct? ${option.is_correct ? 'Yes' : 'No'}\n\nNOTE: Provide it in the same language as the question and option, be concise and clear.`,
       schema: quizOptionExplanationSchema,
       // onFinish: async (response) => {
       //   console.log('AI Response:', response);
