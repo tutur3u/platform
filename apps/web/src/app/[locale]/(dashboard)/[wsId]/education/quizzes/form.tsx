@@ -4,6 +4,7 @@ import { WorkspaceQuiz } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { AutosizeTextarea } from '@repo/ui/components/ui/custom/autosize-textarea';
 import {
   Form,
   FormControl,
@@ -15,7 +16,6 @@ import {
 import { Input } from '@repo/ui/components/ui/input';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Pencil, Plus, PlusCircle, Wand } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -220,9 +220,23 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                   name={`quiz_options.${index}.explanation`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('common.explanation')}</FormLabel>
+                      <FormLabel className="flex items-end justify-between gap-2">
+                        {t('common.explanation')}
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => generateExplanation(index)}
+                          disabled={
+                            !form.getValues(`quiz_options.${index}.value`) ||
+                            !!field.value
+                          }
+                        >
+                          {t('common.generate_explanation')}
+                          <Wand />
+                        </Button>
+                      </FormLabel>
                       <FormControl>
-                        <Textarea
+                        <AutosizeTextarea
                           placeholder={t('common.explanation')}
                           autoComplete="off"
                           {...field}
@@ -233,16 +247,6 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                     </FormItem>
                   )}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => generateExplanation(index)}
-                  className="w-full"
-                  disabled={!form.getValues(`quiz_options.${index}.value`)}
-                >
-                  <Wand />
-                  {t('common.generate_explanation')}
-                </Button>
                 {index < fields.length - 1 && <Separator />}
               </Fragment>
             ))}
