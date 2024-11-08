@@ -1,5 +1,5 @@
 import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
-import FinanceCategoryStatistics from './categories/finance';
+import { FinanceCategoryStatistics } from './categories/finance';
 import FinanceToggle from './finance-toggle';
 import {
   ExpenseStatistics,

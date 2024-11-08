@@ -25,7 +25,6 @@ export default function FeatureToggles() {
   const availableFeatures = [
     'documents',
     'users',
-    'healthcare',
     'inventory',
     'finance',
   ] as const;

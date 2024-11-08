@@ -1,11 +1,7 @@
 import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
-export default async function FinanceCategoryStatistics({
-  wsId,
-}: {
-  wsId: string;
-}) {
+export async function FinanceCategoryStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();
 
   const forceEnable = true;

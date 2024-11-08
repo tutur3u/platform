@@ -2,7 +2,7 @@ import { UserDatabaseFilter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
 import { CustomMonthPicker } from '@/components/custom-month-picker';
-import GeneralSearchBar from '@/components/inputs/GeneralSearchBar';
+import GeneralSearchBar from '@/components/general-search-bar';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';

@@ -1,17 +1,10 @@
 import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
-import {
-  HealthcareCategoryStatistics,
-  InventoryCategoryStatistics,
-  UsersCategoryStatistics,
-} from './categories';
+import { InventoryCategoryStatistics } from './categories/inventory';
+import { UsersCategoryStatistics } from './categories/users';
 import { DailyTotalChart, HourlyTotalChart, MonthlyTotalChart } from './charts';
 import FinanceStatistics from './finance';
 import {
   BatchesStatistics,
-  HealthCheckupsStatistics,
-  HealthDiagnosesStatistics,
-  HealthVitalGroupsStatistics,
-  HealthVitalsStatistics,
   InventoryProductsStatistics,
   ProductCategoriesStatistics,
   ProductsStatistics,
@@ -75,22 +68,6 @@ export default async function WorkspaceHomePage({
       />
 
       <FinanceStatistics wsId={wsId} searchParams={searchParams} />
-      <HealthcareCategoryStatistics wsId={wsId} />
-
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <HealthCheckupsStatistics wsId={wsId} />
-        </Suspense>
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <HealthDiagnosesStatistics wsId={wsId} />
-        </Suspense>
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <HealthVitalsStatistics wsId={wsId} />
-        </Suspense>
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <HealthVitalGroupsStatistics wsId={wsId} />
-        </Suspense>
-      </div>
 
       <InventoryCategoryStatistics wsId={wsId} />
 

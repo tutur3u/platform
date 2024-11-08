@@ -1,11 +1,7 @@
 import { getPermissions } from '@/lib/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
-export default async function InventoryCategoryStatistics({
-  wsId,
-}: {
-  wsId: string;
-}) {
+export async function InventoryCategoryStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();
 
   const enabled = true;

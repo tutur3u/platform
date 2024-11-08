@@ -1,4 +1,3 @@
-import CalendarEventEditForm from '../forms/CalendarEventEditForm';
 import { useCalendar } from '@/hooks/useCalendar';
 import { CalendarEvent } from '@/types/primitives/calendar-event';
 import { Popover } from '@mantine/core';
@@ -469,7 +468,7 @@ export default function EventCard({ dates, wsId, event }: EventCardProps) {
       trapFocus
     >
       <Popover.Dropdown className={`${generateColor()} border-2`}>
-        <CalendarEventEditForm id={id} />
+        {/* <CalendarEventEditForm id={id} /> */}
       </Popover.Dropdown>
 
       <div

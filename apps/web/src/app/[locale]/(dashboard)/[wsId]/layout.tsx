@@ -21,7 +21,6 @@ import {
   FileText,
   GraduationCap,
   HardDrive,
-  HeartPulse,
   Mail,
   MessageCircleIcon,
   Presentation,
@@ -191,19 +190,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <Archive className="h-4 w-4" />,
       disabled: withoutPermission('manage_inventory'),
       shortcut: 'I',
-    },
-    {
-      title: t('sidebar_tabs.healthcare'),
-      href: `/${wsId}/healthcare`,
-      icon: <HeartPulse className="h-4 w-4" />,
-      disabled: !(await verifySecret({
-        forceAdmin: true,
-        wsId,
-        name: 'ENABLE_HEALTHCARE',
-        value: 'true',
-      })),
-      shortcut: 'H',
-      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.finance'),
