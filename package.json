@@ -56,5 +56,8 @@
     "esbuild",
     "sharp",
     "supabase"
-  ]
+  ],
+  "dependencies": {
+    "@tiptap/extension-mention": "^2.9.1"
+  }
 }
