@@ -52,7 +52,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('sidebar_tabs.chat_with_ai'),
       href: `/${wsId}/chat`,
       icon: <MessageCircleIcon className="h-4 w-4" />,
-      forceRefresh: true,
       disabled:
         !(await verifySecret({
           forceAdmin: true,
