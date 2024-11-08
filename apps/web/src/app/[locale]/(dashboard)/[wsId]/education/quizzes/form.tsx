@@ -69,6 +69,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
       moduleId,
       question: data?.question || '',
       quiz_options: data?.quiz_options?.map((option) => ({
+        id: option?.id,
         value: option?.value || '',
         is_correct: option?.is_correct || false,
         explanation: option?.explanation || '',
