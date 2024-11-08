@@ -83,7 +83,7 @@
     "@next/eslint-plugin-next": "15.0.3-canary.9",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@tanstack/eslint-plugin-query": "^5.59.20",
+    "@tanstack/eslint-plugin-query": "^5.60.1",
     "@tanstack/react-query-devtools": "^5.59.20",
     "@testing-library/react": "^16.0.1",
     "@types/cookie": "^0.6.0",
