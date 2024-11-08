@@ -85,7 +85,9 @@ export async function POST(req: Request) {
         ],
       }),
       // output: 'array',
-      prompt: `Generate 10 quizzes with the following context: ` + context,
+      prompt:
+        `Generate 10 quizzes with the following context (in the same language as the provided context): ` +
+        context,
       schema: quizSchema,
       // onFinish: async (response) => {
       //   console.log('AI Response:', response);
