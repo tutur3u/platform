@@ -1,6 +1,5 @@
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
-import FleetingNavigator from './fleeting-navigator';
 import InvitationCard from './invitation-card';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
@@ -263,12 +262,12 @@ export default async function Layout({ children, params }: LayoutProps) {
         {children}
       </Structure>
 
-      {(await verifySecret({
+      {/* {(await verifySecret({
         forceAdmin: true,
         wsId,
         name: 'ENABLE_CHAT',
         value: 'true',
-      })) && <FleetingNavigator wsId={wsId} />}
+      })) && <FleetingNavigator wsId={wsId} />} */}
     </>
   );
 }

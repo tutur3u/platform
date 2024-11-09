@@ -1,4 +1,4 @@
-import LogoTab from '@/components/branding/LogoTab';
+import LogoTab from './logo-tab';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { useTranslations } from 'next-intl';
 

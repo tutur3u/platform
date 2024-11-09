@@ -145,6 +145,9 @@
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
   },
+  "overrides": {
+    "react-is": "19.0.0-rc-7c8e5e7a-20241101"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
