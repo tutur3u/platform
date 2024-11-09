@@ -1,5 +1,6 @@
-import configureMention from './useMention';
+import { mentionSuggestionOptions } from './mentions/mentionSuggesionOptions';
 import { extractYoutubeId } from '@/utils/url-helper';
+import Mention from '@tiptap/extension-mention';
 import { cx } from 'class-variance-authority';
 import { common, createLowlight } from 'lowlight';
 import {
@@ -216,6 +217,10 @@ const mathematics = Mathematics.configure({
 // Configure CharacterCount extension
 const characterCount = CharacterCount.configure();
 
+const mention = Mention.configure({
+  suggestion: mentionSuggestionOptions,
+});
+
 // Export all extensions as default for use in the editor
 export const defaultExtensions = [
   starterKit,
@@ -239,4 +244,5 @@ export const defaultExtensions = [
   Color,
   CustomKeymap,
   GlobalDragHandle,
+  mention,
 ];

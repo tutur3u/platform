@@ -58,6 +58,9 @@
     "supabase"
   ],
   "dependencies": {
-    "@tiptap/extension-mention": "^2.9.1"
+    "@tiptap/extension-mention": "^2.9.1",
+    "@tiptap/react": "^2.9.1",
+    "@tiptap/suggestion": "^2.9.1",
+    "tippy.js": "^6.3.7"
   }
 }
