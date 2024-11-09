@@ -1376,7 +1376,8 @@
     "discounts": "Giảm giá",
     "rounding": "Làm tròn",
     "print": "In",
-    "download_image": "Tải hình ảnh xuống"
+    "download_image": "Tải hình ảnh xuống",
+    "add_promotion": "Thêm khuyến mãi"
   },
   "ai_chat": {
     "welcome_to": "Chào mừng đến với",
@@ -1565,7 +1566,10 @@
     "create": "Tạo hóa đơn",
     "create_description": "Tạo hóa đơn mới",
     "edit": "Chỉnh sửa hóa đơn",
-    "edit_description": "Chỉnh sửa hóa đơn hiện có"
+    "edit_description": "Chỉnh sửa hóa đơn hiện có",
+    "new_invoice": "Hóa đơn mới",
+    "standard": "Hóa đơn tiêu chuẩn",
+    "subscription": "Hóa đơn định kỳ"
   },
   "ws-inventory-products": {
     "plural": "Sản phẩm",

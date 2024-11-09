@@ -6,9 +6,7 @@ import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 
-export async function getWorkspace(id?: string) {
-  if (!id) return null;
-
+export async function getWorkspace(id: string) {
   const supabase = await createClient();
 
   const {

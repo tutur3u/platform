@@ -1376,7 +1376,8 @@
     "discounts": "Discounts",
     "rounding": "Rounding",
     "print": "Print",
-    "download_image": "Download image"
+    "download_image": "Download image",
+    "add_promotion": "Add promotion"
   },
   "ai_chat": {
     "welcome_to": "Welcome to",
@@ -1565,7 +1566,10 @@
     "create": "Create invoice",
     "create_description": "Create a new invoice",
     "edit": "Edit invoice",
-    "edit_description": "Edit an existing invoice"
+    "edit_description": "Edit an existing invoice",
+    "new_invoice": "New invoice",
+    "standard": "Standard invoice",
+    "subscription": "Subscription invoice"
   },
   "ws-inventory-products": {
     "plural": "Products",
