@@ -1,6 +1,8 @@
 import SuggestionList, { SuggestionListRef } from './SuggestionList';
+import { createClient } from '@/utils/supabase/client';
 import type { MentionOptions } from '@tiptap/extension-mention';
 import { ReactRenderer } from '@tiptap/react';
+import { useSearchParams } from 'next/navigation';
 import tippy, { type Instance as TippyInstance } from 'tippy.js';
 
 export type MentionSuggestion = {
@@ -23,52 +25,33 @@ const DOM_RECT_FALLBACK: DOMRect = {
 };
 
 export const mentionSuggestionOptions: MentionOptions['suggestion'] = {
-  // Replace this `items` code with a call to your API that returns suggestions
-  // of whatever sort you like (including potentially additional data beyond
-  // just an ID and a label). It need not be async but is written that way for
-  // the sake of example.
-  items: async ({ query }): Promise<MentionSuggestion[]> =>
-    Promise.resolve(
-      [
-        'Lea Thompson',
-        'Cyndi Lauper',
-        'Tom Cruise',
-        'Madonna',
-        'Jerry Hall',
-        'Joan Collins',
-        'Winona Ryder',
-        'Christina Applegate',
-        'Alyssa Milano',
-        'Molly Ringwald',
-        'Ally Sheedy',
-        'Debbie Harry',
-        'Olivia Newton-John',
-        'Elton John',
-        'Michael J. Fox',
-        'Axl Rose',
-        'Emilio Estevez',
-        'Ralph Macchio',
-        'Rob Lowe',
-        'Jennifer Grey',
-        'Mickey Rourke',
-        'John Cusack',
-        'Matthew Broderick',
-        'Justine Bateman',
-        'Lisa Bonet',
-        'Benicio Monserrate Rafael del Toro Sánchez',
-      ]
-        // Typically we'd be getting this data from an API where we'd have a
-        // definitive "id" to use for each suggestion item, but for the sake of
-        // example, we'll just set the index within this hardcoded list as the
-        // ID of each item.
-        .map((name, index) => ({ mentionLabel: name, id: index.toString() }))
-        // Find matching entries based on what the user has typed so far (after
-        // the @ symbol)
-        .filter((item) =>
-          item.mentionLabel.toLowerCase().startsWith(query.toLowerCase())
-        )
-        .slice(0, 5)
-    ),
+  items: async ({ query }): Promise<MentionSuggestion[]> => {
+    const searchParams = useSearchParams();
+    const wsId = searchParams.get('wsId') as string;
+
+    const supabase = await createClient();
+
+    const queryBuilder = supabase
+      .from('workspace_users')
+      .select('*')
+      .eq('ws_id', wsId);
+
+    if (query) {
+      queryBuilder.ilike('display_name', `%${query}%`);
+    }
+
+    queryBuilder.order('id');
+
+    const { data, error } = await queryBuilder;
+    if (error) throw error;
+
+    return (data || [])
+      .map((user) => ({
+        id: user.id.toString(),
+        mentionLabel: user.display_name ?? '',
+      }))
+      .slice(0, 5); // Limit to 5 suggestions
+  },
 
   render: () => {
     let component: ReactRenderer<SuggestionListRef> | undefined;
