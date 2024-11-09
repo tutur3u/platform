@@ -1,3 +1,4 @@
+import configureMention from './useMention';
 import { extractYoutubeId } from '@/utils/url-helper';
 import { cx } from 'class-variance-authority';
 import { common, createLowlight } from 'lowlight';
