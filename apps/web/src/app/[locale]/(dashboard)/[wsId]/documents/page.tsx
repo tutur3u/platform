@@ -9,7 +9,6 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { FilePlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-
 interface Props {
   params: Promise<{ wsId: string }>;
 }
