@@ -3,7 +3,6 @@ import type { EditorUser } from '@/components/components/BlockEditor/BlockEditor
 import { AiImage, AiWriter } from '@/extensions';
 import { Ai } from '@/extensions/Ai';
 import { ExtensionKit } from '@/extensions/extension-kit';
-import { initialContent } from '@/lib/data/initialContent';
 import { randomElement } from '@/lib/utils/index';
 import { TiptapCollabProvider, WebSocketStatus } from '@hocuspocus/provider';
 import type { AnyExtension, Editor } from '@tiptap/core';
@@ -49,17 +48,16 @@ export const useBlockEditor = ({
           provider.on('synced', () => {
             setTimeout(() => {
               if (ctx.editor.isEmpty) {
-                ctx.editor.commands.setContent(document);
+                ctx.editor.commands.setContent(document || {});
               }
             }, 0);
           });
         } else if (ctx.editor.isEmpty) {
-
           const savedContent = localStorage.getItem('editorContent');
           if (savedContent) {
             ctx.editor.commands.setContent(JSON.parse(savedContent));
           } else if (document) {
-            ctx.editor.commands.setContent(document);
+            ctx.editor.commands.setContent(document || {});
           }
           ctx.editor.commands.focus('start', { scrollIntoView: true });
         }
@@ -129,21 +127,19 @@ export const useBlockEditor = ({
   });
 
   useEffect(() => {
-    // Load initial content only if the editor is empty
     const loadInitialContent = () => {
       if (editor && editor.isEmpty) {
         const savedContent = localStorage.getItem('editorContent');
         if (savedContent) {
           editor.commands.setContent(JSON.parse(savedContent));
         } else if (document) {
-          editor.commands.setContent(document);
+          editor.commands.setContent(document || {});
         }
       }
     };
 
     loadInitialContent();
 
-    // Save content to local storage on editor updates
     const saveContentToLocalStorage = () => {
       if (editor && !editor.isEmpty) {
         const content = editor.getJSON();
