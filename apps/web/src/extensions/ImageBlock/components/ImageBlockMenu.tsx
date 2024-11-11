@@ -1,4 +1,4 @@
-import { BubbleMenu as BaseBubbleMenu, useEditorState } from '@tiptap/react'
+import { BubbleMenu as BaseBubbleMenu, Editor, useEditorState } from '@tiptap/react'
 import React, { useCallback, useRef } from 'react'
 import { Instance, sticky } from 'tippy.js'
 import { v4 as uuid } from 'uuid'
@@ -10,21 +10,27 @@ import { MenuProps } from '@/components/components/ui/PopoverMenu'
 
 import { getRenderContainer } from '@/lib/utils/index'
 
-export const ImageBlockMenu = ({ editor, appendTo }: MenuProps): JSX.Element => {
+interface ImageBlockMenuProps extends MenuProps {
+  editor: Editor | undefined;
+}
+
+export const ImageBlockMenu = ({ editor, appendTo }: ImageBlockMenuProps): JSX.Element | null => {
   const menuRef = useRef<HTMLDivElement>(null)
   const tippyInstance = useRef<Instance | null>(null)
+
+
+  if (!editor) {
+    return null
+  }
 
   const getReferenceClientRect = useCallback(() => {
     const renderContainer = getRenderContainer(editor, 'node-imageBlock')
     const rect = renderContainer?.getBoundingClientRect() || new DOMRect(-1000, -1000, 0, 0)
-
     return rect
   }, [editor])
 
   const shouldShow = useCallback(() => {
-    const isActive = editor.isActive('imageBlock')
-
-    return isActive
+    return editor.isActive('imageBlock')
   }, [editor])
 
   const onAlignImageLeft = useCallback(() => {
@@ -45,6 +51,7 @@ export const ImageBlockMenu = ({ editor, appendTo }: MenuProps): JSX.Element => 
     },
     [editor],
   )
+
   const { isImageCenter, isImageLeft, isImageRight, width } = useEditorState({
     editor,
     selector: ctx => {
@@ -52,10 +59,19 @@ export const ImageBlockMenu = ({ editor, appendTo }: MenuProps): JSX.Element => 
         isImageLeft: ctx.editor.isActive('imageBlock', { align: 'left' }),
         isImageCenter: ctx.editor.isActive('imageBlock', { align: 'center' }),
         isImageRight: ctx.editor.isActive('imageBlock', { align: 'right' }),
-        width: parseInt(ctx.editor.getAttributes('imageBlock')?.width || 0),
+        width: parseInt(ctx.editor.getAttributes('imageBlock')?.width || '0'),
       }
     },
   })
+
+
+  const getAppendTo = useCallback(() => {
+
+    if (appendTo && appendTo.current) {
+      return appendTo.current
+    }
+    return document.body // Fallback to body if appendTo is not set
+  }, [appendTo])
 
   return (
     <BaseBubbleMenu
@@ -72,9 +88,7 @@ export const ImageBlockMenu = ({ editor, appendTo }: MenuProps): JSX.Element => 
         onCreate: (instance: Instance) => {
           tippyInstance.current = instance
         },
-        appendTo: () => {
-          return appendTo?.current
-        },
+        appendTo: getAppendTo,
         plugins: [sticky],
         sticky: 'popper',
       }}

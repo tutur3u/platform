@@ -1,7 +1,7 @@
 'use client';
 
 import DocumentShareDialog from '../document-share-dialog';
-import { DocumentEditor } from './editor';
+// import { DocumentEditor } from './editor';
 import { TiptapCollabProvider } from '@hocuspocus/provider'
 import { BlockEditor } from '@/components/components/BlockEditor';
 import { cn } from '@/lib/utils';

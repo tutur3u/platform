@@ -50,10 +50,17 @@ const useContentItemActions = (editor: Editor, currentNode: Node | null, current
         .chain()
         .command(({ dispatch, tr, state }) => {
           if (dispatch) {
-            if (currentNodeIsEmptyParagraph) {
-              tr.insertText('/', currentNodePos, currentNodePos + 1)
+            // Check if paragraph node exists in the schema
+            const paragraphNode = state.schema.nodes.paragraph
+
+            if (paragraphNode) {
+              if (currentNodeIsEmptyParagraph) {
+                tr.insertText('/', currentNodePos, currentNodePos + 1)
+              } else {
+                tr.insert(insertPos, paragraphNode.create(null, [state.schema.text('/')]))
+              }
             } else {
-              tr.insert(insertPos, state.schema.nodes.paragraph.create(null, [state.schema.text('/')]))
+              console.warn('Paragraph node is not defined in the schema')
             }
 
             return dispatch(tr)

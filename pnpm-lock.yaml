@@ -375,6 +375,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.9.1(react-hook-form@7.53.2(react@19.0.0-rc-7c8e5e7a-20241101))
+      '@liveblocks/client':
+        specifier: ^2.11.0
+        version: 2.11.0
+      '@liveblocks/react':
+        specifier: ^2.11.0
+        version: 2.11.0(react@19.0.0-rc-7c8e5e7a-20241101)
       '@mantine/core':
         specifier: ^7.13.5
         version: 7.13.5(@mantine/hooks@7.13.5(react@19.0.0-rc-7c8e5e7a-20241101))(@types/react@18.3.12)(react-dom@19.0.0-rc-7c8e5e7a-20241101(react@19.0.0-rc-7c8e5e7a-20241101))(react@19.0.0-rc-7c8e5e7a-20241101)
@@ -2089,6 +2095,17 @@ packages:
 
   '@lifeomic/attempt@3.1.0':
     resolution: {integrity: sha512-QZqem4QuAnAyzfz+Gj5/+SLxqwCAw2qmt7732ZXodr6VDWGeYLG6w1i/vYLa55JQM9wRuBKLmXmiZ2P0LtE5rw==}
+
+  '@liveblocks/client@2.11.0':
+    resolution: {integrity: sha512-ZRayUwwOzucYn4QqOTz0vcQSZlqGaP8TBROzE9Ye/PwfACNasyfa3roZqfizhBlYlYQQ/8qQlvGl2n3LPf8Byg==}
+
+  '@liveblocks/core@2.11.0':
+    resolution: {integrity: sha512-2WQlJvJ1NVJ/CpKhDNJJHXrh2Yzz6eXchqn64JqTHk5TLGbx1s4kaTahEXaAOXmu2abnJWnv06v1mhv3YXYg+A==}
+
+  '@liveblocks/react@2.11.0':
+    resolution: {integrity: sha512-uAPEh9ZS03ANTnbbU5PTiFVusI05H7EqOH4aDVaKDrogkKi70RYbCek4PKY8TpK2vLhmutBxyVd3tp2uBwvTFQ==}
+    peerDependencies:
+      react: ^16.14.0 || ^17 || ^18 || ^19 || ^19.0.0-rc
 
   '@mantine/core@7.13.5':
     resolution: {integrity: sha512-1m0C0qH9eIWJZy19M06kKNWbbSLZhsTDvHPqTxMgvFg6JuSN7a6r3v6fqCbvaI1kTQiK51NMe+9vMNVnw4zOsA==}
@@ -10150,6 +10167,19 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.0
 
   '@lifeomic/attempt@3.1.0': {}
+
+  '@liveblocks/client@2.11.0':
+    dependencies:
+      '@liveblocks/core': 2.11.0
+
+  '@liveblocks/core@2.11.0': {}
+
+  '@liveblocks/react@2.11.0(react@19.0.0-rc-7c8e5e7a-20241101)':
+    dependencies:
+      '@liveblocks/client': 2.11.0
+      '@liveblocks/core': 2.11.0
+      react: 19.0.0-rc-7c8e5e7a-20241101
+      use-sync-external-store: 1.2.2(react@19.0.0-rc-7c8e5e7a-20241101)
 
   '@mantine/core@7.13.5(@mantine/hooks@7.13.5(react@19.0.0-rc-7c8e5e7a-20241101))(@types/react@18.3.12)(react-dom@19.0.0-rc-7c8e5e7a-20241101(react@19.0.0-rc-7c8e5e7a-20241101))(react@19.0.0-rc-7c8e5e7a-20241101)':
     dependencies:
