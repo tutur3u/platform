@@ -1377,7 +1377,8 @@
     "rounding": "Rounding",
     "print": "Print",
     "download_image": "Download image",
-    "add_promotion": "Add promotion"
+    "add_promotion": "Add promotion",
+    "files": "Files"
   },
   "ai_chat": {
     "welcome_to": "Welcome to",

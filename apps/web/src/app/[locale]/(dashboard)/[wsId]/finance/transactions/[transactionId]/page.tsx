@@ -1,7 +1,9 @@
 import { Bill } from './bill';
+import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { FileObject } from '@supabase/storage-js';
 import 'dayjs/locale/vi';
 import { CalendarIcon, DollarSign, Wallet } from 'lucide-react';
 import moment from 'moment';
@@ -20,9 +22,11 @@ interface Props {
 export default async function TransactionDetailsPage({ params }: Props) {
   const { wsId, transactionId, locale } = await params;
   const t = await getTranslations();
-  const { transaction } = await getData(transactionId);
+  const { objects, transaction } = await getData(wsId, transactionId);
 
   if (!transaction) notFound();
+
+  console.log(objects);
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -37,7 +41,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
       />
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">
-        <div className="grid gap-4">
+        <div className="space-y-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
             <div className="text-lg font-semibold">
               {t('invoices.basic-info')}
@@ -69,6 +73,16 @@ export default async function TransactionDetailsPage({ params }: Props) {
               }
             />
           </div>
+
+          {objects.length > 0 && (
+            <div className="grid h-fit gap-2 rounded-lg border p-4">
+              <div className="text-lg font-semibold">{t('invoices.files')}</div>
+              <Separator />
+              {objects.map((object) => (
+                <DetailObject object={object} />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4">
@@ -115,7 +129,11 @@ function DetailItem({
   );
 }
 
-async function getData(transactionId: string) {
+function DetailObject({ object }: { object: FileObject }) {
+  return <div>{object.name}</div>;
+}
+
+async function getData(wsId: string, transactionId: string) {
   const supabase = await createClient();
 
   const { data: transaction, error: transactionError } = await supabase
@@ -128,5 +146,11 @@ async function getData(transactionId: string) {
 
   if (transactionError) throw transactionError;
 
-  return { transaction };
+  const { data: objects, error: objectError } = await supabase.storage
+    .from('workspaces')
+    .list(joinPath(wsId, 'finance/transactions', transactionId));
+
+  if (objectError) throw objectError;
+
+  return { objects, transaction };
 }
