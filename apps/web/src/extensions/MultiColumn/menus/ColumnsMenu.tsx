@@ -17,7 +17,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
   }, [editor]);
 
   const shouldShow = useCallback(() => {
-    return editor?.isActive('columns') || false; // Conditional check for editor
+    return editor?.isActive('columns') || false; 
   }, [editor]);
 
   const onColumnLeft = useCallback(() => {
@@ -61,7 +61,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
           modifiers: [{ name: 'flip', enabled: false }],
         },
         getReferenceClientRect,
-        appendTo: () => appendTo?.current || document.body, // Fallback to document.body if appendTo is null
+        appendTo: () => appendTo?.current || document.body, 
         plugins: [sticky],
         sticky: 'popper',
       }}
@@ -90,7 +90,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
         </Toolbar.Button>
       </Toolbar.Wrapper>
     </BaseBubbleMenu>
-  ) : null; // Render nothing if editor is undefined
+  ) : null; 
 };
 
 export default ColumnsMenu;

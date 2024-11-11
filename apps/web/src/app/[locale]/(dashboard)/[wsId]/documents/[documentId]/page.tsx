@@ -66,9 +66,9 @@ export default function DocumentDetailsPage({ params }: Props) {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
-  const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
-  const [collabToken, setCollabToken] = useState<string | null | undefined>();
-  const [aiToken, setAiToken] = useState<string | null | undefined>();
+  const [provider] = useState<TiptapCollabProvider | null>(null);
+  // const [collabToken, setCollabToken] = useState<string | null | undefined>();
+  const [aiToken] = useState<string | null | undefined>();
   const hasCollab= true;
   const ydoc = useMemo(() => new YDoc(), [])
   useEffect(() => {
