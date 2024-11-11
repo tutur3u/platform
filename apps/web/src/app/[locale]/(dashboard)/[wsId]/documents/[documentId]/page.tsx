@@ -215,6 +215,8 @@ export default function DocumentDetailsPage({ params }: Props) {
         aiToken={aiToken ?? undefined}
         hasCollab={hasCollab}
         ydoc={ydoc}
+        docId={documentId}
+        document={document.content as JSONContent}
         provider={provider}
       />
       <DocumentShareDialog

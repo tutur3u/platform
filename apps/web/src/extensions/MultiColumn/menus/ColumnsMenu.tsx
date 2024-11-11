@@ -10,48 +10,46 @@ import { v4 as uuid } from 'uuid';
 
 export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
   const getReferenceClientRect = useCallback(() => {
+    if (!editor) return new DOMRect(-1000, -1000, 0, 0); // Handle undefined editor
+    
     const renderContainer = getRenderContainer(editor, 'columns');
-    const rect =
-      renderContainer?.getBoundingClientRect() ||
-      new DOMRect(-1000, -1000, 0, 0);
-
-    return rect;
+    return renderContainer?.getBoundingClientRect() || new DOMRect(-1000, -1000, 0, 0);
   }, [editor]);
 
   const shouldShow = useCallback(() => {
-    const isColumns = editor.isActive('columns');
-    return isColumns;
+    return editor?.isActive('columns') || false; // Conditional check for editor
   }, [editor]);
 
   const onColumnLeft = useCallback(() => {
-    editor.chain().focus().setLayout(ColumnLayout.SidebarLeft).run();
+    editor?.chain().focus().setLayout(ColumnLayout.SidebarLeft).run();
   }, [editor]);
 
   const onColumnRight = useCallback(() => {
-    editor.chain().focus().setLayout(ColumnLayout.SidebarRight).run();
+    editor?.chain().focus().setLayout(ColumnLayout.SidebarRight).run();
   }, [editor]);
 
   const onColumnTwo = useCallback(() => {
-    editor.chain().focus().setLayout(ColumnLayout.TwoColumn).run();
+    editor?.chain().focus().setLayout(ColumnLayout.TwoColumn).run();
   }, [editor]);
+
   const { isColumnLeft, isColumnRight, isColumnTwo } = useEditorState({
     editor,
     selector: (ctx) => {
       return {
-        isColumnLeft: ctx.editor.isActive('columns', {
+        isColumnLeft: ctx.editor?.isActive('columns', {
           layout: ColumnLayout.SidebarLeft,
-        }),
-        isColumnRight: ctx.editor.isActive('columns', {
+        }) || false,
+        isColumnRight: ctx.editor?.isActive('columns', {
           layout: ColumnLayout.SidebarRight,
-        }),
-        isColumnTwo: ctx.editor.isActive('columns', {
+        }) || false,
+        isColumnTwo: ctx.editor?.isActive('columns', {
           layout: ColumnLayout.TwoColumn,
-        }),
+        }) || false,
       };
     },
   });
 
-  return (
+  return editor ? ( // Only render if editor is defined
     <BaseBubbleMenu
       editor={editor}
       pluginKey={`columnsMenu-${uuid()}`}
@@ -63,7 +61,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
           modifiers: [{ name: 'flip', enabled: false }],
         },
         getReferenceClientRect,
-        appendTo: () => appendTo?.current,
+        appendTo: () => appendTo?.current || document.body, // Fallback to document.body if appendTo is null
         plugins: [sticky],
         sticky: 'popper',
       }}
@@ -92,7 +90,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
         </Toolbar.Button>
       </Toolbar.Wrapper>
     </BaseBubbleMenu>
-  );
+  ) : null; // Render nothing if editor is undefined
 };
 
 export default ColumnsMenu;
