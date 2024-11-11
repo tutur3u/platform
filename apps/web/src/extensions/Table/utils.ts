@@ -200,17 +200,18 @@ export const findCellClosestToPos = ($pos: ResolvedPos) => {
 
   return findParentNodeClosestToPos($pos, predicate);
 };
+
 export const select =
   (type: 'row' | 'column') => (index: number) => (tr: Transaction) => {
-    const table = findTable(tr.selection);
+    const table = findTable(tr.selection)!;
     const isRowSelection = type === 'row';
 
     if (table) {
       const map = TableMap.get(table.node);
 
-      // Ensure map is defined and valid
+      // Ensure map is valid
       if (map) {
-        // Check if the index is valid and defined
+        // Validate the index and ensure it falls within the valid range
         if (
           index !== undefined &&
           index >= 0 &&
@@ -221,15 +222,16 @@ export const select =
           const right = isRowSelection ? map.width : index + 1;
           const bottom = isRowSelection ? index + 1 : map.height;
 
-          // Ensure cellsInFirstRow and cellsInLastRow are valid arrays with type assertion
+          // Cells in the first row
           const cellsInFirstRow =
             map.cellsInRect({
               left,
               top,
               right: isRowSelection ? right : left + 1,
               bottom: isRowSelection ? top + 1 : bottom,
-            }) || ([] as number[]); // Fallback to empty array if undefined and assert type
+            }) || []; // Fallback to empty array if undefined
 
+          // Cells in the last row
           const cellsInLastRow =
             bottom - top === 1
               ? cellsInFirstRow
@@ -238,14 +240,22 @@ export const select =
                   top: isRowSelection ? bottom - 1 : top,
                   right,
                   bottom,
-                }) || ([] as number[]); // Fallback to empty array if undefined and assert type
+                }) || []; // Fallback to empty array if undefined
 
-          // Ensure both arrays have at least one element before proceeding
+          // Ensure both arrays have elements before proceeding
           if (cellsInFirstRow.length > 0 && cellsInLastRow.length > 0) {
-            // Safe to access the first and last elements
-            const head = table.start + cellsInFirstRow[0];
-            const anchor =
-              table.start + cellsInLastRow[cellsInLastRow.length - 1];
+            const head =
+              cellsInFirstRow.length > 0 && cellsInFirstRow[0]
+                ? table.start + cellsInFirstRow[0]
+                : 0;
+            let anchor = 0;
+            if (cellsInLastRow.length > 0 && cellsInLastRow) {
+              anchor =
+                cellsInLastRow.length > 0 &&
+                cellsInLastRow[cellsInLastRow.length - 1]
+                  ? table.start + cellsInLastRow[cellsInLastRow.length - 1]!
+                  : 0;
+            }
 
             const $head = tr.doc.resolve(head);
             const $anchor = tr.doc.resolve(anchor);
@@ -261,23 +271,46 @@ export const select =
 export const selectColumn = select('column');
 
 export const selectRow = select('row');
-
 export const selectTable = (tr: Transaction) => {
   const table = findTable(tr.selection);
 
   if (table) {
-    const { map } = TableMap.get(table.node);
+    const map = TableMap.get(table.node);
 
-    // Ensure map is defined and has a length
-    if (map && map.length > 0) {
-      const head = table.start + map[0];
-      const anchor = table.start + map[map.length - 1];
-      const $head = tr.doc.resolve(head);
-      const $anchor = tr.doc.resolve(anchor);
+    // Ensure map is valid (defined and non-empty)
+    if (map && map.width > 0 && map.height > 0) {
+      // Use cellsInRect to get the first and last cells in the table
 
-      return tr.setSelection(new CellSelection($anchor, $head));
+      // First row (top-left corner)
+      const cellsInFirstRow = map.cellsInRect({
+        left: 0,
+        top: 0,
+        right: map.width,
+        bottom: 1,
+      });
+      // Last row (bottom-right corner)
+      const cellsInLastRow = map.cellsInRect({
+        left: 0,
+        top: map.height - 1,
+        right: map.width,
+        bottom: map.height,
+      });
+
+      // Ensure both rows have valid cells
+      if (cellsInFirstRow.length > 0 && cellsInLastRow.length > 0) {
+        const head = table.start + cellsInFirstRow[0]!; // First cell (top-left)
+        const anchor = table.start + cellsInLastRow[cellsInLastRow.length - 1]!; // Last cell (bottom-right)
+
+        const $head = tr.doc.resolve(head);
+        const $anchor = tr.doc.resolve(anchor);
+
+        // Set the selection
+        return tr.setSelection(new CellSelection($anchor, $head));
+      } else {
+        console.error('Table rows are not valid or empty');
+      }
     } else {
-      console.error('Table map is either undefined or empty');
+      console.error('Table map is either undefined, empty, or invalid');
     }
   }
 

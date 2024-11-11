@@ -18,3 +18,10 @@ export interface ShouldShowProps {
   from?: number
   to?: number
 }
+
+export type EditorUser = {
+    clientId: string
+    name: string
+    color: string
+    initials?: string
+  }

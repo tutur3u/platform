@@ -1,5 +1,5 @@
 import { userColors, userNames } from '../lib/constants';
-import type { EditorUser } from '@/components/components/BlockEditor/BlockEditor';
+import type { EditorUser } from '@/components/components/BlockEditor/types';
 import { AiImage, AiWriter } from '@/extensions';
 import { Ai } from '@/extensions/Ai';
 import { ExtensionKit } from '@/extensions/extension-kit';
