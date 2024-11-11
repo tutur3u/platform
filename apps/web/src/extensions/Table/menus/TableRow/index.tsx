@@ -1,16 +1,19 @@
+import { ShouldShowProps } from '../TableColumn/type';
 import { isRowGripSelected } from './utils';
 import { Icon } from '@/components/components/ui/Icon';
-import {
-  MenuProps,
-  ShouldShowProps,
-} from '@/components/components/ui/PopoverMenu';
-import { Toolbar } from '@/components/components/ui/Toolbar';
+import { MenuProps } from '@/components/components/ui/PopoverMenu';
 import * as PopoverMenu from '@/components/components/ui/PopoverMenu';
+import { Toolbar } from '@/components/components/ui/Toolbar';
 import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react';
 import React, { useCallback } from 'react';
 
 export const TableRowMenu = React.memo(
-  ({ editor, appendTo }: MenuProps): JSX.Element => {
+  ({ editor, appendTo }: MenuProps): JSX.Element | null => {
+    // Guard clause to return null if editor is undefined
+    if (!editor) {
+      return null;
+    }
+
     const shouldShow = useCallback(
       ({ view, state, from }: ShouldShowProps) => {
         if (!state || !from) {
@@ -40,9 +43,7 @@ export const TableRowMenu = React.memo(
         pluginKey="tableRowMenu"
         updateDelay={0}
         tippyOptions={{
-          appendTo: () => {
-            return appendTo?.current;
-          },
+          appendTo: () => appendTo?.current ?? document.body, // Fallback to document.body if appendTo.current is undefined
           placement: 'left',
           offset: [0, 15],
           popperOptions: {

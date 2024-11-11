@@ -1,28 +1,28 @@
 import { Group } from './types'
 
 export const GROUPS: Group[] = [
-  {
-    name: 'ai',
-    title: 'AI',
-    commands: [
-      {
-        name: 'aiWriter',
-        label: 'AI Writer',
-        iconName: 'Sparkles',
-        description: 'Let AI finish your thoughts',
-        shouldBeHidden: editor => editor.isActive('columns'),
-        action: editor => editor.chain().focus().setAiWriter().run(),
-      },
-      {
-        name: 'aiImage',
-        label: 'AI Image',
-        iconName: 'Sparkles',
-        description: 'Generate an image from text',
-        shouldBeHidden: editor => editor.isActive('columns'),
-        action: editor => editor.chain().focus().setAiImage().run(),
-      },
-    ],
-  },
+  // {
+  //   name: 'ai',
+  //   title: 'AI',
+  //   commands: [
+  //     {
+  //       name: 'aiWriter',
+  //       label: 'AI Writer',
+  //       iconName: 'Sparkles',
+  //       description: 'Let AI finish your thoughts',
+  //       shouldBeHidden: editor => editor.isActive('columns'),
+  //       action: editor => editor.chain().focus().setAiWriter().run(),
+  //     },
+  //     {
+  //       name: 'aiImage',
+  //       label: 'AI Image',
+  //       iconName: 'Sparkles',
+  //       description: 'Generate an image from text',
+  //       shouldBeHidden: editor => editor.isActive('columns'),
+  //       action: editor => editor.chain().focus().setAiImage().run(),
+  //     },
+  //   ],
+  // },
   {
     name: 'format',
     title: 'Format',

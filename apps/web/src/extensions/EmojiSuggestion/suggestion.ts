@@ -1,19 +1,19 @@
-import { ReactRenderer } from '@tiptap/react'
-import { Editor } from '@tiptap/core'
-import { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion'
-import tippy, { Instance } from 'tippy.js'
-
-import EmojiList from './components/EmojiList'
-import { KeyboardEvent, RefAttributes } from 'react'
-import { EmojiListProps } from './types'
+import EmojiList from './components/EmojiList';
+import { EmojiListProps } from './types';
+import { Editor } from '@tiptap/core';
+import { ReactRenderer } from '@tiptap/react';
+import { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion';
+import { RefAttributes } from 'react';
+import tippy, { Instance } from 'tippy.js';
 
 export const emojiSuggestion = {
   items: ({ editor, query }: { editor: Editor; query: string }) =>
     editor.storage.emoji.emojis
       .filter(
         ({ shortcodes, tags }: { shortcodes: string[]; tags: string[] }) =>
-          shortcodes.find(shortcode => shortcode.startsWith(query.toLowerCase())) ||
-          tags.find(tag => tag.startsWith(query.toLowerCase())),
+          shortcodes.find((shortcode) =>
+            shortcode.startsWith(query.toLowerCase())
+          ) || tags.find((tag) => tag.startsWith(query.toLowerCase()))
       )
       .slice(0, 250),
 
@@ -22,17 +22,19 @@ export const emojiSuggestion = {
   render: () => {
     let component: ReactRenderer<
       { onKeyDown: (evt: SuggestionKeyDownProps) => boolean },
-      EmojiListProps & RefAttributes<{ onKeyDown: (evt: SuggestionKeyDownProps) => boolean }>
-    >
-    let popup: ReturnType<typeof tippy>
+      EmojiListProps &
+        RefAttributes<{ onKeyDown: (evt: SuggestionKeyDownProps) => boolean }>
+    >;
+    let popup: Instance[] | undefined;
 
     return {
       onStart: (props: SuggestionProps<any>) => {
         component = new ReactRenderer(EmojiList, {
           props,
           editor: props.editor,
-        })
+        });
 
+        // tippy returns an array of instances
         popup = tippy('body', {
           getReferenceClientRect: props.clientRect as () => DOMRect,
           appendTo: () => document.body,
@@ -41,34 +43,42 @@ export const emojiSuggestion = {
           interactive: true,
           trigger: 'manual',
           placement: 'bottom-start',
-        })
+        });
       },
 
       onUpdate(props: SuggestionProps<any>) {
-        component.updateProps(props)
+        component.updateProps(props);
 
-        popup[0].setProps({
-          getReferenceClientRect: props.clientRect as () => DOMRect,
-        })
+        // Ensure popup is not undefined and has elements
+        if (popup && popup.length > 0) {
+          popup[0]?.setProps({
+            getReferenceClientRect: props.clientRect as () => DOMRect,
+          });
+        }
       },
 
       onKeyDown(props: SuggestionKeyDownProps) {
         if (props.event.key === 'Escape') {
-          popup[0].hide()
-          component.destroy()
-
-          return true
+          // Ensure popup is not undefined and has elements
+          if (popup && popup.length > 0) {
+            popup[0]?.hide();
+            component.destroy();
+          }
+          return true;
         }
 
-        return component.ref?.onKeyDown(props) ?? false
+        return component.ref?.onKeyDown(props) ?? false;
       },
 
       onExit() {
-        popup[0].destroy()
-        component.destroy()
+        // Ensure popup is not undefined and has elements
+        if (popup && popup.length > 0) {
+          popup[0]?.destroy();
+        }
+        component.destroy();
       },
-    }
+    };
   },
-}
+};
 
-export default emojiSuggestion
+export default emojiSuggestion;

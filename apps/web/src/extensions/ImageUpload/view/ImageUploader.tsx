@@ -17,8 +17,12 @@ export const ImageUploader = ({
   });
 
   const onFileChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) =>
-      e.target.files ? uploadFile(e.target.files[0]) : null,
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        uploadFile(file);
+      }
+    },
     [uploadFile]
   );
 

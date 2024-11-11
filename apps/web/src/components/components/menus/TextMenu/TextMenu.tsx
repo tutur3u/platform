@@ -2,7 +2,7 @@ import { ColorPicker } from '../../panels';
 import { Icon } from '../../ui/Icon';
 import { Surface } from '../../ui/Surface';
 import { Toolbar } from '../../ui/Toolbar';
-import { AIDropdown } from './components/AIDropdown';
+// import { AIDropdown } from './components/AIDropdown';
 import { ContentTypePicker } from './components/ContentTypePicker';
 import { EditLinkPopover } from './components/EditLinkPopover';
 import { FontFamilyPicker } from './components/FontFamilyPicker';
