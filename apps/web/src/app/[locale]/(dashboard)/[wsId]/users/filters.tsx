@@ -59,6 +59,7 @@ interface UserDatabaseFilterProps {
   className?: string;
   contentClassName?: string;
   hideSelected?: boolean;
+  // eslint-disable-next-line no-unused-vars
   onSet?: (values: string[]) => Promise<void> | void;
 }
 

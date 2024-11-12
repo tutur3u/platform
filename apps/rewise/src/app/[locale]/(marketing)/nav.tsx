@@ -214,7 +214,6 @@ export function Nav({
                 }
                 className="flex items-center justify-start"
                 onClick={() => {
-                  if (pathname === '/' && !searchParams.get('id')) return;
                   onClick?.();
                 }}
               >
