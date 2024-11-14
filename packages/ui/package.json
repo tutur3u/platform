@@ -6,7 +6,7 @@
     "ui": "pnpm dlx shadcn-ui@latest",
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@9.12.3",
+  "packageManager": "pnpm@9.13.0",
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "^1.2.1",
@@ -47,10 +47,10 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.456.0",
     "next-themes": "^0.4.3",
-    "react": "19.0.0-rc-5c56b873-20241107",
+    "react": "19.0.0-rc-7ac8e612-20241113",
     "react-colorful": "^5.6.1",
     "react-day-picker": "8.10.1",
-    "react-dom": "19.0.0-rc-5c56b873-20241107",
+    "react-dom": "19.0.0-rc-7ac8e612-20241113",
     "react-dropzone": "^14.3.5",
     "react-hook-form": "^7.53.2",
     "react-resizable": "^3.0.5",
@@ -82,7 +82,7 @@
     "typescript": "^5.6.3"
   },
   "overrides": {
-    "react-is": "19.0.0-rc-5c56b873-20241107"
+    "react-is": "19.0.0-rc-7ac8e612-20241113"
   },
   "exports": {
     "./globals.css": "./src/globals.css",
