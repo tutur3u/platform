@@ -117,7 +117,7 @@
     "@eslint/eslintrc": "^3.1.0",
     "@eslint/js": "^9.14.0",
     "@next/bundle-analyzer": "15.0.4-canary.9",
-    "@next/eslint-plugin-next": "15.0.4-canary.9",
+    "@next/eslint-plugin-next": "15.0.4-canary.11",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.60.1",
