@@ -86,7 +86,7 @@
     "pptxgenjs": "^3.12.0",
     "react": "19.0.0-rc-380f5d67-20241113",
     "react-csv-reader": "^4.0.0",
-    "react-dom": "19.0.0-rc-380f5d67-20241113",
+    "react-dom": "19.0.0-rc.1",
     "react-email": "3.0.2",
     "react-export-excel": "^0.5.3",
     "react-hook-form": "^7.53.2",
