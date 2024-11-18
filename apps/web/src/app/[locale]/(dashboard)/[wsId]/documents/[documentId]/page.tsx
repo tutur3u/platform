@@ -1,10 +1,12 @@
 'use client';
 
 import DocumentShareDialog from '../document-share-dialog';
-import { DocumentEditor } from './editor';
+import { BlockEditor } from '@/components/components/BlockEditor';
 import { cn } from '@/lib/utils';
 import { WorkspaceDocument } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
+// import { DocumentEditor } from './editor';
+import { TiptapCollabProvider } from '@hocuspocus/provider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +30,8 @@ import { CircleCheck, CircleDashed } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { JSONContent } from 'novel';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Doc as YDoc } from 'yjs';
 
 interface Props {
   params: Promise<{
@@ -63,7 +66,11 @@ export default function DocumentDetailsPage({ params }: Props) {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
-
+  const [provider] = useState<TiptapCollabProvider | null>(null);
+  // const [collabToken, setCollabToken] = useState<string | null | undefined>();
+  const [aiToken] = useState<string | null | undefined>();
+  const hasCollab = true;
+  const ydoc = useMemo(() => new YDoc(), []);
   useEffect(() => {
     params.then((resolvedParams) => {
       setWsId(resolvedParams.wsId);
@@ -199,10 +206,18 @@ export default function DocumentDetailsPage({ params }: Props) {
         </Tooltip>
       </div>
 
-      <DocumentEditor
+      {/* <DocumentEditor
         wsId={wsId}
         docId={documentId}
         content={document.content as JSONContent}
+      /> */}
+      <BlockEditor
+        aiToken={aiToken ?? undefined}
+        hasCollab={hasCollab}
+        ydoc={ydoc}
+        docId={documentId}
+        document={document.content as JSONContent}
+        provider={provider}
       />
       <DocumentShareDialog
         isOpen={isShareDialogOpen}
