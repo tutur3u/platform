@@ -11,9 +11,8 @@ import { useSidebar } from '@/hooks/useSidebar';
 import '@/style/index.css';
 import { createClient } from '@/utils/supabase/client';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
-import { EditorContent } from '@tiptap/react';
-import { JSONContent } from '@tiptap/react';
-import React, { useEffect, useRef } from 'react';
+import { EditorContent, JSONContent } from '@tiptap/react';
+import { useEffect, useRef } from 'react';
 import * as Y from 'yjs';
 
 const supabase = createClient();
@@ -96,7 +95,7 @@ export const BlockEditor = ({
         />
         <EditorContent
           editor={editor}
-          className="h-full flex-1 overflow-y-auto bg-gray-100 pr-0 sm:pr-10 lg:pr-96"
+          className="border-foreground/10 bg-foreground/5 h-full flex-1 overflow-y-auto pr-0 sm:pr-10 lg:pr-96"
         />
         <ContentItemMenu editor={editor} />
         <LinkMenu editor={editor} appendTo={menuContainerRef} />
