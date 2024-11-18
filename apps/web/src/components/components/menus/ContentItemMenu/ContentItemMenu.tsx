@@ -1,31 +1,34 @@
-import { Icon } from '../../ui/Icon'
-import { Toolbar } from '../../ui/Toolbar'
-import DragHandle from '@tiptap-pro/extension-drag-handle-react'
-import { Editor } from '@tiptap/react'
-
-import * as Popover from '@radix-ui/react-popover'
-import { Surface } from '../../ui/Surface'
-import { DropdownButton } from '../../ui/Dropdown'
-import useContentItemActions from './hooks/useContentItemActions'
-import { useData } from './hooks/useData'
-import { useEffect, useState } from 'react'
+import { DropdownButton } from '../../ui/Dropdown';
+import { Icon } from '../../ui/Icon';
+import { Surface } from '../../ui/Surface';
+import { Toolbar } from '../../ui/Toolbar';
+import useContentItemActions from './hooks/useContentItemActions';
+import { useData } from './hooks/useData';
+import * as Popover from '@radix-ui/react-popover';
+import DragHandle from '@tiptap-pro/extension-drag-handle-react';
+import { Editor } from '@tiptap/react';
+import { useEffect, useState } from 'react';
 
 export type ContentItemMenuProps = {
-  editor: Editor
-}
+  editor: Editor;
+};
 
 export const ContentItemMenu = ({ editor }: ContentItemMenuProps) => {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const data = useData()
-  const actions = useContentItemActions(editor, data.currentNode, data.currentNodePos)
+  const [menuOpen, setMenuOpen] = useState(false);
+  const data = useData();
+  const actions = useContentItemActions(
+    editor,
+    data.currentNode,
+    data.currentNodePos
+  );
 
   useEffect(() => {
     if (menuOpen) {
-      editor.commands.setMeta('lockDragHandle', true)
+      editor.commands.setMeta('lockDragHandle', true);
     } else {
-      editor.commands.setMeta('lockDragHandle', false)
+      editor.commands.setMeta('lockDragHandle', false);
     }
-  }, [editor, menuOpen])
+  }, [editor, menuOpen]);
 
   return (
     <DragHandle
@@ -48,7 +51,7 @@ export const ContentItemMenu = ({ editor }: ContentItemMenuProps) => {
             </Toolbar.Button>
           </Popover.Trigger>
           <Popover.Content side="bottom" align="start" sideOffset={8}>
-            <Surface className="p-2 flex flex-col min-w-[16rem]">
+            <Surface className="flex min-w-[16rem] flex-col p-2">
               <Popover.Close>
                 <DropdownButton onClick={actions.resetTextFormatting}>
                   <Icon name="RemoveFormatting" />
@@ -71,7 +74,7 @@ export const ContentItemMenu = ({ editor }: ContentItemMenuProps) => {
               <Popover.Close>
                 <DropdownButton
                   onClick={actions.deleteNode}
-                  className="text-red-500 bg-red-500 dark:text-red-500 hover:bg-red-500 dark:hover:text-red-500 dark:hover:bg-red-500 bg-opacity-10 hover:bg-opacity-20 dark:hover:bg-opacity-20"
+                  className="bg-red-500 bg-opacity-10 text-red-500 hover:bg-red-500 hover:bg-opacity-20 dark:text-red-500 dark:hover:bg-red-500 dark:hover:bg-opacity-20 dark:hover:text-red-500"
                 >
                   <Icon name="Trash2" />
                   Delete
@@ -82,5 +85,5 @@ export const ContentItemMenu = ({ editor }: ContentItemMenuProps) => {
         </Popover.Root>
       </div>
     </DragHandle>
-  )
-}
+  );
+};

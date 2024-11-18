@@ -1,10 +1,10 @@
-import { EmojiItem } from '@tiptap-pro/extension-emoji'
+import { EmojiItem } from '@tiptap-pro/extension-emoji';
 
 export interface Command {
-  name: string
+  name: string;
 }
 
 export interface EmojiListProps {
-  command: (command: Command) => void
-  items: EmojiItem[]
+  command: (command: Command) => void;
+  items: EmojiItem[];
 }

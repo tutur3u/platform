@@ -14,7 +14,10 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
 
   const getReferenceClientRect = useCallback(() => {
     const renderContainer = getRenderContainer(editor, 'columns');
-    return renderContainer?.getBoundingClientRect() || new DOMRect(-1000, -1000, 0, 0);
+    return (
+      renderContainer?.getBoundingClientRect() ||
+      new DOMRect(-1000, -1000, 0, 0)
+    );
   }, [editor]);
 
   const shouldShow = useCallback(() => {
@@ -36,15 +39,18 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
   const { isColumnLeft, isColumnRight, isColumnTwo } = useEditorState({
     editor,
     selector: (ctx) => ({
-      isColumnLeft: ctx.editor?.isActive('columns', {
-        layout: ColumnLayout.SidebarLeft,
-      }) || false,
-      isColumnRight: ctx.editor?.isActive('columns', {
-        layout: ColumnLayout.SidebarRight,
-      }) || false,
-      isColumnTwo: ctx.editor?.isActive('columns', {
-        layout: ColumnLayout.TwoColumn,
-      }) || false,
+      isColumnLeft:
+        ctx.editor?.isActive('columns', {
+          layout: ColumnLayout.SidebarLeft,
+        }) || false,
+      isColumnRight:
+        ctx.editor?.isActive('columns', {
+          layout: ColumnLayout.SidebarRight,
+        }) || false,
+      isColumnTwo:
+        ctx.editor?.isActive('columns', {
+          layout: ColumnLayout.TwoColumn,
+        }) || false,
     }),
   });
 

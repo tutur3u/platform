@@ -1,5 +1,5 @@
-import { mergeAttributes, Node } from '@tiptap/core'
-import { Plugin } from '@tiptap/pm/state'
+import { Node, mergeAttributes } from '@tiptap/core';
+import { Plugin } from '@tiptap/pm/state';
 
 export const Figure = Node.create({
   name: 'figure',
@@ -7,7 +7,7 @@ export const Figure = Node.create({
   addOptions() {
     return {
       HTMLAttributes: {},
-    }
+    };
   },
 
   group: 'block',
@@ -25,11 +25,15 @@ export const Figure = Node.create({
       {
         tag: `figure[data-type="${this.name}"]`,
       },
-    ]
+    ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['figure', mergeAttributes(HTMLAttributes, { 'data-type': this.name }), 0]
+    return [
+      'figure',
+      mergeAttributes(HTMLAttributes, { 'data-type': this.name }),
+      0,
+    ];
   },
 
   addProseMirrorPlugins() {
@@ -40,23 +44,23 @@ export const Figure = Node.create({
             // Prevent dragging child nodes from figure
             dragstart: (view, event) => {
               if (!event.target) {
-                return false
+                return false;
               }
 
-              const pos = view.posAtDOM(event.target as HTMLElement, 0)
-              const $pos = view.state.doc.resolve(pos)
+              const pos = view.posAtDOM(event.target as HTMLElement, 0);
+              const $pos = view.state.doc.resolve(pos);
 
               if ($pos.parent.type.name === this.type.name) {
-                event.preventDefault()
+                event.preventDefault();
               }
 
-              return false
+              return false;
             },
           },
         },
       }),
-    ]
+    ];
   },
-})
+});
 
-export default Figure
+export default Figure;

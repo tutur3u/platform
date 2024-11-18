@@ -1,1 +1,1 @@
-export * from './suggestion'
+export * from './suggestion';

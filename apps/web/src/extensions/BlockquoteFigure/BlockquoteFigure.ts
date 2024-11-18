@@ -1,14 +1,14 @@
-import { mergeAttributes } from '@tiptap/core'
-import { Figure } from '../Figure'
-import { Quote } from './Quote'
-import { QuoteCaption } from './QuoteCaption'
+import { Figure } from '../Figure';
+import { Quote } from './Quote';
+import { QuoteCaption } from './QuoteCaption';
+import { mergeAttributes } from '@tiptap/core';
 
 declare module '@tiptap/core' {
   // eslint-disable-next-line no-unused-vars
   interface Commands<ReturnType> {
     blockquoteFigure: {
-      setBlockquote: () => ReturnType
-    }
+      setBlockquote: () => ReturnType;
+    };
   }
 }
 
@@ -22,23 +22,27 @@ export const BlockquoteFigure = Figure.extend({
   isolating: true,
 
   addExtensions() {
-    return [Quote, QuoteCaption]
+    return [Quote, QuoteCaption];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['figure', mergeAttributes(HTMLAttributes, { 'data-type': this.name }), ['div', {}, 0]]
+    return [
+      'figure',
+      mergeAttributes(HTMLAttributes, { 'data-type': this.name }),
+      ['div', {}, 0],
+    ];
   },
 
   addKeyboardShortcuts() {
     return {
       Enter: () => false,
-    }
+    };
   },
 
   addAttributes() {
     return {
       ...this.parent?.(),
-    }
+    };
   },
 
   addCommands() {
@@ -46,8 +50,8 @@ export const BlockquoteFigure = Figure.extend({
       setBlockquote:
         () =>
         ({ state, chain }) => {
-          const position = state.selection.$from.start()
-          const selectionContent = state.selection.content()
+          const position = state.selection.$from.start();
+          const selectionContent = state.selection.content();
 
           return chain()
             .focus()
@@ -71,10 +75,10 @@ export const BlockquoteFigure = Figure.extend({
               ],
             })
             .focus(position + 1)
-            .run()
+            .run();
         },
-    }
+    };
   },
-})
+});
 
-export default BlockquoteFigure
+export default BlockquoteFigure;

@@ -1,17 +1,17 @@
-import type { Language } from '@/extensions/Ai'
+import type { Language } from '@/extensions/Ai';
 
 export type EditorUser = {
-  clientId: string
-  name: string
-  color: string
-  initials?: string
-}
+  clientId: string;
+  name: string;
+  color: string;
+  initials?: string;
+};
 
 export type LanguageOption = {
-  name: string
-  label: string
-  value: Language
-}
+  name: string;
+  label: string;
+  value: Language;
+};
 
 export type AiTone =
   | 'academic'
@@ -23,18 +23,18 @@ export type AiTone =
   | 'humorous'
   | 'informative'
   | 'inspirational'
-  | string
+  | string;
 
-export type AiPromptType = 'SHORTEN' | 'EXTEND' | 'SIMPLIFY' | 'TONE'
+export type AiPromptType = 'SHORTEN' | 'EXTEND' | 'SIMPLIFY' | 'TONE';
 
 export type AiToneOption = {
-  name: string
-  label: string
-  value: AiTone
-}
+  name: string;
+  label: string;
+  value: AiTone;
+};
 
 export type AiImageStyle = {
-  name: string
-  label: string
-  value: string
-}
+  name: string;
+  label: string;
+  value: string;
+};

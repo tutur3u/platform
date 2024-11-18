@@ -1,30 +1,32 @@
-'use client'
+'use client';
 
-import Tippy from '@tippyjs/react/headless'
-import React, { useCallback } from 'react'
+import { TippyProps, TooltipProps } from './types';
+import Tippy from '@tippyjs/react/headless';
+import React, { useCallback } from 'react';
 
-import { TippyProps, TooltipProps } from './types'
-
-const isMac = typeof window !== 'undefined' ? navigator.platform.toUpperCase().indexOf('MAC') >= 0 : false
+const isMac =
+  typeof window !== 'undefined'
+    ? navigator.platform.toUpperCase().indexOf('MAC') >= 0
+    : false;
 
 const ShortcutKey = ({ children }: { children: string }): JSX.Element => {
   const className =
-    'inline-flex items-center justify-center w-5 h-5 p-1 text-[0.625rem] rounded font-semibold leading-none border border-neutral-200 text-neutral-500 border-b-2'
+    'inline-flex items-center justify-center w-5 h-5 p-1 text-[0.625rem] rounded font-semibold leading-none border border-neutral-200 text-neutral-500 border-b-2';
 
   if (children === 'Mod') {
-    return <kbd className={className}>{isMac ? '⌘' : 'Ctrl'}</kbd> // ⌃
+    return <kbd className={className}>{isMac ? '⌘' : 'Ctrl'}</kbd>; // ⌃
   }
 
   if (children === 'Shift') {
-    return <kbd className={className}>⇧</kbd>
+    return <kbd className={className}>⇧</kbd>;
   }
 
   if (children === 'Alt') {
-    return <kbd className={className}>{isMac ? '⌥' : 'Alt'}</kbd>
+    return <kbd className={className}>{isMac ? '⌥' : 'Alt'}</kbd>;
   }
 
-  return <kbd className={className}>{children}</kbd>
-}
+  return <kbd className={className}>{children}</kbd>;
+};
 
 export const Tooltip = ({
   children,
@@ -36,24 +38,26 @@ export const Tooltip = ({
   const renderTooltip = useCallback(
     (attrs: TippyProps) => (
       <span
-        className="flex items-center gap-2 px-2.5 py-1 bg-white border border-neutral-100 rounded-lg shadow-sm z-[999]"
+        className="z-[999] flex items-center gap-2 rounded-lg border border-neutral-100 bg-white px-2.5 py-1 shadow-sm"
         tabIndex={-1}
         data-placement={attrs['data-placement']}
         data-reference-hidden={attrs['data-reference-hidden']}
         data-escaped={attrs['data-escaped']}
       >
-        {title && <span className="text-xs font-medium text-neutral-500">{title}</span>}
+        {title && (
+          <span className="text-xs font-medium text-neutral-500">{title}</span>
+        )}
         {shortcut && (
           <span className="flex items-center gap-0.5">
-            {shortcut.map(shortcutKey => (
+            {shortcut.map((shortcutKey) => (
               <ShortcutKey key={shortcutKey}>{shortcutKey}</ShortcutKey>
             ))}
           </span>
         )}
       </span>
     ),
-    [shortcut, title],
-  )
+    [shortcut, title]
+  );
 
   if (enabled) {
     return (
@@ -69,10 +73,10 @@ export const Tooltip = ({
       >
         <span>{children}</span>
       </Tippy>
-    )
+    );
   }
 
-  return <>{children}</>
-}
+  return <>{children}</>;
+};
 
-export default Tooltip
+export default Tooltip;

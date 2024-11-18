@@ -19,11 +19,9 @@ export type MenuProps = {
   withPortal?: boolean;
   tooltip?: string;
   isActive?: boolean;
-  editor?: Editor; 
-  appendTo?: React.MutableRefObject<null>; 
+  editor?: Editor;
+  appendTo?: React.MutableRefObject<null>;
 };
-
-
 
 export const Menu = ({
   customTrigger,

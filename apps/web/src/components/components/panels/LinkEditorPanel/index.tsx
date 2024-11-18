@@ -1,1 +1,1 @@
-export * from './LinkEditorPanel'
+export * from './LinkEditorPanel';

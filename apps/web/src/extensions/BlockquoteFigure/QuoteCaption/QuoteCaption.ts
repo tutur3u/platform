@@ -1,4 +1,4 @@
-import { Node } from '@tiptap/core'
+import { Node } from '@tiptap/core';
 
 export const QuoteCaption = Node.create({
   name: 'quoteCaption',
@@ -16,11 +16,11 @@ export const QuoteCaption = Node.create({
       {
         tag: 'figcaption',
       },
-    ]
+    ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['figcaption', HTMLAttributes, 0]
+    return ['figcaption', HTMLAttributes, 0];
   },
 
   addKeyboardShortcuts() {
@@ -31,24 +31,28 @@ export const QuoteCaption = Node.create({
           state: {
             selection: { $from, empty },
           },
-        } = editor
+        } = editor;
 
         if (!empty || $from.parent.type !== this.type) {
-          return false
+          return false;
         }
 
-        const isAtEnd = $from.parentOffset === $from.parent.nodeSize - 2
+        const isAtEnd = $from.parentOffset === $from.parent.nodeSize - 2;
 
         if (!isAtEnd) {
-          return false
+          return false;
         }
 
-        const pos = editor.state.selection.$from.end()
+        const pos = editor.state.selection.$from.end();
 
-        return editor.chain().focus(pos).insertContentAt(pos, { type: 'paragraph' }).run()
+        return editor
+          .chain()
+          .focus(pos)
+          .insertContentAt(pos, { type: 'paragraph' })
+          .run();
       },
-    }
+    };
   },
-})
+});
 
-export default QuoteCaption
+export default QuoteCaption;

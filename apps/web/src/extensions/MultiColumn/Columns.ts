@@ -1,4 +1,4 @@
-import { Node } from '@tiptap/core'
+import { Node } from '@tiptap/core';
 
 export enum ColumnLayout {
   SidebarLeft = 'sidebar-left',
@@ -9,9 +9,9 @@ export enum ColumnLayout {
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     columns: {
-      setColumns: () => ReturnType
-      setLayout: (layout: ColumnLayout) => ReturnType
-    }
+      setColumns: () => ReturnType;
+      setLayout: (layout: ColumnLayout) => ReturnType;
+    };
   }
 }
 
@@ -31,7 +31,7 @@ export const Columns = Node.create({
       layout: {
         default: ColumnLayout.TwoColumn,
       },
-    }
+    };
   },
 
   addCommands() {
@@ -40,17 +40,21 @@ export const Columns = Node.create({
         () =>
         ({ commands }) =>
           commands.insertContent(
-            `<div data-type="columns"><div data-type="column" data-position="left"><p></p></div><div data-type="column" data-position="right"><p></p></div></div>`,
+            `<div data-type="columns"><div data-type="column" data-position="left"><p></p></div><div data-type="column" data-position="right"><p></p></div></div>`
           ),
       setLayout:
         (layout: ColumnLayout) =>
         ({ commands }) =>
           commands.updateAttributes('columns', { layout }),
-    }
+    };
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', { 'data-type': 'columns', class: `layout-${HTMLAttributes.layout}` }, 0]
+    return [
+      'div',
+      { 'data-type': 'columns', class: `layout-${HTMLAttributes.layout}` },
+      0,
+    ];
   },
 
   parseHTML() {
@@ -58,8 +62,8 @@ export const Columns = Node.create({
       {
         tag: 'div[data-type="columns"]',
       },
-    ]
+    ];
   },
-})
+});
 
-export default Columns
+export default Columns;

@@ -1,1 +1,1 @@
-export * from './Figcaption'
+export * from './Figcaption';

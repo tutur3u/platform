@@ -1,1 +1,1 @@
-export * from './TextMenu'
+export * from './TextMenu';

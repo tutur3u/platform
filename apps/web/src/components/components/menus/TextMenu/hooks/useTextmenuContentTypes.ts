@@ -1,5 +1,5 @@
-import { Editor, useEditorState } from '@tiptap/react'
-import { ContentPickerOptions } from '../components/ContentTypePicker'
+import { ContentPickerOptions } from '../components/ContentTypePicker';
+import { Editor, useEditorState } from '@tiptap/react';
 
 export const useTextmenuContentTypes = (editor: Editor) => {
   return useEditorState({
@@ -12,7 +12,14 @@ export const useTextmenuContentTypes = (editor: Editor) => {
       },
       {
         icon: 'Pilcrow',
-        onClick: () => ctx.editor.chain().focus().lift('taskItem').liftListItem('listItem').setParagraph().run(),
+        onClick: () =>
+          ctx.editor
+            .chain()
+            .focus()
+            .lift('taskItem')
+            .liftListItem('listItem')
+            .setParagraph()
+            .run(),
         id: 'paragraph',
         disabled: () => !ctx.editor.can().setParagraph(),
         isActive: () =>
@@ -26,7 +33,13 @@ export const useTextmenuContentTypes = (editor: Editor) => {
       {
         icon: 'Heading1',
         onClick: () =>
-          ctx.editor.chain().focus().lift('taskItem').liftListItem('listItem').setHeading({ level: 1 }).run(),
+          ctx.editor
+            .chain()
+            .focus()
+            .lift('taskItem')
+            .liftListItem('listItem')
+            .setHeading({ level: 1 })
+            .run(),
         id: 'heading1',
         disabled: () => !ctx.editor.can().setHeading({ level: 1 }),
         isActive: () => ctx.editor.isActive('heading', { level: 1 }),
@@ -36,7 +49,13 @@ export const useTextmenuContentTypes = (editor: Editor) => {
       {
         icon: 'Heading2',
         onClick: () =>
-          ctx.editor.chain().focus().lift('taskItem').liftListItem('listItem').setHeading({ level: 2 }).run(),
+          ctx.editor
+            .chain()
+            .focus()
+            .lift('taskItem')
+            .liftListItem('listItem')
+            .setHeading({ level: 2 })
+            .run(),
         id: 'heading2',
         disabled: () => !ctx.editor.can().setHeading({ level: 2 }),
         isActive: () => ctx.editor.isActive('heading', { level: 2 }),
@@ -46,7 +65,13 @@ export const useTextmenuContentTypes = (editor: Editor) => {
       {
         icon: 'Heading3',
         onClick: () =>
-          ctx.editor.chain().focus().lift('taskItem').liftListItem('listItem').setHeading({ level: 3 }).run(),
+          ctx.editor
+            .chain()
+            .focus()
+            .lift('taskItem')
+            .liftListItem('listItem')
+            .setHeading({ level: 3 })
+            .run(),
         id: 'heading3',
         disabled: () => !ctx.editor.can().setHeading({ level: 3 }),
         isActive: () => ctx.editor.isActive('heading', { level: 3 }),
@@ -86,5 +111,5 @@ export const useTextmenuContentTypes = (editor: Editor) => {
         type: 'option',
       },
     ],
-  })
-}
+  });
+};

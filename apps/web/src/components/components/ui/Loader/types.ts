@@ -1,7 +1,7 @@
 export interface LoadingWrapperProps {
-  label?: string
+  label?: string;
 }
 
 export interface LoaderProps extends LoadingWrapperProps {
-  hasOverlay?: boolean
+  hasOverlay?: boolean;
 }

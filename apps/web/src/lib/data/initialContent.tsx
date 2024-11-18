@@ -1181,4 +1181,4 @@ export const initialContent = {
       },
     },
   ],
-}
+};

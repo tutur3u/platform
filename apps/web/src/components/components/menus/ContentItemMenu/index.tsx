@@ -1,1 +1,1 @@
-export * from './ContentItemMenu'
+export * from './ContentItemMenu';

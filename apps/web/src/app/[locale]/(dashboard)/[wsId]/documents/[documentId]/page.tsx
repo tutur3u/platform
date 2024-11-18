@@ -1,12 +1,12 @@
 'use client';
 
 import DocumentShareDialog from '../document-share-dialog';
-// import { DocumentEditor } from './editor';
-import { TiptapCollabProvider } from '@hocuspocus/provider'
 import { BlockEditor } from '@/components/components/BlockEditor';
 import { cn } from '@/lib/utils';
 import { WorkspaceDocument } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
+// import { DocumentEditor } from './editor';
+import { TiptapCollabProvider } from '@hocuspocus/provider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,6 @@ import {
 } from '@repo/ui/components/ui/alert-dialog';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
-import { Doc as YDoc } from 'yjs'
 import {
   Tooltip,
   TooltipContent,
@@ -31,7 +30,8 @@ import { CircleCheck, CircleDashed } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { JSONContent } from 'novel';
-import { useEffect, useRef, useState,useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Doc as YDoc } from 'yjs';
 
 interface Props {
   params: Promise<{
@@ -69,8 +69,8 @@ export default function DocumentDetailsPage({ params }: Props) {
   const [provider] = useState<TiptapCollabProvider | null>(null);
   // const [collabToken, setCollabToken] = useState<string | null | undefined>();
   const [aiToken] = useState<string | null | undefined>();
-  const hasCollab= true;
-  const ydoc = useMemo(() => new YDoc(), [])
+  const hasCollab = true;
+  const ydoc = useMemo(() => new YDoc(), []);
   useEffect(() => {
     params.then((resolvedParams) => {
       setWsId(resolvedParams.wsId);

@@ -1,1 +1,1 @@
-export * from './Colorpicker'
+export * from './Colorpicker';
