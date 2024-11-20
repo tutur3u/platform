@@ -114,7 +114,7 @@
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
     "ai": "^4.0.2",
-    "babel-plugin-react-compiler": "19.0.0-beta-a7bf2bd-20241110",
+    "babel-plugin-react-compiler": "19.0.0-beta-0dec889-20241115",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
