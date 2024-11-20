@@ -138,7 +138,7 @@ export function Navigation({
               setUrlToLoad(link.href);
               if (isActive) scrollActiveLinksIntoView();
             }}
-            href={link.forceRefresh ? `${link.href}?refresh=true` : link.href}
+            href={link.forceRefresh ? '/new' : link.href}
           >
             {link.title}
           </Link>

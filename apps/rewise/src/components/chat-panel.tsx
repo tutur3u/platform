@@ -260,7 +260,7 @@ export function ChatPanel({
                         <ArrowDownToLine className="h-5 w-5" />
                       </Button>
                       <Link
-                        href="/?refresh=true"
+                        href="/new"
                         className={`w-full ${
                           collapsed
                             ? 'pointer-events-none opacity-0'

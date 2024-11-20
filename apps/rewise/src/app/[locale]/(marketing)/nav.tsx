@@ -207,11 +207,7 @@ export function Nav({
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <Link
-                href={
-                  pathname === '/' && !searchParams.get('id')
-                    ? '/'
-                    : '/?refresh=true'
-                }
+                href="/new"
                 className="flex items-center justify-start"
                 onClick={() => {
                   if (pathname === '/' && !searchParams.get('id')) return;
@@ -238,18 +234,10 @@ export function Nav({
           </Tooltip>
         ) : (
           <Link
-            href={
-              pathname === '/' && !searchParams.get('id')
-                ? '/'
-                : '/?refresh=true'
-            }
+            href="/new"
             className="flex items-center justify-start"
             onClick={() => {
-              router.push(
-                pathname === '/' && !searchParams.get('id')
-                  ? '/'
-                  : '/?refresh=true'
-              );
+              router.push('/new');
               router.refresh();
               onClick?.();
             }}

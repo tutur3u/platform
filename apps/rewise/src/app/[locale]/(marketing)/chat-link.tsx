@@ -59,13 +59,7 @@ export default function ChatLink({
     <div className="flex items-center gap-2 group-hover:gap-2 md:gap-0">
       <Link
         target={link.newTab ? '_blank' : undefined}
-        href={
-          link.disabled
-            ? '#'
-            : link.forceRefresh
-              ? `${link.href}?refresh=true`
-              : link.href
-        }
+        href={link.disabled ? '#' : link.forceRefresh ? '/new' : link.href}
         className={cn(
           buttonVariants({
             variant: 'ghost',
