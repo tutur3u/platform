@@ -149,14 +149,14 @@ const codeBlockLowlight = CodeBlockLowlight.configure({
 // });
 
 const youtube = Youtube.extend({
-  addOptions() {
-    return {
-      ...this.parent?.(),
-      HTMLAttributes: {
-        class: cx('rounded-lg border border-muted overflow-hidden'),
-      },
-    };
-  },
+  // addOptions() {
+  //   return {
+  //     ...this.parent?.(),
+  //     HTMLAttributes: {
+  //       class: cx('rounded-lg border border-muted overflow-hidden'),
+  //     },
+  //   };
+  // },
   addNodeView() {
     return ({ node }) => {
       const url = node.attrs?.src;

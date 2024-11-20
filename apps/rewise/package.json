@@ -15,19 +15,19 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^0.0.36",
-    "@ai-sdk/anthropic": "^0.0.56",
-    "@ai-sdk/azure": "^0.0.52",
-    "@ai-sdk/cohere": "^0.0.28",
-    "@ai-sdk/google": "^0.0.55",
-    "@ai-sdk/google-vertex": "^0.0.43",
-    "@ai-sdk/mistral": "^0.0.46",
-    "@ai-sdk/openai": "^0.0.72",
-    "@ai-sdk/react": "^0.0.70",
+    "@ai-sdk/amazon-bedrock": "^1.0.1",
+    "@ai-sdk/anthropic": "^1.0.1",
+    "@ai-sdk/azure": "^1.0.3",
+    "@ai-sdk/cohere": "^1.0.1",
+    "@ai-sdk/google": "^1.0.1",
+    "@ai-sdk/google-vertex": "^1.0.1",
+    "@ai-sdk/mistral": "^1.0.2",
+    "@ai-sdk/openai": "^1.0.2",
+    "@ai-sdk/react": "^1.0.1",
     "@anthropic-ai/sdk": "^0.32.1",
     "@aws-sdk/client-ses": "^3.696.0",
     "@deepgram/sdk": "^3.9.0",
-    "@emotion/react": "^11.13.3",
+    "@emotion/react": "^11.13.5",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.5.8",
     "@google/generative-ai": "^0.21.0",
@@ -41,7 +41,7 @@
     "@upstash/qstash": "^2.7.16",
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
-    "ai": "^3.4.33",
+    "ai": "^4.0.2",
     "babel-plugin-react-compiler": "19.0.0-beta-a7bf2bd-20241110",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
@@ -104,6 +104,7 @@
     "postcss": "^8.4.49",
     "supabase": "^1.223.10",
     "typescript": "^5.6.3",
+    "undici": "^6.21.0",
     "vitest": "^2.1.5"
   },
   "overrides": {
@@ -113,5 +114,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@9.14.1"
+  "packageManager": "pnpm@9.14.2"
 }
