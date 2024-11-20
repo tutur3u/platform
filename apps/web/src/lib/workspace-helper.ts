@@ -217,7 +217,14 @@ export async function getPermissions({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) throw new Error('User not found');
+  if (!user) {
+    console.error('User not found');
+    return {
+      permissions: [],
+      containsPermission: () => false,
+      withoutPermission: () => true,
+    };
+  }
 
   const permissionsQuery = supabase
     .from('workspace_role_permissions')
