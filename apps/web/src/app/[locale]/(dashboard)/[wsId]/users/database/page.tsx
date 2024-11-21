@@ -93,6 +93,7 @@ export default async function WorkspaceUsersPage({
           group_count: false,
           created_at: false,
           updated_at: false,
+          avatar_url: false,
 
           // Extra columns
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),

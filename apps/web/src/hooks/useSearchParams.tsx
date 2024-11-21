@@ -1,3 +1,5 @@
+'use client';
+
 import {
   useSearchParams as useDefaultSearchParams,
   usePathname,

@@ -125,7 +125,12 @@ export const getUserColumns = (
             </Tooltip>
           </TooltipProvider>
         ) : (
-          row.getValue('full_name') || row.getValue('display_name') || '-'
+          <span
+            key={`${row.id}-name`}
+            className="font-semibold hover:underline"
+          >
+            {row.getValue('full_name') || row.getValue('display_name') || '-'}
+          </span>
         )}
       </Link>
     ),

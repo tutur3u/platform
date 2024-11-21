@@ -10,9 +10,15 @@ function createCookieHandler(cookieStore: ReadonlyRequestCookies) {
       return cookieStore.getAll();
     },
     setAll(cookiesToSet: SupabaseCookie[]) {
-      cookiesToSet.forEach(({ name, value, options }) =>
-        cookieStore.set(name, value, options)
-      );
+      try {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          cookieStore.set(name, value, options)
+        );
+      } catch {
+        // The `setAll` method was called from a Server Component.
+        // This can be ignored if you have middleware refreshing
+        // user sessions.
+      }
     },
   };
 }
@@ -24,8 +30,9 @@ async function createGenericClient(isAdmin: boolean) {
     cookies: isAdmin
       ? {
           getAll() {
-            return [];
+            return [] as SupabaseCookie[];
           },
+          // eslint-disable-next-line no-unused-vars
           setAll(_: SupabaseCookie[]) {},
         }
       : createCookieHandler(cookieStore),
