@@ -1,11 +1,12 @@
 import { Bill } from './bill';
 import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { FileObject } from '@supabase/storage-js';
 import 'dayjs/locale/vi';
-import { CalendarIcon, DollarSign, Wallet } from 'lucide-react';
+import { CalendarIcon, DollarSign, FileText, Wallet } from 'lucide-react';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -76,10 +77,19 @@ export default async function TransactionDetailsPage({ params }: Props) {
 
           {objects.length > 0 && (
             <div className="grid h-fit gap-2 rounded-lg border p-4">
-              <div className="text-lg font-semibold">{t('invoices.files')}</div>
+              <div className="flex justify-between text-lg font-semibold">
+                {t('invoices.files')}
+                <Button variant="ghost" size="xs" asChild>
+                  <Link
+                    href={`/${joinPath(wsId, 'drive')}?path=${joinPath('finance', 'transactions', transactionId)}`}
+                  >
+                    {t('sidebar_tabs.drive')}
+                  </Link>
+                </Button>
+              </div>
               <Separator />
               {objects.map((object) => (
-                <DetailObject object={object} />
+                <DetailObject key={object.id} object={object} />
               ))}
             </div>
           )}
@@ -130,7 +140,12 @@ function DetailItem({
 }
 
 function DetailObject({ object }: { object: FileObject }) {
-  return <div>{object.name}</div>;
+  return (
+    <div className="flex items-center gap-2">
+      <FileText className="h-4 w-4" />
+      {object.name}
+    </div>
+  );
 }
 
 async function getData(wsId: string, transactionId: string) {
