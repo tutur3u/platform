@@ -2,7 +2,6 @@
 
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
-import { PUBLIC_PATHS } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -66,30 +65,31 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   return <Link {...linkProps}>{item.label}</Link>;
 };
 
-const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
-  const pathname = usePathname();
+const DesktopMenu: React.FC<{ t: any }> = () => {
+  return <div />;
+  // const pathname = usePathname();
 
-  if (
-    pathname !== '/' &&
-    !PUBLIC_PATHS.some((path) => pathname.startsWith(path)) &&
-    !pathname.startsWith('/settings')
-  )
-    return null;
+  // if (
+  //   pathname !== '/' &&
+  //   !PUBLIC_PATHS.some((path) => pathname.startsWith(path)) &&
+  //   !pathname.startsWith('/settings')
+  // )
+  //   return null;
 
-  return (
-    <div className="hidden gap-8 font-semibold md:flex">
-      {navItems(t).map((item) => (
-        <NavLink key={item.href} item={item} />
-      ))}
-    </div>
-  );
+  // return (
+  //   <div className="hidden gap-8 font-semibold md:flex">
+  //     {navItems(t).map((item) => (
+  //       <NavLink key={item.href} item={item} />
+  //     ))}
+  //   </div>
+  // );
 };
 
 const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   <NavLink
     item={item}
     onClick={onClick}
-    className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition"
+    // className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition"
   />
 );
 
@@ -99,7 +99,9 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition">
+      <SheetTrigger
+      //  className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition"
+      >
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
       <SheetContent className="md:hidden">

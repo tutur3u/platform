@@ -1,6 +1,7 @@
 import LogoTitle from './logo-title';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
+import { MainNavigationMenu } from './navigation-menu';
 import ServerMenu from './server-menu';
 import WorkspaceSelect from './workspace-select';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,10 @@ export default function Navbar({
             >
               <WorkspaceSelect />
             </Suspense>
+
+            <div className="ml-4 hidden md:block">
+              <MainNavigationMenu />
+            </div>
           </div>
 
           <div className="flex w-full flex-row-reverse items-center gap-2 md:flex-row md:justify-between">
