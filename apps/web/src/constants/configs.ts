@@ -21,6 +21,10 @@ export interface AppConfig {
     apiKey: string;
     baseURL?: string;
   };
+  anthropic: {
+    apiKey: string;
+    baseURL?: string;
+  };
   readonly vertex: {
     project?: string;
     location?: string;
