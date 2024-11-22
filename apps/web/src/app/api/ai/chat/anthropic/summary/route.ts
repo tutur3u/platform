@@ -1,3 +1,4 @@
+import { appConfig } from '@/constants/configs';
 import { createClient } from '@/utils/supabase/server';
 import {
   GoogleGenerativeAI,
@@ -10,7 +11,6 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const model = 'gemini-1.5-flash';
 const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -67,7 +67,7 @@ export async function PATCH(req: Request) {
 
     const geminiRes = await genAI
       .getGenerativeModel({
-        model,
+        model: appConfig.defaultModel,
         generationConfig,
         safetySettings,
       })

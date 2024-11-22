@@ -11,5 +11,3 @@ export const siteConfig = {
     github: 'https://github.com/tutur3u/platform',
   },
 };
-
-export type SiteConfig = typeof siteConfig;

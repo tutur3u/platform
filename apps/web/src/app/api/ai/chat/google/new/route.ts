@@ -1,26 +1,17 @@
+import { appConfig } from '@/constants/configs';
 import { createClient } from '@/utils/supabase/server';
-import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
-import { Message } from 'ai';
+import { google } from '@ai-sdk/google';
+import { generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
-
-const genAI = new GoogleGenerativeAI(API_KEY);
-
 export async function POST(req: Request) {
   try {
     const {
-      model = DEFAULT_MODEL_NAME,
+      model = appConfig.defaultModel,
       message,
       previewToken,
     } = (await req.json()) as {
@@ -43,19 +34,38 @@ export async function POST(req: Request) {
     const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) return new Response('Missing API key', { status: 400 });
 
-    const prompt = buildPrompt([
-      {
-        id: 'initial-message',
-        content: `"${message}"`,
-        role: 'user',
-      },
-    ]);
+    const result = await generateText({
+      model: google(appConfig.defaultModel, {
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+          },
+        ],
+      }),
+      messages: [
+        {
+          content: message,
+          role: 'user',
+        },
+      ],
+      system:
+        'Respond with a short and comprehensive title for this chat conversation with the given first message from the user.',
+    });
 
-    const geminiRes = await genAI
-      .getGenerativeModel({ model, generationConfig, safetySettings })
-      .generateContent(prompt);
-
-    const title = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+    const title = result.text;
 
     if (!title) {
       return NextResponse.json(
@@ -93,67 +103,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
-const normalize = (message: Message) => {
-  const { content, role } = message;
-  if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
-  if (role === 'assistant') return `${AI_PROMPT} ${content}`;
-  return content;
-};
-
-const normalizeMessages = (messages: Message[]) =>
-  [...leadingMessages, ...messages, ...trailingMessages]
-    .map(normalize)
-    .join('')
-    .trim();
-
-function buildPrompt(messages: Message[]) {
-  const normalizedMsgs = normalizeMessages(messages);
-  return normalizedMsgs + AI_PROMPT;
-}
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
-
-const leadingMessages: Message[] = [
-  {
-    id: 'initial-message',
-    role: 'assistant',
-    content:
-      'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
-  },
-];
-
-const trailingMessages: Message[] = [
-  {
-    id: 'final-message',
-    role: 'assistant',
-    content:
-      'Thank you, I will respond with a title in my next response that will briefly demonstrate what the chat conversation is about, and it will only contain the title without any quotation marks, markdown, and anything else but the title. The title will be in the language you provided the initial message in.',
-  },
-];

@@ -1,3 +1,4 @@
+import { appConfig } from '@/constants/configs';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { google } from '@ai-sdk/google';
 import { CoreMessage, streamText } from 'ai';
@@ -6,28 +7,29 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
-
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
 
   const {
     id,
-    wsId,
-    model = DEFAULT_MODEL_NAME,
+    model = appConfig.defaultModel,
     messages,
     previewToken,
+    mode,
   } = (await req.json()) as {
     id?: string;
-    wsId?: string;
     model?: string;
     messages?: CoreMessage[];
     previewToken?: string;
+    mode?: 'short' | 'medium' | 'long';
   };
+
+  // if (!mode || !['short', 'medium', 'long'].includes(mode)) {
+  //   return new Response('Invalid mode', { status: 400 });
+  // }
 
   try {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
-    if (!wsId) return new Response('Missing workspace ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
     const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -40,19 +42,6 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) return new Response('Unauthorized', { status: 401 });
-
-    const { count, error } = await sbAdmin
-      .from('workspace_secrets')
-      .select('*', { count: 'exact', head: true })
-      .eq('ws_id', wsId)
-      .eq('name', 'ENABLE_CHAT')
-      .eq('value', 'true');
-
-    if (error) return new Response(error.message, { status: 500 });
-    if (count === 0)
-      return new Response('You are not allowed to use this feature.', {
-        status: 401,
-      });
 
     let chatId = id;
 
@@ -87,7 +76,7 @@ export async function POST(req: Request) {
         {
           message: message as string,
           chat_id: chatId,
-          source: 'Tuturuuu',
+          source: 'Rewise',
         }
       );
 
@@ -100,8 +89,8 @@ export async function POST(req: Request) {
       console.log('User message saved to database');
     }
 
-    const result = await streamText({
-      model: google(`models/${model}-latest`, {
+    const result = streamText({
+      model: google(model, {
         safetySettings: [
           {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
@@ -122,7 +111,13 @@ export async function POST(req: Request) {
         ],
       }),
       messages,
-      system: systemInstruction,
+      system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${
+        mode === 'short'
+          ? 'extremely short, concise, and to the point. No flashcards or quizzes are included'
+          : mode === 'medium'
+            ? 'medium in length, informative, and provides a good chunk of helpful insights'
+            : 'long, detailed, comprehensive and look into all possible aspects for a perfect answer. Be as long and comprehensive as possible'
+      }.`,
       onFinish: async (response) => {
         console.log('AI Response:', response);
 
@@ -140,7 +135,7 @@ export async function POST(req: Request) {
           finish_reason: response.finishReason,
           prompt_tokens: response.usage.promptTokens,
           completion_tokens: response.usage.completionTokens,
-          metadata: { source: 'Tuturuuu' },
+          metadata: { source: 'Rewise' },
         });
 
         if (error) {

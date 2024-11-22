@@ -1,3 +1,4 @@
+import { appConfig } from '@/constants/configs';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { openai } from '@ai-sdk/openai';
 import { CoreMessage, streamText } from 'ai';
@@ -6,15 +7,13 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
-
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
 
   const {
     id,
     wsId,
-    model = DEFAULT_MODEL_NAME,
+    model = appConfig.defaultModel,
     messages,
     previewToken,
   } = (await req.json()) as {
@@ -100,7 +99,7 @@ export async function POST(req: Request) {
       console.log('User message saved to database');
     }
 
-    const result = await streamText({
+    const result = streamText({
       model: openai(model),
       messages,
       system: systemInstruction,

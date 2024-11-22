@@ -41,7 +41,7 @@
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
     "date-fns": "^4.1.0",
-    "embla-carousel-react": "^8.4.0",
+    "embla-carousel-react": "^8.5.1",
     "eslint": "^9.15.0",
     "input-otp": "^1.4.1",
     "lodash": "^4.17.21",

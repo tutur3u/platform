@@ -11,8 +11,8 @@ export function useCopyToClipboard({
 }: useCopyToClipboardProps) {
   const [isCopied, setIsCopied] = React.useState<Boolean>(false);
 
-  const copyToClipboard = (value: string) => {
-    if (typeof window === 'undefined' || !navigator.clipboard?.writeText) {
+  const copyToClipboard = async (value: string) => {
+    if (typeof window === 'undefined' || !navigator.clipboard) {
       return;
     }
 
@@ -20,13 +20,26 @@ export function useCopyToClipboard({
       return;
     }
 
-    navigator.clipboard.writeText(value).then(() => {
-      setIsCopied(true);
+    try {
+      const textBlob = new Blob([value], { type: 'text/plain' });
+      const clipboardItem = new ClipboardItem({
+        'text/plain': textBlob,
+      });
 
-      setTimeout(() => {
-        setIsCopied(false);
-      }, timeout);
-    });
+      await navigator.clipboard.write([clipboardItem]);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), timeout);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // Fallback to basic text copying
+      try {
+        await navigator.clipboard.writeText(value);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), timeout);
+      } catch (err) {
+        console.error('Failed to copy text:', err);
+      }
+    }
   };
 
   return { isCopied, copyToClipboard };

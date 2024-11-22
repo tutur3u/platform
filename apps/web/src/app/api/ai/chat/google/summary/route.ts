@@ -1,19 +1,11 @@
+import { appConfig } from '@/constants/configs';
 import { createClient } from '@/utils/supabase/server';
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
-import { Message } from 'ai';
+import { google } from '@ai-sdk/google';
+import { Message, generateText } from 'ai';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
-
-const model = 'gemini-1.5-flash';
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
-
-const genAI = new GoogleGenerativeAI(API_KEY);
 
 export async function PATCH(req: Request) {
   const { id, previewToken } = (await req.json()) as {
@@ -65,16 +57,32 @@ export async function PATCH(req: Request) {
 
     if (!prompt) return new Response('Internal Server Error', { status: 500 });
 
-    const geminiRes = await genAI
-      .getGenerativeModel({
-        model,
-        generationConfig,
-        safetySettings,
-      })
-      .generateContent(prompt);
+    const result = await generateText({
+      model: google(appConfig.defaultModel, {
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_NONE',
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_NONE',
+          },
+        ],
+      }),
+      messages,
+      system: systemInstruction,
+    });
 
-    const completion =
-      geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+    const completion = result.text;
 
     if (!completion) return new Response('No content found', { status: 404 });
 
@@ -126,34 +134,6 @@ function buildGooglePrompt(messages: Message[]) {
 
   return { contents: normalizedMsgs };
 }
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
 
 const systemInstruction = `
   Here is a set of guidelines I MUST follow:
