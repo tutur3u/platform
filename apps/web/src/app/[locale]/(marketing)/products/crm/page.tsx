@@ -215,20 +215,6 @@ export default function CRMProductPage() {
           </Card>
         </div>
       </section>
-
-      {/* CTA Section */}
-      <section className="text-center">
-        <div className="mx-auto max-w-2xl">
-          <h2 className="mb-4 text-3xl font-bold">Ready to Get Started?</h2>
-          <p className="text-muted-foreground mb-8">
-            Join the waitlist to be among the first to experience our
-            intelligent CRM platform when it launches.
-          </p>
-          <Button size="lg" className="min-w-[200px]" disabled>
-            Join Waitlist
-          </Button>
-        </div>
-      </section>
     </div>
   );
 }
