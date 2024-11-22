@@ -30,7 +30,7 @@ export default async function MeetTogetherPage({
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="text-foreground flex max-w-6xl flex-col gap-6 p-4 md:px-8 lg:gap-14 lg:px-14">
+      <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
         <div className="flex flex-col items-center">
           <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-4 md:text-2xl lg:text-3xl">
             {t('headline-p1')}{' '}

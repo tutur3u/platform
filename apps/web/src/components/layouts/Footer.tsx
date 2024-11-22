@@ -1,19 +1,25 @@
+'use client';
+
 import Slogan from './slogan';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { getTranslations } from 'next-intl/server';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-export default async function Footer() {
-  const t = await getTranslations();
+export default function Footer() {
+  const t = useTranslations();
+  const pathname = usePathname();
 
   return (
     <div className="w-full text-center">
-      <Separator className="bg-foreground/5 mb-8" />
-      <div className="flex flex-col items-center p-8">
-        <Slogan />
+      {pathname.startsWith('/contact') || (
+        <>
+          <Separator className="bg-foreground/5 mb-8" />
+          <div className="flex flex-col items-center">
+            <Slogan />
 
-        <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
+            {/* <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
           {t('common.get-started-desc')}
         </div>
 
@@ -22,8 +28,10 @@ export default async function Footer() {
           className="bg-foreground/5 text-foreground hover:bg-foreground/10 mt-4 w-full max-w-xs rounded border px-8 py-2 font-semibold transition duration-300"
         >
           {t('common.get-started')}
-        </Link>
-      </div>
+        </Link> */}
+          </div>
+        </>
+      )}
 
       <Separator className="bg-foreground/5 my-8" />
 
@@ -118,14 +126,14 @@ export default async function Footer() {
             <Link
               href="/terms"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.terms')}
             </Link>
             <Link
               href="/privacy"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.privacy')}
             </Link>
@@ -137,20 +145,20 @@ export default async function Footer() {
             </div>
             <Link
               href="/calendar/meet-together"
-              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.meet-together')}
             </Link>
             <Link
               href="/qr-generator"
-              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.qr_generator')}
             </Link>
             <Link
               href="/branding"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.branding')}
             </Link>
@@ -163,14 +171,14 @@ export default async function Footer() {
             <Link
               href="https://docs.tuturuuu.com"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.documentation')}
             </Link>
             <Link
               href="https://github.com/tutur3u/platform"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.open-source')}
             </Link>
