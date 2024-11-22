@@ -33,6 +33,13 @@ export const IS_PRODUCTION_DB =
 
 export const PUBLIC_PATHS = [
   '/login',
+  '/pricing',
+  '/about',
+  '/contact',
+  '/features',
+  '/products',
+  '/blog',
+  '/faq',
   '/terms',
   '/privacy',
   '/branding',
