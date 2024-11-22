@@ -29,7 +29,9 @@ export const TableCell = Node.create<TableCellOptions>({
   renderHTML({ HTMLAttributes }) {
     return [
       'td',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+      this.options.HTMLAttributes
+        ? mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)
+        : HTMLAttributes,
       0,
     ];
   },

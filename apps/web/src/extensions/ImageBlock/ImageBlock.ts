@@ -70,7 +70,9 @@ export const ImageBlock = Image.extend({
   renderHTML({ HTMLAttributes }) {
     return [
       'img',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+      this.options.HTMLAttributes
+        ? mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)
+        : HTMLAttributes,
     ];
   },
 

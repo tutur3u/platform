@@ -5,7 +5,11 @@ export const HorizontalRule = TiptapHorizontalRule.extend({
   renderHTML() {
     return [
       'div',
-      mergeAttributes(this.options.HTMLAttributes, { 'data-type': this.name }),
+      this.options.HTMLAttributes
+        ? mergeAttributes(this.options.HTMLAttributes, {
+            'data-type': this.name,
+          })
+        : { 'data-type': this.name },
       ['hr'],
     ];
   },
