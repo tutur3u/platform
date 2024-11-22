@@ -10,6 +10,7 @@ import { ChevronLeft, FileText, Folder } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { Fragment } from 'react';
 
 export const storageObjectsColumns = (
   t: any,
@@ -95,15 +96,15 @@ export const storageObjectsColumns = (
             className="flex items-center gap-2"
           >
             {row.getValue('name') === '...' ? (
-              <>
+              <Fragment>
                 <ChevronLeft className="h-4 w-4" />
                 {t('common.back')}
-              </>
+              </Fragment>
             ) : (
-              <>
+              <Fragment>
                 <Folder className="h-4 w-4" />
                 {row.getValue('name')}
-              </>
+              </Fragment>
             )}
           </Link>
         </div>
