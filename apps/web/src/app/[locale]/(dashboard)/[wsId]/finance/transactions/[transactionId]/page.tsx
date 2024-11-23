@@ -1,9 +1,13 @@
 import { Bill } from './bill';
+import { TransactionObjectRowActions } from './row-actions';
+import { StorageObject } from '@/types/primitives/StorageObject';
+import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import 'dayjs/locale/vi';
-import { CalendarIcon, DollarSign, Wallet } from 'lucide-react';
+import { CalendarIcon, DollarSign, FileText, Wallet } from 'lucide-react';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -20,7 +24,7 @@ interface Props {
 export default async function TransactionDetailsPage({ params }: Props) {
   const { wsId, transactionId, locale } = await params;
   const t = await getTranslations();
-  const { transaction } = await getData(transactionId);
+  const { objects, transaction } = await getData(wsId, transactionId);
 
   if (!transaction) notFound();
 
@@ -37,7 +41,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
       />
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">
-        <div className="grid gap-4">
+        <div className="space-y-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
             <div className="text-lg font-semibold">
               {t('invoices.basic-info')}
@@ -69,6 +73,30 @@ export default async function TransactionDetailsPage({ params }: Props) {
               }
             />
           </div>
+
+          {objects.length > 0 && (
+            <div className="grid h-fit gap-2 rounded-lg border p-4">
+              <div className="flex justify-between text-lg font-semibold">
+                {t('invoices.files')}
+                <Button variant="ghost" size="xs" asChild>
+                  <Link
+                    href={`/${joinPath(wsId, 'drive')}?path=${joinPath('finance', 'transactions', transactionId)}`}
+                  >
+                    {t('sidebar_tabs.drive')}
+                  </Link>
+                </Button>
+              </div>
+              <Separator />
+              {objects.map((object) => (
+                <DetailObject
+                  key={object.id}
+                  wsId={wsId}
+                  transactionId={transactionId}
+                  object={object}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4">
@@ -115,7 +143,32 @@ function DetailItem({
   );
 }
 
-async function getData(transactionId: string) {
+function DetailObject({
+  wsId,
+  transactionId,
+  object,
+}: {
+  wsId: string;
+  transactionId: string;
+  object: StorageObject;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <FileText className="h-4 w-4" />
+        {object.name}
+      </div>
+
+      <TransactionObjectRowActions
+        wsId={wsId}
+        transactionId={transactionId}
+        storageObj={object}
+      />
+    </div>
+  );
+}
+
+async function getData(wsId: string, transactionId: string) {
   const supabase = await createClient();
 
   const { data: transaction, error: transactionError } = await supabase
@@ -128,5 +181,11 @@ async function getData(transactionId: string) {
 
   if (transactionError) throw transactionError;
 
-  return { transaction };
+  const { data: objects, error: objectError } = await supabase.storage
+    .from('workspaces')
+    .list(joinPath(wsId, 'finance/transactions', transactionId));
+
+  if (objectError) throw objectError;
+
+  return { objects, transaction };
 }
