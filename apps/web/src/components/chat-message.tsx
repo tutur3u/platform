@@ -18,12 +18,83 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Bot, Send, Sparkle } from 'lucide-react';
+import mermaid from 'mermaid';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+
+function MermaidRenderer({ content }: { content: string }) {
+  const elementRef = useRef<HTMLDivElement>(null);
+  const [svgContent, setSvgContent] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    mermaid.initialize({
+      theme: 'default',
+      startOnLoad: false,
+      securityLevel: 'strict',
+      themeVariables: {
+        fontSize: '14px',
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: 'linear',
+      },
+    });
+
+    const renderDiagram = async () => {
+      try {
+        // Clean and preprocess the content
+        const cleanContent = content
+          .replace(/\\n/g, '\n')
+          .replace(/\\t/g, '  ')
+          .trim();
+
+        // First try to parse the diagram
+        await mermaid.parse(cleanContent);
+
+        // If parsing succeeds, render it
+        const { svg } = await mermaid.render('mermaid-diagram', cleanContent);
+        setSvgContent(svg);
+        setError('');
+      } catch (error) {
+        console.error('Mermaid rendering error:', error);
+        setError(
+          error instanceof Error ? error.message : 'Failed to render diagram'
+        );
+        setSvgContent('');
+      }
+    };
+
+    renderDiagram();
+  }, [content]);
+
+  if (error) {
+    return (
+      <div className="bg-dynamic-red/10 border-dynamic-red/20 text-dynamic-red rounded-lg border p-4 text-sm">
+        <p className="font-semibold">Failed to render diagram:</p>
+        <pre className="mt-2 whitespace-pre-wrap font-mono text-xs">
+          {error}
+        </pre>
+      </div>
+    );
+  }
+
+  if (!svgContent) {
+    return <div className="animate-pulse">Loading diagram...</div>;
+  }
+
+  return (
+    <div
+      ref={elementRef}
+      className="overflow-x-auto"
+      dangerouslySetInnerHTML={{ __html: svgContent }}
+    />
+  );
+}
 
 export interface ChatMessageProps {
   message: Message & {
@@ -666,6 +737,16 @@ export function ChatMessage({
               }
 
               const match = /language-(\w+)/.exec(className || '');
+
+              if (match && match[1] === 'mermaid') {
+                return (
+                  <div className="my-4">
+                    <MermaidRenderer
+                      content={String(children).replace(/\n$/, '')}
+                    />
+                  </div>
+                );
+              }
 
               return match ? (
                 <CodeBlock

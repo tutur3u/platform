@@ -182,7 +182,7 @@ export default function WorkspaceSelect({
     };
   }, []);
 
-  if (!wsId) return null;
+  if (!wsId) return <div />;
 
   return (
     <>

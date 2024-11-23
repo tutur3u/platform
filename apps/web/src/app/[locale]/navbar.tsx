@@ -22,8 +22,8 @@ export default function Navbar({
       className={cn('fixed inset-x-0 top-0 z-50', onlyOnMobile && 'md:hidden')}
     >
       <div className="bg-background px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
-        <div className="relative flex items-center justify-between gap-2 md:gap-8">
-          <div className="flex flex-none items-center gap-2">
+        <div className="relative flex items-center justify-between gap-2 md:gap-4">
+          <div className="flex w-full items-center gap-2">
             <Link href="/" className="flex flex-none items-center gap-2">
               <Image
                 src="/media/logos/transparent.png"
@@ -43,12 +43,12 @@ export default function Navbar({
               <WorkspaceSelect />
             </Suspense>
 
-            <div className="ml-4 hidden md:block">
+            <div className="ml-4 hidden w-full md:block">
               <MainNavigationMenu />
             </div>
           </div>
 
-          <div className="flex w-full flex-row-reverse items-center gap-2 md:flex-row md:justify-between">
+          <div className="flex w-fit flex-none flex-row-reverse items-center gap-2 md:flex-row md:justify-between">
             <Suspense>
               <ServerMenu />
             </Suspense>

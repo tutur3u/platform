@@ -116,14 +116,14 @@ const products = [
 
 export function MainNavigationMenu() {
   return (
-    <NavigationMenu>
-      <NavigationMenuList>
+    <NavigationMenu className="flex w-full max-w-none">
+      <NavigationMenuList className="flex w-full justify-between">
         <NavigationMenuItem>
           <NavigationMenuTrigger className="font-semibold">
             Products
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+            <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[700px]">
               {products.map((product) => (
                 <ListItem
                   key={product.title}
@@ -139,7 +139,7 @@ export function MainNavigationMenu() {
         <NavigationMenuItem>
           <Link href="/pricing" legacyBehavior passHref>
             <NavigationMenuLink
-              className={cn(navigationMenuTriggerStyle(), 'font-semibold')}
+              className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
             >
               Pricing
             </NavigationMenuLink>
@@ -148,7 +148,7 @@ export function MainNavigationMenu() {
         <NavigationMenuItem>
           <Link href="/about" legacyBehavior passHref>
             <NavigationMenuLink
-              className={cn(navigationMenuTriggerStyle(), 'font-semibold')}
+              className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
             >
               About
             </NavigationMenuLink>
@@ -157,7 +157,7 @@ export function MainNavigationMenu() {
         <NavigationMenuItem>
           <Link href="/contact" legacyBehavior passHref>
             <NavigationMenuLink
-              className={cn(navigationMenuTriggerStyle(), 'font-semibold')}
+              className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
             >
               Contact
             </NavigationMenuLink>
