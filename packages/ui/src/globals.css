@@ -2,17 +2,21 @@
 @plugin "@tailwindcss/typography";
 @plugin "tailwindcss-animate";
 
+/* Base container utility */
 @utility container {
   margin-inline: auto;
   padding-inline: 2rem;
 }
 
+/* Core theme properties */
 @theme {
+  /* Theme color properties */
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
+
   --color-dynamic-purple: hsl(var(--purple));
   --color-dynamic-blue: hsl(var(--blue));
   --color-dynamic-sky: hsl(var(--sky));
@@ -20,20 +24,28 @@
   --color-dynamic-yellow: hsl(var(--yellow));
   --color-dynamic-orange: hsl(var(--orange));
   --color-dynamic-red: hsl(var(--red));
+
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
+
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
+
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
+
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
+
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
+
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
+
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
+
   --color-sidebar: hsl(var(--sidebar-background));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-primary: hsl(var(--sidebar-primary));
@@ -42,12 +54,74 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  /* Radius variants */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  /* Font families */
+  --font-family-poppins: var(--font-poppins);
+  --font-family-inter: var(--font-inter);
+
+  /* Animation durations */
+  --animate-duration-normal: 0.2s;
+  --animate-duration-fast: 0.15s;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+
+    to {
+      height: '0';
+    }
+  }
+}
+
+.border {
+  border-color: var(--color-border);
+}
+
+button {
+  cursor: pointer;
 }
 
 @layer base {
   :root {
+    /* Common properties for all themes */
     color-scheme: light;
 
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    /* Dynamic color palette */
+    --purple: 270 40% 60%;
+    --blue: 220 40% 60%;
+    --sky: 200 40% 60%;
+    --green: 140 40% 60%;
+    --yellow: 40 40% 60%;
+    --orange: 25 40% 60%;
+    --red: 0 40% 60%;
+
+    /* Light theme defaults */
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
 
@@ -76,16 +150,6 @@
     --input: 240 30% 80%;
     --ring: 240 10% 3.9%;
 
-    --purple: 270 40% 60%;
-    --blue: 220 40% 60%;
-    --sky: 200 40% 60%;
-    --green: 140 40% 60%;
-    --yellow: 40 40% 60%;
-    --orange: 25 40% 60%;
-    --red: 0 40% 60%;
-
-    --radius: 0.5rem;
-
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -101,6 +165,63 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  /* Theme variations */
+  .dark {
+    /* Dark theme overrides */
+    color-scheme: dark;
+
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 70%;
+
+    --purple: 270 50% 70%;
+    --blue: 220 50% 70%;
+    --sky: 200 70% 80%;
+    --green: 160 50% 70%;
+    --yellow: 40 50% 70%;
+    --orange: 25 50% 70%;
+    --red: 0 50% 70%;
+
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Color scheme variations */
   .light-pink {
     color-scheme: light;
 
@@ -291,60 +412,6 @@
     --border: 220 30% 80%;
     --input: 220 30% 80%;
     --ring: 220 30% 50%;
-  }
-
-  .dark {
-    color-scheme: dark;
-
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 70%;
-
-    --purple: 270 50% 70%;
-    --blue: 220 50% 70%;
-    --sky: 200 70% 80%;
-    --green: 160 50% 70%;
-    --yellow: 40 50% 70%;
-    --orange: 25 50% 70%;
-    --red: 0 50% 70%;
-
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark-pink {
@@ -624,19 +691,7 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-.animate-in {
-  animation: animateIn 0.3s ease 0.15s both;
-}
-
+/* Animations */
 @keyframes animateIn {
   from {
     opacity: 0;
@@ -647,6 +702,7 @@
     transform: translateY(0);
   }
 }
+
 @keyframes caret-blink {
   0%,
   70%,
@@ -677,14 +733,30 @@
   }
 }
 
+/* Animation classes */
+.animate-in {
+  animation: animateIn var(--animate-duration-normal) ease
+    var(--animate-duration-fast) both;
+}
+
 .animate-caret-blink {
   animation: caret-blink 1.25s ease-out infinite;
 }
 
 .animate-accordion-down {
-  animation: accordion-down 0.2s ease-out;
+  animation: accordion-down var(--animate-duration-normal) ease-out;
 }
 
 .animate-accordion-up {
-  animation: accordion-up 0.2s ease-out;
+  animation: accordion-up var(--animate-duration-normal) ease-out;
+}
+
+/* Base styles */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
