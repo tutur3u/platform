@@ -1,6 +1,4 @@
 import twTypography from '@tailwindcss/typography';
-import twScrollbar from 'tailwind-scrollbar';
-import type { Config } from 'tailwindcss';
 import twAnimate from 'tailwindcss-animate';
 
 const config = {
@@ -112,7 +110,7 @@ const config = {
       },
     },
   },
-  plugins: [twTypography, twAnimate, twScrollbar],
-} satisfies Config;
+  plugins: [twTypography, twAnimate],
+};
 
 export default config;
