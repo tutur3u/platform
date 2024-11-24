@@ -57,6 +57,7 @@ const plans = [
     ],
     limits: {
       workspace: {
+        amount: '3 workspaces',
         members: '5 members',
         storage: '500MB',
       },
@@ -115,7 +116,7 @@ const plans = [
     ],
     limits: {
       workspace: {
-        members: '50 members',
+        members: '10 members',
         storage: '50GB',
       },
       ai: {
@@ -164,7 +165,7 @@ const plans = [
     price: '$199',
     priceDetails: 'per workspace/month',
     features: [
-      'Unlimited team members',
+      'Up to 100 team members',
       'Advanced features',
       'Priority support',
       'API access',
@@ -174,7 +175,7 @@ const plans = [
     ],
     limits: {
       workspace: {
-        members: '1,000 members',
+        members: '100 members',
         storage: '1TB',
       },
       ai: {
@@ -276,13 +277,13 @@ const comparisons = {
     'Team members': {
       Free: '5 members',
       Pro: '10 members',
-      Business: 'Unlimited',
+      Business: '100 members',
       Enterprise: 'Unlimited',
     },
     'Storage space': {
       Free: '500MB',
       Pro: '50GB',
-      Business: '500GB',
+      Business: '1TB',
       Enterprise: 'Custom',
     },
     'Guest access': {
@@ -296,7 +297,7 @@ const comparisons = {
     'Monthly credits': {
       Free: '100',
       Pro: '1,000',
-      Business: '5,000',
+      Business: '10,000',
       Enterprise: 'Custom',
     },
     'Model access': {
@@ -539,7 +540,7 @@ const PlanCard = ({ plan }: { plan: (typeof plans)[number] }) => (
               {metricCategories.workspace.icon} Workspace
             </div>
             <div className="text-sm font-semibold">
-              {plan.limits.workspace?.members || 'Unlimited'}
+              {plan.limits.workspace?.amount || 'Unlimited'}
             </div>
           </div>
           <div
