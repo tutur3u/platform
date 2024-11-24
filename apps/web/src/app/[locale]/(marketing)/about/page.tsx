@@ -136,7 +136,7 @@ export default function AboutPage() {
           Empowering Business Through Technology
         </Badge>
         <h1 className="mb-4 text-4xl font-bold">Our Mission</h1>
-        <p className="text-muted-foreground mx-auto max-w-3xl text-lg leading-relaxed">
+        <p className="text-muted-foreground mx-auto max-w-3xl text-balance text-lg leading-relaxed">
           Born from a vision to make life easier, Tuturuuu has evolved into a
           comprehensive business solution powered by artificial intelligence. We
           transform complex operations into seamless experiences, from finance
@@ -215,14 +215,14 @@ export default function AboutPage() {
       <section className="mb-24">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="mb-6 text-3xl font-bold">Our Vision</h2>
-          <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
+          <p className="text-muted-foreground mb-6 text-balance text-lg leading-relaxed">
             Tuturuuu aspires to be the leading force in the technology and AI
             landscape, driving innovation and shaping the future with our
             unwavering commitment to excellence. We strive to be the most
             trusted and sought-after partner for businesses and individuals
             seeking cutting-edge technology solutions.
           </p>
-          <p className="text-muted-foreground text-lg leading-relaxed">
+          <p className="text-muted-foreground text-balance text-lg leading-relaxed">
             We aim to democratize access to AI, making it accessible and
             beneficial for everyone, regardless of background or expertise.
           </p>
@@ -233,14 +233,14 @@ export default function AboutPage() {
       <section className="mb-24">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="mb-6 text-3xl font-bold">Our Purpose</h2>
-          <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
+          <p className="text-muted-foreground mb-6 text-balance text-lg leading-relaxed">
             Tuturuuu is a powerful tool for businesses and individuals, helping
             simplify everything and improve efficiency and quality of life. We
             believe in the transformative power of our solutions, designed to
             simplify complexities, enhance efficiency, and unlock new
             possibilities.
           </p>
-          <p className="text-muted-foreground text-lg leading-relaxed">
+          <p className="text-muted-foreground text-balance text-lg leading-relaxed">
             We are committed to developing ethical and responsible AI solutions
             that address real-world challenges and contribute to a better
             future.
@@ -276,7 +276,7 @@ export default function AboutPage() {
       <section className="mb-24 grid gap-8 md:grid-cols-2">
         <div>
           <h2 className="mb-6 text-3xl font-bold">Continuous Growth</h2>
-          <p className="text-muted-foreground mb-4 leading-relaxed">
+          <p className="text-muted-foreground mb-4 text-balance leading-relaxed">
             Our platform is continuously evolving, driven by user feedback and
             technological advancements. We're committed to staying at the
             forefront of innovation while maintaining the simplicity and
@@ -284,7 +284,7 @@ export default function AboutPage() {
           </p>
           <div className="flex items-center gap-2">
             <LineChart className="text-primary h-5 w-5" />
-            <span className="font-medium">
+            <span className="text-balance font-medium">
               Consistent growth in user satisfaction and platform capabilities
             </span>
           </div>
@@ -313,7 +313,7 @@ export default function AboutPage() {
       {/* Updated Contact Section */}
       <section className="text-center">
         <h2 className="mb-4 text-2xl font-bold">Connect With Us</h2>
-        <p className="text-muted-foreground mx-auto max-w-2xl">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-balance">
           Whether you're interested in our platform, career opportunities, or
           partnership possibilities, we're always open to meaningful
           conversations that drive innovation forward.
