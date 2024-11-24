@@ -30,8 +30,8 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 30% 80%;
-    --input: 240 30% 80%;
+    --border: 240 80% 93%;
+    --input: 240 80% 93%;
     --ring: 240 10% 3.9%;
 
     --purple: 270 40% 60%;
@@ -62,192 +62,192 @@
   .light-pink {
     color-scheme: light;
 
-    --background: 344 100% 97%;
-    --foreground: 344 21% 41%;
+    --background: 0 0% 100%;
+    --foreground: 344 20% 30%;
 
-    --card: 344 100% 96%;
+    --card: 344 50% 98%;
     --card-foreground: 344 10% 3.9%;
 
-    --popover: 344 100% 96%;
+    --popover: 344 50% 98%;
     --popover-foreground: 344 30% 30%;
 
-    --primary: 344 34% 48%;
+    --primary: 344 50% 50%;
     --primary-foreground: 344 100% 93%;
 
-    --secondary: 344 34% 48%;
+    --secondary: 344 50% 50%;
     --secondary-foreground: 344 65% 92%;
 
-    --muted: 344 30% 80%;
+    --muted: 344 80% 93%;
     --muted-foreground: 344 20% 50%;
 
     --accent: 344 100% 93%;
-    --accent-foreground: 344 21% 41%;
+    --accent-foreground: 344 20% 30%;
 
     --destructive: 4 71% 50%;
     --destructive-foreground: 4 71% 92%;
 
-    --border: 344 30% 80%;
-    --input: 344 30% 80%;
+    --border: 344 80% 93%;
+    --input: 344 80% 93%;
     --ring: 344 30% 50%;
   }
 
   .light-purple {
     color-scheme: light;
 
-    --background: 270 100% 97%;
-    --foreground: 270 21% 41%;
+    --background: 0 0% 100%;
+    --foreground: 270 20% 30%;
 
-    --card: 270 100% 96%;
+    --card: 270 50% 98%;
     --card-foreground: 270 10% 3.9%;
 
-    --popover: 270 100% 96%;
+    --popover: 270 50% 98%;
     --popover-foreground: 270 30% 30%;
 
-    --primary: 270 34% 48%;
+    --primary: 270 50% 50%;
     --primary-foreground: 270 100% 93%;
 
-    --secondary: 270 34% 48%;
+    --secondary: 270 50% 50%;
     --secondary-foreground: 270 65% 92%;
 
-    --muted: 270 30% 80%;
+    --muted: 270 80% 93%;
     --muted-foreground: 270 20% 50%;
 
     --accent: 270 100% 93%;
-    --accent-foreground: 270 21% 41%;
+    --accent-foreground: 270 20% 30%;
 
     --destructive: 4 71% 50%;
     --destructive-foreground: 4 71% 92%;
 
-    --border: 270 30% 80%;
-    --input: 270 30% 80%;
+    --border: 270 80% 93%;
+    --input: 270 80% 93%;
     --ring: 270 30% 50%;
   }
 
   .light-yellow {
     color-scheme: light;
 
-    --background: 40 100% 97%;
-    --foreground: 40 21% 41%;
+    --background: 0 0% 100%;
+    --foreground: 40 20% 30%;
 
-    --card: 40 100% 96%;
+    --card: 40 50% 98%;
     --card-foreground: 40 10% 3.9%;
 
-    --popover: 40 100% 96%;
+    --popover: 40 50% 98%;
     --popover-foreground: 40 30% 30%;
 
-    --primary: 40 34% 48%;
+    --primary: 40 50% 50%;
     --primary-foreground: 40 100% 93%;
 
-    --secondary: 40 34% 48%;
+    --secondary: 40 50% 50%;
     --secondary-foreground: 40 65% 92%;
 
-    --muted: 40 30% 80%;
+    --muted: 40 80% 93%;
     --muted-foreground: 40 20% 50%;
 
     --accent: 40 100% 93%;
-    --accent-foreground: 40 21% 41%;
+    --accent-foreground: 40 20% 30%;
 
     --destructive: 4 71% 50%;
     --destructive-foreground: 4 71% 92%;
 
-    --border: 40 30% 80%;
-    --input: 40 30% 80%;
+    --border: 40 80% 93%;
+    --input: 40 80% 93%;
     --ring: 40 30% 50%;
   }
 
   .light-orange {
     color-scheme: light;
 
-    --background: 25 100% 97%;
-    --foreground: 25 21% 41%;
+    --background: 0 0% 100%;
+    --foreground: 25 20% 30%;
 
-    --card: 25 100% 96%;
+    --card: 25 50% 98%;
     --card-foreground: 25 10% 3.9%;
 
-    --popover: 25 100% 96%;
+    --popover: 25 50% 98%;
     --popover-foreground: 25 30% 30%;
 
-    --primary: 25 34% 48%;
+    --primary: 25 50% 50%;
     --primary-foreground: 25 100% 93%;
 
-    --secondary: 25 34% 48%;
+    --secondary: 25 50% 50%;
     --secondary-foreground: 25 65% 92%;
 
-    --muted: 25 30% 80%;
+    --muted: 25 80% 93%;
     --muted-foreground: 25 20% 50%;
 
     --accent: 25 100% 93%;
-    --accent-foreground: 25 21% 41%;
+    --accent-foreground: 25 20% 30%;
 
     --destructive: 4 71% 50%;
     --destructive-foreground: 4 71% 92%;
 
-    --border: 25 30% 80%;
-    --input: 25 30% 80%;
+    --border: 25 80% 93%;
+    --input: 25 80% 93%;
     --ring: 25 30% 50%;
   }
 
   .light-green {
     color-scheme: light;
 
-    --background: 140 100% 97%;
-    --foreground: 140 21% 41%;
+    --background: 0 0% 100%;
+    --foreground: 140 20% 30%;
 
-    --card: 140 100% 96%;
+    --card: 140 50% 98%;
     --card-foreground: 140 10% 3.9%;
 
-    --popover: 140 100% 96%;
+    --popover: 140 50% 98%;
     --popover-foreground: 140 30% 30%;
 
-    --primary: 140 34% 48%;
+    --primary: 140 50% 50%;
     --primary-foreground: 140 100% 93%;
 
-    --secondary: 140 34% 48%;
+    --secondary: 140 50% 50%;
     --secondary-foreground: 140 65% 92%;
 
-    --muted: 140 30% 80%;
+    --muted: 140 80% 93%;
     --muted-foreground: 140 20% 50%;
 
     --accent: 140 100% 93%;
-    --accent-foreground: 140 21% 41%;
+    --accent-foreground: 140 20% 30%;
 
     --destructive: 4 71% 50%;
     --destructive-foreground: 4 71% 92%;
 
-    --border: 140 30% 80%;
-    --input: 140 30% 80%;
+    --border: 140 80% 93%;
+    --input: 140 80% 93%;
     --ring: 140 30% 50%;
   }
 
   .light-blue {
     color-scheme: light;
 
-    --background: 220 100% 97%;
-    --foreground: 220 21% 41%;
+    --background: 0 0% 100%;
+    --foreground: 220 20% 30%;
 
-    --card: 220 100% 96%;
+    --card: 220 50% 98%;
     --card-foreground: 220 10% 3.9%;
 
-    --popover: 220 100% 96%;
+    --popover: 220 50% 98%;
     --popover-foreground: 220 30% 30%;
 
-    --primary: 220 34% 48%;
+    --primary: 220 50% 50%;
     --primary-foreground: 220 100% 93%;
 
-    --secondary: 220 34% 48%;
+    --secondary: 220 50% 50%;
     --secondary-foreground: 220 65% 92%;
 
-    --muted: 220 30% 80%;
+    --muted: 220 80% 93%;
     --muted-foreground: 220 20% 50%;
 
     --accent: 220 100% 93%;
-    --accent-foreground: 220 21% 41%;
+    --accent-foreground: 220 20% 30%;
 
     --destructive: 4 71% 50%;
     --destructive-foreground: 4 71% 92%;
 
-    --border: 220 30% 80%;
-    --input: 220 30% 80%;
+    --border: 220 80% 93%;
+    --input: 220 80% 93%;
     --ring: 220 30% 50%;
   }
 
