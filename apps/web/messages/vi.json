@@ -1764,6 +1764,8 @@
     "plural": "Bộ trắc nghiệm",
     "singular": "Bộ trắc nghiệm",
     "create": "Tạo bộ trắc nghiệm",
-    "create_description": "Tạo bộ trắc nghiệm mới"
+    "create_description": "Tạo bộ trắc nghiệm mới",
+    "name": "Tên bộ câu hỏi",
+    "edit": "Chỉnh sửa bộ"
   }
 }

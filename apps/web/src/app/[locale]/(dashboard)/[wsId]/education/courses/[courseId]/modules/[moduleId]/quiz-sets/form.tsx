@@ -20,7 +20,7 @@ import * as z from 'zod';
 
 interface Props {
   wsId: string;
-  courseId: string;
+  moduleId: string;
   data?: WorkspaceQuizSet;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
@@ -29,15 +29,16 @@ interface Props {
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
+  moduleId: z.string(),
 });
 
 export default function CourseModuleForm({
   wsId,
-  courseId,
+  moduleId,
   data,
   onFinish,
 }: Props) {
-  const t = useTranslations('ws-course-modules');
+  const t = useTranslations();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -45,6 +46,7 @@ export default function CourseModuleForm({
     values: {
       id: data?.id,
       name: data?.name || '',
+      moduleId,
     },
   });
 
@@ -58,8 +60,8 @@ export default function CourseModuleForm({
     try {
       const res = await fetch(
         data.id
-          ? `/api/v1/workspaces/${wsId}/course-modules/${data.id}`
-          : `/api/v1/workspaces/${wsId}/courses/${courseId}/modules`,
+          ? `/api/v1/workspaces/${wsId}/quiz-sets/${data.id}`
+          : `/api/v1/workspaces/${wsId}/quiz-sets`,
         {
           method: data.id ? 'PUT' : 'POST',
           body: JSON.stringify(data),
@@ -92,9 +94,13 @@ export default function CourseModuleForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('name')}</FormLabel>
+              <FormLabel>{t('ws-quiz-sets.name')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('name')} autoComplete="off" {...field} />
+                <Input
+                  placeholder={t('ws-quiz-sets.name')}
+                  autoComplete="off"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -102,7 +108,7 @@ export default function CourseModuleForm({
         />
 
         <Button type="submit" className="w-full" disabled={disabled}>
-          {data?.id ? t('edit') : t('create')}
+          {data?.id ? t('ws-quiz-sets.edit') : t('ws-quiz-sets.create')}
         </Button>
       </form>
     </Form>

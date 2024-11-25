@@ -20,13 +20,13 @@ import { useState } from 'react';
 
 interface QuizSetRowActionsProps {
   wsId: string;
-  courseId: string;
+  moduleId: string;
   row: Row<WorkspaceQuizSet>;
 }
 
 export function QuizSetRowActions({
   wsId,
-  courseId,
+  moduleId,
   row,
 }: QuizSetRowActionsProps) {
   const router = useRouter();
@@ -35,12 +35,9 @@ export function QuizSetRowActions({
   const data = row.original;
 
   const deleteQuizSetRowActions = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${wsId}/course-modules/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
+    const res = await fetch(`/api/v1/workspaces/${wsId}/quiz-sets/${data.id}`, {
+      method: 'DELETE',
+    });
 
     if (res.ok) {
       router.refresh();
@@ -96,7 +93,7 @@ export function QuizSetRowActions({
         editDescription={t('ws-flashcards.edit_description')}
         setOpen={setShowEditDialog}
         form={
-          <QuizSetRowActionsForm wsId={wsId} courseId={courseId} data={data} />
+          <QuizSetRowActionsForm wsId={wsId} moduleId={moduleId} data={data} />
         }
       />
     </div>

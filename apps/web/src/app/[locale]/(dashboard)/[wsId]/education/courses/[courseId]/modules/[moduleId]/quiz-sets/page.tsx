@@ -46,7 +46,7 @@ export default async function WorkspaceCoursesPage({
         singularTitle={t('ws-quiz-sets.singular')}
         createTitle={t('ws-quiz-sets.create')}
         createDescription={t('ws-quiz-sets.create_description')}
-        form={<CourseModuleForm wsId={wsId} courseId={courseId} />}
+        form={<CourseModuleForm wsId={wsId} moduleId={moduleId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable

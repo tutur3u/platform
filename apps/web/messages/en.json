@@ -1764,6 +1764,8 @@
     "plural": "Quiz Sets",
     "singular": "Quiz Set",
     "create": "Create quiz set",
-    "create_description": "Create a new quiz set"
+    "create_description": "Create a new quiz set",
+    "name": "Set name",
+    "edit": "Edit set"
   }
 }
