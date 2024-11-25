@@ -4,7 +4,7 @@ import LoadingIndicator from './common/LoadingIndicator';
 import { PromptForm, ResponseMode } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
-import { BASE_URL } from '@/constants/common';
+import { TTR_URL } from '@/constants/common';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { createDynamicClient } from '@/utils/supabase/client';
@@ -419,7 +419,7 @@ export function ChatPanel({
 
                   <div className="flex items-center justify-center">
                     <QRCode
-                      value={`${BASE_URL}/chats/${id}`}
+                      value={`${TTR_URL}/ai/chats/${id}`}
                       size={256}
                       style={{
                         borderRadius: '0.5rem',
@@ -437,7 +437,7 @@ export function ChatPanel({
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    navigator.clipboard.writeText(`${BASE_URL}/chats/${id}`);
+                    navigator.clipboard.writeText(`${TTR_URL}/ai/chats/${id}`);
                     setCopiedLink(true);
                     setTimeout(() => setCopiedLink(false), 2000);
                   }}
@@ -453,7 +453,7 @@ export function ChatPanel({
                 <Button
                   type="button"
                   className="w-full"
-                  onClick={() => window.open(`${BASE_URL}/chats/${id}`)}
+                  onClick={() => window.open(`${TTR_URL}/ai/chats/${id}`)}
                   disabled={disablePublicLink}
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
