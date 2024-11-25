@@ -28,6 +28,7 @@ const config = {
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        'dynamic-lime': 'hsl(var(--lime))',
         'dynamic-purple': 'hsl(var(--purple))',
         'dynamic-blue': 'hsl(var(--blue))',
         'dynamic-sky': 'hsl(var(--sky))',

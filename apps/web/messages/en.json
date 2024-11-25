@@ -1759,5 +1759,8 @@
     "description": "View custom chatbots created by the community.",
     "create": "Create chatbot",
     "create_description": "Create a new chatbot"
+  },
+  "ws-quiz-sets": {
+    "plural": "Quiz Sets"
   }
 }

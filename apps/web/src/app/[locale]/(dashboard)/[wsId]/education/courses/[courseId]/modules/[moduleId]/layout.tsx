@@ -11,6 +11,7 @@ import {
   Goal,
   ListTodo,
   Paperclip,
+  SquareCheck,
   SwatchBook,
   Youtube,
 } from 'lucide-react';
@@ -92,9 +93,15 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20"
               />
               <LinkButton
+                href={`${commonHref}/quiz-sets`}
+                title={`${t('ws-quiz-sets.plural')} (${quizzes || 0})`}
+                icon={<ListTodo className="h-5 w-5" />}
+                className="border-dynamic-lime/20 bg-dynamic-lime/10 text-dynamic-lime hover:bg-dynamic-lime/20"
+              />
+              <LinkButton
                 href={`${commonHref}/quizzes`}
                 title={`${t('ws-quizzes.plural')} (${quizzes || 0})`}
-                icon={<ListTodo className="h-5 w-5" />}
+                icon={<SquareCheck className="h-5 w-5" />}
                 className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
               />
               <LinkButton
