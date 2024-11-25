@@ -1761,6 +1761,9 @@
     "create_description": "Tạo một chatbot mới"
   },
   "ws-quiz-sets": {
-    "plural": "Bộ trắc nghiệm"
+    "plural": "Bộ trắc nghiệm",
+    "singular": "Bộ trắc nghiệm",
+    "create": "Tạo bộ trắc nghiệm",
+    "create_description": "Tạo bộ trắc nghiệm mới"
   }
 }

@@ -1761,6 +1761,9 @@
     "create_description": "Create a new chatbot"
   },
   "ws-quiz-sets": {
-    "plural": "Quiz Sets"
+    "plural": "Quiz Sets",
+    "singular": "Quiz Set",
+    "create": "Create quiz set",
+    "create_description": "Create a new quiz set"
   }
 }

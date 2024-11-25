@@ -40,6 +40,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   });
 
   const flashcards = await getFlashcards(moduleId);
+  const quizSets = await getQuizSets(moduleId);
   const quizzes = await getQuizzes(moduleId);
 
   return (
@@ -94,7 +95,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
               />
               <LinkButton
                 href={`${commonHref}/quiz-sets`}
-                title={`${t('ws-quiz-sets.plural')} (${quizzes || 0})`}
+                title={`${t('ws-quiz-sets.plural')} (${quizSets || 0})`}
                 icon={<ListTodo className="h-5 w-5" />}
                 className="border-dynamic-lime/20 bg-dynamic-lime/10 text-dynamic-lime hover:bg-dynamic-lime/20"
               />
@@ -159,6 +160,18 @@ async function getQuizzes(moduleId: string) {
 
   const { count, error } = await supabase
     .from('course_module_quizzes')
+    .select('*', { count: 'exact', head: true })
+    .eq('module_id', moduleId);
+  if (error) throw error;
+
+  return count;
+}
+
+async function getQuizSets(moduleId: string) {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from('course_module_quiz_sets')
     .select('*', { count: 'exact', head: true })
     .eq('module_id', moduleId);
   if (error) throw error;

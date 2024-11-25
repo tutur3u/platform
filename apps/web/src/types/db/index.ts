@@ -11,6 +11,9 @@ export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
+export type WorkspaceQuizSet = Tables<'workspace_quiz_sets'> & {
+  href?: string;
+};
 export type WorkspaceCourse = Tables<'workspace_courses'> & {
   href?: string;
 };
