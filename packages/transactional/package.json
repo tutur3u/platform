@@ -17,7 +17,7 @@
     "react-email": "3.0.2"
   },
   "devDependencies": {
-    "@types/node": "^22.9.3",
+    "@types/node": "^22.9.4",
     "@types/react": "^18.3.12"
   }
 }
