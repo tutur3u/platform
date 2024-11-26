@@ -1,7 +1,6 @@
-import { geQuizSetColumns } from './columns';
-import QuizForm from './form';
+import { getWorkspaceCourseModuleColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { type WorkspaceQuizSet } from '@/types/db';
+import { WorkspaceCourseModule } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -18,41 +17,42 @@ interface SearchParams {
 interface Props {
   params: Promise<{
     wsId: string;
+    setId: string;
   }>;
   searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceQuizzesPage({
+export default async function WorkspaceCoursesPage({
   params,
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId, setId } = await params;
 
-  const { data, count } = await getData(wsId, await searchParams);
+  const { data, count } = await getData(setId, await searchParams);
 
-  const quizSets = data.map((quizSet) => ({
-    ...quizSet,
-    href: `/${wsId}/education/quiz-sets/${quizSet.id}`,
+  const modules = data.map((m) => ({
+    ...m,
+    ws_id: wsId,
+    href: `/${wsId}/education/courses/${m.course_id}/modules/${m.id}`,
   }));
 
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-quizzes.plural')}
-        singularTitle={t('ws-quizzes.singular')}
-        description={t('ws-quizzes.description')}
-        createTitle={t('ws-quizzes.create')}
-        createDescription={t('ws-quizzes.create_description')}
-        form={<QuizForm wsId={wsId} />}
+        pluralTitle={t('ws-course-modules.plural')}
+        singularTitle={t('ws-course-modules.singular')}
+        description={t('ws-course-modules.description')}
+        createTitle={t('ws-course-modules.create')}
+        createDescription={t('ws-course-modules.create_description')}
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={quizSets}
-        columnGenerator={geQuizSetColumns}
-        namespace="quiz-set-data-table"
+        data={modules}
+        columnGenerator={getWorkspaceCourseModuleColumns}
+        extraData={{ wsId, setId }}
+        namespace="course-data-table"
         count={count}
-        extraData={{ wsId }}
         defaultVisibility={{
           id: false,
           created_at: false,
@@ -63,7 +63,7 @@ export default async function WorkspaceQuizzesPage({
 }
 
 async function getData(
-  wsId: string,
+  setId: string,
   {
     q,
     page = '1',
@@ -74,14 +74,11 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_quiz_sets')
-    .select(
-      '*, linked_modules:course_module_quiz_sets(...workspace_course_modules(module_id:id, module_name:name, ...workspace_courses(course_id:id, course_name:name)))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
+    .from('course_module_quiz_sets')
+    .select('...workspace_course_modules(*)', {
+      count: 'exact',
+    })
+    .eq('set_id', setId)
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
@@ -97,8 +94,8 @@ async function getData(
   const { data, error, count } = await queryBuilder;
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(setId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: WorkspaceQuizSet[]; count: number };
+  return { data, count } as { data: WorkspaceCourseModule[]; count: number };
 }

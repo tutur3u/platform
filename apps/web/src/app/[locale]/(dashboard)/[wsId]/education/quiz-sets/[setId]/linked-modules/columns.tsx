@@ -1,18 +1,19 @@
 'use client';
 
-import { QuizSetRowActions } from './row-actions';
-import { WorkspaceQuizSet } from '@/types/db';
+import { WorkspaceCourseModuleRowActions } from './row-actions';
+import { WorkspaceCourseModule } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
-export const geQuizSetColumns = (
+export const getWorkspaceCourseModuleColumns = (
   t: any,
   namespace: string | undefined,
   _: any,
   extraData?: any
-): ColumnDef<WorkspaceQuizSet>[] => [
+): ColumnDef<WorkspaceCourseModule>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -64,41 +65,32 @@ export const geQuizSetColumns = (
     ),
   },
   {
-    accessorKey: 'linked_modules',
+    accessorKey: 'is_public',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.linked_modules`)}
+        title={t(`${namespace}.is_public`)}
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem] font-semibold">
-        {(
-          row.getValue('linked_modules') as unknown as
-            | {
-                module_name: string;
-                course_name: string;
-              }[]
-            | undefined
-        )?.length
-          ? (
-              row.getValue('linked_modules') as unknown as {
-                module_id: string;
-                course_id: string;
-                module_name: string;
-                course_name: string;
-              }[]
-            ).map((module) => (
-              <Link
-                href={`/${extraData.wsId}/education/courses/${module.course_id}/modules/${module.module_id}`}
-                key={`${module.course_name}-${module.module_name}`}
-                className="bg-foreground/5 w-fit rounded border px-2 py-0.5 hover:underline"
-              >
-                {module.course_name} / {module.module_name}
-              </Link>
-            ))
-          : '-'}
+      <div className="font-semibold">
+        {row.getValue('is_public') ? <Check /> : <X />}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'is_published',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.is_published`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="font-semibold">
+        {row.getValue('is_published') ? <Check /> : <X />}
       </div>
     ),
   },
@@ -122,10 +114,10 @@ export const geQuizSetColumns = (
   {
     id: 'actions',
     cell: ({ row }) => (
-      <QuizSetRowActions
+      <WorkspaceCourseModuleRowActions
         row={row}
         wsId={extraData.wsId}
-        moduleId={extraData.moduleId}
+        courseId={extraData.courseId}
       />
     ),
   },

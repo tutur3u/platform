@@ -33,10 +33,10 @@ export default async function WorkspaceCoursesPage({
 
   const { data, count } = await getData(moduleId, await searchParams);
 
-  const modules = data.map((m) => ({
+  const quizSets = data.map((m) => ({
     ...m,
     ws_id: wsId,
-    href: `/${wsId}/education/courses/${courseId}/modules/${m.id}`,
+    href: `/${wsId}/education/quiz-sets/${m.id}`,
   }));
 
   return (
@@ -50,7 +50,7 @@ export default async function WorkspaceCoursesPage({
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={modules}
+        data={quizSets}
         columnGenerator={geQuizSetColumns}
         extraData={{ wsId, courseId, moduleId }}
         namespace="course-data-table"

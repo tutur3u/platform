@@ -1,7 +1,7 @@
-import { geQuizSetColumns } from './columns';
+import { getWorkspaceQuizColumns } from './columns';
 import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { type WorkspaceQuizSet } from '@/types/db';
+import { WorkspaceQuiz } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -18,6 +18,7 @@ interface SearchParams {
 interface Props {
   params: Promise<{
     wsId: string;
+    setId: string;
   }>;
   searchParams: Promise<SearchParams>;
 }
@@ -27,14 +28,9 @@ export default async function WorkspaceQuizzesPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId, setId } = await params;
 
-  const { data, count } = await getData(wsId, await searchParams);
-
-  const quizSets = data.map((quizSet) => ({
-    ...quizSet,
-    href: `/${wsId}/education/quiz-sets/${quizSet.id}`,
-  }));
+  const { data, count } = await getData(setId, await searchParams);
 
   return (
     <>
@@ -48,11 +44,10 @@ export default async function WorkspaceQuizzesPage({
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={quizSets}
-        columnGenerator={geQuizSetColumns}
-        namespace="quiz-set-data-table"
+        data={data}
+        columnGenerator={getWorkspaceQuizColumns}
+        namespace="quiz-data-table"
         count={count}
-        extraData={{ wsId }}
         defaultVisibility={{
           id: false,
           created_at: false,
@@ -63,7 +58,7 @@ export default async function WorkspaceQuizzesPage({
 }
 
 async function getData(
-  wsId: string,
+  setId: string,
   {
     q,
     page = '1',
@@ -74,14 +69,11 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_quiz_sets')
-    .select(
-      '*, linked_modules:course_module_quiz_sets(...workspace_course_modules(module_id:id, module_name:name, ...workspace_courses(course_id:id, course_name:name)))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
+    .from('quiz_set_quizzes')
+    .select('...workspace_quizzes(*)', {
+      count: 'exact',
+    })
+    .eq('set_id', setId)
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
@@ -97,8 +89,8 @@ async function getData(
   const { data, error, count } = await queryBuilder;
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(setId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as { data: WorkspaceQuizSet[]; count: number };
+  return { data, count } as { data: WorkspaceQuiz[]; count: number };
 }
