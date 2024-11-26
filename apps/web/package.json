@@ -68,7 +68,7 @@
     "@tippyjs/react": "^4.2.6",
     "@tiptap-pro/extension-details": "^2.15.0",
     "@tiptap-pro/extension-details-content": "^2.15.0",
-    "@tiptap-pro/extension-details-summary": "^2.15.0",
+    "@tiptap-pro/extension-details-summary": "^2.16.1",
     "@tiptap-pro/extension-drag-handle": "^2.15.0",
     "@tiptap-pro/extension-drag-handle-react": "^2.15.0",
     "@tiptap-pro/extension-emoji": "^2.15.0",
