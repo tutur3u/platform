@@ -43,6 +43,15 @@
     --orange: 25 40% 30%;
     --red: 0 40% 30%;
 
+    --light-lime: 90 50% 55%;
+    --light-purple: 270 50% 55%;
+    --light-blue: 220 50% 55%;
+    --light-sky: 200 50% 55%;
+    --light-green: 140 50% 55%;
+    --light-yellow: 40 50% 55%;
+    --light-orange: 25 50% 55%;
+    --light-red: 0 50% 55%;
+
     --radius: 0.5rem;
 
     --chart-1: 12 76% 61%;
@@ -292,6 +301,15 @@
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
 
+    --light-lime: 90 60% 75%;
+    --light-purple: 270 60% 75%;
+    --light-blue: 220 60% 75%;
+    --light-sky: 200 70% 80%;
+    --light-green: 160 60% 75%;
+    --light-yellow: 40 60% 75%;
+    --light-orange: 25 60% 75%;
+    --light-red: 0 60% 75%;
+
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -338,6 +356,7 @@
     --input: 344 20% 20%;
     --ring: 344 20% 70%;
 
+    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -345,6 +364,15 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
+
+    --light-lime: 90 60% 75%;
+    --light-purple: 270 60% 75%;
+    --light-blue: 220 60% 75%;
+    --light-sky: 200 70% 80%;
+    --light-green: 160 60% 75%;
+    --light-yellow: 40 60% 75%;
+    --light-orange: 25 60% 75%;
+    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -384,6 +412,7 @@
     --input: 270 20% 20%;
     --ring: 270 20% 70%;
 
+    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -391,6 +420,15 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
+
+    --light-lime: 90 60% 75%;
+    --light-purple: 270 60% 75%;
+    --light-blue: 220 60% 75%;
+    --light-sky: 200 70% 80%;
+    --light-green: 160 60% 75%;
+    --light-yellow: 40 60% 75%;
+    --light-orange: 25 60% 75%;
+    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -430,6 +468,7 @@
     --input: 40 20% 20%;
     --ring: 40 20% 70%;
 
+    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -437,6 +476,15 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
+
+    --light-lime: 90 60% 75%;
+    --light-purple: 270 60% 75%;
+    --light-blue: 220 60% 75%;
+    --light-sky: 200 70% 80%;
+    --light-green: 160 60% 75%;
+    --light-yellow: 40 60% 75%;
+    --light-orange: 25 60% 75%;
+    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -476,6 +524,7 @@
     --input: 25 20% 20%;
     --ring: 25 20% 70%;
 
+    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -483,6 +532,15 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
+
+    --light-lime: 90 60% 75%;
+    --light-purple: 270 60% 75%;
+    --light-blue: 220 60% 75%;
+    --light-sky: 200 70% 80%;
+    --light-green: 160 60% 75%;
+    --light-yellow: 40 60% 75%;
+    --light-orange: 25 60% 75%;
+    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -522,6 +580,7 @@
     --input: 140 20% 20%;
     --ring: 140 20% 70%;
 
+    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -529,6 +588,15 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
+
+    --light-lime: 90 60% 75%;
+    --light-purple: 270 60% 75%;
+    --light-blue: 220 60% 75%;
+    --light-sky: 200 70% 80%;
+    --light-green: 160 60% 75%;
+    --light-yellow: 40 60% 75%;
+    --light-orange: 25 60% 75%;
+    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -568,6 +636,7 @@
     --input: 220 20% 20%;
     --ring: 220 20% 70%;
 
+    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -575,6 +644,15 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
+
+    --light-lime: 90 60% 75%;
+    --light-purple: 270 60% 75%;
+    --light-blue: 220 60% 75%;
+    --light-sky: 200 70% 80%;
+    --light-green: 160 60% 75%;
+    --light-yellow: 40 60% 75%;
+    --light-orange: 25 60% 75%;
+    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
