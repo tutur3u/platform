@@ -17,6 +17,7 @@ import {
   Video,
   Zap,
 } from 'lucide-react';
+import NextLink from 'next/link';
 
 const features = [
   {
@@ -106,7 +107,7 @@ export default function CalendarProductPage() {
             Join Waitlist
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <a href="/contact">Contact Sales</a>
+            <NextLink href="/contact">Contact Sales</NextLink>
           </Button>
         </div>
       </div>
