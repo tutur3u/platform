@@ -1775,6 +1775,7 @@
     "create": "Tạo bộ trắc nghiệm",
     "create_description": "Tạo bộ trắc nghiệm mới",
     "name": "Tên bộ câu hỏi",
-    "edit": "Chỉnh sửa bộ"
+    "edit": "Chỉnh sửa bộ",
+    "link-quizzes": "Liên kết câu hỏi"
   }
 }

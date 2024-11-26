@@ -1775,6 +1775,7 @@
     "create": "Create quiz set",
     "create_description": "Create a new quiz set",
     "name": "Set name",
-    "edit": "Edit set"
+    "edit": "Edit set",
+    "link-quizzes": "Link Quizzes"
   }
 }
