@@ -18,7 +18,6 @@ const departments: { name: DepartmentName; color: string }[] = [
   { name: 'Human Resources', color: 'text-purple-500 dark:text-purple-300' },
   { name: 'Marketing', color: 'text-orange-500 dark:text-orange-300' },
   { name: 'External Relations', color: 'text-red-500 dark:text-red-300' },
-  { name: 'Executive Board', color: 'text-pink-500 dark:text-pink-300' },
 ];
 
 export default function Members() {
@@ -94,8 +93,8 @@ export default function Members() {
           <div
             key={index}
             className={`flex justify-center p-4 transition duration-300 ${
-              highlightedDepartment &&
-              !p.departments.includes(highlightedDepartment)
+            highlightedDepartment &&
+            !p.departments.includes(highlightedDepartment)
                 ? 'opacity-30'
                 : 'opacity-100'
             }`}

@@ -62,11 +62,11 @@ export default function History() {
         <div className="relative m-0 rounded-lg bg-gradient-to-b from-[#1AF4E6] via-white/50 to-[#F4B71A] p-0.5 [clip-path:polygon(100%_0,_100%_100%,_10%_100%,_0_90%,_0_10%,_10%_0)] md:m-8">
           <div className="pointer-events-none absolute top-60 z-10 h-full w-full rounded-lg bg-gradient-to-b from-white/70 to-[#C6D9E3] opacity-30 dark:from-black/70 dark:to-[#0A0515]" />
 
-          <div className="relative rounded-lg bg-gradient-to-b from-[#C6D9E3] to-white px-3 [clip-path:polygon(100%_0,_100%_100%,_10%_100%,_0_90%,_0_10%,_10%_0)] lg:px-20 dark:from-[#100921] dark:to-black">
+          <div className="relative rounded-lg bg-gradient-to-b from-[#C6D9E3] to-white px-3 ease-in-out [clip-path:polygon(100%_0,_100%_100%,_10%_100%,_0_90%,_0_10%,_10%_0)] lg:px-20 dark:from-[#100921] dark:to-black">
             <div className="flex flex-col items-center justify-center gap-8 py-12 lg:gap-14 lg:pt-14">
               {timelineData.map((data) => (
                 <div
-                  className="flex w-full transform cursor-pointer items-center justify-between gap-1 transition-transform duration-500 hover:scale-95 lg:gap-5"
+                  className="flex w-full transform cursor-pointer items-center justify-between gap-1 transition-transform duration-700 hover:scale-95 lg:gap-5"
                   key={data.year}
                   onClick={() => handleClick(data.year)}
                 >
