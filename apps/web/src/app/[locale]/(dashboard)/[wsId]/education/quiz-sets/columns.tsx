@@ -64,6 +64,45 @@ export const geQuizSetColumns = (
     ),
   },
   {
+    accessorKey: 'linked_modules',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.linked_modules`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem] font-semibold">
+        {(
+          row.getValue('linked_modules') as unknown as
+            | {
+                module_name: string;
+                course_name: string;
+              }[]
+            | undefined
+        )?.length
+          ? (
+              row.getValue('linked_modules') as unknown as {
+                module_id: string;
+                course_id: string;
+                module_name: string;
+                course_name: string;
+              }[]
+            ).map((module) => (
+              <Link
+                href={`/${extraData.wsId}/education/courses/${module.course_id}/modules/${module.module_id}`}
+                key={`${module.course_name}-${module.module_name}`}
+                className="bg-foreground/5 w-fit rounded border px-2 py-0.5 hover:underline"
+              >
+                {module.course_name} - {module.module_name}
+              </Link>
+            ))
+          : '-'}
+      </div>
+    ),
+  },
+  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader

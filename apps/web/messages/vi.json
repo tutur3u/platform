@@ -575,6 +575,14 @@
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
   },
+  "quiz-set-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "linked_modules": "Mô đun liên kết",
+    "is_public": "Public",
+    "is_published": "Published",
+    "created_at": "Created At"
+  },
   "quiz-data-table": {
     "id": "Mã số",
     "name": "Tên",
@@ -1677,8 +1685,9 @@
     "overview": "Tổng quan",
     "courses": "Khóa học",
     "materials": "Tài liệu học tập",
-    "quizzes": "Bộ trắc nghiệm",
-    "flashcards": "Thẻ từ vựng"
+    "quizzes": "Câu hỏi trắc nghiệm",
+    "flashcards": "Thẻ từ vựng",
+    "quiz-sets": "Bộ trắc nghiệm"
   },
   "ws-courses": {
     "plural": "Khóa học",

@@ -575,6 +575,14 @@
     "modules": "Modules",
     "created_at": "Created At"
   },
+  "quiz-set-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "linked_modules": "Linked Modules",
+    "is_public": "Public",
+    "is_published": "Published",
+    "created_at": "Created At"
+  },
   "quiz-data-table": {
     "id": "ID",
     "name": "Name",
@@ -1678,7 +1686,8 @@
     "courses": "Courses",
     "materials": "Learning Materials",
     "quizzes": "Quizzes",
-    "flashcards": "Flashcards"
+    "flashcards": "Flashcards",
+    "quiz-sets": "Quiz Sets"
   },
   "ws-courses": {
     "plural": "Courses",

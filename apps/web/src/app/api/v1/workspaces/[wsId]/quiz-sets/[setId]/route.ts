@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
-    quizId: string;
+    setId: string;
   }>;
 }
 
@@ -12,7 +12,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   // eslint-disable-next-line no-unused-vars
   const { moduleId: _, quiz_options, ...rest } = await req.json();
-  const { quizId: id } = await params;
+  const { setId: id } = await params;
 
   const { error } = await supabase
     .from('workspace_quiz_sets')
@@ -71,7 +71,7 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { quizId: id } = await params;
+  const { setId: id } = await params;
 
   const { error } = await supabase
     .from('workspace_quiz_sets')
