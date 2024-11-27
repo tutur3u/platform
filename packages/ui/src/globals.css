@@ -43,14 +43,15 @@
     --orange: 25 40% 30%;
     --red: 0 40% 30%;
 
-    --light-lime: 90 50% 55%;
-    --light-purple: 270 50% 55%;
-    --light-blue: 220 50% 55%;
-    --light-sky: 200 50% 55%;
-    --light-green: 140 50% 55%;
-    --light-yellow: 40 50% 55%;
-    --light-orange: 25 50% 55%;
-    --light-red: 0 50% 55%;
+    --light-lime: 90 80% 60%;
+    --light-purple: 240 70% 60%;
+    --light-pink: 330 70% 60%;
+    --light-blue: 220 80% 60%;
+    --light-sky: 200 80% 60%;
+    --light-green: 140 80% 60%;
+    --light-yellow: 40 80% 60%;
+    --light-orange: 25 80% 60%;
+    --light-red: 0 70% 80%;
 
     --radius: 0.5rem;
 
@@ -303,6 +304,7 @@
 
     --light-lime: 90 60% 75%;
     --light-purple: 270 60% 75%;
+    --light-pink: 330 60% 75%;
     --light-blue: 220 60% 75%;
     --light-sky: 200 70% 80%;
     --light-green: 160 60% 75%;
@@ -367,6 +369,7 @@
 
     --light-lime: 90 60% 75%;
     --light-purple: 270 60% 75%;
+    --light-pink: 330 60% 75%;
     --light-blue: 220 60% 75%;
     --light-sky: 200 70% 80%;
     --light-green: 160 60% 75%;
@@ -423,6 +426,7 @@
 
     --light-lime: 90 60% 75%;
     --light-purple: 270 60% 75%;
+    --light-pink: 330 60% 75%;
     --light-blue: 220 60% 75%;
     --light-sky: 200 70% 80%;
     --light-green: 160 60% 75%;
@@ -479,6 +483,7 @@
 
     --light-lime: 90 60% 75%;
     --light-purple: 270 60% 75%;
+    --light-pink: 330 60% 75%;
     --light-blue: 220 60% 75%;
     --light-sky: 200 70% 80%;
     --light-green: 160 60% 75%;
@@ -535,6 +540,7 @@
 
     --light-lime: 90 60% 75%;
     --light-purple: 270 60% 75%;
+    --light-pink: 330 60% 75%;
     --light-blue: 220 60% 75%;
     --light-sky: 200 70% 80%;
     --light-green: 160 60% 75%;
@@ -591,6 +597,7 @@
 
     --light-lime: 90 60% 75%;
     --light-purple: 270 60% 75%;
+    --light-pink: 330 60% 75%;
     --light-blue: 220 60% 75%;
     --light-sky: 200 70% 80%;
     --light-green: 160 60% 75%;
@@ -647,6 +654,7 @@
 
     --light-lime: 90 60% 75%;
     --light-purple: 270 60% 75%;
+    --light-pink: 330 60% 75%;
     --light-blue: 220 60% 75%;
     --light-sky: 200 70% 80%;
     --light-green: 160 60% 75%;

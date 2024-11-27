@@ -40,6 +40,7 @@ const config = {
 
         'dynamic-light-lime': 'hsl(var(--light-lime))',
         'dynamic-light-purple': 'hsl(var(--light-purple))',
+        'dynamic-light-pink': 'hsl(var(--light-pink))',
         'dynamic-light-blue': 'hsl(var(--light-blue))',
         'dynamic-light-sky': 'hsl(var(--light-sky))',
         'dynamic-light-green': 'hsl(var(--light-green))',

@@ -64,12 +64,15 @@ export default function MarketingPage() {
   };
 
   return (
-    <div className="flex w-full flex-col items-center" suppressHydrationWarning>
+    <div
+      className="relative flex w-full flex-col items-center"
+      suppressHydrationWarning
+    >
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="from-background to-primary/5 relative min-h-[calc(100vh-4rem)] w-full bg-gradient-to-b"
+        className="from-background via-background to-dynamic-light-pink/10 relative min-h-[calc(100vh-4rem)] w-full bg-gradient-to-b"
       >
         {/* Animated Background Patterns */}
         <div className="absolute inset-0 overflow-hidden">
@@ -81,7 +84,7 @@ export default function MarketingPage() {
         </div>
 
         {/* Main Content */}
-        <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-4 py-24">
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-48">
           {/* 3D Floating Logo */}
           <motion.div
             ref={logoRef}
@@ -109,15 +112,6 @@ export default function MarketingPage() {
                 priority
                 className="relative transition-transform duration-200 group-hover:scale-110"
               />
-              <motion.div
-                className="bg-primary/20 absolute inset-0 rounded-full blur-2xl"
-                style={{
-                  scale: 0.85,
-                  translateZ: -100,
-                  rotateX,
-                  rotateY,
-                }}
-              />
             </motion.div>
           </motion.div>
 
@@ -128,10 +122,12 @@ export default function MarketingPage() {
             transition={{ delay: 0.2 }}
             className="relative text-center"
           >
-            <h1 className="mx-auto mb-8 max-w-2xl text-balance text-center text-xl font-bold tracking-tight md:text-3xl">
-              {t('home.headline-p1')}{' '}
-              <GradientHeadline title={t('home.headline-p2')} />.
+            <h1 className="text-foreground mx-auto mb-2 text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
+              <GradientHeadline title={t('home.headline')} />
             </h1>
+            <h2 className="text-foreground mb-8 max-w-3xl text-balance text-lg font-bold tracking-tight md:text-2xl lg:text-3xl">
+              {t('home.subheadline')}
+            </h2>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <GetStartedButton href="/login" />
