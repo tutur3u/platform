@@ -1827,5 +1827,23 @@
     "title": "Ready to get started?",
     "description": "Join the waitlist to be among the first to experience our intelligent business management platform when it launches.",
     "join_waitlist": "Join waitlist"
+  },
+  "contact": {
+    "title": "Contact us",
+    "description": "Have questions or need assistance? We're here to help. Choose your preferred way to reach us.",
+    "get_in_touch": "Get in Touch",
+    "founder_contact": "Founder Contact",
+    "founder_description": "Founder & CEO",
+    "on_github": "on GitHub",
+    "send_us_a_message": "Send us a Message",
+    "form": {
+      "name_label": "Name",
+      "name_placeholder": "Your name",
+      "subject_label": "Subject",
+      "subject_placeholder": "How can we help?",
+      "message_label": "Message",
+      "message_placeholder": "Your message...",
+      "submit_button": "Send Message"
+    }
   }
 }

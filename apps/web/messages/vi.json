@@ -1827,5 +1827,23 @@
     "title": "Sẵn sàng để bắt đầu?",
     "description": "Hãy tham gia danh sách chờ để trở thành một trong những người đầu tiên trải nghiệm nền tảng quản lý doanh nghiệp thông minh của chúng tôi khi nền tảng này ra mắt.",
     "join_waitlist": "Tham gia danh sách chờ"
+  },
+  "contact": {
+    "title": "Liên hệ với chúng tôi",
+    "description": "Có thắc mắc hoặc cần hỗ trợ? Chúng tôi ở đây để giúp đỡ. Hãy chọn cách ưa thích của bạn để tiếp cận chúng tôi.",
+    "get_in_touch": "Liên hệ",
+    "founder_contact": "Thông tin người sáng lập",
+    "founder_description": "Người sáng lập",
+    "on_github": "trên GitHub",
+    "send_us_a_message": "Gửi tin nhắn cho chúng tôi",
+    "form": {
+      "name_label": "Tên",
+      "name_placeholder": "Tên của bạn",
+      "subject_label": "Chủ đề",
+      "subject_placeholder": "Chúng tôi có thể giúp gì?",
+      "message_label": "Tin nhắn",
+      "message_placeholder": "Tin nhắn của bạn...",
+      "submit_button": "Gửi tin nhắn"
+    }
   }
 }
