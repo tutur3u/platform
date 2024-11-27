@@ -75,7 +75,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
           </div>
 
           {objects.length > 0 && (
-            <div className="grid h-fit gap-2 rounded-lg border p-4">
+            <div className="h-fit space-y-2 rounded-lg border p-4">
               <div className="flex justify-between text-lg font-semibold">
                 {t('invoices.files')}
                 <Button variant="ghost" size="xs" asChild>
@@ -99,7 +99,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
           )}
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid h-fit gap-4">
           <div className="h-full rounded-lg border p-4">
             <div className="grid h-full content-start gap-2">
               <div className="text-lg font-semibold">
@@ -154,16 +154,17 @@ function DetailObject({
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4" />
-        {object.name}
-      </div>
+      <FileText className="h-4 w-4 flex-shrink-0" />
 
-      <TransactionObjectRowActions
-        wsId={wsId}
-        transactionId={transactionId}
-        storageObj={object}
-      />
+      <span className="flex-1 truncate">{object.name}</span>
+
+      <div className="flex-shrink-0">
+        <TransactionObjectRowActions
+          wsId={wsId}
+          transactionId={transactionId}
+          storageObj={object}
+        />
+      </div>
     </div>
   );
 }
