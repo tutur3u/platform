@@ -1,5 +1,6 @@
 import Form from './form';
 import UserTime from './user-time';
+import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -9,36 +10,19 @@ import 'dayjs/locale/vi';
 import { getLocale, getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
-interface Props {
-  // params: {
-  //   wsId: string;
-  // };
-  searchParams: Promise<{
-    q: string;
-    // page: string;
-    // pageSize: string;
-  }>;
-}
-
-export default async function MeetTogetherPage({
-  // params: { wsId },
-  searchParams,
-}: Props) {
+export default async function MeetTogetherPage() {
   const locale = await getLocale();
   const t = await getTranslations('meet-together');
-  const { data: plans, user } = await getData(await searchParams);
+  const { data: plans, user } = await getData();
 
   return (
     <div className="flex w-full flex-col items-center">
       <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
         <div className="flex flex-col items-center">
-          <p className="mx-auto my-4 max-w-xl text-center text-lg font-semibold !leading-tight md:mb-4 md:text-2xl lg:text-3xl">
+          <h1 className="text-foreground mx-auto mb-2 text-center text-2xl font-bold !leading-tight tracking-tight md:text-4xl lg:text-6xl">
             {t('headline-p1')}{' '}
-            <span className="bg-gradient-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300">
-              {t('headline-p2')}
-            </span>
-            .
-          </p>
+            <GradientHeadline>{t('headline-p2')}</GradientHeadline>.
+          </h1>
         </div>
       </div>
       <Form />
@@ -51,10 +35,7 @@ export default async function MeetTogetherPage({
           <div className="mt-4 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan: MeetTogetherPlan) => (
               <Link
-                href={`/calendar/meet-together/plans/${plan.id?.replace(
-                  /-/g,
-                  ''
-                )}`}
+                href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
                 key={plan.id}
                 className="border-foreground/20 hover:border-foreground group grid w-full rounded-lg border p-4"
               >
@@ -128,14 +109,7 @@ export default async function MeetTogetherPage({
   );
 }
 
-async function getData(
-  // wsId: string,
-  {
-    // q,
-    // page = '1',
-    // pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
+async function getData() {
   const supabase = await createClient();
 
   const {

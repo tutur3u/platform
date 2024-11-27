@@ -127,7 +127,7 @@ export default function CreatePlanDialog({ plan }: Props) {
     if (res.ok) {
       const { id } = await res.json();
       const normalizedId = id.replace(/-/g, '');
-      router.push(`/calendar/meet-together/plans/${normalizedId}`);
+      router.push(`/meet-together/plans/${normalizedId}`);
       router.refresh();
     } else {
       setCreating(false);

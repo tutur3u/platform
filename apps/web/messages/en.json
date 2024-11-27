@@ -203,7 +203,10 @@
     "finance-description": "Track finances and manage transactions efficiently.",
     "mail-description": "Powerful email and communication management.",
     "tasks-description": "Organize and track projects with clarity.",
-    "workflows-description": "Automate and optimize your business processes."
+    "workflows-description": "Automate and optimize your business processes.",
+    "scroll_to_explore": "Scroll to explore",
+    "features": "Features",
+    "learn_more": "Learn more"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1819,5 +1822,10 @@
     "name": "Set name",
     "edit": "Edit set",
     "link-quizzes": "Link Quizzes"
+  },
+  "slogan": {
+    "title": "Ready to get started?",
+    "description": "Join the waitlist to be among the first to experience our intelligent business management platform when it launches.",
+    "join_waitlist": "Join waitlist"
   }
 }

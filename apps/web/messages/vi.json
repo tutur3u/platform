@@ -203,7 +203,10 @@
     "finance-description": "Theo dõi tài chính và quản lý giao dịch hiệu quả.",
     "mail-description": "Quản lý email và truyền thông mạnh mẽ.",
     "tasks-description": "Tổ chức và theo dõi các dự án một cách rõ ràng.",
-    "workflows-description": "Tự động hóa và tối ưu hóa quy trình kinh doanh của bạn."
+    "workflows-description": "Tự động hóa và tối ưu hóa quy trình kinh doanh của bạn.",
+    "scroll_to_explore": "Cuộn để khám phá",
+    "features": "Các tính năng",
+    "learn_more": "Tìm hiểu thêm"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1819,5 +1822,10 @@
     "name": "Tên bộ câu hỏi",
     "edit": "Chỉnh sửa bộ",
     "link-quizzes": "Liên kết câu hỏi"
+  },
+  "slogan": {
+    "title": "Sẵn sàng để bắt đầu?",
+    "description": "Hãy tham gia danh sách chờ để trở thành một trong những người đầu tiên trải nghiệm nền tảng quản lý doanh nghiệp thông minh của chúng tôi khi nền tảng này ra mắt.",
+    "join_waitlist": "Tham gia danh sách chờ"
   }
 }

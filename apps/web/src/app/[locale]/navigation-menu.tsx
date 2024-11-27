@@ -41,7 +41,7 @@ export function MainNavigationMenu() {
   const products = [
     {
       title: t('common.meet-together'),
-      href: '/calendar/meet-together',
+      href: '/meet-together',
       description: t('common.meet-together-description'),
       icon: <UsersRound className="h-4 w-4" />,
     },
