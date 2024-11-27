@@ -41,7 +41,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
       />
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-auto">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
             <div className="text-lg font-semibold">
               {t('invoices.basic-info')}
