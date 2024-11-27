@@ -575,6 +575,14 @@
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
   },
+  "quiz-set-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "linked_modules": "Mô đun liên kết",
+    "is_public": "Public",
+    "is_published": "Published",
+    "created_at": "Created At"
+  },
   "quiz-data-table": {
     "id": "Mã số",
     "name": "Tên",
@@ -1677,8 +1685,9 @@
     "overview": "Tổng quan",
     "courses": "Khóa học",
     "materials": "Tài liệu học tập",
-    "quizzes": "Bộ trắc nghiệm",
-    "flashcards": "Thẻ từ vựng"
+    "quizzes": "Câu hỏi trắc nghiệm",
+    "flashcards": "Thẻ từ vựng",
+    "quiz-sets": "Bộ trắc nghiệm"
   },
   "ws-courses": {
     "plural": "Khóa học",
@@ -1724,7 +1733,7 @@
     "generation_accepted": "Thẻ từ do AI tạo đã được chấp nhận!"
   },
   "ws-quizzes": {
-    "plural": "Bộ trắc nghiệm",
+    "plural": "Câu hỏi trắc nghiệm",
     "singular": "Bộ trắc nghiệm",
     "create": "Tạo bộ trắc nghiệm",
     "create_description": "Tạo một bộ trắc nghiệm mới",
@@ -1759,5 +1768,14 @@
     "description": "Xem các chatbot tùy chỉnh được tạo bởi cộng đồng.",
     "create": "Tạo chatbot",
     "create_description": "Tạo một chatbot mới"
+  },
+  "ws-quiz-sets": {
+    "plural": "Bộ trắc nghiệm",
+    "singular": "Bộ trắc nghiệm",
+    "create": "Tạo bộ trắc nghiệm",
+    "create_description": "Tạo bộ trắc nghiệm mới",
+    "name": "Tên bộ câu hỏi",
+    "edit": "Chỉnh sửa bộ",
+    "link-quizzes": "Liên kết câu hỏi"
   }
 }

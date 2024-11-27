@@ -575,6 +575,14 @@
     "modules": "Modules",
     "created_at": "Created At"
   },
+  "quiz-set-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "linked_modules": "Linked Modules",
+    "is_public": "Public",
+    "is_published": "Published",
+    "created_at": "Created At"
+  },
   "quiz-data-table": {
     "id": "ID",
     "name": "Name",
@@ -1678,7 +1686,8 @@
     "courses": "Courses",
     "materials": "Learning Materials",
     "quizzes": "Quizzes",
-    "flashcards": "Flashcards"
+    "flashcards": "Flashcards",
+    "quiz-sets": "Quiz Sets"
   },
   "ws-courses": {
     "plural": "Courses",
@@ -1759,5 +1768,14 @@
     "description": "View custom chatbots created by the community.",
     "create": "Create chatbot",
     "create_description": "Create a new chatbot"
+  },
+  "ws-quiz-sets": {
+    "plural": "Quiz Sets",
+    "singular": "Quiz Set",
+    "create": "Create quiz set",
+    "create_description": "Create a new quiz set",
+    "name": "Set name",
+    "edit": "Edit set",
+    "link-quizzes": "Link Quizzes"
   }
 }

@@ -28,6 +28,8 @@ const config = {
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+
+        'dynamic-lime': 'hsl(var(--lime))',
         'dynamic-purple': 'hsl(var(--purple))',
         'dynamic-blue': 'hsl(var(--blue))',
         'dynamic-sky': 'hsl(var(--sky))',
@@ -35,6 +37,15 @@ const config = {
         'dynamic-yellow': 'hsl(var(--yellow))',
         'dynamic-orange': 'hsl(var(--orange))',
         'dynamic-red': 'hsl(var(--red))',
+
+        'dynamic-light-lime': 'hsl(var(--light-lime))',
+        'dynamic-light-purple': 'hsl(var(--light-purple))',
+        'dynamic-light-blue': 'hsl(var(--light-blue))',
+        'dynamic-light-sky': 'hsl(var(--light-sky))',
+        'dynamic-light-green': 'hsl(var(--light-green))',
+        'dynamic-light-yellow': 'hsl(var(--light-yellow))',
+        'dynamic-light-orange': 'hsl(var(--light-orange))',
+        'dynamic-light-red': 'hsl(var(--light-red))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',

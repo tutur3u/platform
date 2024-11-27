@@ -13,6 +13,7 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
+import Link from 'next/link';
 
 const features = [
   {
@@ -101,7 +102,7 @@ export default function AIProductPage() {
             Join Waitlist
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <a href="/contact">Contact Sales</a>
+            <Link href="/contact">Contact Sales</Link>
           </Button>
         </div>
       </div>
