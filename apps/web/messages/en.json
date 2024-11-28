@@ -206,7 +206,10 @@
     "workflows-description": "Automate and optimize your business processes.",
     "scroll_to_explore": "Scroll to explore",
     "features": "Features",
-    "learn_more": "Learn more"
+    "learn_more": "Learn more",
+    "pricing_hook": "Simple, transparent pricing",
+    "usage_based_pricing": "Usage-Based Pricing",
+    "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits."
   },
   "date_helper": {
     "time-unit": "Time unit",

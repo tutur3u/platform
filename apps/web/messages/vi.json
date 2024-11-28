@@ -206,7 +206,10 @@
     "workflows-description": "Tự động hóa và tối ưu hóa quy trình kinh doanh của bạn.",
     "scroll_to_explore": "Cuộn để khám phá",
     "features": "Các tính năng",
-    "learn_more": "Tìm hiểu thêm"
+    "learn_more": "Tìm hiểu thêm",
+    "pricing_hook": "Giá cả đơn giản, minh bạch",
+    "usage_based_pricing": "Bảng giá",
+    "usage_based_pricing_description": "Chỉ trả tiền cho những gì bạn sử dụng. Tất cả các gói đều bao gồm các tính năng cốt lõi với các giới hạn sử dụng khác nhau."
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1835,7 +1838,7 @@
     "founder_contact": "Thông tin người sáng lập",
     "founder_description": "Người sáng lập",
     "on_github": "trên GitHub",
-    "send_us_a_message": "Gửi tin nhắn cho chúng tôi",
+    "send_us_a_message": "Cần hỗ trợ?",
     "form": {
       "name_label": "Tên",
       "name_placeholder": "Tên của bạn",

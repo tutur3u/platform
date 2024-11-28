@@ -1,5 +1,6 @@
 'use client';
 
+import GradientHeadline from '../gradient-headline';
 import { cn } from '@/lib/utils';
 import {
   Accordion,
@@ -40,6 +41,7 @@ import {
   Users2,
   Zap,
 } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 
 const plans = [
@@ -463,7 +465,7 @@ const PlanCard = ({ plan }: { plan: (typeof plans)[number] }) => (
       plan.popular && 'border-primary shadow-lg',
       plan.name === 'Business' && 'col-span-full lg:col-span-1',
       plan.name === 'Enterprise' &&
-        'from-dynamic-sky/10 via-dynamic-sky/30 to-dynamic-green/40 text-background border-foreground/50 col-span-full border-2 bg-gradient-to-br'
+        'from-dynamic-light-red/30 via-dynamic-light-pink/40 to-dynamic-light-blue/60 text-background border-foreground/50 col-span-full border-2 bg-gradient-to-br'
     )}
   >
     {plan.popular && (
@@ -665,22 +667,32 @@ const categoryIcons = {
 };
 
 export default function PricingPage() {
+  const locale = useLocale();
+  const t = useTranslations();
+
   return (
     <div className="container relative mx-auto mt-8 flex max-w-7xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Background decoration */}
       <div className="absolute left-0 right-0 top-0 -z-10 h-[400px] rounded-t-lg bg-gradient-to-b from-transparent to-transparent" />
 
       <div className="mb-16 text-center">
-        <span className="bg-primary/10 text-primary mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium">
-          <Sparkles className="h-4 w-4" />
-          Simple, transparent pricing
-        </span>
-        <h1 className="mb-4 text-4xl font-bold lg:text-5xl">
-          Usage-Based Pricing
+        {locale !== 'vi' && (
+          <span className="bg-primary/10 text-primary mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium">
+            <Sparkles className="h-4 w-4" />
+            {t('common.pricing_hook')}
+          </span>
+        )}
+
+        <h1
+          className={cn(
+            'mb-4 text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl',
+            locale === 'vi' && 'text-5xl md:text-7xl'
+          )}
+        >
+          <GradientHeadline>{t('common.usage_based_pricing')}</GradientHeadline>
         </h1>
         <p className="text-muted-foreground mx-auto max-w-2xl text-balance text-lg">
-          Pay only for what you use. All plans include core features with
-          different usage limits.
+          {t('common.usage_based_pricing_description')}
         </p>
       </div>
 
@@ -707,7 +719,7 @@ export default function PricingPage() {
                   <TableHead className="w-[300px]">Features</TableHead>
                   <TableHead>
                     <div className="text-center">
-                      <div className="font-bold">Free</div>
+                      <div className="font-bold">{t('common.free')}</div>
                       <div className="text-muted-foreground text-sm">$0</div>
                     </div>
                   </TableHead>
