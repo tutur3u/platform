@@ -1,52 +1,57 @@
 import React, {
-  KeyboardEvent,
+  KeyboardEvent as ReactKeyboardEvent,
   forwardRef,
   useEffect,
   useImperativeHandle,
   useState,
 } from 'react';
 
-interface MentionListProps {
-  items: string[];
-  command: (payload: { id: string }) => void;
+// Define the type for your ref that expects a React.KeyboardEvent
+export interface MentionListRef {
+  onKeyDown: (params: { event: ReactKeyboardEvent }) => boolean;
 }
 
-export interface MentionListRef {
-  onKeyDown: (params: { event: KeyboardEvent }) => boolean;
+interface MentionListProps {
+  items: string[]; // Array of items to be displayed
+  command: (payload: { id: string }) => void; // Command handler, it can be used to select an item
 }
 
 const MentionList = forwardRef<MentionListRef, MentionListProps>(
   (props, ref) => {
     const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
+    // Function to select an item based on the index
     const selectItem = (index: number) => {
       const item = props.items[index];
-
       if (item) {
         props.command({ id: item });
       }
     };
 
+    // Handler for ArrowUp key
     const upHandler = () => {
-      setSelectedIndex(
-        (selectedIndex + props.items.length - 1) % props.items.length
-      );
+      setSelectedIndex((selectedIndex + props.items.length - 1) % props.items.length);
     };
 
+    // Handler for ArrowDown key
     const downHandler = () => {
       setSelectedIndex((selectedIndex + 1) % props.items.length);
     };
 
+    // Handler for Enter key
     const enterHandler = () => {
       selectItem(selectedIndex);
     };
 
+    // Reset selected index when items change
     useEffect(() => {
       setSelectedIndex(0);
     }, [props.items]);
 
+    // Expose onKeyDown to parent component via ref
     useImperativeHandle(ref, () => ({
-      onKeyDown: ({ event }: { event: KeyboardEvent }) => {
+      onKeyDown: ({ event }: { event: ReactKeyboardEvent<Element> }) => {
+        // Check for key events and call corresponding handlers
         if (event.key === 'ArrowUp') {
           upHandler();
           return true;

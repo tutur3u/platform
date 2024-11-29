@@ -20,6 +20,7 @@ import tippy, {
   Instance as TippyInstance,
 } from 'tippy.js';
 import type { Doc as YDoc } from 'yjs';
+import { KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 declare global {
   interface Window {
@@ -173,29 +174,24 @@ export const useBlockEditor = ({
                 },
 
                 onKeyDown: (props: SuggestionKeyDownProps): boolean => {
-                  const event: KeyboardEvent = props.event; // Standard KeyboardEvent type
-                
-                  // Check for the 'Escape' key press
+                  const event: ReactKeyboardEvent = props.event as any;
+
                   if (event.key === 'Escape') {
                     popup[0]?.hide();
                     return true; // Stop propagation
                   }
-                
-                  // If component reference exists, pass the event as-is (no need for casting)
+
                   if (component?.ref) {
-                    const handled = (component.ref as MentionListRef).onKeyDown({
-                      event, // Pass the event directly (no need for type assertion)
-                    });
+                    const handled = (component.ref as MentionListRef).onKeyDown(
+                      {
+                        event,
+                      }
+                    );
                     return handled === undefined ? false : handled;
                   }
-                
+
                   return false; // Default return value if nothing is handled
                 },
-                
-                
-                
-                
-                
 
                 onExit: (): void => {
                   if (popup[0]) {
