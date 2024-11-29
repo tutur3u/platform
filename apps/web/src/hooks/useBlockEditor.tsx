@@ -13,9 +13,12 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Mention from '@tiptap/extension-mention';
 import { useEditor, useEditorState } from '@tiptap/react';
 import { ReactRenderer } from '@tiptap/react';
-import { SuggestionKeyDownProps } from '@tiptap/suggestion';
+import { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion';
 import { useEffect, useState } from 'react';
-import tippy, { GetReferenceClientRect, Instance as TippyInstance } from 'tippy.js';
+import tippy, {
+  GetReferenceClientRect,
+  Instance as TippyInstance,
+} from 'tippy.js';
 import type { Doc as YDoc } from 'yjs';
 
 declare global {
@@ -23,12 +26,12 @@ declare global {
     editor: Editor | null;
   }
 }
-interface MentionPluginProps {
-  query: string;
-  clientRect: DOMRect | null;
-  editor: any;
-  event: React.KeyboardEvent;
-}
+// interface MentionPluginProps {
+//   query: string;
+//   clientRect: DOMRect | null;
+//   editor: any;
+//   event: React.KeyboardEvent;
+// }
 export const useBlockEditor = ({
   aiToken,
   ydoc,
@@ -129,22 +132,20 @@ export const useBlockEditor = ({
               let popup: TippyInstance[] = [];
 
               return {
-                onStart: (props: MentionPluginProps): void => {
-                  // Prevent issues when there's no clientRect available
+                onStart: (props: SuggestionProps<any, any>): void => {
                   if (!props.clientRect) {
                     console.error('No clientRect available for mention popup');
                     return;
                   }
 
-                  // Render the mention list component
                   component = new ReactRenderer(MentionList, {
                     props,
                     editor: props.editor,
                   });
 
-                  // Initialize the Tippy popup with proper settings
                   popup = tippy('body', {
-                    getReferenceClientRect: props.clientRect as unknown as GetReferenceClientRect,
+                    getReferenceClientRect:
+                      props.clientRect as unknown as GetReferenceClientRect,
                     appendTo: document?.body,
                     content: component.element,
                     showOnCreate: true,
@@ -154,45 +155,49 @@ export const useBlockEditor = ({
                   });
                 },
 
-                // onUpdate will update the popup when the query changes or the editor updates
-                onUpdate: (props: MentionPluginProps): void => {
+                onUpdate: (props: SuggestionProps<any, any>): void => {
                   if (!props.clientRect) {
                     console.error('No clientRect on update');
                     return;
                   }
 
-                  // Update the mention component props when the editor state changes
                   component?.updateProps(props);
 
-                  // Update Tippy popup's position
                   if (popup[0]) {
                     popup[0].setProps({
                       getReferenceClientRect: () => {
-                        return props.clientRect as DOMRect;
+                        return props.clientRect as unknown as DOMRect;
                       },
                     });
                   }
                 },
 
-                // onKeyDown will handle key events (e.g., Esc to close the popup)
-                onKeyDown: (props: MentionPluginProps): boolean | undefined => {
-                  // Close the popup if Escape key is pressed
-                  if (props.event.key === 'Escape') {
+                onKeyDown: (props: SuggestionKeyDownProps): boolean => {
+                  const event: KeyboardEvent = props.event; // Standard KeyboardEvent type
+                
+                  // Check for the 'Escape' key press
+                  if (event.key === 'Escape') {
                     popup[0]?.hide();
-                    return true; // Stop the event from propagating further
+                    return true; // Stop propagation
                   }
-
-                  // Ensure that component.ref is typed as MentionListRef so TypeScript can recognize onKeyDown
+                
+                  // If component reference exists, pass the event as-is (no need for casting)
                   if (component?.ref) {
-                    return (component.ref as MentionListRef).onKeyDown(props);
+                    const handled = (component.ref as MentionListRef).onKeyDown({
+                      event, // Pass the event directly (no need for type assertion)
+                    });
+                    return handled === undefined ? false : handled;
                   }
-
-                  return undefined;
+                
+                  return false; // Default return value if nothing is handled
                 },
+                
+                
+                
+                
+                
 
-                // onExit will clean up when the popup is destroyed (e.g., when the editor is destroyed or the user exits)
                 onExit: (): void => {
-                  // Ensure proper cleanup of popup and component
                   if (popup[0]) {
                     popup[0].destroy();
                   }
