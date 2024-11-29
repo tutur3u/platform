@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-
-const initialTimelineData = [
+const timelineData = [
   {
     year: '2024',
     description:
@@ -25,21 +23,6 @@ const initialTimelineData = [
 ];
 
 export default function History() {
-  const [timelineData, setTimelineData] = useState(initialTimelineData);
-
-  const handleClick = (year: string) => {
-    // Find the index of the clicked year
-    const clickedIndex = timelineData.findIndex((data) => data.year === year);
-
-    // Create a new order based on the clicked year
-    const newOrder = [
-      ...timelineData.slice(clickedIndex),
-      ...timelineData.slice(0, clickedIndex),
-    ];
-
-    setTimelineData([...newOrder]);
-  };
-
   return (
     <div className="flex justify-center">
       <div className="text-foreground container flex flex-col items-center gap-6">
@@ -68,7 +51,6 @@ export default function History() {
                 <div
                   className="flex w-full transform cursor-pointer items-center justify-between gap-1 transition-transform duration-700 hover:scale-95 lg:gap-5"
                   key={data.year}
-                  onClick={() => handleClick(data.year)}
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#5FC6E5] text-center text-sm font-black lg:h-28 lg:w-28 lg:text-3xl">
                     {data.year}

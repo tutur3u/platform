@@ -40,7 +40,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: ^2.1.4
-        version: 2.1.4(@types/node@22.9.0)(jsdom@25.0.1(canvas@2.11.2))
+        version: 2.1.4(@types/node@22.9.0)(jsdom@25.0.1)
 
   apps/web:
     dependencies:
@@ -392,7 +392,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: ^2.1.4
-        version: 2.1.4(@types/node@22.9.0)(jsdom@25.0.1(canvas@2.11.2))
+        version: 2.1.4(@types/node@22.9.0)(jsdom@25.0.1)
 
   packages/eslint-config:
     devDependencies:
@@ -13339,7 +13339,7 @@ snapshots:
       eslint: 9.14.0(jiti@1.21.6)
     optionalDependencies:
       '@typescript-eslint/eslint-plugin': 7.18.0(@typescript-eslint/parser@7.18.0(eslint@9.14.0(jiti@1.21.6))(typescript@5.6.3))(eslint@9.14.0(jiti@1.21.6))(typescript@5.6.3)
-      vitest: 2.1.4(@types/node@22.9.0)(jsdom@25.0.1(canvas@2.11.2))
+      vitest: 2.1.4(@types/node@22.9.0)(jsdom@25.0.1)
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -17477,7 +17477,7 @@ snapshots:
       '@types/node': 22.9.0
       fsevents: 2.3.3
 
-  vitest@2.1.4(@types/node@22.9.0)(jsdom@25.0.1(canvas@2.11.2)):
+  vitest@2.1.4(@types/node@22.9.0)(jsdom@25.0.1):
     dependencies:
       '@vitest/expect': 2.1.4
       '@vitest/mocker': 2.1.4(vite@5.4.10(@types/node@22.9.0))

@@ -131,9 +131,10 @@ export default async function Footer() {
           </div>
         </div>
       </div>
-      <Separator className="mt-8 h-1 bg-gradient-to-r from-[#5FC6E5] to-[#FBC821] blur-sm" />
+      {/* <Separator className="mt-8 h-1 bg-gradient-to-r from-[#5FC6E5] to-[#FBC821] blur-sm" /> */}
+
       <div className="mt-4 flex flex-col items-center justify-between gap-4 pb-4 md:flex-row">
-        <div className="opascity-80 text-center">{t('common.copyright')}</div>
+        <div className="text-center opacity-80">{t('common.copyright')}</div>
         <Link
           href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
           className="text-brand-light-red font-semibold underline"

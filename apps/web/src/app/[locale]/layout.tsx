@@ -125,7 +125,7 @@ export default async function RootLayout({ children, params }: Props) {
         <VercelInsights />
         <Providers
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="dark"
           themes={[
             'system',
 
@@ -146,7 +146,7 @@ export default async function RootLayout({ children, params }: Props) {
             'dark-blue',
           ]}
           enableColorScheme={false}
-          enableSystem
+          enableSystem={false}
         >
           <NextIntlClientProvider messages={messages}>
             {children}

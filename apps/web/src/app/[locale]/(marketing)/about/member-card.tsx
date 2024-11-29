@@ -15,7 +15,7 @@ export default function MemberCard({ name, role, image }: MemberCardProps) {
           width={1000}
           height={1000}
           alt={name}
-          className="w-5/6 rounded-lg object-cover md:w-2/3"
+          className="w-full rounded-lg object-cover md:w-2/3"
         />
       </div>
       <p className="mt-3 text-center text-xl font-black md:text-xl">{name}</p>

@@ -35,7 +35,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
   if (!data) {
     return null;
   }
-  const { name, description, techStack } = data;
+  const { name, description, techStack, members } = data;
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800/60"
@@ -45,7 +45,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
       onClick={onClose}
     >
       <motion.div
-        className="bg-background relative mx-auto h-[90%] w-[98%] max-w-3xl overflow-y-auto rounded-lg p-6 text-center md:w-[90%]"
+        className="bg-background relative mx-auto h-fit max-h-[90%] w-[98%] max-w-3xl overflow-y-auto rounded-lg p-6 pb-10 text-center md:w-[90%]"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
@@ -91,29 +91,31 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           ))}
         </div>
 
-        <p className="mt-6 text-lg font-semibold md:text-xl lg:text-2xl">
-          Contributors
-        </p>
-        <Separator className="my-2" />
-        <div className="flex flex-col gap-4 py-4 md:px-6">
-          {contributors.map((person, index) => {
-            return (
-              <div className="flex items-center justify-between" key={index}>
-                <div className="flex items-center gap-4 md:gap-6">
-                  <Image
-                    className="h-10 w-10 rounded-full object-cover md:h-12 md:w-12"
-                    src="/members/people.jpg"
-                    width={1000}
-                    height={1000}
-                    alt="Contributor"
-                  />
-                  <p className="text-sm md:text-lg">{person.name}</p>
-                </div>
-                <div className="text-sm md:text-lg">{person.role}</div>
-              </div>
-            );
-          })}
-        </div>
+        {members && (
+          <div>
+            <p className="mt-6 text-lg font-semibold md:text-xl lg:text-2xl">
+              Contributors
+            </p>
+            <Separator className="my-2" />
+            <div className="flex flex-col gap-4 py-4 md:px-6">
+              {members.map((person, index) => {
+                return (
+                  <div
+                    className="flex items-center justify-between"
+                    key={index}
+                  >
+                    <div className="flex items-center gap-4 md:gap-6">
+                      <p className="text-sm md:text-lg">{person.name}</p>
+                    </div>
+                    <div className="text-sm md:text-lg">
+                      {person.role ? person.role : 'Member'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );

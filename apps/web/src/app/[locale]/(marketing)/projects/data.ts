@@ -6,6 +6,7 @@ export type Project = {
   techStack?: string[];
   purpose: string;
   status: 'planning' | 'ongoing' | 'completed';
+  members?: { name: string; role: string }[];
 };
 
 export const projects: Project[] = [
@@ -30,6 +31,14 @@ export const projects: Project[] = [
     manager: 'Huynh Hoang Duc',
     purpose:
       'This project aims to create a sophisticated micromouse capable of navigating mazes efficiently.',
+    members: [
+      { name: 'Pham Ngoc Phu Vinh', role: 'Hardware Engineer' },
+      { name: 'Tran Thanh Sang', role: 'Hardware Engineer' },
+      { name: 'Nguyen Gia Khang', role: 'Software Developer' },
+      { name: 'Tran Viet Duc', role: 'Software Developer' },
+      { name: 'Ngo Van Tai', role: 'CAD Designer' },
+      { name: 'Huynh Thai Duong', role: 'CAD Designer' },
+    ],
   },
   {
     name: 'Neo Chess',
@@ -47,6 +56,7 @@ export const projects: Project[] = [
     manager: 'Luong Ngoc Bao Tran',
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
+    members: [{ name: 'Vo Hoang Phuc', role: 'Developer' }],
   },
   {
     name: 'Neo Checker',
@@ -107,6 +117,13 @@ export const projects: Project[] = [
     manager: 'Ngo Van Tai',
     purpose:
       'A revamp of the club landing page to showcase the club projects and activities.',
+
+    members: [
+      { name: 'Nguyen Phuong Anh', role: 'Developer' },
+      { name: 'Luong Ngoc Bao Tran', role: 'Developer' },
+      { name: 'Huynh Ngoc Nhat Mai', role: 'Developer' },
+      { name: 'Nguyen Gia Khang', role: 'Developer' },
+    ],
   },
   {
     name: 'Neo Crush Alpha',

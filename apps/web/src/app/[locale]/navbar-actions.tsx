@@ -28,7 +28,7 @@ export default async function NavbarActions({
           <>
             <GetStartedButton />
             <LanguageWrapper />
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
           </>
         )}
       </div>
