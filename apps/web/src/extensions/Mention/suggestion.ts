@@ -33,7 +33,7 @@ export default {
       'Lisa Bonet',
     ]
       .filter(item => item.toLowerCase().startsWith(query.toLowerCase())) // Filtering by query
-      .slice(0, 5); // Limit to top 5 results
+      .slice(0, 5);
   },
 
   render: () => {
@@ -41,7 +41,7 @@ export default {
     let popup;
 
     return {
-      // onStart will initialize the mention popup when the user starts typing
+
       onStart: (props) => {
         // Prevent issues when there's no clientRect available
         if (!props.clientRect) {

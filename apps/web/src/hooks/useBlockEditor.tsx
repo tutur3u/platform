@@ -11,6 +11,7 @@ import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { useEditor, useEditorState } from '@tiptap/react';
 import { useEffect, useState } from 'react';
+import Mention from '@tiptap/extension-mention';
 import type { Doc as YDoc } from 'yjs';
 
 declare global {
@@ -26,6 +27,7 @@ export const useBlockEditor = ({
   document,
   userId,
   userName = 'Maxi',
+  wsId,
 }: {
   aiToken?: string;
   ydoc: YDoc;
@@ -33,11 +35,12 @@ export const useBlockEditor = ({
   provider?: TiptapCollabProvider | null | undefined;
   userId?: string;
   userName?: string;
+  wsId?: string | undefined | null;
 }) => {
   const [collabState, setCollabState] = useState<WebSocketStatus>(
     provider ? WebSocketStatus.Connecting : WebSocketStatus.Disconnected
   );
-
+  // console.log(wsId, "WSid in useBlock editor")
   const editor = useEditor(
     {
       immediatelyRender: true,
@@ -65,6 +68,12 @@ export const useBlockEditor = ({
       extensions: [
         ...ExtensionKit({
           provider,
+        }),
+        Mention.configure({
+          HTMLAttributes:{
+            class: 'bg-purple-100 rounded-md text-purple-600 px-1 py-0.5 break-words',
+          },
+
         }),
         provider
           ? Collaboration.configure({

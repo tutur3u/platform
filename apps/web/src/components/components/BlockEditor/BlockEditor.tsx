@@ -23,12 +23,14 @@ export const BlockEditor = ({
   document,
   provider,
   docId,
+  wsId,
 }: {
   aiToken?: string;
   hasCollab: boolean;
   ydoc: Y.Doc;
   document?: JSONContent;
   docId?: string;
+  wsId?: string | undefined;
   provider?: TiptapCollabProvider | null | undefined;
 }) => {
   const menuContainerRef = useRef(null);
@@ -38,6 +40,7 @@ export const BlockEditor = ({
     ydoc,
     document,
     provider,
+    wsId,
   });
 
   useEffect(() => {
