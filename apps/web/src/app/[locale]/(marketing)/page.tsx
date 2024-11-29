@@ -13,13 +13,13 @@ import {
   Brain,
   Calendar,
   CircleCheck,
+  Container,
   FileText,
-  Gift,
   HardDrive,
   Rocket,
   Users,
-  Wand2,
   Workflow,
+  Zap,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -64,12 +64,15 @@ export default function MarketingPage() {
   };
 
   return (
-    <div className="flex w-full flex-col items-center" suppressHydrationWarning>
+    <div
+      className="relative flex w-full flex-col items-center"
+      suppressHydrationWarning
+    >
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="from-background to-primary/5 relative min-h-[calc(100vh-4rem)] w-full bg-gradient-to-b"
+        className="from-background via-background to-dynamic-light-pink/10 relative min-h-[calc(100vh-3.5rem)] w-full bg-gradient-to-b"
       >
         {/* Animated Background Patterns */}
         <div className="absolute inset-0 overflow-hidden">
@@ -81,7 +84,7 @@ export default function MarketingPage() {
         </div>
 
         {/* Main Content */}
-        <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-4 py-24">
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-48">
           {/* 3D Floating Logo */}
           <motion.div
             ref={logoRef}
@@ -109,15 +112,6 @@ export default function MarketingPage() {
                 priority
                 className="relative transition-transform duration-200 group-hover:scale-110"
               />
-              <motion.div
-                className="bg-primary/20 absolute inset-0 rounded-full blur-2xl"
-                style={{
-                  scale: 0.85,
-                  translateZ: -100,
-                  rotateX,
-                  rotateY,
-                }}
-              />
             </motion.div>
           </motion.div>
 
@@ -128,10 +122,12 @@ export default function MarketingPage() {
             transition={{ delay: 0.2 }}
             className="relative text-center"
           >
-            <h1 className="mx-auto mb-8 max-w-2xl text-balance text-center text-xl font-bold tracking-tight md:text-3xl">
-              {t('home.headline-p1')}{' '}
-              <GradientHeadline title={t('home.headline-p2')} />.
+            <h1 className="text-foreground mx-auto mb-2 text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
+              <GradientHeadline title={t('home.headline')} />
             </h1>
+            <h2 className="text-foreground mb-8 max-w-3xl text-balance text-lg font-bold tracking-tight md:text-2xl lg:text-3xl">
+              {t('home.subheadline')}
+            </h2>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <GetStartedButton href="/login" />
@@ -146,7 +142,7 @@ export default function MarketingPage() {
           className="absolute inset-x-0 bottom-24 flex w-full flex-col items-center"
         >
           <div className="text-muted-foreground flex flex-col items-center gap-2">
-            <span className="text-sm">Scroll to explore</span>
+            <span className="text-sm">{t('common.scroll_to_explore')}</span>
             <motion.div
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ repeat: Infinity, duration: 2 }}
@@ -168,9 +164,9 @@ export default function MarketingPage() {
       >
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="mb-12 text-center text-4xl font-bold">
-            Platform Features
+            {t('common.features')}
             <span className="ml-2 inline-block">
-              <Wand2 className="text-primary h-8 w-8" />
+              <Zap className="text-primary h-8 w-8" />
             </span>
           </h2>
 
@@ -190,7 +186,7 @@ export default function MarketingPage() {
                     href={features[0].url}
                     className="text-primary mt-auto inline-flex items-center gap-2 pt-4 hover:underline"
                   >
-                    Learn more
+                    {t('common.learn_more')}
                     <Rocket className="h-4 w-4" />
                   </Link>
                 )}
@@ -214,7 +210,7 @@ export default function MarketingPage() {
                       href={feature.url}
                       className="text-primary mt-auto inline-flex items-center gap-2 pt-4 opacity-0 transition-opacity group-hover:opacity-100"
                     >
-                      Learn more
+                      {t('common.learn_more')}
                       <Rocket className="h-4 w-4" />
                     </Link>
                   )}
@@ -239,90 +235,83 @@ export default function MarketingPage() {
             variants={itemVariants}
             className="mb-12 text-center text-4xl font-bold"
           >
-            Our Products
+            {t('common.products')}
             <span className="animate-spin-slow ml-2 inline-block">
-              <Gift className="text-primary h-8 w-8" />
+              <Container className="text-primary h-8 w-8" />
             </span>
           </motion.h2>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
-                title: 'AI Assistant',
-                description:
-                  'Leverage AI to automate tasks and enhance productivity.',
+                title: t('common.ai-assistant'),
+                description: t('common.ai-assistant-description'),
                 href: '/products/ai',
                 icon: Brain,
                 className: 'lg:col-span-full',
-                badge: 'Coming Soon',
+                badge: t('common.coming_soon'),
               },
               {
-                title: 'Meet Together',
-                description:
-                  'Schedule meetings effortlessly across time zones and teams.',
-                href: '/calendar/meet-together',
+                title: t('common.meet-together'),
+                description: t('common.meet-together-description'),
+                href: '/meet-together',
                 icon: Users,
               },
               {
-                title: 'Calendar',
-                description:
-                  'Comprehensive calendar and event management system.',
+                title: t('common.calendar'),
+                description: t('common.calendar-description'),
                 href: '/products/calendar',
                 icon: Calendar,
-                badge: 'Coming Soon',
+                badge: t('common.coming_soon'),
               },
               {
-                title: 'CRM',
-                description:
-                  'Build and maintain valuable customer relationships.',
+                title: t('common.crm'),
+                description: t('common.crm-description'),
                 href: '/products/crm',
                 icon: Users,
-                badge: 'Coming Soon',
+                badge: t('common.coming_soon'),
               },
               {
-                title: 'Documents',
-                description:
-                  'AI-powered document management and collaboration.',
+                title: t('common.documents'),
+                description: t('common.documents-description'),
                 href: '/products/documents',
                 icon: FileText,
-                badge: 'Coming Soon',
+                badge: t('common.coming_soon'),
               },
               {
-                title: 'Drive',
-                description: 'Secure cloud storage with seamless file sharing.',
+                title: t('common.drive'),
+                description: t('common.drive-description'),
                 href: '/products/drive',
                 icon: HardDrive,
-                badge: 'Coming Soon',
+                badge: t('common.coming_soon'),
               },
               {
-                title: 'Finance',
-                description:
-                  'Track finances and manage transactions efficiently.',
+                title: t('common.finance'),
+                description: t('common.finance-description'),
                 href: '/products/finance',
                 icon: Banknote,
-                badge: 'Coming Soon',
+                badge: t('common.coming_soon'),
               },
               {
-                title: 'Inventory',
-                description:
-                  'Streamline inventory control and stock management.',
+                title: t('common.inventory'),
+                description: t('common.inventory-description'),
                 href: '/products/inventory',
                 icon: Archive,
-                badge: 'Coming Soon',
+                badge: t('common.coming_soon'),
               },
               {
-                title: 'Tasks',
-                description: 'Organize and track projects with clarity.',
+                title: t('common.tasks'),
+                description: t('common.tasks-description'),
                 href: '/products/tasks',
                 icon: CircleCheck,
-                badge: 'Coming Soon',
+                badge: t('common.coming_soon'),
               },
               {
-                title: 'Workflows',
-                description: 'Automate and optimize your business processes.',
+                title: t('common.workflows'),
+                description: t('common.workflows-description'),
                 href: '/products/workflows',
                 icon: Workflow,
-                badge: 'Coming Soon',
+                badge: t('common.coming_soon'),
               },
             ].map((product) => (
               <motion.div
@@ -352,7 +341,7 @@ export default function MarketingPage() {
                       {product.description}
                     </p>
                     <div className="mt-4 flex items-center gap-2 group-hover:underline">
-                      Learn More
+                      {t('common.learn_more')}
                       <Rocket className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </div>
                   </Card>

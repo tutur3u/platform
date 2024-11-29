@@ -161,7 +161,55 @@
     "generate": "Generate",
     "enabled": "Enabled",
     "explanation": "Explanation",
-    "generate_explanation": "Generate explanation"
+    "generate_explanation": "Generate explanation",
+    "products": "Products",
+    "solutions": "Solutions",
+    "pricing": "Pricing",
+    "about": "About",
+    "contact": "Contact",
+    "ai-assistant": "AI Assistant",
+    "lms": "Learning Management System",
+    "calendar": "Calendar",
+    "documents": "Documents",
+    "drive": "Drive",
+    "crm": "Customer Relationship Management",
+    "inventory": "Inventory",
+    "finance": "Finance",
+    "mail": "Mail",
+    "tasks": "Tasks",
+    "workflows": "Workflows",
+    "education": "Education",
+    "restaurants": "Restaurants",
+    "pharmacies": "Pharmacies",
+    "agencies": "Agencies",
+    "realestate": "Real Estate",
+    "blog": "Blog",
+    "blog-description": "Read our latest articles and updates.",
+    "documentation-description": "Find detailed documentation and guides.",
+    "education-description": "Solutions tailored for educational institutions.",
+    "restaurants-description": "Manage your restaurant operations efficiently.",
+    "pharmacies-description": "Streamline pharmacy management and services.",
+    "realestate-description": "Optimize your real estate business operations.",
+    "meet-together-description": "Schedule meetings effortlessly across time zones and teams.",
+    "ai-assistant-description": "Leverage AI to automate tasks and enhance productivity.",
+    "lms-description": "Deliver and track educational content effectively.",
+    "calendar-description": "Comprehensive calendar and event management system.",
+    "documents-description": "AI-powered document management and collaboration.",
+    "drive-description": "Secure cloud storage with seamless file sharing.",
+    "crm-description": "Build and maintain valuable customer relationships.",
+    "inventory-description": "Streamline inventory control and stock management.",
+    "branding-description": "Get Tuturuuu's branding assets and guidelines.",
+    "github-description": "View our open-source projects on GitHub.",
+    "finance-description": "Track finances and manage transactions efficiently.",
+    "mail-description": "Powerful email and communication management.",
+    "tasks-description": "Organize and track projects with clarity.",
+    "workflows-description": "Automate and optimize your business processes.",
+    "scroll_to_explore": "Scroll to explore",
+    "features": "Features",
+    "learn_more": "Learn more",
+    "pricing_hook": "Simple, transparent pricing",
+    "usage_based_pricing": "Usage-Based Pricing",
+    "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits."
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -188,8 +236,8 @@
     "next-year": "Next year"
   },
   "home": {
-    "headline-p1": "Take control of your workflow,",
-    "headline-p2": "supercharged by AI",
+    "headline": "Your intelligent shortcut",
+    "subheadline": "Take control of workflows, supercharged by AI",
     "get-started": "Get Started",
     "features-lead": "What can you do with Tuturuuu?",
     "features-1-title": "Powered by AI",
@@ -573,6 +621,14 @@
     "is_public": "Public",
     "is_published": "Published",
     "modules": "Modules",
+    "created_at": "Created At"
+  },
+  "quiz-set-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "linked_modules": "Linked Modules",
+    "is_public": "Public",
+    "is_published": "Published",
     "created_at": "Created At"
   },
   "quiz-data-table": {
@@ -1678,7 +1734,8 @@
     "courses": "Courses",
     "materials": "Learning Materials",
     "quizzes": "Quizzes",
-    "flashcards": "Flashcards"
+    "flashcards": "Flashcards",
+    "quiz-sets": "Quiz Sets"
   },
   "ws-courses": {
     "plural": "Courses",
@@ -1759,5 +1816,37 @@
     "description": "View custom chatbots created by the community.",
     "create": "Create chatbot",
     "create_description": "Create a new chatbot"
+  },
+  "ws-quiz-sets": {
+    "plural": "Quiz Sets",
+    "singular": "Quiz Set",
+    "create": "Create quiz set",
+    "create_description": "Create a new quiz set",
+    "name": "Set name",
+    "edit": "Edit set",
+    "link-quizzes": "Link Quizzes"
+  },
+  "slogan": {
+    "title": "Ready to get started?",
+    "description": "Join the waitlist to be among the first to experience our intelligent business management platform when it launches.",
+    "join_waitlist": "Join waitlist"
+  },
+  "contact": {
+    "title": "Contact us",
+    "description": "Have questions or need assistance? We're here to help. Choose your preferred way to reach us.",
+    "get_in_touch": "Get in Touch",
+    "founder_contact": "Founder Contact",
+    "founder_description": "Founder & CEO",
+    "on_github": "on GitHub",
+    "send_us_a_message": "Send us a Message",
+    "form": {
+      "name_label": "Name",
+      "name_placeholder": "Your name",
+      "subject_label": "Subject",
+      "subject_placeholder": "How can we help?",
+      "message_label": "Message",
+      "message_placeholder": "Your message...",
+      "submit_button": "Send Message"
+    }
   }
 }
