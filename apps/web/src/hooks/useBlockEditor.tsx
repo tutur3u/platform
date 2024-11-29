@@ -53,27 +53,7 @@ export const useBlockEditor = ({
   const [collabState, setCollabState] = useState<WebSocketStatus>(
     provider ? WebSocketStatus.Connecting : WebSocketStatus.Disconnected
   );
-  // const [usernames, setUsernames] = useState<string[]>([]);
 
-  // useEffect(() => {
-  //   const fetchUsernames = async () => {
-  //     try {
-  //       const response = await fetch(`/api/v1/workspaces/${wsId}/Mention`);
-  //       const data = await response.json();
-  //       console.log(data, 'real data pls');
-  //       if (data.email) {
-  //         console.log(data.email, 'print out emails');
-  //         console.log(data.email.length, 'length ');
-  //         setUsernames(data.email);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching usernames:', error);
-  //     }
-  //   };
-  //   if (wsId) {
-  //     fetchUsernames();
-  //   }
-  // }, [wsId]);
   const editor = useEditor(
     {
       immediatelyRender: true,
@@ -190,7 +170,7 @@ export const useBlockEditor = ({
                     return handled === undefined ? false : handled;
                   }
 
-                  return false; // Default return value if nothing is handled
+                  return false;
                 },
 
                 onExit: (): void => {

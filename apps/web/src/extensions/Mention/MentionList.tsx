@@ -6,14 +6,14 @@ import React, {
   useState,
 } from 'react';
 
-// Define the type for your ref that expects a React.KeyboardEvent
+
 export interface MentionListRef {
   onKeyDown: (params: { event: ReactKeyboardEvent }) => boolean;
 }
 
 interface MentionListProps {
   items: string[]; // Array of items to be displayed
-  command: (payload: { id: string }) => void; // Command handler, it can be used to select an item
+  command: (payload: { id: string }) => void; 
 }
 
 const MentionList = forwardRef<MentionListRef, MentionListProps>(
@@ -28,12 +28,12 @@ const MentionList = forwardRef<MentionListRef, MentionListProps>(
       }
     };
 
-    // Handler for ArrowUp key
+
     const upHandler = () => {
       setSelectedIndex((selectedIndex + props.items.length - 1) % props.items.length);
     };
 
-    // Handler for ArrowDown key
+
     const downHandler = () => {
       setSelectedIndex((selectedIndex + 1) % props.items.length);
     };
@@ -48,10 +48,9 @@ const MentionList = forwardRef<MentionListRef, MentionListProps>(
       setSelectedIndex(0);
     }, [props.items]);
 
-    // Expose onKeyDown to parent component via ref
+   
     useImperativeHandle(ref, () => ({
       onKeyDown: ({ event }: { event: ReactKeyboardEvent<Element> }) => {
-        // Check for key events and call corresponding handlers
         if (event.key === 'ArrowUp') {
           upHandler();
           return true;
