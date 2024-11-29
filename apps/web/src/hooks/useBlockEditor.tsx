@@ -15,7 +15,7 @@ import { useEditor, useEditorState } from '@tiptap/react';
 import { ReactRenderer } from '@tiptap/react';
 import { SuggestionKeyDownProps } from '@tiptap/suggestion';
 import { useEffect, useState } from 'react';
-import tippy, { Instance as TippyInstance } from 'tippy.js';
+import tippy, { GetReferenceClientRect, Instance as TippyInstance } from 'tippy.js';
 import type { Doc as YDoc } from 'yjs';
 
 declare global {
@@ -144,7 +144,7 @@ export const useBlockEditor = ({
 
                   // Initialize the Tippy popup with proper settings
                   popup = tippy('body', {
-                    getReferenceClientRect: props.clientRect,
+                    getReferenceClientRect: props.clientRect as unknown as GetReferenceClientRect,
                     appendTo: document?.body,
                     content: component.element,
                     showOnCreate: true,
