@@ -2,6 +2,7 @@ import { userColors, userNames } from '../lib/constants';
 import type { EditorUser } from '@/components/components/BlockEditor/types';
 import { AiImage, AiWriter } from '@/extensions';
 import { Ai } from '@/extensions/Ai';
+import MentionList from '@/extensions/Mention/MentionList';
 import { ExtensionKit } from '@/extensions/extension-kit';
 import { randomElement } from '@/lib/utils/index';
 import { TiptapCollabProvider, WebSocketStatus } from '@hocuspocus/provider';
@@ -9,9 +10,11 @@ import type { AnyExtension, Editor } from '@tiptap/core';
 import { JSONContent } from '@tiptap/core';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
-import { useEditor, useEditorState } from '@tiptap/react';
-import { useEffect, useState } from 'react';
 import Mention from '@tiptap/extension-mention';
+import { useEditor, useEditorState } from '@tiptap/react';
+import { ReactRenderer } from '@tiptap/react';
+import { useEffect, useState } from 'react';
+import tippy from 'tippy.js';
 import type { Doc as YDoc } from 'yjs';
 
 declare global {
@@ -40,7 +43,27 @@ export const useBlockEditor = ({
   const [collabState, setCollabState] = useState<WebSocketStatus>(
     provider ? WebSocketStatus.Connecting : WebSocketStatus.Disconnected
   );
-  // console.log(wsId, "WSid in useBlock editor")
+  // const [usernames, setUsernames] = useState<string[]>([]);
+
+  // useEffect(() => {
+  //   const fetchUsernames = async () => {
+  //     try {
+  //       const response = await fetch(`/api/v1/workspaces/${wsId}/Mention`);
+  //       const data = await response.json();
+  //       console.log(data, 'real data pls');
+  //       if (data.email) {
+  //         console.log(data.email, 'print out emails');
+  //         console.log(data.email.length, 'length ');
+  //         setUsernames(data.email);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching usernames:', error);
+  //     }
+  //   };
+  //   if (wsId) {
+  //     fetchUsernames();
+  //   }
+  // }, [wsId]);
   const editor = useEditor(
     {
       immediatelyRender: true,
@@ -70,10 +93,102 @@ export const useBlockEditor = ({
           provider,
         }),
         Mention.configure({
-          HTMLAttributes:{
-            class: 'bg-purple-100 rounded-md text-purple-600 px-1 py-0.5 break-words',
+          HTMLAttributes: {
+            class:
+              'bg-purple-100 rounded-md text-purple-600 px-1 py-0.5 break-words',
           },
+          suggestion: {
+            items: async ({ query }) => {
+              // console.log(query, 'query')
+              // Filter the list of names based on the user's query
+              const response = await fetch(
+                `/api/v1/workspaces/${wsId}/Mention`
+              );
+              const data = await response.json();
+              console.log(data, 'data in item');
+              console.log(data.email, 'email in item');
 
+              if (data.email.length === 0) {
+                return [];
+              }
+              return data.email
+                .filter((item) =>
+                  item.toLowerCase().startsWith(query.toLowerCase())
+                ) // Filter dynamic data based on query
+                .slice(0, 5);
+            },
+
+            render: () => {
+              let component;
+              let popup;
+
+              return {
+                onStart: (props) => {
+                  // Prevent issues when there's no clientRect available
+                  if (!props.clientRect) {
+                    console.error('No clientRect available for mention popup');
+                    return;
+                  }
+
+                  // Render the mention list component
+                  component = new ReactRenderer(MentionList, {
+                    props,
+                    editor: props.editor,
+                  });
+
+                  // Initialize the Tippy popup with proper settings
+                  popup = tippy('body', {
+                    getReferenceClientRect: props.clientRect,
+                    appendTo: document.body,
+                    content: component.element,
+                    showOnCreate: true,
+                    interactive: true,
+                    trigger: 'manual',
+                    placement: 'bottom-start', // Place popup below the reference element
+                  });
+                },
+
+                // onUpdate will update the popup when the query changes or the editor updates
+                onUpdate: (props) => {
+                  if (!props.clientRect) {
+                    console.error('No clientRect on update');
+                    return;
+                  }
+
+                  // Update the mention component props when the editor state changes
+                  component.updateProps(props);
+
+                  // Update Tippy popup's position
+                  popup[0].setProps({
+                    getReferenceClientRect: props.clientRect,
+                  });
+                },
+
+                // onKeyDown will handle key events (e.g., Esc to close the popup)
+                onKeyDown: (props) => {
+                  // Close the popup if Escape key is pressed
+                  if (props.event.key === 'Escape') {
+                    popup[0].hide();
+                    return true; // Stop the event from propagating further
+                  }
+
+                  // Delegate keydown events to the MentionList component
+                  return component.ref?.onKeyDown(props);
+                },
+
+                // onExit will clean up when the popup is destroyed (e.g., when the editor is destroyed or the user exits)
+                onExit: () => {
+                  // Ensure proper cleanup of popup and component
+                  if (popup) {
+                    popup[0].destroy();
+                  }
+                  if (component) {
+                    component.destroy();
+                  }
+                },
+              };
+            },
+          },
         }),
         provider
           ? Collaboration.configure({
