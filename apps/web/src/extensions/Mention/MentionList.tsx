@@ -11,7 +11,7 @@ interface MentionListProps {
   command: (payload: { id: string }) => void;
 }
 
-interface MentionListRef {
+export interface MentionListRef {
   onKeyDown: (params: { event: KeyboardEvent }) => boolean;
 }
 

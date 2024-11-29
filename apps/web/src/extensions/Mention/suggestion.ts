@@ -1,10 +1,16 @@
 import { ReactRenderer } from '@tiptap/react'
-import tippy from 'tippy.js'
-import MentionList from './MentionList';
+import tippy, { Instance as TippyInstance } from 'tippy.js'
+import MentionList, { MentionListRef } from './MentionList'
+
+interface MentionPluginProps {
+  query: string
+  clientRect: DOMRect | null
+  editor: any // Type this more specifically based on your editor's instance
+  event: React.KeyboardEvent // Use React.KeyboardEvent instead of the native KeyboardEvent
+}
 
 export default {
-  items: ({ query }) => {
-    // Filter the list of names based on the user's query
+  items: ({ query }: { query: string }): string[] => {
     return [
       'Lea Thompson',
       'Cyndi Lauper',
@@ -33,78 +39,88 @@ export default {
       'Lisa Bonet',
     ]
       .filter(item => item.toLowerCase().startsWith(query.toLowerCase())) // Filtering by query
-      .slice(0, 5);
+      .slice(0, 5)
   },
 
   render: () => {
-    let component;
-    let popup;
+    let component: ReactRenderer | null = null
+    let popup: TippyInstance[] = []
 
     return {
-
-      onStart: (props) => {
+      onStart: (props: MentionPluginProps): void => {
         // Prevent issues when there's no clientRect available
         if (!props.clientRect) {
-          console.error('No clientRect available for mention popup');
-          return;
+          console.error('No clientRect available for mention popup')
+          return
         }
 
         // Render the mention list component
         component = new ReactRenderer(MentionList, {
           props,
           editor: props.editor,
-        });
+        })
 
         // Initialize the Tippy popup with proper settings
         popup = tippy('body', {
-          getReferenceClientRect: props.clientRect,
+          getReferenceClientRect: () => {
+            // Return clientRect via a function to satisfy tippy's type requirement
+            return props.clientRect as DOMRect
+          },
           appendTo: document.body,
           content: component.element,
           showOnCreate: true,
           interactive: true,
           trigger: 'manual',
           placement: 'bottom-start', // Place popup below the reference element
-        });
+        })
       },
 
       // onUpdate will update the popup when the query changes or the editor updates
-      onUpdate: (props) => {
+      onUpdate: (props: MentionPluginProps): void => {
         if (!props.clientRect) {
-          console.error('No clientRect on update');
-          return;
+          console.error('No clientRect on update')
+          return
         }
 
         // Update the mention component props when the editor state changes
-        component.updateProps(props);
+        component?.updateProps(props)
 
         // Update Tippy popup's position
-        popup[0].setProps({
-          getReferenceClientRect: props.clientRect,
-        });
+        if (popup[0]) {
+          popup[0].setProps({
+            getReferenceClientRect: () => {
+              return props.clientRect as DOMRect
+            },
+          })
+        }
       },
 
       // onKeyDown will handle key events (e.g., Esc to close the popup)
-      onKeyDown: (props) => {
+      onKeyDown: (props: MentionPluginProps): boolean | undefined => {
         // Close the popup if Escape key is pressed
         if (props.event.key === 'Escape') {
-          popup[0].hide();
-          return true; // Stop the event from propagating further
+          popup[0]?.hide()
+          return true // Stop the event from propagating further
         }
 
-        // Delegate keydown events to the MentionList component
-        return component.ref?.onKeyDown(props);
+        // Ensure that component.ref is typed as MentionListRef so TypeScript can recognize onKeyDown
+        if (component?.ref) {
+          return (component.ref as MentionListRef).onKeyDown(props)
+        }
+
+        return undefined
       },
 
       // onExit will clean up when the popup is destroyed (e.g., when the editor is destroyed or the user exits)
-      onExit: () => {
+      onExit: (): void => {
         // Ensure proper cleanup of popup and component
-        if (popup) {
-          popup[0].destroy();
+        if (popup[0]) {
+          popup[0].destroy()
         }
         if (component) {
-          component.destroy();
+          component.destroy()
         }
       },
-    };
+    }
   },
 }
