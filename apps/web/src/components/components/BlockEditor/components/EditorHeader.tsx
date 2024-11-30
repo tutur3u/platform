@@ -16,7 +16,6 @@ export type EditorHeaderProps = {
 
 export const EditorHeader = ({
   editor,
-  collabState,
   users,
   isSidebarOpen,
   toggleSidebar,
@@ -49,7 +48,6 @@ export const EditorHeader = ({
       <EditorInfo
         characters={characters}
         words={words}
-        collabState={collabState}
         users={users}
       />
     </div>
