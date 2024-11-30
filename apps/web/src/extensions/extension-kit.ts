@@ -47,9 +47,9 @@ import {
 import { ImageUpload } from './ImageUpload';
 import { TableOfContentsNode } from './TableOfContentsNode';
 import { API } from '@/lib/api';
+// import Mention from '@tiptap/extension-mention'
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { isChangeOrigin } from '@tiptap/extension-collaboration';
-
 interface ExtensionKitProps {
   provider?: HocuspocusProvider | null;
 }
@@ -145,6 +145,12 @@ export const ExtensionKit = ({ provider }: ExtensionKitProps) => [
   Superscript,
   Table,
   TableCell,
+  // Mention.configure({
+  //   HTMLAttributes: {
+  //     class: 'bg-purple-100 rounded-md text-purple-600 px-1 py-0.5 break-words',
+  //   },
+  //   suggestion,
+  // }),
   TableHeader,
   TableRow,
   Typography,

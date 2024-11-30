@@ -2,6 +2,7 @@ import { userColors, userNames } from '../lib/constants';
 import type { EditorUser } from '@/components/components/BlockEditor/types';
 import { AiImage, AiWriter } from '@/extensions';
 import { Ai } from '@/extensions/Ai';
+import MentionList, { MentionListRef } from '@/extensions/Mention/MentionList';
 import { ExtensionKit } from '@/extensions/extension-kit';
 import { randomElement } from '@/lib/utils/index';
 import { TiptapCollabProvider, WebSocketStatus } from '@hocuspocus/provider';
@@ -9,16 +10,29 @@ import type { AnyExtension, Editor } from '@tiptap/core';
 import { JSONContent } from '@tiptap/core';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import Mention from '@tiptap/extension-mention';
 import { useEditor, useEditorState } from '@tiptap/react';
+import { ReactRenderer } from '@tiptap/react';
+import { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion';
 import { useEffect, useState } from 'react';
+import tippy, {
+  GetReferenceClientRect,
+  Instance as TippyInstance,
+} from 'tippy.js';
 import type { Doc as YDoc } from 'yjs';
+import { KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 declare global {
   interface Window {
     editor: Editor | null;
   }
 }
-
+// interface MentionPluginProps {
+//   query: string;
+//   clientRect: DOMRect | null;
+//   editor: any;
+//   event: React.KeyboardEvent;
+// }
 export const useBlockEditor = ({
   aiToken,
   ydoc,
@@ -26,6 +40,7 @@ export const useBlockEditor = ({
   document,
   userId,
   userName = 'Maxi',
+  wsId,
 }: {
   aiToken?: string;
   ydoc: YDoc;
@@ -33,6 +48,7 @@ export const useBlockEditor = ({
   provider?: TiptapCollabProvider | null | undefined;
   userId?: string;
   userName?: string;
+  wsId?: string | undefined | null;
 }) => {
   const [collabState, setCollabState] = useState<WebSocketStatus>(
     provider ? WebSocketStatus.Connecting : WebSocketStatus.Disconnected
@@ -65,6 +81,109 @@ export const useBlockEditor = ({
       extensions: [
         ...ExtensionKit({
           provider,
+        }),
+        Mention.configure({
+          HTMLAttributes: {
+            class:
+              'bg-purple-100 rounded-md text-purple-600 px-1 py-0.5 break-words',
+          },
+          suggestion: {
+            items: async ({ query }) => {
+              // console.log(query, 'query')
+              // Filter the list of names based on the user's query
+              const response = await fetch(
+                `/api/v1/workspaces/${wsId}/Mention`
+              );
+              const data = await response.json();
+              console.log(data, 'data in item');
+              console.log(data.email, 'email in item');
+
+              if (data.email.length === 0) {
+                return [];
+              }
+              return data.email
+                .filter((item: any) =>
+                  item.toLowerCase().startsWith(query.toLowerCase())
+                ) // Filter dynamic data based on query
+                .slice(0, 5);
+            },
+
+            render: () => {
+              let component: ReactRenderer | null = null;
+              let popup: TippyInstance[] = [];
+
+              return {
+                onStart: (props: SuggestionProps<any, any>): void => {
+                  if (!props.clientRect) {
+                    console.error('No clientRect available for mention popup');
+                    return;
+                  }
+
+                  component = new ReactRenderer(MentionList, {
+                    props,
+                    editor: props.editor,
+                  });
+
+                  popup = tippy('body', {
+                    getReferenceClientRect:
+                      props.clientRect as unknown as GetReferenceClientRect,
+                    appendTo: document?.body,
+                    content: component.element,
+                    showOnCreate: true,
+                    interactive: true,
+                    trigger: 'manual',
+                    placement: 'bottom-start',
+                  });
+                },
+
+                onUpdate: (props: SuggestionProps<any, any>): void => {
+                  if (!props.clientRect) {
+                    console.error('No clientRect on update');
+                    return;
+                  }
+
+                  component?.updateProps(props);
+
+                  if (popup[0]) {
+                    popup[0].setProps({
+                      getReferenceClientRect: () => {
+                        return props.clientRect as unknown as DOMRect;
+                      },
+                    });
+                  }
+                },
+
+                onKeyDown: (props: SuggestionKeyDownProps): boolean => {
+                  const event: ReactKeyboardEvent = props.event as any;
+
+                  if (event.key === 'Escape') {
+                    popup[0]?.hide();
+                    return true; // Stop propagation
+                  }
+
+                  if (component?.ref) {
+                    const handled = (component.ref as MentionListRef).onKeyDown(
+                      {
+                        event,
+                      }
+                    );
+                    return handled === undefined ? false : handled;
+                  }
+
+                  return false;
+                },
+
+                onExit: (): void => {
+                  if (popup[0]) {
+                    popup[0].destroy();
+                  }
+                  if (component) {
+                    component.destroy();
+                  }
+                },
+              };
+            },
+          },
         }),
         provider
           ? Collaboration.configure({
