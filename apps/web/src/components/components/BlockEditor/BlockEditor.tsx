@@ -3,6 +3,8 @@ import { LinkMenu } from '../menus';
 import { ContentItemMenu } from '../menus/ContentItemMenu';
 import { TextMenu } from '../menus/TextMenu';
 import { EditorHeader } from './components/EditorHeader';
+import { Threads } from '@/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/Threads';
+import { Toolbar } from '@/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/Toolbar';
 // import ImageBlockMenu from '@/extensions/ImageBlock/components/ImageBlockMenu';
 import { ColumnsMenu } from '@/extensions/MultiColumn/menus';
 import { TableColumnMenu, TableRowMenu } from '@/extensions/Table/menus';
@@ -121,6 +123,8 @@ export const BlockEditor = ({
           children={undefined}
           trigger={undefined}
         />
+        <Toolbar editor={editor} />
+        <Threads editor={editor} />
       </div>
     </div>
   );

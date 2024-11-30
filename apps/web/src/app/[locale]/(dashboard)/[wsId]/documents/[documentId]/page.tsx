@@ -1,11 +1,12 @@
 'use client';
 
 import DocumentShareDialog from '../document-share-dialog';
+// import { DocumentEditor } from './editor';
+import { Room } from './Room';
 import { BlockEditor } from '@/components/components/BlockEditor';
 import { cn } from '@/lib/utils';
 import { WorkspaceDocument } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
-// import { DocumentEditor } from './editor';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
 import {
   AlertDialog,
@@ -206,20 +207,18 @@ export default function DocumentDetailsPage({ params }: Props) {
         </Tooltip>
       </div>
 
-      {/* <DocumentEditor
-        wsId={wsId}
-        docId={documentId}
-        content={document.content as JSONContent}
-      /> */}
-      <BlockEditor
-        aiToken={aiToken ?? undefined}
-        hasCollab={hasCollab}
-        ydoc={ydoc}
-        wsId={wsId}
-        docId={documentId}
-        document={document.content as JSONContent}
-        provider={provider}
-      />
+      <Room>
+        <BlockEditor
+          aiToken={aiToken ?? undefined}
+          hasCollab={hasCollab}
+          ydoc={ydoc}
+          wsId={wsId}
+          docId={documentId}
+          document={document.content as JSONContent}
+          provider={provider}
+        />
+      </Room>
+
       <DocumentShareDialog
         isOpen={isShareDialogOpen}
         onClose={() => setIsShareDialogOpen(false)}
