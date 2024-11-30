@@ -10,7 +10,7 @@ export default function NavbarPadding({
   onlyOnMobile = false,
   children,
 }: Props) {
-  const navbarHeight = 66;
+  const navbarHeight = 57;
 
   return (
     <>

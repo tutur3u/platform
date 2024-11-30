@@ -17,6 +17,7 @@ import {
   Users,
   Wand2,
 } from 'lucide-react';
+import Link from 'next/link';
 
 const features = [
   {
@@ -108,7 +109,7 @@ export default function DocumentsProductPage() {
             Join Waitlist
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <a href="/contact">Contact Sales</a>
+            <Link href="/contact">Contact Sales</Link>
           </Button>
         </div>
       </div>

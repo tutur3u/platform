@@ -145,6 +145,23 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         }
       />
       <CourseSection
+        href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/quiz-sets`}
+        title={t('ws-quiz-sets.plural')}
+        icon={<ListTodo className="h-5 w-5" />}
+        content={
+          quizzes && quizzes.length > 0 ? (
+            <div className="grid gap-4 pt-2 md:grid-cols-2">
+              <ClientQuizzes
+                wsId={wsId}
+                moduleId={moduleId}
+                quizzes={quizzes}
+                previewMode
+              />
+            </div>
+          ) : undefined
+        }
+      />
+      <CourseSection
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/flashcards`}
         title={t('ws-flashcards.plural')}
         icon={<SwatchBook className="h-5 w-5" />}
