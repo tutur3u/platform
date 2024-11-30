@@ -35,11 +35,11 @@
     "@repo/typescript-config": "workspace:*",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "eslint": "^9.15.0",
-    "prettier": "^3.4.1",
+    "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.9",
-    "turbo": "^2.3.3",
+    "turbo": "^2.3.1",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.6"
+    "vitest": "^2.1.5"
   },
   "engines": {
     "node": ">=20"

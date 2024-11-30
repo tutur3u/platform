@@ -14,7 +14,6 @@ import {
 import { Input } from '@repo/ui/components/ui/input';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { Github, Mail } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -76,8 +75,6 @@ const contactMethods = [
 ];
 
 export default function ContactPage() {
-  const t = useTranslations();
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -96,16 +93,17 @@ export default function ContactPage() {
   return (
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       <div className="mb-16 text-center">
-        <h1 className="mb-4 text-4xl font-bold">{t('contact.title')}</h1>
+        <h1 className="mb-4 text-4xl font-bold">Contact Us</h1>
         <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-          {t('contact.description')}
+          Have questions or need assistance? We're here to help. Choose your
+          preferred way to reach us.
         </p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Contact Methods */}
         <div className="space-y-8">
-          <h2 className="text-2xl font-bold">{t('contact.get_in_touch')}</h2>
+          <h2 className="text-2xl font-bold">Get in Touch</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {contactMethods.map((method) => (
               <Card key={method.title} className="p-4">
@@ -131,16 +129,15 @@ export default function ContactPage() {
             ))}
           </div>
 
+          {/* Replace the business hours section with founder contact */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold">
-              {t('contact.founder_contact')}
-            </h2>
+            <h2 className="text-2xl font-bold">Founder Contact</h2>
             <Card className="p-4">
               <div className="flex flex-col gap-4">
                 <div>
                   <h3 className="font-semibold">Võ Hoàng Phúc</h3>
                   <p className="text-muted-foreground text-sm">
-                    {t('contact.founder_description')}
+                    For partnership and opportunities
                   </p>
                 </div>
 
@@ -157,7 +154,7 @@ export default function ContactPage() {
                     className="text-muted-foreground hover:text-primary flex items-center gap-2 text-sm"
                   >
                     <Github className="h-4 w-4" />
-                    @vhpx {t('contact.on_github')}
+                    @vhpx on GitHub
                   </a>
                 </div>
               </div>
@@ -167,9 +164,7 @@ export default function ContactPage() {
 
         {/* Contact Form */}
         <div>
-          <h2 className="mb-8 text-2xl font-bold">
-            {t('contact.send_us_a_message')}
-          </h2>
+          <h2 className="mb-8 text-2xl font-bold">Send us a Message</h2>
           <Card className="p-6">
             <Form {...form}>
               <form
@@ -181,12 +176,9 @@ export default function ContactPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('contact.form.name_label')}</FormLabel>
+                      <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder={t('contact.form.name_placeholder')}
-                          {...field}
-                        />
+                        <Input placeholder="Your name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -202,7 +194,7 @@ export default function ContactPage() {
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="username@example.com"
+                          placeholder="your@email.com"
                           {...field}
                         />
                       </FormControl>
@@ -216,12 +208,9 @@ export default function ContactPage() {
                   name="subject"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('contact.form.subject_label')}</FormLabel>
+                      <FormLabel>Subject</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder={t('contact.form.subject_placeholder')}
-                          {...field}
-                        />
+                        <Input placeholder="How can we help?" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -233,10 +222,10 @@ export default function ContactPage() {
                   name="message"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('contact.form.message_label')}</FormLabel>
+                      <FormLabel>Message</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder={t('contact.form.message_placeholder')}
+                          placeholder="Your message..."
                           className="min-h-[120px]"
                           {...field}
                         />
@@ -247,7 +236,7 @@ export default function ContactPage() {
                 />
 
                 <Button type="submit" className="w-full" disabled>
-                  {t('contact.form.submit_button')}
+                  Send Message
                 </Button>
               </form>
             </Form>

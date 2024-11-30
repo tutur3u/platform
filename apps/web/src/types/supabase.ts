@@ -398,39 +398,6 @@ export type Database = {
           },
         ];
       };
-      course_module_quiz_sets: {
-        Row: {
-          created_at: string;
-          module_id: string;
-          set_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          module_id: string;
-          set_id: string;
-        };
-        Update: {
-          created_at?: string;
-          module_id?: string;
-          set_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'course_module_quiz_sets_module_id_fkey';
-            columns: ['module_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_course_modules';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'course_module_quiz_sets_set_id_fkey';
-            columns: ['set_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_quiz_sets';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       course_module_quizzes: {
         Row: {
           created_at: string;
@@ -1917,39 +1884,6 @@ export type Database = {
             columns: ['quiz_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_quizzes';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      quiz_set_quizzes: {
-        Row: {
-          created_at: string;
-          quiz_id: string;
-          set_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          quiz_id: string;
-          set_id: string;
-        };
-        Update: {
-          created_at?: string;
-          quiz_id?: string;
-          set_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'quiz_set_quizzes_quiz_id_fkey';
-            columns: ['quiz_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_quizzes';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'quiz_set_quizzes_set_id_fkey';
-            columns: ['set_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_quiz_sets';
             referencedColumns: ['id'];
           },
         ];
@@ -3657,35 +3591,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_promotions_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      workspace_quiz_sets: {
-        Row: {
-          created_at: string;
-          id: string;
-          name: string;
-          ws_id: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          id?: string;
-          name?: string;
-          ws_id?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          name?: string;
-          ws_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_quiz_sets_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';

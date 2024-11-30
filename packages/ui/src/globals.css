@@ -34,24 +34,13 @@
     --input: 240 80% 93%;
     --ring: 240 10% 3.9%;
 
-    --lime: 90 40% 30%;
-    --purple: 270 40% 30%;
-    --blue: 220 40% 30%;
-    --sky: 200 40% 30%;
-    --green: 140 40% 30%;
-    --yellow: 40 40% 30%;
-    --orange: 25 40% 30%;
-    --red: 0 40% 30%;
-
-    --light-lime: 90 80% 60%;
-    --light-purple: 240 70% 60%;
-    --light-pink: 330 70% 60%;
-    --light-blue: 220 80% 60%;
-    --light-sky: 200 80% 60%;
-    --light-green: 140 80% 60%;
-    --light-yellow: 40 80% 60%;
-    --light-orange: 25 80% 60%;
-    --light-red: 0 70% 80%;
+    --purple: 270 40% 60%;
+    --blue: 220 40% 60%;
+    --sky: 200 40% 60%;
+    --green: 140 40% 60%;
+    --yellow: 40 40% 60%;
+    --orange: 25 40% 60%;
+    --red: 0 40% 60%;
 
     --radius: 0.5rem;
 
@@ -293,7 +282,6 @@
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 70%;
 
-    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -301,16 +289,6 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
-
-    --light-lime: 90 60% 75%;
-    --light-purple: 270 60% 75%;
-    --light-pink: 330 60% 75%;
-    --light-blue: 220 60% 75%;
-    --light-sky: 200 70% 80%;
-    --light-green: 160 60% 75%;
-    --light-yellow: 40 60% 75%;
-    --light-orange: 25 60% 75%;
-    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -358,7 +336,6 @@
     --input: 344 20% 20%;
     --ring: 344 20% 70%;
 
-    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -366,16 +343,6 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
-
-    --light-lime: 90 60% 75%;
-    --light-purple: 270 60% 75%;
-    --light-pink: 330 60% 75%;
-    --light-blue: 220 60% 75%;
-    --light-sky: 200 70% 80%;
-    --light-green: 160 60% 75%;
-    --light-yellow: 40 60% 75%;
-    --light-orange: 25 60% 75%;
-    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -415,7 +382,6 @@
     --input: 270 20% 20%;
     --ring: 270 20% 70%;
 
-    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -423,16 +389,6 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
-
-    --light-lime: 90 60% 75%;
-    --light-purple: 270 60% 75%;
-    --light-pink: 330 60% 75%;
-    --light-blue: 220 60% 75%;
-    --light-sky: 200 70% 80%;
-    --light-green: 160 60% 75%;
-    --light-yellow: 40 60% 75%;
-    --light-orange: 25 60% 75%;
-    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -472,7 +428,6 @@
     --input: 40 20% 20%;
     --ring: 40 20% 70%;
 
-    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -480,16 +435,6 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
-
-    --light-lime: 90 60% 75%;
-    --light-purple: 270 60% 75%;
-    --light-pink: 330 60% 75%;
-    --light-blue: 220 60% 75%;
-    --light-sky: 200 70% 80%;
-    --light-green: 160 60% 75%;
-    --light-yellow: 40 60% 75%;
-    --light-orange: 25 60% 75%;
-    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -529,7 +474,6 @@
     --input: 25 20% 20%;
     --ring: 25 20% 70%;
 
-    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -537,16 +481,6 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
-
-    --light-lime: 90 60% 75%;
-    --light-purple: 270 60% 75%;
-    --light-pink: 330 60% 75%;
-    --light-blue: 220 60% 75%;
-    --light-sky: 200 70% 80%;
-    --light-green: 160 60% 75%;
-    --light-yellow: 40 60% 75%;
-    --light-orange: 25 60% 75%;
-    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -586,7 +520,6 @@
     --input: 140 20% 20%;
     --ring: 140 20% 70%;
 
-    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -594,16 +527,6 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
-
-    --light-lime: 90 60% 75%;
-    --light-purple: 270 60% 75%;
-    --light-pink: 330 60% 75%;
-    --light-blue: 220 60% 75%;
-    --light-sky: 200 70% 80%;
-    --light-green: 160 60% 75%;
-    --light-yellow: 40 60% 75%;
-    --light-orange: 25 60% 75%;
-    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -643,7 +566,6 @@
     --input: 220 20% 20%;
     --ring: 220 20% 70%;
 
-    --lime: 90 50% 70%;
     --purple: 270 50% 70%;
     --blue: 220 50% 70%;
     --sky: 200 70% 80%;
@@ -651,16 +573,6 @@
     --yellow: 40 50% 70%;
     --orange: 25 50% 70%;
     --red: 0 50% 70%;
-
-    --light-lime: 90 60% 75%;
-    --light-purple: 270 60% 75%;
-    --light-pink: 330 60% 75%;
-    --light-blue: 220 60% 75%;
-    --light-sky: 200 70% 80%;
-    --light-green: 160 60% 75%;
-    --light-yellow: 40 60% 75%;
-    --light-orange: 25 60% 75%;
-    --light-red: 0 60% 75%;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;

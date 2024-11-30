@@ -11,7 +11,6 @@ import {
   Goal,
   ListTodo,
   Paperclip,
-  SquareCheck,
   SwatchBook,
   Youtube,
 } from 'lucide-react';
@@ -40,7 +39,6 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   });
 
   const flashcards = await getFlashcards(moduleId);
-  const quizSets = await getQuizSets(moduleId);
   const quizzes = await getQuizzes(moduleId);
 
   return (
@@ -49,7 +47,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
         title={
           <>
             <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="bg-dynamic-purple/10 border-dynamic-purple/20 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
+              <div className="bg-dynamic-purple/20 border-dynamic-purple/20 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
                 <Box className="h-6 w-6" />
                 {t('ws-course-modules.singular')}
               </div>
@@ -94,15 +92,9 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                 className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20"
               />
               <LinkButton
-                href={`${commonHref}/quiz-sets`}
-                title={`${t('ws-quiz-sets.plural')} (${quizSets || 0})`}
-                icon={<ListTodo className="h-5 w-5" />}
-                className="border-dynamic-lime/20 bg-dynamic-lime/10 text-dynamic-lime hover:bg-dynamic-lime/20"
-              />
-              <LinkButton
                 href={`${commonHref}/quizzes`}
                 title={`${t('ws-quizzes.plural')} (${quizzes || 0})`}
-                icon={<SquareCheck className="h-5 w-5" />}
+                icon={<ListTodo className="h-5 w-5" />}
                 className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
               />
               <LinkButton
@@ -160,18 +152,6 @@ async function getQuizzes(moduleId: string) {
 
   const { count, error } = await supabase
     .from('course_module_quizzes')
-    .select('*', { count: 'exact', head: true })
-    .eq('module_id', moduleId);
-  if (error) throw error;
-
-  return count;
-}
-
-async function getQuizSets(moduleId: string) {
-  const supabase = await createClient();
-
-  const { count, error } = await supabase
-    .from('course_module_quiz_sets')
     .select('*', { count: 'exact', head: true })
     .eq('module_id', moduleId);
   if (error) throw error;

@@ -1,5 +1,5 @@
-import Navbar from '../navbar';
-import NavbarPadding from '../navbar-padding';
+import Navbar from '../../navbar';
+import NavbarPadding from '../../navbar-padding';
 import Footer from '@/components/layouts/Footer';
 import React from 'react';
 
@@ -14,9 +14,9 @@ export default async function Layout({ children }: LayoutProps) {
       <NavbarPadding>
         <div
           id="main-content"
-          className="flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto"
+          className="h-screen max-h-screen min-h-screen overflow-y-auto"
         >
-          <div className="flex-none">{children}</div>
+          {children}
           <Footer />
         </div>
       </NavbarPadding>

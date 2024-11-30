@@ -1,4 +1,4 @@
-import timezones from '../../../../data/timezones.json';
+import timezones from '../../../../../data/timezones.json';
 import { Timezone } from '@/types/primitives/Timezone';
 import {
   Select,

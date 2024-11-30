@@ -17,7 +17,6 @@ import {
   Smartphone,
   Users,
 } from 'lucide-react';
-import Link from 'next/link';
 
 const features = [
   {
@@ -107,7 +106,7 @@ export default function DriveProductPage() {
             Join Waitlist
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <Link href="/contact">Contact Sales</Link>
+            <a href="/contact">Contact Sales</a>
           </Button>
         </div>
       </div>

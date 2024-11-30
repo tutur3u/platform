@@ -36,10 +36,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/education/courses`,
     },
     {
-      title: t('workspace-education-tabs.quiz-sets'),
-      href: `/${wsId}/education/quiz-sets`,
-    },
-    {
       title: t('workspace-education-tabs.quizzes'),
       href: `/${wsId}/education/quizzes`,
     },
