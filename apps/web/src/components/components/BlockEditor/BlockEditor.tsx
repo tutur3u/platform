@@ -54,7 +54,6 @@ export const BlockEditor = ({
     const saveContentToDatabase = async () => {
       if (editor && docId) {
         const content = editor.getJSON();
-        console.log(content, 'heloooo');
         try {
           const { error } = await supabase
             .from('workspace_documents')

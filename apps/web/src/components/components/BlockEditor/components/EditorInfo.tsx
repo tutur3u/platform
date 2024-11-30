@@ -1,19 +1,36 @@
 import Tooltip from '../../ui/Tooltip';
 import { EditorUser } from '../types';
 import { cn } from '@/lib/utils';
-import { getConnectionText } from '@/lib/utils/index';
-import { WebSocketStatus } from '@hocuspocus/provider';
+import { useStatus } from '@liveblocks/react/suspense';
 import { memo } from 'react';
 
 export type EditorInfoProps = {
   characters: number;
   words: number;
-  collabState: WebSocketStatus;
   users: EditorUser[];
 };
 
 export const EditorInfo = memo(
-  ({ characters, collabState, users, words }: EditorInfoProps) => {
+  ({ characters, users, words }: EditorInfoProps) => {
+    const status = useStatus(); // Get the current connection status from Liveblocks
+    console.log(status, 'status'); // Log the status for debugging
+
+    // Determine the connection state text based on `status`
+    const connectionText = 
+      status === 'connected' 
+        ? 'Connected' 
+        : status === 'connecting' 
+        ? 'Connecting...' 
+        : 'Disconnected';
+
+    // Determine the color of the connection indicator based on `status`
+    const statusColor = 
+      status === 'connected'
+        ? 'bg-green-500 dark:bg-green-400'
+        : status === 'connecting'
+        ? 'bg-yellow-500 dark:bg-yellow-400'
+        : 'bg-red-500 dark:bg-red-400';
+
     return (
       <div className="flex items-center">
         <div className="mr-4 flex flex-col justify-center border-r border-neutral-200 pr-4 text-right dark:border-neutral-800">
@@ -25,28 +42,22 @@ export const EditorInfo = memo(
           </div>
         </div>
         <div className="mr-2 flex items-center gap-2">
-          <div
-            className={cn('h-2 w-2 rounded-full', {
-              'bg-yellow-500 dark:bg-yellow-400': collabState === 'connecting',
-              'bg-green-500 dark:bg-green-400': collabState === 'connected',
-              'bg-red-500 dark:bg-red-400': collabState === 'disconnected',
-            })}
-          />
+          {/* Connection Status Indicator */}
+          <div className={cn('h-2 w-2 rounded-full', statusColor)} />
           <span className="max-w-[4rem] text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-            {getConnectionText(collabState)}
+            {connectionText}
           </span>
         </div>
-        {collabState === 'connected' && (
+        {status === 'connected' && (
           <div className="flex flex-row items-center">
             <div className="relative ml-3 flex flex-row items-center">
+              {/* Display Users */}
               {users.slice(0, 3).map((user: EditorUser) => (
                 <div key={user.clientId} className="-ml-3">
                   <Tooltip title={user.name}>
                     <img
                       className="h-8 w-8 rounded-full border border-white dark:border-black"
-                      src={`https://api.dicebear.com/7.x/notionists-neutral/svg?seed=${
-                        user.name
-                      }&backgroundColor=${user.color.replace('#', '')}`}
+                      src={`https://api.dicebear.com/7.x/notionists-neutral/svg?seed=${user.name}&backgroundColor=${user.color.replace('#', '')}`}
                       alt="avatar"
                     />
                   </Tooltip>

@@ -2,7 +2,7 @@ import { Icon } from '../../ui/Icon';
 import { Toolbar } from '../../ui/Toolbar';
 import { EditorUser } from '../types';
 import { EditorInfo } from './EditorInfo';
-import { WebSocketStatus } from '@hocuspocus/provider';
+// import { WebSocketStatus } from '@hocuspocus/provider';
 import { Editor } from '@tiptap/core';
 import { useEditorState } from '@tiptap/react';
 
@@ -10,7 +10,7 @@ export type EditorHeaderProps = {
   isSidebarOpen?: boolean;
   toggleSidebar?: () => void;
   editor: Editor;
-  collabState: WebSocketStatus;
+  collabState: string;
   users: EditorUser[];
 };
 
