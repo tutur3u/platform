@@ -62,7 +62,7 @@
     "@repo/ui": "workspace:*",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "2.46.2",
-    "@tabler/icons-react": "^3.23.0",
+    "@tabler/icons-react": "^3.24.0",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-table": "^8.20.5",
     "@tippyjs/react": "^4.2.6",
