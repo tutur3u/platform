@@ -60,10 +60,10 @@ export default function UserNavClient({
         <DropdownMenuTrigger asChild>
           <button
             className={cn(
-              'flex h-10 w-10 gap-2 rounded-md p-1 text-start transition',
+              'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
               hideMetadata
                 ? 'items-center justify-center'
-                : 'hover:bg-foreground/10 bg-foreground/5 items-center justify-start md:bg-transparent'
+                : 'hover:bg-foreground/5 items-center justify-start'
             )}
           >
             <Avatar className="relative cursor-pointer overflow-visible font-semibold">

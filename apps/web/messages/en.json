@@ -209,7 +209,8 @@
     "learn_more": "Learn more",
     "pricing_hook": "Simple, transparent pricing",
     "usage_based_pricing": "Usage-Based Pricing",
-    "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits."
+    "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits.",
+    "faq": "Frequently Asked Questions"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1847,6 +1848,93 @@
       "message_label": "Message",
       "message_placeholder": "Your message...",
       "submit_button": "Send Message"
+    }
+  },
+  "marketing": {
+    "solutions": {
+      "education": {
+        "education_solutions": "Education Solutions",
+        "title": "Transform Education with AI",
+        "description": "Empower educators and students with intelligent tools for personalized learning, seamless collaboration, and enhanced educational outcomes.",
+        "trusted_section_title": "Trusted by Educational Institutions",
+        "trusted_section_description": "Our platform is designed to meet the highest standards of security and privacy, ensuring a safe learning environment for students of all ages.",
+        "features_title": "Powerful Educational Tools",
+        "features": {
+          "smart_learning_management": "Smart Learning Management",
+          "smart_learning_management_desc": "AI-powered LMS that adapts to each student's learning style and pace.",
+          "interactive_classrooms": "Interactive Classrooms",
+          "interactive_classrooms_desc": "Engage students with real-time collaboration and virtual classroom tools.",
+          "progress_tracking": "Progress Tracking",
+          "progress_tracking_desc": "Comprehensive analytics to monitor student performance and engagement.",
+          "course_creation": "Course Creation",
+          "course_creation_desc": "Easy-to-use tools for creating and managing educational content.",
+          "virtual_classrooms": "Virtual Classrooms",
+          "virtual_classrooms_desc": "Seamless video conferencing integration for remote learning.",
+          "ai assessment": "AI Assessment",
+          "ai assessment_desc": "Automated grading and personalized feedback powered by AI."
+        },
+        "use_cases_title": "Solutions For Every Level",
+        "use_cases": {
+          "K_12_education": "K-12 Education",
+          "K_12_education_desc": "Comprehensive tools for primary and secondary education management.",
+          "K_12_education_item1": "Interactive lessons",
+          "K_12_education_item2": "Parent communication",
+          "K_12_education_item3": "Homework management",
+          "K_12_education_item4": "Progress reports",
+          "higher_education": "Higher Education",
+          "higher_education_desc": "Advanced features for universities and colleges.",
+          "higher_education_item1": "Course management",
+          "higher_education_item2": "Research collaboration",
+          "higher_education_item3": "Student analytics",
+          "higher_education_item4": "Resource sharing",
+          "professional_training": "Professional Training",
+          "professional_training_desc": "Corporate training and professional development solutions.",
+          "professional_training_item1": "Skill assessments",
+          "professional_training_item2": "Certification programs",
+          "professional_training_item3": "Employee onboarding",
+          "professional_training_item4": "Performance tracking"
+        },
+        "bento_grid_title": "Learning Excellence",
+        "bento_grid_subtitle": "Comprehensive Library",
+        "bento_grid_description": "Access thousands of curated educational resources, textbooks, and multimedia content.",
+        "bento_grid_features": {
+          "global_reach": "Global Reach",
+          "global_reach_desc": "Connect with learners worldwide",
+          "gamification": "Gamification",
+          "gamification_desc": "Earn badges and certificates",
+          "smart_network": "Smart Network",
+          "smart_network_desc": "AI-powered learning paths",
+          "custom_dashboard": "Custom Dashboard",
+          "custom_dashboard_desc": "Personalized learning space"
+        },
+        "timeline_title": "Implementation Journey",
+        "timeline_steps": {
+          "step1": "Platform Setup",
+          "week1": "Week 1",
+          "step2": "Staff Training",
+          "week2": "Week 2",
+          "step3": "Data Migration",
+          "week3": "Week 3",
+          "step4": "Full Deployment",
+          "week4": "Week 4"
+        },
+        "faq": {
+          "question1": "How does the AI-powered learning system work?",
+          "answer1": "Our AI system analyzes student performance, learning patterns, and engagement levels to create personalized learning paths. It adapts in real-time to provide optimal content delivery and support.",
+          "question2": "What security measures are in place?",
+          "answer2": "We implement enterprise-grade encryption, regular security audits, and comply with FERPA and GDPR requirements to ensure student data protection.",
+          "question3": "Can it integrate with existing systems?",
+          "answer3": "Yes, our platform offers robust API integration capabilities and supports common education technology standards for seamless integration with existing systems.",
+          "question4": "What kind of support do you offer?",
+          "answer4": "We provide 24/7 technical support, dedicated customer success managers, and comprehensive onboarding assistance. Our team also offers regular training sessions and educational webinars.",
+          "question5": "How customizable is the platform?",
+          "answer5": "The platform is highly customizable with white-labeling options, custom branding, configurable workflows, and API integrations. You can tailor the learning experience to match your institution's needs.",
+          "question6": "What are the hardware requirements?",
+          "answer6": "Our cloud-based platform works on any modern web browser. For optimal video conferencing, we recommend a stable internet connection and updated devices with camera and microphone capabilities.",
+          "question7": "How do you handle data backup?",
+          "answer7": "We maintain automated daily backups with 30-day retention, geo-redundant storage, and disaster recovery protocols. Your data is always safe and accessible."
+        }
+      }
     }
   }
 }

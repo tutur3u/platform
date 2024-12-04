@@ -25,184 +25,191 @@ import {
   School,
   ShieldCheck,
   Trophy,
-  Users,
   Video,
   Wand2,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { BarChart } from 'recharts';
 
-const features = [
-  {
-    title: 'Smart Learning Management',
-    description:
-      "AI-powered LMS that adapts to each student's learning style and pace.",
-    icon: <BrainCircuit className="h-6 w-6" />,
-  },
-  {
-    title: 'Interactive Classrooms',
-    description:
-      'Engage students with real-time collaboration and virtual classroom tools.',
-    icon: <Presentation className="h-6 w-6" />,
-  },
-  {
-    title: 'Progress Tracking',
-    description:
-      'Comprehensive analytics to monitor student performance and engagement.',
-    icon: <LineChart className="h-6 w-6" />,
-  },
-  {
-    title: 'Course Creation',
-    description:
-      'Easy-to-use tools for creating and managing educational content.',
-    icon: <BookOpen className="h-6 w-6" />,
-  },
-  {
-    title: 'Virtual Classrooms',
-    description: 'Seamless video conferencing integration for remote learning.',
-    icon: <Video className="h-6 w-6" />,
-  },
-  {
-    title: 'AI Assessment',
-    description: 'Automated grading and personalized feedback powered by AI.',
-    icon: <Wand2 className="h-6 w-6" />,
-  },
-];
+// const testimonials = [
+//   {
+//     quote:
+//       "The AI-powered learning tools have transformed how we teach. Our students' engagement has increased dramatically.",
+//     author: 'Dr. Sarah Johnson',
+//     role: 'Education Director',
+//     institution: 'International Academy',
+//   },
+//   {
+//     quote:
+//       'The analytics provide invaluable insights into student performance. We can now identify and address learning gaps early.',
+//     author: 'Prof. Michael Chen',
+//     role: 'Department Head',
+//     institution: 'Tech University',
+//   },
+//   {
+//     quote:
+//       'Implementation was seamless, and the support team has been exceptional. A game-changer for our institution.',
+//     author: 'Lisa Rodriguez',
+//     role: 'IT Administrator',
+//     institution: 'Valley School District',
+//   },
+// ];
 
-const useCases = [
-  {
-    title: 'K-12 Education',
-    description:
-      'Comprehensive tools for primary and secondary education management.',
-    items: [
-      'Interactive lessons',
-      'Parent communication',
-      'Homework management',
-      'Progress reports',
-    ],
-  },
-  {
-    title: 'Higher Education',
-    description: 'Advanced features for universities and colleges.',
-    items: [
-      'Course management',
-      'Research collaboration',
-      'Student analytics',
-      'Resource sharing',
-    ],
-  },
-  {
-    title: 'Professional Training',
-    description: 'Corporate training and professional development solutions.',
-    items: [
-      'Skill assessments',
-      'Certification programs',
-      'Employee onboarding',
-      'Performance tracking',
-    ],
-  },
-];
+// const achievements = [
+//   { number: '250K+', label: 'Active Students' },
+//   { number: '1.5M+', label: 'Courses Completed' },
+//   { number: '98%', label: 'Success Rate' },
+//   { number: '50+', label: 'Countries' },
+// ];
 
-const testimonials = [
-  {
-    quote:
-      "The AI-powered learning tools have transformed how we teach. Our students' engagement has increased dramatically.",
-    author: 'Dr. Sarah Johnson',
-    role: 'Education Director',
-    institution: 'International Academy',
-  },
-  {
-    quote:
-      'The analytics provide invaluable insights into student performance. We can now identify and address learning gaps early.',
-    author: 'Prof. Michael Chen',
-    role: 'Department Head',
-    institution: 'Tech University',
-  },
-  {
-    quote:
-      'Implementation was seamless, and the support team has been exceptional. A game-changer for our institution.',
-    author: 'Lisa Rodriguez',
-    role: 'IT Administrator',
-    institution: 'Valley School District',
-  },
-];
+// const learningData = {
+//   courses: [
+//     { month: 'Jan', completed: 45, active: 120, newEnroll: 65 },
+//     { month: 'Feb', completed: 52, active: 140, newEnroll: 78 },
+//     { month: 'Mar', completed: 61, active: 158, newEnroll: 89 },
+//     { month: 'Apr', completed: 67, active: 172, newEnroll: 95 },
+//     { month: 'May', completed: 75, active: 188, newEnroll: 102 },
+//     { month: 'Jun', completed: 89, active: 201, newEnroll: 111 },
+//   ],
+// };
 
-const achievements = [
-  { number: '250K+', label: 'Active Students' },
-  { number: '1.5M+', label: 'Courses Completed' },
-  { number: '98%', label: 'Success Rate' },
-  { number: '50+', label: 'Countries' },
-];
-
-const learningData = {
-  courses: [
-    { month: 'Jan', completed: 45, active: 120, newEnroll: 65 },
-    { month: 'Feb', completed: 52, active: 140, newEnroll: 78 },
-    { month: 'Mar', completed: 61, active: 158, newEnroll: 89 },
-    { month: 'Apr', completed: 67, active: 172, newEnroll: 95 },
-    { month: 'May', completed: 75, active: 188, newEnroll: 102 },
-    { month: 'Jun', completed: 89, active: 201, newEnroll: 111 },
-  ],
-};
-
-const satisfactionData = [
-  { name: 'Very Satisfied', value: 45, color: 'hsl(var(--light-green))' },
-  { name: 'Satisfied', value: 35, color: 'hsl(var(--light-blue))' },
-  { name: 'Neutral', value: 15, color: 'hsl(var(--light-purple))' },
-  { name: 'Unsatisfied', value: 5, color: 'hsl(var(--light-red))' },
-];
-
-const enhancedFaqs = [
-  {
-    question: 'How does the AI-powered learning system work?',
-    answer:
-      'Our AI system analyzes student performance, learning patterns, and engagement levels to create personalized learning paths. It adapts in real-time to provide optimal content delivery and support.',
-  },
-  {
-    question: 'What security measures are in place?',
-    answer:
-      'We implement enterprise-grade encryption, regular security audits, and comply with FERPA and GDPR requirements to ensure student data protection.',
-  },
-  {
-    question: 'Can it integrate with existing systems?',
-    answer:
-      'Yes, our platform offers robust API integration capabilities and supports common education technology standards for seamless integration with existing systems.',
-  },
-  {
-    question: 'What kind of support do you offer?',
-    answer:
-      'We provide 24/7 technical support, dedicated customer success managers, and comprehensive onboarding assistance. Our team also offers regular training sessions and educational webinars.',
-  },
-  {
-    question: 'How customizable is the platform?',
-    answer:
-      "The platform is highly customizable with white-labeling options, custom branding, configurable workflows, and API integrations. You can tailor the learning experience to match your institution's needs.",
-  },
-  {
-    question: 'What are the hardware requirements?',
-    answer:
-      'Our cloud-based platform works on any modern web browser. For optimal video conferencing, we recommend a stable internet connection and updated devices with camera and microphone capabilities.',
-  },
-  {
-    question: 'How do you handle data backup?',
-    answer:
-      'We maintain automated daily backups with 30-day retention, geo-redundant storage, and disaster recovery protocols. Your data is always safe and accessible.',
-  },
-];
+// const satisfactionData = [
+//   { name: 'Very Satisfied', value: 45, color: 'hsl(var(--light-green))' },
+//   { name: 'Satisfied', value: 35, color: 'hsl(var(--light-blue))' },
+//   { name: 'Neutral', value: 15, color: 'hsl(var(--light-purple))' },
+//   { name: 'Unsatisfied', value: 5, color: 'hsl(var(--light-red))' },
+// ];
 
 export default function EducationPage() {
+  const t = useTranslations();
+
+  const features = [
+    {
+      title: t(
+        'marketing.solutions.education.features.smart_learning_management'
+      ),
+      description: t(
+        'marketing.solutions.education.features.smart_learning_management_desc'
+      ),
+      icon: <BrainCircuit className="h-6 w-6" />,
+    },
+    {
+      title: t('marketing.solutions.education.features.interactive_classrooms'),
+      description: t(
+        'marketing.solutions.education.features.interactive_classrooms_desc'
+      ),
+      icon: <Presentation className="h-6 w-6" />,
+    },
+    {
+      title: t('marketing.solutions.education.features.progress_tracking'),
+      description: t(
+        'marketing.solutions.education.features.progress_tracking_desc'
+      ),
+      icon: <LineChart className="h-6 w-6" />,
+    },
+    {
+      title: t('marketing.solutions.education.features.course_creation'),
+      description: t(
+        'marketing.solutions.education.features.course_creation_desc'
+      ),
+      icon: <BookOpen className="h-6 w-6" />,
+    },
+    {
+      title: t('marketing.solutions.education.features.virtual_classrooms'),
+      description: t(
+        'marketing.solutions.education.features.virtual_classrooms_desc'
+      ),
+      icon: <Video className="h-6 w-6" />,
+    },
+    {
+      title: t('marketing.solutions.education.features.ai assessment'),
+      description: t(
+        'marketing.solutions.education.features.ai assessment_desc'
+      ),
+      icon: <Wand2 className="h-6 w-6" />,
+    },
+  ];
+
+  const useCases = [
+    {
+      title: t('marketing.solutions.education.use_cases.K_12_education'),
+      description: t(
+        'marketing.solutions.education.use_cases.K_12_education_desc'
+      ),
+      items: [
+        t('marketing.solutions.education.use_cases.K_12_education_item1'),
+        t('marketing.solutions.education.use_cases.K_12_education_item2'),
+        t('marketing.solutions.education.use_cases.K_12_education_item3'),
+        t('marketing.solutions.education.use_cases.K_12_education_item4'),
+      ],
+    },
+    {
+      title: t('marketing.solutions.education.use_cases.higher_education'),
+      description: t(
+        'marketing.solutions.education.use_cases.higher_education_desc'
+      ),
+      items: [
+        t('marketing.solutions.education.use_cases.higher_education_item1'),
+        t('marketing.solutions.education.use_cases.higher_education_item2'),
+        t('marketing.solutions.education.use_cases.higher_education_item3'),
+        t('marketing.solutions.education.use_cases.higher_education_item4'),
+      ],
+    },
+    {
+      title: t('marketing.solutions.education.use_cases.professional_training'),
+      description: t(
+        'marketing.solutions.education.use_cases.professional_training_desc'
+      ),
+      items: [
+        t(
+          'marketing.solutions.education.use_cases.professional_training_item1'
+        ),
+        t(
+          'marketing.solutions.education.use_cases.professional_training_item2'
+        ),
+        t(
+          'marketing.solutions.education.use_cases.professional_training_item3'
+        ),
+        t(
+          'marketing.solutions.education.use_cases.professional_training_item4'
+        ),
+      ],
+    },
+  ];
+
+  const enhancedFaqs = [
+    {
+      question: t('marketing.solutions.education.faq.question1'),
+      answer: t('marketing.solutions.education.faq.answer1'),
+    },
+    {
+      question: t('marketing.solutions.education.faq.question2'),
+      answer: t('marketing.solutions.education.faq.answer2'),
+    },
+    {
+      question: t('marketing.solutions.education.faq.question3'),
+      answer: t('marketing.solutions.education.faq.answer3'),
+    },
+    {
+      question: t('marketing.solutions.education.faq.question4'),
+      answer: t('marketing.solutions.education.faq.answer4'),
+    },
+    {
+      question: t('marketing.solutions.education.faq.question5'),
+      answer: t('marketing.solutions.education.faq.answer5'),
+    },
+    {
+      question: t('marketing.solutions.education.faq.question6'),
+      answer: t('marketing.solutions.education.faq.answer6'),
+    },
+    {
+      question: t('marketing.solutions.education.faq.question7'),
+      answer: t('marketing.solutions.education.faq.answer7'),
+    },
+  ];
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -230,19 +237,20 @@ export default function EducationPage() {
       {/* Enhanced Hero Section */}
       <motion.div variants={itemVariants} className="mb-8 text-center">
         <Badge variant="secondary" className="mb-4">
-          Education Solutions
+          {t('marketing.solutions.education.education_solutions')}
         </Badge>
-        <h1 className="mb-4 text-4xl font-bold">Transform Education with AI</h1>
+        <h1 className="mb-4 text-4xl font-bold">
+          {t('marketing.solutions.education.title')}
+        </h1>
         <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-          Empower educators and students with intelligent tools for personalized
-          learning, seamless collaboration, and enhanced educational outcomes.
+          {t('marketing.solutions.education.description')}
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <Button size="lg" asChild>
-            <Link href="/contact">Schedule Demo</Link>
+            <Link href="/contact">{t('common.get-started')}</Link>
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <Link href="/pricing">View Pricing</Link>
+            <Link href="/pricing">{t('common.pricing')}</Link>
           </Button>
         </div>
         <motion.div
@@ -280,12 +288,10 @@ export default function EducationPage() {
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="text-primary h-12 w-12" />
             <h2 className="text-2xl font-bold">
-              Trusted by Educational Institutions
+              {t('marketing.solutions.education.trusted_section_title')}
             </h2>
             <p className="text-muted-foreground">
-              Our platform is designed to meet the highest standards of security
-              and privacy, ensuring a safe learning environment for students of
-              all ages.
+              {t('marketing.solutions.education.trusted_section_description')}
             </p>
           </div>
         </Card>
@@ -294,7 +300,7 @@ export default function EducationPage() {
       {/* Interactive Features Grid */}
       <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center text-3xl font-bold">
-          Powerful Educational Tools
+          {t('marketing.solutions.education.features_title')}
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
@@ -319,7 +325,7 @@ export default function EducationPage() {
       {/* Use Cases */}
       <section className="mb-24">
         <h2 className="mb-12 text-center text-3xl font-bold">
-          Solutions For Every Level
+          {t('marketing.solutions.education.use_cases_title')}
         </h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
@@ -343,7 +349,7 @@ export default function EducationPage() {
       </section>
 
       {/* New Testimonials Section */}
-      <motion.section variants={itemVariants} className="mb-24">
+      {/* <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center text-3xl font-bold">
           Trusted by Educators
         </h2>
@@ -372,10 +378,10 @@ export default function EducationPage() {
             </motion.div>
           ))}
         </div>
-      </motion.section>
+      </motion.section> */}
 
       {/* Enhanced Success Metrics with Animation */}
-      <motion.section
+      {/* <motion.section
         variants={itemVariants}
         className="mb-24"
         whileInView={{ scale: [0.95, 1] }}
@@ -400,9 +406,9 @@ export default function EducationPage() {
             ))}
           </div>
         </Card>
-      </motion.section>
+      </motion.section> */}
 
-      <motion.section variants={itemVariants} className="mb-24">
+      {/* <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center text-3xl font-bold">
           Learning Analytics
         </h2>
@@ -436,7 +442,6 @@ export default function EducationPage() {
             </div>
           </Card>
 
-          {/* Student Satisfaction */}
           <Card className="p-6">
             <h3 className="mb-4 text-xl font-bold">Student Satisfaction</h3>
             <div className="h-[300px] w-full">
@@ -461,10 +466,10 @@ export default function EducationPage() {
             </div>
           </Card>
         </div>
-      </motion.section>
+      </motion.section> */}
 
       {/* New ROI Calculator Section */}
-      <motion.section variants={itemVariants} className="mb-24">
+      {/* <motion.section variants={itemVariants} className="mb-24">
         <Card className="p-8">
           <h2 className="mb-8 text-center text-3xl font-bold">
             Calculate Your ROI
@@ -502,10 +507,10 @@ export default function EducationPage() {
             </div>
           </div>
         </Card>
-      </motion.section>
+      </motion.section> */}
 
       {/* Achievements Grid */}
-      <motion.section variants={itemVariants} className="mb-24">
+      {/* <motion.section variants={itemVariants} className="mb-24">
         <div className="grid gap-4 md:grid-cols-4">
           {achievements.map((achievement) => (
             <Card
@@ -523,21 +528,22 @@ export default function EducationPage() {
             </Card>
           ))}
         </div>
-      </motion.section>
+      </motion.section> */}
 
       {/* Bento Grid Features */}
       <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center text-3xl font-bold">
-          Learning Excellence
+          {t('marketing.solutions.education.bento_grid_title')}
         </h2>
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
               <Library className="text-primary mb-4 h-8 w-8" />
-              <h3 className="mb-2 text-xl font-bold">Comprehensive Library</h3>
+              <h3 className="mb-2 text-xl font-bold">
+                {t('marketing.solutions.education.bento_grid_subtitle')}
+              </h3>
               <p className="text-muted-foreground">
-                Access thousands of curated educational resources, textbooks,
-                and multimedia content.
+                {t('marketing.solutions.education.bento_grid_description')}
               </p>
               <div className="bg-background/50 mt-4 flex-grow rounded-lg p-4">
                 <div className="space-y-2">
@@ -552,23 +558,39 @@ export default function EducationPage() {
           {[
             {
               icon: Globe,
-              title: 'Global Reach',
-              desc: 'Connect with learners worldwide',
+              title: t(
+                'marketing.solutions.education.bento_grid_features.global_reach'
+              ),
+              desc: t(
+                'marketing.solutions.education.bento_grid_features.global_reach_desc'
+              ),
             },
             {
               icon: Trophy,
-              title: 'Gamification',
-              desc: 'Earn badges and certificates',
+              title: t(
+                'marketing.solutions.education.bento_grid_features.gamification'
+              ),
+              desc: t(
+                'marketing.solutions.education.bento_grid_features.gamification_desc'
+              ),
             },
             {
               icon: Network,
-              title: 'Smart Network',
-              desc: 'AI-powered learning paths',
+              title: t(
+                'marketing.solutions.education.bento_grid_features.smart_network'
+              ),
+              desc: t(
+                'marketing.solutions.education.bento_grid_features.smart_network_desc'
+              ),
             },
             {
               icon: Layout,
-              title: 'Custom Dashboard',
-              desc: 'Personalized learning space',
+              title: t(
+                'marketing.solutions.education.bento_grid_features.custom_dashboard'
+              ),
+              desc: t(
+                'marketing.solutions.education.bento_grid_features.custom_dashboard_desc'
+              ),
             },
           ].map((item) => (
             <Card key={item.title} className="group overflow-hidden">
@@ -589,18 +611,30 @@ export default function EducationPage() {
       {/* Timeline Section */}
       <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center text-3xl font-bold">
-          Implementation Journey
+          {t('marketing.solutions.education.timeline_title')}
         </h2>
         <div className="relative">
           <div className="bg-primary/20 absolute left-1/2 h-full w-px" />
           {[
-            { icon: CheckCircle2, title: 'Platform Setup', duration: 'Week 1' },
-            { icon: Calendar, title: 'Staff Training', duration: 'Week 2' },
-            { icon: BarChart, title: 'Data Migration', duration: 'Week 3' },
+            {
+              icon: CheckCircle2,
+              title: t('marketing.solutions.education.timeline_steps.step1'),
+              duration: t('marketing.solutions.education.timeline_steps.week1'),
+            },
+            {
+              icon: Calendar,
+              title: t('marketing.solutions.education.timeline_steps.step2'),
+              duration: t('marketing.solutions.education.timeline_steps.week2'),
+            },
+            {
+              icon: BarChart,
+              title: t('marketing.solutions.education.timeline_steps.step3'),
+              duration: t('marketing.solutions.education.timeline_steps.week3'),
+            },
             {
               icon: GraduationCap,
-              title: 'Full Deployment',
-              duration: 'Week 4',
+              title: t('marketing.solutions.education.timeline_steps.step4'),
+              duration: t('marketing.solutions.education.timeline_steps.week4'),
             },
           ].map((step, index) => (
             <motion.div
@@ -629,7 +663,7 @@ export default function EducationPage() {
 
       <motion.section variants={itemVariants}>
         <h2 className="mb-12 text-center text-3xl font-bold">
-          Frequently Asked Questions
+          {t('common.faq')}
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Accordion type="single" className="grid h-fit gap-4" collapsible>
