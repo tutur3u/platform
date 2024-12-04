@@ -176,7 +176,7 @@ export default function Footer() {
       </div>
 
       <Separator className="bg-foreground/5 mt-8" />
-      <div className="p-4 text-center opacity-80 md:px-32 xl:px-64">
+      <div className="text-balance p-4 text-center text-sm opacity-80 md:px-32 xl:px-64">
         {t('common.copyright')}
       </div>
     </div>
