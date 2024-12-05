@@ -38,6 +38,7 @@ export const PUBLIC_PATHS = [
   '/contact',
   '/features',
   '/products',
+  '/solutions',
   '/blog',
   '/faq',
   '/terms',
