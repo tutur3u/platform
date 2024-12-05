@@ -30,8 +30,10 @@ import {
   Wand2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { BarChart } from 'recharts';
 
 // const testimonials = [
@@ -85,6 +87,13 @@ import { BarChart } from 'recharts';
 
 export default function EducationPage() {
   const t = useTranslations();
+  const { resolvedTheme } = useTheme();
+
+  const [activeTheme, setActiveTheme] = useState('light');
+
+  useEffect(() => {
+    setActiveTheme(resolvedTheme?.includes('dark') ? 'dark' : 'light');
+  }, [resolvedTheme]);
 
   const features = [
     {
@@ -277,7 +286,11 @@ export default function EducationPage() {
       >
         <div className="absolute inset-0 flex items-center justify-center">
           <Image
-            src="/media/marketing/education.png"
+            src={
+              activeTheme === 'dark'
+                ? '/media/marketing/education/edu-dark.jpeg'
+                : '/media/marketing/education/edu-light.jpeg'
+            }
             alt="Education Platform Interface"
             width={2980}
             height={1786}
