@@ -1,4 +1,4 @@
-import { UserDatabaseFilter } from '../../../filters';
+import { Filter } from '../../../filters';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
 import { cn } from '@/lib/utils';
@@ -151,7 +151,7 @@ export default async function UserGroupDetailsPage({
       <Separator className="my-4" />
       <div className="flex min-h-full w-full flex-col">
         <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
-          <UserDatabaseFilter
+          <Filter
             key="user-filter"
             tag="userId"
             title={t('user-data-table.user')}
@@ -178,7 +178,7 @@ export default async function UserGroupDetailsPage({
           />
 
           {reports.length > 0 && (
-            <UserDatabaseFilter
+            <Filter
               key="report-filter"
               tag="reportId"
               title={t('user-data-table.report')}

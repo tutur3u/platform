@@ -1,4 +1,4 @@
-import { UserDatabaseFilter } from '../filters';
+import { Filter } from '../filters';
 import { getUserReportColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceUserReport } from '@/types/db';
@@ -78,7 +78,7 @@ export default async function WorkspaceUserReportsPage({
           created_at: false,
         }}
         filters={[
-          <UserDatabaseFilter
+          <Filter
             key="group-filter"
             tag="groupId"
             title={t('user-data-table.group')}
@@ -92,7 +92,7 @@ export default async function WorkspaceUserReportsPage({
             }))}
             multiple={false}
           />,
-          <UserDatabaseFilter
+          <Filter
             key="user-filter"
             tag="userId"
             title={t('user-data-table.user')}

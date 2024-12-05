@@ -1,6 +1,6 @@
 import UserAttendances from '../../../attendance/user-attendances';
 import UserAttendancesSkeleton from '../../../attendance/user-attendances-skeleton';
-import { UserDatabaseFilter } from '../../../filters';
+import { Filter } from '../../../filters';
 import { CustomMonthPicker } from '@/components/custom-month-picker';
 import { cn } from '@/lib/utils';
 import { UserGroup } from '@/types/primitives/UserGroup';
@@ -143,7 +143,7 @@ export default async function UserGroupAttendancePage({
           lang={locale}
           className="col-span-full md:col-span-1"
         />
-        <UserDatabaseFilter
+        <Filter
           key="excluded-user-groups-filter"
           tag="excludedGroups"
           title={t('user-data-table.excluded_groups')}

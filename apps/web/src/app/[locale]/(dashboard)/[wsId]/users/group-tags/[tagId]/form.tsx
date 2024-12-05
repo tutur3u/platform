@@ -1,6 +1,6 @@
 'use client';
 
-import { UserDatabaseFilter } from '../../../users/filters';
+import { Filter } from '../../../users/filters';
 import { cn } from '@/lib/utils';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/client';
@@ -73,7 +73,7 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
     <>
       <div className="flex items-center gap-2">
         <SearchBar t={t} className={cn('w-full')} onSearch={setQuery} />
-        <UserDatabaseFilter
+        <Filter
           title={t('ws-user-group-tags.add_group')}
           icon={<Users className="mr-2 h-4 w-4" />}
           options={groups.map((group) => ({

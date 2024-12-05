@@ -25,7 +25,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
-interface UserDatabaseFilterProps {
+interface FilterProps {
   tag?: string;
   icon?: ReactNode;
   title: string;
@@ -59,10 +59,11 @@ interface UserDatabaseFilterProps {
   className?: string;
   contentClassName?: string;
   hideSelected?: boolean;
+  // eslint-disable-next-line no-unused-vars
   onSet?: (values: string[]) => Promise<void> | void;
 }
 
-export function UserDatabaseFilter({
+export function Filter({
   tag,
   icon,
   title,
@@ -82,7 +83,7 @@ export function UserDatabaseFilter({
   contentClassName,
   hideSelected = false,
   onSet,
-}: UserDatabaseFilterProps) {
+}: FilterProps) {
   const t = useTranslations('user-data-table');
 
   const searchParams = useSearchParams();
