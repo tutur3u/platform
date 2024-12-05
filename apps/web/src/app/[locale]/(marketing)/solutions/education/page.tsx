@@ -1,5 +1,6 @@
 'use client';
 
+import GradientHeadline from '../../gradient-headline';
 import {
   Accordion,
   AccordionContent,
@@ -239,8 +240,10 @@ export default function EducationPage() {
         <Badge variant="secondary" className="mb-4">
           {t('marketing.solutions.education.education_solutions')}
         </Badge>
-        <h1 className="mb-4 text-4xl font-bold">
-          {t('marketing.solutions.education.title')}
+        <h1 className="mb-4 text-balance text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
+          <GradientHeadline>
+            {t('marketing.solutions.education.title')}
+          </GradientHeadline>
         </h1>
         <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
           {t('marketing.solutions.education.description')}
