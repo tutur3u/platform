@@ -1,11 +1,10 @@
-import { Sidebar } from '../Sidebar';
+// import { Sidebar } from '../Sidebar';
 import { LinkMenu } from '../menus';
 import { ContentItemMenu } from '../menus/ContentItemMenu';
 import { TextMenu } from '../menus/TextMenu';
 import { EditorHeader } from './components/EditorHeader';
 import { Threads } from '@/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/Threads';
 import { Toolbar } from '@/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/Toolbar';
-// import ImageBlockMenu from '@/extensions/ImageBlock/components/ImageBlockMenu';
 import { ColumnsMenu } from '@/extensions/MultiColumn/menus';
 import { TableColumnMenu, TableRowMenu } from '@/extensions/Table/menus';
 import { useBlockEditor } from '@/hooks/useBlockEditor';
@@ -84,11 +83,11 @@ export const BlockEditor = ({
 
   return (
     <div className="flex h-full">
-      <Sidebar
+      {/* <Sidebar
         isOpen={leftSidebar.isOpen}
         onClose={leftSidebar.close}
         editor={editor}
-      />
+      /> */}
       <div className="relative flex flex-1 flex-col overflow-hidden">
         <EditorHeader
           editor={editor}
