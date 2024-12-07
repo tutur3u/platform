@@ -9,10 +9,10 @@ const DefaultLayout: FC<DefaultLayoutProps> = ({
   children,
 }: DefaultLayoutProps) => {
   return (
-    <div>
+    <>
       <div className="relative min-h-screen">{children}</div>
       <Footer />
-    </div>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import { UserDatabaseFilter } from '../filters';
+import { Filter } from '../filters';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@/utils/supabase/server';
 import { MinusCircle, PlusCircle } from 'lucide-react';
@@ -34,7 +34,7 @@ export default async function Filters({
   return (
     <>
       {noInclude || (
-        <UserDatabaseFilter
+        <Filter
           key="included-user-groups-filter"
           tag="includedGroups"
           title={t('included_groups')}
@@ -47,7 +47,7 @@ export default async function Filters({
         />
       )}
       {noExclude || (
-        <UserDatabaseFilter
+        <Filter
           key="excluded-user-groups-filter"
           tag="excludedGroups"
           title={t('excluded_groups')}

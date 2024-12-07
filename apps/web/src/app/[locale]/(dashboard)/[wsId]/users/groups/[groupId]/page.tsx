@@ -1,5 +1,5 @@
 import { getUserColumns } from '../../database/columns';
-import { UserDatabaseFilter } from '../../filters';
+import { Filter } from '../../filters';
 import ExternalGroupMembers from './external-group-members';
 import GroupMemberForm from './form';
 import PostsClient from './posts-client';
@@ -220,7 +220,7 @@ export default async function UserGroupDetailsPage({
         extraData={{ locale, wsId, groupId }}
         count={usersCount}
         filters={[
-          <UserDatabaseFilter
+          <Filter
             key="excluded-user-groups-filter"
             tag="excludedGroups"
             title={t('user-data-table.excluded_groups')}
