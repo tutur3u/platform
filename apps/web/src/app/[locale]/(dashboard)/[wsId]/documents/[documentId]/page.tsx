@@ -59,7 +59,7 @@ async function deleteDocument(wsId: string, documentId: string) {
 export default function DocumentDetailsPage({ params }: Props) {
   const t = useTranslations();
   const nameInputRef = useRef<HTMLInputElement | null>(null);
-  const supabase= createClient();
+  // const supabase= createClient();
   const [wsId, setWsId] = useState<string | null>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

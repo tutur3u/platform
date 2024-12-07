@@ -1,5 +1,5 @@
-import { Icon } from '../../ui/Icon';
-import { Toolbar } from '../../ui/Toolbar';
+// import { Icon } from '../../ui/Icon';
+// import { Toolbar } from '../../ui/Toolbar';
 import { EditorUser } from '../types';
 import { EditorInfo } from './EditorInfo';
 // import { WebSocketStatus } from '@hocuspocus/provider';
