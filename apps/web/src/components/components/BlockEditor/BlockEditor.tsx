@@ -15,6 +15,8 @@ import { TiptapCollabProvider } from '@hocuspocus/provider';
 import { EditorContent, JSONContent } from '@tiptap/react';
 import { useEffect, useRef } from 'react';
 import * as Y from 'yjs';
+import { randomElement } from '@/lib/utils/index';
+import { userColors } from '@/lib/constants';
 
 const supabase = createClient();
 
@@ -80,7 +82,11 @@ export const BlockEditor = ({
   if (!editor || !users) {
     return null;
   }
-
+  editor.commands.updateUser({
+    name: 'John Doe',
+    color: randomElement(userColors),
+    // avatar: 'https://unavatar.io/github/ueberdosis',
+  })
   return (
     <div className="flex h-full">
       {/* <Sidebar

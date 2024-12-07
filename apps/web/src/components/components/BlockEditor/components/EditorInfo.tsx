@@ -29,7 +29,7 @@ export const EditorInfo = memo(
         : status === 'connecting'
         ? 'bg-yellow-500 dark:bg-yellow-400'
         : 'bg-red-500 dark:bg-red-400';
-
+    
     return (
       <div className="flex items-center">
         <div className="mr-4 flex flex-col justify-center border-r border-neutral-200 pr-4 text-right dark:border-neutral-800">
