@@ -17,8 +17,6 @@ export type EditorHeaderProps = {
 export const EditorHeader = ({
   editor,
   users,
-  isSidebarOpen,
-  toggleSidebar,
 }: EditorHeaderProps) => {
   const { characters, words } = useEditorState({
     editor,

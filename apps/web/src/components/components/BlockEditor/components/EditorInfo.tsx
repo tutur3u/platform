@@ -12,10 +12,9 @@ export type EditorInfoProps = {
 
 export const EditorInfo = memo(
   ({ characters, users, words }: EditorInfoProps) => {
-    const status = useStatus(); // Get the current connection status from Liveblocks
-    console.log(status, 'status'); // Log the status for debugging
+    const status = useStatus(); 
 
-    // Determine the connection state text based on `status`
+
     const connectionText = 
       status === 'connected' 
         ? 'Connected' 
@@ -23,7 +22,7 @@ export const EditorInfo = memo(
         ? 'Connecting...' 
         : 'Disconnected';
 
-    // Determine the color of the connection indicator based on `status`
+
     const statusColor = 
       status === 'connected'
         ? 'bg-green-500 dark:bg-green-400'
@@ -42,7 +41,6 @@ export const EditorInfo = memo(
           </div>
         </div>
         <div className="mr-2 flex items-center gap-2">
-          {/* Connection Status Indicator */}
           <div className={cn('h-2 w-2 rounded-full', statusColor)} />
           <span className="max-w-[4rem] text-xs font-semibold text-neutral-500 dark:text-neutral-400">
             {connectionText}
@@ -51,7 +49,6 @@ export const EditorInfo = memo(
         {status === 'connected' && (
           <div className="flex flex-row items-center">
             <div className="relative ml-3 flex flex-row items-center">
-              {/* Display Users */}
               {users.slice(0, 3).map((user: EditorUser) => (
                 <div key={user.clientId} className="-ml-3">
                   <Tooltip title={user.name}>
