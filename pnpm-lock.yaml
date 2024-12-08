@@ -378,17 +378,23 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.9.1(react-hook-form@7.53.2(react@19.0.0-rc-de68d2f4-20241204))
-      '@liveblocks/client':
-        specifier: ^2.13.1
+      '@liveblocks/core':
+        specifier: ^2.13.0
         version: 2.13.1
       '@liveblocks/react':
-        specifier: ^2.13.1
+        specifier: ^2.13.0
         version: 2.13.1(react@19.0.0-rc-de68d2f4-20241204)
+      '@liveblocks/react-tiptap':
+        specifier: ^2.13.0
+        version: 2.13.1(oyqaqkk3h7gg25wdtmbnjawpja)
+      '@liveblocks/react-ui':
+        specifier: ^2.13.0
+        version: 2.13.1(@types/react-dom@18.3.1)(@types/react@18.3.13)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
       '@mantine/core':
-        specifier: ^7.14.3
+        specifier: ^7.14.2
         version: 7.14.3(@mantine/hooks@7.14.3(react@19.0.0-rc-de68d2f4-20241204))(@types/react@18.3.13)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
       '@mantine/hooks':
-        specifier: ^7.14.3
+        specifier: ^7.14.2
         version: 7.14.3(react@19.0.0-rc-de68d2f4-20241204)
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.1.2
@@ -638,7 +644,7 @@ importers:
         version: 0.4.3(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
       novel:
         specifier: ^0.5.0
-        version: 0.5.0(@tiptap/extension-code-block@2.10.3(@tiptap/core@2.10.3(@tiptap/pm@2.10.3))(@tiptap/pm@2.10.3))(@types/react@18.3.13)(highlight.js@11.10.0)(lowlight@3.2.0)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+        version: 0.5.0(@tiptap/extension-code-block@2.10.3(@tiptap/core@2.10.3(@tiptap/pm@2.10.3))(@tiptap/pm@2.10.3))(@types/react@18.3.13)(highlight.js@11.10.0)(immer@10.1.1)(lowlight@3.2.0)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
       openai:
         specifier: ^4.75.0
         version: 4.75.0(zod@3.23.8)
@@ -2257,8 +2263,8 @@ packages:
   '@liveblocks/core@2.13.1':
     resolution: {integrity: sha512-pSb46I/Uvo5NkIR5G4Gc74mPh1xjyok5uyaIO7eFX4E/zBZWWK/XEIgufTlDS9yqlLWW78XdJL2OSI5pK5+7iw==}
 
-  '@liveblocks/react@2.13.1':
-    resolution: {integrity: sha512-UeJO6Vu5pbxOUiWKx7+OmfmDnXfqV9VJ5hmDiCHryojibM67xOnIwRpY7lvediEUtTU/U2230kXr5QfpaWmX7A==}
+  '@liveblocks/react-tiptap@2.13.1':
+    resolution: {integrity: sha512-M5HseAnCSEhVo6xdUZa16TQZSLtYND6ALs0sDlecDBLym8m8ZqQFdNeISnEjJaD0cMc5DMXyMs3qlF6QyQOi3w==}
     peerDependencies:
       '@tiptap/extension-collaboration': ^2.7.2
       '@tiptap/extension-collaboration-cursor': ^2.7.2
@@ -2268,10 +2274,20 @@ packages:
       react: ^16.14.0 || ^17 || ^18
       react-dom: ^16.14.0 || ^17 || ^18
 
-  '@liveblocks/react-ui@2.13.0':
-    resolution: {integrity: sha512-KB2I8C7fTDJuZU6FRrxaPdEU+AyRYnSMECAtQ2rbxhMCPq4lxiuWIG6Wnla+XTmeLTO5d10QREtEsa/APo86+Q==}
+  '@liveblocks/react-ui@2.13.1':
+    resolution: {integrity: sha512-nOYe8oPhn1srCIxVxccH9RzRjS0EeJQHBY7K6SWK+IaBwbZFdp/GlRmUB3kwy8/HBYHP9c1OqeyLji/+cyRX/g==}
     peerDependencies:
       react: ^16.14.0 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
+  '@liveblocks/react@2.13.1':
+    resolution: {integrity: sha512-UeJO6Vu5pbxOUiWKx7+OmfmDnXfqV9VJ5hmDiCHryojibM67xOnIwRpY7lvediEUtTU/U2230kXr5QfpaWmX7A==}
+    peerDependencies:
+      react: ^16.14.0 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
+  '@liveblocks/yjs@2.13.1':
+    resolution: {integrity: sha512-+WD6pYHuKDC2usHU2RqDnQF2Wb0VHPPeXMLLnCM4Qc1nkpc8xk8RasNdnyp86hcTLqQ7pzFEX3QMX/vT9aGbRg==}
+    peerDependencies:
+      yjs: ^13.6.1
 
   '@mantine/core@7.14.3':
     resolution: {integrity: sha512-niAi+ZYBr4KrG+X2Mx+muvEzUOOHc/Rx0vsbIGYeNe7urwHSm/xNEGsaapmCqeRC0CSL4KI6TJOq8QhnSuQZcw==}
@@ -6625,6 +6641,9 @@ packages:
       react:
         optional: true
 
+  js-base64@3.7.7:
+    resolution: {integrity: sha512-7rCnleh0z2CkXhH67J8K1Ytz0b2Y+yxTPL+/KOJoa20hfnVQ/3/T6W/KflYI4bRHRagNeXeU2bkNGI3v1oS/lw==}
+
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -9327,6 +9346,12 @@ packages:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
 
+  y-indexeddb@9.0.12:
+    resolution: {integrity: sha512-9oCFRSPPzBK7/w5vOkJBaVCQZKHXB/v6SIT+WYhnJxlEC61juqG0hBrAf+y3gmSMLFLwICNH9nQ53uscuse6Hg==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+    peerDependencies:
+      yjs: ^13.0.0
+
   y-prosemirror@1.2.15:
     resolution: {integrity: sha512-XDdrytq2M5bIy3qusQvfRclLu2eWZYPA+BbGWAb9FFWEhOB5FCrnzez2vsA+gvAd0FJTAcr89mjJ5g45r0j7TQ==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
@@ -10797,12 +10822,70 @@ snapshots:
 
   '@liveblocks/core@2.13.1': {}
 
+  '@liveblocks/react-tiptap@2.13.1(oyqaqkk3h7gg25wdtmbnjawpja)':
+    dependencies:
+      '@floating-ui/react-dom': 2.1.2(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+      '@liveblocks/client': 2.13.1
+      '@liveblocks/core': 2.13.1
+      '@liveblocks/react': 2.13.1(react@19.0.0-rc-de68d2f4-20241204)
+      '@liveblocks/react-ui': 2.13.1(@types/react-dom@18.3.1)(@types/react@18.3.13)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+      '@liveblocks/yjs': 2.13.1(yjs@13.6.20)
+      '@tiptap/core': 2.10.3(@tiptap/pm@2.10.3)
+      '@tiptap/extension-collaboration': 2.10.3(@tiptap/core@2.10.3(@tiptap/pm@2.10.3))(@tiptap/pm@2.10.3)(y-prosemirror@1.2.15(prosemirror-model@1.24.0)(prosemirror-state@1.4.3)(prosemirror-view@1.37.0)(y-protocols@1.0.6(yjs@13.6.20))(yjs@13.6.20))
+      '@tiptap/extension-collaboration-cursor': 2.10.3(@tiptap/core@2.10.3(@tiptap/pm@2.10.3))(y-prosemirror@1.2.15(prosemirror-model@1.24.0)(prosemirror-state@1.4.3)(prosemirror-view@1.37.0)(y-protocols@1.0.6(yjs@13.6.20))(yjs@13.6.20))
+      '@tiptap/pm': 2.10.3
+      '@tiptap/react': 2.10.3(@tiptap/core@2.10.3(@tiptap/pm@2.10.3))(@tiptap/pm@2.10.3)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+      '@tiptap/suggestion': 2.10.3(@tiptap/core@2.10.3(@tiptap/pm@2.10.3))(@tiptap/pm@2.10.3)
+      react: 19.0.0-rc-de68d2f4-20241204
+      react-dom: 19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204)
+      use-sync-external-store: 1.2.2(react@19.0.0-rc-de68d2f4-20241204)
+      y-prosemirror: 1.2.15(prosemirror-model@1.24.0)(prosemirror-state@1.4.3)(prosemirror-view@1.37.0)(y-protocols@1.0.6(yjs@13.6.20))(yjs@13.6.20)
+      yjs: 13.6.20
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+      - prosemirror-model
+      - prosemirror-state
+      - prosemirror-view
+      - y-protocols
+
+  '@liveblocks/react-ui@2.13.1(@types/react-dom@18.3.1)(@types/react@18.3.13)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)':
+    dependencies:
+      '@floating-ui/react-dom': 2.1.2(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+      '@liveblocks/client': 2.13.1
+      '@liveblocks/core': 2.13.1
+      '@liveblocks/react': 2.13.1(react@19.0.0-rc-de68d2f4-20241204)
+      '@radix-ui/react-dropdown-menu': 2.1.2(@types/react-dom@18.3.1)(@types/react@18.3.13)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+      '@radix-ui/react-popover': 1.1.2(@types/react-dom@18.3.1)(@types/react@18.3.13)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+      '@radix-ui/react-slot': 1.1.0(@types/react@18.3.13)(react@19.0.0-rc-de68d2f4-20241204)
+      '@radix-ui/react-toggle': 1.1.0(@types/react-dom@18.3.1)(@types/react@18.3.13)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+      '@radix-ui/react-tooltip': 1.1.4(@types/react-dom@18.3.1)(@types/react@18.3.13)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+      react: 19.0.0-rc-de68d2f4-20241204
+      react-virtuoso: 4.12.2(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)
+      slate: 0.110.2
+      slate-history: 0.110.3(slate@0.110.2)
+      slate-hyperscript: 0.100.0(slate@0.110.2)
+      slate-react: 0.110.3(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)(slate@0.110.2)
+      use-sync-external-store: 1.2.2(react@19.0.0-rc-de68d2f4-20241204)
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+      - react-dom
+
   '@liveblocks/react@2.13.1(react@19.0.0-rc-de68d2f4-20241204)':
     dependencies:
       '@liveblocks/client': 2.13.1
       '@liveblocks/core': 2.13.1
       react: 19.0.0-rc-de68d2f4-20241204
       use-sync-external-store: 1.2.2(react@19.0.0-rc-de68d2f4-20241204)
+
+  '@liveblocks/yjs@2.13.1(yjs@13.6.20)':
+    dependencies:
+      '@liveblocks/client': 2.13.1
+      '@liveblocks/core': 2.13.1
+      js-base64: 3.7.7
+      y-indexeddb: 9.0.12(yjs@13.6.20)
+      yjs: 13.6.20
 
   '@mantine/core@7.14.3(@mantine/hooks@7.14.3(react@19.0.0-rc-de68d2f4-20241204))(@types/react@18.3.13)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)':
     dependencies:
@@ -15763,6 +15846,8 @@ snapshots:
       '@types/react': 18.3.13
       react: 19.0.0-rc-de68d2f4-20241204
 
+  js-base64@3.7.7: {}
+
   js-tokens@4.0.0: {}
 
   js-yaml@4.1.0:
@@ -16870,7 +16955,7 @@ snapshots:
 
   normalize-range@0.1.2: {}
 
-  novel@0.5.0(@tiptap/extension-code-block@2.10.3(@tiptap/core@2.10.3(@tiptap/pm@2.10.3))(@tiptap/pm@2.10.3))(@types/react@18.3.13)(highlight.js@11.10.0)(lowlight@3.2.0)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204):
+  novel@0.5.0(@tiptap/extension-code-block@2.10.3(@tiptap/core@2.10.3(@tiptap/pm@2.10.3))(@tiptap/pm@2.10.3))(@types/react@18.3.13)(highlight.js@11.10.0)(immer@10.1.1)(lowlight@3.2.0)(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204):
     dependencies:
       '@radix-ui/react-slot': 1.1.0(@types/react@18.3.13)(react@19.0.0-rc-de68d2f4-20241204)
       '@tiptap/core': 2.10.3(@tiptap/pm@2.10.3)
@@ -16903,7 +16988,7 @@ snapshots:
       tippy.js: 6.3.7
       tiptap-extension-global-drag-handle: 0.1.16
       tiptap-markdown: 0.8.10(@tiptap/core@2.10.3(@tiptap/pm@2.10.3))
-      tunnel-rat: 0.1.2(@types/react@18.3.13)(react@19.0.0-rc-de68d2f4-20241204)
+      tunnel-rat: 0.1.2(@types/react@18.3.13)(immer@10.1.1)(react@19.0.0-rc-de68d2f4-20241204)
     transitivePeerDependencies:
       - '@tiptap/extension-code-block'
       - '@types/react'
@@ -17745,10 +17830,10 @@ snapshots:
       react-dom: 19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204)
       swr: 2.2.5(react@19.0.0-rc-de68d2f4-20241204)
 
-  react-virtuoso@4.12.2(react-dom@19.0.0-rc-b01722d5-20241114(react@19.0.0-rc-b01722d5-20241114))(react@19.0.0-rc-b01722d5-20241114):
+  react-virtuoso@4.12.2(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204):
     dependencies:
-      react: 19.0.0-rc-b01722d5-20241114
-      react-dom: 19.0.0-rc-b01722d5-20241114(react@19.0.0-rc-b01722d5-20241114)
+      react: 19.0.0-rc-de68d2f4-20241204
+      react-dom: 19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204)
 
   react@18.3.1:
     dependencies:
@@ -18163,15 +18248,15 @@ snapshots:
       is-plain-object: 5.0.0
       slate: 0.110.2
 
-  slate-react@0.110.3(react-dom@19.0.0-rc-b01722d5-20241114(react@19.0.0-rc-b01722d5-20241114))(react@19.0.0-rc-b01722d5-20241114)(slate@0.110.2):
+  slate-react@0.110.3(react-dom@19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204))(react@19.0.0-rc-de68d2f4-20241204)(slate@0.110.2):
     dependencies:
       '@juggle/resize-observer': 3.4.0
       direction: 1.0.4
       is-hotkey: 0.2.0
       is-plain-object: 5.0.0
       lodash: 4.17.21
-      react: 19.0.0-rc-b01722d5-20241114
-      react-dom: 19.0.0-rc-b01722d5-20241114(react@19.0.0-rc-b01722d5-20241114)
+      react: 19.0.0-rc-de68d2f4-20241204
+      react-dom: 19.0.0-rc-de68d2f4-20241204(react@19.0.0-rc-de68d2f4-20241204)
       scroll-into-view-if-needed: 3.1.0
       slate: 0.110.2
       tiny-invariant: 1.3.1
@@ -18629,9 +18714,9 @@ snapshots:
       tslib: 1.14.1
       typescript: 5.7.2
 
-  tunnel-rat@0.1.2(@types/react@18.3.13)(react@19.0.0-rc-de68d2f4-20241204):
+  tunnel-rat@0.1.2(@types/react@18.3.13)(immer@10.1.1)(react@19.0.0-rc-de68d2f4-20241204):
     dependencies:
-      zustand: 4.5.5(@types/react@18.3.13)(react@19.0.0-rc-de68d2f4-20241204)
+      zustand: 4.5.5(@types/react@18.3.13)(immer@10.1.1)(react@19.0.0-rc-de68d2f4-20241204)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -19204,6 +19289,11 @@ snapshots:
 
   xtend@4.0.2: {}
 
+  y-indexeddb@9.0.12(yjs@13.6.20):
+    dependencies:
+      lib0: 0.2.99
+      yjs: 13.6.20
+
   y-prosemirror@1.2.15(prosemirror-model@1.24.0)(prosemirror-state@1.4.3)(prosemirror-view@1.37.0)(y-protocols@1.0.6(yjs@13.6.20))(yjs@13.6.20):
     dependencies:
       lib0: 0.2.99
@@ -19243,11 +19333,12 @@ snapshots:
 
   zod@3.23.8: {}
 
-  zustand@4.5.5(@types/react@18.3.13)(react@19.0.0-rc-de68d2f4-20241204):
+  zustand@4.5.5(@types/react@18.3.13)(immer@10.1.1)(react@19.0.0-rc-de68d2f4-20241204):
     dependencies:
       use-sync-external-store: 1.2.2(react@19.0.0-rc-de68d2f4-20241204)
     optionalDependencies:
       '@types/react': 18.3.13
+      immer: 10.1.1
       react: 19.0.0-rc-de68d2f4-20241204
 
   zwitch@2.0.4: {}
