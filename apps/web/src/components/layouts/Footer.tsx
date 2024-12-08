@@ -18,17 +18,6 @@ export default function Footer() {
           <Separator className="bg-foreground/5 mb-8" />
           <div className="flex flex-col items-center">
             <Slogan />
-
-            {/* <div className="text-foreground/80 mt-2 font-semibold md:text-xl">
-          {t('common.get-started-desc')}
-        </div>
-
-        <Link
-          href="/login"
-          className="bg-foreground/5 text-foreground hover:bg-foreground/10 mt-4 w-full max-w-xs rounded border px-8 py-2 font-semibold transition duration-300"
-        >
-          {t('common.get-started')}
-        </Link> */}
           </div>
         </>
       )}
@@ -144,7 +133,7 @@ export default function Footer() {
               {t('common.resources')}
             </div>
             <Link
-              href="/calendar/meet-together"
+              href="/meet-together"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.meet-together')}
@@ -187,7 +176,7 @@ export default function Footer() {
       </div>
 
       <Separator className="bg-foreground/5 mt-8" />
-      <div className="p-4 text-center opacity-80 md:px-32 xl:px-64">
+      <div className="text-balance p-4 text-center text-sm opacity-80 md:px-32 xl:px-64">
         {t('common.copyright')}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { UserDatabaseFilter } from '../../filters';
+import { Filter } from '../../filters';
 import EditableReportPreview from './editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
 import { WorkspaceUserReport } from '@/types/db';
@@ -66,7 +66,7 @@ export default async function WorkspaceUserDetailsPage({
   return (
     <div className="flex min-h-full w-full flex-col">
       <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
-        <UserDatabaseFilter
+        <Filter
           key="group-filter"
           tag="groupId"
           title={t('group')}
@@ -81,7 +81,7 @@ export default async function WorkspaceUserDetailsPage({
           multiple={false}
         />
 
-        <UserDatabaseFilter
+        <Filter
           key="user-filter"
           tag="userId"
           title={t('user')}
@@ -108,7 +108,7 @@ export default async function WorkspaceUserDetailsPage({
         />
 
         {reports.length > 0 && (
-          <UserDatabaseFilter
+          <Filter
             key="report-filter"
             tag="reportId"
             title={t('report')}

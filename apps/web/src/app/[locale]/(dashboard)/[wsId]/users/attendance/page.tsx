@@ -1,4 +1,4 @@
-import { UserDatabaseFilter } from '../filters';
+import { Filter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
 import { CustomMonthPicker } from '@/components/custom-month-picker';
@@ -59,7 +59,7 @@ export default async function WorkspaceUserAttendancePage({
           lang={locale}
           className="col-span-full md:col-span-1"
         />
-        <UserDatabaseFilter
+        <Filter
           key="included-user-groups-filter"
           tag="includedGroups"
           title={t('user-data-table.included_groups')}
@@ -70,7 +70,7 @@ export default async function WorkspaceUserAttendancePage({
             count: group.amount,
           }))}
         />
-        <UserDatabaseFilter
+        <Filter
           key="excluded-user-groups-filter"
           tag="excludedGroups"
           title={t('user-data-table.excluded_groups')}

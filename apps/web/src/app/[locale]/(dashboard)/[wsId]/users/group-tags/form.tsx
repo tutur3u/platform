@@ -1,6 +1,6 @@
 'use client';
 
-import { UserDatabaseFilter } from '../filters';
+import { Filter } from '../filters';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import { createClient } from '@/utils/supabase/client';
@@ -136,7 +136,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
           <>
             <Separator />
 
-            <UserDatabaseFilter
+            <Filter
               title={t('linked_user_groups')}
               icon={<Users className="mr-2 h-4 w-4" />}
               defaultValues={form.watch('group_ids')}

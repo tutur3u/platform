@@ -161,7 +161,56 @@
     "generate": "Tạo nội dung",
     "enabled": "Đã bật",
     "explanation": "Giải thích",
-    "generate_explanation": "Tạo lời giải thích"
+    "generate_explanation": "Tạo lời giải thích",
+    "products": "Các sản phẩm",
+    "solutions": "Giải pháp",
+    "pricing": "Bảng giá",
+    "about": "Giới thiệu",
+    "contact": "Liên hệ",
+    "ai-assistant": "Trợ lý AI",
+    "lms": "Hệ thống quản lý học tập",
+    "calendar": "Lịch",
+    "documents": "Tài liệu",
+    "drive": "Kho lưu trữ",
+    "crm": "Quản lý quan hệ khách hàng",
+    "inventory": "Quản kho",
+    "finance": "Tài chính",
+    "mail": "Hộp thư",
+    "tasks": "Tác vụ",
+    "workflows": "Quy trình",
+    "education": "Giáo dục",
+    "restaurants": "Nhà hàng",
+    "pharmacies": "Nhà thuốc",
+    "agencies": "Agency",
+    "realestate": "Bất động sản",
+    "blog": "Blog",
+    "blog-description": "Đọc các bài viết và cập nhật mới nhất của chúng tôi.",
+    "documentation-description": "Tìm tài liệu và hướng dẫn chi tiết.",
+    "education-description": "Giải pháp dành riêng cho các tổ chức giáo dục.",
+    "restaurants-description": "Quản lý hoạt động nhà hàng của bạn một cách hiệu quả.",
+    "pharmacies-description": "Chuẩn hóa việc quản lý và dịch vụ nhà thuốc.",
+    "realestate-description": "Tối ưu hóa hoạt động kinh doanh bất động sản của bạn.",
+    "meet-together-description": "Lên lịch cuộc họp dễ dàng giữa các múi giờ khác nhau và đội ngũ khác nhau.",
+    "ai-assistant-description": "Tận dụng AI để tự động hóa các nhiệm vụ và nâng cao năng suất.",
+    "lms-description": "Cung cấp và theo dõi nội dung giáo dục một cách hiệu quả.",
+    "calendar-description": "Hệ thống quản lý sự kiện và lịch toàn diện.",
+    "documents-description": "Quản lý và cộng tác tài liệu được hỗ trợ bởi AI.",
+    "drive-description": "Lưu trữ đám mây an toàn với tính năng chia sẻ tệp liền mạch.",
+    "crm-description": "Xây dựng và duy trì các mối quan hệ khách hàng có giá trị.",
+    "inventory-description": "Hợp lý hóa việc kiểm soát hàng tồn kho và quản lý hàng tồn kho.",
+    "branding-description": "Xem bộ nhận diện thương hiệu của Tuturuuu.",
+    "github-description": "Xem các dự án nguồn mở của chúng tôi trên GitHub.",
+    "finance-description": "Theo dõi tài chính và quản lý giao dịch hiệu quả.",
+    "mail-description": "Quản lý email và truyền thông mạnh mẽ.",
+    "tasks-description": "Tổ chức và theo dõi các dự án một cách rõ ràng.",
+    "workflows-description": "Tự động hóa và tối ưu hóa quy trình kinh doanh của bạn.",
+    "scroll_to_explore": "Cuộn để khám phá",
+    "features": "Các tính năng",
+    "learn_more": "Tìm hiểu thêm",
+    "pricing_hook": "Giá cả đơn giản, minh bạch",
+    "usage_based_pricing": "Bảng giá",
+    "usage_based_pricing_description": "Chỉ trả tiền cho những gì bạn sử dụng. Tất cả các gói đều bao gồm các tính năng cốt lõi với các giới hạn sử dụng khác nhau.",
+    "faq": "Câu hỏi thường gặp"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -188,8 +237,8 @@
     "next-year": "Năm sau"
   },
   "home": {
-    "headline-p1": "Quản lý công việc của bạn,",
-    "headline-p2": "siêu tốc độ cùng AI",
+    "headline": "Lối tắt thông minh của bạn",
+    "subheadline": "Quản lý công việc, siêu tốc độ cùng AI",
     "get-started": "Bắt đầu ngay",
     "features-lead": "Bạn có thể làm gì với Tuturuuu?",
     "features-1-title": "Tăng cường bởi AI",
@@ -574,6 +623,14 @@
     "is_published": "Đã xuất bản",
     "modules": "Mô-đun",
     "created_at": "Ngày tạo"
+  },
+  "quiz-set-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "linked_modules": "Mô đun liên kết",
+    "is_public": "Public",
+    "is_published": "Published",
+    "created_at": "Created At"
   },
   "quiz-data-table": {
     "id": "Mã số",
@@ -1677,8 +1734,9 @@
     "overview": "Tổng quan",
     "courses": "Khóa học",
     "materials": "Tài liệu học tập",
-    "quizzes": "Bộ trắc nghiệm",
-    "flashcards": "Thẻ từ vựng"
+    "quizzes": "Câu hỏi trắc nghiệm",
+    "flashcards": "Thẻ từ vựng",
+    "quiz-sets": "Bộ trắc nghiệm"
   },
   "ws-courses": {
     "plural": "Khóa học",
@@ -1724,7 +1782,7 @@
     "generation_accepted": "Thẻ từ do AI tạo đã được chấp nhận!"
   },
   "ws-quizzes": {
-    "plural": "Bộ trắc nghiệm",
+    "plural": "Câu hỏi trắc nghiệm",
     "singular": "Bộ trắc nghiệm",
     "create": "Tạo bộ trắc nghiệm",
     "create_description": "Tạo một bộ trắc nghiệm mới",
@@ -1759,5 +1817,124 @@
     "description": "Xem các chatbot tùy chỉnh được tạo bởi cộng đồng.",
     "create": "Tạo chatbot",
     "create_description": "Tạo một chatbot mới"
+  },
+  "ws-quiz-sets": {
+    "plural": "Bộ trắc nghiệm",
+    "singular": "Bộ trắc nghiệm",
+    "create": "Tạo bộ trắc nghiệm",
+    "create_description": "Tạo bộ trắc nghiệm mới",
+    "name": "Tên bộ câu hỏi",
+    "edit": "Chỉnh sửa bộ",
+    "link-quizzes": "Liên kết câu hỏi"
+  },
+  "slogan": {
+    "title": "Sẵn sàng để bắt đầu?",
+    "description": "Hãy tham gia danh sách chờ để trở thành một trong những người đầu tiên trải nghiệm nền tảng quản lý doanh nghiệp thông minh của chúng tôi khi nền tảng này ra mắt.",
+    "join_waitlist": "Tham gia danh sách chờ"
+  },
+  "contact": {
+    "title": "Liên hệ với chúng tôi",
+    "description": "Có thắc mắc hoặc cần hỗ trợ? Chúng tôi ở đây để giúp đỡ. Hãy chọn cách ưa thích của bạn để tiếp cận chúng tôi.",
+    "get_in_touch": "Liên hệ",
+    "founder_contact": "Thông tin người sáng lập",
+    "founder_description": "Người sáng lập",
+    "on_github": "trên GitHub",
+    "send_us_a_message": "Cần hỗ trợ?",
+    "form": {
+      "name_label": "Tên",
+      "name_placeholder": "Tên của bạn",
+      "subject_label": "Chủ đề",
+      "subject_placeholder": "Chúng tôi có thể giúp gì?",
+      "message_label": "Tin nhắn",
+      "message_placeholder": "Tin nhắn của bạn...",
+      "submit_button": "Gửi tin nhắn"
+    }
+  },
+  "marketing": {
+    "solutions": {
+      "education": {
+        "education_solutions": "Giải pháp dành riêng cho giáo dục",
+        "title": "Chuyển đổi giáo dục với AI",
+        "description": "Trao nguồn sức mạnh công nghệ cho giáo dục: Các giải pháp thông minh giúp cá nhân hóa việc học, kết nối dễ dàng và mang lại kết quả học tập vượt trội.",
+        "trusted_section_title": "Được tin cậy bởi các tổ chức giáo dục",
+        "trusted_section_description": "Nền tảng của chúng tôi được thiết kế để đáp ứng các tiêu chuẩn cao nhất về bảo mật và quyền riêng tư, đảm bảo môi trường học tập an toàn cho học sinh ở mọi lứa tuổi.",
+        "features_title": "Công cụ giáo dục mạnh mẽ",
+        "features": {
+          "smart_learning_management": "Quản lý học tập thông minh",
+          "smart_learning_management_desc": "LMS được hỗ trợ bởi AI thích ứng với phong cách và tốc độ học tập của từng học sinh.",
+          "interactive_classrooms": "Lớp học tương tác",
+          "interactive_classrooms_desc": "Thu hút học sinh bằng các công cụ lớp học ảo và cộng tác theo thời gian thực.",
+          "progress_tracking": "Theo dõi tiến độ",
+          "progress_tracking_desc": "Phân tích toàn diện để theo dõi hiệu suất và sự tham gia của sinh viên.",
+          "course_creation": "Tạo khóa học",
+          "course_creation_desc": "Các công cụ dễ sử dụng để tạo và quản lý nội dung giáo dục.",
+          "virtual_classrooms": "Lớp học ảo",
+          "virtual_classrooms_desc": "Tích hợp hội nghị truyền hình liền mạch cho việc học từ xa.",
+          "ai assessment": "Đánh giá bằng AI",
+          "ai assessment_desc": "Tự động chấm điểm và phản hồi được cá nhân hóa nhờ AI."
+        },
+        "use_cases_title": "Giải pháp cho mọi cấp độ",
+        "use_cases": {
+          "K_12_education": "Chương trình phổ thông 12 năm",
+          "K_12_education_desc": "Công cụ toàn diện để quản lý giáo dục tiểu học và trung học.",
+          "K_12_education_item1": "Bài học tương tác",
+          "K_12_education_item2": "Giao tiếp phụ huynh",
+          "K_12_education_item3": "Quản lý bài tập về nhà",
+          "K_12_education_item4": "Báo cáo tiến độ",
+          "higher_education": "Giáo dục bậc cao",
+          "higher_education_desc": "Các tính năng nâng cao dành cho các trường đại học và cao đẳng.",
+          "higher_education_item1": "Quản lý khóa học",
+          "higher_education_item2": "Hợp tác nghiên cứu",
+          "higher_education_item3": "Phân tích sinh viên",
+          "higher_education_item4": "Chia sẻ tài nguyên",
+          "professional_training": "Đào tạo chuyên nghiệp",
+          "professional_training_desc": "Giải pháp đào tạo và phát triển chuyên môn doanh nghiệp.",
+          "professional_training_item1": "Đánh giá kỹ năng",
+          "professional_training_item2": "Chương trình chứng nhận",
+          "professional_training_item3": "Giới thiệu nhân viên",
+          "professional_training_item4": "Theo dõi hiệu suất"
+        },
+        "bento_grid_title": "Học tập xuất sắc",
+        "bento_grid_subtitle": "Thư viện tổng hợp",
+        "bento_grid_description": "Truy cập hàng nghìn tài nguyên giáo dục, sách giáo khoa và nội dung đa phương tiện được tuyển chọn.",
+        "bento_grid_features": {
+          "global_reach": "Phạm vi tiếp cận toàn cầu",
+          "global_reach_desc": "Kết nối với người học trên toàn thế giới",
+          "gamification": "Trò chơi hóa",
+          "gamification_desc": "Kiếm huy hiệu và chứng chỉ",
+          "smart_network": "Mạng thông minh",
+          "smart_network_desc": "Lộ trình học tập được hỗ trợ bởi AI",
+          "custom_dashboard": "Trang tổng quan tùy chỉnh",
+          "custom_dashboard_desc": "Không gian học tập cá nhân hóa"
+        },
+        "timeline_title": "Hành trình thực hiện",
+        "timeline_steps": {
+          "step1": "Thiết lập nền tảng",
+          "week1": "Tuần 1",
+          "step2": "Đào tạo nhân viên",
+          "week2": "Tuần 2",
+          "step3": "Di chuyển dữ liệu",
+          "week3": "Tuần 3",
+          "step4": "Triển khai đầy đủ",
+          "week4": "Tuần 4"
+        },
+        "faq": {
+          "answer1": "Hệ thống AI của chúng tôi phân tích hiệu suất, mô hình học tập và mức độ tương tác của sinh viên để tạo ra lộ trình học tập được cá nhân hóa. \nNó thích ứng trong thời gian thực để cung cấp và hỗ trợ nội dung tối ưu.",
+          "question1": "Hệ thống học tập được hỗ trợ bởi AI hoạt động như thế nào?",
+          "question2": "Những biện pháp an ninh nào được áp dụng?",
+          "answer2": "Chúng tôi triển khai mã hóa cấp doanh nghiệp, kiểm tra bảo mật thường xuyên và tuân thủ các yêu cầu của FERPA và GDPR để đảm bảo bảo vệ dữ liệu của sinh viên.",
+          "question3": "Khả năng tích hợp với các hệ thống hiện có",
+          "answer3": "Có, nền tảng của chúng tôi cung cấp khả năng tích hợp API mạnh mẽ và hỗ trợ các tiêu chuẩn công nghệ giáo dục phổ biến để tích hợp liền mạch với các hệ thống hiện có.",
+          "question4": "Những hình thức hỗ trợ được cung cấp",
+          "answer4": "Chúng tôi cung cấp hỗ trợ kỹ thuật 24/7, người quản lý thành công của khách hàng tận tâm và hỗ trợ triển khai toàn diện. \nNhóm của chúng tôi cũng cung cấp các buổi đào tạo thường xuyên và hội thảo trực tuyến về giáo dục.",
+          "question5": "Nền tảng có thể tùy chỉnh như thế nào?",
+          "answer5": "Nền tảng này có khả năng tùy biến cao với các tùy chọn gắn nhãn trắng, nhãn hiệu tùy chỉnh, quy trình công việc có thể định cấu hình và tích hợp API. \nBạn có thể điều chỉnh trải nghiệm học tập để phù hợp với nhu cầu của tổ chức bạn.",
+          "question6": "Các yêu cầu phần cứng là gì?",
+          "answer6": "Nền tảng dựa trên đám mây của chúng tôi hoạt động trên mọi trình duyệt web hiện đại. \nĐể tổ chức hội nghị truyền hình tối ưu, chúng tôi khuyên bạn nên kết nối Internet ổn định và cập nhật các thiết bị có chức năng camera và micrô.",
+          "question7": "Việc sao lưu dữ liệu được xử lí như thế nào?",
+          "answer7": "Chúng tôi duy trì các bản sao lưu tự động hàng ngày với khả năng lưu giữ trong 30 ngày, lưu trữ dự phòng theo địa lý và các giao thức khắc phục thảm họa. \nDữ liệu của bạn luôn an toàn và có thể truy cập được."
+        }
+      }
+    }
   }
 }

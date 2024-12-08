@@ -1,4 +1,4 @@
-import { UserDatabaseFilter } from '../../users/filters';
+import { Filter } from '../../users/filters';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
@@ -37,7 +37,7 @@ export default async function Filters({
   return (
     <>
       {noInclude || (
-        <UserDatabaseFilter
+        <Filter
           key="included-user-groups-filter"
           tag="includedGroups"
           title={t('user-data-table.included_groups')}
@@ -50,7 +50,7 @@ export default async function Filters({
         />
       )}
       {noExclude || (
-        <UserDatabaseFilter
+        <Filter
           key="excluded-user-groups-filter"
           tag="excludedGroups"
           title={t('user-data-table.excluded_groups')}
@@ -62,7 +62,7 @@ export default async function Filters({
           }))}
         />
       )}
-      <UserDatabaseFilter
+      <Filter
         key="user-filter"
         tag="userId"
         title={t('user-data-table.user')}

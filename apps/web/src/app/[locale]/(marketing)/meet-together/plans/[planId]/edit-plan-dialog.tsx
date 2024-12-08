@@ -109,7 +109,7 @@ export default function EditPlanDialog({ plan }: Props) {
     });
 
     if (res.ok) {
-      router.push('/calendar/meet-together');
+      router.push('/meet-together');
     } else {
       setDeleting(false);
       toast({

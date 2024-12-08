@@ -1,4 +1,4 @@
-import { UserDatabaseFilter } from '../../../users/filters';
+import { Filter } from '../../../users/filters';
 import { SectionProps } from './index';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
@@ -82,7 +82,7 @@ export default function RoleFormMembersSection({
       </div>
       <div className="flex items-center gap-2">
         <SearchBar t={t} className={cn('w-full')} onSearch={setQuery} />
-        <UserDatabaseFilter
+        <Filter
           title={t('ws-members.invite_member')}
           icon={<User className="mr-2 h-4 w-4" />}
           options={users.map((user) => ({
