@@ -1,11 +1,11 @@
 'use client';
 
 import DocumentShareDialog from '../document-share-dialog';
-// import { DocumentEditor } from './editor';
 import { Room } from './Room';
+// import { DocumentEditor } from './editor';
 import { BlockEditor } from '@/components/components/BlockEditor';
 import { cn } from '@/lib/utils';
-// import { useLiveblocks } from '@liveblocks/react'; 
+// import { useLiveblocks } from '@liveblocks/react';
 import { WorkspaceDocument } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
@@ -27,12 +27,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
-import { Globe2, Lock } from 'lucide-react';
-import { CircleCheck, CircleDashed } from 'lucide-react';
+import { CircleCheck, CircleDashed, Globe2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { JSONContent } from 'novel';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { use, useEffect, useMemo, useRef, useState } from 'react';
 import { Doc as YDoc } from 'yjs';
 
 interface Props {
@@ -59,26 +58,22 @@ async function deleteDocument(wsId: string, documentId: string) {
 export default function DocumentDetailsPage({ params }: Props) {
   const t = useTranslations();
   const nameInputRef = useRef<HTMLInputElement | null>(null);
-  // const supabase= createClient();
-  const [wsId, setWsId] = useState<string | null>(null);
-  const [documentId, setDocumentId] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
-  const [document, setDocument] = useState<WorkspaceDocument | null>(null);
+  const [document, setDocument] = useState<Partial<WorkspaceDocument> | null>(
+    null
+  );
   const [saveStatus, setSaveStatus] = useState(t('common.saved'));
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
   const [provider] = useState<TiptapCollabProvider | null>(null);
-  // const [collabToken, setCollabToken] = useState<string | null | undefined>();
   const [aiToken] = useState<string | null | undefined>();
+
   const hasCollab = true;
   const ydoc = useMemo(() => new YDoc(), []);
-  useEffect(() => {
-    params.then((resolvedParams) => {
-      setWsId(resolvedParams.wsId);
-      setDocumentId(resolvedParams.documentId);
-    });
-  }, [params]);
+
+  const { wsId, documentId } = use(params);
 
   useEffect(() => {
     if (wsId && documentId) {
@@ -94,7 +89,7 @@ export default function DocumentDetailsPage({ params }: Props) {
     if (document && wsId && documentId) {
       try {
         setLoading(true);
-        await deleteDocument(wsId, document.id);
+        if (document.id) await deleteDocument(wsId, document.id);
         router.push(`/${wsId}/documents`);
       } catch (error) {
         console.error(error);
@@ -111,7 +106,7 @@ export default function DocumentDetailsPage({ params }: Props) {
         .from('workspace_documents')
         .update({ is_public })
         .eq('id', documentId);
-      setDocument({ ...document, is_public });
+      setDocument((prevDoc) => ({ ...prevDoc, is_public }));
     }
   };
 
@@ -124,12 +119,15 @@ export default function DocumentDetailsPage({ params }: Props) {
     if (newName && document) {
       setSaveStatus(t('common.saving'));
       const supabase = createClient();
+
+      if (!document.id) return;
+
       await supabase
         .from('workspace_documents')
         .update({ name: newName })
         .eq('id', document.id);
 
-      setDocument({ ...document, name: newName });
+      setDocument((prevDoc) => ({ ...prevDoc, name: newName }));
       setSaveStatus(t('common.saved'));
     }
   };
@@ -220,13 +218,15 @@ export default function DocumentDetailsPage({ params }: Props) {
         />
       </Room>
 
-      <DocumentShareDialog
-        isOpen={isShareDialogOpen}
-        onClose={() => setIsShareDialogOpen(false)}
-        documentId={document.id}
-        isPublic={document.is_public!!}
-        onUpdateVisibility={handleUpdateVisibility}
-      />
+      {document.id && (
+        <DocumentShareDialog
+          isOpen={isShareDialogOpen}
+          onClose={() => setIsShareDialogOpen(false)}
+          documentId={document.id}
+          isPublic={document.is_public!!}
+          onUpdateVisibility={handleUpdateVisibility}
+        />
+      )}
     </div>
   );
 }
