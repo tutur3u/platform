@@ -1,11 +1,12 @@
-import { userColors, userNames } from '../lib/constants';
+// import { userColors, userNames } from '../lib/constants';
 import type { EditorUser } from '@/components/components/BlockEditor/types';
-import { AiImage, AiWriter } from '@/extensions';
+import { AiImage, AiWriter, StarterKit } from '@/extensions';
 import { Ai } from '@/extensions/Ai';
 import MentionList, { MentionListRef } from '@/extensions/Mention/MentionList';
 import { ExtensionKit } from '@/extensions/extension-kit';
-import { randomElement } from '@/lib/utils/index';
+// import { randomElement } from '@/lib/utils/index';
 import { TiptapCollabProvider, WebSocketStatus } from '@hocuspocus/provider';
+import { useLiveblocksExtension } from '@liveblocks/react-tiptap';
 import type { AnyExtension, Editor } from '@tiptap/core';
 import { JSONContent } from '@tiptap/core';
 import Collaboration from '@tiptap/extension-collaboration';
@@ -15,24 +16,18 @@ import { useEditor, useEditorState } from '@tiptap/react';
 import { ReactRenderer } from '@tiptap/react';
 import { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion';
 import { useEffect, useState } from 'react';
+import { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import tippy, {
   GetReferenceClientRect,
   Instance as TippyInstance,
 } from 'tippy.js';
 import type { Doc as YDoc } from 'yjs';
-import { KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 declare global {
   interface Window {
     editor: Editor | null;
   }
 }
-// interface MentionPluginProps {
-//   query: string;
-//   clientRect: DOMRect | null;
-//   editor: any;
-//   event: React.KeyboardEvent;
-// }
 export const useBlockEditor = ({
   aiToken,
   ydoc,
@@ -53,6 +48,7 @@ export const useBlockEditor = ({
   const [collabState, setCollabState] = useState<WebSocketStatus>(
     provider ? WebSocketStatus.Connecting : WebSocketStatus.Disconnected
   );
+  const liveblocks = useLiveblocksExtension();
 
   const editor = useEditor(
     {
@@ -82,6 +78,11 @@ export const useBlockEditor = ({
         ...ExtensionKit({
           provider,
         }),
+        liveblocks,
+        StarterKit.configure({
+          history:false,
+        }),
+
         Mention.configure({
           HTMLAttributes: {
             class:
@@ -89,7 +90,6 @@ export const useBlockEditor = ({
           },
           suggestion: {
             items: async ({ query }) => {
-              // console.log(query, 'query')
               // Filter the list of names based on the user's query
               const response = await fetch(
                 `/api/v1/workspaces/${wsId}/Mention`
@@ -194,8 +194,10 @@ export const useBlockEditor = ({
           ? CollaborationCursor.configure({
               provider,
               user: {
-                name: randomElement(userNames),
-                color: randomElement(userColors),
+                // name: randomElement(userNames),
+                // color: randomElement(userColors),
+                name: 'Maxi',
+                color: '#000000',
               },
             })
           : undefined,
