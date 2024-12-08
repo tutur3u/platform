@@ -2,13 +2,20 @@ import { cn } from '../../../lib/utils';
 import { Button } from '../button';
 import ModifiableDialogTrigger from './modifiable-dialog-trigger';
 import { Cog, Plus } from 'lucide-react';
-import { ReactNode } from 'react';
+import { type ReactElement, ReactNode } from 'react';
+
+interface FormProps<T> {
+  data?: T;
+  forceDefault?: boolean;
+  onFinish?: () => void;
+  form?: ReactElement<FormProps<T>>;
+}
 
 interface Props<T> {
   data?: T & { id?: string };
   defaultData?: T & { id?: string };
   trigger?: ReactNode;
-  form?: ReactNode;
+  form?: ReactElement<FormProps<T>>;
   href?: string;
   title?: ReactNode;
   pluralTitle?: string;

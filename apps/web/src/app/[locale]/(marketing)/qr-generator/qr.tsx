@@ -64,7 +64,7 @@ export default function QR() {
         </div>
         <div>
           <QRDisplay
-            ref={ref}
+            ref={ref as React.RefObject<QRCode>}
             value={value}
             color={color}
             bgColor={bgColor}

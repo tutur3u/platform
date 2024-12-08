@@ -18,7 +18,7 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Pencil, Trash, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Flashcard } from 'react-quizlet-flashcard';
 
 export default function ClientFlashcards({
@@ -34,8 +34,8 @@ export default function ClientFlashcards({
         id: string;
         front: string;
         back: string;
-        frontHTML: string | JSX.Element;
-        backHTML: string | JSX.Element;
+        frontHTML: string | React.JSX.Element;
+        backHTML: string | React.JSX.Element;
         frontCardStyle?: React.CSSProperties;
         frontContentStyle?: React.CSSProperties;
         backCardStyle?: React.CSSProperties;

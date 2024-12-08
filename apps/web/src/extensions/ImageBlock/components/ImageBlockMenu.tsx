@@ -19,7 +19,7 @@ interface ImageBlockMenuProps extends MenuProps {
 export const ImageBlockMenu = ({
   editor,
   appendTo,
-}: ImageBlockMenuProps): JSX.Element | null => {
+}: ImageBlockMenuProps): React.ReactNode | null => {
   const menuRef = useRef<HTMLDivElement>(null);
   const tippyInstance = useRef<Instance | null>(null);
 

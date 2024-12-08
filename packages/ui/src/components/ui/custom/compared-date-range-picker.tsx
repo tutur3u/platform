@@ -293,7 +293,7 @@ export const ComparedDateRangePicker = ({
     preset: string;
     label: string;
     isSelected: boolean;
-  }): JSX.Element => (
+  }): React.ReactNode => (
     <Button
       className={cn(isSelected && 'pointer-events-none')}
       variant="ghost"

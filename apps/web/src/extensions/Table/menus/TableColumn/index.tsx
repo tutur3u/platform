@@ -8,7 +8,7 @@ import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react';
 import React, { useCallback } from 'react';
 
 export const TableColumnMenu = React.memo(
-  ({ editor, appendTo }: MenuProps): JSX.Element | null => {
+  ({ editor, appendTo }: MenuProps): React.ReactNode | null => {
     // Return null if editor is undefined
     if (!editor) return null;
 

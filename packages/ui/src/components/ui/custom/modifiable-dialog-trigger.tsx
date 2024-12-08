@@ -10,10 +10,16 @@ import {
 } from '../dialog';
 import { ReactElement, ReactNode, cloneElement, useState } from 'react';
 
+interface FormProps<T> {
+  data?: T;
+  forceDefault?: boolean;
+  onFinish?: () => void;
+}
+
 interface Props<T> {
   data?: T & { id?: string };
   trigger?: ReactNode;
-  form?: ReactNode;
+  form?: ReactElement<FormProps<T>>;
   open?: boolean;
   title?: string;
   editDescription?: string;
@@ -42,11 +48,14 @@ export default function ModifiableDialogTrigger<T>({
   const setOpen = setExternalOpen ?? setInternalOpen;
 
   const formWithCallback = form
-    ? cloneElement(form as ReactElement, {
-        data,
-        forceDefault,
-        onFinish: () => setOpen(false),
-      })
+    ? cloneElement(
+        form as ReactElement,
+        {
+          data,
+          forceDefault,
+          onFinish: () => setOpen(false),
+        } as FormProps<T>
+      )
     : null;
 
   return (

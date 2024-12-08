@@ -56,7 +56,7 @@ export interface ChatPanelProps
   chats?: AIChat[];
   count?: number | null;
   defaultRoute: string;
-  inputRef: React.RefObject<HTMLTextAreaElement>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   model?: Model;
   setModel: (model: Model) => void;
   createChat: (input: string) => Promise<void>;
