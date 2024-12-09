@@ -2,9 +2,12 @@ import { invoiceColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { Invoice } from '@/types/primitives/Invoice';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface Props {
   params: Promise<{
@@ -39,6 +42,14 @@ export default async function WorkspaceInvoicesPage({
         description={t('ws-invoices.description')}
         createTitle={t('ws-invoices.create')}
         createDescription={t('ws-invoices.create_description')}
+        action={
+          <Link href={`/${wsId}/finance/invoices/new`}>
+            <Button>
+              <Plus />
+              {t('ws-invoices.create')}
+            </Button>
+          </Link>
+        }
       />
       <Separator className="my-4" />
       <CustomDataTable

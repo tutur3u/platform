@@ -210,7 +210,6 @@ export function Nav({
                 href="/new"
                 className="flex items-center justify-start"
                 onClick={() => {
-                  if (pathname === '/' && !searchParams.get('id')) return;
                   onClick?.();
                 }}
               >
