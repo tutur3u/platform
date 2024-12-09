@@ -50,7 +50,7 @@
     "@google/generative-ai": "^0.21.0",
     "@hocuspocus/provider": "^2.14.0",
     "@hookform/resolvers": "^3.9.1",
-    "@liveblocks/core": "^2.13.1",
+    "@liveblocks/core": "^2.13.2",
     "@liveblocks/react": "^2.13.1",
     "@liveblocks/react-tiptap": "^2.13.1",
     "@liveblocks/react-ui": "^2.13.1",

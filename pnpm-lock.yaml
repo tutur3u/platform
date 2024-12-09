@@ -379,8 +379,8 @@ importers:
         specifier: ^3.9.1
         version: 3.9.1(react-hook-form@7.54.0(react@19.0.0-rc-1c9b1387-20241204))
       '@liveblocks/core':
-        specifier: ^2.13.1
-        version: 2.13.1
+        specifier: ^2.13.2
+        version: 2.13.2
       '@liveblocks/react':
         specifier: ^2.13.1
         version: 2.13.1(react@19.0.0-rc-1c9b1387-20241204)
@@ -2234,6 +2234,9 @@ packages:
 
   '@liveblocks/core@2.13.1':
     resolution: {integrity: sha512-pSb46I/Uvo5NkIR5G4Gc74mPh1xjyok5uyaIO7eFX4E/zBZWWK/XEIgufTlDS9yqlLWW78XdJL2OSI5pK5+7iw==}
+
+  '@liveblocks/core@2.13.2':
+    resolution: {integrity: sha512-oqEzYYMT1u2WkkKkiTGrdVTK4AWBTx0HUbnYW9YV0nHMNZpyGtpHkjA1K3wiHxnuDE8Mo85VngVwN+0IkcpuMg==}
 
   '@liveblocks/react-tiptap@2.13.1':
     resolution: {integrity: sha512-M5HseAnCSEhVo6xdUZa16TQZSLtYND6ALs0sDlecDBLym8m8ZqQFdNeISnEjJaD0cMc5DMXyMs3qlF6QyQOi3w==}
@@ -8647,8 +8650,8 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
-    resolution: {tarball: https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e}
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
+    resolution: {commit: 32f550d3b3bdb1b781aabe100683311cd982c98e, repo: git@github.com:securedeveloper/js-xlsx.git, type: git}
     version: 0.8.20
     engines: {node: '>=0.8'}
     hasBin: true
@@ -10779,6 +10782,8 @@ snapshots:
       '@liveblocks/core': 2.13.1
 
   '@liveblocks/core@2.13.1': {}
+
+  '@liveblocks/core@2.13.2': {}
 
   '@liveblocks/react-tiptap@2.13.1(kcwm4id6hnxgwwe7hmx6gtxv3u)':
     dependencies:
@@ -17553,7 +17558,7 @@ snapshots:
   react-export-excel@0.5.3:
     dependencies:
       file-saver: 1.3.8
-      xlsx: tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e
+      xlsx: tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e
 
   react-hook-form@7.54.0(react@19.0.0-rc-1c9b1387-20241204):
     dependencies:
@@ -18557,7 +18562,7 @@ snapshots:
       mkdirp: 3.0.1
       yallist: 5.0.0
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
     dependencies:
       adler-32: 1.3.1
       cfb: 1.2.2
