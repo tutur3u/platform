@@ -1,4 +1,3 @@
-import { UserDatabaseFilter } from '../../../users/filters';
 import { Invoice } from '@/types/primitives/Invoice';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
@@ -19,6 +18,7 @@ import {
 } from '@repo/ui/components/ui/tabs';
 import { Package, TicketPercent, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { Filter } from '../../../users/filters';
 
 interface Props {
   params: Promise<{
@@ -68,7 +68,7 @@ export default async function WorkspaceInvoicesPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <UserDatabaseFilter
+              <Filter
                 key="user-filter"
                 tag="userId"
                 title={t('user-data-table.user')}
@@ -91,7 +91,7 @@ export default async function WorkspaceInvoicesPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <UserDatabaseFilter
+              <Filter
                 key="product-filter"
                 tag="productId"
                 title={t('invoices.add-product')}
@@ -120,7 +120,7 @@ export default async function WorkspaceInvoicesPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <UserDatabaseFilter
+              <Filter
                 key="promotion-filter"
                 tag="promotionId"
                 title={t('invoices.add_promotion')}
