@@ -388,8 +388,8 @@ importers:
         specifier: ^2.13.1
         version: 2.13.1(kcwm4id6hnxgwwe7hmx6gtxv3u)
       '@liveblocks/react-ui':
-        specifier: ^2.13.1
-        version: 2.13.1(@types/react-dom@19.0.1)(@types/react@19.0.1)(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)
+        specifier: ^2.14.0
+        version: 2.14.0(@types/react-dom@19.0.1)(@types/react@19.0.1)(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)
       '@mantine/core':
         specifier: ^7.14.3
         version: 7.14.3(@mantine/hooks@7.14.3(react@19.0.0-rc-1c9b1387-20241204))(@types/react@19.0.1)(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)
@@ -2232,8 +2232,14 @@ packages:
   '@liveblocks/client@2.13.1':
     resolution: {integrity: sha512-lID7zLeqHWJxmrFaUGWE23ItG78ox6xAz9lSVQV7vqjJFyDisivE+toJ7OKTViRftqvO4s7HgqMNh7PMmUrFKw==}
 
+  '@liveblocks/client@2.14.0':
+    resolution: {integrity: sha512-XSsZpHVYTUSHFt0nPh7JRIpALBSU7rY1BSUCanvDyDbfArg7b9BXb/tojhB8UNvdYMU1UVSCD/syDco/2R3BCw==}
+
   '@liveblocks/core@2.13.1':
     resolution: {integrity: sha512-pSb46I/Uvo5NkIR5G4Gc74mPh1xjyok5uyaIO7eFX4E/zBZWWK/XEIgufTlDS9yqlLWW78XdJL2OSI5pK5+7iw==}
+
+  '@liveblocks/core@2.14.0':
+    resolution: {integrity: sha512-MbciLE8HprTaYxY5H0jq3VbUS1qLno8oEYvP63y/S3IWsSe0l61VlkDQdHcyhPzpjmYNSpN2rr5VhPDADsIRaA==}
 
   '@liveblocks/react-tiptap@2.13.1':
     resolution: {integrity: sha512-M5HseAnCSEhVo6xdUZa16TQZSLtYND6ALs0sDlecDBLym8m8ZqQFdNeISnEjJaD0cMc5DMXyMs3qlF6QyQOi3w==}
@@ -2251,8 +2257,18 @@ packages:
     peerDependencies:
       react: ^16.14.0 || ^17 || ^18 || ^19 || ^19.0.0-rc
 
+  '@liveblocks/react-ui@2.14.0':
+    resolution: {integrity: sha512-XzDEDfayV7zMKEApnl27fqHblq6r4hqFN+llN44T7ROMPhJVsKpSomGXOizgWXCjbNRpwBfEkv+1mQTqv410Bg==}
+    peerDependencies:
+      react: ^16.14.0 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
   '@liveblocks/react@2.13.1':
     resolution: {integrity: sha512-UeJO6Vu5pbxOUiWKx7+OmfmDnXfqV9VJ5hmDiCHryojibM67xOnIwRpY7lvediEUtTU/U2230kXr5QfpaWmX7A==}
+    peerDependencies:
+      react: ^16.14.0 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
+  '@liveblocks/react@2.14.0':
+    resolution: {integrity: sha512-bY25dZqMzCwp99Q4RjYc52uX86shu4qjuYTEX42awu/pwlM7gSgBczzh7iMp4TGwmy+iAU1bp2xREAkWGrxlIQ==}
     peerDependencies:
       react: ^16.14.0 || ^17 || ^18 || ^19 || ^19.0.0-rc
 
@@ -8647,8 +8663,8 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
-    resolution: {tarball: https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e}
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
+    resolution: {commit: 32f550d3b3bdb1b781aabe100683311cd982c98e, repo: git@github.com:securedeveloper/js-xlsx.git, type: git}
     version: 0.8.20
     engines: {node: '>=0.8'}
     hasBin: true
@@ -10778,7 +10794,13 @@ snapshots:
     dependencies:
       '@liveblocks/core': 2.13.1
 
+  '@liveblocks/client@2.14.0':
+    dependencies:
+      '@liveblocks/core': 2.14.0
+
   '@liveblocks/core@2.13.1': {}
+
+  '@liveblocks/core@2.14.0': {}
 
   '@liveblocks/react-tiptap@2.13.1(kcwm4id6hnxgwwe7hmx6gtxv3u)':
     dependencies:
@@ -10830,10 +10852,40 @@ snapshots:
       - '@types/react-dom'
       - react-dom
 
+  '@liveblocks/react-ui@2.14.0(@types/react-dom@19.0.1)(@types/react@19.0.1)(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)':
+    dependencies:
+      '@floating-ui/react-dom': 2.1.2(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)
+      '@liveblocks/client': 2.14.0
+      '@liveblocks/core': 2.14.0
+      '@liveblocks/react': 2.14.0(react@19.0.0-rc-1c9b1387-20241204)
+      '@radix-ui/react-dropdown-menu': 2.1.2(@types/react-dom@19.0.1)(@types/react@19.0.1)(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)
+      '@radix-ui/react-popover': 1.1.2(@types/react-dom@19.0.1)(@types/react@19.0.1)(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)
+      '@radix-ui/react-slot': 1.1.0(@types/react@19.0.1)(react@19.0.0-rc-1c9b1387-20241204)
+      '@radix-ui/react-toggle': 1.1.0(@types/react-dom@19.0.1)(@types/react@19.0.1)(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)
+      '@radix-ui/react-tooltip': 1.1.4(@types/react-dom@19.0.1)(@types/react@19.0.1)(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)
+      react: 19.0.0-rc-1c9b1387-20241204
+      react-virtuoso: 4.12.3(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)
+      slate: 0.110.2
+      slate-history: 0.110.3(slate@0.110.2)
+      slate-hyperscript: 0.100.0(slate@0.110.2)
+      slate-react: 0.110.3(react-dom@19.0.0-rc-1c9b1387-20241204(react@19.0.0-rc-1c9b1387-20241204))(react@19.0.0-rc-1c9b1387-20241204)(slate@0.110.2)
+      use-sync-external-store: 1.4.0(react@19.0.0-rc-1c9b1387-20241204)
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
+      - react-dom
+
   '@liveblocks/react@2.13.1(react@19.0.0-rc-1c9b1387-20241204)':
     dependencies:
       '@liveblocks/client': 2.13.1
       '@liveblocks/core': 2.13.1
+      react: 19.0.0-rc-1c9b1387-20241204
+      use-sync-external-store: 1.4.0(react@19.0.0-rc-1c9b1387-20241204)
+
+  '@liveblocks/react@2.14.0(react@19.0.0-rc-1c9b1387-20241204)':
+    dependencies:
+      '@liveblocks/client': 2.14.0
+      '@liveblocks/core': 2.14.0
       react: 19.0.0-rc-1c9b1387-20241204
       use-sync-external-store: 1.4.0(react@19.0.0-rc-1c9b1387-20241204)
 
@@ -17553,7 +17605,7 @@ snapshots:
   react-export-excel@0.5.3:
     dependencies:
       file-saver: 1.3.8
-      xlsx: tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e
+      xlsx: tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e
 
   react-hook-form@7.54.0(react@19.0.0-rc-1c9b1387-20241204):
     dependencies:
@@ -18557,7 +18609,7 @@ snapshots:
       mkdirp: 3.0.1
       yallist: 5.0.0
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
     dependencies:
       adler-32: 1.3.1
       cfb: 1.2.2
