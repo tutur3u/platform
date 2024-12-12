@@ -123,8 +123,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0(next@15.1.1-canary.1(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-df7b47d-20241124)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
       ai:
-        specifier: ^4.0.14
-        version: 4.0.14(react@19.0.0-rc-7283a213-20241206)(zod@3.24.1)
+        specifier: ^4.0.16
+        version: 4.0.16(react@19.0.0-rc-7283a213-20241206)(zod@3.24.1)
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-df7b47d-20241124
         version: 19.0.0-beta-df7b47d-20241124
@@ -574,8 +574,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0(next@15.1.1-canary.1(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-df7b47d-20241124)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
       ai:
-        specifier: ^4.0.14
-        version: 4.0.14(react@19.0.0-rc-7283a213-20241206)(zod@3.24.1)
+        specifier: ^4.0.16
+        version: 4.0.16(react@19.0.0-rc-7283a213-20241206)(zod@3.24.1)
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-df7b47d-20241124
         version: 19.0.0-beta-df7b47d-20241124
@@ -4619,8 +4619,8 @@ packages:
     resolution: {integrity: sha512-5GG/5IbQQpC9FpkRGsSvZI5QYeSCzlJHdpBQntCsuTOxhKD8lqKhrleg2Yi7yvMIf82Ycmmqln9U8V9qwEiJew==}
     engines: {node: '>= 8.0.0'}
 
-  ai@4.0.14:
-    resolution: {integrity: sha512-0Cefmf13LItpef4PotGnVX37vpx0CGxAcMypS429PweGOMAR913jxX3yPtRyS5S3pcKOK006phRZKLZreTBgmg==}
+  ai@4.0.16:
+    resolution: {integrity: sha512-DdpyzTaJYwagQKkWNb1eYx/UcQoMNy+cZVRYYX3cb88r25EI46YjtjMuvDhd296FPgjJBFqbL4IvDHQBPaSwbw==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
@@ -8636,8 +8636,8 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
-    resolution: {tarball: https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e}
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
+    resolution: {commit: 32f550d3b3bdb1b781aabe100683311cd982c98e, repo: git@github.com:securedeveloper/js-xlsx.git, type: git}
     version: 0.8.20
     engines: {node: '>=0.8'}
     hasBin: true
@@ -13500,7 +13500,7 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@4.0.14(react@19.0.0-rc-7283a213-20241206)(zod@3.24.1):
+  ai@4.0.16(react@19.0.0-rc-7283a213-20241206)(zod@3.24.1):
     dependencies:
       '@ai-sdk/provider': 1.0.2
       '@ai-sdk/provider-utils': 2.0.4(zod@3.24.1)
@@ -17539,7 +17539,7 @@ snapshots:
   react-export-excel@0.5.3:
     dependencies:
       file-saver: 1.3.8
-      xlsx: tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e
+      xlsx: tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e
 
   react-hook-form@7.54.0(react@19.0.0-rc-7283a213-20241206):
     dependencies:
@@ -18578,7 +18578,7 @@ snapshots:
       mkdirp: 3.0.1
       yallist: 5.0.0
 
-  tempa-xlsx@https://codeload.github.com/securedeveloper/js-xlsx/tar.gz/32f550d3b3bdb1b781aabe100683311cd982c98e:
+  tempa-xlsx@git+https://git@github.com:securedeveloper/js-xlsx.git#32f550d3b3bdb1b781aabe100683311cd982c98e:
     dependencies:
       adler-32: 1.3.1
       cfb: 1.2.2
