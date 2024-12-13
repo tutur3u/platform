@@ -495,7 +495,7 @@ async function fetchWorkspaces() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return;
+  if (!user) return [] as Workspace[];
 
   const { data: workspaces, error: error } = await supabase
     .from('workspaces')
@@ -504,6 +504,6 @@ async function fetchWorkspaces() {
     )
     .eq('workspace_members.user_id', user.id);
 
-  if (error) return;
+  if (error) return [] as Workspace[];
   return workspaces as Workspace[];
 }
