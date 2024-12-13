@@ -66,7 +66,7 @@
     "@supabase/supabase-js": "^2.47.6",
     "@tabler/icons-react": "^3.24.0",
     "@tanstack/react-query": "^5.62.7",
-    "@tanstack/react-table": "^8.20.5",
+    "@tanstack/react-table": "^8.20.6",
     "@tippyjs/react": "^4.2.6",
     "@tiptap-pro/extension-details": "^2.16.3",
     "@tiptap-pro/extension-details-content": "^2.16.3",
