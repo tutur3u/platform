@@ -19,7 +19,10 @@ export function AuthButton({
   const supabase = createClient();
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({
+      scope: 'local',
+    });
+
     return redirect('/login');
   };
 
