@@ -6,10 +6,27 @@ export const models: {
   context?: number;
   disabled?: boolean;
 }[] = [
+  // {
+  //   value: 'gemini-1.5-flash',
+  //   label: 'gemini-1.5-flash',
+  //   provider: 'Google',
+  //   description:
+  //     "Gemini 1.5 Flash is the latest model of the Gemini family. It's a multimodal model that supports up to 1 million tokens. It is optimized for speed and efficiency.",
+  //   context: 1000000,
+  // },
+  // {
+  //   value: 'gemini-1.5-pro',
+  //   label: 'gemini-1.5-pro',
+  //   provider: 'Google',
+  //   description:
+  //     "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",
+  //   context: 1000000,
+  // },
+
   {
     value: 'gemini-1.5-flash',
     label: 'gemini-1.5-flash',
-    provider: 'Google',
+    provider: 'Google-Vertex',
     description:
       "Gemini 1.5 Flash is the latest model of the Gemini family. It's a multimodal model that supports up to 1 million tokens. It is optimized for speed and efficiency.",
     context: 1000000,
@@ -17,7 +34,7 @@ export const models: {
   {
     value: 'gemini-1.5-pro',
     label: 'gemini-1.5-pro',
-    provider: 'Google',
+    provider: 'Google-Vertex',
     description:
       "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",
     context: 1000000,
