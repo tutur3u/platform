@@ -42,7 +42,7 @@
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
     "ai": "^4.0.16",
-    "babel-plugin-react-compiler": "19.0.0-beta-df7b47d-20241124",
+    "babel-plugin-react-compiler": "19.0.0-beta-37ed2a7-20241206",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "framer-motion": "12.0.0-alpha.2",
