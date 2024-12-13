@@ -55,7 +55,7 @@
     "next": "15.1.1-canary.2",
     "next-intl": "^3.26.1",
     "next-themes": "^0.4.4",
-    "openai": "^4.76.2",
+    "openai": "^4.76.3",
     "pptxgenjs": "^3.12.0",
     "react": "19.0.0-rc-7283a213-20241206",
     "react-csv-reader": "^4.0.0",
