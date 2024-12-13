@@ -1,5 +1,5 @@
 import { checkEnvVariables } from './common';
-import { Database } from '@/types/supabase';
+import type { Database } from '@/types/supabase';
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -49,5 +49,10 @@ export async function updateSession(request: NextRequest) {
   // If this is not done, you may be causing the browser and server to go out
   // of sync and terminate the user's session prematurely!
 
-  return { res: supabaseResponse, user };
+  return {
+    res: NextResponse.next({
+      request,
+    }),
+    user,
+  };
 }

@@ -5,7 +5,6 @@ import { WorkspaceQuiz } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { ListPlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -42,12 +41,6 @@ export default async function WorkspaceQuizzesPage({
         createTitle={t('ws-quizzes.create')}
         createDescription={t('ws-quizzes.create_description')}
         form={<QuizForm wsId={wsId} />}
-        secondaryTriggerIcon={<ListPlus />}
-        secondaryTriggerTitle={`${t('ws-quiz-sets.link-quizzes')} `}
-        secondaryTitle={t('ws-roles.default_permissions')}
-        secondaryDescription={t('ws-roles.default_permissions_description')}
-        showSecondaryTrigger
-        showCustomSecondaryTrigger
       />
       <Separator className="my-4" />
       <CustomDataTable
