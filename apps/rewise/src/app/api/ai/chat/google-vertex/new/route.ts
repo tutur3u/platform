@@ -96,15 +96,6 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!title) {
-      return NextResponse.json(
-        {
-          message: 'Internal server error.',
-        },
-        { status: 502 }
-      );
-    }
-
     const { data: id, error } = await supabase.rpc('create_ai_chat', {
       title,
       message,
