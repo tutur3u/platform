@@ -28,7 +28,9 @@ export function ChatModelSelector({
   open: boolean;
   model?: Model;
   className?: string;
+  // eslint-disable-next-line no-unused-vars
   setOpen: (open: boolean) => void;
+  // eslint-disable-next-line no-unused-vars
   onChange: (value: Model) => void;
 }) {
   const [previewModel, setPreviewModel] = useState<Model | undefined>(model);
@@ -74,14 +76,19 @@ export function ChatModelSelector({
                   .filter((m) => m.provider === provider)
                   .map((m) => (
                     <CommandItem
-                      key={m.value}
-                      value={m.value}
+                      key={`${m.provider}-${m.value}`}
+                      value={`${m.provider}-${m.value}`}
                       onSelect={(currentValue) => {
-                        if (currentValue === model?.value) return;
                         if (m.disabled) return;
+                        if (
+                          currentValue === `${model?.provider}-${model?.value}`
+                        )
+                          return;
 
                         onChange(
-                          models.find((m) => m.value === currentValue) as Model
+                          models.find(
+                            (m) => `${m.provider}-${m.value}` === currentValue
+                          ) as Model
                         );
                       }}
                       onClick={() => setPreviewModel(m)}
@@ -91,7 +98,10 @@ export function ChatModelSelector({
                       <Check
                         className={cn(
                           'mr-2 h-4 w-4',
-                          model?.value === m.value ? 'opacity-100' : 'opacity-0'
+                          `${m.provider}-${m.value}` ===
+                            `${model?.provider}-${model?.value}`
+                            ? 'opacity-100'
+                            : 'opacity-0'
                         )}
                       />
                       <div className="bg-foreground text-background rounded-full px-2 py-0.5">

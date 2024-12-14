@@ -27,15 +27,22 @@ export async function POST(req: Request) {
   };
 
   if (!mode || !['short', 'medium', 'long'].includes(mode)) {
+    console.error('Invalid mode:', mode);
     return new Response('Invalid mode', { status: 400 });
   }
 
   try {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
-    if (!messages) return new Response('Missing messages', { status: 400 });
+    if (!messages) {
+      console.error('Missing messages');
+      return new Response('Missing messages', { status: 400 });
+    }
 
     const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    if (!apiKey) return new Response('Missing API key', { status: 400 });
+    if (!apiKey) {
+      console.error('Missing API key');
+      return new Response('Missing API key', { status: 400 });
+    }
 
     const supabase = await createClient();
 
@@ -43,7 +50,10 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return new Response('Unauthorized', { status: 401 });
+    if (!user) {
+      console.error('Unauthorized');
+      return new Response('Unauthorized', { status: 401 });
+    }
 
     let chatId = id;
 
@@ -56,7 +66,11 @@ export async function POST(req: Request) {
         .limit(1)
         .single();
 
-      if (error) return new Response(error.message, { status: 500 });
+      if (error) {
+        console.error(error.message);
+        return new Response(error.message, { status: 500 });
+      }
+
       if (!data) return new Response('Internal Server Error', { status: 500 });
 
       chatId = data.id;
@@ -91,7 +105,7 @@ export async function POST(req: Request) {
       console.log('User message saved to database');
     }
 
-    const result = await streamText({
+    const result = streamText({
       model: google(model, {
         safetySettings: [
           {
