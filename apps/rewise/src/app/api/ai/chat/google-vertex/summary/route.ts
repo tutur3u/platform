@@ -15,7 +15,7 @@ const vertex = createVertex({
   },
 });
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
+const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-exp';
 
 const ggVertex = vertex(DEFAULT_MODEL_NAME, {
   safetySettings: [

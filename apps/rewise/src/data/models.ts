@@ -6,27 +6,18 @@ export const models: {
   context?: number;
   disabled?: boolean;
 }[] = [
-  // {
-  //   value: 'gemini-1.5-flash',
-  //   label: 'gemini-1.5-flash',
-  //   provider: 'Google',
-  //   description:
-  //     "Gemini 1.5 Flash is the latest model of the Gemini family. It's a multimodal model that supports up to 1 million tokens. It is optimized for speed and efficiency.",
-  //   context: 1000000,
-  // },
-  // {
-  //   value: 'gemini-1.5-pro',
-  //   label: 'gemini-1.5-pro',
-  //   provider: 'Google',
-  //   description:
-  //     "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",
-  //   context: 1000000,
-  // },
-
+  {
+    value: 'gemini-2.0-flash-exp',
+    label: 'gemini-2.0-flash',
+    provider: 'Google',
+    description:
+      'Gemini 2.0 Flash delivers next-gen features and improved capabilities, including superior speed, native tool use, multimodal generation, and a 1M token context window.',
+    context: 1000000,
+  },
   {
     value: 'gemini-1.5-flash',
     label: 'gemini-1.5-flash',
-    provider: 'Google-Vertex',
+    provider: 'Google',
     description:
       "Gemini 1.5 Flash is the latest model of the Gemini family. It's a multimodal model that supports up to 1 million tokens. It is optimized for speed and efficiency.",
     context: 1000000,
@@ -34,10 +25,35 @@ export const models: {
   {
     value: 'gemini-1.5-pro',
     label: 'gemini-1.5-pro',
-    provider: 'Google-Vertex',
+    provider: 'Google',
     description:
       "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",
+    context: 2000000,
+  },
+
+  {
+    value: 'gemini-2.0-flash-exp',
+    label: 'gemini-2.0-flash',
+    provider: 'Google Vertex',
+    description:
+      'Gemini 2.0 Flash delivers next-gen features and improved capabilities, including superior speed, native tool use, multimodal generation, and a 1M token context window.',
     context: 1000000,
+  },
+  {
+    value: 'gemini-1.5-flash',
+    label: 'gemini-1.5-flash',
+    provider: 'Google Vertex',
+    description:
+      "Gemini 1.5 Flash is the latest model of the Gemini family. It's a multimodal model that supports up to 1 million tokens. It is optimized for speed and efficiency.",
+    context: 1000000,
+  },
+  {
+    value: 'gemini-1.5-pro',
+    label: 'gemini-1.5-pro',
+    provider: 'Google Vertex',
+    description:
+      "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",
+    context: 2000000,
   },
 
   {
@@ -296,15 +312,6 @@ export const models: {
   },
 
   {
-    value: 'gpt-4',
-    label: 'gpt-4',
-    provider: 'OpenAI',
-    description:
-      'GPT-4 from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately.',
-    context: 8192,
-    disabled: true,
-  },
-  {
     value: 'gpt-4-turbo',
     label: 'gpt-4-turbo',
     provider: 'OpenAI',
@@ -340,7 +347,8 @@ export const models: {
 
 const fallbackModel = models.find((model) => !model.disabled);
 export const defaultModel =
-  models.find((model) => model.value === 'gemini-1.5-flash') || fallbackModel;
+  models.find((model) => model.value === 'gemini-2.0-flash-exp') ||
+  fallbackModel;
 
 export const providers = models.reduce((acc, model) => {
   if (!acc.includes(model.provider)) acc.push(model.provider);

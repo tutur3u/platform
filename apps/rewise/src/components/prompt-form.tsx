@@ -5,6 +5,7 @@ import { Button } from '@repo/ui/components/ui/button';
 import { StatedFile } from '@repo/ui/components/ui/custom/file-uploader';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { IconArrowElbow } from '@repo/ui/components/ui/icons';
+import { Separator } from '@repo/ui/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
@@ -26,6 +27,7 @@ import {
   Paperclip,
   Rabbit,
   RefreshCw,
+  Sparkles,
   X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -39,6 +41,7 @@ export type ResponseMode = 'short' | 'medium' | 'long';
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
   id: string | undefined;
+  model?: string;
   chat: Partial<AIChat> | undefined;
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
@@ -56,6 +59,7 @@ export interface PromptProps
 export function PromptForm({
   onSubmit,
   id,
+  model,
   chat,
   files,
   setFiles,
@@ -233,6 +237,16 @@ export function PromptForm({
         className="w-full"
       >
         <div className="mb-2 flex items-center justify-between gap-2">
+          {model && (
+            <>
+              <div className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange flex shrink-0 items-center gap-1 rounded border px-2 py-1 text-xs font-semibold">
+                <Sparkles className="h-3 w-3" />
+                {model}
+              </div>
+              <Separator orientation="vertical" className="h-4" />
+            </>
+          )}
+
           <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
             <Button
               size="xs"

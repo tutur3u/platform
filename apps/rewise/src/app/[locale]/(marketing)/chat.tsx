@@ -328,7 +328,11 @@ const Chat = ({
         input={input}
         inputRef={inputRef}
         setInput={setInput}
-        model={model}
+        model={
+          chat?.model
+            ? models.find((m) => m.value === chat.model) || model
+            : model
+        }
         setModel={setModel}
         messages={messages}
         collapsed={collapsed}

@@ -28,7 +28,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
   >();
 
   const defaultProvider = 'google';
-  const defaultModel = 'gemini-1.5-flash';
+  const defaultModel = 'gemini-2.0-flash-exp';
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>();
 
