@@ -7,7 +7,7 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-latest';
+const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-exp';
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();

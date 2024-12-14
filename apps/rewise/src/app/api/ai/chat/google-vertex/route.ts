@@ -1,13 +1,30 @@
 import { ResponseMode } from '@/components/prompt-form';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
-import { anthropic } from '@ai-sdk/anthropic';
+import { createVertex } from '@ai-sdk/google-vertex/edge';
 import { CoreMessage, streamText } from 'ai';
 
+const vertex = createVertex({
+  project: process.env.GCP_PROJECT_ID || '',
+  location: process.env.GCP_LOCATION || 'asia-southeast1',
+  googleCredentials: {
+    clientEmail: process.env.GCP_SERVICE_ACCOUNT_CLIENT_EMAIL || '',
+    privateKey: process.env.GCP_SERVICE_ACCOUNT_PRIVATE_KEY || '',
+  },
+});
+
+const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-exp';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-exp';
+const ggVertex = vertex(DEFAULT_MODEL_NAME, {
+  safetySettings: [
+    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+  ],
+});
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
@@ -16,13 +33,11 @@ export async function POST(req: Request) {
     id,
     model = DEFAULT_MODEL_NAME,
     messages,
-    previewToken,
     mode,
   } = (await req.json()) as {
     id?: string;
     model?: string;
     messages?: CoreMessage[];
-    previewToken?: string;
     mode?: ResponseMode;
   };
 
@@ -34,8 +49,20 @@ export async function POST(req: Request) {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    if (!apiKey) return new Response('Missing API key', { status: 400 });
+    const gcpClientEmail = process.env.GCP_SERVICE_ACCOUNT_CLIENT_EMAIL;
+    const gcpPrivateKey = process.env.GCP_SERVICE_ACCOUNT_PRIVATE_KEY;
+
+    if (!gcpClientEmail) {
+      return new Response('Missing GCP Service Account Client Email', {
+        status: 400,
+      });
+    }
+
+    if (!gcpPrivateKey) {
+      return new Response('Missing GCP Service Account Private Key', {
+        status: 400,
+      });
+    }
 
     const supabase = await createClient();
 
@@ -62,11 +89,13 @@ export async function POST(req: Request) {
       chatId = data.id;
     }
 
+    // Filter user messages, and save message (prompt) to DB
     if (messages.length !== 1) {
       const userMessages = messages.filter(
         (msg: CoreMessage) => msg.role === 'user'
       );
 
+      // Extract last user message to become the prompt
       const message = userMessages[userMessages.length - 1]?.content;
       if (!message) {
         console.log('No message found');
@@ -91,11 +120,10 @@ export async function POST(req: Request) {
       console.log('User message saved to database');
     }
 
-    const result = await streamText({
-      model: anthropic(model, {
-        cacheControl: true,
-      }),
-      messages,
+    // Stream text with user input
+    const result = streamText({
+      model: ggVertex,
+      messages: messages,
       system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${
         mode === 'short'
           ? 'extremely short, concise, and to the point. No flashcards or quizzes are included'

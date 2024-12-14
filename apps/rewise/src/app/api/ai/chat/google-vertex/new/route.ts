@@ -1,28 +1,54 @@
 import { createClient } from '@/utils/supabase/server';
+import { createVertex } from '@ai-sdk/google-vertex/edge';
 import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
-import { Message } from 'ai';
+import { Message, generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-exp';
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
+const vertex = createVertex({
+  project: process.env.GCP_PROJECT_ID || '',
+  location: process.env.GCP_LOCATION || 'asia-southeast1',
+  googleCredentials: {
+    clientEmail: process.env.GCP_SERVICE_ACCOUNT_CLIENT_EMAIL || '',
+    privateKey: process.env.GCP_SERVICE_ACCOUNT_PRIVATE_KEY || '',
+  },
+});
 
-const genAI = new GoogleGenerativeAI(API_KEY);
+const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-exp';
+
+const ggVertex = vertex(DEFAULT_MODEL_NAME, {
+  safetySettings: [
+    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+  ],
+});
+
+async function generateChatTitle(message: string) {
+  const prompt =
+    'Generate a concise title for the following chat conversation: ' + message;
+
+  try {
+    const res = await generateText({
+      model: ggVertex,
+      prompt: prompt,
+    });
+    return res?.text || null;
+  } catch (error) {
+    console.log('Error generating chat title:', error);
+    throw error;
+  }
+}
 
 export async function POST(req: Request) {
   try {
-    const { model, message, previewToken } = (await req.json()) as {
+    const { model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
       model?: string;
       message?: string;
-      previewToken?: string;
     };
 
     if (!message)
@@ -36,10 +62,20 @@ export async function POST(req: Request) {
 
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    if (!apiKey) return new Response('Missing API key', { status: 400 });
+    const gcpClientEmail = process.env.GCP_SERVICE_ACCOUNT_CLIENT_EMAIL;
+    const gcpPrivateKey = process.env.GCP_SERVICE_ACCOUNT_PRIVATE_KEY;
 
-    if (!model) return NextResponse.json('No model provided', { status: 400 });
+    if (!gcpClientEmail) {
+      return new Response('Missing GCP Service Account Client Email', {
+        status: 400,
+      });
+    }
+
+    if (!gcpPrivateKey) {
+      return new Response('Missing GCP Service Account Private Key', {
+        status: 400,
+      });
+    }
 
     const prompt = buildPrompt([
       {
@@ -49,31 +85,14 @@ export async function POST(req: Request) {
       },
     ]);
 
-    const geminiRes = await genAI
-      .getGenerativeModel({
-        model: DEFAULT_MODEL_NAME,
-        generationConfig,
-        safetySettings,
-      })
-      .generateContent(prompt);
-
-    const title = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+    const title = await generateChatTitle(prompt);
 
     if (!title) {
       return NextResponse.json(
         {
           message: 'Internal server error.',
         },
-        { status: 500 }
-      );
-    }
-
-    if (!title) {
-      return NextResponse.json(
-        {
-          message: 'Internal server error.',
-        },
-        { status: 500 }
+        { status: 501 }
       );
     }
 
@@ -83,7 +102,7 @@ export async function POST(req: Request) {
       model: model.toLowerCase(),
     });
 
-    if (error) return NextResponse.json(error.message, { status: 500 });
+    if (error) return NextResponse.json(error.message, { status: 503 });
     return NextResponse.json({ id, title }, { status: 200 });
   } catch (error: any) {
     console.log(error);
@@ -113,34 +132,6 @@ function buildPrompt(messages: Message[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
 }
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
 
 const leadingMessages: Message[] = [
   {
