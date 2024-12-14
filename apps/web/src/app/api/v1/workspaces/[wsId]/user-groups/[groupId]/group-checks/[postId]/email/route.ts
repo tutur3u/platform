@@ -38,6 +38,7 @@ export async function POST(
   });
 
   if (withoutPermission('send_user_group_post_emails')) {
+    console.log('Permission denied');
     return NextResponse.json({ message: 'Permission denied' }, { status: 403 });
   }
 
@@ -54,6 +55,7 @@ export async function POST(
   const isWSIDAllowed = workspaceSecret?.value === 'true';
 
   if (!isWSIDAllowed) {
+    console.log('Workspace ID is not allowed');
     return NextResponse.json(
       { message: 'Workspace ID is not allowed' },
       { status: 403 }
@@ -73,6 +75,7 @@ export async function POST(
   };
 
   if (!data.users) {
+    console.log('Invalid request body');
     return NextResponse.json(
       { message: 'Invalid request body' },
       { status: 400 }
