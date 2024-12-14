@@ -38,6 +38,7 @@ export const models: {
     description:
       'Gemini 2.0 Flash delivers next-gen features and improved capabilities, including superior speed, native tool use, multimodal generation, and a 1M token context window.',
     context: 1000000,
+    disabled: true,
   },
   {
     value: 'gemini-1.5-flash',
@@ -46,6 +47,7 @@ export const models: {
     description:
       "Gemini 1.5 Flash is the latest model of the Gemini family. It's a multimodal model that supports up to 1 million tokens. It is optimized for speed and efficiency.",
     context: 1000000,
+    disabled: true,
   },
   {
     value: 'gemini-1.5-pro',
@@ -54,6 +56,7 @@ export const models: {
     description:
       "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",
     context: 2000000,
+    disabled: true,
   },
 
   {
