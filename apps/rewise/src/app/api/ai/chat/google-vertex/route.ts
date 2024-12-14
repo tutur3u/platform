@@ -4,15 +4,18 @@ import { createVertex } from '@ai-sdk/google-vertex/edge';
 import { CoreMessage, streamText } from 'ai';
 
 const vertex = createVertex({
-    project: process.env.GCP_PROJECT_ID || '',
-    location: process.env.GCP_LOCATION || 'asia-southeast1',
-    googleCredentials: {
-      clientEmail: process.env.GCP_SERVICE_ACCOUNT_CLIENT_EMAIL || '',
-      privateKey: process.env.GCP_SERVICE_ACCOUNT_PRIVATE_KEY || '',
-    },
+  project: process.env.GCP_PROJECT_ID || '',
+  location: process.env.GCP_LOCATION || 'asia-southeast1',
+  googleCredentials: {
+    clientEmail: process.env.GCP_SERVICE_ACCOUNT_CLIENT_EMAIL || '',
+    privateKey: process.env.GCP_SERVICE_ACCOUNT_PRIVATE_KEY || '',
+  },
 });
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
+export const runtime = 'edge';
+export const maxDuration = 60;
+export const preferredRegion = 'sin1';
 
 const ggVertex = vertex(DEFAULT_MODEL_NAME, {
   safetySettings: [
@@ -22,10 +25,6 @@ const ggVertex = vertex(DEFAULT_MODEL_NAME, {
     { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
   ],
 });
-
-// export const runtime = 'edge';
-// export const maxDuration = 60;
-// export const preferredRegion = 'sin1';
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
@@ -122,7 +121,7 @@ export async function POST(req: Request) {
     }
 
     // Stream text with user input
-    const result = await streamText({
+    const result = streamText({
       model: ggVertex,
       messages: messages,
       system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${

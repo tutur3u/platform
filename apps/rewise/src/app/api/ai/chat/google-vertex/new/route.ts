@@ -4,6 +4,10 @@ import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { Message, generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+export const maxDuration = 60;
+export const preferredRegion = 'sin1';
+
 const vertex = createVertex({
   project: process.env.GCP_PROJECT_ID || '',
   location: process.env.GCP_LOCATION || 'asia-southeast1',
@@ -12,10 +16,6 @@ const vertex = createVertex({
     privateKey: process.env.GCP_SERVICE_ACCOUNT_PRIVATE_KEY || '',
   },
 });
-
-// export const runtime = 'edge';
-// export const maxDuration = 60;
-// export const preferredRegion = 'sin1';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
 
@@ -141,15 +141,6 @@ function buildPrompt(messages: Message[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
 }
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
 
 const leadingMessages: Message[] = [
   {

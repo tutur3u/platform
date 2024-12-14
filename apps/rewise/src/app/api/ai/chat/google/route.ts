@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     }
 
     const result = await streamText({
-      model: google(`models/${model}-latest`, {
+      model: google(model, {
         safetySettings: [
           {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',

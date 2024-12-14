@@ -1,10 +1,10 @@
 import { createClient } from '@/utils/supabase/server';
 import { createVertex } from '@ai-sdk/google-vertex/edge';
-import { CoreMessage, Message, convertToCoreMessages, generateText } from 'ai';
+import { Message, generateText } from 'ai';
 
-// export const runtime = 'edge';
-// export const maxDuration = 60;
-// export const preferredRegion = 'sin1';
+export const runtime = 'edge';
+export const maxDuration = 60;
+export const preferredRegion = 'sin1';
 
 const vertex = createVertex({
   project: process.env.GCP_PROJECT_ID || '',
@@ -25,20 +25,6 @@ const ggVertex = vertex(DEFAULT_MODEL_NAME, {
     { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
   ],
 });
-
-async function generateChatSummaryMessage(messages: CoreMessage[] | Message[]) {
-  try {
-    const res = await generateText({
-      model: ggVertex,
-      messages: messages,
-      system: systemInstruction,
-    });
-    return res?.text || null;
-  } catch (error) {
-    console.log('Error generating chat summary:', error);
-    throw error;
-  }
-}
 
 async function generateChatSummaryPrompt(prompt: string) {
   try {
@@ -150,40 +136,6 @@ export async function PATCH(req: Request) {
   }
 }
 
-const normalizeGoogle = (message: Message) => ({
-  role:
-    message.role === 'user'
-      ? 'user'
-      : ('model' as 'user' | 'function' | 'model'),
-  parts: [{ text: message.content }],
-});
-
-const normalizeGoogleMessages = (messages: Message[]) =>
-  messages
-    .filter(
-      (message) => message.role === 'user' || message.role === 'assistant'
-    )
-    .map(normalizeGoogle);
-
-function buildGooglePrompt(messages: Message[]) {
-  const normalizedMsgs = normalizeGoogleMessages([
-    ...leadingMessages,
-    ...messages,
-    ...trailingMessages,
-  ]);
-
-  return { contents: normalizedMsgs };
-}
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
 const systemInstruction = `
   Note to self (this is private thoughts that are not sent to the chat participant):
 
@@ -205,13 +157,3 @@ const systemInstruction = `
   (This is the end of the note.)
   DO NOT SAY RESPONSE START OR SAYING THAT THE RESPONSE TO THE USER STARTS HERE. JUST START THE RESPONSE.
   `;
-
-const leadingMessages: Message[] = [];
-
-const trailingMessages: Message[] = [
-  {
-    id: 'system-instruction',
-    role: 'assistant',
-    content: `Note to self (this is private thoughts that are not sent to the chat participant): \n\n"""${systemInstruction}"""`,
-  },
-];

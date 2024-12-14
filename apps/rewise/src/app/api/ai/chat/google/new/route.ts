@@ -114,13 +114,6 @@ function buildPrompt(messages: Message[]) {
 
 const generationConfig = undefined;
 
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
 const safetySettings = [
   {
     category: HarmCategory.HARM_CATEGORY_HARASSMENT,
