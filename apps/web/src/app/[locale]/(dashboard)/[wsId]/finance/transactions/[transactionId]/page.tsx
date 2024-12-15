@@ -1,13 +1,11 @@
 import { Bill } from './bill';
-import { TransactionObjectRowActions } from './row-actions';
-import { StorageObject } from '@/types/primitives/StorageObject';
+import { DetailObjects } from './objects';
 import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import 'dayjs/locale/vi';
-import { CalendarIcon, DollarSign, FileText, Wallet } from 'lucide-react';
+import { CalendarIcon, DollarSign, Wallet } from 'lucide-react';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -75,27 +73,11 @@ export default async function TransactionDetailsPage({ params }: Props) {
           </div>
 
           {objects.length > 0 && (
-            <div className="h-fit space-y-2 rounded-lg border p-4">
-              <div className="flex justify-between text-lg font-semibold">
-                {t('invoices.files')}
-                <Button variant="ghost" size="xs" asChild>
-                  <Link
-                    href={`/${joinPath(wsId, 'drive')}?path=${joinPath('finance', 'transactions', transactionId)}`}
-                  >
-                    {t('sidebar_tabs.drive')}
-                  </Link>
-                </Button>
-              </div>
-              <Separator />
-              {objects.map((object) => (
-                <DetailObject
-                  key={object.id}
-                  wsId={wsId}
-                  transactionId={transactionId}
-                  object={object}
-                />
-              ))}
-            </div>
+            <DetailObjects
+              wsId={wsId}
+              transactionId={transactionId}
+              objects={objects}
+            />
           )}
         </div>
 
@@ -143,32 +125,6 @@ function DetailItem({
   );
 }
 
-function DetailObject({
-  wsId,
-  transactionId,
-  object,
-}: {
-  wsId: string;
-  transactionId: string;
-  object: StorageObject;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <FileText className="h-4 w-4 flex-shrink-0" />
-
-      <span className="flex-1 truncate">{object.name}</span>
-
-      <div className="flex-shrink-0">
-        <TransactionObjectRowActions
-          wsId={wsId}
-          transactionId={transactionId}
-          storageObj={object}
-        />
-      </div>
-    </div>
-  );
-}
-
 async function getData(wsId: string, transactionId: string) {
   const supabase = await createClient();
 
@@ -188,5 +144,36 @@ async function getData(wsId: string, transactionId: string) {
 
   if (objectError) throw objectError;
 
-  return { objects, transaction };
+  const imageObjects = objects.filter((object) =>
+    object.metadata.mimetype.includes('image')
+  );
+
+  // batch signed to reduce network calls
+  const { data: previews, error: previewError } = imageObjects.length
+    ? await supabase.storage.from('workspaces').createSignedUrls(
+        imageObjects.map((object) =>
+          joinPath(wsId, 'finance/transactions', transactionId, object.name)
+        ),
+        // TODO: externalize expiresIn params, currently 5 minutes
+        3600
+      )
+    : { data: [], error: undefined };
+
+  if (previewError) throw previewError;
+
+  // assign preview-able objects results to objects' metadata
+  Object.assign(
+    objects,
+    objects.map((object) => ({
+      ...object,
+      metadata: {
+        ...object.metadata,
+        preview: previews?.find(
+          (preview) => preview?.path?.split('/').pop() === object.name
+        ),
+      },
+    }))
+  );
+
+  return { objects, transaction, previews };
 }
