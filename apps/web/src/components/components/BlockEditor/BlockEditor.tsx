@@ -9,14 +9,14 @@ import { ColumnsMenu } from '@/extensions/MultiColumn/menus';
 import { TableColumnMenu, TableRowMenu } from '@/extensions/Table/menus';
 import { useBlockEditor } from '@/hooks/useBlockEditor';
 import { useSidebar } from '@/hooks/useSidebar';
+import { userColors } from '@/lib/constants';
+import { randomElement } from '@/lib/utils/index';
 import '@/style/index.css';
 import { createClient } from '@/utils/supabase/client';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
 import { EditorContent, JSONContent } from '@tiptap/react';
 import { useEffect, useRef } from 'react';
 import * as Y from 'yjs';
-import { randomElement } from '@/lib/utils/index';
-import { userColors } from '@/lib/constants';
 
 const supabase = createClient();
 
@@ -86,7 +86,7 @@ export const BlockEditor = ({
     name: 'John Doe',
     color: randomElement(userColors),
     // avatar: 'https://unavatar.io/github/ueberdosis',
-  })
+  });
   return (
     <div className="flex h-full">
       {/* <Sidebar

@@ -1,16 +1,12 @@
 // import { Editor } from "@tiptap/react";
 // import CommentIcon from "./icons/comment-icon";
-
 // type Props = {
 //   editor: Editor | null;
 // };
-
-
 // export function Toolbar({ editor }: Props) {
 //   if (!editor) {
 //     return null;
 //   }
-
 //   return (
 //     <div className="flex gap-1.5">
 //       <button
@@ -40,7 +36,6 @@
 //       </button>
 //       <button className="flex items-center justify-center cursor-pointer rounded-md h-8 w-8 bg-white text-gray-800 border-none shadow-md hover:text-gray-900 hover:shadow-lg focus:outline-offset-2 active:shadow-sm data-[active=is-active]:bg-gray-300"
 //         onClick={() => editor.chain().focus().addPendingComment().run()}
-
 //         data-active={editor.isActive("lb-comment") ? "is-active" : undefined}
 //         aria-label="strikethrough"
 //       >
@@ -49,7 +44,6 @@
 //     </div>
 //   );
 // }
-
 // function BoldIcon() {
 //   return (
 //     <svg
@@ -66,7 +60,6 @@
 //     </svg>
 //   );
 // }
-
 // function ItalicIcon() {
 //   return (
 //     <svg
@@ -83,7 +76,6 @@
 //     </svg>
 //   );
 // }
-
 // function StrikethroughIcon() {
 //   return (
 //     <svg
@@ -100,18 +92,17 @@
 //     </svg>
 //   );
 // }
-
-import { Editor } from "@tiptap/react";
+import { Editor } from '@tiptap/react';
 
 export function Toolbar({ editor }: { editor: Editor | null }) {
   return (
-    <div className="p-2 border-b border-[#E6E6E7]">
+    <div className="border-b border-[#E6E6E7] p-2">
       <button
         onClick={() => {
           editor?.chain().focus().addPendingComment().run();
         }}
-        data-active={editor?.isActive("liveblocksCommentMark")}
-        className="font-medium p-2 rounded-lg hover:bg-[#F4F4F5] focus:outline-none"
+        data-active={editor?.isActive('liveblocksCommentMark')}
+        className="rounded-lg p-2 font-medium hover:bg-[#F4F4F5] focus:outline-none"
       >
         💬 New comment
       </button>

@@ -14,10 +14,7 @@ export type EditorHeaderProps = {
   users: EditorUser[];
 };
 
-export const EditorHeader = ({
-  editor,
-  users,
-}: EditorHeaderProps) => {
+export const EditorHeader = ({ editor, users }: EditorHeaderProps) => {
   const { characters, words } = useEditorState({
     editor,
     selector: (ctx): { characters: number; words: number } => {
@@ -43,11 +40,7 @@ export const EditorHeader = ({
           </Toolbar.Button>
         </div> */}
       </div>
-      <EditorInfo
-        characters={characters}
-        words={words}
-        users={users}
-      />
+      <EditorInfo characters={characters} words={words} users={users} />
     </div>
   );
 };

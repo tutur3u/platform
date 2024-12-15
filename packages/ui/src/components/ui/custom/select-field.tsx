@@ -39,7 +39,7 @@ export interface SelectProps
 // Merge the two interfaces
 type Props = SelectFieldProps & SelectProps;
 
-const SelectField = forwardRef<React.ElementRef<typeof Root>, Props>(
+const SelectField = forwardRef<React.ComponentRef<typeof Root>, Props>(
   ({ id, label, placeholder, options, classNames, ...props }, ref) => {
     return (
       <div className={cn('grid gap-2', classNames?.root)}>

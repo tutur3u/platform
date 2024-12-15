@@ -12,24 +12,22 @@ export type EditorInfoProps = {
 
 export const EditorInfo = memo(
   ({ characters, users, words }: EditorInfoProps) => {
-    const status = useStatus(); 
+    const status = useStatus();
 
+    const connectionText =
+      status === 'connected'
+        ? 'Connected'
+        : status === 'connecting'
+          ? 'Connecting...'
+          : 'Disconnected';
 
-    const connectionText = 
-      status === 'connected' 
-        ? 'Connected' 
-        : status === 'connecting' 
-        ? 'Connecting...' 
-        : 'Disconnected';
-
-
-    const statusColor = 
+    const statusColor =
       status === 'connected'
         ? 'bg-green-500 dark:bg-green-400'
         : status === 'connecting'
-        ? 'bg-yellow-500 dark:bg-yellow-400'
-        : 'bg-red-500 dark:bg-red-400';
-    
+          ? 'bg-yellow-500 dark:bg-yellow-400'
+          : 'bg-red-500 dark:bg-red-400';
+
     return (
       <div className="flex items-center">
         <div className="mr-4 flex flex-col justify-center border-r border-neutral-200 pr-4 text-right dark:border-neutral-800">

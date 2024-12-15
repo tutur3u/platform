@@ -42,6 +42,7 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   data?: Transaction;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -308,17 +309,17 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
 
           <div className="h-0" />
 
-          <FormField
-            control={form.control}
-            name="taken_at"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>{t('transaction-data-table.taken_at')}</FormLabel>
-                <Popover>
+          <Popover>
+            <FormField
+              control={form.control}
+              name="taken_at"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>{t('transaction-data-table.taken_at')}</FormLabel>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
-                        variant={'outline'}
+                        variant="outline"
                         className={cn(
                           'pl-3 text-left font-normal',
                           !field.value && 'text-muted-foreground'
@@ -344,21 +345,22 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
+                      onSubmit={field.onChange}
                       initialFocus
                     />
                   </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </Popover>
 
           <div className="h-2" />
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading
               ? t('common.processing')
-              : !!data?.id
+              : data?.id
                 ? t('ws-transactions.edit')
                 : t('ws-transactions.create')}
           </Button>

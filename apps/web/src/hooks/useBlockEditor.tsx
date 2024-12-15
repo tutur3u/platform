@@ -80,7 +80,7 @@ export const useBlockEditor = ({
         }),
         liveblocks,
         StarterKit.configure({
-          history:false,
+          history: false,
         }),
 
         Mention.configure({

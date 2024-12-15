@@ -12,6 +12,7 @@ import { useState } from 'react';
 
 interface Props {
   defaultValue?: Date;
+  // eslint-disable-next-line no-unused-vars
   onValueChange: (date?: Date) => void;
   fromDate?: Date;
   toDate?: Date;

@@ -272,7 +272,7 @@ export function MainNavigationMenu() {
 }
 
 const ListItem = React.forwardRef<
-  React.ElementRef<'a'>,
+  React.ComponentRef<'a'>,
   React.ComponentPropsWithoutRef<'a'> & {
     title: string;
     icon: React.ReactNode;

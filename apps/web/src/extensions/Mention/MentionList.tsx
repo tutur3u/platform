@@ -6,14 +6,13 @@ import React, {
   useState,
 } from 'react';
 
-
 export interface MentionListRef {
   onKeyDown: (params: { event: ReactKeyboardEvent }) => boolean;
 }
 
 interface MentionListProps {
   items: string[]; // Array of items to be displayed
-  command: (payload: { id: string }) => void; 
+  command: (payload: { id: string }) => void;
 }
 
 const MentionList = forwardRef<MentionListRef, MentionListProps>(
@@ -28,11 +27,11 @@ const MentionList = forwardRef<MentionListRef, MentionListProps>(
       }
     };
 
-
     const upHandler = () => {
-      setSelectedIndex((selectedIndex + props.items.length - 1) % props.items.length);
+      setSelectedIndex(
+        (selectedIndex + props.items.length - 1) % props.items.length
+      );
     };
-
 
     const downHandler = () => {
       setSelectedIndex((selectedIndex + 1) % props.items.length);
@@ -48,7 +47,6 @@ const MentionList = forwardRef<MentionListRef, MentionListProps>(
       setSelectedIndex(0);
     }, [props.items]);
 
-   
     useImperativeHandle(ref, () => ({
       onKeyDown: ({ event }: { event: ReactKeyboardEvent<Element> }) => {
         if (event.key === 'ArrowUp') {

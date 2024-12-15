@@ -34,9 +34,5 @@ export async function GET(_: Request, { params }: Params) {
   }
   const email = data?.map((email) => email.email) || [];
 
-  return NextResponse.json(
-    { email },  
-    { status: 200 }
-  );
-  
+  return NextResponse.json({ email }, { status: 200 });
 }

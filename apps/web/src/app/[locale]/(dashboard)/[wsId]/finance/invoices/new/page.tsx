@@ -1,3 +1,4 @@
+import { Filter } from '../../../users/filters';
 import { Invoice } from '@/types/primitives/Invoice';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@/utils/supabase/server';
@@ -18,7 +19,6 @@ import {
 } from '@repo/ui/components/ui/tabs';
 import { Package, TicketPercent, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { Filter } from '../../../users/filters';
 
 interface Props {
   params: Promise<{

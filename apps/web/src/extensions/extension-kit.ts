@@ -50,6 +50,7 @@ import { API } from '@/lib/api';
 // import Mention from '@tiptap/extension-mention'
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { isChangeOrigin } from '@tiptap/extension-collaboration';
+
 interface ExtensionKitProps {
   provider?: HocuspocusProvider | null;
 }

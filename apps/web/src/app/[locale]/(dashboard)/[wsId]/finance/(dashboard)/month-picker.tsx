@@ -24,6 +24,7 @@ interface Props {
   defaultValue?: Date;
   fromDate?: Date;
   toDate?: Date;
+  // eslint-disable-next-line no-unused-vars
   onValueChange: (date?: Date) => void;
   className?: string;
 }
