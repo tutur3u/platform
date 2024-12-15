@@ -144,19 +144,20 @@ async function getData(wsId: string, transactionId: string) {
 
   if (objectError) throw objectError;
 
+  const imageObjects = objects.filter((object) =>
+    object.metadata.mimetype.includes('image')
+  );
+
   // batch signed to reduce network calls
-  const { data: previews, error: previewError } = await supabase.storage
-    .from('workspaces')
-    .createSignedUrls(
-      objects
-        // image-only
-        .filter((object) => object.metadata.mimetype.includes('image'))
-        .map((object) =>
+  const { data: previews, error: previewError } = imageObjects.length
+    ? await supabase.storage.from('workspaces').createSignedUrls(
+        imageObjects.map((object) =>
           joinPath(wsId, 'finance/transactions', transactionId, object.name)
         ),
-      // TODO: externalize expiresIn params, currently 5 minutes
-      3600
-    );
+        // TODO: externalize expiresIn params, currently 5 minutes
+        3600
+      )
+    : { data: [], error: undefined };
 
   if (previewError) throw previewError;
 
