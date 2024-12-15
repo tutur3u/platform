@@ -253,22 +253,13 @@ async function getUserData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .rpc(
-      'get_workspace_users',
-      {
-        _ws_id: wsId,
-        included_groups: [groupId],
-        excluded_groups: Array.isArray(excludedGroups)
-          ? excludedGroups
-          : [excludedGroups],
-        search_query: q || '',
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('*')
-    .order('full_name', { ascending: true, nullsFirst: false });
+    .from('workspace_user_groups_users')
+    .select('...workspace_users!inner(*)', {
+      count: 'exact',
+    })
+    .eq('group_id', groupId);
+
+  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
 
   // if (page && pageSize) {
   //   const parsedPage = Number.parseInt(page);
