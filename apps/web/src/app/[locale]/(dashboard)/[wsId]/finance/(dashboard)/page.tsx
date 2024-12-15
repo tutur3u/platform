@@ -8,11 +8,12 @@ import {
   TransactionsStatistics,
   WalletsStatistics,
 } from '../../(dashboard)/statistics';
-import { DailyTotalChart, MonthlyTotalChart } from './charts';
+import { transactionColumns } from '../transactions/columns';
 import { Filter } from './filter';
+import { CustomDataTable } from '@/components/custom-data-table';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
+import type { Transaction } from '@/types/primitives/Transaction';
 import { createClient } from '@/utils/supabase/server';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { Suspense } from 'react';
 
 export interface FinanceDashboardSearchParams {
@@ -35,8 +36,18 @@ export default async function WorkspaceFinancePage({
 }: Props) {
   const { wsId } = await params;
   const sp = await searchParams;
-  const { data: dailyData } = await getDailyData(wsId);
-  const { data: monthlyData } = await getMonthlyData(wsId);
+
+  // const { data: dailyData } = await getDailyData(wsId);
+  // const { data: monthlyData } = await getMonthlyData(wsId);
+
+  const { data: recentTransactions } = await getRecentTransactions(wsId);
+
+  // Map recent transactions to match the data structure expected by CustomDataTable
+  const transactionsData = recentTransactions.map((d) => ({
+    ...d,
+    href: `/${wsId}/finance/transactions/${d.id}`,
+    ws_id: wsId,
+  })) as Transaction[];
 
   return (
     <>
@@ -73,15 +84,30 @@ export default async function WorkspaceFinancePage({
           <InvoicesStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
-        <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
+        {/* <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
           <Separator className="col-span-full mb-4" />
           <DailyTotalChart data={dailyData} className="col-span-full" />
           <Separator className="col-span-full my-4" />
           <MonthlyTotalChart
             data={monthlyData}
-            className="col-span-full mb-32"
+            className="col-span-full mb-8"
           />
-        </Suspense>
+          <Separator className="col-span-full my-4" />
+        </Suspense> */}
+
+        <CustomDataTable
+          data={transactionsData}
+          columnGenerator={transactionColumns}
+          namespace="transaction-data-table"
+          className="col-span-full"
+          defaultVisibility={{
+            id: false,
+            report_opt_in: false,
+            created_at: false,
+          }}
+          hideToolbar
+          hidePagination
+        />
       </div>
     </>
   );
@@ -111,4 +137,34 @@ async function getMonthlyData(wsId: string) {
   if (error) throw error;
 
   return { data, count };
+}
+
+async function getRecentTransactions(wsId: string) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('wallet_transactions')
+    .select(
+      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
+      {
+        count: 'exact',
+      }
+    )
+    .eq('workspace_wallets.ws_id', wsId)
+    .order('taken_at', { ascending: false })
+    .limit(10);
+
+  const { data: rawData, error } = await queryBuilder;
+
+  if (error) throw error;
+
+  const data = rawData.map(
+    ({ workspace_wallets, transaction_categories, ...rest }) => ({
+      ...rest,
+      wallet: workspace_wallets?.name,
+      category: transaction_categories?.name,
+    })
+  );
+
+  return { data };
 }
