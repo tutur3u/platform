@@ -48,13 +48,12 @@ const Chat = ({
       initialMessages,
       api:
         chat?.model || model?.value
-          ? `/api/ai/chat/${
-              chat?.model
-                ? models
-                    .find((m) => m.value === chat.model)
-                    ?.provider.toLowerCase() || model?.provider.toLowerCase()
-                : model?.provider.toLowerCase()
-            }`
+          ? `/api/ai/chat/${(chat?.model
+              ? models
+                  .find((m) => m.value === chat.model)
+                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
+              : model?.provider.toLowerCase()
+            )?.replace(' ', '-')}`
           : undefined,
       body: {
         id: chat?.id,
@@ -106,7 +105,7 @@ const Chat = ({
       setSummarizing(true);
 
       const res = await fetch(
-        `/api/ai/chat/${model.provider.toLowerCase()}/summary`,
+        `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/summary`,
         {
           method: 'PATCH',
           body: JSON.stringify({
@@ -206,7 +205,7 @@ const Chat = ({
     setPendingPrompt(input);
 
     const res = await fetch(
-      `/api/ai/chat/${model.provider.toLowerCase()}/new`,
+      `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/new`,
       {
         method: 'POST',
         body: JSON.stringify({

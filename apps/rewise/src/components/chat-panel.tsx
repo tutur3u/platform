@@ -306,6 +306,7 @@ export function ChatPanel({
               <PromptForm
                 id={id}
                 key={`${model?.provider}-${model?.value}`}
+                provider={model?.provider}
                 model={model?.label}
                 chat={chat}
                 onSubmit={async (value) => {

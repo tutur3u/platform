@@ -1,25 +1,15 @@
 import { createClient } from '@/utils/supabase/server';
-import { createVertex } from '@ai-sdk/google-vertex/edge';
+import { vertex } from '@ai-sdk/google-vertex/edge';
 import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import { Message, generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
+const DEFAULT_MODEL_NAME = 'gemini-1.5-flash';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const vertex = createVertex({
-  project: process.env.GCP_PROJECT_ID || '',
-  location: process.env.GCP_LOCATION || 'asia-southeast1',
-  googleCredentials: {
-    clientEmail: process.env.GCP_SERVICE_ACCOUNT_CLIENT_EMAIL || '',
-    privateKey: process.env.GCP_SERVICE_ACCOUNT_PRIVATE_KEY || '',
-  },
-});
-
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-exp';
-
-const ggVertex = vertex(DEFAULT_MODEL_NAME, {
+const vertexModel = vertex(DEFAULT_MODEL_NAME, {
   safetySettings: [
     { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
     { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
@@ -34,8 +24,8 @@ async function generateChatTitle(message: string) {
 
   try {
     const res = await generateText({
-      model: ggVertex,
-      prompt: prompt,
+      model: vertexModel,
+      prompt,
     });
     return res?.text || null;
   } catch (error) {
@@ -61,21 +51,6 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
-
-    const gcpClientEmail = process.env.GCP_SERVICE_ACCOUNT_CLIENT_EMAIL;
-    const gcpPrivateKey = process.env.GCP_SERVICE_ACCOUNT_PRIVATE_KEY;
-
-    if (!gcpClientEmail) {
-      return new Response('Missing GCP Service Account Client Email', {
-        status: 400,
-      });
-    }
-
-    if (!gcpPrivateKey) {
-      return new Response('Missing GCP Service Account Private Key', {
-        status: 400,
-      });
-    }
 
     const prompt = buildPrompt([
       {
@@ -109,7 +84,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
       {
-        status: 200,
+        status: 500,
       }
     );
   }

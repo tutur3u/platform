@@ -41,6 +41,7 @@ export type ResponseMode = 'short' | 'medium' | 'long';
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
   id: string | undefined;
+  provider: string | undefined;
   model?: string;
   chat: Partial<AIChat> | undefined;
   files: StatedFile[];
@@ -59,6 +60,7 @@ export interface PromptProps
 export function PromptForm({
   onSubmit,
   id,
+  provider,
   model,
   chat,
   files,
@@ -237,17 +239,24 @@ export function PromptForm({
         className="w-full"
       >
         <div className="mb-2 flex items-center justify-between gap-2">
-          {model && (
-            <>
-              <div className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange flex shrink-0 items-center gap-1 rounded border px-2 py-1 text-xs font-semibold">
-                <Sparkles className="h-3 w-3" />
-                {model}
-              </div>
-              <Separator orientation="vertical" className="h-4" />
-            </>
-          )}
-
           <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
+            {model && (
+              <>
+                <div className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange flex shrink-0 items-center gap-1 rounded border px-2 py-1 text-xs font-semibold">
+                  <Sparkles className="h-3 w-3" />
+                  <span>
+                    {provider && (
+                      <span className="opacity-70">
+                        {provider.toLowerCase().replace(' ', '-')}/
+                      </span>
+                    )}
+                    {model}
+                  </span>
+                </div>
+                <Separator orientation="vertical" className="h-4" />
+              </>
+            )}
+
             <Button
               size="xs"
               type="button"
@@ -661,6 +670,7 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}
