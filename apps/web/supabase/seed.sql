@@ -337,7 +337,7 @@ values
         'ENABLE_CHAT',
         'true'
     ),
-(
+    (
         '00000000-0000-0000-0000-000000000000',
         'ENABLE_EDUCATION',
         'true'
@@ -1331,3 +1331,8 @@ values
         '00000000-0000-0000-0000-000000000009',
         'Module 10'
     );
+
+insert into
+    public.ai_whitelisted_emails (email, enabled)
+values
+    ('local@tuturuuu.com', true);

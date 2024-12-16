@@ -41,16 +41,16 @@ export const models: {
     disabled: true,
   },
   {
-    value: 'gemini-1.5-flash',
-    label: 'gemini-1.5-flash',
+    value: 'gemini-1.5-flash-002',
+    label: 'gemini-1.5-flash-002',
     provider: 'Google Vertex',
     description:
       "Gemini 1.5 Flash is the latest model of the Gemini family. It's a multimodal model that supports up to 1 million tokens. It is optimized for speed and efficiency.",
     context: 1000000,
   },
   {
-    value: 'gemini-1.5-pro',
-    label: 'gemini-1.5-pro',
+    value: 'gemini-1.5-pro-002',
+    label: 'gemini-1.5-pro-002',
     provider: 'Google Vertex',
     description:
       "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",

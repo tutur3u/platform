@@ -6,7 +6,7 @@ import { Box, Globe, Lock, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
 
-export interface ChatList {
+export interface ChatListProps {
   chatId?: string | null;
   chatTitle?: string | null;
   chatIsPublic?: boolean;
@@ -23,6 +23,7 @@ export interface ChatList {
   model?: string;
   anonymize?: boolean;
   summarizing?: boolean;
+  // eslint-disable-next-line no-unused-vars
   setInput: (input: string) => void;
 }
 
@@ -39,7 +40,7 @@ export function ChatList({
   anonymize,
   summarizing,
   setInput,
-}: ChatList) {
+}: ChatListProps) {
   const t = useTranslations('ai_chat');
   if (!messages.length) return null;
 
@@ -107,7 +108,7 @@ export function ChatList({
                   <div className="bg-foreground/5 h-32 w-full animate-pulse rounded border" />
                 ) : (
                   <div className="bg-foreground/5 w-full whitespace-pre-wrap break-words rounded border p-2 text-start text-lg font-normal">
-                    {chatSummary}
+                    {chatSummary?.trim()}
                   </div>
                 )}
               </Fragment>
