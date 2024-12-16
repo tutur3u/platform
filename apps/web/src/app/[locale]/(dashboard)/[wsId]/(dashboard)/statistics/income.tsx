@@ -9,7 +9,7 @@ const enabled = true;
 
 export default async function IncomeStatistics({
   wsId,
-  searchParams: { showFinanceStats, view, startDate, endDate } = {},
+  searchParams: { showFinanceStats = true, view, startDate, endDate } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;

@@ -1,4 +1,3 @@
-import FinanceToggle from '../../(dashboard)/finance-toggle';
 import {
   ExpenseStatistics,
   IncomeStatistics,
@@ -52,9 +51,8 @@ export default async function WorkspaceFinancePage({
   return (
     <>
       <Filter className="mb-4" />
-      {/* <NextCharts /> */}
+      {/* <FinanceMetrics wsId={wsId} searchParams={sp} /> */}
 
-      <FinanceToggle />
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
           <TotalBalanceStatistics wsId={wsId} searchParams={sp} />
@@ -113,31 +111,31 @@ export default async function WorkspaceFinancePage({
   );
 }
 
-async function getDailyData(wsId: string) {
-  const supabase = await createClient();
+// async function getDailyData(wsId: string) {
+//   const supabase = await createClient();
 
-  const queryBuilder = supabase.rpc('get_daily_income_expense', {
-    _ws_id: wsId,
-  });
+//   const queryBuilder = supabase.rpc('get_daily_income_expense', {
+//     _ws_id: wsId,
+//   });
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+//   const { data, error, count } = await queryBuilder;
+//   if (error) throw error;
 
-  return { data, count };
-}
+//   return { data, count };
+// }
 
-async function getMonthlyData(wsId: string) {
-  const supabase = await createClient();
+// async function getMonthlyData(wsId: string) {
+//   const supabase = await createClient();
 
-  const queryBuilder = supabase.rpc('get_monthly_income_expense', {
-    _ws_id: wsId,
-  });
+//   const queryBuilder = supabase.rpc('get_monthly_income_expense', {
+//     _ws_id: wsId,
+//   });
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+//   const { data, error, count } = await queryBuilder;
+//   if (error) throw error;
 
-  return { data, count };
-}
+//   return { data, count };
+// }
 
 async function getRecentTransactions(wsId: string) {
   const supabase = await createClient();

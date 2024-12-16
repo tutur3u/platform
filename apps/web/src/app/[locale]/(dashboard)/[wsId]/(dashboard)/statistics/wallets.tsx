@@ -8,7 +8,7 @@ const enabled = true;
 
 export default async function WalletsStatistics({
   wsId,
-  searchParams: { showFinanceStats } = {},
+  searchParams: { showFinanceStats = true } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
