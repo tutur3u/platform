@@ -2,6 +2,7 @@ import { appConfig } from '@/constants/configs';
 import { createClient } from '@/utils/supabase/server';
 import { google } from '@ai-sdk/google';
 import { Message, generateText } from 'ai';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -101,8 +102,10 @@ export async function PATCH(req: Request) {
     });
   } catch (error: any) {
     console.log(error);
-    return new Response(
-      `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+    return NextResponse.json(
+      {
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+      },
       {
         status: 200,
       }

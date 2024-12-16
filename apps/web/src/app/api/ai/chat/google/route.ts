@@ -2,6 +2,7 @@ import { appConfig } from '@/constants/configs';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { google } from '@ai-sdk/google';
 import { CoreMessage, streamText } from 'ai';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
@@ -151,8 +152,10 @@ export async function POST(req: Request) {
     return result.toDataStreamResponse();
   } catch (error: any) {
     console.log(error);
-    return new Response(
-      `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+    return NextResponse.json(
+      {
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+      },
       {
         status: 200,
       }
