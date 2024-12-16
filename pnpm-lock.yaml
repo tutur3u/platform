@@ -238,8 +238,8 @@ importers:
         specifier: 15.1.1-canary.4
         version: 15.1.1-canary.4
       '@next/eslint-plugin-next':
-        specifier: 15.1.1-canary.4
-        version: 15.1.1-canary.4
+        specifier: 15.1.1-canary.6
+        version: 15.1.1-canary.6
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -758,8 +758,8 @@ importers:
         specifier: 15.1.1-canary.4
         version: 15.1.1-canary.4
       '@next/eslint-plugin-next':
-        specifier: 15.1.1-canary.4
-        version: 15.1.1-canary.4
+        specifier: 15.1.1-canary.6
+        version: 15.1.1-canary.6
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -2209,8 +2209,8 @@ packages:
   '@next/env@15.1.1-canary.4':
     resolution: {integrity: sha512-ORDaLfX/x2YWt62FzZmuKvOjQ4wAB5OLWFV82vYVl5ngnG6sCZxMefF+aPtaDzn1IAeSjAdEIM1r6qS3j4JSzA==}
 
-  '@next/eslint-plugin-next@15.1.1-canary.4':
-    resolution: {integrity: sha512-r2sFMrJGfB8YFEm1AZrmVUbde3JtQajjoNP1hGCw4gSpUSvbqE5Joh/VKStNRTmtItjtk4wb2mQ0iV3UjVxTTA==}
+  '@next/eslint-plugin-next@15.1.1-canary.6':
+    resolution: {integrity: sha512-vStWMOBX2m6tqFpLaFiOKfyreUGdGrPEMUjhi+tCbSRCQpgNmHoJ4NjFfpt+ziLrwJmpHuSdk88B14ihE6SSEA==}
 
   '@next/swc-darwin-arm64@15.0.4':
     resolution: {integrity: sha512-QecQXPD0yRHxSXWL5Ff80nD+A56sUXZG9koUsjWJwA2Z0ZgVQfuy7gd0/otjxoOovPVHR2eVEvPMHbtZP+pf9w==}
@@ -10600,7 +10600,7 @@ snapshots:
 
   '@next/env@15.1.1-canary.4': {}
 
-  '@next/eslint-plugin-next@15.1.1-canary.4':
+  '@next/eslint-plugin-next@15.1.1-canary.6':
     dependencies:
       fast-glob: 3.3.1
 
