@@ -21,16 +21,14 @@
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "i18n-ally.enabledFrameworks": [
-    "next-intl"
-  ],
-  "i18n-ally.localesPaths": [
-    "apps/web/messages",
-  ],
+  "i18n-ally.enabledFrameworks": ["next-intl"],
+  "i18n-ally.localesPaths": ["apps/web/messages"],
   "i18n-ally.keystyle": "nested",
   "codeQL.githubDatabase.update": "never",
   "codeQL.githubDatabase.download": "never",
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"
-  }
+  },
+  "IDX.aI.enableInlineCompletion": true,
+  "IDX.aI.enableCodebaseIndexing": true
 }
