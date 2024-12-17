@@ -38,7 +38,7 @@
     "@ai-sdk/mistral": "^1.0.5",
     "@ai-sdk/openai": "^1.0.8",
     "@ai-sdk/react": "^1.0.6",
-    "@anthropic-ai/sdk": "^0.32.1",
+    "@anthropic-ai/sdk": "^0.33.0",
     "@aws-sdk/client-ses": "^3.713.0",
     "@deepgram/sdk": "^3.9.0",
     "@dnd-kit/core": "^6.3.1",
