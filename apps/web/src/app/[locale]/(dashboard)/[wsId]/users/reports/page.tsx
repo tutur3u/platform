@@ -164,10 +164,8 @@ async function getData(
   const { data: rawData, error, count } = await queryBuilder;
 
   const data = rawData?.map((row) => ({
-    // @ts-expect-error
     user_name: row.user.full_name,
-    // @ts-expect-error
-    creator_name: row.creator.full_name,
+    creator_name: row.creator?.full_name,
     ...row,
   }));
 

@@ -174,11 +174,11 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   } = {
     user_name: Array.isArray(rawData.user)
       ? rawData.user?.[0]?.full_name
-      : // @ts-expect-error
+      : //
         (rawData.user?.full_name ?? undefined),
     creator_name: Array.isArray(rawData.creator)
       ? rawData.creator?.[0]?.full_name
-      : // @ts-expect-error
+      : //
         (rawData.creator?.full_name ?? undefined),
     ...rawData,
   };
@@ -255,10 +255,8 @@ async function getReports(
   if (error) throw error;
 
   const data = rawData?.map((rawData) => ({
-    // @ts-expect-error
     user_name: rawData.user.full_name,
-    // @ts-expect-error
-    creator_name: rawData.creator.full_name,
+    creator_name: rawData.creator?.full_name,
     ...rawData,
   }));
 

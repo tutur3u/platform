@@ -102,7 +102,6 @@ async function getData(
 
   const data = rawData.map(({ customer, ...rest }) => ({
     ...rest,
-    // @ts-expect-error
     customer: customer?.full_name || '-',
   }));
 

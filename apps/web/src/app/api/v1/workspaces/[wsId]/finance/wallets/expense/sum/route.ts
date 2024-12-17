@@ -59,7 +59,6 @@ async function getDataWithApiKey({
     );
   }
 
-  // @ts-expect-error
   return NextResponse.json(data?.sum || 0);
 }
 
@@ -81,6 +80,5 @@ async function getDataFromSession({ wsId }: { wsId: string }) {
     );
   }
 
-  // @ts-expect-error
   return NextResponse.json(data?.sum || 0);
 }
