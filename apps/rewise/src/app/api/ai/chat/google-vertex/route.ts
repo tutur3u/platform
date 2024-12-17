@@ -1,7 +1,7 @@
 import { ResponseMode } from '@/components/prompt-form';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { vertex } from '@ai-sdk/google-vertex/edge';
-import { CoreMessage, streamText } from 'ai';
+import { CoreMessage, smoothStream, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
@@ -99,6 +99,7 @@ export async function POST(req: Request) {
 
     // Stream text with user input
     const result = streamText({
+      experimental_transform: smoothStream(),
       model: vertexModel,
       messages: messages,
       system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${

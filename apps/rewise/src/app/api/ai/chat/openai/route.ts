@@ -1,7 +1,7 @@
 import { ResponseMode } from '@/components/prompt-form';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { openai } from '@ai-sdk/openai';
-import { CoreMessage, streamText } from 'ai';
+import { CoreMessage, smoothStream, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -92,7 +92,8 @@ export async function POST(req: Request) {
       console.log('User message saved to database');
     }
 
-    const result = await streamText({
+    const result = streamText({
+      experimental_transform: smoothStream(),
       model: openai(model),
       messages,
       system: `${systemInstruction}\n\nSYSTEM NOTE: The user has requested that Mira assistant's response must be ${
