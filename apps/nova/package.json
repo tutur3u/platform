@@ -97,7 +97,7 @@
     "@tiptap/extension-paragraph": "^2.10.3",
     "@tiptap/extension-placeholder": "^2.10.3",
     "@tiptap/extension-subscript": "^2.10.3",
-    "@tiptap/extension-superscript": "^2.10.3",
+    "@tiptap/extension-superscript": "^2.10.4",
     "@tiptap/extension-table": "^2.10.3",
     "@tiptap/extension-table-header": "^2.10.3",
     "@tiptap/extension-table-row": "^2.10.3",
