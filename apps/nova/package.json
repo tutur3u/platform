@@ -110,7 +110,7 @@
     "@tiptap/pm": "^2.10.3",
     "@tiptap/react": "^2.10.3",
     "@tiptap/starter-kit": "^2.10.3",
-    "@tiptap/suggestion": "^2.10.3",
+    "@tiptap/suggestion": "^2.10.4",
     "@upstash/qstash": "^2.7.19",
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
