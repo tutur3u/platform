@@ -125,7 +125,9 @@
     "scan_me": "Quét mã QR",
     "qr_code": "Mã QR",
     "current_plan": "Gói hiện tại",
-    "go_to_tuturuuu": "Tới Tuturuu"
+    "go_to_tuturuuu": "Tới Tuturuu",
+    "magic": "Phép thuật",
+    "magic-tools": "Công cụ ma thuật"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

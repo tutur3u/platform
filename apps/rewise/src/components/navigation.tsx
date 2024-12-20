@@ -8,7 +8,7 @@ import { ReactNode, useEffect, useState } from 'react';
 
 export interface NavLink {
   title: string;
-  trailing?: string;
+  trailing?: string | ReactNode;
   icon?: ReactNode;
   href: string;
   newTab?: boolean;

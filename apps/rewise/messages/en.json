@@ -125,7 +125,9 @@
     "scan_me": "Scan me",
     "qr_code": "QR Code",
     "current_plan": "Current plan",
-    "go_to_tuturuuu": "Go to Tuturuuu"
+    "go_to_tuturuuu": "Go to Tuturuuu",
+    "magic": "Magic",
+    "magic-tools": "Magic Tools"
   },
   "date_helper": {
     "time-unit": "Time unit",

@@ -16,7 +16,11 @@ export default function LogoTitle({
   if (!forceShow && hasWorkspace) return null;
   return (
     <div
-      className={cn('text-4xl font-bold md:text-3xl lg:text-4xl', className)}
+      className={cn(
+        'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 text-transparent',
+        'text-4xl font-bold md:text-3xl lg:text-4xl',
+        className
+      )}
     >
       Rewise
     </div>
