@@ -39,11 +39,11 @@ export default async function WorkspaceQuizzesPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-quizzes.plural')}
-        singularTitle={t('ws-quizzes.singular')}
-        description={t('ws-quizzes.description')}
-        createTitle={t('ws-quizzes.create')}
-        createDescription={t('ws-quizzes.create_description')}
+        pluralTitle={t('ws-quiz-sets.plural')}
+        singularTitle={t('ws-quiz-sets.singular')}
+        description={t('ws-quiz-sets.description')}
+        createTitle={t('ws-quiz-sets.create')}
+        createDescription={t('ws-quiz-sets.create_description')}
         form={<QuizForm wsId={wsId} />}
       />
       <Separator className="my-4" />

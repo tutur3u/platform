@@ -1821,6 +1821,7 @@
   "ws-quiz-sets": {
     "plural": "Quiz Sets",
     "singular": "Quiz Set",
+    "description": "Quiz sets are used to group quizzes together for learning purposes.",
     "create": "Create quiz set",
     "create_description": "Create a new quiz set",
     "name": "Set name",

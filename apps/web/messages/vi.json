@@ -1821,9 +1821,10 @@
   "ws-quiz-sets": {
     "plural": "Bộ trắc nghiệm",
     "singular": "Bộ trắc nghiệm",
+    "description": "Quản lý các bộ trắc nghiệm trong không gian làm việc của bạn bao gồm các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
     "create": "Tạo bộ trắc nghiệm",
     "create_description": "Tạo bộ trắc nghiệm mới",
-    "name": "Tên bộ câu hỏi",
+    "name": "Tên bộ trắc nghiệm",
     "edit": "Chỉnh sửa bộ",
     "link-quizzes": "Liên kết câu hỏi"
   },
