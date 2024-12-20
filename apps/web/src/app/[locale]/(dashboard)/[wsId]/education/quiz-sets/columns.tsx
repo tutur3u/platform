@@ -73,7 +73,7 @@ export const geQuizSetColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-[8rem] font-semibold">
+      <div className="flex min-w-[8rem] flex-wrap gap-1 font-semibold">
         {(
           row.getValue('linked_modules') as unknown as
             | {

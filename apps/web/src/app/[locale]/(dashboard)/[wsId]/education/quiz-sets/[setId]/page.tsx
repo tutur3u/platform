@@ -40,7 +40,7 @@ export default async function WorkspaceQuizzesPage({
         description={t('ws-quizzes.description')}
         createTitle={t('ws-quizzes.create')}
         createDescription={t('ws-quizzes.create_description')}
-        form={<QuizForm wsId={wsId} />}
+        form={<QuizForm wsId={wsId} setId={setId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -70,7 +70,7 @@ async function getData(
 
   const queryBuilder = supabase
     .from('quiz_set_quizzes')
-    .select('...workspace_quizzes(*)', {
+    .select('...workspace_quizzes(*, quiz_options(*))', {
       count: 'exact',
     })
     .eq('set_id', setId)

@@ -86,9 +86,12 @@ async function getData(
 
   const queryBuilder = supabase
     .from('course_module_quiz_sets')
-    .select('...workspace_course_modules(id, name, is_public, is_published)', {
-      count: 'exact',
-    })
+    .select(
+      'id:module_id, ...workspace_course_modules(course_id, name, is_public, is_published)',
+      {
+        count: 'exact',
+      }
+    )
     .eq('set_id', setId)
     .order('created_at', { ascending: false });
 

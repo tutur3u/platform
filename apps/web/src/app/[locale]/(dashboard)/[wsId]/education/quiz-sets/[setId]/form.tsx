@@ -27,6 +27,7 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   moduleId?: string;
+  setId?: string;
   data?: Partial<
     WorkspaceQuiz & {
       quiz_options: (
@@ -54,11 +55,18 @@ const QuizOptionSchema = z.object({
 const FormSchema = z.object({
   id: z.string().optional(),
   moduleId: z.string().optional(),
+  setId: z.string().optional(),
   question: z.string().min(1),
   quiz_options: z.array(QuizOptionSchema).min(1),
 });
 
-export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
+export default function QuizForm({
+  wsId,
+  moduleId,
+  setId,
+  data,
+  onFinish,
+}: Props) {
   const t = useTranslations();
   const router = useRouter();
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
@@ -68,6 +76,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
     defaultValues: {
       id: data?.id,
       moduleId,
+      setId,
       question: data?.question || '',
       quiz_options: data?.quiz_options?.map((option) => ({
         id: option?.id,

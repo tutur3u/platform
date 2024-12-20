@@ -39,6 +39,7 @@ export function QuizsetModuleLinker({
         disabled: module.selected,
       }))}
       onSet={onSet}
+      hideSelected
     />
   );
 }
