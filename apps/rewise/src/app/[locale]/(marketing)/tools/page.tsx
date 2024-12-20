@@ -1,4 +1,4 @@
-import { recommendedTools, tools } from './tools';
+import { recommendedTools, tools } from './data';
 import {
   Card,
   CardContent,
@@ -31,13 +31,27 @@ export default async function MagicToolsPage({
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {recommendedTools.map((tool) => (
-            <Link href={`/tools/${tool.id}`} key={tool.name} className="h-full">
-              <Card className="h-full">
+            <Link
+              href={`/tools/${tool.id}`}
+              key={tool.name}
+              className="group h-full"
+            >
+              <Card className="group-hover:border-foreground h-full">
                 <CardHeader>
                   <CardTitle>{tool.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p>{tool.description}</p>
+                  <div className="flex flex-wrap items-center gap-1 text-sm font-semibold">
+                    {tool.tags.map((tag) => (
+                      <p
+                        key={`${tool.name}-${tag}`}
+                        className="border-dynamic-purple/20 text-dynamic-light-purple bg-dynamic-light-purple/10 mt-2 w-fit rounded-full border px-2 py-0.5"
+                      >
+                        {tag}
+                      </p>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </Link>
@@ -51,13 +65,27 @@ export default async function MagicToolsPage({
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {tools.map((tool) => (
-            <Link href={`/tools/${tool.id}`} key={tool.name} className="h-full">
-              <Card className="h-full">
+            <Link
+              href={`/tools/${tool.id}`}
+              key={tool.name}
+              className="group h-full"
+            >
+              <Card className="group-hover:border-foreground h-full">
                 <CardHeader>
                   <CardTitle>{tool.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p>{tool.description}</p>
+                  <div className="flex flex-wrap items-center gap-1 text-sm font-semibold">
+                    {tool.tags.map((tag) => (
+                      <p
+                        key={`${tool.name}-${tag}`}
+                        className="border-dynamic-purple/20 text-dynamic-light-purple bg-dynamic-light-purple/10 mt-2 w-fit rounded-full border px-2 py-0.5"
+                      >
+                        {tag}
+                      </p>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </Link>

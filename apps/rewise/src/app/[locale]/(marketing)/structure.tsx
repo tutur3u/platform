@@ -70,7 +70,7 @@ export function Structure({
       matchExact: true,
     },
     {
-      href: '/magic',
+      href: '/tools',
       title: t('common.magic-tools'),
       icon: <WandSparkles className="h-5 w-5 flex-none" />,
       matchExact: true,
@@ -311,7 +311,7 @@ export function Structure({
           <ResizablePanel defaultSize={defaultLayout[1]}>
             <main
               id="main-content"
-              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pb-48 pt-20 md:pb-64 md:pt-4 lg:px-8 lg:pb-96 xl:px-16"
+              className="relative flex h-full min-h-screen flex-col overflow-y-auto px-4 pt-20 md:pt-0 lg:px-8 xl:px-16"
             >
               {children}
             </main>
