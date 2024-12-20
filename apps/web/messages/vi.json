@@ -1737,7 +1737,8 @@
     "materials": "Tài liệu học tập",
     "quizzes": "Câu hỏi trắc nghiệm",
     "flashcards": "Thẻ từ vựng",
-    "quiz-sets": "Bộ trắc nghiệm"
+    "quiz-sets": "Bộ trắc nghiệm",
+    "attempts": "Lịch sử làm bài"
   },
   "ws-courses": {
     "plural": "Khóa học",

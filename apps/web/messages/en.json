@@ -1737,7 +1737,8 @@
     "materials": "Learning Materials",
     "quizzes": "Quizzes",
     "flashcards": "Flashcards",
-    "quiz-sets": "Quiz Sets"
+    "quiz-sets": "Quiz Sets",
+    "attempts": "Quiz Attempts"
   },
   "ws-courses": {
     "plural": "Courses",
