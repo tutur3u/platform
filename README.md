@@ -10,9 +10,10 @@ This monorepo contains multiple applications and services that make up the Tutur
 
 ## Project Structure
 
-- `apps/web`: Main application (tuturuuu.com)
-- `apps/rewise`: AI-powered chatbot assistant (similar to claude.ai and chatgpt.com)
+- `apps/web`: Web application for Tuturuuu platform
 - `apps/docs`: Documentation website powered by Mintlify
+- `apps/rewise`: AI-powered chatbot for everyday tasks
+- `apps/nova`: Prompt engineering platform that allows everyone to Learn, Practice, Innovate, and Compete. Similar to Leetcode for Algorithms and Kaggle for Machine Learning & AI
 
 ## Features
 
@@ -41,14 +42,20 @@ Tuturuuu services include:
 
 ## Getting Started
 
-1. Clone the repository
-2. Install dependencies:
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/tutur3u/platform.git
+   cd platform
+   ```
+
+2. **Install dependencies:**
 
    ```bash
    pnpm i
    ```
 
-3. Start the Supabase local development environment:
+3. **Start the Supabase local development environment:**
 
    ```bash
    pnpm sb:start
@@ -56,9 +63,24 @@ Tuturuuu services include:
 
    This will provide the necessary URLs and keys for local development.
 
-4. Create a `.env.local` file in each app directory (`apps/*/.env.local`) using the corresponding `.env.example` template and add the Supabase URLs and keys from the previous step.
+4. **Create environment files:**
 
-5. Start the desired application(s) using the appropriate pnpm scripts.
+   Create a `.env.local` file in each app directory (`apps/*/.env.local`) using the corresponding `.env.example` template and add the Supabase URLs and keys from the previous step.
+
+5. **Start the desired application(s):**
+
+   Use the appropriate pnpm scripts to start the applications.
+
+   ```bash
+   pnpm dev
+   ```
+
+## Community & Support
+
+If you have any questions, feel free to reach out to our community or support team:
+
+- Follow us on [X/Twitter](https://x.com/tutur3u) for updates and announcements.
+- Check out our [GitHub Discussions](https://github.com/orgs/tutur3u/discussions) for more in-depth conversations and support.
 
 ## Development Tools
 
