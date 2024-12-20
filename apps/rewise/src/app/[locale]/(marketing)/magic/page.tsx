@@ -7,13 +7,15 @@ import {
 } from '@repo/ui/components/ui/card';
 import Link from 'next/link';
 
-export default function MagicToolsPage({
-  params: { locale },
+export default async function MagicToolsPage({
+  params,
 }: {
-  params: {
+  params: Promise<{
     locale: string;
-  };
+  }>;
 }) {
+  const { locale } = await params;
+
   if (locale === 'vi')
     return (
       <div className="flex h-screen w-full items-center justify-center text-center text-2xl font-bold">
