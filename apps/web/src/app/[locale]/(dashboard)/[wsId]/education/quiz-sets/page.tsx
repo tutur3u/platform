@@ -1,4 +1,4 @@
-import { geQuizSetColumns } from './columns';
+import { getQuizSetColumns } from './columns';
 import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { type WorkspaceQuizSet } from '@/types/db';
@@ -49,7 +49,7 @@ export default async function WorkspaceQuizzesPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={quizSets}
-        columnGenerator={geQuizSetColumns}
+        columnGenerator={getQuizSetColumns}
         namespace="quiz-set-data-table"
         count={count}
         extraData={{ wsId }}

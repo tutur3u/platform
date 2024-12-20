@@ -7,7 +7,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';
 import Link from 'next/link';
 
-export const geQuizSetColumns = (
+export const getQuizSetColumns = (
   t: any,
   namespace: string | undefined,
   _: any,
