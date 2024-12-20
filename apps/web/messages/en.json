@@ -210,7 +210,8 @@
     "pricing_hook": "Simple, transparent pricing",
     "usage_based_pricing": "Usage-Based Pricing",
     "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits.",
-    "faq": "Frequently Asked Questions"
+    "faq": "Frequently Asked Questions",
+    "unlink": "Unlink"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1826,7 +1827,8 @@
     "create_description": "Create a new quiz set",
     "name": "Set name",
     "edit": "Edit set",
-    "link-quizzes": "Link Quizzes"
+    "link-quizzes": "Link Quizzes",
+    "link-modules": "Link modules"
   },
   "slogan": {
     "title": "Ready to get started?",

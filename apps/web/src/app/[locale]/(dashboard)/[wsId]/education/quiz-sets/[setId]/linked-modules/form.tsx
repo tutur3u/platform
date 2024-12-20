@@ -21,7 +21,7 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   courseId: string;
-  data?: WorkspaceCourseModule;
+  data?: Partial<WorkspaceCourseModule>;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }

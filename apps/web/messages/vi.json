@@ -210,7 +210,8 @@
     "pricing_hook": "Giá cả đơn giản, minh bạch",
     "usage_based_pricing": "Bảng giá",
     "usage_based_pricing_description": "Chỉ trả tiền cho những gì bạn sử dụng. Tất cả các gói đều bao gồm các tính năng cốt lõi với các giới hạn sử dụng khác nhau.",
-    "faq": "Câu hỏi thường gặp"
+    "faq": "Câu hỏi thường gặp",
+    "unlink": "Hủy liên kết"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1784,7 +1785,7 @@
   "ws-quizzes": {
     "plural": "Câu hỏi trắc nghiệm",
     "singular": "Bộ trắc nghiệm",
-    "create": "Tạo bộ trắc nghiệm",
+    "create": "Tạo câu hỏi",
     "create_description": "Tạo một bộ trắc nghiệm mới",
     "description": "Quản lý bộ trắc nghiệm trong không gian làm việc của bạn có các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
     "edit": "Chỉnh sửa bộ trắc nghiệm",
@@ -1826,7 +1827,8 @@
     "create_description": "Tạo bộ trắc nghiệm mới",
     "name": "Tên bộ trắc nghiệm",
     "edit": "Chỉnh sửa bộ",
-    "link-quizzes": "Liên kết câu hỏi"
+    "link-quizzes": "Liên kết câu hỏi",
+    "link-modules": "Liên kết mô-đun"
   },
   "slogan": {
     "title": "Sẵn sàng để bắt đầu?",

@@ -2,6 +2,7 @@
 
 import WorkspaceCourseModuleForm from './form';
 import { WorkspaceCourseModule } from '@/types/db';
+import { createClient } from '@/utils/supabase/client';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
@@ -21,16 +22,19 @@ import { useState } from 'react';
 interface WorkspaceCourseModuleRowActionsProps {
   wsId: string;
   courseId: string;
-  row: Row<WorkspaceCourseModule>;
+  setId?: string;
+  row: Row<Partial<WorkspaceCourseModule>>;
 }
 
 export function WorkspaceCourseModuleRowActions({
   wsId,
   courseId,
+  setId,
   row,
 }: WorkspaceCourseModuleRowActionsProps) {
   const router = useRouter();
   const t = useTranslations();
+  const supabase = createClient();
 
   const data = row.original;
 
@@ -50,6 +54,25 @@ export function WorkspaceCourseModuleRowActions({
         title: 'Failed to delete workspace user group tag',
         description: data.message,
       });
+    }
+  };
+
+  const unlinkWorkspaceCourseModule = async () => {
+    if (!data.id || !setId) return;
+
+    const { error } = await supabase
+      .from('course_module_quiz_sets')
+      .delete()
+      .eq('module_id', data.id)
+      .eq('set_id', setId);
+
+    if (error) {
+      toast({
+        title: 'Failed to unlink workspace course module',
+        description: error.message,
+      });
+    } else {
+      router.refresh();
     }
   };
 
@@ -79,13 +102,23 @@ export function WorkspaceCourseModuleRowActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWorkspaceCourseModule}>
-            {t('common.delete')}
-          </DropdownMenuItem>
+          {setId ? (
+            <>
+              <DropdownMenuItem onClick={unlinkWorkspaceCourseModule}>
+                {t('common.unlink')}
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <>
+              <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                {t('common.edit')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={deleteWorkspaceCourseModule}>
+                {t('common.delete')}
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

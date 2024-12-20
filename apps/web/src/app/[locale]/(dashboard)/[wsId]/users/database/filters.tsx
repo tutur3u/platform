@@ -19,7 +19,7 @@ export default async function Filters({
   noExclude = false,
 }: {
   wsId: string;
-  searchParams: SearchParams;
+  searchParams?: SearchParams;
   noInclude?: boolean;
   noExclude?: boolean;
 }) {
@@ -82,7 +82,7 @@ async function getUserGroups(wsId: string) {
 
 async function getExcludedUserGroups(
   wsId: string,
-  { includedGroups }: SearchParams
+  { includedGroups }: SearchParams = {}
 ) {
   const supabase = await createClient();
 

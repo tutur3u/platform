@@ -13,7 +13,7 @@ export const getWorkspaceCourseModuleColumns = (
   namespace: string | undefined,
   _: any,
   extraData?: any
-): ColumnDef<WorkspaceCourseModule>[] => [
+): ColumnDef<Partial<WorkspaceCourseModule>>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -118,6 +118,7 @@ export const getWorkspaceCourseModuleColumns = (
         row={row}
         wsId={extraData.wsId}
         courseId={extraData.courseId}
+        setId={extraData.setId}
       />
     ),
   },
