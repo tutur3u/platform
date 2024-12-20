@@ -1,10 +1,11 @@
 export interface Tool {
+  id: string;
   name: string;
   description: string;
-  category: 'teaching';
+  category: string;
 }
 
-export const recommendedTools: Tool[] = [
+export const recommendedTools = [
   {
     name: '5E Model Lesson Plan',
     description:
@@ -40,9 +41,17 @@ export const recommendedTools: Tool[] = [
       'Create a concept map to show relationships between concepts and ideas.',
     category: 'teaching',
   },
-];
+].map((tool) => ({
+  ...tool,
+  id: tool.name
+    .replaceAll(' ', '-')
+    .replaceAll('/', '')
+    .replaceAll('!', '')
+    .replaceAll('--', '-')
+    .toLowerCase(),
+})) satisfies Tool[];
 
-export const tools: Tool[] = [
+export const tools = [
   {
     name: 'Text Rewriter',
     description:
@@ -529,4 +538,12 @@ export const tools: Tool[] = [
       'Create a SMART goals tracker for students aligned to their needs. (Tier 2/3, MTSS, IEPs, etc.)',
     category: 'teaching',
   },
-];
+].map((tool) => ({
+  ...tool,
+  id: tool.name
+    .replaceAll(' ', '-')
+    .replaceAll('/', '')
+    .replaceAll('!', '')
+    .replaceAll('--', '-')
+    .toLowerCase(),
+})) satisfies Tool[];

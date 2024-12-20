@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/ui/card';
+import Link from 'next/link';
 
 export default function MagicToolsPage({
   params: { locale },
@@ -28,14 +29,16 @@ export default function MagicToolsPage({
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {recommendedTools.map((tool) => (
-            <Card key={tool.name}>
-              <CardHeader>
-                <CardTitle>{tool.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{tool.description}</p>
-              </CardContent>
-            </Card>
+            <Link href={`/tools/${tool.id}`} key={tool.name} className="h-full">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>{tool.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>{tool.description}</p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </section>
@@ -46,14 +49,16 @@ export default function MagicToolsPage({
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {tools.map((tool) => (
-            <Card key={tool.name}>
-              <CardHeader>
-                <CardTitle>{tool.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{tool.description}</p>
-              </CardContent>
-            </Card>
+            <Link href={`/tools/${tool.id}`} key={tool.name} className="h-full">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>{tool.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>{tool.description}</p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </section>
