@@ -48,12 +48,12 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.468.0",
     "next-themes": "^0.4.4",
-    "react": "19.0.0-rc-7283a213-20241206",
+    "react": "19.1.0-canary-518d06d2-20241219",
     "react-colorful": "^5.6.1",
     "react-day-picker": "8.10.1",
-    "react-dom": "19.0.0-rc-7283a213-20241206",
+    "react-dom": "19.1.0-canary-518d06d2-20241219",
     "react-dropzone": "^14.3.5",
-    "react-hook-form": "^7.54.1",
+    "react-hook-form": "^7.54.2",
     "react-resizable": "^3.0.5",
     "react-resizable-panels": "^2.1.7",
     "react-syntax-highlighter": "^15.6.1",
@@ -83,7 +83,7 @@
     "typescript": "^5.7.2"
   },
   "overrides": {
-    "react-is": "19.0.0-rc-7283a213-20241206"
+    "react-is": "19.1.0-canary-518d06d2-20241219"
   },
   "exports": {
     "./globals.css": "./src/globals.css",
