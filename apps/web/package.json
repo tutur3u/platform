@@ -53,7 +53,7 @@
     "@liveblocks/core": "2.14.0",
     "@liveblocks/react": "2.14.0",
     "@liveblocks/react-tiptap": "2.14.0",
-    "@liveblocks/react-ui": "2.14.0",
+    "@liveblocks/react-ui": "2.15.0",
     "@mantine/core": "^7.15.1",
     "@mantine/hooks": "^7.15.1",
     "@radix-ui/react-dropdown-menu": "^2.1.4",
