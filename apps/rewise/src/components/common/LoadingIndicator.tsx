@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils';
+
 export default function LoadingIndicator({
   className,
 }: {
@@ -6,7 +8,7 @@ export default function LoadingIndicator({
   return (
     <div className="inline-flex items-center rounded-md border border-transparent text-base">
       <svg
-        className={`text-foreground animate-spin ${className || 'h-4'}`}
+        className={cn('text-foreground animate-spin', className || 'h-4')}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
