@@ -143,7 +143,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="fixed inset-x-0 bottom-4">
+      <div className="fixed inset-x-0 bottom-4 md:sticky">
         <div
           className={cn(
             'absolute z-10 -mb-4 flex items-end gap-2 md:-mb-1 md:flex-col lg:mb-4',
@@ -158,7 +158,7 @@ export function ChatPanel({
           <ScrollToTopButton />
           <ScrollToBottomButton />
 
-          {!!chats && count !== undefined && id && (
+          {!!chats && count !== undefined && (
             <div className="flex w-full gap-2">
               <Button
                 size="icon"

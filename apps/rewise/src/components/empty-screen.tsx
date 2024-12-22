@@ -1,29 +1,22 @@
-import { capitalize, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { UseChatHelpers } from 'ai/react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import {
   ArrowDownToDot,
-  Box,
-  Globe,
   GraduationCap,
-  Lock,
   Mail,
-  MessageCircle,
   Microscope,
   NotebookPen,
   Sigma,
-  Sparkle,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 
 export function EmptyScreen({
-  chats,
+  // chats,
   setInput,
   locale,
 }: Pick<UseChatHelpers, 'setInput'> & {
@@ -97,7 +90,7 @@ export function EmptyScreen({
                 key={index}
                 variant="link"
                 className={cn(
-                  'w-full items-center justify-center gap-2 border p-2 text-left text-sm',
+                  'w-full items-center justify-center gap-2 border p-2 text-left text-sm md:p-8',
                   message.color
                 )}
                 onClick={() => setInput(message.message)}
@@ -111,7 +104,7 @@ export function EmptyScreen({
           </div>
         </div>
 
-        {chats && chats.length > 0 && (
+        {/* {chats && chats.length > 0 && (
           <>
             <Separator className="my-4" />
             <div>
@@ -177,7 +170,7 @@ export function EmptyScreen({
               </div>
             </div>
           </>
-        )}
+        )} */}
       </div>
     </div>
   );

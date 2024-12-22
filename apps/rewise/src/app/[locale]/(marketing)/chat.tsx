@@ -282,7 +282,7 @@ const Chat = ({
 
   return (
     <div className="relative">
-      <div className={cn('pb-32 md:pt-10', className)}>
+      <div className={cn('min-h-[calc(100vh-8rem)] pb-32 md:pt-10', className)}>
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
