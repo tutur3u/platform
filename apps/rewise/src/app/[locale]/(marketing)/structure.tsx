@@ -199,7 +199,7 @@ export function Structure({
               'flex-col justify-between backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
-            <div className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue absolute -z-20 h-full w-full bg-gradient-to-r" />
+            {/* <div className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue absolute -z-20 h-full w-full bg-gradient-to-r" /> */}
             <div className="bg-background/90 absolute -z-10 h-full w-full" />
             <div className="flex h-full flex-1 flex-col">
               <div className="flex-none py-2 md:p-0">
