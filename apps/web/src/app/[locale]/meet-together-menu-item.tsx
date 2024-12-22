@@ -3,7 +3,6 @@
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { CalendarClock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -16,7 +15,6 @@ export default function MeetTogetherMenuItem() {
 
   return (
     <>
-      <DropdownMenuSeparator />
       <DropdownMenuGroup>
         {pathname === `/meet-together` ? (
           <DropdownMenuItem disabled>
