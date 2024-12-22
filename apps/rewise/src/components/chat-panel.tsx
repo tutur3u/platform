@@ -143,7 +143,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="fixed inset-x-0 bottom-4 md:sticky">
+      <div className="fixed inset-x-0 bottom-0 md:sticky md:bottom-4">
         <div
           className={cn(
             'absolute z-10 -mb-4 flex items-end gap-2 md:-mb-1 md:flex-col lg:mb-4',
@@ -289,9 +289,7 @@ export function ChatPanel({
               ) : null} */}
             </div>
 
-            <div
-              className={`bg-background/70 flex flex-col items-start justify-start rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
-            >
+            <div className="bg-background/70 flex flex-col items-start justify-start border p-2 shadow-lg backdrop-blur-lg transition-all md:rounded-xl md:p-4">
               <ChatModelSelector
                 open={showExtraOptions}
                 model={model}
