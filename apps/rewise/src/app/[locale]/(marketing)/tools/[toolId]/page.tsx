@@ -1,5 +1,6 @@
 import { tools } from '../data';
 import { ToolForm } from './tool-form';
+import { supportedLocales } from '@/i18n/routing';
 import { Badge } from '@repo/ui/components/ui/badge';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -10,11 +11,18 @@ import {
 } from '@repo/ui/components/ui/card';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { ChevronLeft } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { use } from 'react';
 
-export default async function ToolDetailsPage({
+export function generateStaticParams() {
+  return supportedLocales
+    .map((locale) => tools.map((tool) => ({ locale, toolId: tool.id })))
+    .flat();
+}
+
+export default function ToolDetailsPage({
   params,
 }: {
   params: Promise<{
@@ -22,10 +30,9 @@ export default async function ToolDetailsPage({
     toolId: string;
   }>;
 }) {
-  const { toolId } = await params;
-  const t = await getTranslations('common');
+  const { toolId } = use(params);
+  const t = useTranslations();
   const tool = tools.find((tool) => tool.id === toolId);
-
   if (!tool) notFound();
 
   return (
@@ -38,7 +45,7 @@ export default async function ToolDetailsPage({
       >
         <Link href="/tools">
           <ChevronLeft className="h-4 w-4" />
-          {t('back')}
+          {t('common.back')}
         </Link>
       </Button>
 

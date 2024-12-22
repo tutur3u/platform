@@ -7,7 +7,7 @@ import {
 } from '@repo/ui/components/ui/card';
 import Link from 'next/link';
 
-export default async function MagicToolsPage() {
+export default function ToolsPage() {
   return (
     <div className="grid gap-8 py-8">
       <section>

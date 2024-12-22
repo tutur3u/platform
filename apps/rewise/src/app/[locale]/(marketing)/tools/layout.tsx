@@ -1,6 +1,11 @@
-import type { ReactNode } from 'react';
+import { supportedLocales } from '@/i18n/routing';
+import { type ReactNode, use } from 'react';
 
-export default async function ToolsLayout({
+export function generateStaticParams() {
+  return supportedLocales.map((locale) => ({ locale }));
+}
+
+export default function ToolsLayout({
   children,
   params,
 }: {
@@ -9,7 +14,7 @@ export default async function ToolsLayout({
     locale: string;
   }>;
 }) {
-  const { locale } = await params;
+  const { locale } = use(params);
 
   if (locale === 'vi')
     return (
