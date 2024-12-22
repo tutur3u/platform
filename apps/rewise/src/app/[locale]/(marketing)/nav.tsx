@@ -234,7 +234,7 @@ export function Nav({
         ) : (
           <Link
             href="/new"
-            className="flex items-center justify-start"
+            className="mt-2 flex items-center justify-start"
             onClick={() => {
               router.push('/new');
               router.refresh();

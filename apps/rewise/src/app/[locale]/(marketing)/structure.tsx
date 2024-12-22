@@ -65,6 +65,7 @@ export function Structure({
   const rootLinks: NavLink[] = [
     {
       href: '/new',
+      aliases: ['/'],
       title: t('common.home'),
       icon: <Home className="h-5 w-5 flex-none" />,
       matchExact: true,
@@ -73,7 +74,6 @@ export function Structure({
       href: '/tools',
       title: t('common.magic-tools'),
       icon: <WandSparkles className="h-5 w-5 flex-none" />,
-      matchExact: true,
     },
     {
       href: 'https://tuturuuu.com/onboarding',
