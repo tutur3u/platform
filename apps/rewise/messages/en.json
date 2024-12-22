@@ -127,7 +127,9 @@
     "current_plan": "Current plan",
     "go_to_tuturuuu": "Go to Tuturuuu",
     "magic": "Magic",
-    "magic-tools": "Magic Tools"
+    "magic-tools": "Magic Tools",
+    "generating": "Generating...",
+    "generate": "Generate"
   },
   "date_helper": {
     "time-unit": "Time unit",
