@@ -4,6 +4,7 @@ import { Tool } from '../data';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
 import { Label } from '@repo/ui/components/ui/label';
+import { Textarea } from '@repo/ui/components/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -22,21 +23,37 @@ export function ToolForm({ tool }: { tool: Tool }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {tool.fields?.map((field) => (
-        <div key={field.label} className="space-y-2">
-          <Label htmlFor={field.label}>
-            {field.label}
-            {field.required && <span className="ml-1 text-red-500">*</span>}
-          </Label>
-          <Input
-            id={field.label}
-            placeholder={field.placeholder}
-            required={field.required}
-          />
-        </div>
-      ))}
+      {tool.fields?.map((field) => {
+        return (
+          <div key={field.label} className="space-y-2">
+            <Label htmlFor={field.label}>
+              {field.label}
+              {field.required && <span className="ml-1 text-red-500">*</span>}
+            </Label>
+            {field.type === 'text' ? (
+              <Input
+                id={field.label}
+                placeholder={field.placeholder}
+                required={field.required}
+              />
+            ) : field.type === 'textarea' ? (
+              <Textarea
+                id={field.label}
+                placeholder={field.placeholder}
+                required={field.required}
+              />
+            ) : (
+              <Input
+                id={field.label}
+                placeholder={field.placeholder}
+                required={field.required}
+              />
+            )}
+          </div>
+        );
+      })}
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full" disabled>
         {isLoading ? t('common.generating') : t('common.generate')}
       </Button>
     </form>

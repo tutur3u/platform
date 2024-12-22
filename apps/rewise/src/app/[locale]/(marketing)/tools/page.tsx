@@ -7,22 +7,7 @@ import {
 } from '@repo/ui/components/ui/card';
 import Link from 'next/link';
 
-export default async function MagicToolsPage({
-  params,
-}: {
-  params: Promise<{
-    locale: string;
-  }>;
-}) {
-  const { locale } = await params;
-
-  if (locale === 'vi')
-    return (
-      <div className="flex h-screen w-full items-center justify-center text-center text-2xl font-bold">
-        Bạn cần đổi ngôn ngữ sang tiếng Anh để xem trang này.
-      </div>
-    );
-
+export default async function MagicToolsPage() {
   return (
     <div className="grid gap-8">
       <section>
