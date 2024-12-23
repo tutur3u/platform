@@ -1,22 +1,57 @@
 'use client';
 
 import { Tool } from '../data';
+import type { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
 import { Label } from '@repo/ui/components/ui/label';
 import { Textarea } from '@repo/ui/components/ui/textarea';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { Album, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export function ToolForm({ tool }: { tool: Tool }) {
   const t = useTranslations();
+  const router = useRouter();
+
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState(tool);
+
+  const createChat = async (input: string) => {
+    const res = await fetch(`/api/ai/chat/google-vertex/new`, {
+      method: 'POST',
+      body: JSON.stringify({
+        model: 'gemini-1.5-flash-002',
+        message: input,
+      }),
+    });
+
+    if (!res.ok) {
+      toast({
+        title: t('ai_chat.something_went_wrong'),
+        description: res.statusText,
+      });
+      return;
+    }
+
+    const { id } = (await res.json()) as AIChat;
+    if (id) {
+      router.push(`/c/${id}`);
+      router.refresh();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    await createChat(
+      `## ${tool.name}\n> ${tool.description}\n\n` +
+        formData.fields
+          .map((field) => `- **${field.label}:** ${field.value}`)
+          .join('\n')
+    );
   };
 
   const fillPlaceholderContent = () => {
