@@ -209,6 +209,79 @@ export const recommendedTools: Tool[] = (
 export const tools: Tool[] = (
   [
     {
+      name: 'Prompt Engineering Scenarios',
+      description:
+        'Generate engineering scenarios for students to solve real-world problems.',
+      category: 'teaching',
+      tags: ['Engineering', 'Problem Solving', 'Real-World Scenarios'],
+      fields: [
+        {
+          type: 'text',
+          label: 'Topic',
+          placeholder: 'e.g. Renewable Energy',
+          required: true,
+        },
+        {
+          type: 'text',
+          label: 'Grade Level',
+          placeholder: 'e.g. 8th Grade',
+          required: true,
+        },
+        {
+          type: 'text',
+          label: 'Objective',
+          placeholder: 'e.g. Design a renewable energy source.',
+        },
+      ],
+    },
+    {
+      name: 'Science Fair Project Ideas',
+      description:
+        'Generate science fair project ideas for students based on their interests and grade level.',
+      category: 'teaching',
+      tags: ['Science Fair', 'Project Ideas', 'Student Interests'],
+      fields: [
+        {
+          type: 'text',
+          label: 'Interest',
+          placeholder: 'e.g. Chemistry',
+          required: true,
+        },
+        {
+          type: 'text',
+          label: 'Grade Level',
+          placeholder: 'e.g. 7th Grade',
+          required: true,
+        },
+      ],
+    },
+    {
+      name: 'Math Problem Generator',
+      description:
+        'Generate math problems for students based on topic, grade level, and difficulty.',
+      category: 'teaching',
+      tags: ['Math Problems', 'Problem Generator', 'Math Practice'],
+      fields: [
+        {
+          type: 'text',
+          label: 'Topic',
+          placeholder: 'e.g. Fractions',
+          required: true,
+        },
+        {
+          type: 'text',
+          label: 'Grade Level',
+          placeholder: 'e.g. 5th Grade',
+          required: true,
+        },
+        {
+          type: 'text',
+          label: 'Difficulty',
+          placeholder: 'e.g. Easy, Medium, Hard',
+        },
+      ],
+    },
+    {
       name: 'Text Rewriter',
       description:
         "Take any text and rewrite it with custom criteria however you'd like!",

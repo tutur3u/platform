@@ -135,7 +135,7 @@ export function ChatMessage({
 
   return (
     <div
-      className={cn('group relative mb-4 grid h-fit w-full gap-4')}
+      className={cn('group relative mb-4 grid h-fit w-full gap-2')}
       {...props}
     >
       <div className="flex h-fit flex-wrap justify-between gap-2">
@@ -216,26 +216,28 @@ export function ChatMessage({
         <ChatMessageActions message={message} />
       </div>
 
-      <div className="mb-2 flex items-center gap-1">
-        {message.metadata?.['response_types']
-          ?.filter((responseType) =>
-            [
-              'summary',
-              'notes',
-              'multi_choice_quiz',
-              'paragraph_quiz',
-              'flashcards',
-            ].includes(responseType)
-          )
-          ?.map((responseType, index) => (
-            <span
-              key={index}
-              className="bg-foreground/5 text-foreground/80 border-foreground/20 inline-block rounded border px-2 py-1 text-xs font-semibold"
-            >
-              {t(responseType)}
-            </span>
-          ))}
-      </div>
+      {message.metadata?.['response_types'] && (
+        <div className="mb-2 flex items-center gap-1">
+          {message.metadata?.['response_types']
+            ?.filter((responseType) =>
+              [
+                'summary',
+                'notes',
+                'multi_choice_quiz',
+                'paragraph_quiz',
+                'flashcards',
+              ].includes(responseType)
+            )
+            ?.map((responseType, index) => (
+              <span
+                key={index}
+                className="bg-foreground/5 text-foreground/80 border-foreground/20 inline-block rounded border px-2 py-1 text-xs font-semibold"
+              >
+                {t(responseType)}
+              </span>
+            ))}
+        </div>
+      )}
 
       <div className="flex-1 space-y-2">
         <MemoizedReactMarkdown
