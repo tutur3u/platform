@@ -49,6 +49,7 @@ export function ToolForm({ tool }: { tool: Tool }) {
     await createChat(
       `## ${tool.name}\n> ${tool.description}\n\n` +
         formData.fields
+          .filter((field) => field.value)
           .map((field) => `- **${field.label}:** ${field.value}`)
           .join('\n')
     );
