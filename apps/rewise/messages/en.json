@@ -129,7 +129,8 @@
     "magic": "Magic",
     "magic-tools": "Magic Tools",
     "generating": "Generating...",
-    "generate": "Generate"
+    "generate": "Generate",
+    "example_content": "Example content"
   },
   "date_helper": {
     "time-unit": "Time unit",

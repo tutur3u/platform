@@ -1,6 +1,7 @@
 export type ToolFieldType = 'text' | 'textarea' | 'select' | 'tags';
 
 export interface ToolField {
+  value?: string;
   type: ToolFieldType;
   label: string;
   placeholder?: string;

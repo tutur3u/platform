@@ -129,7 +129,8 @@
     "magic": "Phép thuật",
     "magic-tools": "Công cụ ma thuật",
     "generating": "Đang tạo...",
-    "generate": "Bắt đầu tạo"
+    "generate": "Bắt đầu tạo",
+    "example_content": "Nội dung mẫu"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
