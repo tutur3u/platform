@@ -23,10 +23,10 @@ export default function ToolsPage() {
             >
               <Card className="group-hover:border-foreground h-full">
                 <CardHeader>
-                  <CardTitle>{tool.name}</CardTitle>
+                  <CardTitle className="line-clamp-2">{tool.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p>{tool.description}</p>
+                  <p className="line-clamp-2">{tool.description}</p>
                   <div className="flex flex-wrap items-center gap-1 text-sm font-semibold">
                     {tool.tags.map((tag) => (
                       <p
@@ -57,10 +57,10 @@ export default function ToolsPage() {
             >
               <Card className="group-hover:border-foreground h-full">
                 <CardHeader>
-                  <CardTitle>{tool.name}</CardTitle>
+                  <CardTitle className="line-clamp-2">{tool.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p>{tool.description}</p>
+                  <p className="line-clamp-2">{tool.description}</p>
                   <div className="flex flex-wrap items-center gap-1 text-sm font-semibold">
                     {tool.tags.map((tag) => (
                       <p

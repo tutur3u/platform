@@ -209,28 +209,38 @@ export const recommendedTools: Tool[] = (
 export const tools: Tool[] = (
   [
     {
-      name: 'Prompt Engineering Scenarios',
+      name: 'University Capstone Project Ideas',
       description:
-        'Generate engineering scenarios for students to solve real-world problems.',
+        'Generate capstone project ideas for university students based on their field of study.',
       category: 'teaching',
-      tags: ['Engineering', 'Problem Solving', 'Real-World Scenarios'],
+      tags: ['Capstone Projects', 'University Students', 'Project Ideas'],
       fields: [
         {
           type: 'text',
-          label: 'Topic',
-          placeholder: 'e.g. Renewable Energy',
+          label: 'Field of Study',
+          placeholder: 'e.g. Computer Science',
           required: true,
         },
         {
           type: 'text',
-          label: 'Grade Level',
-          placeholder: 'e.g. 8th Grade',
+          label: 'Degree Level',
+          placeholder: 'e.g. Bachelor’s Degree',
           required: true,
         },
         {
-          type: 'text',
+          type: 'textarea',
           label: 'Objective',
-          placeholder: 'e.g. Design a renewable energy source.',
+          placeholder: 'e.g. Develop a new software application.',
+        },
+        {
+          type: 'text',
+          label: 'Duration',
+          placeholder: 'e.g. 6 months',
+        },
+        {
+          type: 'textarea',
+          label: 'Tools / Technologies',
+          placeholder: 'e.g. Python, Machine Learning',
         },
       ],
     },
@@ -2287,6 +2297,91 @@ export const tools: Tool[] = (
           type: 'text',
           label: 'Grade Level',
           placeholder: 'e.g. 6th Grade',
+          required: true,
+        },
+      ],
+    },
+    {
+      name: 'Prompt Engineering Scenarios',
+      description:
+        'Generate engineering scenarios for students to solve real-world problems.',
+      category: 'teaching',
+      tags: ['Engineering', 'Problem Solving', 'Real-World Scenarios'],
+      fields: [
+        {
+          type: 'text',
+          label: 'Topic',
+          placeholder: 'e.g. Renewable Energy',
+          required: true,
+        },
+        {
+          type: 'text',
+          label: 'Grade Level',
+          placeholder: 'e.g. 8th Grade',
+          required: true,
+        },
+        {
+          type: 'text',
+          label: 'Objective',
+          placeholder: 'e.g. Design a renewable energy source.',
+        },
+      ],
+    },
+    {
+      name: 'Prompt Engineering Problems',
+      description:
+        'Generate life-threatening scenarios, with a twist, that the player must solve using critical thinking, problem-solving, and creativity. Using prompts, the player must come up with a solution to the scenario.',
+      category: 'teaching',
+      tags: ['Engineering', 'Problem Solving', 'Real-World Scenarios'],
+      fields: [
+        {
+          type: 'text',
+          label: 'Scenario Type',
+          placeholder:
+            'e.g. Wilderness Survival, Space Exploration, Zombie Apocalypse',
+          required: true,
+        },
+        {
+          type: 'textarea',
+          label: 'Objective',
+          placeholder:
+            'e.g. Design a building that can withstand an earthquake.',
+        },
+        {
+          type: 'text',
+          label: 'Twist',
+          placeholder: 'e.g. Limited resources, Time constraint',
+        },
+        {
+          type: 'text',
+          label: 'Difficulty',
+          placeholder: 'e.g. Easy, Medium, Hard',
+        },
+        {
+          type: 'text',
+          label: 'Scenario Content Length',
+          placeholder: 'e.g. Short (1-2 sentences), Long (1-2 paragraphs)',
+        },
+      ],
+    },
+    {
+      name: 'Prompt Engineering Problem Solver',
+      description:
+        'Given a life-threatening scenario, with a twist, the player must solve the problem using critical thinking, problem-solving, and creativity. The player must come up with a solution to the scenario. Both the scenario and the solution are provided, please turn it into a story with potential plot twists related to the scenario and the solution, it should be brief, presented in 1 paragraph (3-4 sentences). The main character in the story must be the player, role playing in the given scenario, with a focus on their critical thinking and logical solution. Not all solutions can make it through the scenario. Short and simple solutions, like imagining the scenario was just a dream, will not work, and are disencouraged. Decide the outcome of the story: Success or Failure. Rate the scenario, the solution, and the story. Do not generate quizzes and flashcards. Effectively use markdown.',
+      category: 'teaching',
+      tags: ['Engineering', 'Problem Solving', 'Real-World Scenarios'],
+      fields: [
+        {
+          type: 'textarea',
+          label: 'Scenario',
+          placeholder:
+            'e.g. Wilderness Survival, Space Exploration, Zombie Apocalypse',
+          required: true,
+        },
+        {
+          type: 'textarea',
+          label: "Player's Proposed Solution",
+          placeholder: 'e.g. Build a shelter, Find food and water',
           required: true,
         },
       ],
