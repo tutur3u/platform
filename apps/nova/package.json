@@ -46,7 +46,7 @@
     "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^3.9.1",
     "@liveblocks/core": "2.14.0",
-    "@liveblocks/react": "2.14.0",
+    "@liveblocks/react": "2.15.1",
     "@liveblocks/react-tiptap": "2.14.0",
     "@liveblocks/react-ui": "2.15.0",
     "@radix-ui/react-dropdown-menu": "^2.1.4",
