@@ -24,6 +24,7 @@ import {
   ChevronDown,
   Crown,
   Home,
+  ImagePlay,
   Menu,
   MessagesSquare,
   SquareArrowOutUpRight,
@@ -73,8 +74,13 @@ export function Structure({
     },
     {
       href: '/tools',
-      title: t('common.magic-tools'),
+      title: t('common.tools'),
       icon: <WandSparkles className="h-5 w-5 flex-none" />,
+    },
+    {
+      href: '/imagine',
+      title: t('common.image_generator'),
+      icon: <ImagePlay className="h-5 w-5 flex-none" />,
     },
     {
       href: DEV_MODE

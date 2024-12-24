@@ -47,6 +47,7 @@ export interface PromptProps
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  // eslint-disable-next-line no-unused-vars
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
   showExtraOptions: boolean;
@@ -54,7 +55,9 @@ export interface PromptProps
   toggleChatFileUpload: () => void;
   toggleChatVisibility: () => void;
   mode: ResponseMode;
+  // eslint-disable-next-line no-unused-vars
   setMode: (mode: ResponseMode) => void;
+  disabled?: boolean;
 }
 
 export function PromptForm({
@@ -75,6 +78,7 @@ export function PromptForm({
   toggleChatVisibility,
   mode,
   setMode,
+  disabled,
 }: PromptProps) {
   const t = useTranslations();
 
@@ -253,55 +257,64 @@ export function PromptForm({
                     {model}
                   </span>
                 </div>
-                <Separator orientation="vertical" className="h-4" />
+                {disabled || (
+                  <Separator orientation="vertical" className="h-4" />
+                )}
               </>
             )}
 
-            <Button
-              size="xs"
-              type="button"
-              variant={mode === 'short' ? undefined : 'secondary'}
-              className={cn(
-                'border text-xs',
-                mode === 'short'
-                  ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
-              )}
-              onClick={() => setMode('short')}
-            >
-              <Rabbit className="mr-1 h-4 w-4" />
-              {t('ai_chat.short_and_concise')}
-            </Button>
-            <Button
-              size="xs"
-              type="button"
-              variant={mode === 'medium' ? undefined : 'secondary'}
-              className={cn(
-                'border text-xs',
-                mode === 'medium'
-                  ? 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
-              )}
-              onClick={() => setMode('medium')}
-            >
-              <Cat className="mr-1 h-4 w-4" />
-              {t('ai_chat.medium_and_informative')}
-            </Button>
-            <Button
-              size="xs"
-              type="button"
-              variant={mode === 'long' ? undefined : 'secondary'}
-              className={cn(
-                'border text-xs',
-                mode === 'long'
-                  ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
-                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
-              )}
-              onClick={() => setMode('long')}
-            >
-              <Origami className="mr-1 h-4 w-4" />
-              {t('ai_chat.long_and_detailed')}
-            </Button>
+            {disabled || (
+              <>
+                <Button
+                  size="xs"
+                  type="button"
+                  variant={mode === 'short' ? undefined : 'secondary'}
+                  className={cn(
+                    'border text-xs',
+                    mode === 'short'
+                      ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                      : 'bg-background text-foreground/70 hover:bg-foreground/5'
+                  )}
+                  onClick={() => setMode('short')}
+                  disabled={disabled}
+                >
+                  <Rabbit className="mr-1 h-4 w-4" />
+                  {t('ai_chat.short_and_concise')}
+                </Button>
+                <Button
+                  size="xs"
+                  type="button"
+                  variant={mode === 'medium' ? undefined : 'secondary'}
+                  className={cn(
+                    'border text-xs',
+                    mode === 'medium'
+                      ? 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                      : 'bg-background text-foreground/70 hover:bg-foreground/5'
+                  )}
+                  onClick={() => setMode('medium')}
+                  disabled={disabled}
+                >
+                  <Cat className="mr-1 h-4 w-4" />
+                  {t('ai_chat.medium_and_informative')}
+                </Button>
+                <Button
+                  size="xs"
+                  type="button"
+                  variant={mode === 'long' ? undefined : 'secondary'}
+                  className={cn(
+                    'border text-xs',
+                    mode === 'long'
+                      ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
+                      : 'bg-background text-foreground/70 hover:bg-foreground/5'
+                  )}
+                  onClick={() => setMode('long')}
+                  disabled={disabled}
+                >
+                  <Origami className="mr-1 h-4 w-4" />
+                  {t('ai_chat.long_and_detailed')}
+                </Button>
+              </>
+            )}
             {/* <Button
               size="xs"
               type="button"
@@ -410,20 +423,24 @@ export function PromptForm({
           </div>
 
           <div className="flex items-center">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  // disabled={isInternalLoading}
-                  size="icon"
-                  variant="ghost"
-                  className={cn('mr-1 transition duration-300')}
-                  disabled={!ENABLE_NEW_UI}
-                >
-                  <Languages />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('ai_chat.response_language')}</TooltipContent>
-            </Tooltip>
+            {disabled || (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    // disabled={isInternalLoading}
+                    size="icon"
+                    variant="ghost"
+                    className={cn('mr-1 transition duration-300')}
+                    disabled={!ENABLE_NEW_UI || disabled}
+                  >
+                    <Languages />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {t('ai_chat.response_language')}
+                </TooltipContent>
+              </Tooltip>
+            )}
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -433,7 +450,7 @@ export function PromptForm({
                   variant="ghost"
                   className={cn('transition duration-300')}
                   onClick={toggleChatFileUpload}
-                  disabled={!ENABLE_NEW_UI}
+                  disabled={!ENABLE_NEW_UI || disabled}
                 >
                   <Paperclip />
                 </Button>
@@ -556,7 +573,7 @@ export function PromptForm({
                       ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
                       : 'pointer-events-auto ml-1 w-10 opacity-100'
                   )}
-                  disabled={!id}
+                  disabled={!id || disabled}
                   onClick={toggleChatVisibility}
                 >
                   {chat?.is_public ? <Globe /> : <Lock />}
@@ -581,7 +598,7 @@ export function PromptForm({
                       ? 'pointer-events-none w-0 bg-transparent text-transparent opacity-0'
                       : 'pointer-events-auto ml-1 w-10 opacity-100'
                   )}
-                  disabled={isLoading || showExtraOptions}
+                  disabled={isLoading || showExtraOptions || disabled}
                 >
                   <Bolt />
                   <span className="sr-only">{t('ai_chat.extra_options')}</span>
@@ -752,10 +769,15 @@ export function PromptForm({
             value={input}
             // value={[input, caption || ''].filter(Boolean).join(' ')}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={`${t('ai_chat.send_message')}.`}
+            placeholder={
+              disabled
+                ? t('ai_chat.imagine_placeholder')
+                : `${t('ai_chat.send_message')}.`
+            }
             spellCheck={false}
             maxRows={7}
             className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
+            disabled={disabled}
           />
         </div>
       </form>

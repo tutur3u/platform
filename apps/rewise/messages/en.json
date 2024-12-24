@@ -127,10 +127,12 @@
     "current_plan": "Current plan",
     "go_to_tuturuuu": "Go to Tuturuuu",
     "magic": "Magic",
-    "magic-tools": "Magic Tools",
+    "tools": "Tools",
     "generating": "Generating...",
     "generate": "Generate",
-    "example_content": "Example content"
+    "example_content": "Example content",
+    "image_generator": "Image Generator",
+    "imagine": "Imagine"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1291,7 +1293,8 @@
     "chat_name_hidden": "Chat name hidden",
     "short_and_concise": "Short and concise",
     "medium_and_informative": "Medium and informative",
-    "long_and_detailed": "Long and detailed"
+    "long_and_detailed": "Long and detailed",
+    "imagine_placeholder": "Imagine..."
   },
   "crud-ops": {
     "ops": "Operations",

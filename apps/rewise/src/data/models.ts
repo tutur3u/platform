@@ -32,6 +32,22 @@ export const models: {
   },
 
   {
+    value: 'imagen-3.0-generate-001',
+    label: 'imagen-3.0-generate-001',
+    provider: 'Google Vertex',
+    description:
+      'Imagen 3.0 helps you generate high-quality images from text descriptions.',
+    disabled: true,
+  },
+  {
+    value: 'imagen-3.0-fast-generate-001',
+    label: 'imagen-3.0-fast-generate-001',
+    provider: 'Google Vertex',
+    description:
+      'Imagen 3.0 helps you generate high-quality images from text descriptions.',
+    disabled: true,
+  },
+  {
     value: 'gemini-2.0-flash-exp',
     label: 'gemini-2.0-flash',
     provider: 'Google Vertex',

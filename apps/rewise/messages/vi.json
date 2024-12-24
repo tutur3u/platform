@@ -127,10 +127,12 @@
     "current_plan": "Gói hiện tại",
     "go_to_tuturuuu": "Tới Tuturuu",
     "magic": "Phép thuật",
-    "magic-tools": "Công cụ ma thuật",
+    "tools": "Công cụ",
     "generating": "Đang tạo...",
     "generate": "Bắt đầu tạo",
-    "example_content": "Nội dung mẫu"
+    "example_content": "Nội dung mẫu",
+    "image_generator": "Tạo ảnh",
+    "imagine": "Tưởng tượng"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1291,7 +1293,8 @@
     "chat_name_hidden": "Tên trò chuyện đã được ẩn",
     "short_and_concise": "Ngắn gọn và súc tích",
     "medium_and_informative": "Vừa đủ thông tin",
-    "long_and_detailed": "Dài và chi tiết"
+    "long_and_detailed": "Dài và chi tiết",
+    "imagine_placeholder": "Hãy tưởng tượng..."
   },
   "crud-ops": {
     "ops": "Thao tác",

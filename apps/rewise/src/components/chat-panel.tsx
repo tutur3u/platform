@@ -66,6 +66,7 @@ export interface ChatPanelProps
   setCollapsed: (collapsed: boolean) => void;
   mode: ResponseMode;
   setMode: (mode: ResponseMode) => void;
+  disabled?: boolean;
 }
 
 export function ChatPanel({
@@ -87,6 +88,7 @@ export function ChatPanel({
   setCollapsed,
   mode,
   setMode,
+  disabled,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
 
@@ -336,6 +338,7 @@ export function ChatPanel({
                 }}
                 mode={mode}
                 setMode={setMode}
+                disabled={disabled}
               />
             </div>
           </div>
