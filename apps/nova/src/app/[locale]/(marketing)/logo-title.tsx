@@ -1,7 +1,7 @@
 'use client';
 
 import {cn} from '@/lib/utils';
-import { useParams } from 'next/navigation';
+// import { useParams } from 'next/navigation';
 
 export default function LogoTitle({
 
