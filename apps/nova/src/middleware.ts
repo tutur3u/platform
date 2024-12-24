@@ -60,13 +60,13 @@ const handleRedirect = ({
   redirect: boolean;
 } => {
   // If current path ends with /login and user is logged in, redirect to onboarding page
-  if (req.nextUrl.pathname.endsWith('/login') && user) {
-    const nextRes = NextResponse.redirect(
-      req.nextUrl.href.replace('/login', '/onboarding')
-    );
+  // if (req.nextUrl.pathname.endsWith('/login') && user) {
+  //   const nextRes = NextResponse.redirect(
+  //     req.nextUrl.href.replace('/login', '/onboarding')
+  //   );
 
-    return { res: nextRes, redirect: true };
-  }
+  //   return { res: nextRes, redirect: true };
+  // }
 
   // If current path ends with /onboarding and user is not logged in, redirect to login page
   if (

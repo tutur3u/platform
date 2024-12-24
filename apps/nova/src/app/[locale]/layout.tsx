@@ -1,4 +1,4 @@
-import Header from './header';
+import Header from './(marketing)/header';
 import { siteConfig } from '@/constants/configs';
 import { routing, supportedLocales } from '@/i18n/routing';
 import { Toaster } from '@repo/ui/components/ui/toaster';
@@ -6,7 +6,6 @@ import '@repo/ui/globals.css';
 import { cn } from '@repo/ui/lib/utils';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
-import { motion } from 'framer-motion';
 import { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
