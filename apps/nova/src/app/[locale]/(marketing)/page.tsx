@@ -8,9 +8,9 @@ function MarketingPage() {
   // Make sure to only access `window` in the browser
   const isBrowser = typeof window !== 'undefined';
 
-  const rainingElements = Array.from({ length: 30 }).map((_, i) => ({
+  const rainingElements = Array.from({ length: 100 }).map((_, i) => ({
     id: i,
-    content: i % 3 === 0 ? '✨' : i % 3 === 1 ? '🤖' : '🚀',
+    content: i % 3 === 0 ? '✨' : i % 3 === 1 ? '🌟' : '❄️',
     color: i % 2 === 0 ? 'text-blue-400' : 'text-pink-400',
   }));
 
@@ -69,9 +69,7 @@ function MarketingPage() {
 
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <div className="relative">
-              <input
-                className="ease placeholder:text-white-400 hover:border-white-300 peer rounded-xl border border-slate-200 bg-white bg-opacity-20 px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-80"
-              />
+              <input className="ease placeholder:text-white-400 hover:border-white-300 peer rounded-xl border border-slate-200 bg-white bg-opacity-20 px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-80" />
               <label className="absolute left-2.5 top-2.5 origin-left transform cursor-text px-1 text-sm text-white transition-all peer-focus:-top-2 peer-focus:left-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-white">
                 Prompt here..
               </label>
