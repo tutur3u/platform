@@ -1,18 +1,32 @@
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@repo/ui/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@repo/ui/components/ui/select';
 
 interface VersionControlProps {
-  version: number
-  versions: { id: number; prompt: string }[]
-  onSave: () => void
-  onLoad: (versionId: number) => void
+  version: number;
+  versions: { id: number; prompt: string }[];
+  onSave: () => void;
+  onLoad: (versionId: number) => void;
 }
 
-export function VersionControl({ version, versions, onSave, onLoad }: VersionControlProps) {
+export function VersionControl({
+  version,
+  versions,
+  onSave,
+  onLoad,
+}: VersionControlProps) {
   return (
     <div className="mb-4 flex items-center space-x-4">
       <div className="flex-grow">
-        <Select value={version.toString()} onValueChange={(value) => onLoad(parseInt(value))}>
+        <Select
+          value={version.toString()}
+          onValueChange={(value) => onLoad(parseInt(value))}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select version" />
           </SelectTrigger>
@@ -29,6 +43,5 @@ export function VersionControl({ version, versions, onSave, onLoad }: VersionCon
         Save Version
       </Button>
     </div>
-  )
+  );
 }
-

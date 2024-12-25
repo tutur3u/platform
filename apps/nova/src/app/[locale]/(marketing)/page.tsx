@@ -1,11 +1,13 @@
 'use client';
 
-import GetStartedButton from '../get-started-button';
-import GradientHeadline from '../gradient-headline';
 import { motion } from 'framer-motion';
-
+import GradientHeadline from '../gradient-headline';
+import GetStartedButton from '../get-started-button';
 
 function MarketingPage() {
+  // Make sure to only access `window` in the browser
+  const isBrowser = typeof window !== 'undefined';
+
   const rainingElements = Array.from({ length: 30 }).map((_, i) => ({
     id: i,
     content: i % 3 === 0 ? '✨' : i % 3 === 1 ? '🤖' : '🚀',
@@ -26,11 +28,11 @@ function MarketingPage() {
             <motion.div
               key={element.id}
               initial={{
-                x: Math.random() * window.innerWidth, 
+                x: isBrowser ? Math.random() * window.innerWidth : 0, // Only use `window` in the browser
                 y: -50,
               }}
               animate={{
-                y: [Math.random() * -200, Math.random() * window.innerHeight],
+                y: [Math.random() * -200, Math.random() * (isBrowser ? window.innerHeight : 500)],
                 opacity: [0, 1, 0],
               }}
               transition={{
@@ -49,7 +51,6 @@ function MarketingPage() {
           ))}
         </div>
 
-
         <div className="relative mx-auto pt-[250px] flex max-w-6xl flex-col items-center justify-center px-4 py-48">
           <h1 className="text-white text-center text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl">
             JOIN OUR PLAYGROUND
@@ -60,7 +61,6 @@ function MarketingPage() {
           <p className="text-gray-400 text-center mt-4">
             Practice your prompt, use your prompt in real-world applications.
           </p>
-
 
           <div className="flex flex-col items-center gap-4 mt-8 sm:flex-row sm:justify-center">
             <input

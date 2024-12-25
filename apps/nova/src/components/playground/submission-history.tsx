@@ -1,14 +1,17 @@
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@repo/ui/components/ui/badge';
+import {
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@repo/ui/components/ui/card';
 
 interface SubmissionHistoryProps {
   submissions: {
-    id: number
-    timestamp: Date
-    status: 'Accepted' | 'Wrong Answer' | 'Runtime Error'
-  }[]
+    id: number;
+    timestamp: Date;
+    status: 'Accepted' | 'Wrong Answer' | 'Runtime Error';
+  }[];
 }
-
 export function SubmissionHistory({ submissions }: SubmissionHistoryProps) {
   return (
     <>
@@ -17,20 +20,25 @@ export function SubmissionHistory({ submissions }: SubmissionHistoryProps) {
       </CardHeader>
       <CardContent>
         {submissions.length === 0 ? (
-          <p className="text-muted-foreground text-center">No submissions yet.</p>
+          <p className="text-muted-foreground text-center">
+            No submissions yet.
+          </p>
         ) : (
           <ul className="space-y-2">
             {submissions.map((submission) => (
-              <li key={submission.id} className="flex justify-between items-center bg-muted p-2 rounded-md">
+              <li
+                key={submission.id}
+                className="bg-muted flex items-center justify-between rounded-md p-2"
+              >
                 <span>Submission {submission.id}</span>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     {submission.timestamp.toLocaleString()}
                   </span>
                   <Badge
                     variant={
                       submission.status === 'Accepted'
-                        ? 'success'
+                        ? 'success' 
                         : submission.status === 'Wrong Answer'
                         ? 'destructive'
                         : 'warning'
@@ -45,6 +53,5 @@ export function SubmissionHistory({ submissions }: SubmissionHistoryProps) {
         )}
       </CardContent>
     </>
-  )
+  );
 }
-

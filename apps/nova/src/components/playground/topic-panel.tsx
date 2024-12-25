@@ -1,19 +1,18 @@
-import { useState } from 'react'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { FileUploader } from './file-uploader'
+import { FileUploader } from './file-uploader';
+import { Input } from '@repo/ui/components/ui/input';
+import { Label } from '@repo/ui/components/ui/label';
+import { Textarea } from '@repo/ui/components/ui/textarea';
+import { useState } from 'react';
 
 interface TopicPanelProps {
-  topic: string
-  setTopic: (topic: string) => void
-  exampleInput: string
-  setExampleInput: (input: string) => void
-  expectedOutput: string
-  setExpectedOutput: (output: string) => void
-  inputType: string
-  setInputType: (type: string) => void
+  topic: string;
+  setTopic: (topic: string) => void;
+  exampleInput: string;
+  setExampleInput: (input: string) => void;
+  expectedOutput: string;
+  setExpectedOutput: (output: string) => void;
+  inputType: string;
+  setInputType: (type: string) => void;
 }
 
 export function TopicPanel({
@@ -26,12 +25,12 @@ export function TopicPanel({
   inputType,
   setInputType,
 }: TopicPanelProps) {
-  const [file, setFile] = useState<File | null>(null)
+  const [file, setFile] = useState<File | null>(null);
 
   const handleFileUpload = (uploadedFile: File) => {
-    setFile(uploadedFile)
-    setExampleInput(uploadedFile.name)
-  }
+    setFile(uploadedFile);
+    setExampleInput(uploadedFile.name);
+  };
 
   return (
     <div className="mb-4 space-y-4">
@@ -50,7 +49,7 @@ export function TopicPanel({
           id="input-type"
           value={inputType}
           onChange={(e) => setInputType(e.target.value)}
-          className="w-full p-2 border rounded"
+          className="w-full rounded border p-2"
         >
           <option value="text">Text</option>
           <option value="image">Image</option>
@@ -72,9 +71,14 @@ export function TopicPanel({
             rows={3}
           />
         ) : (
-          <FileUploader onFileUpload={handleFileUpload} acceptedTypes={inputType} />
+          <FileUploader
+            onFileUpload={handleFileUpload}
+            acceptedTypes={inputType}
+          />
         )}
-        {file && <p className="mt-2 text-sm text-gray-500">Uploaded: {file.name}</p>}
+        {file && (
+          <p className="mt-2 text-sm text-gray-500">Uploaded: {file.name}</p>
+        )}
       </div>
       <div>
         <Label htmlFor="expected-output">Expected Output</Label>
@@ -87,6 +91,5 @@ export function TopicPanel({
         />
       </div>
     </div>
-  )
+  );
 }
-
