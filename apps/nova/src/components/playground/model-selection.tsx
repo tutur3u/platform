@@ -1,12 +1,21 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@repo/ui/components/ui/select';
 
 interface ModelSelectionProps {
-  selectedModel: string
-  setSelectedModel: (model: string) => void
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
 }
 
-export function ModelSelection({ selectedModel, setSelectedModel }: ModelSelectionProps) {
-  const models = ['gpt-3.5-turbo', 'gpt-4', 'claude-v1', 'palm-2']
+export function ModelSelection({
+  selectedModel,
+  setSelectedModel,
+}: ModelSelectionProps) {
+  const models = ['gpt-3.5-turbo', 'gpt-4', 'claude-v1', 'palm-2'];
 
   return (
     <div className="w-[200px]">
@@ -23,6 +32,5 @@ export function ModelSelection({ selectedModel, setSelectedModel }: ModelSelecti
         </SelectContent>
       </Select>
     </div>
-  )
+  );
 }
-

@@ -3,7 +3,6 @@ import LogoTitle from './logo-title';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import Image from 'next/image';
 // import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

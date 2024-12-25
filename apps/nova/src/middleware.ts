@@ -80,7 +80,7 @@ const handleRedirect = ({
         `?nextUrl=${req.nextUrl.pathname}`
     );
 
-    return { res: nextRes, redirect: true };
+    return { res: nextRes, redirect: false };
   }
 
   return { res, redirect: false };

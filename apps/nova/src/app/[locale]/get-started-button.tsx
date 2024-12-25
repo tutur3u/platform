@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+// import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export default function GetStartedButton({ href }: { href: string }) {

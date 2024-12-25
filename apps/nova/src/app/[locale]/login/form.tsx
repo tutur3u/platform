@@ -21,7 +21,7 @@ import {
 import { toast } from '@repo/ui/hooks/use-toast';
 import { IconBrandGmail, IconBrandWindows } from '@tabler/icons-react';
 import { Mail } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+// import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -34,7 +34,7 @@ const FormSchema = z.object({
 });
 
 export default function LoginForm() {
-  const t = useTranslations('login');
+  // const t = useTranslations('login');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -96,8 +96,8 @@ export default function LoginForm() {
     if (res.ok) {
       // Notify user
       toast({
-        title: t('success'),
-        description: t('otp_sent'),
+        title: 'success',
+        description: 'otp_sent',
       });
 
       // OTP has been sent
@@ -109,8 +109,8 @@ export default function LoginForm() {
       setResendCooldown(cooldown);
     } else {
       toast({
-        title: t('failed'),
-        description: t('failed_to_send'),
+        title: 'failed',
+        description:'failed_to_send',
       });
     }
 
@@ -132,12 +132,12 @@ export default function LoginForm() {
     } else {
       setLoading(false);
 
-      form.setError('otp', { message: t('invalid_verification_code') });
+      form.setError('otp', { message: 'invalid_verification_code' });
       form.setValue('otp', '');
 
       toast({
-        title: t('failed'),
-        description: t('failed_to_verify'),
+        title: 'failed',
+        description: 'failed_to_verify',
       });
     }
   };
@@ -168,14 +168,14 @@ export default function LoginForm() {
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input
-                  placeholder={t('email_placeholder')}
+                  placeholder={'email_placeholder'}
                   {...field}
                   disabled={otpSent || loading}
                 />
               </FormControl>
 
               {otpSent || (
-                <FormDescription>{t('email_description')}</FormDescription>
+                <FormDescription>{'email_description'}</FormDescription>
               )}
               <FormMessage />
             </FormItem>
@@ -187,7 +187,7 @@ export default function LoginForm() {
           name="otp"
           render={({ field }) => (
             <FormItem className={otpSent ? '' : 'hidden'}>
-              <FormLabel>{t('otp_code')}</FormLabel>
+              <FormLabel>{'otp_code'}</FormLabel>
               <FormControl>
                 <div className="flex flex-col gap-2 md:flex-row">
                   <InputOTP
@@ -219,15 +219,15 @@ export default function LoginForm() {
                     type="button"
                   >
                     {resendCooldown > 0
-                      ? `${t('resend')} (${resendCooldown})`
-                      : t('resend')}
+                      ? `${'resend'} (${resendCooldown})`
+                      : 'resend'}
                   </Button>
                 </div>
               </FormControl>
               {form.formState.errors.otp && (
                 <FormMessage>{form.formState.errors.otp.message}</FormMessage>
               )}
-              <FormDescription>{t('otp_description')}</FormDescription>
+              <FormDescription>{'otp_description'}</FormDescription>
             </FormItem>
           )}
         />
@@ -250,7 +250,7 @@ export default function LoginForm() {
                   disabled={loading}
                 >
                   <Mail size={18} className="mr-1" />
-                  {t('open_inbucket')}
+                  {'open_inbucket'}
                 </Button>
               </Link>
             ) : (
@@ -267,7 +267,7 @@ export default function LoginForm() {
                     disabled={loading}
                   >
                     <IconBrandGmail size={18} className="mr-1" />
-                    {t('open_gmail')}
+                    {'open_gmail'}
                   </Button>
                 </Link>
 
@@ -283,7 +283,7 @@ export default function LoginForm() {
                     disabled={loading}
                   >
                     <IconBrandWindows size={18} className="mr-1" />
-                    {t('open_outlook')}
+                    {'open_outlook'}
                   </Button>
                 </Link>
               </>
@@ -302,7 +302,7 @@ export default function LoginForm() {
               (otpSent && !form.formState.dirtyFields.otp)
             }
           >
-            {loading ? t('processing') : t('continue')}
+            {loading ? 'processing' : 'continue'}
           </Button>
         </div>
       </form>

@@ -1,12 +1,12 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/playground/theme-toggle'
+import { ThemeToggle } from '@/components/playground/theme-toggle';
+import { Button } from '@repo/ui/components/ui/button';
+import Link from 'next/link';
 
 export function Navbar() {
   return (
     <nav className="bg-background border-b">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link href="/" className="text-xl font-bold text-primary">
+      <div className="container mx-auto flex items-center justify-between px-4 py-3">
+        <Link href="/" className="text-primary text-xl font-bold">
           Prompt Engineering Playground
         </Link>
         <div className="flex items-center space-x-4">
@@ -26,6 +26,5 @@ export function Navbar() {
         </div>
       </div>
     </nav>
-  )
+  );
 }
-

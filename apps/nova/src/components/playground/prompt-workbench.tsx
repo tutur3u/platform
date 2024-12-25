@@ -1,18 +1,29 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2 } from 'lucide-react'
+import { Button } from '@repo/ui/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@repo/ui/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@repo/ui/components/ui/select';
+import { Textarea } from '@repo/ui/components/ui/textarea';
+import { Loader2 } from 'lucide-react';
 
 interface PromptWorkbenchProps {
-  prompt: string
-  setPrompt: (prompt: string) => void
-  onRunPrompt: () => void
-  isLoading: boolean
-  versions: { id: number; prompt: string }[]
-  currentVersion: number
-  onSaveVersion: () => void
-  onLoadVersion: (versionId: number) => void
+  prompt: string;
+  setPrompt: (prompt: string) => void;
+  onRunPrompt: () => void;
+  isLoading: boolean;
+  versions: { id: number; prompt: string }[];
+  currentVersion: number;
+  onSaveVersion: () => void;
+  onLoadVersion: (versionId: number) => void;
 }
 
 export function PromptWorkbench({
@@ -23,7 +34,7 @@ export function PromptWorkbench({
   versions,
   currentVersion,
   onSaveVersion,
-  onLoadVersion
+  onLoadVersion,
 }: PromptWorkbenchProps) {
   return (
     <Card>
@@ -31,7 +42,10 @@ export function PromptWorkbench({
         <CardTitle className="flex items-center justify-between">
           <span>Prompt Engineering Workbench</span>
           <div className="flex items-center space-x-2">
-            <Select value={currentVersion.toString()} onValueChange={(value) => onLoadVersion(parseInt(value))}>
+            <Select
+              value={currentVersion.toString()}
+              onValueChange={(value) => onLoadVersion(parseInt(value))}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select version" />
               </SelectTrigger>
@@ -43,7 +57,9 @@ export function PromptWorkbench({
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={onSaveVersion} variant="outline">Save Version</Button>
+            <Button onClick={onSaveVersion} variant="outline">
+              Save Version
+            </Button>
           </div>
         </CardTitle>
       </CardHeader>
@@ -55,8 +71,8 @@ export function PromptWorkbench({
           className="min-h-[200px] resize-none"
         />
         <div className="flex justify-end">
-          <Button 
-            onClick={onRunPrompt} 
+          <Button
+            onClick={onRunPrompt}
             disabled={isLoading || prompt.trim() === ''}
           >
             {isLoading ? (
@@ -71,6 +87,5 @@ export function PromptWorkbench({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

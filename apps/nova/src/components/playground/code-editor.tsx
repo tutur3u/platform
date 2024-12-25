@@ -1,24 +1,34 @@
-import { useState } from 'react'
-import Editor from '@monaco-editor/react'
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import Editor from '@monaco-editor/react';
+import {
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@repo/ui/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@repo/ui/components/ui/select';
+import { useState } from 'react';
 
 interface CodeEditorProps {
-  code: string
-  setCode: (code: string) => void
+  code: string;
+  setCode: (code: string) => void;
 }
 
 export function CodeEditor({ code, setCode }: CodeEditorProps) {
-  const [theme, setTheme] = useState('vs-dark')
+  const [theme, setTheme] = useState('vs-dark');
 
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
-      setCode(value)
+      setCode(value);
     }
-  }
+  };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex h-full flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium">Code Editor</CardTitle>
@@ -51,6 +61,5 @@ export function CodeEditor({ code, setCode }: CodeEditorProps) {
         />
       </CardContent>
     </div>
-  )
+  );
 }
-

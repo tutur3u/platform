@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
-import { Locale } from '@/i18n/routing';
+// import { Locale } from '@/i18n/routing';
 import { Button } from '@repo/ui/components/ui/button';
 
 export default function LanguageToggle() {

@@ -1,5 +1,15 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Challenge } from '@/types/challenge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/ui/components/ui/select'
+
+export interface Challenge {
+  id: number;
+  title: string;
+  topic: string;
+  description: string;
+  exampleInput: string;
+  exampleOutput: string;
+}
+
+
 
 interface ChallengeSelectionProps {
   challenges: Challenge[]
@@ -11,9 +21,9 @@ export function ChallengeSelection({ challenges, currentChallenge, onSelectChall
   return (
     <div className="w-[300px]">
       <Select
-        value={currentChallenge.id.toString()}
+        value={currentChallenge.id?.toString()}
         onValueChange={(value) => {
-          const selected = challenges.find(c => c.id.toString() === value)
+          const selected = challenges.find(c => c.id?.toString() === value)
           if (selected) onSelectChallenge(selected)
         }}
       >
@@ -22,7 +32,7 @@ export function ChallengeSelection({ challenges, currentChallenge, onSelectChall
         </SelectTrigger>
         <SelectContent>
           {challenges.map((challenge) => (
-            <SelectItem key={challenge.id} value={challenge.id.toString()}>
+            <SelectItem key={challenge.id} value={challenge.id?.toString()}>
               {challenge.title}
             </SelectItem>
           ))}
