@@ -47,8 +47,16 @@ export interface PromptProps
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
-  // eslint-disable-next-line no-unused-vars
-  onSubmit: (value: string) => Promise<void>;
+  onSubmit: (
+    // eslint-disable-next-line no-unused-vars
+    value: string,
+    {
+      // eslint-disable-next-line no-unused-vars
+      formMode,
+    }: {
+      formMode: 'chat' | 'image';
+    }
+  ) => Promise<void>;
   isLoading: boolean;
   showExtraOptions: boolean;
   setShowExtraOptions: React.Dispatch<React.SetStateAction<boolean>>;
@@ -58,6 +66,7 @@ export interface PromptProps
   // eslint-disable-next-line no-unused-vars
   setMode: (mode: ResponseMode) => void;
   disabled?: boolean;
+  formMode: 'chat' | 'image';
 }
 
 export function PromptForm({
@@ -79,6 +88,7 @@ export function PromptForm({
   mode,
   setMode,
   disabled,
+  formMode,
 }: PromptProps) {
   const t = useTranslations();
 
@@ -237,7 +247,7 @@ export function PromptForm({
             top: element.scrollHeight,
             behavior: 'smooth',
           });
-          await onSubmit(input);
+          await onSubmit(input, { formMode });
         }}
         ref={formRef}
         className="w-full"
@@ -777,7 +787,6 @@ export function PromptForm({
             spellCheck={false}
             maxRows={7}
             className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
-            disabled={disabled}
           />
         </div>
       </form>

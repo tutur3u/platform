@@ -58,7 +58,7 @@ export interface ChatPanelProps
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   model?: Model;
   setModel: (model: Model) => void;
-  createChat: (input: string) => Promise<void>;
+  createChat: (input: string, mode: 'chat' | 'image') => Promise<void>;
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;
   initialMessages?: Message[];
@@ -67,6 +67,7 @@ export interface ChatPanelProps
   mode: ResponseMode;
   setMode: (mode: ResponseMode) => void;
   disabled?: boolean;
+  formMode: 'chat' | 'image';
 }
 
 export function ChatPanel({
@@ -89,6 +90,7 @@ export function ChatPanel({
   mode,
   setMode,
   disabled,
+  formMode,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
 
@@ -311,7 +313,7 @@ export function ChatPanel({
                 chat={chat}
                 onSubmit={async (value) => {
                   // If there is no id, create a new chat
-                  if (!id) return await createChat(value);
+                  if (!id) return await createChat(value, formMode);
 
                   // If there is an id, append the message to the chat
                   await append({
@@ -339,6 +341,7 @@ export function ChatPanel({
                 mode={mode}
                 setMode={setMode}
                 disabled={disabled}
+                formMode={formMode}
               />
             </div>
           </div>

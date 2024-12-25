@@ -17,6 +17,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
+  formMode?: 'chat' | 'image';
   inputModel?: Model;
   defaultChat?: Partial<AIChat>;
   initialMessages?: Message[];
@@ -28,6 +29,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
 }
 
 const Chat = ({
+  formMode = 'chat',
   inputModel = defaultModel,
   defaultChat,
   initialMessages,
@@ -205,13 +207,13 @@ const Chat = ({
 
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
-  const createChat = async (input: string) => {
+  const createChat = async (input: string, mode: 'chat' | 'image' = 'chat') => {
     if (!model) return;
 
     setPendingPrompt(input);
 
     const res = await fetch(
-      `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/new`,
+      `/api/ai/${mode}/${model.provider.toLowerCase().replace(' ', '-')}/new`,
       {
         method: 'POST',
         body: JSON.stringify({
@@ -352,6 +354,7 @@ const Chat = ({
         mode={mode}
         setMode={setMode}
         disabled={disabled}
+        formMode={formMode}
       />
     </div>
   );

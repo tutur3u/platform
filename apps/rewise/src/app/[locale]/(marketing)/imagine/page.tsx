@@ -14,6 +14,7 @@ export default async function AIPage({ searchParams }: Props) {
 
   return (
     <Chat
+      formMode="image"
       inputModel={models.find(
         (m) => m.value === 'imagen-3.0-fast-generate-001'
       )}
