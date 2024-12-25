@@ -146,7 +146,7 @@ export function Nav({
             link={link}
             urlToLoad={urlToLoad}
             onClick={() => {
-              if (link.disabled) return;
+              if (link.disabled || link.newTab) return;
               setUrlToLoad(link.href.split('?')[0]);
               onClick?.();
             }}

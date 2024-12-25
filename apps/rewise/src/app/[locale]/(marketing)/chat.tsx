@@ -17,29 +17,35 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
+  inputModel?: Model;
   defaultChat?: Partial<AIChat>;
   initialMessages?: Message[];
   chats?: AIChat[];
   count?: number | null;
   locale: string;
+  noEmptyPage?: boolean;
+  disabled?: boolean;
 }
 
 const Chat = ({
+  inputModel = defaultModel,
   defaultChat,
   initialMessages,
   chats,
   count,
   className,
   locale,
+  noEmptyPage,
+  disabled,
 }: ChatProps) => {
-  const t = useTranslations('ai_chat');
+  const t = useTranslations();
 
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
-  const [model, setModel] = useState<Model | undefined>(defaultModel);
+  const [model, setModel] = useState<Model | undefined>(inputModel);
   const [mode, setMode] = useState<ResponseMode>('medium');
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
@@ -63,14 +69,14 @@ const Chat = ({
       onResponse(response) {
         if (!response.ok)
           toast({
-            title: t('something_went_wrong'),
-            description: t('try_again_later'),
+            title: t('ai_chat.something_went_wrong'),
+            description: t('ai_chat.try_again_later'),
           });
       },
       onError() {
         toast({
-          title: t('something_went_wrong'),
-          description: t('try_again_later'),
+          title: t('ai_chat.something_went_wrong'),
+          description: t('ai_chat.try_again_later'),
         });
       },
     });
@@ -117,7 +123,7 @@ const Chat = ({
 
       if (!res.ok) {
         toast({
-          title: t('something_went_wrong'),
+          title: t('ai_chat.something_went_wrong'),
           description: res.statusText,
         });
         return;
@@ -158,8 +164,8 @@ const Chat = ({
     // if there is "input" in the query string, we will
     // use that as the input for the chat, then remove
     // it from the query string
-    const input = searchParams.get('input');
-    const refresh = searchParams.get('refresh');
+    const input = searchParams.get('ai_chat.input');
+    const refresh = searchParams.get('ai_chat.refresh');
 
     if (
       (initialScroll || refresh) &&
@@ -217,7 +223,7 @@ const Chat = ({
 
     if (!res.ok) {
       toast({
-        title: t('something_went_wrong'),
+        title: t('ai_chat.something_went_wrong'),
         description: res.statusText,
       });
       return;
@@ -244,7 +250,7 @@ const Chat = ({
 
     if (error) {
       toast({
-        title: t('something_went_wrong'),
+        title: t('ai_chat.something_went_wrong'),
         description: error.message,
       });
       return;
@@ -252,8 +258,8 @@ const Chat = ({
 
     setChat({ ...chat, is_public });
     toast({
-      title: t('chat_updated'),
-      description: t('visibility_updated_desc'),
+      title: t('ai_chat.chat_updated'),
+      description: t('ai_chat.visibility_updated_desc'),
     });
   };
 
@@ -310,6 +316,10 @@ const Chat = ({
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
+        ) : noEmptyPage ? (
+          <div className="flex h-[calc(100vh-20rem)] w-full items-center justify-center text-2xl font-bold lg:text-4xl xl:text-5xl">
+            {t('common.coming_soon')} ✨
+          </div>
         ) : (
           <EmptyScreen chats={chats} setInput={setInput} locale={locale} />
         )}
@@ -341,6 +351,7 @@ const Chat = ({
         setCollapsed={setCollapsed}
         mode={mode}
         setMode={setMode}
+        disabled={disabled}
       />
     </div>
   );

@@ -3,6 +3,7 @@
 import LogoTitle from '../logo-title';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import {
@@ -23,6 +24,7 @@ import {
   ChevronDown,
   Crown,
   Home,
+  ImagePlay,
   Menu,
   MessagesSquare,
   SquareArrowOutUpRight,
@@ -72,11 +74,18 @@ export function Structure({
     },
     {
       href: '/tools',
-      title: t('common.magic-tools'),
+      title: t('common.tools'),
       icon: <WandSparkles className="h-5 w-5 flex-none" />,
     },
     {
-      href: 'https://tuturuuu.com/onboarding',
+      href: '/imagine',
+      title: t('common.image_generator'),
+      icon: <ImagePlay className="h-5 w-5 flex-none" />,
+    },
+    {
+      href: DEV_MODE
+        ? 'http://localhost:7803'
+        : 'https://tuturuuu.com/onboarding',
       title: t('common.go_to_tuturuuu'),
       icon: <SquareArrowOutUpRight className="h-5 w-5 flex-none" />,
       matchExact: true,
