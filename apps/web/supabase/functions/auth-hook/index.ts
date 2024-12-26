@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
         user_metadata: {
           username: string;
           locale: string;
+          origin: string;
         };
       };
       email_data: {
@@ -52,6 +53,7 @@ Deno.serve(async (req) => {
     if (email_action_type === 'signup') {
       html = await renderAsync(
         React.createElement(SignUpEmail, {
+          origin: user['user_metadata'].origin,
           username: user['user_metadata'].username,
           locale: user['user_metadata'].locale,
           supabase_url: Deno.env.get('SUPABASE_URL') ?? '',
@@ -67,6 +69,7 @@ Deno.serve(async (req) => {
     } else {
       html = await renderAsync(
         React.createElement(MagicLinkEmail, {
+          origin: user['user_metadata'].origin,
           locale: user['user_metadata'].locale,
           supabase_url: Deno.env.get('SUPABASE_URL') ?? '',
           token,
@@ -75,13 +78,18 @@ Deno.serve(async (req) => {
           email_action_type,
         })
       );
-      subject = user['user_metadata'].locale?.includes('vi')
-        ? 'Mã xác minh Tuturuuu'
-        : 'Tuturuuu Verification Code';
+      subject =
+        user['user_metadata'].origin === 'AISEA'
+          ? user['user_metadata'].locale?.includes('vi')
+            ? 'Xác nhận tài khoản AISEA'
+            : 'AISEA Account Confirmation'
+          : user['user_metadata'].locale?.includes('vi')
+            ? 'Mã xác minh Tuturuuu'
+            : 'Tuturuuu Verification Code';
     }
 
     const params = {
-      Source: `${Deno.env.get('SOURCE_NAME')} <${Deno.env.get('SOURCE_EMAIL')}>`,
+      Source: `${user['user_metadata'].origin === 'AISEA' ? 'AISEA' : Deno.env.get('SOURCE_NAME')} <${user['user_metadata'].origin === 'AISEA' ? 'hello@aisea.vn' : Deno.env.get('SOURCE_EMAIL')}>`,
       Destination: {
         ToAddresses: [user.email],
       },

@@ -18,13 +18,13 @@ interface MagicLinkEmailProps {
   redirect_to: string;
   token_hash: string;
   token: string;
+  origin?: string;
 }
 
-/** Translations of the text for English */
 const translationsEn = {
-  preview: 'Log in with this magic link',
+  preview: 'Log in with this verification code',
   heading: 'Login',
-  click_here: 'Click here to log in with this magic link',
+  click_here: 'Click here to log in with this verification code',
   copy_and_paste: 'Or, copy and paste this temporary login code:',
   if_you_did_not_request:
     "If you didn't try to login, you can safely ignore this email.",
@@ -36,16 +36,45 @@ const translationsEn = {
   contact: 'Contact us',
 };
 
-/** Translations of the text for Vietnamese */
 const translationsVi = {
-  preview: 'Đăng nhập với liên kết ma thuật này',
+  preview: 'Đăng nhập với mã đăng nhập này',
   heading: 'Đăng nhập',
-  click_here: 'Nhấp vào đây để đăng nhập với liên kết ma thuật này',
+  click_here: 'Nhấp vào đây để đăng nhập với mã đăng nhập này',
   copy_and_paste: 'Hoặc, sao chép và dán mã đăng nhập tạm thời này:',
   if_you_did_not_request:
     'Nếu bạn không yêu cầu đăng nhập, bạn có thể bỏ qua email này.',
   footer: 'Tuturuuu, Tạo lối tắt thông minh cho công việc của bạn.',
   tagline: 'Lối tắt thông minh của bạn\nQuản lý công việc, siêu tốc độ cùng AI',
+  blog: 'Blog của chúng tôi',
+  about: 'Về chúng tôi',
+  contact: 'Liên hệ',
+};
+
+const translationsAiseaEn = {
+  preview: 'Log in with this verification code',
+  heading: 'Login',
+  click_here: 'Click here to log in with this verification code',
+  copy_and_paste: 'Or, copy and paste this temporary login code:',
+  if_you_did_not_request:
+    "If you didn't try to login, you can safely ignore this email.",
+  footer: 'AISEA, AI for Schools, Educators, and Administrators',
+  tagline:
+    'Level up your learning journey\nEmpower your school with AI-driven tools.',
+  blog: 'Our blog',
+  about: 'About us',
+  contact: 'Contact us',
+};
+
+const translationsAiseaVi = {
+  preview: 'Đăng nhập với mã đăng nhập này',
+  heading: 'Đăng nhập',
+  click_here: 'Nhấp vào đây để đăng nhập với mã đăng nhập này',
+  copy_and_paste: 'Hoặc, sao chép và dán mã đăng nhập tạm thời này:',
+  if_you_did_not_request:
+    'Nếu bạn không yêu cầu đăng nhập, bạn có thể bỏ qua email này.',
+  footer: 'AISEA, AI cho trường học, giáo viên và quản trị viên',
+  tagline:
+    'Hành trình học tập của bạn\nĐẩy mạnh trường học của bạn với công cụ AI',
   blog: 'Blog của chúng tôi',
   about: 'Về chúng tôi',
   contact: 'Liên hệ',
@@ -58,8 +87,16 @@ export const MagicLinkEmail = ({
   // email_action_type,
   // redirect_to,
   // token_hash,
+  origin = 'TUTURUUU',
 }: MagicLinkEmailProps) => {
-  const translations = locale?.includes('vi') ? translationsVi : translationsEn;
+  const translations =
+    origin === 'AISEA'
+      ? locale?.includes('vi')
+        ? translationsAiseaVi
+        : translationsAiseaEn
+      : locale?.includes('vi')
+        ? translationsVi
+        : translationsEn;
 
   return (
     <Html>
@@ -83,7 +120,9 @@ export const MagicLinkEmail = ({
           </Text>
           <Text style={footer}>
             <Link
-              href="https://tuturuuu.com"
+              href={
+                origin === 'AISEA' ? 'https://aisea.vn' : 'https://tuturuuu.com'
+              }
               target="_blank"
               style={{ ...link, color: '#898989' }}
             >
@@ -91,34 +130,36 @@ export const MagicLinkEmail = ({
             </Link>
           </Text>
           <Text style={footer}>{translations.tagline}</Text>
-          <Section>
-            <Link
-              style={footerLink}
-              href="https://tuturuuu.com/blog"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {translations.blog}
-            </Link>
-            &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-            <Link
-              style={footerLink}
-              href="https://tuturuuu.com/about"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {translations.about}
-            </Link>
-            &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-            <Link
-              style={footerLink}
-              href="https://tuturuuu.com/contact"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {translations.contact}
-            </Link>
-          </Section>
+          {origin === 'TUTURUUU' && (
+            <Section>
+              <Link
+                style={footerLink}
+                href="https://tuturuuu.com/blog"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {translations.blog}
+              </Link>
+              &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+              <Link
+                style={footerLink}
+                href="https://tuturuuu.com/about"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {translations.about}
+              </Link>
+              &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+              <Link
+                style={footerLink}
+                href="https://tuturuuu.com/contact"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {translations.contact}
+              </Link>
+            </Section>
+          )}
         </Container>
       </Body>
     </Html>
