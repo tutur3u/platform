@@ -1,3 +1,4 @@
+import Header from './(marketing)/header';
 import { siteConfig } from '@/constants/configs';
 import { routing, supportedLocales } from '@/i18n/routing';
 import { Toaster } from '@repo/ui/components/ui/toaster';
@@ -115,6 +116,8 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
+        <Header />
+
         <VercelAnalytics />
         <VercelInsights />
         <NextIntlClientProvider messages={messages}>

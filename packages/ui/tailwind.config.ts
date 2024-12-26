@@ -37,7 +37,9 @@ const config = {
         'dynamic-yellow': 'hsl(var(--yellow))',
         'dynamic-orange': 'hsl(var(--orange))',
         'dynamic-red': 'hsl(var(--red))',
-
+        'deep-blue': '#0B1023', 
+        'midnight-blue': '#1E2240', 
+        'dark-purple': '#2C124B',
         'dynamic-light-lime': 'hsl(var(--light-lime))',
         'dynamic-light-purple': 'hsl(var(--light-purple))',
         'dynamic-light-pink': 'hsl(var(--light-pink))',

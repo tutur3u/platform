@@ -91,7 +91,7 @@ export default function MarketingPage() {
             onMouseMove={handleMouseMove}
             onMouseLeave={() => {
               mouseX.set(0);
-              mouseY.set(0);
+              mouseY.set(-0);
             }}
             style={{ perspective: 1000 }}
             className="group relative mb-8"
