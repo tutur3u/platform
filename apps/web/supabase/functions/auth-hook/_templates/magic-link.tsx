@@ -6,6 +6,7 @@ import {
   Html,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22';
 import * as React from 'npm:react@18.3.1';
@@ -29,7 +30,7 @@ const translationsEn = {
     "If you didn't try to login, you can safely ignore this email.",
   footer: 'Tuturuuu, Empower your workflows, stress-free.',
   tagline:
-    'Your intelligent shortcut\nTake control of workflows, supercharged by AI',
+    'Your intelligent shortcut\nTake control of workflows, supercharged by AI.',
   blog: 'Our blog',
   about: 'About us',
   contact: 'Contact us',
@@ -53,10 +54,10 @@ const translationsVi = {
 export const MagicLinkEmail = ({
   locale,
   token,
-  supabase_url,
-  email_action_type,
-  redirect_to,
-  token_hash,
+  // supabase_url,
+  // email_action_type,
+  // redirect_to,
+  // token_hash,
 }: MagicLinkEmailProps) => {
   const translations = locale?.includes('vi') ? translationsVi : translationsEn;
 
@@ -67,21 +68,9 @@ export const MagicLinkEmail = ({
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>{translations.heading}</Heading>
-          <Link
-            href={`${supabase_url}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`}
-            target="_blank"
-            style={{
-              ...link,
-              display: 'block',
-              marginBottom: '16px',
-            }}
-          >
-            {translations.click_here}
-          </Link>
-          <Text style={{ ...text, marginBottom: '14px' }}>
-            {translations.copy_and_paste}
-          </Text>
-          <code style={code}>{token}</code>
+          <Section style={code}>
+            <Text style={confirmationCodeText}>{token}</Text>
+          </Section>
           <Text
             style={{
               ...text,
@@ -102,6 +91,34 @@ export const MagicLinkEmail = ({
             </Link>
           </Text>
           <Text style={footer}>{translations.tagline}</Text>
+          <Section>
+            <Link
+              style={footerLink}
+              href="https://tuturuuu.com/blog"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {translations.blog}
+            </Link>
+            &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+            <Link
+              style={footerLink}
+              href="https://tuturuuu.com/about"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {translations.about}
+            </Link>
+            &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+            <Link
+              style={footerLink}
+              href="https://tuturuuu.com/contact"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {translations.contact}
+            </Link>
+          </Section>
         </Container>
       </Body>
     </Html>
@@ -164,4 +181,18 @@ const code = {
   borderRadius: '5px',
   border: '1px solid #eee',
   color: '#333',
+};
+
+const confirmationCodeText = {
+  fontSize: '30px',
+  textAlign: 'center' as const,
+  verticalAlign: 'middle',
+};
+
+const footerLink = {
+  color: '#898989',
+  fontFamily:
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+  fontSize: '12px',
+  textDecoration: 'none',
 };

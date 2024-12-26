@@ -62,22 +62,8 @@ Deno.serve(async (req) => {
         })
       );
       subject = user['user_metadata'].locale?.includes('vi')
-        ? 'Xác nhận địa chỉ email của bạn'
-        : 'Confirm your email address';
-    } else if (email_action_type == 'login') {
-      html = await renderAsync(
-        React.createElement(MagicLinkEmail, {
-          locale: user['user_metadata'].locale,
-          supabase_url: Deno.env.get('SUPABASE_URL') ?? '',
-          token,
-          token_hash,
-          redirect_to,
-          email_action_type,
-        })
-      );
-      subject = user['user_metadata'].locale?.includes('vi')
-        ? 'Đăng nhập với liên kết ma thuật này'
-        : 'Log in with this magic link';
+        ? 'Mã xác minh Tuturuuu'
+        : 'Tuturuuu Verification Code';
     } else {
       html = await renderAsync(
         React.createElement(MagicLinkEmail, {
@@ -90,8 +76,8 @@ Deno.serve(async (req) => {
         })
       );
       subject = user['user_metadata'].locale?.includes('vi')
-        ? 'Đăng nhập với liên kết ma thuật này'
-        : 'Log in with this magic link';
+        ? 'Mã xác minh Tuturuuu'
+        : 'Tuturuuu Verification Code';
     }
 
     const params = {

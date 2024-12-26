@@ -36,11 +36,8 @@ const translationsEn = {
   blog: 'Our blog',
   about: 'About us',
   contact: 'Contact us',
-  policies: 'Policies',
-  help_center: 'Help center',
-  community: 'Community',
   tagline:
-    'Your intelligent shortcut\nTake control of workflows, supercharged by AI',
+    'Your intelligent shortcut\nTake control of workflows, supercharged by AI.',
 };
 
 /** Translations of the text for Vietnamese */
@@ -57,19 +54,16 @@ const translationsVi = {
   blog: 'Blog của chúng tôi',
   about: 'Về chúng tôi',
   contact: 'Liên hệ',
-  policies: 'Chính sách',
-  help_center: 'Trung tâm trợ giúp',
-  community: 'Cộng đồng',
   tagline: 'Lối tắt thông minh của bạn\nQuản lý công việc, siêu tốc độ cùng AI',
 };
 
 export const SignUpEmail = ({
   locale,
   token,
-  supabase_url,
-  email_action_type,
-  redirect_to,
-  token_hash,
+  // supabase_url,
+  // email_action_type,
+  // redirect_to,
+  // token_hash,
 }: SignUpEmailProps) => {
   const translations = locale?.includes('vi') ? translationsVi : translationsEn;
 
@@ -81,7 +75,7 @@ export const SignUpEmail = ({
         <Container style={container}>
           <Section style={logoContainer}>
             <Img
-              src="https://tuturuuu.com/logo.png"
+              src="https://tuturuuu.com/media/logos/transparent.png"
               width="120"
               alt="Tuturuuu"
             />
@@ -89,22 +83,7 @@ export const SignUpEmail = ({
           <Heading style={h1}>{translations.h1('')}</Heading>
           <Text style={heroText}>{translations.your_confirmation_code}</Text>
 
-          <Link
-            href={`${supabase_url}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`}
-            target="_blank"
-            style={{
-              ...link,
-              display: 'block',
-              marginBottom: '16px',
-            }}
-          >
-            {translations.click_here}
-          </Link>
-          <Text style={{ ...text, marginBottom: '14px' }}>
-            {translations.copy_and_paste}
-          </Text>
-
-          <Section style={codeBox}>
+          <Section style={code}>
             <Text style={confirmationCodeText}>{token}</Text>
           </Section>
 
@@ -114,7 +93,7 @@ export const SignUpEmail = ({
             <Row style={footerLogos}>
               <Column style={{ width: '66%' }}>
                 <Img
-                  src="https://tuturuuu.com/logo.png"
+                  src="https://tuturuuu.com/media/logos/transparent.png"
                   width="120"
                   alt="Tuturuuu"
                 />
@@ -157,24 +136,7 @@ export const SignUpEmail = ({
   );
 };
 
-SignUpEmail.PreviewProps = {
-  username: 'dshukertjr',
-  token: '123456',
-  supabase_url: 'https://123.supabase.co',
-  email_action_type: 'confirm',
-  redirect_to: 'https://dshukertjr.dev',
-  token_hash: '123456',
-} as SignUpEmailProps;
-
 export default SignUpEmail;
-
-const link = {
-  color: '#2754C5',
-  fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
-  fontSize: '14px',
-  textDecoration: 'underline',
-};
 
 const footerLink = {
   color: '#ffffff',
@@ -219,11 +181,14 @@ const heroText = {
   marginBottom: '30px',
 };
 
-const codeBox = {
-  background: 'rgb(245, 244, 245)',
-  borderRadius: '4px',
-  marginBottom: '30px',
-  padding: '40px 10px',
+const code = {
+  display: 'inline-block',
+  padding: '16px 4.5%',
+  width: '90.5%',
+  backgroundColor: '#f4f4f4',
+  borderRadius: '5px',
+  border: '1px solid #eee',
+  color: '#333',
 };
 
 const confirmationCodeText = {
