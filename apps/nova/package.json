@@ -50,7 +50,7 @@
     "@hookform/resolvers": "^3.9.1",
     "@liveblocks/core": "2.14.0",
     "@liveblocks/react": "2.14.0",
-    "@liveblocks/react-tiptap": "2.14.0",
+    "@liveblocks/react-tiptap": "2.15.1",
     "@liveblocks/react-ui": "2.15.0",
     "@mantine/core": "^7.15.2",
     "@mantine/hooks": "^7.15.2",
