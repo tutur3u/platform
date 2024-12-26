@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
-  const { email } = await request.json();
+  const { locale, email } = await request.json();
   const validatedEmail = await validateEmail(email);
 
   const userExists = await checkIfUserExists({ email: validatedEmail });
@@ -13,6 +13,7 @@ export async function POST(request: Request) {
   if (userExists) {
     const { error } = await supabase.auth.signInWithOtp({
       email: validatedEmail,
+      options: { data: { locale, origin: 'TUTURUUU' } },
     });
 
     if (error) {
@@ -24,6 +25,9 @@ export async function POST(request: Request) {
     const { error } = await supabase.auth.signUp({
       email: validatedEmail,
       password: randomPassword,
+      options: {
+        data: { locale, origin: 'TUTURUUU' },
+      },
     });
 
     if (error) {

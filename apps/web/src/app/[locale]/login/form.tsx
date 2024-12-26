@@ -21,7 +21,7 @@ import {
 import { toast } from '@repo/ui/hooks/use-toast';
 import { IconBrandGmail, IconBrandWindows } from '@tabler/icons-react';
 import { Mail } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -35,6 +35,8 @@ const FormSchema = z.object({
 
 export default function LoginForm() {
   const t = useTranslations('login');
+  const locale = useLocale();
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -86,11 +88,12 @@ export default function LoginForm() {
   }, [resendCooldown]);
 
   const sendOtp = async (data: { email: string }) => {
+    if (!locale || !data.email) return;
     setLoading(true);
 
     const res = await fetch('/api/auth/otp/send', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, locale }),
     });
 
     if (res.ok) {
