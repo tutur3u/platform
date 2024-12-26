@@ -99,7 +99,6 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children, params }: Props) {
-  // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes((await params).locale as any)) {
     notFound();
   }
@@ -116,7 +115,6 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <Header />
 
         <VercelAnalytics />
         <VercelInsights />
