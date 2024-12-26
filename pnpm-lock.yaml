@@ -42,6 +42,535 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.2)(jsdom@25.0.1(canvas@2.11.2))
 
+  apps/mira:
+    dependencies:
+      '@ai-sdk/amazon-bedrock':
+        specifier: ^1.0.6
+        version: 1.0.6(zod@3.24.1)
+      '@ai-sdk/anthropic':
+        specifier: ^1.0.6
+        version: 1.0.6(zod@3.24.1)
+      '@ai-sdk/azure':
+        specifier: ^1.0.13
+        version: 1.0.13(zod@3.24.1)
+      '@ai-sdk/cohere':
+        specifier: ^1.0.6
+        version: 1.0.6(zod@3.24.1)
+      '@ai-sdk/google':
+        specifier: ^1.0.12
+        version: 1.0.12(zod@3.24.1)
+      '@ai-sdk/google-vertex':
+        specifier: ^2.0.12
+        version: 2.0.12(zod@3.24.1)
+      '@ai-sdk/mistral':
+        specifier: ^1.0.6
+        version: 1.0.6(zod@3.24.1)
+      '@ai-sdk/openai':
+        specifier: ^1.0.11
+        version: 1.0.11(zod@3.24.1)
+      '@ai-sdk/react':
+        specifier: ^1.0.7
+        version: 1.0.7(react@19.0.0-rc-7283a213-20241206)(zod@3.24.1)
+      '@anthropic-ai/sdk':
+        specifier: ^0.33.1
+        version: 0.33.1
+      '@aws-sdk/client-ses':
+        specifier: ^3.716.0
+        version: 3.716.0
+      '@deepgram/sdk':
+        specifier: ^3.9.0
+        version: 3.9.0
+      '@dnd-kit/core':
+        specifier: ^6.3.1
+        version: 6.3.1(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@dnd-kit/sortable':
+        specifier: ^10.0.0
+        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@19.0.0-rc-7283a213-20241206)
+      '@emotion/react':
+        specifier: ^11.14.0
+        version: 11.14.0(@types/react@19.0.2)(react@19.0.0-rc-7283a213-20241206)
+      '@emotion/server':
+        specifier: ^11.11.0
+        version: 11.11.0
+      '@formatjs/intl-localematcher':
+        specifier: ^0.5.9
+        version: 0.5.9
+      '@google/generative-ai':
+        specifier: ^0.21.0
+        version: 0.21.0
+      '@hocuspocus/provider':
+        specifier: ^2.15.0
+        version: 2.15.0(y-protocols@1.0.6(yjs@13.6.21))(yjs@13.6.21)
+      '@hookform/resolvers':
+        specifier: ^3.9.1
+        version: 3.9.1(react-hook-form@7.54.2(react@19.0.0-rc-7283a213-20241206))
+      '@liveblocks/core':
+        specifier: ^2.15.1
+        version: 2.15.1
+      '@liveblocks/react':
+        specifier: ^2.15.1
+        version: 2.15.1(react@19.0.0-rc-7283a213-20241206)
+      '@liveblocks/react-tiptap':
+        specifier: ^2.15.1
+        version: 2.15.1(ql7bzrpslifmxvomyab7rpg34q)
+      '@liveblocks/react-ui':
+        specifier: ^2.15.1
+        version: 2.15.1(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@mantine/core':
+        specifier: ^7.15.2
+        version: 7.15.2(@mantine/hooks@7.15.2(react@19.0.0-rc-7283a213-20241206))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@mantine/hooks':
+        specifier: ^7.15.2
+        version: 7.15.2(react@19.0.0-rc-7283a213-20241206)
+      '@radix-ui/react-dropdown-menu':
+        specifier: ^2.1.4
+        version: 2.1.4(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@radix-ui/react-popover':
+        specifier: ^1.1.4
+        version: 1.1.4(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@radix-ui/react-slot':
+        specifier: ^1.1.1
+        version: 1.1.1(@types/react@19.0.2)(react@19.0.0-rc-7283a213-20241206)
+      '@react-email/components':
+        specifier: ^0.0.31
+        version: 0.0.31(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@react-email/tailwind':
+        specifier: ^1.0.4
+        version: 1.0.4(react@19.0.0-rc-7283a213-20241206)
+      '@repo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@supabase/ssr':
+        specifier: ^0.5.2
+        version: 0.5.2(@supabase/supabase-js@2.47.10)
+      '@supabase/supabase-js':
+        specifier: ^2.47.10
+        version: 2.47.10
+      '@tabler/icons-react':
+        specifier: ^3.26.0
+        version: 3.26.0(react@19.0.0-rc-7283a213-20241206)
+      '@tanstack/react-query':
+        specifier: ^5.62.10
+        version: 5.62.10(react@19.0.0-rc-7283a213-20241206)
+      '@tanstack/react-table':
+        specifier: ^8.20.6
+        version: 8.20.6(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@tippyjs/react':
+        specifier: ^4.2.6
+        version: 4.2.6(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@tiptap-pro/extension-details':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap-pro/extension-details-content':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap-pro/extension-details-summary':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap-pro/extension-drag-handle':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap-pro/extension-node-range@2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4))(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/extension-collaboration@2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)(y-prosemirror@1.2.15(prosemirror-model@1.24.1)(prosemirror-state@1.4.3)(prosemirror-view@1.37.1)(y-protocols@1.0.6(yjs@13.6.21))(yjs@13.6.21)))(@tiptap/pm@2.10.4)(y-prosemirror@1.2.15(prosemirror-model@1.24.1)(prosemirror-state@1.4.3)(prosemirror-view@1.37.1)(y-protocols@1.0.6(yjs@13.6.21))(yjs@13.6.21))
+      '@tiptap-pro/extension-drag-handle-react':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap-pro/extension-drag-handle@2.17.0(@tiptap-pro/extension-node-range@2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4))(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/extension-collaboration@2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)(y-prosemirror@1.2.15(prosemirror-model@1.24.1)(prosemirror-state@1.4.3)(prosemirror-view@1.37.1)(y-protocols@1.0.6(yjs@13.6.21))(yjs@13.6.21)))(@tiptap/pm@2.10.4)(y-prosemirror@1.2.15(prosemirror-model@1.24.1)(prosemirror-state@1.4.3)(prosemirror-view@1.37.1)(y-protocols@1.0.6(yjs@13.6.21))(yjs@13.6.21)))(@tiptap/pm@2.10.4)(@tiptap/react@2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206))(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@tiptap-pro/extension-emoji':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)(@tiptap/suggestion@2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4))(emojibase@16.0.0)
+      '@tiptap-pro/extension-file-handler':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap-pro/extension-node-range':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap-pro/extension-table-of-contents':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap-pro/extension-unique-id':
+        specifier: ^2.17.0
+        version: 2.17.0(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap/core':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/pm@2.10.4)
+      '@tiptap/extension-bullet-list':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-character-count':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap/extension-code-block-lowlight':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/extension-code-block@2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)(highlight.js@11.11.1)(lowlight@3.3.0)
+      '@tiptap/extension-collaboration':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)(y-prosemirror@1.2.15(prosemirror-model@1.24.1)(prosemirror-state@1.4.3)(prosemirror-view@1.37.1)(y-protocols@1.0.6(yjs@13.6.21))(yjs@13.6.21))
+      '@tiptap/extension-collaboration-cursor':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(y-prosemirror@1.2.15(prosemirror-model@1.24.1)(prosemirror-state@1.4.3)(prosemirror-view@1.37.1)(y-protocols@1.0.6(yjs@13.6.21))(yjs@13.6.21))
+      '@tiptap/extension-color':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/extension-text-style@2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4)))
+      '@tiptap/extension-document':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-dropcursor':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap/extension-focus':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap/extension-font-family':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/extension-text-style@2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4)))
+      '@tiptap/extension-heading':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-highlight':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-horizontal-rule':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap/extension-image':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-link':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap/extension-mention':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)(@tiptap/suggestion@2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4))
+      '@tiptap/extension-ordered-list':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-paragraph':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-placeholder':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap/extension-subscript':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-superscript':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-table':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap/extension-table-header':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-table-row':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-task-item':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@tiptap/extension-task-list':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-text-align':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-text-style':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-typography':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/extension-underline':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))
+      '@tiptap/pm':
+        specifier: ^2.10.4
+        version: 2.10.4
+      '@tiptap/react':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@tiptap/starter-kit':
+        specifier: ^2.10.4
+        version: 2.10.4
+      '@tiptap/suggestion':
+        specifier: ^2.10.4
+        version: 2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4)
+      '@upstash/qstash':
+        specifier: ^2.7.20
+        version: 2.7.20
+      '@vercel/analytics':
+        specifier: ^1.4.1
+        version: 1.4.1(next@15.1.1-canary.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-201e55d-20241215)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@vercel/speed-insights':
+        specifier: ^1.1.0
+        version: 1.1.0(next@15.1.1-canary.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-201e55d-20241215)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      ai:
+        specifier: ^4.0.22
+        version: 4.0.22(react@19.0.0-rc-7283a213-20241206)(zod@3.24.1)
+      babel-plugin-react-compiler:
+        specifier: 19.0.0-beta-201e55d-20241215
+        version: 19.0.0-beta-201e55d-20241215
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.13
+      file-saver:
+        specifier: ^2.0.5
+        version: 2.0.5
+      framer-motion:
+        specifier: 12.0.0-alpha.2
+        version: 12.0.0-alpha.2(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      google-auth-library:
+        specifier: ^9.15.0
+        version: 9.15.0
+      highlight.js:
+        specifier: ^11.11.1
+        version: 11.11.1
+      html2canvas:
+        specifier: ^1.4.1
+        version: 1.4.1
+      jotai:
+        specifier: ^2.11.0
+        version: 2.11.0(@types/react@19.0.2)(react@19.0.0-rc-7283a213-20241206)
+      juice:
+        specifier: ^11.0.0
+        version: 11.0.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      lowlight:
+        specifier: ^3.3.0
+        version: 3.3.0
+      lucide-react:
+        specifier: ^0.468.0
+        version: 0.468.0(react@19.0.0-rc-7283a213-20241206)
+      mermaid:
+        specifier: ^11.4.1
+        version: 11.4.1
+      moment:
+        specifier: ^2.30.1
+        version: 2.30.1
+      negotiator:
+        specifier: ^1.0.0
+        version: 1.0.0
+      next:
+        specifier: 15.1.1-canary.7
+        version: 15.1.1-canary.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-201e55d-20241215)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      next-intl:
+        specifier: ^3.26.3
+        version: 3.26.3(next@15.1.1-canary.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-201e55d-20241215)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      next-themes:
+        specifier: ^0.4.4
+        version: 0.4.4(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      novel:
+        specifier: ^0.5.0
+        version: 0.5.0(@tiptap/extension-code-block@2.10.4(@tiptap/core@2.10.4(@tiptap/pm@2.10.4))(@tiptap/pm@2.10.4))(@types/react@19.0.2)(highlight.js@11.11.1)(immer@10.1.1)(lowlight@3.3.0)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      openai:
+        specifier: ^4.77.0
+        version: 4.77.0(zod@3.24.1)
+      pptxgenjs:
+        specifier: ^3.12.0
+        version: 3.12.0
+      react:
+        specifier: 19.0.0-rc-7283a213-20241206
+        version: 19.0.0-rc-7283a213-20241206
+      react-colorful:
+        specifier: ^5.6.1
+        version: 5.6.1(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      react-csv-reader:
+        specifier: ^4.0.0
+        version: 4.0.0(prop-types@15.8.1)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      react-dom:
+        specifier: 19.0.0-rc-7283a213-20241206
+        version: 19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206)
+      react-email:
+        specifier: ^3.0.4
+        version: 3.0.4(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-201e55d-20241215)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      react-hook-form:
+        specifier: ^7.54.2
+        version: 7.54.2(react@19.0.0-rc-7283a213-20241206)
+      react-intersection-observer:
+        specifier: ^9.14.0
+        version: 9.14.0(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      react-markdown:
+        specifier: ^9.0.1
+        version: 9.0.1(@types/react@19.0.2)(react@19.0.0-rc-7283a213-20241206)
+      react-papaparse:
+        specifier: ^4.4.0
+        version: 4.4.0
+      react-pdf:
+        specifier: ^9.2.1
+        version: 9.2.1(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      react-pdftotext:
+        specifier: ^1.3.4
+        version: 1.3.4(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      react-qrcode-logo:
+        specifier: ^3.0.0
+        version: 3.0.0(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      react-quizlet-flashcard:
+        specifier: ^3.0.0
+        version: 3.0.0(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      react-textarea-autosize:
+        specifier: ^8.5.6
+        version: 8.5.6(@types/react@19.0.2)(react@19.0.0-rc-7283a213-20241206)
+      recharts:
+        specifier: ^2.15.0
+        version: 2.15.0(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      rehype-katex:
+        specifier: ^7.0.1
+        version: 7.0.1
+      remark-gfm:
+        specifier: ^4.0.0
+        version: 4.0.0
+      remark-math:
+        specifier: ^6.0.0
+        version: 6.0.0
+      sharp:
+        specifier: ^0.33.5
+        version: 0.33.5
+      sonner:
+        specifier: ^1.7.1
+        version: 1.7.1(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      swr:
+        specifier: ^2.3.0
+        version: 2.3.0(react@19.0.0-rc-7283a213-20241206)
+      tailwind-merge:
+        specifier: ^2.6.0
+        version: 2.6.0
+      tailwindcss:
+        specifier: ^3.4.17
+        version: 3.4.17
+      tippy.js:
+        specifier: ^6.3.7
+        version: 6.3.7
+      tiptap-extension-auto-joiner:
+        specifier: ^0.1.3
+        version: 0.1.3
+      tiptap-extension-global-drag-handle:
+        specifier: ^0.1.16
+        version: 0.1.16
+      use-debounce:
+        specifier: ^10.0.4
+        version: 10.0.4(react@19.0.0-rc-7283a213-20241206)
+      uuid:
+        specifier: ^11.0.3
+        version: 11.0.3
+      xlsx:
+        specifier: file:vendor/xlsx-0.20.3.tgz
+        version: file:apps/mira/vendor/xlsx-0.20.3.tgz
+      y-prosemirror:
+        specifier: ^1.2.15
+        version: 1.2.15(prosemirror-model@1.24.1)(prosemirror-state@1.4.3)(prosemirror-view@1.37.1)(y-protocols@1.0.6(yjs@13.6.21))(yjs@13.6.21)
+      y-protocols:
+        specifier: ^1.0.6
+        version: 1.0.6(yjs@13.6.21)
+      yjs:
+        specifier: ^13.6.21
+        version: 13.6.21
+      zod:
+        specifier: ^3.24.1
+        version: 3.24.1
+    devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.2.0
+        version: 3.2.0
+      '@eslint/js':
+        specifier: ^9.17.0
+        version: 9.17.0
+      '@next/bundle-analyzer':
+        specifier: 15.1.1-canary.7
+        version: 15.1.1-canary.7
+      '@next/eslint-plugin-next':
+        specifier: 15.1.1-canary.7
+        version: 15.1.1-canary.7
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@tanstack/eslint-plugin-query':
+        specifier: ^5.62.9
+        version: 5.62.9(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2)
+      '@tanstack/react-query-devtools':
+        specifier: ^5.62.10
+        version: 5.62.10(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      '@types/eslint':
+        specifier: ^9.6.1
+        version: 9.6.1
+      '@types/file-saver':
+        specifier: ^2.0.7
+        version: 2.0.7
+      '@types/js-cookie':
+        specifier: ^3.0.6
+        version: 3.0.6
+      '@types/lodash':
+        specifier: ^4.17.13
+        version: 4.17.13
+      '@types/negotiator':
+        specifier: ^0.6.3
+        version: 0.6.3
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.10.2
+      '@types/react':
+        specifier: ^19.0.2
+        version: 19.0.2
+      '@types/react-dom':
+        specifier: ^19.0.2
+        version: 19.0.2(@types/react@19.0.2)
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.18.2
+        version: 8.18.2(@typescript-eslint/parser@8.18.2(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2))(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2)
+      '@typescript-eslint/parser':
+        specifier: ^8.18.2
+        version: 8.18.2(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.3.4(vite@5.4.11(@types/node@22.10.2))
+      autoprefixer:
+        specifier: ^10.4.20
+        version: 10.4.20(postcss@8.4.49)
+      eslint:
+        specifier: ^9.17.0
+        version: 9.17.0(jiti@1.21.7)
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1(canvas@2.11.2)
+      lint-staged:
+        specifier: ^15.2.11
+        version: 15.2.11
+      postcss:
+        specifier: ^8.4.49
+        version: 8.4.49
+      react-hot-toast:
+        specifier: ^2.4.1
+        version: 2.4.1(csstype@3.1.3)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+      supabase:
+        specifier: ^2.1.1
+        version: 2.1.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.7.2
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.8(@types/node@22.10.2)(jsdom@25.0.1(canvas@2.11.2))
+
   apps/nova:
     dependencies:
       '@ai-sdk/amazon-bedrock':
@@ -9744,6 +10273,12 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+
+  xlsx@file:apps/mira/vendor/xlsx-0.20.3.tgz:
+    resolution: {integrity: sha512-oLDq3jw7AcLqKWH2AhCpVTZl8mf6X2YReP+Neh0SJUzV/BdZYjth94tG5toiMB1PPrYtxOCfaoUCkvtuH+3AJA==, tarball: file:apps/mira/vendor/xlsx-0.20.3.tgz}
+    version: 0.20.3
+    engines: {node: '>=0.8'}
+    hasBin: true
 
   xlsx@file:apps/web/vendor/xlsx-0.20.3.tgz:
     resolution: {integrity: sha512-oLDq3jw7AcLqKWH2AhCpVTZl8mf6X2YReP+Neh0SJUzV/BdZYjth94tG5toiMB1PPrYtxOCfaoUCkvtuH+3AJA==, tarball: file:apps/web/vendor/xlsx-0.20.3.tgz}
@@ -19735,6 +20270,8 @@ snapshots:
   ws@8.17.1: {}
 
   ws@8.18.0: {}
+
+  xlsx@file:apps/mira/vendor/xlsx-0.20.3.tgz: {}
 
   xlsx@file:apps/web/vendor/xlsx-0.20.3.tgz: {}
 
