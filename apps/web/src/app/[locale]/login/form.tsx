@@ -121,11 +121,12 @@ export default function LoginForm() {
   };
 
   const verifyOtp = async (data: { email: string; otp: string }) => {
+    if (!locale || !data.email || !data.otp) return;
     setLoading(true);
 
     const res = await fetch('/api/auth/otp/verify', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, locale }),
     });
 
     if (res.ok) {

@@ -7,10 +7,23 @@ export async function POST(request: Request) {
   const { locale, email } = await request.json();
   const validatedEmail = await validateEmail(email);
 
-  const userExists = await checkIfUserExists({ email: validatedEmail });
+  const userId = await checkIfUserExists({ email: validatedEmail });
+
+  const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
-  if (userExists) {
+  if (userId) {
+    const { error: updateError } = await sbAdmin.auth.admin.updateUserById(
+      userId,
+      {
+        user_metadata: { locale, origin: 'TUTURUUU' },
+      }
+    );
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email: validatedEmail,
       options: { data: { locale, origin: 'TUTURUUU' } },
@@ -57,7 +70,7 @@ const checkIfUserExists = async ({ email }: { email: string }) => {
     .maybeSingle();
 
   if (error) throw error.message;
-  return !!data;
+  return data?.id;
 };
 
 const generateRandomPassword = () => {
