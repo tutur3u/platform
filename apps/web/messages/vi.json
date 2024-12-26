@@ -1851,7 +1851,8 @@
       "subject_placeholder": "Chúng tôi có thể giúp gì?",
       "message_label": "Tin nhắn",
       "message_placeholder": "Tin nhắn của bạn...",
-      "submit_button": "Gửi tin nhắn"
+      "submit_button": "Gửi tin nhắn",
+      "sent_message": "Cảm ơn bạn đã liên hệ với chúng tôi! Chúng tôi sẽ phản hồi bạn sớm nhất có thể."
     }
   },
   "marketing": {

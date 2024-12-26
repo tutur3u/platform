@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from '@/lib/utils';
+import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
@@ -13,8 +15,9 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { Textarea } from '@repo/ui/components/ui/textarea';
-import { Github, Mail } from 'lucide-react';
+import { CheckCircle, Github, Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -77,6 +80,9 @@ const contactMethods = [
 
 export default function ContactPage() {
   const t = useTranslations();
+  const supabase = createClient();
+
+  const [sent, setSent] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -89,8 +95,25 @@ export default function ContactPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Implement form submission logic here
-    console.log(values);
+    try {
+      const { error } = await supabase.from('support_inquiries').insert({
+        name: values.name,
+        email: values.email,
+        subject: values.subject,
+        message: values.message,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      form.reset();
+      setSent(true);
+      // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      setSent(false);
+      alert('Đã xảy ra lỗi khi gửi thông tin. Vui lòng thử lại sau.');
+    }
   }
 
   return (
@@ -174,81 +197,105 @@ export default function ContactPage() {
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
+                className={cn(
+                  'space-y-6',
+                  sent && 'flex flex-col items-center justify-center'
+                )}
               >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('contact.form.name_label')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t('contact.form.name_placeholder')}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {sent ? (
+                  <>
+                    <CheckCircle size={96} />
+                    <h3 className="text-balance text-center text-lg font-bold">
+                      {t('contact.form.sent_message')}
+                    </h3>
+                  </>
+                ) : (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('contact.form.name_label')}</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder={t('contact.form.name_placeholder')}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="username@example.com"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="username@example.com"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="subject"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('contact.form.subject_label')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t('contact.form.subject_placeholder')}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="subject"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {t('contact.form.subject_label')}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder={t(
+                                'contact.form.subject_placeholder'
+                              )}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('contact.form.message_label')}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t('contact.form.message_placeholder')}
-                          className="min-h-[120px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="message"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {t('contact.form.message_label')}
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder={t(
+                                'contact.form.message_placeholder'
+                              )}
+                              className="min-h-[120px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
 
-                <Button type="submit" className="w-full" disabled>
-                  {t('contact.form.submit_button')}
-                </Button>
+                {sent || (
+                  <Button type="submit" className="w-full">
+                    {t('contact.form.submit_button')}
+                  </Button>
+                )}
               </form>
             </Form>
           </Card>

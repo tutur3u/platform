@@ -1851,7 +1851,8 @@
       "subject_placeholder": "How can we help?",
       "message_label": "Message",
       "message_placeholder": "Your message...",
-      "submit_button": "Send Message"
+      "submit_button": "Send Message",
+      "sent_message": "Thank you for contacting us! We'll get back to you as soon as possible."
     }
   },
   "marketing": {
