@@ -178,8 +178,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.17.0",
-    "@next/bundle-analyzer": "15.1.1-canary.16",
-    "@next/eslint-plugin-next": "15.1.1-canary.16",
+    "@next/bundle-analyzer": "15.1.1-canary.20",
+    "@next/eslint-plugin-next": "15.1.1-canary.20",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.62.9",
