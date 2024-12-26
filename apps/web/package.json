@@ -141,10 +141,10 @@
     "novel": "^0.5.0",
     "openai": "^4.77.0",
     "pptxgenjs": "^3.12.0",
-    "react": "19.0.0-rc-7283a213-20241206",
+    "react": "19.1.0-canary-518d06d2-20241219",
     "react-colorful": "^5.6.1",
     "react-csv-reader": "^4.0.0",
-    "react-dom": "19.0.0-rc-7283a213-20241206",
+    "react-dom": "19.1.0-canary-518d06d2-20241219",
     "react-email": "^3.0.4",
     "react-hook-form": "^7.54.2",
     "react-intersection-observer": "^9.14.0",
@@ -178,8 +178,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.17.0",
-    "@next/bundle-analyzer": "15.1.1-canary.7",
-    "@next/eslint-plugin-next": "15.1.1-canary.7",
+    "@next/bundle-analyzer": "15.1.1-canary.16",
+    "@next/eslint-plugin-next": "15.1.1-canary.16",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.62.9",
@@ -208,7 +208,7 @@
     "vitest": "^2.1.8"
   },
   "overrides": {
-    "react-is": "19.0.0-rc-7283a213-20241206"
+    "react-is": "19.1.0-canary-518d06d2-20241219"
   },
   "workspaces": [
     "apps/*",
