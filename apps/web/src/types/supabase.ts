@@ -2029,6 +2029,39 @@ export type Database = {
           },
         ];
       };
+      support_inquiries: {
+        Row: {
+          created_at: string;
+          email: string;
+          id: string;
+          is_read: boolean;
+          is_resolved: boolean;
+          message: string;
+          name: string;
+          subject: string;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          id?: string;
+          is_read?: boolean;
+          is_resolved?: boolean;
+          message: string;
+          name: string;
+          subject: string;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          id?: string;
+          is_read?: boolean;
+          is_resolved?: boolean;
+          message?: string;
+          name?: string;
+          subject?: string;
+        };
+        Relationships: [];
+      };
       task_assignees: {
         Row: {
           created_at: string | null;
