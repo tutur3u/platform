@@ -1,4 +1,3 @@
-import Header from './(marketing)/header';
 import { siteConfig } from '@/constants/configs';
 import { routing, supportedLocales } from '@/i18n/routing';
 import { Toaster } from '@repo/ui/components/ui/toaster';
@@ -111,7 +110,7 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'bg-background overflow-y-scroll antialiased',
+          ' overflow-y-scroll antialiased',
           font.className
         )}
       >

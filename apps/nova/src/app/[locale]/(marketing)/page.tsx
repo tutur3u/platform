@@ -4,11 +4,11 @@ import GetStartedButton from '../get-started-button';
 import GradientHeadline from '../gradient-headline';
 import { getFeatures } from './features';
 import { Card } from '@repo/ui/components/ui/card';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { motion } from 'framer-motion';
 import { Rocket, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Separator } from '@repo/ui/components/ui/separator';
 
 function MarketingPage() {
   const t = useTranslations();
@@ -34,7 +34,7 @@ function MarketingPage() {
   return (
     <div className="from-deep-blue via-midnight-blue to-dark-purple relative flex h-full w-full flex-col items-center bg-gradient-to-b">
       {/* Raining Effect */}
-      <div className="absolute h-screen inset-0 overflow-hidden">
+      <div className="absolute inset-0 h-screen overflow-hidden">
         {rainingElements.map((element) => (
           <motion.div
             key={element.id}
@@ -93,7 +93,7 @@ function MarketingPage() {
         </div>
       </motion.div>
 
-      <motion.div
+      {/* <motion.div
         animate={{ y: [0, 10, 0] }}
         transition={{ repeat: Infinity, duration: 2 }}
         className="absolute inset-x-0 bottom-24 flex w-full flex-col items-center"
@@ -106,7 +106,7 @@ function MarketingPage() {
             ↓
           </motion.div>
         </div>
-      </motion.div>
+      </motion.div> */}
       <Separator className="bg-foreground/5 mb-8" />
       <motion.section
         id="features"
@@ -114,20 +114,20 @@ function MarketingPage() {
         whileInView="show"
         viewport={{ once: true }}
         variants={containerVariants}
-        className="from-midnight-blue pt-16 via-midnight-blue to-dark-purple w-full bg-gradient-to-b py-24"
+        className="from-midnight-blue via-midnight-blue to-dark-purple w-full bg-gradient-to-b py-24 pt-16"
       >
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="mb-12 text-center text-4xl font-bold text-white">
-            {('common.features')}
+            {'common.features'}
             <span className="ml-2 inline-block">
               <Zap className="h-8 w-8 text-blue-400" />
             </span>
           </h2>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="row-span-2 md:col-span-2 shadow-sm backdrop-blur-lg duration-300 lg:col-span-2">
+            <Card className="row-span-2 shadow-sm backdrop-blur-lg duration-300 md:col-span-2 lg:col-span-2">
               <div
-                className="flex h-full border-black flex-col backdrop-blur-lg rounded-lg p-8"
+                className="flex h-full flex-col rounded-lg p-8 backdrop-blur-lg"
                 style={{ backgroundColor: '#1E2240' }}
               >
                 {features?.[0]?.icon}
@@ -140,7 +140,7 @@ function MarketingPage() {
                     href={features[0].url}
                     className="mt-auto inline-flex items-center gap-2 pt-4 text-white hover:underline"
                   >
-                    {('common.learn_more')}
+                    {'common.learn_more'}
                     <Rocket className="h-4 w-4" />
                   </Link>
                 )}
@@ -150,10 +150,10 @@ function MarketingPage() {
             {features.slice(1).map((feature, i) => (
               <Card
                 key={i}
-                className="group relative shadow-sm backdrop-blur-lg duration-300 overflow-hidden rounded-lg transition-all hover:-translate-y-1 hover:shadow-xl"
+                className="group relative overflow-hidden rounded-lg shadow-sm backdrop-blur-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
                 <div
-                  className="flex h-full backdrop-blur-lg flex-col p-6"
+                  className="flex h-full flex-col p-6 backdrop-blur-lg"
                   style={{ backgroundColor: '#1E2240' }} // Dark blue background
                 >
                   <div className="mb-4 text-white">{feature.icon}</div>
@@ -166,7 +166,7 @@ function MarketingPage() {
                       href={feature.url}
                       className="mt-auto inline-flex items-center gap-2 pt-4 text-white opacity-0 transition-opacity group-hover:opacity-100"
                     >
-                      {('common.learn_more')}
+                      {'common.learn_more'}
                       <Rocket className="h-4 w-4" />
                     </Link>
                   )}
