@@ -1,17 +1,29 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { LogoutDropdownItem } from '../logout-dropdown-item';
+import { cn } from '@/lib/utils';
 import { Button } from '@repo/ui/components/ui/button';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { ThemeToggle } from '@/components/playground/theme-toggle'
-import { Home, BookOpen, Code, Trophy, Settings, ChevronDown } from 'lucide-react'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@repo/ui/components/ui/collapsible"
+} from '@repo/ui/components/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@repo/ui/components/ui/dropdown-menu';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import {
+  BookOpen,
+  ChevronDown,
+  Code,
+  Home,
+  Settings,
+  Trophy,
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const sidebarItems = [
   { name: 'Home', href: '/', icon: Home },
@@ -28,13 +40,15 @@ const sidebarItems = [
   },
   { name: 'Challenges', href: '/challenges', icon: Code },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
-]
+];
 
 export function Sidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
+
+  const wsId = pathname.split('/')[1];
 
   return (
-    <div className="flex flex-col w-64 bg-card text-card-foreground border-r">
+    <div className="bg-card text-card-foreground flex w-64 flex-col border-r">
       <div className="p-4">
         <h1 className="text-xl font-bold">Prompt Engineering</h1>
       </div>
@@ -45,10 +59,7 @@ export function Sidebar() {
               {item.subItems ? (
                 <Collapsible>
                   <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between"
-                    >
+                    <Button variant="ghost" className="w-full justify-between">
                       <span className="flex items-center">
                         <item.icon className="mr-2 h-4 w-4" />
                         {item.name}
@@ -58,12 +69,13 @@ export function Sidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="ml-4 space-y-2">
                     {item.subItems.map((subItem) => (
-                      <Link key={subItem.href} href={subItem.href}>
+                      <Link key={subItem.href} href={`/${wsId}${subItem.href}`}>
                         <Button
                           variant="ghost"
                           className={cn(
                             'w-full justify-start',
-                            pathname === subItem.href && 'bg-accent text-accent-foreground'
+                            pathname === `/${wsId}${subItem.href}` &&
+                              'bg-accent text-accent-foreground'
                           )}
                         >
                           {subItem.name}
@@ -73,12 +85,13 @@ export function Sidebar() {
                   </CollapsibleContent>
                 </Collapsible>
               ) : (
-                <Link href={item.href}>
+                <Link href={`/${wsId}${item.href}`}>
                   <Button
                     variant="ghost"
                     className={cn(
                       'w-full justify-start',
-                      pathname === item.href && 'bg-accent text-accent-foreground'
+                      pathname === `/${wsId}${item.href}` &&
+                        'bg-accent text-accent-foreground'
                     )}
                   >
                     <item.icon className="mr-2 h-4 w-4" />
@@ -90,13 +103,20 @@ export function Sidebar() {
           ))}
         </nav>
       </ScrollArea>
-      <div className="p-4 border-t flex justify-between items-center">
-        <ThemeToggle />
-        <Button variant="ghost" size="icon">
-          <Settings className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center justify-between border-t p-4">
+        {/* <ThemeToggle /> */}
+        <div></div>
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-full">
+            <LogoutDropdownItem />
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
-  )
+  );
 }
-

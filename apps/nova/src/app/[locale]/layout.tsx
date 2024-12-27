@@ -1,4 +1,3 @@
-import Header from './(marketing)/header';
 import { siteConfig } from '@/constants/configs';
 import { routing, supportedLocales } from '@/i18n/routing';
 import { Toaster } from '@repo/ui/components/ui/toaster';
@@ -99,7 +98,6 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children, params }: Props) {
-  // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes((await params).locale as any)) {
     notFound();
   }
@@ -112,11 +110,10 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'bg-background overflow-y-scroll antialiased',
+          ' overflow-y-scroll antialiased',
           font.className
         )}
       >
-        <Header />
 
         <VercelAnalytics />
         <VercelInsights />
