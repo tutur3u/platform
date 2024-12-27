@@ -45,7 +45,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.468.0",
+    "lucide-react": "^0.469.0",
     "mermaid": "^11.4.1",
     "moment": "^2.30.1",
     "negotiator": "^1.0.0",
