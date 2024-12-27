@@ -487,8 +487,8 @@ importers:
         specifier: ^9.17.0
         version: 9.17.0
       '@next/bundle-analyzer':
-        specifier: 15.1.1-canary.7
-        version: 15.1.1-canary.7
+        specifier: 15.1.3
+        version: 15.1.3
       '@next/eslint-plugin-next':
         specifier: 15.1.1-canary.7
         version: 15.1.1-canary.7
@@ -1016,8 +1016,8 @@ importers:
         specifier: ^9.17.0
         version: 9.17.0
       '@next/bundle-analyzer':
-        specifier: 15.1.1-canary.7
-        version: 15.1.1-canary.7
+        specifier: 15.1.3
+        version: 15.1.3
       '@next/eslint-plugin-next':
         specifier: 15.1.1-canary.7
         version: 15.1.1-canary.7
@@ -1548,8 +1548,8 @@ importers:
         specifier: ^9.17.0
         version: 9.17.0
       '@next/bundle-analyzer':
-        specifier: 15.1.1-canary.7
-        version: 15.1.1-canary.7
+        specifier: 15.1.3
+        version: 15.1.3
       '@next/eslint-plugin-next':
         specifier: 15.1.1-canary.7
         version: 15.1.1-canary.7
@@ -1816,8 +1816,8 @@ importers:
         specifier: ^9.17.0
         version: 9.17.0
       '@next/bundle-analyzer':
-        specifier: 15.1.1-canary.7
-        version: 15.1.1-canary.7
+        specifier: 15.1.3
+        version: 15.1.3
       '@next/eslint-plugin-next':
         specifier: 15.1.1-canary.7
         version: 15.1.1-canary.7
@@ -2336,8 +2336,8 @@ importers:
         specifier: ^9.17.0
         version: 9.17.0
       '@next/bundle-analyzer':
-        specifier: 15.1.1-canary.7
-        version: 15.1.1-canary.7
+        specifier: 15.1.3
+        version: 15.1.3
       '@next/eslint-plugin-next':
         specifier: 15.1.1-canary.7
         version: 15.1.1-canary.7
@@ -3793,8 +3793,8 @@ packages:
     resolution: {integrity: sha512-YcFhXQcp+b2d38zFOJNbpyPHnIL7KAEkhJQ+UeeKI5IpE9B8Cpf/M6RiHPQXSsSqnYbrfFylnW49dyh2oeSblQ==}
     engines: {node: '>= 10'}
 
-  '@next/bundle-analyzer@15.1.1-canary.7':
-    resolution: {integrity: sha512-2x509JfN8ejfMnXzpwsxCMuxx06gEkUfn7dh3cvuL1ahaJkkh3ywzNnXIx/uD55kuxEyUOs0q0B0tD1ilhCn/A==}
+  '@next/bundle-analyzer@15.1.3':
+    resolution: {integrity: sha512-dh5i2KBONWVhQzJnL10sv9+ImsKgGtOHHeA1dWp/H3MXphWBt1uGjXCwPCcitwimvNncHBmxaOyTm2FwfOLRSA==}
 
   '@next/env@15.0.4':
     resolution: {integrity: sha512-WNRvtgnRVDD4oM8gbUcRc27IAhaL4eXQ/2ovGbgLnPGUvdyDr8UdXP4Q/IBDdAdojnD2eScryIDirv0YUCjUVw==}
@@ -12360,7 +12360,7 @@ snapshots:
       '@napi-rs/canvas-win32-x64-msvc': 0.1.65
     optional: true
 
-  '@next/bundle-analyzer@15.1.1-canary.7':
+  '@next/bundle-analyzer@15.1.3':
     dependencies:
       webpack-bundle-analyzer: 4.10.1
     transitivePeerDependencies:
