@@ -502,8 +502,8 @@ importers:
         specifier: ^5.62.9
         version: 5.62.9(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2)
       '@tanstack/react-query-devtools':
-        specifier: ^5.62.10
-        version: 5.62.10(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^5.62.11
+        version: 5.62.11(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
@@ -1031,8 +1031,8 @@ importers:
         specifier: ^5.62.9
         version: 5.62.9(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2)
       '@tanstack/react-query-devtools':
-        specifier: ^5.62.10
-        version: 5.62.10(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^5.62.11
+        version: 5.62.11(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
@@ -1563,8 +1563,8 @@ importers:
         specifier: ^5.62.9
         version: 5.62.9(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2)
       '@tanstack/react-query-devtools':
-        specifier: ^5.62.10
-        version: 5.62.10(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^5.62.11
+        version: 5.62.11(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
@@ -1831,8 +1831,8 @@ importers:
         specifier: ^5.62.9
         version: 5.62.9(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2)
       '@tanstack/react-query-devtools':
-        specifier: ^5.62.10
-        version: 5.62.10(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^5.62.11
+        version: 5.62.11(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
@@ -2351,8 +2351,8 @@ importers:
         specifier: ^5.62.9
         version: 5.62.9(eslint@9.17.0(jiti@1.21.7))(typescript@5.7.2)
       '@tanstack/react-query-devtools':
-        specifier: ^5.62.10
-        version: 5.62.10(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^5.62.11
+        version: 5.62.11(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.1.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
@@ -5124,10 +5124,10 @@ packages:
   '@tanstack/query-devtools@5.62.9':
     resolution: {integrity: sha512-b1NZzDLVf6laJsB1Cfm3ieuYzM+WqoO8qpm9v+3Etwd+Ph4zkhUMiT+wcWj5AhEPsXiRodKYiiW048VDNdBxNg==}
 
-  '@tanstack/react-query-devtools@5.62.10':
-    resolution: {integrity: sha512-TnFcvfEnOvH9j8iYKRl8Qn/U2P0NijdQ6nilhHobpdAcF4DLUwlKKufJZAlc759+1HBZ/jEvCqWo2g3mO9Ttvg==}
+  '@tanstack/react-query-devtools@5.62.11':
+    resolution: {integrity: sha512-i0vKgdM4ORRzqduz7UeUF52UhLrvRp4sNY/DnLsd5NqNyiKct3a0bLQMWE2fqjF5tEExQ0d0xY60ILXW/T62xA==}
     peerDependencies:
-      '@tanstack/react-query': ^5.62.10
+      '@tanstack/react-query': ^5.62.11
       react: ^18 || ^19
 
   '@tanstack/react-query@5.62.10':
@@ -13932,7 +13932,7 @@ snapshots:
 
   '@tanstack/query-devtools@5.62.9': {}
 
-  '@tanstack/react-query-devtools@5.62.10(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)':
+  '@tanstack/react-query-devtools@5.62.11(@tanstack/react-query@5.62.10(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)':
     dependencies:
       '@tanstack/query-devtools': 5.62.9
       '@tanstack/react-query': 5.62.10(react@19.0.0-rc-7283a213-20241206)
