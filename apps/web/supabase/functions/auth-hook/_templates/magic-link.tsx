@@ -30,7 +30,7 @@ const translationsEn = {
     "If you didn't try to login, you can safely ignore this email.",
   footer: 'Tuturuuu, Empower your workflows, stress-free.',
   tagline:
-    'Your intelligent shortcut\nTake control of workflows, supercharged by AI.',
+    'Your intelligent shortcut - take control of workflows, supercharged by AI.',
   blog: 'Our blog',
   about: 'About us',
   contact: 'Contact us',
@@ -44,7 +44,8 @@ const translationsVi = {
   if_you_did_not_request:
     'Nếu bạn không yêu cầu đăng nhập, bạn có thể bỏ qua email này.',
   footer: 'Tuturuuu, Tạo lối tắt thông minh cho công việc của bạn.',
-  tagline: 'Lối tắt thông minh của bạn\nQuản lý công việc, siêu tốc độ cùng AI',
+  tagline:
+    'Lối tắt thông minh của bạn - quản lý công việc, siêu tốc độ cùng AI',
   blog: 'Blog của chúng tôi',
   about: 'Về chúng tôi',
   contact: 'Liên hệ',
@@ -59,7 +60,7 @@ const translationsAiseaEn = {
     "If you didn't try to login, you can safely ignore this email.",
   footer: 'AISEA, AI for Schools, Educators, and Administrators',
   tagline:
-    'Level up your learning journey\nEmpower your school with AI-driven tools.',
+    'Level up your learning journey - empower your school with AI-driven tools.',
   blog: 'Our blog',
   about: 'About us',
   contact: 'Contact us',
@@ -74,7 +75,7 @@ const translationsAiseaVi = {
     'Nếu bạn không yêu cầu đăng nhập, bạn có thể bỏ qua email này.',
   footer: 'AISEA, AI cho trường học, giáo viên và quản trị viên',
   tagline:
-    'Hành trình học tập của bạn\nĐẩy mạnh trường học của bạn với công cụ AI',
+    'Hành trình học tập của bạn - đẩy mạnh trường học của bạn với công cụ AI',
   blog: 'Blog của chúng tôi',
   about: 'Về chúng tôi',
   contact: 'Liên hệ',
