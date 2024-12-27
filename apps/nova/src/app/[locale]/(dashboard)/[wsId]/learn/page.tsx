@@ -45,7 +45,7 @@ interface Props {
 }
 
 export default async function LearnPage({ params }: Props) {
-  const {wsId} = await params;
+  const { wsId } = await params;
   return (
     <div className="container mx-auto p-6">
       <h1 className="mb-6 text-3xl font-bold">Learn Prompt Engineering</h1>
@@ -62,7 +62,7 @@ export default async function LearnPage({ params }: Props) {
                   <BookOpen className="mr-2 h-4 w-4" />
                   {lesson.duration}
                 </span>
-                <Link href={`/learn/${lesson.id}`}>
+                <Link href={`/${wsId}/learn/${lesson.id}`}>
                   <Button variant="outline" className="gap-2">
                     Start Lesson <ArrowRight className="h-4 w-4" />
                   </Button>
