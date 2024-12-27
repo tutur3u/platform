@@ -38,7 +38,7 @@ const translationsEn = {
   about: 'About us',
   contact: 'Contact us',
   tagline:
-    'Your intelligent shortcut\nTake control of workflows, supercharged by AI.',
+    'Your intelligent shortcut - take control of workflows, supercharged by AI.',
 };
 
 /** Translations of the text for Vietnamese */
@@ -55,7 +55,8 @@ const translationsVi = {
   blog: 'Blog của chúng tôi',
   about: 'Về chúng tôi',
   contact: 'Liên hệ',
-  tagline: 'Lối tắt thông minh của bạn\nQuản lý công việc, siêu tốc độ cùng AI',
+  tagline:
+    'Lối tắt thông minh của bạn - quản lý công việc, siêu tốc độ cùng AI',
 };
 
 const translationsAiseaEn = {
@@ -71,7 +72,7 @@ const translationsAiseaEn = {
   about: 'About us',
   contact: 'Contact us',
   tagline:
-    'Level up your learning journey\nEmpower your school with AI-driven tools.',
+    'Level up your learning journey - empower your school with AI-driven tools.',
 };
 
 const translationsAiseaVi = {
@@ -88,7 +89,7 @@ const translationsAiseaVi = {
   about: 'Về chúng tôi',
   contact: 'Liên hệ',
   tagline:
-    'Hành trình học tập của bạn\nĐẩy mạnh trường học của bạn với công cụ AI',
+    'Hành trình học tập của bạn - đẩy mạnh trường học của bạn với công cụ AI',
 };
 
 export const SignUpEmail = ({

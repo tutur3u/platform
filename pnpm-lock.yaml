@@ -351,8 +351,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       lucide-react:
-        specifier: ^0.468.0
-        version: 0.468.0(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.0.0-rc-7283a213-20241206)
       mermaid:
         specifier: ^11.4.1
         version: 11.4.1
@@ -880,8 +880,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       lucide-react:
-        specifier: ^0.468.0
-        version: 0.468.0(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.0.0-rc-7283a213-20241206)
       mermaid:
         specifier: ^11.4.1
         version: 11.4.1
@@ -1415,8 +1415,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       lucide-react:
-        specifier: ^0.468.0
-        version: 0.468.0(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.0.0-rc-7283a213-20241206)
       mermaid:
         specifier: ^11.4.1
         version: 11.4.1
@@ -1725,8 +1725,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       lucide-react:
-        specifier: ^0.468.0
-        version: 0.468.0(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.0.0-rc-7283a213-20241206)
       mermaid:
         specifier: ^11.4.1
         version: 11.4.1
@@ -2200,8 +2200,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       lucide-react:
-        specifier: ^0.468.0
-        version: 0.468.0(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.0.0-rc-7283a213-20241206)
       mermaid:
         specifier: ^11.4.1
         version: 11.4.1
@@ -2582,8 +2582,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       lucide-react:
-        specifier: ^0.468.0
-        version: 0.468.0(react@19.0.0-rc-7283a213-20241206)
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.0.0-rc-7283a213-20241206)
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
@@ -8329,10 +8329,10 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-react@0.468.0:
-    resolution: {integrity: sha512-6koYRhnM2N0GGZIdXzSeiNwguv1gt/FAjZOiPl76roBi3xKEXa4WmfpxgQwTTL4KipXjefrnf3oV4IsYhi4JFA==}
+  lucide-react@0.469.0:
+    resolution: {integrity: sha512-28vvUnnKQ/dBwiCQtwJw7QauYnE7yd2Cyp4tTTJpvglX4EMpbflcdBgrgToX2j71B3YvugK/NH3BGUk+E/p/Fw==}
     peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -17548,7 +17548,7 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-react@0.468.0(react@19.0.0-rc-7283a213-20241206):
+  lucide-react@0.469.0(react@19.0.0-rc-7283a213-20241206):
     dependencies:
       react: 19.0.0-rc-7283a213-20241206
 
