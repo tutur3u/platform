@@ -65,7 +65,7 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@tabler/icons-react": "^3.26.0",
-    "@tanstack/react-query": "^5.62.10",
+    "@tanstack/react-query": "^5.62.11",
     "@tanstack/react-table": "^8.20.6",
     "@tippyjs/react": "^4.2.6",
     "@tiptap-pro/extension-details": "^2.17.0",
@@ -183,7 +183,7 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.62.9",
-    "@tanstack/react-query-devtools": "^5.62.10",
+    "@tanstack/react-query-devtools": "^5.62.11",
     "@testing-library/react": "^16.1.0",
     "@types/eslint": "^9.6.1",
     "@types/file-saver": "^2.0.7",
@@ -214,5 +214,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@9.15.0"
+  "packageManager": "pnpm@9.15.1"
 }
