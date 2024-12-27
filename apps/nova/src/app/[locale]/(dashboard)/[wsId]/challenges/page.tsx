@@ -1,4 +1,5 @@
 import { getChallenges } from './challenges';
+import { createClient } from '@/utils/supabase/server';
 import { Badge } from '@repo/ui/components/ui/badge';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -10,9 +11,18 @@ import {
 } from '@repo/ui/components/ui/card';
 import { ArrowRight, Star } from 'lucide-react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 export default async function ChallengesPage() {
-  const challenges = await getChallenges();
+  const database = await createClient();
+  const {
+    data: { user },
+  } = await database.auth.getUser();
+
+  if (!user?.id) {
+    redirect('/login');
+  }
+  const challenges = getChallenges();
 
   return (
     <div className="container mx-auto p-6">

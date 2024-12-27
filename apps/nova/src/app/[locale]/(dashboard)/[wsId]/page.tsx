@@ -1,3 +1,4 @@
+import { createClient } from '@/utils/supabase/server';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Card,
@@ -8,6 +9,7 @@ import {
 } from '@repo/ui/components/ui/card';
 import { ArrowRight, BookOpen, Code, Trophy, Zap } from 'lucide-react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -15,6 +17,14 @@ interface Props {
   }>;
 }
 export default async function HomePage({ params }: Props) {
+  const database = await createClient();
+  const {
+    data: { user },
+  } = await database.auth.getUser();
+
+  if (!user?.id) {
+    redirect('/login');
+  }
   const { wsId } = await params;
   return (
     <div className="container mx-auto px-4 py-12">

@@ -1,5 +1,6 @@
 import { Leaderboard } from '@/components/leaderboard/leaderboard';
 import { getLeaderboardData } from '@/lib/leaderboard';
+import { createClient } from '@/utils/supabase/server';
 import {
   Card,
   CardContent,
@@ -7,8 +8,17 @@ import {
   CardTitle,
 } from '@repo/ui/components/ui/card';
 import { Trophy } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 export default async function LeaderboardPage() {
+  const database = await createClient();
+  const {
+    data: { user },
+  } = await database.auth.getUser();
+
+  if (!user?.id) {
+    redirect('/login');
+  }
   const leaderboardData = await getLeaderboardData();
 
   return (
