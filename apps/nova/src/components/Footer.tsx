@@ -1,13 +1,13 @@
 'use client';
 
 import { Separator } from '@repo/ui/components/ui/separator';
-// import { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Footer() {
-  // const t = useTranslations();
+  const t = useTranslations();
   const pathname = usePathname();
 
   return (
@@ -106,66 +106,66 @@ export default function Footer() {
         <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:items-start md:gap-16 lg:gap-32">
           <div className="grid gap-1 md:items-start">
             <div className="text-lg font-semibold md:w-fit md:text-xl">
-              {('common.legal')}
+              {t('common.legal')}
             </div>
             <Link
               href="/terms"
               target="_blank"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
-              {('common.terms')}
+              {t('common.terms')}
             </Link>
             <Link
               href="/privacy"
               target="_blank"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
-              {('common.privacy')}
+              {t('common.privacy')}
             </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">
             <div className="text-lg font-semibold md:w-fit md:text-xl">
-              {('common.resources')}
+              {t('common.resources')}
             </div>
             <Link
               href="/meet-together"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
-              {('common.meet-together')}
+              {t('common.meet-together')}
             </Link>
             <Link
               href="/qr-generator"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
-              {('common.qr_generator')}
+              {t('common.qr_generator')}
             </Link>
             <Link
               href="/branding"
               target="_blank"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
-              {('common.branding')}
+              {t('common.branding')}
             </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">
             <div className="text-lg font-semibold md:w-fit md:text-xl">
-              {('common.developers')}
+              {t('common.developers')}
             </div>
             <Link
               href="https://docs.tuturuuu.com"
               target="_blank"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
-              {('common.documentation')}
+              {t('common.documentation')}
             </Link>
             <Link
               href="https://github.com/tutur3u/platform"
               target="_blank"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
-              {('common.open-source')}
+              {t('common.open-source')}
             </Link>
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function Footer() {
 
       <Separator className="bg-foreground/5 mt-8" />
       <div className="text-balance p-4 text-center text-sm opacity-80 md:px-32 xl:px-64">
-        {('common.copyright')}
+        {t('common.copyright')}
       </div>
     </div>
   );

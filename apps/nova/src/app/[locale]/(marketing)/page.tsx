@@ -118,7 +118,7 @@ function MarketingPage() {
       >
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="mb-12 text-center text-4xl font-bold text-white">
-            {'common.features'}
+            {t('common.features')}
             <span className="ml-2 inline-block">
               <Zap className="h-8 w-8 text-blue-400" />
             </span>

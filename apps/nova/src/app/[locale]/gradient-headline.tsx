@@ -2,7 +2,6 @@
 
 import { cn } from '@repo/ui/lib/utils';
 import { ReactNode } from 'react';
-
 export default function GradientHeadline({
   title,
   children,
@@ -12,6 +11,7 @@ export default function GradientHeadline({
   children?: ReactNode;
   className?: string;
 }) {
+
   return (
     <span
       className={cn(
