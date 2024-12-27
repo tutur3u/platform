@@ -110,7 +110,7 @@ export default function LoginForm() {
     } else {
       toast({
         title: 'failed',
-        description:'failed_to_send',
+        description: 'failed_to_send',
       });
     }
 
@@ -236,9 +236,7 @@ export default function LoginForm() {
           <div className="grid gap-2 md:grid-cols-2">
             {DEV_MODE ? (
               <Link
-                href={
-                  window.location.origin.replace('7803', '8004') + '/monitor'
-                }
+                href="http://localhost:8004/monitor"
                 target="_blank"
                 className="col-span-full"
                 aria-disabled={loading}
