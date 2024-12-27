@@ -1,20 +1,32 @@
-import Link from 'next/link'
-import { Button } from '@repo/ui/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
-import { ArrowRight, BookOpen, Code, Zap, Trophy } from 'lucide-react'
+import { Button } from '@repo/ui/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@repo/ui/components/ui/card';
+import { ArrowRight, BookOpen, Code, Trophy, Zap } from 'lucide-react';
+import Link from 'next/link';
 
-export default function HomePage() {
+interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
+}
+export default async function HomePage({ params }: Props) {
+  const { wsId } = await params;
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-4">
+      <div className="mb-12 text-center">
+        <h1 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
           Welcome to the Prompt Engineering Playground
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
           Master the art of crafting effective prompts for AI models
         </p>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
+      <div className="mb-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -24,7 +36,8 @@ export default function HomePage() {
           </CardHeader>
           <CardContent>
             <CardDescription className="text-blue-100">
-              Explore comprehensive guides and tutorials on prompt engineering techniques.
+              Explore comprehensive guides and tutorials on prompt engineering
+              techniques.
             </CardDescription>
           </CardContent>
         </Card>
@@ -37,7 +50,8 @@ export default function HomePage() {
           </CardHeader>
           <CardContent>
             <CardDescription className="text-green-100">
-              Tackle real-world challenges and improve your skills in a hands-on environment.
+              Tackle real-world challenges and improve your skills in a hands-on
+              environment.
             </CardDescription>
           </CardContent>
         </Card>
@@ -50,7 +64,8 @@ export default function HomePage() {
           </CardHeader>
           <CardContent>
             <CardDescription className="text-yellow-100">
-              Push the boundaries of what's possible with AI and create groundbreaking prompts.
+              Push the boundaries of what's possible with AI and create
+              groundbreaking prompts.
             </CardDescription>
           </CardContent>
         </Card>
@@ -63,29 +78,29 @@ export default function HomePage() {
           </CardHeader>
           <CardContent>
             <CardDescription className="text-red-100">
-              Join the leaderboard and see how your prompt engineering skills stack up against others.
+              Join the leaderboard and see how your prompt engineering skills
+              stack up against others.
             </CardDescription>
           </CardContent>
         </Card>
       </div>
       <div className="flex flex-wrap justify-center gap-4">
-        <Link href="/challenges">
+        <Link href={`/${wsId}/challenges`}>
           <Button size="lg" className="gap-2">
             Start a Challenge <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
-        <Link href="/learn">
+        <Link href={`/${wsId}/learn`}>
           <Button size="lg" variant="outline" className="gap-2">
             Explore Tutorials <BookOpen className="h-4 w-4" />
           </Button>
         </Link>
-        <Link href="/leaderboard">
+        <Link href={`/${wsId}/leaderboard`}>
           <Button size="lg" variant="secondary" className="gap-2">
             View Leaderboard <Trophy className="h-4 w-4" />
           </Button>
         </Link>
       </div>
     </div>
-  )
+  );
 }
-
