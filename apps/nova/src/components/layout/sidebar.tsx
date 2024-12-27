@@ -1,7 +1,6 @@
 'use client';
 
-import { ThemeToggle } from '@/components/playground/theme-toggle';
-// Use usePathname to get the current path
+import { LogoutDropdownItem } from '../logout-dropdown-item';
 import { cn } from '@/lib/utils';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -9,6 +8,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@repo/ui/components/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@repo/ui/components/ui/dropdown-menu';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import {
   BookOpen,
@@ -100,10 +104,18 @@ export function Sidebar() {
         </nav>
       </ScrollArea>
       <div className="flex items-center justify-between border-t p-4">
-        <ThemeToggle />
-        <Button variant="ghost" size="icon">
-          <Settings className="h-4 w-4" />
-        </Button>
+        {/* <ThemeToggle /> */}
+        <div></div>
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-full">
+            <LogoutDropdownItem />
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
