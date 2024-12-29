@@ -457,7 +457,11 @@
     "slides": "Slides",
     "mail": "Mail",
     "tasks": "Tasks",
-    "education": "Education"
+    "education": "Education",
+    "models": "Models",
+    "datasets": "Datasets",
+    "pipelines": "Pipelines",
+    "cron": "Cron Jobs"
   },
   "team-tabs": {
     "overview": "Overview",

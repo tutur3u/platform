@@ -457,7 +457,11 @@
     "slides": "Trang trình bày",
     "mail": "Hộp thư",
     "tasks": "Nhiệm vụ",
-    "education": "Giáo dục"
+    "education": "Giáo dục",
+    "models": "Các mô hình",
+    "datasets": "Bộ dữ liệu",
+    "pipelines": "Quy trình",
+    "cron": "Công việc định kỳ"
   },
   "team-tabs": {
     "overview": "Tổng quan",

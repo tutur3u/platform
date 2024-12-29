@@ -13,15 +13,18 @@ import {
 import {
   Archive,
   Banknote,
+  Box,
   Calendar,
   ChartArea,
   CircleCheck,
   Cog,
+  Database,
   FileText,
   GraduationCap,
   HardDrive,
   Mail,
   MessageCircleIcon,
+  Play,
   Presentation,
   Sparkles,
   Users,
@@ -46,7 +49,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     wsId,
   });
 
-  const navLinks: NavLink[] = [
+  const navLinks: (NavLink | null)[] = [
     {
       title: t('sidebar_tabs.chat_with_ai'),
       href: `/${wsId}/chat`,
@@ -68,6 +71,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       matchExact: true,
       shortcut: 'D',
     },
+    null,
     {
       title: t('sidebar_tabs.ai'),
       href: `/${wsId}/ai`,
@@ -82,6 +86,62 @@ export default async function Layout({ children, params }: LayoutProps) {
       shortcut: 'A',
       experimental: 'beta',
     },
+    {
+      title: t('sidebar_tabs.models'),
+      href: `/${wsId}/models`,
+      icon: <Box className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'beta',
+    },
+    {
+      title: t('sidebar_tabs.datasets'),
+      href: `/${wsId}/datasets`,
+      icon: <Database className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      shortcut: 'A',
+      experimental: 'beta',
+    },
+    {
+      title: t('sidebar_tabs.pipelines'),
+      href: `/${wsId}/pipelines`,
+      icon: <Play className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      shortcut: 'A',
+      experimental: 'beta',
+    },
+    {
+      title: t('sidebar_tabs.cron'),
+      href: `/${wsId}/cron`,
+      icon: <Database className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      shortcut: 'A',
+      experimental: 'beta',
+    },
+    null,
     {
       title: t('sidebar_tabs.education'),
       href: `/${wsId}/education`,

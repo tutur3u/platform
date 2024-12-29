@@ -44,7 +44,7 @@ interface MailProps {
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
   user: WorkspaceUser | null;
-  links: NavLink[];
+  links: (NavLink | null)[];
   actions: ReactNode;
   userPopover: ReactNode;
   children: ReactNode;
@@ -70,7 +70,7 @@ export function Structure({
 
   const filteredLinks = links.filter((link) => {
     // If the link is disabled, don't render it
-    if (link?.disabled) return null;
+    if (!link || link?.disabled) return null;
 
     // If the link is disabled on production, don't render it
     if (link?.disableOnProduction && PROD_MODE) return null;
@@ -89,6 +89,7 @@ export function Structure({
   });
 
   const matchedLinks = filteredLinks
+    .filter((link) => link !== null)
     .sort((a, b) => b.href.length - a.href.length)
     .filter(
       (link) =>
@@ -262,27 +263,31 @@ export function Structure({
                         <span className="sr-only">Toggle menu</span>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start">
-                        {filteredLinks.map((link, index) => (
-                          <Link
-                            key={index}
-                            href={link.href === pathname ? '#' : link.href}
-                            className={cn(
-                              link.disabled || link.href === pathname
-                                ? 'pointer-events-none'
-                                : ''
-                            )}
-                            passHref
-                            replace
-                          >
-                            <DropdownMenuItem
-                              className="flex items-center gap-2"
-                              disabled={link.disabled || link.href === pathname}
+                        {filteredLinks.map((link, index) =>
+                          link ? (
+                            <Link
+                              key={index}
+                              href={link.href === pathname ? '#' : link.href}
+                              className={cn(
+                                link.disabled || link.href === pathname
+                                  ? 'pointer-events-none'
+                                  : ''
+                              )}
+                              passHref
+                              replace
                             >
-                              {link.icon}
-                              {link.title}
-                            </DropdownMenuItem>
-                          </Link>
-                        ))}
+                              <DropdownMenuItem
+                                className="flex items-center gap-2"
+                                disabled={
+                                  link.disabled || link.href === pathname
+                                }
+                              >
+                                {link.icon}
+                                {link.title}
+                              </DropdownMenuItem>
+                            </Link>
+                          ) : null
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </BreadcrumbItem>
