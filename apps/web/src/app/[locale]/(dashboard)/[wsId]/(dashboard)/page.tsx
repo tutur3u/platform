@@ -1,8 +1,11 @@
 import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
+import AdvancedAnalytics from './advanced-analytics';
 import { InventoryCategoryStatistics } from './categories/inventory';
 import { UsersCategoryStatistics } from './categories/users';
-import { DailyTotalChart, HourlyTotalChart, MonthlyTotalChart } from './charts';
+import CommodityComparison from './commodity-comparison';
+import DashboardChart from './dashboard';
 import FinanceStatistics from './finance';
+import PricePredictionChart from './price-prediction-chart';
 import {
   BatchesStatistics,
   InventoryProductsStatistics,
@@ -18,9 +21,7 @@ import {
   WarehousesStatistics,
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
-import { createAdminClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -48,9 +49,9 @@ export default async function WorkspaceHomePage({
 
   if (!workspace) notFound();
 
-  const { data: dailyData } = await getDailyData(wsId);
-  const { data: monthlyData } = await getMonthlyData(wsId);
-  const { data: hourlyData } = await getHourlyData(wsId);
+  // const { data: dailyData } = await getDailyData(wsId);
+  // const { data: monthlyData } = await getMonthlyData(wsId);
+  // const { data: hourlyData } = await getHourlyData(wsId);
 
   return (
     <>
@@ -67,6 +68,23 @@ export default async function WorkspaceHomePage({
         }
       />
 
+      {containsPermission('ai_lab') && (
+        <>
+          <Separator className="my-4" />
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-4">
+              <DashboardChart />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <PricePredictionChart />
+                <CommodityComparison />
+              </div>
+              <AdvancedAnalytics />
+            </div>
+          </div>
+        </>
+      )}
+
+      <Separator className="my-4" />
       <FinanceStatistics wsId={wsId} searchParams={searchParams} />
       <InventoryCategoryStatistics wsId={wsId} />
 
@@ -124,7 +142,7 @@ export default async function WorkspaceHomePage({
         </Suspense>
       </div>
 
-      {containsPermission('manage_workspace_roles') &&
+      {/* {containsPermission('manage_workspace_roles') &&
         wsId === ROOT_WORKSPACE_ID && (
           <Suspense
             fallback={<LoadingStatisticCard className="col-span-full" />}
@@ -138,45 +156,45 @@ export default async function WorkspaceHomePage({
               <MonthlyTotalChart data={monthlyData} />
             </div>
           </Suspense>
-        )}
+        )} */}
     </>
   );
 }
 
-async function getHourlyData(wsId: string) {
-  if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = await createAdminClient();
+// async function getHourlyData(wsId: string) {
+//   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
+//   const supabase = await createAdminClient();
 
-  const queryBuilder = supabase.rpc('get_hourly_prompt_completion_tokens', {
-    past_hours: 24,
-  });
+//   const queryBuilder = supabase.rpc('get_hourly_prompt_completion_tokens', {
+//     past_hours: 24,
+//   });
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+//   const { data, error, count } = await queryBuilder;
+//   if (error) throw error;
 
-  return { data, count };
-}
+//   return { data, count };
+// }
 
-async function getDailyData(wsId: string) {
-  if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = await createAdminClient();
+// async function getDailyData(wsId: string) {
+//   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
+//   const supabase = await createAdminClient();
 
-  const queryBuilder = supabase.rpc('get_daily_prompt_completion_tokens');
+//   const queryBuilder = supabase.rpc('get_daily_prompt_completion_tokens');
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+//   const { data, error, count } = await queryBuilder;
+//   if (error) throw error;
 
-  return { data, count };
-}
+//   return { data, count };
+// }
 
-async function getMonthlyData(wsId: string) {
-  if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
-  const supabase = await createAdminClient();
+// async function getMonthlyData(wsId: string) {
+//   if (wsId !== ROOT_WORKSPACE_ID) return { data: [], count: 0 };
+//   const supabase = await createAdminClient();
 
-  const queryBuilder = supabase.rpc('get_monthly_prompt_completion_tokens');
+//   const queryBuilder = supabase.rpc('get_monthly_prompt_completion_tokens');
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+//   const { data, error, count } = await queryBuilder;
+//   if (error) throw error;
 
-  return { data, count };
-}
+//   return { data, count };
+// }

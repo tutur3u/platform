@@ -257,6 +257,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       disabled: withoutPermission('manage_finance'),
       shortcut: 'F',
     },
+    null,
     {
       title: t('common.settings'),
       href: `/${wsId}/settings`,

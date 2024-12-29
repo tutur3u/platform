@@ -2124,7 +2124,7 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       cmdk:
-        specifier: 1.0.4
+        specifier: ^1.0.4
         version: 1.0.4(@types/react-dom@19.0.2(@types/react@19.0.2))(@types/react@19.0.2)(react-dom@19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206))(react@19.0.0-rc-7283a213-20241206)
       date-fns:
         specifier: ^4.1.0
