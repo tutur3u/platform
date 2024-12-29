@@ -15,5 +15,5 @@
     "eslint-plugin-only-warn": "^1.1.0",
     "typescript": "^5.7.2"
   },
-  "packageManager": "pnpm@9.15.1"
+  "packageManager": "pnpm@9.15.2"
 }
