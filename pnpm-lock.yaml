@@ -1909,6 +1909,43 @@ importers:
         specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.2)(jsdom@25.0.1(canvas@2.11.2))
 
+  packages/ai:
+    dependencies:
+      eslint:
+        specifier: ^9.17.0
+        version: 9.17.0(jiti@1.21.7)
+      react:
+        specifier: 19.0.0-rc-7283a213-20241206
+        version: 19.0.0-rc-7283a213-20241206
+      react-dom:
+        specifier: 19.0.0-rc-7283a213-20241206
+        version: 19.0.0-rc-7283a213-20241206(react@19.0.0-rc-7283a213-20241206)
+      zod:
+        specifier: ^3.24.1
+        version: 3.24.1
+    devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.2.0
+        version: 3.2.0
+      '@eslint/js':
+        specifier: ^9.17.0
+        version: 9.17.0
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.10.2
+      '@types/react':
+        specifier: ^19.0.2
+        version: 19.0.2
+      typescript:
+        specifier: ^5.7.2
+        version: 5.7.2
+
   packages/eslint-config:
     devDependencies:
       '@typescript-eslint/eslint-plugin':
