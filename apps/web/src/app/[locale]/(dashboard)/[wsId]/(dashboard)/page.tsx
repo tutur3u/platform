@@ -21,7 +21,11 @@ import {
   WarehousesStatistics,
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  verifySecret,
+} from '@/lib/workspace-helper';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -68,21 +72,27 @@ export default async function WorkspaceHomePage({
         }
       />
 
-      {containsPermission('ai_lab') && (
-        <>
-          <Separator className="my-4" />
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-4">
-              <DashboardChart />
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <PricePredictionChart />
-                <CommodityComparison />
+      {(await verifySecret({
+        forceAdmin: true,
+        wsId,
+        name: 'ENABLE_AI',
+        value: 'true',
+      })) &&
+        containsPermission('ai_lab') && (
+          <>
+            <Separator className="my-4" />
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-4">
+                <DashboardChart />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <PricePredictionChart />
+                  <CommodityComparison />
+                </div>
+                <AdvancedAnalytics />
               </div>
-              <AdvancedAnalytics />
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
 
       <Separator className="my-4" />
       <FinanceStatistics wsId={wsId} searchParams={searchParams} />
