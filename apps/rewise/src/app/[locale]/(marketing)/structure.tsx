@@ -3,7 +3,6 @@
 import LogoTitle from '../logo-title';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import {
@@ -27,7 +26,6 @@ import {
   ImagePlay,
   Menu,
   MessagesSquare,
-  SquareArrowOutUpRight,
   WandSparkles,
   X,
 } from 'lucide-react';
@@ -82,47 +80,6 @@ export function Structure({
       title: t('common.image_generator'),
       icon: <ImagePlay className="h-5 w-5 flex-none" />,
     },
-    {
-      href: DEV_MODE
-        ? 'http://localhost:7803'
-        : 'https://tuturuuu.com/onboarding',
-      title: t('common.go_to_tuturuuu'),
-      icon: <SquareArrowOutUpRight className="h-5 w-5 flex-none" />,
-      matchExact: true,
-      newTab: true,
-    },
-    // {
-    //   href: '/models',
-    //   title: t('ai_chat.ai_models'),
-    //   icon: <Box className="h-5 w-5 flex-none" />,
-    //   trailing: '9',
-    //   disabled: true,
-    //   showDisabled: true,
-    // },
-    // {
-    //   href: '/documents',
-    //   title: t('documents.documents'),
-    //   icon: <NotebookPen className="h-5 w-5 flex-none" />,
-    //   trailing: '0',
-    //   disabled: true,
-    //   showDisabled: true,
-    // },
-    // {
-    //   href: '/quizzes',
-    //   title: t('ai_chat.quizzes'),
-    //   icon: <SquareStack className="h-5 w-5 flex-none" />,
-    //   trailing: '0',
-    //   disabled: true,
-    //   showDisabled: true,
-    // },
-    // {
-    //   href: '/flashcards',
-    //   title: t('ai_chat.flashcards'),
-    //   icon: <Captions className="h-5 w-5 flex-none" />,
-    //   trailing: '0',
-    //   disabled: true,
-    //   showDisabled: true,
-    // },
     {
       href: '/plans',
       title: t('common.current_plan'),
