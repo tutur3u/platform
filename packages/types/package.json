@@ -1,0 +1,30 @@
+{
+  "name": "@repo/types",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "packageManager": "pnpm@9.15.2",
+  "dependencies": {
+    "eslint": "^9.17.0",
+    "react": "19.0.0-rc-7283a213-20241206",
+    "react-dom": "19.0.0-rc-7283a213-20241206",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.17.0",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "react-is": "19.0.0-rc-7283a213-20241206"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  }
+}

@@ -25,6 +25,7 @@
     "next.config.mjs",
     "postcss.config.mjs",
     ".next/types/**/*.ts",
+    "../../packages/types/src/supabase.ts",
   ],
   "exclude": [
     "node_modules",

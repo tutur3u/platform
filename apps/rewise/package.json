@@ -32,6 +32,7 @@
     "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^3.9.1",
     "@repo/ui": "workspace:*",
+    "@repo/types": "workspace:*",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@tabler/icons-react": "^3.26.0",

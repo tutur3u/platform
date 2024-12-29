@@ -23,6 +23,6 @@ jobs:
 
       - name: Deploy migrations to staging
         run: |
-          cd apps/db/supabase
+          cd apps/db
           supabase link --project-ref ${{ env.STAGING_PROJECT_ID }}
           supabase db push

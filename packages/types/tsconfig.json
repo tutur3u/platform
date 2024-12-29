@@ -1,0 +1,18 @@
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@repo/types/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "../../apps/web/src/app/[locale]/ws-settings-dialog.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

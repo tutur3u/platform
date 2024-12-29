@@ -1,5 +1,5 @@
 import { checkEnvVariables } from './common';
-import { Database } from '@/types/supabase';
+import { Database } from '@repo/types/supabase';
 import { createBrowserClient } from '@supabase/ssr';
 
 const { url, key } = checkEnvVariables({ useServiceKey: false });

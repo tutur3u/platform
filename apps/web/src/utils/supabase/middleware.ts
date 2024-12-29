@@ -1,5 +1,5 @@
 import { checkEnvVariables } from './common';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@repo/types/supabase';
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 

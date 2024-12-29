@@ -1,5 +1,5 @@
 import { SupabaseCookie, checkEnvVariables } from './common';
-import { Database } from '@/types/supabase';
+import { Database } from '@repo/types/supabase';
 import { createServerClient } from '@supabase/ssr';
 import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { cookies } from 'next/headers';
