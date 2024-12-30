@@ -1,5 +1,10 @@
-import { getWorkspace } from '@/lib/workspace-helper';
+import ExecutionStatistics from './executions';
+import JobsStatistics from './jobs';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
 interface Props {
   params: Promise<{
@@ -9,22 +14,24 @@ interface Props {
 
 export default async function WorkspaceHomePage({ params }: Props) {
   const { wsId } = await params;
-  const ws = await getWorkspace(wsId);
-  const t = await getTranslations('ws-home');
-
-  const homeLabel = t('home');
+  const t = await getTranslations();
 
   return (
     <>
-      <div className="bg-foreground/5 rounded-lg border p-4">
-        <h1 className="text-2xl font-bold">{homeLabel}</h1>
-        <p className="text-foreground/80">
-          {t('description_p1')}{' '}
-          <span className="text-foreground font-semibold">
-            {ws?.name || 'Unnamed Workspace'}
-          </span>{' '}
-          {t('description_p2')}
-        </p>
+      <FeatureSummary
+        pluralTitle={t('sidebar_tabs.cron')}
+        singularTitle={t('sidebar_tabs.cron')}
+        description={t('ws-cron.description')}
+      />
+      <Separator className="my-4" />
+      <div className="grid items-end gap-4 md:grid-cols-2">
+        <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
+          <JobsStatistics wsId={wsId} />
+        </Suspense>
+
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <ExecutionStatistics wsId={wsId} />
+        </Suspense>
       </div>
     </>
   );

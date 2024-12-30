@@ -31,6 +31,16 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/cron`,
       matchExact: true,
     },
+    {
+      title: t('cron_jobs'),
+      href: `/${wsId}/cron/jobs`,
+      matchExact: true,
+    },
+    {
+      title: t('executions'),
+      href: `/${wsId}/cron/executions`,
+      matchExact: true,
+    },
   ];
 
   return (

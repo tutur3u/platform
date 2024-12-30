@@ -1,7 +1,3 @@
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
@@ -24,14 +20,17 @@ import {
   HardDrive,
   Mail,
   MessageCircleIcon,
-  Play,
   Presentation,
-  Users,
+  Users
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import InvitationCard from './invitation-card';
+import { Structure } from './structure';
 
 interface LayoutProps {
   params: Promise<{
@@ -112,20 +111,20 @@ export default async function Layout({ children, params }: LayoutProps) {
       shortcut: 'A',
       experimental: 'beta',
     },
-    {
-      title: t('sidebar_tabs.pipelines'),
-      href: `/${wsId}/pipelines`,
-      icon: <Play className="h-4 w-4" />,
-      disabled:
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_AI',
-          value: 'true',
-        })) || withoutPermission('ai_lab'),
-      shortcut: 'A',
-      experimental: 'beta',
-    },
+    // {
+    //   title: t('sidebar_tabs.pipelines'),
+    //   href: `/${wsId}/pipelines`,
+    //   icon: <Play className="h-4 w-4" />,
+    //   disabled:
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_AI',
+    //       value: 'true',
+    //     })) || withoutPermission('ai_lab'),
+    //   shortcut: 'A',
+    //   experimental: 'beta',
+    // },
     {
       title: t('sidebar_tabs.cron'),
       href: `/${wsId}/cron`,

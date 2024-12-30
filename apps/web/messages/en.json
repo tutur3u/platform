@@ -558,8 +558,10 @@
   "user-data-table": {
     "id": "ID",
     "avatar_url": "Avatar",
+    "name": "Name",
     "full_name": "Full Name",
     "display_name": "Display Name",
+    "description": "Description",
     "email": "Email",
     "phone": "Phone",
     "gender": "Gender",
@@ -1586,7 +1588,10 @@
     "prompts": "Prompts",
     "workflows": "Workflows",
     "pipelines": "Pipelines",
-    "pipeline": "Pipeline"
+    "pipeline": "Pipeline",
+    "executions": "Executions",
+    "jobs": "Jobs",
+    "cron_jobs": "Jobs"
   },
   "workspace-settings-layout": {
     "workspace": "Workspace",
@@ -1945,5 +1950,22 @@
         }
       }
     }
+  },
+  "ws-models": {
+    "plural": "Models",
+    "singular": "Model",
+    "create": "Create model",
+    "create_description": "Create a new model",
+    "description": "Models are trained AI models that can be used for different tasks."
+  },
+  "ws-datasets": {
+    "plural": "Datasets",
+    "singular": "Dataset",
+    "description": "Datasets are used to train AI models.",
+    "create": "Create dataset",
+    "create_description": "Create a dataset"
+  },
+  "ws-cron": {
+    "description": "Cron jobs are used to schedule tasks to run at specific times."
   }
 }

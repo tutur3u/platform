@@ -6,7 +6,7 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "typescript.tsdk": "node_modules/typescript/lib",
   "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "files.exclude": {
     // "**/node_modules": true,
@@ -21,8 +21,12 @@
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "i18n-ally.enabledFrameworks": ["next-intl"],
-  "i18n-ally.localesPaths": ["apps/web/messages"],
+  "i18n-ally.enabledFrameworks": [
+    "next-intl"
+  ],
+  "i18n-ally.localesPaths": [
+    "apps/web/messages"
+  ],
   "i18n-ally.keystyle": "nested",
   "codeQL.githubDatabase.update": "never",
   "codeQL.githubDatabase.download": "never",

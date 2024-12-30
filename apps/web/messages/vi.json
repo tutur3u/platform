@@ -558,8 +558,10 @@
   "user-data-table": {
     "id": "Mã số",
     "avatar_url": "Ảnh đại diện",
+    "name": "Tên",
     "full_name": "Họ và tên",
     "display_name": "Tên hiển thị",
+    "description": "Mô tả",
     "email": "Email",
     "phone": "SĐT",
     "gender": "Giới tính",
@@ -1586,7 +1588,10 @@
     "prompts": "Lệnh nhắc",
     "workflows": "Quy trình",
     "pipeline": "Luồng xử lý",
-    "pipelines": "Luồng xử lý"
+    "pipelines": "Luồng xử lý",
+    "executions": "Lịch sử chạy",
+    "cron_jobs": "Lịch trình",
+    "jobs": "Lịch trình"
   },
   "workspace-settings-layout": {
     "workspace": "Không gian làm việc",
@@ -1945,5 +1950,22 @@
         }
       }
     }
+  },
+  "ws-models": {
+    "plural": "Các mô hình",
+    "singular": "Mô hình",
+    "create": "Tạo mô hình",
+    "create_description": "Tạo một mô hình mới",
+    "description": "Các mô hình là các mô hình AI được huấn luyện có thể được sử dụng cho các nhiệm vụ khác nhau."
+  },
+  "ws-datasets": {
+    "plural": "Bộ dữ liệu",
+    "singular": "Tập dữ liệu",
+    "description": "Tập dữ liệu được sử dụng để huấn luyện các mô hình AI.",
+    "create": "Tạo tập dữ liệu",
+    "create_description": "Tạo một tập dữ liệu"
+  },
+  "ws-cron": {
+    "description": "Lịch trình được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể."
   }
 }

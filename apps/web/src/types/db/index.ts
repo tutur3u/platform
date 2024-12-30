@@ -26,6 +26,12 @@ export type WorkspaceCourse = Tables<'workspace_courses'> & {
 export type WorkspaceCourseModule = Tables<'workspace_course_modules'> & {
   href?: string;
 };
+export type WorkspaceAIModel = Tables<'workspace_ai_models'> & {
+  href?: string;
+};
+export type WorkspaceDataset = Tables<'workspace_datasets'> & {
+  href?: string;
+};
 
 export type PermissionId =
   Database['public']['Enums']['workspace_role_permission'];
