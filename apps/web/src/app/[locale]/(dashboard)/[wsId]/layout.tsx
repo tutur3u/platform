@@ -26,7 +26,6 @@ import {
   MessageCircleIcon,
   Play,
   Presentation,
-  Sparkles,
   Users,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
@@ -72,20 +71,20 @@ export default async function Layout({ children, params }: LayoutProps) {
       shortcut: 'D',
     },
     null,
-    {
-      title: t('sidebar_tabs.ai'),
-      href: `/${wsId}/ai`,
-      icon: <Sparkles className="h-4 w-4" />,
-      disabled:
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_AI',
-          value: 'true',
-        })) || withoutPermission('ai_lab'),
-      shortcut: 'A',
-      experimental: 'beta',
-    },
+    // {
+    //   title: t('sidebar_tabs.ai'),
+    //   href: `/${wsId}/ai`,
+    //   icon: <Sparkles className="h-4 w-4" />,
+    //   disabled:
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_AI',
+    //       value: 'true',
+    //     })) || withoutPermission('ai_lab'),
+    //   shortcut: 'A',
+    //   experimental: 'beta',
+    // },
     {
       title: t('sidebar_tabs.models'),
       href: `/${wsId}/models`,

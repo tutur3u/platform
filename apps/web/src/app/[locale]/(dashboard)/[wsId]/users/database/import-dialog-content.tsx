@@ -72,10 +72,9 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
           header: 1,
         }) as any[][];
         const formattedData = jsonData
-          .slice(1)
           .map((row: any[]) => ({
             fullName: sentenceCase(row[1]) || '',
-            email: row[2]?.toLowerCase(),
+            email: row[0]?.toLowerCase(),
           }))
           // only take rows with email
           .filter((row) => row.email)
