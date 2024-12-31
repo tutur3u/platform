@@ -15,13 +15,15 @@ export async function POST(
     const json = await request.json();
     const { rows } = RowsSchema.parse(json);
 
+    console.log('Received rows count:', rows.length); // Debug log
+
     if (!rows?.length) {
       return NextResponse.json({ error: 'No rows provided' }, { status: 400 });
     }
 
     const supabase = await createClient();
 
-    // First get all columns for this dataset
+    // Get all columns first
     const { data: columns } = await supabase
       .from('workspace_dataset_columns')
       .select('id, name')
@@ -37,51 +39,48 @@ export async function POST(
     // Create column name to ID mapping
     const columnMap = new Map(columns.map((col) => [col.name, col.id]));
 
-    // Delete existing rows and their cells
-    const { error: deleteError } = await supabase
+    // Insert all rows at once
+    const { data: newRows, error: rowError } = await supabase
       .from('workspace_dataset_rows')
-      .delete()
-      .eq('dataset_id', datasetId);
+      .insert(rows.map(() => ({ dataset_id: datasetId })))
+      .select('id');
 
-    if (deleteError) throw deleteError;
+    if (rowError) throw rowError;
+    if (!newRows)
+      return NextResponse.json({ error: 'No rows created' }, { status: 500 });
 
-    // Insert rows in batches
-    for (let i = 0; i < rows.length; i += 100) {
-      const batch = rows.slice(i, i + 100);
+    console.log('Created rows count:', newRows.length); // Debug log
 
-      // Insert rows first
-      const { data: newRows, error: rowError } = await supabase
-        .from('workspace_dataset_rows')
-        .insert(batch.map(() => ({ dataset_id: datasetId })))
-        .select('id');
+    // Create cells for each row
+    const cellsToCreate = newRows.flatMap((row, rowIndex) =>
+      Object.entries(rows[rowIndex] ?? {})
+        .filter(([colName]) => columnMap.has(colName))
+        .map(([colName, value]) => ({
+          dataset_id: datasetId,
+          row_id: row.id,
+          column_id: columnMap.get(colName)!,
+          data: value?.toString() ?? null,
+        }))
+    );
 
-      if (rowError) throw rowError;
-      if (!newRows) continue;
+    console.log('Cells to create:', cellsToCreate.length); // Debug log
 
-      // Then create cells for each row
-      const cellsToCreate = newRows.flatMap((row) =>
-        Object.entries(batch[newRows.indexOf(row)] || {})
-          .filter(([colName]) => columnMap.has(colName))
-          .map(([colName, value]) => ({
-            dataset_id: datasetId,
-            row_id: row.id,
-            column_id: columnMap.get(colName)!,
-            data: value?.toString() ?? null,
-          }))
-      );
+    // Insert cells in batches
+    const cellBatchSize = 1000;
+    for (let i = 0; i < cellsToCreate.length; i += cellBatchSize) {
+      const batch = cellsToCreate.slice(i, i + cellBatchSize);
+      const { error: cellError } = await supabase
+        .from('workspace_dataset_cell')
+        .insert(batch);
 
-      // Insert cells in sub-batches
-      for (let j = 0; j < cellsToCreate.length; j += 100) {
-        const cellBatch = cellsToCreate.slice(j, j + 100);
-        const { error: cellError } = await supabase
-          .from('workspace_dataset_cell')
-          .insert(cellBatch);
-
-        if (cellError) throw cellError;
-      }
+      if (cellError) throw cellError;
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      rowsProcessed: rows.length,
+      cellsCreated: cellsToCreate.length,
+    });
   } catch (error) {
     console.error('Error syncing rows:', error);
     if (error instanceof z.ZodError) {

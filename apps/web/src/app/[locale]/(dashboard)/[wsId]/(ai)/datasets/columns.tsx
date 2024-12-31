@@ -44,6 +44,47 @@ export const getColumns = (
     ),
   },
   {
+    accessorKey: 'description',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.description`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="line-clamp-1 w-[8rem]">
+        {row.getValue('description') || '-'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'columns',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.columns`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="line-clamp-1 w-[2rem]">{row.getValue('columns')}</div>
+    ),
+  },
+  {
+    accessorKey: 'rows',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.rows`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="line-clamp-1 w-[2rem]">{row.getValue('rows')}</div>
+    ),
+  },
+  {
     accessorKey: 'url',
     header: ({ column }) => (
       <DataTableColumnHeader
@@ -63,34 +104,6 @@ export const getColumns = (
           {row.getValue('url') || '-'}
         </span>
       </Link>
-    ),
-  },
-  {
-    accessorKey: 'columns',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        t={t}
-        column={column}
-        title={t(`${namespace}.columns`)}
-      />
-    ),
-    cell: ({ row }) => (
-      <div className="line-clamp-1 w-[2rem]">{row.getValue('columns')}</div>
-    ),
-  },
-  {
-    accessorKey: 'description',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        t={t}
-        column={column}
-        title={t(`${namespace}.description`)}
-      />
-    ),
-    cell: ({ row }) => (
-      <div className="line-clamp-1 w-[8rem]">
-        {row.getValue('description') || '-'}
-      </div>
     ),
   },
   {

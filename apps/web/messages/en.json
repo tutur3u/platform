@@ -605,7 +605,8 @@
     "linked_products": "Linked products",
     "remove-from-group": "Remove from group",
     "url": "URL",
-    "columns": "Columns"
+    "columns": "Columns",
+    "rows": "Rows"
   },
   "email-data-table": {
     "id": "ID",

@@ -29,6 +29,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@repo/ui/components/ui/pagination';
+import { Progress } from '@repo/ui/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -55,6 +56,17 @@ const FormSchema = z.object({
   }),
 });
 
+interface SyncMetrics {
+  totalColumns: number;
+  syncedColumns: number;
+  totalRows: number;
+  syncedRows: number;
+  rowBatches: number;
+  currentBatch: number;
+  startTime: number;
+  estimatedTimeLeft: string;
+}
+
 export function DatasetCrawler({
   url,
   wsId,
@@ -73,6 +85,18 @@ export function DatasetCrawler({
   const [pageSize, setPageSize] = useState(10);
   const [, setColumns] = useState<any[]>([]);
   const [, setRows] = useState<any[]>([]);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [syncStatus, setSyncStatus] = useState('');
+  const [, setSyncMetrics] = useState<SyncMetrics>({
+    totalColumns: 0,
+    syncedColumns: 0,
+    totalRows: 0,
+    syncedRows: 0,
+    rowBatches: 0,
+    currentBatch: 0,
+    startTime: 0,
+    estimatedTimeLeft: '-',
+  });
 
   useEffect(() => {
     const fetchColumnsAndRows = async () => {
@@ -106,7 +130,7 @@ export function DatasetCrawler({
     defaultValues: {
       url: url || '',
       headerRow: '',
-      dataRow: '1',
+      dataRow: '',
     },
   });
 
@@ -192,77 +216,145 @@ export function DatasetCrawler({
     setCurrentPage(page);
   };
 
+  const updateProgress = (metrics: Partial<SyncMetrics>) => {
+    setSyncMetrics((prev) => {
+      const updated = { ...prev, ...metrics };
+      // Calculate estimated time left based on progress
+      if (updated.startTime && (updated.syncedRows || updated.syncedColumns)) {
+        const elapsed = (Date.now() - updated.startTime) / 1000; // seconds
+        const totalItems = updated.totalRows + updated.totalColumns;
+        const completedItems = updated.syncedRows + updated.syncedColumns;
+        const itemsPerSecond = completedItems / elapsed;
+        const remainingItems = totalItems - completedItems;
+        const remainingSeconds = remainingItems / itemsPerSecond;
+
+        if (remainingSeconds > 0) {
+          updated.estimatedTimeLeft =
+            remainingSeconds > 60
+              ? `${Math.ceil(remainingSeconds / 60)}m`
+              : `${Math.ceil(remainingSeconds)}s`;
+        }
+      }
+      return updated;
+    });
+  };
+
   const syncDataset = async () => {
     try {
       setLoading(true);
+      setSyncProgress(0);
+      setSyncStatus('Analyzing dataset...');
 
-      // Ensure we have data to sync
-      if (!processedData?.length || !processedData[0]?.length) {
-        throw new Error('No data to sync');
-      }
-
-      // First sync columns
+      const startTime = Date.now();
       const headers = processedData[0];
+      const allRows = processedData.slice(1); // Get all rows
+
+      console.log('Total rows to sync:', allRows.length); // Debug log
+
+      updateProgress({
+        totalColumns: headers?.length,
+        totalRows: allRows.length,
+        syncedColumns: 0,
+        syncedRows: 0,
+        startTime,
+        rowBatches: Math.ceil(allRows.length / 100),
+        currentBatch: 0,
+      });
+
+      // Sync columns first
+      setSyncProgress(5);
+      setSyncStatus(`Preparing to sync ${headers?.length || 0} columns...`);
+
+      const columnsToSync = headers
+        ?.map((name: string) => ({
+          name: String(name).trim(),
+        }))
+        .filter((col) => !!col.name);
+
       const columnsResponse = await fetch(
         `/api/v1/workspaces/${wsId}/datasets/${datasetId}/columns/sync`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            columns: headers
-              .map((name: string) => ({
-                name: String(name).trim(),
-              }))
-              .filter((col) => !!col.name),
-          }),
+          body: JSON.stringify({ columns: columnsToSync }),
         }
       );
 
       if (!columnsResponse.ok) {
-        const error = await columnsResponse.json();
-        throw new Error(error.message || 'Failed to sync columns');
+        throw new Error('Failed to sync columns');
       }
 
-      // Then sync rows with validated headers
-      const processedHeaders = headers
-        .map((h: string) => String(h).trim())
-        .filter(Boolean);
-      const rows = processedData.slice(1); // Skip header row
+      updateProgress({ syncedColumns: headers?.length });
+      setSyncProgress(30);
+      setSyncStatus(`Columns synced successfully (${headers?.length} columns)`);
 
-      if (rows.length === 0) {
-        throw new Error('No rows to sync');
-      }
+      // Sync rows in batches
+      const batchSize = 100;
+      const totalBatches = Math.ceil(allRows.length / batchSize);
 
-      const processedRows = rows.map((row: any[]) => {
-        const rowData: Record<string, any> = {};
-        processedHeaders.forEach((header: string, index: number) => {
-          // Ensure we only include data for valid headers
-          if (header && index < row.length) {
-            rowData[header] = row[index] ?? null;
-          }
+      for (let i = 0; i < allRows.length; i += batchSize) {
+        const batch = allRows.slice(i, Math.min(i + batchSize, allRows.length));
+        const currentBatch = Math.floor(i / batchSize) + 1;
+
+        console.log(
+          `Processing batch ${currentBatch}/${totalBatches}, size: ${batch.length}`
+        ); // Debug log
+
+        setSyncStatus(
+          `Syncing rows (Batch ${currentBatch}/${totalBatches}): ` +
+            `${i + 1} to ${Math.min(i + batchSize, allRows.length)} of ${allRows.length} rows`
+        );
+
+        updateProgress({
+          currentBatch,
+          syncedRows: i,
         });
-        return rowData;
-      });
 
-      const rowsResponse = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows/sync`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rows: processedRows }),
+        const processedBatch = batch.map((row: any[]) => {
+          const rowData: Record<string, any> = {};
+          headers?.forEach((header: string, index: number) => {
+            if (header && index < row.length) {
+              const value = row[index];
+              rowData[String(header).trim()] =
+                value !== undefined ? value : null;
+            }
+          });
+          return rowData;
+        });
+
+        console.log(`Processed batch size: ${processedBatch.length}`); // Debug log
+
+        const rowsResponse = await fetch(
+          `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows/sync`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: processedBatch }),
+          }
+        );
+
+        if (!rowsResponse.ok) {
+          const error = await rowsResponse.json();
+          throw new Error(error.error || 'Failed to sync rows batch');
         }
-      );
 
-      if (!rowsResponse.ok) {
-        const error = await rowsResponse.json();
-        throw new Error(error.message || 'Failed to sync rows');
+        const progress = 30 + (70 * (i + batch.length)) / allRows.length;
+        setSyncProgress(Math.round(progress));
+        updateProgress({ syncedRows: i + batch.length });
       }
 
+      setSyncProgress(100);
+      setSyncStatus('Sync completed successfully!');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       setIsOpen(false);
       window.location.reload();
     } catch (error) {
       console.error('Error syncing dataset:', error);
-      // You might want to show an error toast here
+      if (error instanceof Error) {
+        setSyncStatus(`Sync failed: ${error.message}`);
+      } else {
+        setSyncStatus('Sync failed: An unknown error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -462,10 +554,23 @@ export function DatasetCrawler({
               </PaginationContent>
             </Pagination>
 
-            <div className="mt-4 flex justify-end">
-              <Button onClick={syncDataset} disabled={loading}>
-                {loading ? 'Syncing...' : 'Sync Dataset'}
-              </Button>
+            <div className="mt-4 flex flex-col gap-2">
+              {loading && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">
+                      {syncStatus}
+                    </span>
+                    <span className="text-sm font-medium">{syncProgress}%</span>
+                  </div>
+                  <Progress value={syncProgress} className="h-2" />
+                </>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={syncDataset} disabled={loading}>
+                  {loading ? 'Syncing...' : 'Sync Dataset'}
+                </Button>
+              </div>
             </div>
           </div>
         )}

@@ -76,7 +76,9 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_datasets')
-    .select('*, workspace_dataset_columns(name.count())')
+    .select(
+      '*, workspace_dataset_columns(id.count()), workspace_dataset_rows(id.count())'
+    )
     .order('name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
@@ -95,10 +97,13 @@ async function getData(
   }
 
   return {
-    data: data.map(({ workspace_dataset_columns, ...rest }) => ({
-      ...rest,
-      columns: workspace_dataset_columns?.[0]?.count,
-    })),
+    data: data.map(
+      ({ workspace_dataset_columns, workspace_dataset_rows, ...rest }) => ({
+        ...rest,
+        columns: workspace_dataset_columns?.[0]?.count,
+        rows: workspace_dataset_rows?.[0]?.count,
+      })
+    ),
     count,
   } as unknown as {
     data: WorkspaceAIModel[];

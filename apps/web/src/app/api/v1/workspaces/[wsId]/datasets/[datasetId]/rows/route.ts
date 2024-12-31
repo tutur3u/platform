@@ -10,9 +10,10 @@ interface Params {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { wsId: string; datasetId: string } }
+  { params }: { params: Promise<{ wsId: string; datasetId: string }> }
 ) {
   try {
+    const { datasetId } = await params;
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
@@ -25,7 +26,7 @@ export async function GET(
     const { count } = await supabase
       .from('workspace_dataset_rows')
       .select('*', { count: 'exact', head: true })
-      .eq('dataset_id', params.datasetId);
+      .eq('dataset_id', datasetId);
 
     // Then get paginated rows with their cells
     const { data: rows, error } = await supabase
@@ -41,7 +42,7 @@ export async function GET(
         )
       `
       )
-      .eq('dataset_id', params.datasetId)
+      .eq('dataset_id', datasetId)
       .order('created_at', { ascending: true })
       .range(start, end);
 

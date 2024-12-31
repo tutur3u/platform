@@ -605,7 +605,8 @@
     "linked_products": "Sản phẩm liên kết",
     "remove-from-group": "Xóa khỏi nhóm",
     "url": "Liên kết",
-    "columns": "Cột"
+    "columns": "Cột",
+    "rows": "Dòng"
   },
   "email-data-table": {
     "id": "Mã số",
