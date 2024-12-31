@@ -1,3 +1,4 @@
+import { getColumns } from './columns';
 import { CronJobs } from './jobs';
 import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceCronJob } from '@/types/db';
@@ -20,7 +21,7 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceHomePage({
+export default async function WorkspaceCronJobsPage({
   params,
   searchParams,
 }: Props) {
@@ -47,7 +48,7 @@ export default async function WorkspaceHomePage({
       <CustomDataTable
         data={jobs}
         namespace="user-data-table"
-        // columnGenerator={getColumns}
+        columnGenerator={getColumns}
         extraData={{ locale, wsId }}
         count={count}
         defaultVisibility={{
@@ -72,7 +73,7 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_ai_models')
+    .from('workspace_cron_jobs')
     .select('*')
     .order('name', { ascending: true, nullsFirst: false });
 
