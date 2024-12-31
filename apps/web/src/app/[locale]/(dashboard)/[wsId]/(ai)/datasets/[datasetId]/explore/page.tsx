@@ -1,5 +1,4 @@
 import { DataExplorer } from './data-explorer';
-import { DatasetCrawler } from './dataset-crawler';
 import { createClient } from '@/utils/supabase/server';
 import { Card, CardContent } from '@repo/ui/components/ui/card';
 import { notFound } from 'next/navigation';
@@ -23,8 +22,11 @@ export default async function ExploreDatasetPage({ params }: Props) {
     <div className="space-y-6">
       <Card>
         <CardContent className="pt-6">
-          <DatasetCrawler wsId={wsId} datasetId={datasetId} />
-          <DataExplorer wsId={wsId} datasetId={datasetId} />
+          <DataExplorer
+            wsId={wsId}
+            datasetId={datasetId}
+            datasetUrl={dataset.url}
+          />
         </CardContent>
       </Card>
     </div>

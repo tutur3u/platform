@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
@@ -8,78 +8,67 @@ interface Params {
   }>;
 }
 
-export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { datasetId } = await params;
-  const url = new URL(req.url);
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { wsId: string; datasetId: string } }
+) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize - 1;
 
-  const page = parseInt(url.searchParams.get('page') || '1');
-  const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
+    const supabase = await createClient();
 
-  const { data: columns, error: columnsError } = await supabase
-    .from('workspace_dataset_columns')
-    .select('id, name')
-    .eq('dataset_id', datasetId);
+    // Get total count first
+    const { count } = await supabase
+      .from('workspace_dataset_rows')
+      .select('*', { count: 'exact', head: true })
+      .eq('dataset_id', params.datasetId);
 
-  if (columnsError) {
-    console.log(columnsError);
-    return NextResponse.json(
-      { message: 'Error fetching columns' },
-      { status: 500 }
-    );
-  }
+    // Then get paginated rows with their cells
+    const { data: rows, error } = await supabase
+      .from('workspace_dataset_rows')
+      .select(
+        `
+        id,
+        workspace_dataset_cell (
+          data,
+          workspace_dataset_columns (
+            name
+          )
+        )
+      `
+      )
+      .eq('dataset_id', params.datasetId)
+      .order('created_at', { ascending: true })
+      .range(start, end);
 
-  const { data: rows, error: rowsError } = await supabase
-    .from('workspace_dataset_rows')
-    .select('id')
-    .eq('dataset_id', datasetId)
-    .range(start, end);
+    if (error) throw error;
 
-  if (rowsError) {
-    console.log(rowsError);
-    return NextResponse.json(
-      { message: 'Error fetching rows' },
-      { status: 500 }
-    );
-  }
-
-  const rowIds = rows.map((row: any) => row.id);
-
-  const { data: cells, error: cellsError } = await supabase
-    .from('workspace_dataset_cell')
-    .select('row_id, column_id, data')
-    .in('row_id', rowIds);
-
-  if (cellsError) {
-    console.log(cellsError);
-    return NextResponse.json(
-      { message: 'Error fetching cells' },
-      { status: 500 }
-    );
-  }
-
-  const rowData = rows.map((row: any) => {
-    const rowCells = cells.filter((cell: any) => cell.row_id === row.id);
-    const rowObject: any = { id: row.id };
-    rowCells.forEach((cell: any) => {
-      const column = columns.find((col: any) => col.id === cell.column_id);
-      if (column) {
-        rowObject[column.name] = cell.data;
-      }
+    // Transform the data to a more usable format
+    const transformedRows = rows?.map((row) => {
+      const rowData: Record<string, any> = {};
+      row.workspace_dataset_cell?.forEach((cell: any) => {
+        rowData[cell.workspace_dataset_columns.name] = cell.data;
+      });
+      return { id: row.id, ...rowData };
     });
-    return rowObject;
-  });
 
-  const totalRows = rows.length;
-
-  return NextResponse.json({
-    data: rowData,
-    totalRows,
-    page,
-    pageSize,
-  });
+    return NextResponse.json({
+      data: transformedRows || [],
+      totalRows: count || 0,
+      page,
+      pageSize,
+    });
+  } catch (error) {
+    console.error('Error fetching rows:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch rows' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: Request, { params }: Params) {

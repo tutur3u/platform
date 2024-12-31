@@ -55,7 +55,7 @@ export default async function WorkspaceDatasetsPage({
         count={count}
         defaultVisibility={{
           id: false,
-          description: false,
+          url: false,
           created_at: false,
         }}
       />

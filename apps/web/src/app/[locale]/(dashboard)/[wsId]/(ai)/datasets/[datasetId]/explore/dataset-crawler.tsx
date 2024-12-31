@@ -56,9 +56,11 @@ const FormSchema = z.object({
 });
 
 export function DatasetCrawler({
+  url,
   wsId,
   datasetId,
 }: {
+  url: string | null;
   wsId: string;
   datasetId: string;
 }) {
@@ -102,7 +104,7 @@ export function DatasetCrawler({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      url: '',
+      url: url || '',
       headerRow: '',
       dataRow: '1',
     },
@@ -269,7 +271,9 @@ export function DatasetCrawler({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button onClick={() => setIsOpen(true)}>Configure Dataset</Button>
+        <Button onClick={() => setIsOpen(true)} disabled={!url}>
+          Sync Dataset
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-auto sm:max-w-[90vw]">
         <DialogHeader>
@@ -293,6 +297,7 @@ export function DatasetCrawler({
                     <Input
                       placeholder="https://example.com/data.xlsx"
                       {...field}
+                      disabled
                     />
                   </FormControl>
                   <FormDescription>
