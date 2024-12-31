@@ -184,6 +184,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_whitelisted_domains: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          domain: string;
+          enabled: boolean;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          domain: string;
+          enabled?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          domain?: string;
+          enabled?: boolean;
+        };
+        Relationships: [];
+      };
       ai_whitelisted_emails: {
         Row: {
           created_at: string;

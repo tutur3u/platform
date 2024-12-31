@@ -452,3 +452,80 @@ grant truncate on table "public"."workspace_cron_executions" to "service_role";
 grant
 update
     on table "public"."workspace_cron_executions" to "service_role";
+
+create table "public"."ai_whitelisted_domains" (
+    "domain" text not null,
+    "description" text,
+    "enabled" boolean not null default true,
+    "created_at" timestamp with time zone not null default now()
+);
+
+alter table
+    "public"."ai_whitelisted_domains" enable row level security;
+
+CREATE UNIQUE INDEX ai_whitelisted_domains_pkey ON public.ai_whitelisted_domains USING btree (domain);
+
+alter table
+    "public"."ai_whitelisted_domains"
+add
+    constraint "ai_whitelisted_domains_pkey" PRIMARY KEY using index "ai_whitelisted_domains_pkey";
+
+grant delete on table "public"."ai_whitelisted_domains" to "anon";
+
+grant
+insert
+    on table "public"."ai_whitelisted_domains" to "anon";
+
+grant references on table "public"."ai_whitelisted_domains" to "anon";
+
+grant
+select
+    on table "public"."ai_whitelisted_domains" to "anon";
+
+grant trigger on table "public"."ai_whitelisted_domains" to "anon";
+
+grant truncate on table "public"."ai_whitelisted_domains" to "anon";
+
+grant
+update
+    on table "public"."ai_whitelisted_domains" to "anon";
+
+grant delete on table "public"."ai_whitelisted_domains" to "authenticated";
+
+grant
+insert
+    on table "public"."ai_whitelisted_domains" to "authenticated";
+
+grant references on table "public"."ai_whitelisted_domains" to "authenticated";
+
+grant
+select
+    on table "public"."ai_whitelisted_domains" to "authenticated";
+
+grant trigger on table "public"."ai_whitelisted_domains" to "authenticated";
+
+grant truncate on table "public"."ai_whitelisted_domains" to "authenticated";
+
+grant
+update
+    on table "public"."ai_whitelisted_domains" to "authenticated";
+
+grant delete on table "public"."ai_whitelisted_domains" to "service_role";
+
+grant
+insert
+    on table "public"."ai_whitelisted_domains" to "service_role";
+
+grant references on table "public"."ai_whitelisted_domains" to "service_role";
+
+grant
+select
+    on table "public"."ai_whitelisted_domains" to "service_role";
+
+grant trigger on table "public"."ai_whitelisted_domains" to "service_role";
+
+grant truncate on table "public"."ai_whitelisted_domains" to "service_role";
+
+grant
+update
+    on table "public"."ai_whitelisted_domains" to "service_role";
