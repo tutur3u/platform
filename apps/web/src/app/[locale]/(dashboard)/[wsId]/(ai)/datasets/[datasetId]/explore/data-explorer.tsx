@@ -27,8 +27,13 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { Skeleton } from '@repo/ui/components/ui/skeleton';
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface Props {
   wsId: string;
@@ -38,53 +43,47 @@ interface Props {
 
 export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
   const t = useTranslations();
+  const queryClient = useQueryClient();
+
   const [pageSize, setPageSize] = useState('10');
   const [currentPage, setCurrentPage] = useState(1);
-  const [data, setData] = useState<any[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [totalRows, setTotalRows] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [isAddingRow, setIsAddingRow] = useState(false);
   const [newRow, setNewRow] = useState<any>({});
   const [editingRow, setEditingRow] = useState<any>(null);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchColumns = async () => {
-    const response = await fetch(
-      `/api/v1/workspaces/${wsId}/datasets/${datasetId}/columns`
-    );
-    if (response.ok) {
-      const columns = await response.json();
-      setHeaders(columns.map((col: any) => col.name));
-    }
-  };
+  // Query for columns
+  const columnsQuery = useQuery({
+    queryKey: [wsId, datasetId, 'columns'],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/columns`
+      );
+      if (!response.ok) throw new Error('Failed to fetch columns');
+      return response.json();
+    },
+    placeholderData: keepPreviousData,
+  });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const response = await fetch(
-      `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows?` +
-        new URLSearchParams({
-          page: currentPage.toString(),
-          pageSize,
-        })
-    );
+  // Query for rows with pagination
+  const rowsQuery = useQuery({
+    queryKey: [wsId, datasetId, 'rows', { currentPage, pageSize }],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows?` +
+          new URLSearchParams({
+            page: currentPage.toString(),
+            pageSize,
+          })
+      );
+      if (!response.ok) throw new Error('Failed to fetch rows');
+      return response.json();
+    },
+    placeholderData: keepPreviousData,
+  });
 
-    if (response.ok) {
-      const { data: rowData, totalRows: total } = await response.json();
-      setData(rowData);
-      setTotalRows(total);
-      setTotalPages(Math.ceil(total / parseInt(pageSize)));
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchColumns();
-  }, [datasetId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [currentPage, pageSize, datasetId]);
+  const headers = columnsQuery.data?.map((col: any) => col.name) || [];
+  const { data, totalRows = 0 } = rowsQuery.data || {};
+  const totalPages = Math.ceil(totalRows / parseInt(pageSize));
 
   const handlePageSizeChange = (value: string) => {
     setPageSize(value);
@@ -92,59 +91,70 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
   };
 
   const handleRefresh = () => {
-    fetchData();
+    columnsQuery.refetch();
+    rowsQuery.refetch();
   };
 
   const handleAddRow = async () => {
-    const response = await fetch(
-      `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows: [newRow] }),
-      }
-    );
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows: [newRow] }),
+        }
+      );
 
-    if (response.ok) {
-      setIsAddingRow(false);
-      setNewRow({});
-      fetchData();
+      if (response.ok) {
+        setIsAddingRow(false);
+        setNewRow({});
+        // Invalidate rows query to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['rows'] });
+      }
+    } catch (error) {
+      console.error('Error adding row:', error);
     }
   };
 
+  // Similar updates for handleEditRow and handleDeleteRow
   const handleEditRow = async () => {
-    const response = await fetch(
-      `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`,
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rowId: editingRow.id, row: editingRow }),
-      }
-    );
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rowId: editingRow.id, row: editingRow }),
+        }
+      );
 
-    if (response.ok) {
-      setEditingRow(null);
-      fetchData();
+      if (response.ok) {
+        setEditingRow(null);
+        queryClient.invalidateQueries({ queryKey: ['rows'] });
+      }
+    } catch (error) {
+      console.error('Error editing row:', error);
     }
   };
 
   const handleDeleteRow = async (rowId: string) => {
-    const response = await fetch(
-      `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`,
-      {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rowId }),
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rowId }),
+        }
+      );
+
+      if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ['rows'] });
       }
-    );
-
-    if (response.ok) {
-      fetchData();
+    } catch (error) {
+      console.error('Error deleting row:', error);
     }
-  };
-
-  const handlePageClick = (page: number) => {
-    setCurrentPage(page);
   };
 
   const TableContent = () => {
@@ -167,7 +177,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 border-b">
-                {headers.map((header, index) => (
+                {headers.map((header: any, index: number) => (
                   <th key={index} className="p-2 text-left text-sm">
                     {header}
                   </th>
@@ -176,12 +186,12 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
               </tr>
             </thead>
             <tbody>
-              {loading && data.length > 0
+              {rowsQuery.isPlaceholderData && data.length > 0
                 ? // Show skeleton rows while loading with existing data
                   Array.from({ length: parseInt(pageSize) }).map(
                     (_, rowIndex) => (
                       <tr key={`skeleton-${rowIndex}`} className="border-b">
-                        {headers.map((_, colIndex) => (
+                        {headers.map((_: any, colIndex: number) => (
                           <td key={colIndex} className="p-2">
                             <Skeleton className="h-9 w-full" />
                           </td>
@@ -193,9 +203,9 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
                       </tr>
                     )
                   )
-                : data.map((row, rowIndex) => (
+                : data.map((row: any, rowIndex: number) => (
                     <tr key={rowIndex} className="border-b">
-                      {headers.map((header, colIndex) => (
+                      {headers.map((header: any, colIndex: number) => (
                         <td key={colIndex} className="p-2 text-sm">
                           {row[header]}
                         </td>
@@ -223,6 +233,14 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
         </div>
       </div>
     );
+  };
+
+  const getPageHref = (page: number) => {
+    return `#page=${page}`;
+  };
+
+  const handlePageClick = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -259,7 +277,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
                 <DialogTitle>{t('ws-datasets.add_row')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                {headers.map((header) => (
+                {headers.map((header: any) => (
                   <div key={header} className="space-y-2">
                     <label className="text-sm font-medium">{header}</label>
                     <Input
@@ -281,77 +299,102 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
         </div>
       </div>
 
-      {loading && !data.length ? (
+      {rowsQuery.isFetching && !data?.length ? (
         <div className="flex h-64 items-center justify-center">
           <span className="text-muted-foreground text-sm">
-            {t('common.loading')}
+            {t('common.loading')}...
           </span>
         </div>
       ) : (
         <TableContent />
       )}
 
-      {data.length > 0 && (
+      {/* Show skeleton pagination when loading but not on first load */}
+      {data?.length > 0 && (
         <div className="flex items-center justify-between">
-          <div className="text-muted-foreground text-sm">
-            Showing {(currentPage - 1) * parseInt(pageSize) + 1} to{' '}
-            {Math.min(currentPage * parseInt(pageSize), totalRows)} of{' '}
-            {totalRows} rows
-          </div>
+          {rowsQuery.isPending ? (
+            <>
+              <Skeleton className="h-4 w-64" /> {/* Row count text */}
+              <Skeleton className="h-9 w-80" /> {/* Pagination */}
+            </>
+          ) : (
+            <>
+              <div className="text-muted-foreground text-sm">
+                Showing {(currentPage - 1) * parseInt(pageSize) + 1} to{' '}
+                {Math.min(currentPage * parseInt(pageSize), totalRows)} of{' '}
+                {totalRows} rows
+              </div>
 
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={() => handlePageClick(currentPage - 1)}
-                  className={
-                    currentPage <= 1 ? 'pointer-events-none opacity-50' : ''
-                  }
-                />
-              </PaginationItem>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href={getPageHref(currentPage - 1)}
+                      onClick={() => handlePageClick(currentPage - 1)}
+                      className={
+                        currentPage <= 1
+                          ? 'pointer-events-none opacity-50'
+                          : 'cursor-pointer'
+                      }
+                    />
+                  </PaginationItem>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(
-                  (page) =>
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                )
-                .map((page, index, array) => {
-                  if (index > 0 && array[index - 1] !== page - 1) {
-                    return (
-                      <PaginationItem key={`ellipsis-${page}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    );
-                  }
-                  return (
-                    <PaginationItem key={page}>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(
+                      (page) =>
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                    )
+                    .map((page, index, array) => {
+                      if (index > 0 && array[index - 1] !== page - 1) {
+                        return (
+                          <PaginationItem key={`ellipsis-${page}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => handlePageClick(page)}
+                            isActive={page === currentPage}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+
+                  {currentPage < totalPages - 1 && (
+                    <PaginationItem key={totalPages}>
                       <PaginationLink
-                        href="#"
-                        onClick={() => handlePageClick(page)}
-                        isActive={page === currentPage}
+                        onClick={() => handlePageClick(totalPages)}
+                        isActive={currentPage === totalPages}
+                        className="cursor-pointer"
                       >
-                        {page}
+                        {totalPages}
                       </PaginationLink>
                     </PaginationItem>
-                  );
-                })}
+                  )}
 
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={() => handlePageClick(currentPage + 1)}
-                  className={
-                    currentPage >= totalPages
-                      ? 'pointer-events-none opacity-50'
-                      : ''
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+                  <PaginationItem>
+                    <PaginationNext
+                      href={getPageHref(currentPage + 1)}
+                      onClick={() => handlePageClick(currentPage + 1)}
+                      className={
+                        currentPage >= totalPages
+                          ? 'pointer-events-none opacity-50'
+                          : 'cursor-pointer'
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </>
+          )}
         </div>
       )}
 
@@ -365,7 +408,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
               <DialogTitle>{t('ws-datasets.edit_row')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {headers.map((header) => (
+              {headers.map((header: any) => (
                 <div key={header} className="space-y-2">
                   <label className="text-sm font-medium">{header}</label>
                   <Input
