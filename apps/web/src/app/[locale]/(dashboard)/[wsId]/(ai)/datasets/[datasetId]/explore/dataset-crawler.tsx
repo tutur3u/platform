@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as XLSX from 'xlsx';
@@ -364,6 +365,7 @@ export function DatasetCrawler({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button onClick={() => setIsOpen(true)} disabled={!url}>
+          <RefreshCw className="h-4 w-4" />
           Sync Dataset
         </Button>
       </DialogTrigger>

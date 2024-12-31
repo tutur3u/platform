@@ -217,7 +217,9 @@
     "add_column_description": "Nhập tên cho cột mới",
     "column_name": "Tên Cột",
     "explore": "Khám phá",
-    "actions": "hành động"
+    "actions": "hành động",
+    "clear_all": "Xóa tất cả",
+    "clearing": "Đang xoá"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

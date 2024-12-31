@@ -217,7 +217,9 @@
     "faq": "Frequently Asked Questions",
     "unlink": "Unlink",
     "explore": "Explore",
-    "actions": "Actions"
+    "actions": "Actions",
+    "clear_all": "Clear all",
+    "clearing": "Clearing"
   },
   "date_helper": {
     "time-unit": "Time unit",

@@ -32,6 +32,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { Plus, RotateCw, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -50,6 +51,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
   const [isAddingRow, setIsAddingRow] = useState(false);
   const [newRow, setNewRow] = useState<any>({});
   const [editingRow, setEditingRow] = useState<any>(null);
+  const [isClearingRows, setIsClearingRows] = useState(false);
 
   // Query for columns
   const columnsQuery = useQuery({
@@ -154,6 +156,27 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
       }
     } catch (error) {
       console.error('Error deleting row:', error);
+    }
+  };
+
+  const handleClearAllRows = async () => {
+    setIsClearingRows(true);
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows/clear`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ['rows'] });
+      }
+    } catch (error) {
+      console.error('Error clearing all rows:', error);
+    } finally {
+      setIsClearingRows(false);
     }
   };
 
@@ -266,11 +289,29 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
 
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleRefresh}>
+            <RotateCw className="h-4 w-4" />
             {t('common.refresh')}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleClearAllRows}
+            disabled={isClearingRows}
+          >
+            {isClearingRows ? (
+              <>{t('common.clearing')}...</>
+            ) : (
+              <>
+                <Trash className="h-4 w-4" />
+                {t('common.clear_all')}
+              </>
+            )}
           </Button>
           <Dialog open={isAddingRow} onOpenChange={setIsAddingRow}>
             <DialogTrigger asChild>
-              <Button variant="outline">{t('ws-datasets.add_row')}</Button>
+              <Button variant="outline">
+                <Plus className="h-4 w-4" />
+                {t('ws-datasets.add_row')}
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
