@@ -3340,12 +3340,55 @@ export type Database = {
           },
         ];
       };
+      workspace_cron_executions: {
+        Row: {
+          created_at: string;
+          cron_run_id: number | null;
+          end_time: string | null;
+          id: string;
+          job_id: string;
+          response: string | null;
+          start_time: string | null;
+          status: string;
+        };
+        Insert: {
+          created_at?: string;
+          cron_run_id?: number | null;
+          end_time?: string | null;
+          id?: string;
+          job_id: string;
+          response?: string | null;
+          start_time?: string | null;
+          status: string;
+        };
+        Update: {
+          created_at?: string;
+          cron_run_id?: number | null;
+          end_time?: string | null;
+          id?: string;
+          job_id?: string;
+          response?: string | null;
+          start_time?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_cron_executions_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_cron_jobs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_cron_jobs: {
         Row: {
           active: boolean;
           created_at: string;
+          cron_job_id: number | null;
           dataset_id: string;
           id: string;
+          name: string;
           schedule: string;
           url: string;
           ws_id: string;
@@ -3353,8 +3396,10 @@ export type Database = {
         Insert: {
           active?: boolean;
           created_at?: string;
+          cron_job_id?: number | null;
           dataset_id: string;
           id?: string;
+          name: string;
           schedule: string;
           url: string;
           ws_id: string;
@@ -3362,8 +3407,10 @@ export type Database = {
         Update: {
           active?: boolean;
           created_at?: string;
+          cron_job_id?: number | null;
           dataset_id?: string;
           id?: string;
+          name?: string;
           schedule?: string;
           url?: string;
           ws_id?: string;

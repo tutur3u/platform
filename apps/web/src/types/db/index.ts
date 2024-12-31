@@ -11,6 +11,7 @@ export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
+
 export type WorkspaceQuizSet = Tables<'workspace_quiz_sets'> & {
   href?: string;
   usage?: {
@@ -20,19 +21,28 @@ export type WorkspaceQuizSet = Tables<'workspace_quiz_sets'> & {
     course_name: string;
   }[];
 };
+
 export type WorkspaceCourse = Tables<'workspace_courses'> & {
   href?: string;
 };
+
 export type WorkspaceCourseModule = Tables<'workspace_course_modules'> & {
   href?: string;
 };
+
 export type WorkspaceAIModel = Tables<'workspace_ai_models'> & {
   href?: string;
 };
+
 export type WorkspaceDataset = Tables<'workspace_datasets'> & {
   href?: string;
 };
+
 export type WorkspaceCronJob = Tables<'workspace_cron_jobs'> & {
+  href?: string;
+};
+
+export type WorkspaceCronExecution = Tables<'workspace_cron_executions'> & {
   href?: string;
 };
 

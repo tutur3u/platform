@@ -1,50 +1,3 @@
-create schema if not exists "pgmq";
-
-create extension if not exists "pgmq" with schema "pgmq" version '1.4.4';
-
-DO $ $ BEGIN create type "pgmq"."message_record" as (
-    "msg_id" bigint,
-    "read_ct" integer,
-    "enqueued_at" timestamp with time zone,
-    "vt" timestamp with time zone,
-    "message" jsonb
-);
-
-exception
-when duplicate_object then null;
-
-END $ $;
-
-DO $ $ BEGIN create type "pgmq"."metrics_result" as (
-    "queue_name" text,
-    "queue_length" bigint,
-    "newest_msg_age_sec" integer,
-    "oldest_msg_age_sec" integer,
-    "total_messages" bigint,
-    "scrape_time" timestamp with time zone
-);
-
-exception
-when duplicate_object then null;
-
-END $ $;
-
-DO $ $ BEGIN create type "pgmq"."queue_record" as (
-    "queue_name" character varying,
-    "is_partitioned" boolean,
-    "is_unlogged" boolean,
-    "created_at" timestamp with time zone
-);
-
-exception
-when duplicate_object then null;
-
-END $ $;
-
-grant
-select
-    on table "pgmq"."meta" to "pg_monitor";
-
 create table "public"."workspace_ai_models" (
     "id" uuid not null default gen_random_uuid(),
     "name" text not null,
@@ -400,3 +353,102 @@ grant truncate on table "public"."workspace_datasets" to "service_role";
 grant
 update
     on table "public"."workspace_datasets" to "service_role";
+
+create table "public"."workspace_cron_executions" (
+    "id" uuid not null default gen_random_uuid(),
+    "job_id" uuid not null,
+    "cron_run_id" bigint,
+    "status" text not null,
+    "start_time" timestamp with time zone,
+    "end_time" timestamp with time zone,
+    "response" text,
+    "created_at" timestamp with time zone not null default now()
+);
+
+alter table
+    "public"."workspace_cron_executions" enable row level security;
+
+alter table
+    "public"."workspace_cron_jobs"
+add
+    column "cron_job_id" bigint;
+
+alter table
+    "public"."workspace_cron_jobs"
+add
+    column "name" text not null;
+
+CREATE UNIQUE INDEX workspace_cron_executions_pkey ON public.workspace_cron_executions USING btree (id);
+
+alter table
+    "public"."workspace_cron_executions"
+add
+    constraint "workspace_cron_executions_pkey" PRIMARY KEY using index "workspace_cron_executions_pkey";
+
+alter table
+    "public"."workspace_cron_executions"
+add
+    constraint "workspace_cron_executions_job_id_fkey" FOREIGN KEY (job_id) REFERENCES workspace_cron_jobs(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
+alter table
+    "public"."workspace_cron_executions" validate constraint "workspace_cron_executions_job_id_fkey";
+
+grant delete on table "public"."workspace_cron_executions" to "anon";
+
+grant
+insert
+    on table "public"."workspace_cron_executions" to "anon";
+
+grant references on table "public"."workspace_cron_executions" to "anon";
+
+grant
+select
+    on table "public"."workspace_cron_executions" to "anon";
+
+grant trigger on table "public"."workspace_cron_executions" to "anon";
+
+grant truncate on table "public"."workspace_cron_executions" to "anon";
+
+grant
+update
+    on table "public"."workspace_cron_executions" to "anon";
+
+grant delete on table "public"."workspace_cron_executions" to "authenticated";
+
+grant
+insert
+    on table "public"."workspace_cron_executions" to "authenticated";
+
+grant references on table "public"."workspace_cron_executions" to "authenticated";
+
+grant
+select
+    on table "public"."workspace_cron_executions" to "authenticated";
+
+grant trigger on table "public"."workspace_cron_executions" to "authenticated";
+
+grant truncate on table "public"."workspace_cron_executions" to "authenticated";
+
+grant
+update
+    on table "public"."workspace_cron_executions" to "authenticated";
+
+grant delete on table "public"."workspace_cron_executions" to "service_role";
+
+grant
+insert
+    on table "public"."workspace_cron_executions" to "service_role";
+
+grant references on table "public"."workspace_cron_executions" to "service_role";
+
+grant
+select
+    on table "public"."workspace_cron_executions" to "service_role";
+
+grant trigger on table "public"."workspace_cron_executions" to "service_role";
+
+grant truncate on table "public"."workspace_cron_executions" to "service_role";
+
+grant
+update
+    on table "public"."workspace_cron_executions" to "service_role";
