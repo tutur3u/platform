@@ -19,6 +19,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@repo/ui/components/ui/pagination';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -317,7 +318,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
               <DialogHeader>
                 <DialogTitle>{t('ws-datasets.add_row')}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <ScrollArea className="max-h-96 space-y-4">
                 {headers.map((header: any) => (
                   <div key={header} className="space-y-2">
                     <label className="text-sm font-medium">{header}</label>
@@ -330,10 +331,10 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
                     />
                   </div>
                 ))}
-                <Button onClick={handleAddRow} className="w-full">
-                  {t('common.add')}
-                </Button>
-              </div>
+              </ScrollArea>
+              <Button onClick={handleAddRow} className="w-full">
+                {t('common.add')}
+              </Button>
             </DialogContent>
           </Dialog>
           <DatasetCrawler wsId={wsId} datasetId={datasetId} url={datasetUrl} />
@@ -448,7 +449,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
             <DialogHeader>
               <DialogTitle>{t('ws-datasets.edit_row')}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <ScrollArea className="max-h-96 space-y-4">
               {headers.map((header: any) => (
                 <div key={header} className="space-y-2">
                   <label className="text-sm font-medium">{header}</label>
@@ -461,10 +462,10 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
                   />
                 </div>
               ))}
-              <Button onClick={handleEditRow} className="w-full">
-                {t('common.save')}
-              </Button>
-            </div>
+            </ScrollArea>
+            <Button onClick={handleEditRow} className="w-full">
+              {t('common.save')}
+            </Button>
           </DialogContent>
         </Dialog>
       )}
