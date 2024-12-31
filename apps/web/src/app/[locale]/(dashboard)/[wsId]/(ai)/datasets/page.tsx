@@ -58,6 +58,8 @@ export default async function WorkspaceDatasetsPage({
         count={count}
         defaultVisibility={{
           id: false,
+          description: false,
+          created_at: false,
         }}
       />
     </>
@@ -77,7 +79,7 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_datasets')
-    .select('*')
+    .select('*, workspace_dataset_columns(name.count())')
     .order('name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
@@ -95,7 +97,13 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as unknown as {
+  return {
+    data: data.map(({ workspace_dataset_columns, ...rest }) => ({
+      ...rest,
+      columns: workspace_dataset_columns?.[0]?.count,
+    })),
+    count,
+  } as unknown as {
     data: WorkspaceAIModel[];
     count: number;
   };

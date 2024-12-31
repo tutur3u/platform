@@ -90,6 +90,7 @@
     "view": "View",
     "show-all": "Show All",
     "hide-all": "Hide All",
+    "columns": "Columns",
     "toggle-columns": "Toggle Columns",
     "no-results": "No Results",
     "of": "of",
@@ -597,7 +598,9 @@
     "applying": "Applying...",
     "selected": "Selected",
     "linked_products": "Linked products",
-    "remove-from-group": "Remove from group"
+    "remove-from-group": "Remove from group",
+    "url": "URL",
+    "columns": "Columns"
   },
   "email-data-table": {
     "id": "ID",

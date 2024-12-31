@@ -44,6 +44,41 @@ export const getColumns = (
     ),
   },
   {
+    accessorKey: 'url',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.url`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <Link
+        href={row.getValue('url') || '#'}
+        target={row.getValue('url') ? '_blank' : '_self'}
+        className="min-w-[4rem]"
+        rel="noreferrer"
+      >
+        <span className="line-clamp-1 font-semibold hover:underline">
+          {row.getValue('url') || '-'}
+        </span>
+      </Link>
+    ),
+  },
+  {
+    accessorKey: 'columns',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.columns`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="line-clamp-1 w-[2rem]">{row.getValue('columns')}</div>
+    ),
+  },
+  {
     accessorKey: 'description',
     header: ({ column }) => (
       <DataTableColumnHeader

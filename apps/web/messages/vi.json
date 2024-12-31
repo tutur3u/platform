@@ -90,6 +90,7 @@
     "view": "Xem",
     "show-all": "Hiển thị tất cả",
     "hide-all": "Ẩn tất cả",
+    "columns": "Cột",
     "toggle-columns": "Hiển thị cột",
     "no-results": "Không có kết quả",
     "of": "trên",
@@ -597,7 +598,9 @@
     "applying": "Đang áp dụng...",
     "selected": "nhóm",
     "linked_products": "Sản phẩm liên kết",
-    "remove-from-group": "Xóa khỏi nhóm"
+    "remove-from-group": "Xóa khỏi nhóm",
+    "url": "Liên kết",
+    "columns": "Cột"
   },
   "email-data-table": {
     "id": "Mã số",
