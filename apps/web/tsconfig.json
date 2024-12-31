@@ -9,9 +9,7 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
@@ -24,11 +22,7 @@
     "next-env.d.ts",
     "next.config.mjs",
     "postcss.config.mjs",
-    ".next/types/**/*.ts",
-    "../../packages/types/src/supabase.ts",
+    ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "supabase"
-  ]
+  "exclude": ["node_modules"]
 }
