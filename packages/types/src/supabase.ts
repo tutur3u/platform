@@ -3011,6 +3011,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_ai_models: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          updated_at: string;
+          url: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          url: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          url?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_ai_models_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_ai_prompts: {
         Row: {
           created_at: string;
@@ -3295,6 +3333,115 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'workspace_courses_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_cron_jobs: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          dataset_id: string;
+          id: string;
+          schedule: string;
+          url: string;
+          ws_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          dataset_id: string;
+          id?: string;
+          schedule: string;
+          url: string;
+          ws_id: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          dataset_id?: string;
+          id?: string;
+          schedule?: string;
+          url?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_cron_jobs_dataset_id_fkey';
+            columns: ['dataset_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_datasets';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_cron_jobs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_dataset_columns: {
+        Row: {
+          alias: string | null;
+          created_at: string;
+          dataset_id: string;
+          description: string | null;
+          name: string;
+        };
+        Insert: {
+          alias?: string | null;
+          created_at?: string;
+          dataset_id?: string;
+          description?: string | null;
+          name: string;
+        };
+        Update: {
+          alias?: string | null;
+          created_at?: string;
+          dataset_id?: string;
+          description?: string | null;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_dataset_columns_dataset_id_fkey';
+            columns: ['dataset_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_datasets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_datasets: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_datasets_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';

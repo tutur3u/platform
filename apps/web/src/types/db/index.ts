@@ -32,6 +32,9 @@ export type WorkspaceAIModel = Tables<'workspace_ai_models'> & {
 export type WorkspaceDataset = Tables<'workspace_datasets'> & {
   href?: string;
 };
+export type WorkspaceCronJob = Tables<'workspace_cron_jobs'> & {
+  href?: string;
+};
 
 export type PermissionId =
   Database['public']['Enums']['workspace_role_permission'];
