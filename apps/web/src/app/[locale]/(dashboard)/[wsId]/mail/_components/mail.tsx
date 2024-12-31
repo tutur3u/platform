@@ -56,17 +56,25 @@ export function Mail({
           collapsible={true}
           minSize={15}
           maxSize={20}
-          onCollapse={() => {
+          onCollapse={async () => {
             setIsCollapsed(true);
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-              true
-            )}`;
+            await fetch('/api/v1/infrastructure/sidebar', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ collapsed: true }),
+            });
           }}
-          onResize={() => {
+          onResize={async () => {
             setIsCollapsed(false);
-            document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-              false
-            )}`;
+            await fetch('/api/v1/infrastructure/sidebar', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ collapsed: false }),
+            });
           }}
           className={cn(
             isCollapsed &&

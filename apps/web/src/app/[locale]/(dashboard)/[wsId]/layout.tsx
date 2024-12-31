@@ -1,5 +1,14 @@
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import InvitationCard from './invitation-card';
+import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
+import {
+  MAIN_CONTENT_SIZE_COOKIE_NAME,
+  ROOT_WORKSPACE_ID,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+  SIDEBAR_SIZE_COOKIE_NAME,
+} from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
@@ -22,16 +31,12 @@ import {
   Mail,
   MessageCircleIcon,
   Presentation,
-  Users
+  Users,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import { Structure } from './structure';
 
 interface LayoutProps {
   params: Promise<{
@@ -276,10 +281,16 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
-  const layout = (await cookies()).get('react-resizable-panels:layout:default');
-  const collapsed = (await cookies()).get('react-resizable-panels:collapsed');
+  const sidebarSize = (await cookies()).get(SIDEBAR_SIZE_COOKIE_NAME);
+  const mainSize = (await cookies()).get(MAIN_CONTENT_SIZE_COOKIE_NAME);
 
-  const defaultLayout = layout ? JSON.parse(layout.value) : undefined;
+  const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
+
+  const defaultLayout =
+    sidebarSize !== undefined && mainSize !== undefined
+      ? [JSON.parse(sidebarSize.value), JSON.parse(mainSize.value)]
+      : undefined;
+
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
 
   if (!workspace) redirect('/onboarding');

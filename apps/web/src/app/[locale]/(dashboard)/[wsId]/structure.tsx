@@ -142,10 +142,14 @@ export function Structure({
       <TooltipProvider delayDuration={0}>
         <ResizablePanelGroup
           direction="horizontal"
-          onLayout={(sizes: number[]) => {
-            document.cookie = `react-resizable-panels:layout:default=${JSON.stringify(
-              sizes
-            )}`;
+          onLayout={async (sizes: number[]) => {
+            await fetch('/api/v1/infrastructure/sidebar/sizes', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ sidebar: sizes[0], main: sizes[1] }),
+            });
           }}
           className={cn(
             'fixed h-screen max-h-screen items-stretch',
@@ -158,17 +162,25 @@ export function Structure({
             collapsible={true}
             minSize={15}
             maxSize={40}
-            onCollapse={() => {
+            onCollapse={async () => {
               setIsCollapsed(true);
-              document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-                true
-              )}`;
+              await fetch('/api/v1/infrastructure/sidebar', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ collapsed: true }),
+              });
             }}
-            onResize={() => {
+            onResize={async () => {
               setIsCollapsed(false);
-              document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-                false
-              )}`;
+              await fetch('/api/v1/infrastructure/sidebar', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ collapsed: false }),
+              });
             }}
             className={cn(
               isCollapsed
