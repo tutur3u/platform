@@ -212,7 +212,11 @@
     "usage_based_pricing": "Bảng giá",
     "usage_based_pricing_description": "Chỉ trả tiền cho những gì bạn sử dụng. Tất cả các gói đều bao gồm các tính năng cốt lõi với các giới hạn sử dụng khác nhau.",
     "faq": "Câu hỏi thường gặp",
-    "unlink": "Hủy liên kết"
+    "unlink": "Hủy liên kết",
+    "add_column": "Thêm Cột",
+    "add_column_description": "Nhập tên cho cột mới",
+    "column_name": "Tên Cột",
+    "explore": "Khám phá"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1984,7 +1988,11 @@
     "singular": "Tập dữ liệu",
     "description": "Tập dữ liệu được sử dụng để huấn luyện các mô hình AI.",
     "create": "Tạo tập dữ liệu",
-    "create_description": "Tạo một tập dữ liệu"
+    "create_description": "Tạo một tập dữ liệu",
+    "total_columns": "Tổng số cột",
+    "total_rows": "Tổng số dòng",
+    "last_updated": "Cập nhật lần cuối",
+    "columns_description": "Quản lý các cột trong bộ dữ liệu của bạn, bao gồm tên, mô tả và tên thay thế."
   },
   "ws-cron": {
     "description": "Lịch trình được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể."

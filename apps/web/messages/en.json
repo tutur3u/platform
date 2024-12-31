@@ -47,6 +47,9 @@
     "delete": "Delete",
     "create": "Create",
     "add": "Add",
+    "add_column": "Add Column",
+    "add_column_description": "Enter a name for the new column",
+    "column_name": "Column Name",
     "new": "New",
     "save": "Save",
     "reset": "Reset",
@@ -212,7 +215,8 @@
     "usage_based_pricing": "Usage-Based Pricing",
     "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits.",
     "faq": "Frequently Asked Questions",
-    "unlink": "Unlink"
+    "unlink": "Unlink",
+    "explore": "Explore"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1984,7 +1988,11 @@
     "singular": "Dataset",
     "description": "Datasets are used to train AI models.",
     "create": "Create dataset",
-    "create_description": "Create a dataset"
+    "create_description": "Create a dataset",
+    "total_columns": "Total Columns",
+    "total_rows": "Total Rows",
+    "last_updated": "Last Updated",
+    "columns_description": "Manage the columns in your dataset, including their names, descriptions, and aliases."
   },
   "ws-cron": {
     "description": "Cron jobs are used to schedule tasks to run at specific times."

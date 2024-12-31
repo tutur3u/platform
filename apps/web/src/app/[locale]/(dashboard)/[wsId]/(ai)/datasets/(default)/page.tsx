@@ -1,6 +1,6 @@
-import { getColumns } from './columns';
-import { ConfigureDataset } from './configure-dataset';
-import ModelForm from './form';
+import { getColumns } from '../columns';
+import { ConfigureDataset } from '../configure-dataset';
+import ModelForm from '../form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceAIModel } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
