@@ -30,10 +30,10 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   name: z.string(),
+  url: z.string().optional(),
   description: z.string().optional(),
-  created_at: z.string(),
 });
 
 export default function DatasetForm({ wsId, data, onFinish }: Props) {
@@ -44,10 +44,10 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      id: data?.id || '',
+      id: data?.id,
       name: data?.name || '',
+      url: data?.url || '',
       description: data?.description || '',
-      created_at: data?.created_at || '',
     },
   });
 
@@ -56,8 +56,8 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
     try {
       const res = await fetch(
         formData.id
-          ? `/api/v1/workspaces/${wsId}/users/${formData.id}`
-          : `/api/v1/workspaces/${wsId}/users`,
+          ? `/api/v1/workspaces/${wsId}/datasets/${formData.id}`
+          : `/api/v1/workspaces/${wsId}/datasets`,
         {
           method: formData.id ? 'PUT' : 'POST',
           body: JSON.stringify(formData),
@@ -121,6 +121,20 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
