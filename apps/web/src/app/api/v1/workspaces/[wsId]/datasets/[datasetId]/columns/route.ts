@@ -80,9 +80,10 @@ export async function POST(req: Request, { params }: Params) {
 
 export async function DELETE(
   _: Request,
-  { params: { datasetId } }: { params: { wsId: string; datasetId: string } }
+  { params }: { params: Promise<{ wsId: string; datasetId: string }> }
 ) {
   try {
+    const { datasetId } = await params;
     const supabase = await createClient();
 
     const { error } = await supabase

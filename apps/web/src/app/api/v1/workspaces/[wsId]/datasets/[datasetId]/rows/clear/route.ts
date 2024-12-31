@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 
 export async function POST(
   _: Request,
-  { params }: { params: { wsId: string; datasetId: string } }
+  { params }: { params: Promise<{ wsId: string; datasetId: string }> }
 ) {
   try {
-    const { datasetId } = params;
+    const { datasetId } = await params;
     const supabase = await createClient();
 
     const { error: deleteRowsError } = await supabase
