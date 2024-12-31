@@ -13,6 +13,7 @@ import {
   Calendar,
   ChartArea,
   CircleCheck,
+  Clock,
   Cog,
   Database,
   FileText,
@@ -128,7 +129,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     {
       title: t('sidebar_tabs.cron'),
       href: `/${wsId}/cron`,
-      icon: <Database className="h-4 w-4" />,
+      icon: <Clock className="h-4 w-4" />,
       disabled:
         !(await verifySecret({
           forceAdmin: true,

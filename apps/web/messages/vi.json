@@ -1967,5 +1967,17 @@
   },
   "ws-cron": {
     "description": "Lịch trình được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể."
+  },
+  "ws-cron-jobs": {
+    "singular": "Công việc định kỳ",
+    "plural": "Công việc định kỳ",
+    "create": "Tạo công việc",
+    "create_description": "Tạo một công việc mới",
+    "description": "Công việc định kỳ được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể."
+  },
+  "ws-cron-executions": {
+    "plural": "Lịch sử chạy",
+    "singular": "Lịch sử chạy",
+    "description": "Lịch sử chạy được sử dụng để xem lịch sử của các công việc định kỳ."
   }
 }

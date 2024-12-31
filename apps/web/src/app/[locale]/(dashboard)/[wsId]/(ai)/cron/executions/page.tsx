@@ -1,32 +1,36 @@
-import { getWorkspace } from '@/lib/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { Executions } from './executions';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { getTranslations } from 'next-intl/server';
 
-interface Props {
-  params: Promise<{
-    wsId: string;
-  }>;
-}
+// interface Props {
+//   params: Promise<{
+//     wsId: string;
+//   }>;
+// }
 
-export default async function WorkspaceHomePage({ params }: Props) {
-  const { wsId } = await params;
-  const ws = await getWorkspace(wsId);
-  const t = await getTranslations('ws-home');
-
-  const homeLabel = t('home');
+export default async function WorkspaceHomePage() {
+  const t = await getTranslations();
 
   return (
     <>
-      <div className="bg-foreground/5 rounded-lg border p-4">
-        <h1 className="text-2xl font-bold">{homeLabel}</h1>
-        <p className="text-foreground/80">
-          {t('description_p1')}{' '}
-          <span className="text-foreground font-semibold">
-            {ws?.name || 'Unnamed Workspace'}
-          </span>{' '}
-          {t('description_p2')}
-        </p>
-      </div>
+      <FeatureSummary
+        pluralTitle={t('ws-cron-executions.plural')}
+        singularTitle={t('ws-cron-executions.singular')}
+        description={t('ws-cron-executions.description')}
+      />
+      <Separator className="my-4" />
+      {/* <CustomDataTable
+        data={datasets}
+        namespace="user-data-table"
+        columnGenerator={getColumns}
+        extraData={{ locale, wsId }}
+        count={count}
+        defaultVisibility={{
+          id: false,
+        }}
+      /> */}
+
       <Executions />
     </>
   );

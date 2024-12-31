@@ -1967,5 +1967,17 @@
   },
   "ws-cron": {
     "description": "Cron jobs are used to schedule tasks to run at specific times."
+  },
+  "ws-cron-jobs": {
+    "plural": "Cron Jobs",
+    "singular": "Cron Job",
+    "create": "Create job",
+    "create_description": "Create a new job",
+    "description": "Cron jobs are used to schedule tasks to run at specific times."
+  },
+  "ws-cron-executions": {
+    "plural": "Cron Executions",
+    "singular": "Cron Execution",
+    "description": "Cron executions are used to view the history of cron jobs."
   }
 }

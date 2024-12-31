@@ -17,7 +17,6 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -39,7 +38,6 @@ const FormSchema = z.object({
 });
 
 export default function ModelForm({ wsId, data, onFinish }: Props) {
-  const t = useTranslations();
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);
@@ -147,7 +145,7 @@ export default function ModelForm({ wsId, data, onFinish }: Props) {
           </ScrollArea>
 
           <div className="flex justify-center gap-2">
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={saving}>
               Save changes
             </Button>
           </div>

@@ -11,8 +11,6 @@ interface SearchParams {
   q?: string;
   page?: string;
   pageSize?: string;
-  includedGroups?: string | string[];
-  excludedGroups?: string | string[];
 }
 
 interface Props {
