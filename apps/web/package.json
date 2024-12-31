@@ -203,7 +203,7 @@
     "jsdom": "^25.0.1",
     "lint-staged": "^15.3.0",
     "postcss": "^8.4.49",
-    "react-hot-toast": "^2.4.1",
+    "react-hot-toast": "^2.5.1",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
