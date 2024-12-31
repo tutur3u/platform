@@ -216,7 +216,8 @@
     "add_column": "Thêm Cột",
     "add_column_description": "Nhập tên cho cột mới",
     "column_name": "Tên Cột",
-    "explore": "Khám phá"
+    "explore": "Khám phá",
+    "actions": "hành động"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1992,6 +1993,11 @@
     "total_columns": "Tổng số cột",
     "total_rows": "Tổng số dòng",
     "last_updated": "Cập nhật lần cuối",
+    "add_row": "Thêm dòng",
+    "edit_row": "Chỉnh sửa dòng",
+    "delete_row": "Xóa dòng",
+    "confirm_delete_row": "Bạn có chắc chắn muốn xóa dòng này?",
+    "no_data": "Không có dữ liệu",
     "columns_description": "Quản lý các cột trong bộ dữ liệu của bạn, bao gồm tên, mô tả và tên thay thế."
   },
   "ws-cron": {

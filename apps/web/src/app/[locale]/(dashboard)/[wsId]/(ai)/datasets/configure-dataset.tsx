@@ -37,7 +37,7 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
@@ -55,7 +55,13 @@ const FormSchema = z.object({
   }),
 });
 
-export function ConfigureDataset() {
+export function ConfigureDataset({
+  wsId,
+  datasetId,
+}: {
+  wsId: string;
+  datasetId: string;
+}) {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [, setRawData] = useState<any[][]>([]);
@@ -63,6 +69,29 @@ export function ConfigureDataset() {
   const [sheetInfo, setSheetInfo] = useState({ rows: 0, columns: 0, name: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [, setColumns] = useState<any[]>([]);
+  const [, setRows] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchColumnsAndRows = async () => {
+      const columnsRes = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/columns`
+      );
+      if (columnsRes.ok) {
+        const cols = await columnsRes.json();
+        setColumns(cols);
+      }
+      const rowsRes = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`
+      );
+      if (rowsRes.ok) {
+        const { data } = await rowsRes.json();
+        setRows(data);
+      }
+    };
+
+    fetchColumnsAndRows();
+  }, [wsId, datasetId]);
 
   // Calculate pagination values
   const totalRows = processedData.length - 1; // Subtract header row

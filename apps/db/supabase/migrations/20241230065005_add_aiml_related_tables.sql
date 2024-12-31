@@ -529,3 +529,318 @@ grant truncate on table "public"."ai_whitelisted_domains" to "service_role";
 grant
 update
     on table "public"."ai_whitelisted_domains" to "service_role";
+
+alter table
+    "public"."workspace_dataset_columns" drop constraint "workspace_dataset_columns_pkey";
+
+drop index if exists "public"."workspace_dataset_columns_pkey";
+
+create table "public"."workspace_dataset_cell" (
+    "dataset_id" uuid not null,
+    "column_id" uuid not null,
+    "data" text,
+    "created_at" timestamp with time zone not null default now(),
+    "row_id" uuid not null,
+    "id" uuid not null default gen_random_uuid()
+);
+
+alter table
+    "public"."workspace_dataset_cell" enable row level security;
+
+create table "public"."workspace_dataset_rows" (
+    "id" uuid not null default gen_random_uuid(),
+    "dataset_id" uuid not null,
+    "created_at" timestamp with time zone not null default now()
+);
+
+alter table
+    "public"."workspace_dataset_rows" enable row level security;
+
+alter table
+    "public"."workspace_cron_jobs" drop column "url";
+
+alter table
+    "public"."workspace_dataset_columns"
+add
+    column "id" uuid not null default gen_random_uuid();
+
+alter table
+    "public"."workspace_dataset_columns"
+alter column
+    "dataset_id" drop default;
+
+alter table
+    "public"."workspace_datasets"
+add
+    column "url" text;
+
+CREATE UNIQUE INDEX workspace_dataset_cell_pkey ON public.workspace_dataset_cell USING btree (id);
+
+CREATE UNIQUE INDEX workspace_dataset_rows_pkey ON public.workspace_dataset_rows USING btree (id);
+
+CREATE UNIQUE INDEX workspace_dataset_columns_pkey ON public.workspace_dataset_columns USING btree (id);
+
+alter table
+    "public"."workspace_dataset_cell"
+add
+    constraint "workspace_dataset_cell_pkey" PRIMARY KEY using index "workspace_dataset_cell_pkey";
+
+alter table
+    "public"."workspace_dataset_rows"
+add
+    constraint "workspace_dataset_rows_pkey" PRIMARY KEY using index "workspace_dataset_rows_pkey";
+
+alter table
+    "public"."workspace_dataset_columns"
+add
+    constraint "workspace_dataset_columns_pkey" PRIMARY KEY using index "workspace_dataset_columns_pkey";
+
+alter table
+    "public"."workspace_dataset_cell"
+add
+    constraint "workspace_dataset_cell_column_id_fkey" FOREIGN KEY (column_id) REFERENCES workspace_dataset_columns(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
+alter table
+    "public"."workspace_dataset_cell" validate constraint "workspace_dataset_cell_column_id_fkey";
+
+alter table
+    "public"."workspace_dataset_cell"
+add
+    constraint "workspace_dataset_cell_dataset_id_fkey" FOREIGN KEY (dataset_id) REFERENCES workspace_datasets(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
+alter table
+    "public"."workspace_dataset_cell" validate constraint "workspace_dataset_cell_dataset_id_fkey";
+
+alter table
+    "public"."workspace_dataset_cell"
+add
+    constraint "workspace_dataset_cell_row_id_fkey" FOREIGN KEY (row_id) REFERENCES workspace_dataset_rows(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
+alter table
+    "public"."workspace_dataset_cell" validate constraint "workspace_dataset_cell_row_id_fkey";
+
+alter table
+    "public"."workspace_dataset_rows"
+add
+    constraint "workspace_dataset_rows_dataset_id_fkey" FOREIGN KEY (dataset_id) REFERENCES workspace_datasets(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
+alter table
+    "public"."workspace_dataset_rows" validate constraint "workspace_dataset_rows_dataset_id_fkey";
+
+grant delete on table "public"."workspace_dataset_cell" to "anon";
+
+grant
+insert
+    on table "public"."workspace_dataset_cell" to "anon";
+
+grant references on table "public"."workspace_dataset_cell" to "anon";
+
+grant
+select
+    on table "public"."workspace_dataset_cell" to "anon";
+
+grant trigger on table "public"."workspace_dataset_cell" to "anon";
+
+grant truncate on table "public"."workspace_dataset_cell" to "anon";
+
+grant
+update
+    on table "public"."workspace_dataset_cell" to "anon";
+
+grant delete on table "public"."workspace_dataset_cell" to "authenticated";
+
+grant
+insert
+    on table "public"."workspace_dataset_cell" to "authenticated";
+
+grant references on table "public"."workspace_dataset_cell" to "authenticated";
+
+grant
+select
+    on table "public"."workspace_dataset_cell" to "authenticated";
+
+grant trigger on table "public"."workspace_dataset_cell" to "authenticated";
+
+grant truncate on table "public"."workspace_dataset_cell" to "authenticated";
+
+grant
+update
+    on table "public"."workspace_dataset_cell" to "authenticated";
+
+grant delete on table "public"."workspace_dataset_cell" to "service_role";
+
+grant
+insert
+    on table "public"."workspace_dataset_cell" to "service_role";
+
+grant references on table "public"."workspace_dataset_cell" to "service_role";
+
+grant
+select
+    on table "public"."workspace_dataset_cell" to "service_role";
+
+grant trigger on table "public"."workspace_dataset_cell" to "service_role";
+
+grant truncate on table "public"."workspace_dataset_cell" to "service_role";
+
+grant
+update
+    on table "public"."workspace_dataset_cell" to "service_role";
+
+grant delete on table "public"."workspace_dataset_rows" to "anon";
+
+grant
+insert
+    on table "public"."workspace_dataset_rows" to "anon";
+
+grant references on table "public"."workspace_dataset_rows" to "anon";
+
+grant
+select
+    on table "public"."workspace_dataset_rows" to "anon";
+
+grant trigger on table "public"."workspace_dataset_rows" to "anon";
+
+grant truncate on table "public"."workspace_dataset_rows" to "anon";
+
+grant
+update
+    on table "public"."workspace_dataset_rows" to "anon";
+
+grant delete on table "public"."workspace_dataset_rows" to "authenticated";
+
+grant
+insert
+    on table "public"."workspace_dataset_rows" to "authenticated";
+
+grant references on table "public"."workspace_dataset_rows" to "authenticated";
+
+grant
+select
+    on table "public"."workspace_dataset_rows" to "authenticated";
+
+grant trigger on table "public"."workspace_dataset_rows" to "authenticated";
+
+grant truncate on table "public"."workspace_dataset_rows" to "authenticated";
+
+grant
+update
+    on table "public"."workspace_dataset_rows" to "authenticated";
+
+grant delete on table "public"."workspace_dataset_rows" to "service_role";
+
+grant
+insert
+    on table "public"."workspace_dataset_rows" to "service_role";
+
+grant references on table "public"."workspace_dataset_rows" to "service_role";
+
+grant
+select
+    on table "public"."workspace_dataset_rows" to "service_role";
+
+grant trigger on table "public"."workspace_dataset_rows" to "service_role";
+
+grant truncate on table "public"."workspace_dataset_rows" to "service_role";
+
+grant
+update
+    on table "public"."workspace_dataset_rows" to "service_role";
+
+create policy "Allow workspace members to have full permissions" on "public"."workspace_dataset_cell" as permissive for all to authenticated using (
+    (
+        (
+            EXISTS (
+                SELECT
+                    1
+                FROM
+                    workspace_datasets wd
+                WHERE
+                    (wd.id = workspace_dataset_cell.dataset_id)
+            )
+        )
+        AND (
+            EXISTS (
+                SELECT
+                    1
+                FROM
+                    workspace_dataset_columns wdc
+                WHERE
+                    (wdc.id = workspace_dataset_cell.column_id)
+            )
+        )
+    )
+) with check (
+    (
+        (
+            EXISTS (
+                SELECT
+                    1
+                FROM
+                    workspace_datasets wd
+                WHERE
+                    (wd.id = workspace_dataset_cell.dataset_id)
+            )
+        )
+        AND (
+            EXISTS (
+                SELECT
+                    1
+                FROM
+                    workspace_dataset_columns wdc
+                WHERE
+                    (wdc.id = workspace_dataset_cell.column_id)
+            )
+        )
+    )
+);
+
+create policy "Allow workspace members to have full permissions" on "public"."workspace_dataset_columns" as permissive for all to authenticated using (
+    (
+        EXISTS (
+            SELECT
+                1
+            FROM
+                workspace_datasets wd
+            WHERE
+                (wd.id = workspace_dataset_columns.dataset_id)
+        )
+    )
+) with check (
+    (
+        EXISTS (
+            SELECT
+                1
+            FROM
+                workspace_datasets wd
+            WHERE
+                (wd.id = workspace_dataset_columns.dataset_id)
+        )
+    )
+);
+
+create policy "Allow workspace members to have full permissions" on "public"."workspace_dataset_rows" as permissive for all to authenticated using (
+    (
+        EXISTS (
+            SELECT
+                1
+            FROM
+                workspace_datasets wd
+            WHERE
+                (wd.id = workspace_dataset_rows.dataset_id)
+        )
+    )
+) with check (
+    (
+        EXISTS (
+            SELECT
+                1
+            FROM
+                workspace_datasets wd
+            WHERE
+                (wd.id = workspace_dataset_rows.dataset_id)
+        )
+    )
+);
+
+create policy "Allow workspace members to have full permissions" on "public"."workspace_datasets" as permissive for all to authenticated using (is_org_member(auth.uid(), ws_id)) with check (is_org_member(auth.uid(), ws_id));

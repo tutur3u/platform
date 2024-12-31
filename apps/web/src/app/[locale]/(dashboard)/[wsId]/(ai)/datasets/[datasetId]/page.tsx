@@ -137,13 +137,17 @@ async function getDatasetMetrics(id: string) {
     .select('*', { count: 'exact' })
     .eq('dataset_id', id);
 
-  // In a real app you would get these from your data storage
-  const totalRows = 0;
+  // Get total rows
+  const { count: totalRows } = await supabase
+    .from('workspace_dataset_rows')
+    .select('*', { count: 'exact' })
+    .eq('dataset_id', id);
+
   const lastUpdated = new Date().toLocaleDateString();
 
   return {
     totalColumns: totalColumns || 0,
-    totalRows,
+    totalRows: totalRows || 0,
     lastUpdated,
   };
 }

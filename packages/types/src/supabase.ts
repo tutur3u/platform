@@ -3450,19 +3450,70 @@ export type Database = {
           },
         ];
       };
+      workspace_dataset_cell: {
+        Row: {
+          column_id: string;
+          created_at: string;
+          data: string | null;
+          dataset_id: string;
+          id: string;
+          row_id: string;
+        };
+        Insert: {
+          column_id: string;
+          created_at?: string;
+          data?: string | null;
+          dataset_id: string;
+          id?: string;
+          row_id: string;
+        };
+        Update: {
+          column_id?: string;
+          created_at?: string;
+          data?: string | null;
+          dataset_id?: string;
+          id?: string;
+          row_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_dataset_cell_column_id_fkey';
+            columns: ['column_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_dataset_columns';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_dataset_cell_dataset_id_fkey';
+            columns: ['dataset_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_datasets';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_dataset_cell_row_id_fkey';
+            columns: ['row_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_dataset_rows';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_dataset_columns: {
         Row: {
           alias: string | null;
           created_at: string;
           dataset_id: string;
           description: string | null;
+          id: string;
           name: string;
         };
         Insert: {
           alias?: string | null;
           created_at?: string;
-          dataset_id?: string;
+          dataset_id: string;
           description?: string | null;
+          id?: string;
           name: string;
         };
         Update: {
@@ -3470,11 +3521,38 @@ export type Database = {
           created_at?: string;
           dataset_id?: string;
           description?: string | null;
+          id?: string;
           name?: string;
         };
         Relationships: [
           {
             foreignKeyName: 'workspace_dataset_columns_dataset_id_fkey';
+            columns: ['dataset_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_datasets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_dataset_rows: {
+        Row: {
+          created_at: string;
+          dataset_id: string;
+          id: string;
+        };
+        Insert: {
+          created_at?: string;
+          dataset_id: string;
+          id?: string;
+        };
+        Update: {
+          created_at?: string;
+          dataset_id?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_dataset_rows_dataset_id_fkey';
             columns: ['dataset_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_datasets';
