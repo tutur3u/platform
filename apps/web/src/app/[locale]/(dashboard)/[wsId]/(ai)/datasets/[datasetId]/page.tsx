@@ -13,15 +13,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     datasetId: string;
-  };
+  }>;
 }
 
-export default async function DatasetDetailsPage({
-  params: { wsId, datasetId },
-}: Props) {
+export default async function DatasetDetailsPage({ params }: Props) {
+  const { wsId, datasetId } = await params;
   const t = await getTranslations();
   const dataset = await getDataset(datasetId);
 

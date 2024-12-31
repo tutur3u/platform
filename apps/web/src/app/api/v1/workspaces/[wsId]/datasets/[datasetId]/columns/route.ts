@@ -77,3 +77,27 @@ export async function POST(req: Request, { params }: Params) {
 
   return NextResponse.json(column);
 }
+
+export async function DELETE(
+  _: Request,
+  { params: { datasetId } }: { params: { wsId: string; datasetId: string } }
+) {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('workspace_dataset_columns')
+      .delete()
+      .eq('dataset_id', datasetId);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting all columns:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete all columns' },
+      { status: 500 }
+    );
+  }
+}

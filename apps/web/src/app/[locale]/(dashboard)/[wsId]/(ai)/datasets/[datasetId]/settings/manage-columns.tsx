@@ -92,6 +92,25 @@ export function ManageColumns({ wsId, datasetId }: Props) {
     }
   };
 
+  const removeAllColumns = async () => {
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/columns`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (response.ok) {
+        setColumns([]);
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Error removing all columns:', error);
+    }
+  };
+
   return (
     <Dialog open={isAddingColumn} onOpenChange={setIsAddingColumn}>
       <div className="space-y-4">
@@ -117,35 +136,46 @@ export function ManageColumns({ wsId, datasetId }: Props) {
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap gap-2">
-              {columns.map((column) => (
-                <div
-                  key={`${datasetId}-${column.name}`}
-                  className="bg-secondary flex items-center gap-2 rounded-md px-3 py-1"
-                >
-                  <span className="text-sm">{column.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4"
-                    onClick={() => removeColumn(column.id)}
+            <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-2">
+                {columns.map((column) => (
+                  <div
+                    key={`${datasetId}-${column.name}`}
+                    className="bg-secondary flex items-center gap-2 rounded-md px-3 py-1"
                   >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+                    <span className="text-sm">{column.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4"
+                      onClick={() => removeColumn(column.id)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
 
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAddingColumn(true)}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                {t('common.add')}
-              </Button>
-            </DialogTrigger>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={removeAllColumns}
+                >
+                  Remove All
+                </Button>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsAddingColumn(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t('common.add')}
+                  </Button>
+                </DialogTrigger>
+              </div>
+            </div>
           </>
         )}
       </div>

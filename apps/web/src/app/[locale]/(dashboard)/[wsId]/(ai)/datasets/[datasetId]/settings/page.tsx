@@ -1,4 +1,4 @@
-import { ManageColumns } from '../manage-columns';
+import { ManageColumns } from './manage-columns';
 import { createClient } from '@/utils/supabase/server';
 import {
   Card,
@@ -11,15 +11,14 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     datasetId: string;
-  };
+  }>;
 }
 
-export default async function DatasetSettingsPage({
-  params: { wsId, datasetId },
-}: Props) {
+export default async function DatasetSettingsPage({ params }: Props) {
+  const { wsId, datasetId } = await params;
   const t = await getTranslations();
   const dataset = await getDataset(datasetId);
 

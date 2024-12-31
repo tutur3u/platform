@@ -1,18 +1,18 @@
 import { DataExplorer } from './data-explorer';
+import { DatasetCrawler } from './dataset-crawler';
 import { createClient } from '@/utils/supabase/server';
 import { Card, CardContent } from '@repo/ui/components/ui/card';
 import { notFound } from 'next/navigation';
 
 interface Props {
-  params: {
+  params: Promise<{
     wsId: string;
     datasetId: string;
-  };
+  }>;
 }
 
-export default async function ExploreDatasetPage({
-  params: { wsId, datasetId },
-}: Props) {
+export default async function ExploreDatasetPage({ params }: Props) {
+  const { wsId, datasetId } = await params;
   const dataset = await getDataset(datasetId);
 
   if (!dataset) {
@@ -23,6 +23,7 @@ export default async function ExploreDatasetPage({
     <div className="space-y-6">
       <Card>
         <CardContent className="pt-6">
+          <DatasetCrawler wsId={wsId} datasetId={datasetId} />
           <DataExplorer wsId={wsId} datasetId={datasetId} />
         </CardContent>
       </Card>

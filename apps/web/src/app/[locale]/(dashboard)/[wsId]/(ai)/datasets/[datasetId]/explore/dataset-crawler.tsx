@@ -55,7 +55,7 @@ const FormSchema = z.object({
   }),
 });
 
-export function ConfigureDataset({
+export function DatasetCrawler({
   wsId,
   datasetId,
 }: {
@@ -188,6 +188,82 @@ export function ConfigureDataset({
   ) => {
     e.preventDefault();
     setCurrentPage(page);
+  };
+
+  const syncDataset = async () => {
+    try {
+      setLoading(true);
+
+      // Ensure we have data to sync
+      if (!processedData?.length || !processedData[0]?.length) {
+        throw new Error('No data to sync');
+      }
+
+      // First sync columns
+      const headers = processedData[0];
+      const columnsResponse = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/columns/sync`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            columns: headers
+              .map((name: string) => ({
+                name: String(name).trim(),
+              }))
+              .filter((col) => !!col.name),
+          }),
+        }
+      );
+
+      if (!columnsResponse.ok) {
+        const error = await columnsResponse.json();
+        throw new Error(error.message || 'Failed to sync columns');
+      }
+
+      // Then sync rows with validated headers
+      const processedHeaders = headers
+        .map((h: string) => String(h).trim())
+        .filter(Boolean);
+      const rows = processedData.slice(1); // Skip header row
+
+      if (rows.length === 0) {
+        throw new Error('No rows to sync');
+      }
+
+      const processedRows = rows.map((row: any[]) => {
+        const rowData: Record<string, any> = {};
+        processedHeaders.forEach((header: string, index: number) => {
+          // Ensure we only include data for valid headers
+          if (header && index < row.length) {
+            rowData[header] = row[index] ?? null;
+          }
+        });
+        return rowData;
+      });
+
+      const rowsResponse = await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows/sync`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows: processedRows }),
+        }
+      );
+
+      if (!rowsResponse.ok) {
+        const error = await rowsResponse.json();
+        throw new Error(error.message || 'Failed to sync rows');
+      }
+
+      setIsOpen(false);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error syncing dataset:', error);
+      // You might want to show an error toast here
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -380,6 +456,12 @@ export function ConfigureDataset({
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
+
+            <div className="mt-4 flex justify-end">
+              <Button onClick={syncDataset} disabled={loading}>
+                {loading ? 'Syncing...' : 'Sync Dataset'}
+              </Button>
+            </div>
           </div>
         )}
       </DialogContent>

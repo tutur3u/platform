@@ -1,5 +1,4 @@
 import { getColumns } from '../columns';
-import { ConfigureDataset } from '../configure-dataset';
 import ModelForm from '../form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceAIModel } from '@/types/db';
@@ -47,8 +46,6 @@ export default async function WorkspaceDatasetsPage({
         createDescription={t('ws-datasets.create_description')}
         form={<ModelForm wsId={wsId} />}
       />
-      <Separator className="my-4" />
-      <ConfigureDataset />
       <Separator className="my-4" />
       <CustomDataTable
         data={datasets}
