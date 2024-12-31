@@ -44,18 +44,63 @@ export const getColumns = (
     ),
   },
   {
-    accessorKey: 'description',
+    accessorKey: 'schedule',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.description`)}
+        title={t(`${namespace}.schedule`)}
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[8rem]">
-        {row.getValue('description') || '-'}
+      <div className="min-w-[8rem]">{row.getValue('schedule') || '-'}</div>
+    ),
+  },
+  {
+    accessorKey: 'last_run',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.last_run`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        {row.getValue('last_run')
+          ? moment(row.getValue('last_run')).format('DD/MM/YYYY HH:mm')
+          : '-'}
       </div>
+    ),
+  },
+  {
+    accessorKey: 'next_run',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.next_run`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        {row.getValue('next_run')
+          ? moment(row.getValue('next_run')).format('DD/MM/YYYY HH:mm')
+          : '-'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.status`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">{row.getValue('status') || '-'}</div>
     ),
   },
   {
@@ -70,21 +115,6 @@ export const getColumns = (
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
         {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'updated_at',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        t={t}
-        column={column}
-        title={t(`${namespace}.updated_at`)}
-      />
-    ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {moment(row.getValue('updated_at')).format('DD/MM/YYYY')}
       </div>
     ),
   },

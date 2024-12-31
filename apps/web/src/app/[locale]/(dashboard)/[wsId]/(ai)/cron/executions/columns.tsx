@@ -27,34 +27,64 @@ export const getColumns = (
     ),
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'job',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.name`)}
+        title={t(`${namespace}.job`)}
       />
     ),
     cell: ({ row }) => (
       <Link href={row.original.href || '#'} className="min-w-[8rem]">
         <span className="font-semibold hover:underline">
-          {row.getValue('name') || '-'}
+          {row.getValue('job') || '-'}
         </span>
       </Link>
     ),
   },
   {
-    accessorKey: 'description',
+    accessorKey: 'status',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.description`)}
+        title={t(`${namespace}.status`)}
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 w-[8rem]">
-        {row.getValue('description') || '-'}
+      <div className="min-w-[8rem]">{row.getValue('status') || '-'}</div>
+    ),
+  },
+  {
+    accessorKey: 'started_at',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.started_at`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        {moment(row.getValue('started_at')).format('DD/MM/YYYY HH:mm:ss')}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'finished_at',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.finished_at`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-[8rem]">
+        {row.getValue('finished_at')
+          ? moment(row.getValue('finished_at')).format('DD/MM/YYYY HH:mm:ss')
+          : '-'}
       </div>
     ),
   },
@@ -70,21 +100,6 @@ export const getColumns = (
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
         {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'updated_at',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        t={t}
-        column={column}
-        title={t(`${namespace}.updated_at`)}
-      />
-    ),
-    cell: ({ row }) => (
-      <div className="min-w-[8rem]">
-        {moment(row.getValue('updated_at')).format('DD/MM/YYYY')}
       </div>
     ),
   },

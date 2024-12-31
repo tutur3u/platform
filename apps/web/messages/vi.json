@@ -805,6 +805,24 @@
     "user_count": "Số người dùng",
     "created_at": "Tạo lúc"
   },
+  "cron-job-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "description": "Mô tả",
+    "schedule": "Lịch trình",
+    "status": "Trạng thái",
+    "last_run": "Lần chạy cuối",
+    "next_run": "Lần Chạy tới",
+    "created_at": "Tạo lúc"
+  },
+  "cron-execution-data-table": {
+    "id": "Mã số",
+    "job": "Công việc",
+    "status": "Trạng thái",
+    "started_at": "Bắt đầu lúc",
+    "finished_at": "Kết thúc lúc",
+    "created_at": "Tạo lúc"
+  },
   "ws-home": {
     "home": "Trang chủ",
     "description_p1": "Tổng quan về không gian làm việc",

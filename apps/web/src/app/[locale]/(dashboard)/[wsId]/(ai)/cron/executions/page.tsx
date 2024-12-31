@@ -46,7 +46,7 @@ export default async function WorkspaceCronExecutionsPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={executions}
-        namespace="user-data-table"
+        namespace="cron-execution-data-table"
         columnGenerator={getColumns}
         extraData={{ locale, wsId }}
         count={count}

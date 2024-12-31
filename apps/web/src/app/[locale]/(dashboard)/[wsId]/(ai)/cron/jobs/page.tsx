@@ -47,12 +47,13 @@ export default async function WorkspaceCronJobsPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={jobs}
-        namespace="user-data-table"
+        namespace="cron-job-data-table"
         columnGenerator={getColumns}
         extraData={{ locale, wsId }}
         count={count}
         defaultVisibility={{
           id: false,
+          created_at: false,
         }}
       />
 

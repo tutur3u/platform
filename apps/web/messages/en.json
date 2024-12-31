@@ -805,6 +805,24 @@
     "user_count": "User count",
     "created_at": "Created at"
   },
+  "cron-job-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "description": "Description",
+    "schedule": "Schedule",
+    "status": "Status",
+    "last_run": "Last run",
+    "next_run": "Next run",
+    "created_at": "Created at"
+  },
+  "cron-execution-data-table": {
+    "id": "ID",
+    "job": "Job",
+    "status": "Status",
+    "started_at": "Started at",
+    "finished_at": "Finished at",
+    "created_at": "Created at"
+  },
   "ws-home": {
     "home": "Home",
     "description_p1": "A quick summary of the",
