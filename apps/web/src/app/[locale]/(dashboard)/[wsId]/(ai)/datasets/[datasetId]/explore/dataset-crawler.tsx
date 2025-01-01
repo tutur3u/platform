@@ -1,7 +1,17 @@
 'use client';
 
-import { Button } from '@/components/components/ui/Button';
+// Fix imports - remove duplicate
+import { HtmlCrawler } from './html-crawler';
+import type { WorkspaceDataset } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@repo/ui/components/ui/alert';
+import { Badge } from '@repo/ui/components/ui/badge';
+import { Button } from '@repo/ui/components/ui/button';
+import { Card, CardContent } from '@repo/ui/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -38,7 +48,13 @@ import {
   SelectValue,
 } from '@repo/ui/components/ui/select';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { RefreshCw } from 'lucide-react';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@repo/ui/components/ui/tabs';
+import { Bug, Code2, ExternalLink, RefreshCw, ScanSearch } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as XLSX from 'xlsx';
@@ -68,14 +84,21 @@ interface SyncMetrics {
   estimatedTimeLeft: string;
 }
 
+interface HtmlPreviewData {
+  url: string;
+  columnName: string;
+  selector: string;
+  subSelector?: string;
+  attribute?: string;
+  sampleData?: string[];
+}
+
 export function DatasetCrawler({
-  url,
   wsId,
-  datasetId,
+  dataset,
 }: {
-  url: string | null;
   wsId: string;
-  datasetId: string;
+  dataset: WorkspaceDataset;
 }) {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -98,18 +121,22 @@ export function DatasetCrawler({
     startTime: 0,
     estimatedTimeLeft: '-',
   });
+  const [htmlPreview, setHtmlPreview] = useState<HtmlPreviewData[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [rawHtml, setRawHtml] = useState<string>('');
+  const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([]);
 
   useEffect(() => {
     const fetchColumnsAndRows = async () => {
       const columnsRes = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/columns`
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns`
       );
       if (columnsRes.ok) {
         const cols = await columnsRes.json();
         setColumns(cols);
       }
       const rowsRes = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`
       );
       if (rowsRes.ok) {
         const { data } = await rowsRes.json();
@@ -118,7 +145,7 @@ export function DatasetCrawler({
     };
 
     fetchColumnsAndRows();
-  }, [wsId, datasetId]);
+  }, [wsId, dataset.id]);
 
   // Calculate pagination values
   const totalRows = processedData.length - 1; // Subtract header row
@@ -129,7 +156,7 @@ export function DatasetCrawler({
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      url: url || '',
+      url: dataset.url || '',
       headerRow: '',
       dataRow: '',
     },
@@ -247,6 +274,58 @@ export function DatasetCrawler({
       setSyncStatus('Analyzing dataset...');
 
       const startTime = Date.now();
+
+      // Handle HTML crawling
+      if (dataset.type === 'html' && dataset?.html_ids?.length) {
+        const crawler = new HtmlCrawler();
+        setSyncStatus('Starting HTML crawling...');
+
+        const htmlData = await crawler.crawl({
+          url: dataset.url!,
+          htmlIds: dataset.html_ids,
+          onProgress: (progress, status) => {
+            setSyncProgress(progress);
+            setSyncStatus(status);
+          },
+        });
+
+        // Get column names from HTML IDs
+        const columnNames = dataset.html_ids
+          .map((id) => {
+            const match = id.match(/{{(.+?)}}/);
+            return match ? match[1] : '';
+          })
+          .filter(Boolean);
+
+        // Sync columns
+        const columnsToSync = columnNames.map((name) => ({ name }));
+        await fetch(
+          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ columns: columnsToSync }),
+          }
+        );
+
+        // Sync rows
+        await fetch(
+          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/sync`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: htmlData }),
+          }
+        );
+
+        setSyncProgress(100);
+        setSyncStatus('Sync completed successfully!');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setIsOpen(false);
+        window.location.reload();
+        return;
+      }
+
       const headers = processedData[0];
       const allRows = processedData.slice(1); // Get all rows
 
@@ -273,7 +352,7 @@ export function DatasetCrawler({
         .filter((col) => !!col.name);
 
       const columnsResponse = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/columns/sync`,
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -326,7 +405,7 @@ export function DatasetCrawler({
         console.log(`Processed batch size: ${processedBatch.length}`); // Debug log
 
         const rowsResponse = await fetch(
-          `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows/sync`,
+          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/sync`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -361,15 +440,376 @@ export function DatasetCrawler({
     }
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button onClick={() => setIsOpen(true)} disabled={!url}>
-          <RefreshCw className="h-4 w-4" />
-          Sync Dataset
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-auto sm:max-w-[90vw]">
+  const fetchHtmlPreview = async () => {
+    if (!dataset.url || !dataset.html_ids?.length) return;
+
+    setPreviewLoading(true);
+    try {
+      const crawler = new HtmlCrawler();
+      const rows = await crawler.crawl({
+        url: dataset.url,
+        htmlIds: dataset.html_ids,
+        onProgress: (progress, status) => {
+          setSyncProgress(progress);
+          setSyncStatus(status);
+        },
+      });
+
+      setPreviewRows(rows);
+      const response = await fetch(
+        `/api/proxy?url=${encodeURIComponent(dataset.url)}`
+      );
+      const html = await response.text();
+      setRawHtml(html);
+      const preview: HtmlPreviewData[] = [];
+
+      for (const htmlId of dataset.html_ids) {
+        const match = htmlId.match(/{{(.+?)}}:(.+?)(?:->(.+?))?(?:{(.+?)})?$/);
+        if (!match) continue;
+
+        const [, columnName, rawSelector, subSelector, attribute] = match;
+
+        // Clean up array notation:
+        const cleanedSelector = rawSelector?.replace('[]', '').trim();
+
+        const previewData: HtmlPreviewData = {
+          url: dataset.url,
+          columnName: columnName || 'Unknown',
+          selector: cleanedSelector || '',
+          subSelector,
+          attribute,
+          sampleData: [],
+        };
+
+        // Fetch sample data for preview
+        try {
+          const response = await fetch(
+            `/api/proxy?url=${encodeURIComponent(dataset.url)}`
+          );
+          const html = await response.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+
+          if (subSelector && cleanedSelector) {
+            const baseElements = doc.querySelectorAll(cleanedSelector);
+            const samples: string[] = [];
+
+            baseElements.forEach((base) => {
+              if (samples.length < 3) {
+                // Show max 3 samples
+                const element = base.querySelector(subSelector);
+                if (element) {
+                  const content = attribute
+                    ? element.getAttribute(attribute) || ''
+                    : element.textContent?.trim() || '';
+                  samples.push(content);
+                }
+              }
+            });
+
+            previewData.sampleData = samples;
+          } else {
+            if (!cleanedSelector) continue;
+            const element = doc.querySelector(cleanedSelector);
+            if (element) {
+              const content = attribute
+                ? element.getAttribute(attribute) || ''
+                : element.textContent?.trim() || '';
+              previewData.sampleData = [content];
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching preview:', error);
+        }
+
+        preview.push(previewData);
+      }
+
+      setHtmlPreview(preview);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && dataset.type === 'html') {
+      fetchHtmlPreview();
+    }
+  }, [isOpen, dataset.type]);
+
+  const renderHtmlPreview = () => {
+    if (!dataset.url || !dataset.html_ids?.length) {
+      return (
+        <Alert>
+          <AlertTitle>No HTML selectors configured</AlertTitle>
+          <AlertDescription>
+            Add HTML selectors in the dataset settings to start crawling.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return (
+      <Tabs defaultValue="preview">
+        <TabsList className="w-full">
+          <TabsTrigger value="preview" className="flex items-center gap-2">
+            <ScanSearch className="h-4 w-4" />
+            Preview
+          </TabsTrigger>
+          <TabsTrigger value="debug" className="flex items-center gap-2">
+            <Bug className="h-4 w-4" />
+            Debug
+          </TabsTrigger>
+          <TabsTrigger value="raw" className="flex items-center gap-2">
+            <Code2 className="h-4 w-4" />
+            Raw HTML
+          </TabsTrigger>
+          <TabsTrigger value="rows" className="flex items-center gap-2">
+            <ScanSearch className="h-4 w-4" />
+            Preview Rows
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="preview" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  <a
+                    href={dataset.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-500 hover:underline"
+                  >
+                    {dataset.url}
+                  </a>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchHtmlPreview}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh Preview
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {previewLoading ? (
+            <div className="space-y-2">
+              <div className="bg-muted h-[100px] animate-pulse rounded-md" />
+              <div className="bg-muted h-[100px] animate-pulse rounded-md" />
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {htmlPreview.map((preview, index) => (
+                <Card key={index}>
+                  <CardContent className="pt-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">
+                            {preview.columnName}
+                          </h3>
+                          <Badge
+                            variant={
+                              preview.sampleData?.length
+                                ? 'success'
+                                : 'destructive'
+                            }
+                          >
+                            {preview.sampleData?.length || 0} matches
+                          </Badge>
+                        </div>
+                        <Badge
+                          variant={
+                            preview.subSelector ? 'default' : 'secondary'
+                          }
+                        >
+                          {preview.subSelector
+                            ? 'Multiple Elements'
+                            : 'Single Element'}
+                        </Badge>
+                      </div>
+                      <div className="text-muted-foreground space-y-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          Selector:{' '}
+                          <code className="text-xs">{preview.selector}</code>
+                        </div>
+                        {preview.subSelector && (
+                          <div className="flex items-center gap-2">
+                            Sub-selector:{' '}
+                            <code className="text-xs">
+                              {preview.subSelector}
+                            </code>
+                          </div>
+                        )}
+                        {preview.attribute && (
+                          <div className="flex items-center gap-2">
+                            Attribute:{' '}
+                            <code className="text-xs">{preview.attribute}</code>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-2">
+                        <div className="text-sm font-medium">Sample Data:</div>
+                        {preview.sampleData?.length ? (
+                          <div className="mt-1 space-y-1">
+                            {preview.sampleData.map((sample, i) => (
+                              <div
+                                key={i}
+                                className="text-muted-foreground bg-muted/50 rounded-md p-2 text-sm"
+                              >
+                                {sample}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <Alert variant="destructive" className="mt-2">
+                            <AlertTitle>No matches found</AlertTitle>
+                            <AlertDescription>
+                              Check your selector syntax and try again.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="debug" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold">Debug Information</h3>
+                <div className="grid gap-2">
+                  {htmlPreview.map((preview, index) => (
+                    <Alert key={index}>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <AlertTitle>{preview.columnName}</AlertTitle>
+                          <Badge>
+                            {preview.sampleData?.length || 0} matches
+                          </Badge>
+                        </div>
+                        <AlertDescription>
+                          <code className="w-full whitespace-pre-wrap">
+                            {`Original: ${preview.selector}${preview.subSelector ? `\nSub-selector: ${preview.subSelector}` : ''}${preview.attribute ? `\nAttribute: ${preview.attribute}` : ''}
+Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelector}` : ''}${preview.attribute ? ` {${preview.attribute}}` : ''}`}
+                          </code>
+                        </AlertDescription>
+                      </div>
+                    </Alert>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="raw" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">Raw HTML Preview</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchHtmlPreview}
+                  >
+                    Refresh
+                  </Button>
+                </div>
+                <div className="max-h-[500px] overflow-auto rounded-md border">
+                  <code className="w-full whitespace-pre-wrap p-4">
+                    {rawHtml || 'No HTML content loaded'}
+                  </code>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="rows" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">Preview Rows</h3>
+                  <Badge>{previewRows.length} rows found</Badge>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border">
+                    <thead>
+                      <tr className="bg-muted">
+                        {dataset.html_ids?.map((id) => {
+                          const match = id.match(/{{(.+?)}}/);
+                          return match ? (
+                            <th key={match[1]} className="border p-2 text-left">
+                              {match[1]}
+                            </th>
+                          ) : null;
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewRows.slice(0, 5).map((row, i) => (
+                        <tr key={i}>
+                          {Object.entries(row).map(([key, value]) => (
+                            <td key={key} className="border p-2">
+                              {key === 'URL' ? (
+                                <a
+                                  href={value}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:underline"
+                                >
+                                  {value}
+                                </a>
+                              ) : (
+                                value
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {previewRows.length > 5 && (
+                  <div className="text-muted-foreground text-center text-sm">
+                    Showing first 5 of {previewRows.length} rows
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    );
+  };
+
+  const renderDialogContent = () => {
+    if (dataset.type === 'html') {
+      return (
+        <>
+          <DialogHeader>
+            <DialogTitle>HTML Dataset Preview</DialogTitle>
+            <DialogDescription>
+              Preview and debug HTML selectors
+            </DialogDescription>
+          </DialogHeader>
+          {renderHtmlPreview()}
+        </>
+      );
+    }
+
+    // Excel/CSV content
+    return (
+      <>
         <DialogHeader>
           <DialogTitle>Excel Dataset Preview</DialogTitle>
           <DialogDescription>
@@ -576,6 +1016,40 @@ export function DatasetCrawler({
             </div>
           </div>
         )}
+      </>
+    );
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button onClick={() => setIsOpen(true)} disabled={!dataset.url}>
+          <RefreshCw className="h-4 w-4" />
+          Sync Dataset
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-auto sm:max-w-[90vw]">
+        {renderDialogContent()}
+
+        {/* Move sync status and button outside tabs but inside dialog */}
+        <div className="mt-4 flex flex-col gap-2">
+          {loading && (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-sm">
+                  {syncStatus}
+                </span>
+                <span className="text-sm font-medium">{syncProgress}%</span>
+              </div>
+              <Progress value={syncProgress} className="h-2" />
+            </>
+          )}
+          <div className="flex justify-end">
+            <Button onClick={syncDataset} disabled={loading}>
+              {loading ? 'Syncing...' : 'Sync Dataset'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

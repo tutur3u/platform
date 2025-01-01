@@ -22,11 +22,7 @@ export default async function ExploreDatasetPage({ params }: Props) {
     <div className="space-y-6">
       <Card>
         <CardContent className="pt-6">
-          <DataExplorer
-            wsId={wsId}
-            datasetId={datasetId}
-            datasetUrl={dataset.url}
-          />
+          <DataExplorer wsId={wsId} dataset={dataset} />
         </CardContent>
       </Card>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { DatasetCrawler } from './dataset-crawler';
+import type { WorkspaceDataset } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
@@ -39,11 +40,10 @@ import { useState } from 'react';
 
 interface Props {
   wsId: string;
-  datasetId: string;
-  datasetUrl: string | null;
+  dataset: WorkspaceDataset;
 }
 
-export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
+export function DataExplorer({ wsId, dataset }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
 
@@ -56,10 +56,10 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
 
   // Query for columns
   const columnsQuery = useQuery({
-    queryKey: [wsId, datasetId, 'columns'],
+    queryKey: [wsId, dataset.id, 'columns'],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/columns`
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns`
       );
       if (!response.ok) throw new Error('Failed to fetch columns');
       return response.json();
@@ -69,10 +69,10 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
 
   // Query for rows with pagination
   const rowsQuery = useQuery({
-    queryKey: [wsId, datasetId, 'rows', { currentPage, pageSize }],
+    queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows?` +
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows?` +
           new URLSearchParams({
             page: currentPage.toString(),
             pageSize,
@@ -101,7 +101,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
   const handleAddRow = async () => {
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`,
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -124,7 +124,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
   const handleEditRow = async () => {
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`,
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -144,7 +144,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
   const handleDeleteRow = async (rowId: string) => {
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`,
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`,
         {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
@@ -164,7 +164,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
     setIsClearingRows(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows/clear`,
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/clear`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -230,8 +230,11 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
                 : data.map((row: any, rowIndex: number) => (
                     <tr key={rowIndex} className="border-b">
                       {headers.map((header: any, colIndex: number) => (
-                        <td key={colIndex} className="p-2 text-sm">
-                          {row[header]}
+                        <td
+                          key={colIndex}
+                          className="min-w-32 whitespace-pre-line p-2 text-sm"
+                        >
+                          <span className="line-clamp-3">{row[header]}</span>
                         </td>
                       ))}
                       <td className="flex gap-2 p-2 text-sm">
@@ -337,7 +340,7 @@ export function DataExplorer({ wsId, datasetId, datasetUrl }: Props) {
               </Button>
             </DialogContent>
           </Dialog>
-          <DatasetCrawler wsId={wsId} datasetId={datasetId} url={datasetUrl} />
+          <DatasetCrawler wsId={wsId} dataset={dataset} />
         </div>
       </div>
 
