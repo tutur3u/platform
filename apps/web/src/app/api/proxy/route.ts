@@ -17,8 +17,6 @@ export async function GET(request: Request) {
       });
     }
 
-    const contentType = response.headers.get('content-type') || '';
-
     // Handle Excel files
     if (url.match(/\.(xlsx|xls)$/i)) {
       const arrayBuffer = await response.arrayBuffer();

@@ -106,7 +106,7 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
-          <ScrollArea>
+          <ScrollArea className="max-h-96">
             <div className="grid gap-2">
               {data?.id && (
                 <>
