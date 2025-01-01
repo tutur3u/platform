@@ -608,7 +608,8 @@
     "remove-from-group": "Xóa khỏi nhóm",
     "url": "Liên kết",
     "columns": "Cột",
-    "rows": "Dòng"
+    "rows": "Dòng",
+    "type": "Loại"
   },
   "email-data-table": {
     "id": "Mã số",

@@ -52,6 +52,13 @@ export default async function DatasetDetailsPage({ params }: Props) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div>
+                <div className="text-sm font-semibold">Type</div>
+                <p className="text-muted-foreground text-sm capitalize">
+                  {dataset.type || 'excel'}
+                </p>
+              </div>
+
               {dataset.url && (
                 <div>
                   <div className="text-sm font-semibold">URL</div>
@@ -63,6 +70,23 @@ export default async function DatasetDetailsPage({ params }: Props) {
                   </Link>
                 </div>
               )}
+
+              {dataset.html_ids && dataset.html_ids.length > 0 && (
+                <div>
+                  <div className="text-sm font-semibold">HTML IDs</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {dataset.html_ids.map((id, index) => (
+                      <div
+                        key={index}
+                        className="bg-muted text-muted-foreground rounded-md px-2 py-1 text-sm"
+                      >
+                        {id}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {dataset.description && (
                 <div>
                   <label className="text-sm font-medium">

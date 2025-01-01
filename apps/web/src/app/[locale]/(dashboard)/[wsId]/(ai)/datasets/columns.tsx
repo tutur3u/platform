@@ -107,6 +107,19 @@ export const getColumns = (
     ),
   },
   {
+    accessorKey: 'type',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.type`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="font-semibold uppercase">{row.getValue('type')}</div>
+    ),
+  },
+  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader
