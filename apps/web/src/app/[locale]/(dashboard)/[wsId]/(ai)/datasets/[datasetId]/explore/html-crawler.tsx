@@ -16,6 +16,15 @@ interface ParsedHtmlId {
   attribute?: string;
 }
 
+interface HtmlPreviewData {
+  url: string;
+  columnName: string;
+  selector: string;
+  subSelector?: string;
+  attribute?: string;
+  sampleData?: string[];
+}
+
 export class HtmlCrawler {
   private baseUrl: string = '';
 
@@ -33,8 +42,7 @@ export class HtmlCrawler {
     let pageId = '';
 
     if (subSelector?.includes('->#')) {
-      [finalSubSelector, pageId] = subSelector.split('->#');
-      pageId = pageId.trim();
+      pageId = subSelector.split('->#')?.[1]?.trim() || '';
     }
 
     return {
@@ -85,6 +93,113 @@ export class HtmlCrawler {
     }
   }
 
+  // Add method to fetch article preview
+  private async getArticlePreview(
+    url: string,
+    selectors: ParsedHtmlId[]
+  ): Promise<Record<string, string>> {
+    const doc = await this.fetchAndParse(url);
+    if (!doc) return {};
+
+    const data: Record<string, string> = {};
+    for (const selector of selectors) {
+      if (selector.pageId) {
+        const element = doc.getElementById(selector.pageId);
+        if (element) {
+          data[selector.columnName] = element.textContent?.trim() || '';
+        }
+      }
+    }
+    return data;
+  }
+
+  async getPreview({ url, htmlIds }: HtmlCrawlerProps): Promise<{
+    mainPage: HtmlPreviewData[];
+    articlePreviews: Record<string, string>[];
+  }> {
+    this.baseUrl = url;
+
+    const mainDoc = await this.fetchAndParse(url);
+    if (!mainDoc) throw new Error('Failed to fetch main page');
+
+    // Get sample articles first
+    const newsContainer = mainDoc.querySelector('.news');
+    if (!newsContainer) throw new Error('News container not found');
+
+    const newsItems = Array.from(
+      newsContainer.querySelectorAll('a.item')
+    ).slice(0, 3);
+    const mainPagePreviews: HtmlPreviewData[] = [];
+    const articlePreviews: Record<string, string>[] = [];
+
+    // Process main page selectors
+    for (const id of htmlIds) {
+      const parsed = this.parseHtmlId(id);
+      const previewData: HtmlPreviewData = {
+        url,
+        columnName: parsed.columnName,
+        selector: parsed.selector,
+        subSelector: parsed.subSelector,
+        attribute: parsed.attribute,
+        sampleData: [],
+      };
+
+      if (!parsed.pageId) {
+        // Handle main page content first
+        if (parsed.attribute === 'href' && parsed.subSelector === 'a') {
+          newsItems.forEach((item) => {
+            const href = item.getAttribute('href');
+            if (href) {
+              const fullUrl = href.startsWith('..')
+                ? new URL(href.replace('..', ''), this.baseUrl).toString()
+                : new URL(href, this.baseUrl).toString();
+              previewData.sampleData?.push(fullUrl);
+            }
+          });
+        } else {
+          // Other main page selectors
+          newsItems.forEach((item) => {
+            const elements = parsed.isMultiple
+              ? item.querySelectorAll(parsed.selector)
+              : [item.querySelector(parsed.selector)];
+
+            elements.forEach((el) => {
+              if (!el) return;
+              const content = this.extractContent(el, parsed);
+              if (content) previewData.sampleData?.push(content);
+            });
+          });
+        }
+      } else if (parsed.pageId) {
+        // Handle page-specific content
+        for (const item of newsItems) {
+          const href = item.getAttribute('href');
+          if (!href) continue;
+
+          const articleUrl = href.startsWith('..')
+            ? new URL(href.replace('..', ''), this.baseUrl).toString()
+            : new URL(href, this.baseUrl).toString();
+
+          const articleData = await this.getArticlePreview(articleUrl, [
+            parsed,
+          ]);
+          if (articleData[parsed.columnName]) {
+            if (articleData[parsed.columnName]) {
+              previewData.sampleData?.push(
+                articleData[parsed.columnName] as string
+              );
+            }
+            articlePreviews.push({ ...articleData, URL: articleUrl });
+          }
+        }
+      }
+
+      mainPagePreviews.push(previewData);
+    }
+
+    return { mainPage: mainPagePreviews, articlePreviews };
+  }
+
   async crawl({ url, htmlIds, onProgress }: HtmlCrawlerProps): Promise<any[]> {
     this.baseUrl = url;
     const results: any[] = [];
@@ -95,43 +210,53 @@ export class HtmlCrawler {
       const mainDoc = await this.fetchAndParse(url);
       if (!mainDoc) throw new Error('Failed to fetch main page');
 
-      // Get all news links first
       const newsContainer = mainDoc.querySelector('.news');
-      if (!newsContainer) throw new Error('News container not found');
+      if (!mainDoc) throw new Error('News container not found');
 
-      const newsItems = Array.from(newsContainer.querySelectorAll('a.item'));
+      const newsItems = Array.from(
+        newsContainer?.querySelectorAll('a.item') || []
+      );
       console.log(`Found ${newsItems.length} news items`);
 
       // Process each news item
       for (let i = 0; i < newsItems.length; i++) {
         const item = newsItems[i];
         const rowData: Record<string, string> = {};
-
-        // Get the article URL
-        const href = item.getAttribute('href');
+        const href = item?.getAttribute('href');
         if (!href) continue;
 
         const articleUrl = href.startsWith('..')
           ? new URL(href.replace('..', ''), this.baseUrl).toString()
           : new URL(href, this.baseUrl).toString();
 
-        // Store URL if requested
-        const urlColumn = parsedIds.find((p) => p.columnName === 'URL');
-        if (urlColumn) {
-          rowData.URL = articleUrl;
+        // First handle main page selectors (including URL)
+        for (const parsed of parsedIds) {
+          if (!parsed.pageId) {
+            // Handle main page content
+            if (parsed.attribute === 'href' && parsed.subSelector === 'a') {
+              rowData[parsed.columnName] = articleUrl;
+            } else {
+              const elements = parsed.isMultiple
+                ? item?.querySelectorAll(parsed.selector)
+                : [item?.querySelector(parsed.selector)];
+
+              elements?.forEach((el) => {
+                if (!el) return;
+                const content = this.extractContent(el, parsed);
+                if (content) rowData[parsed.columnName] = content;
+              });
+            }
+          }
         }
 
-        // Fetch and parse article page if we have any page IDs to process
-        if (parsedIds.some((p) => p.pageId)) {
+        // Check if we need page-specific content
+        const needsPageContent = parsedIds.some((p) => p.pageId);
+        if (needsPageContent) {
           const articleDoc = await this.fetchAndParse(articleUrl);
           if (!articleDoc) continue;
 
-          // Extract content using IDs
           for (const parsed of parsedIds) {
-            if (parsed.columnName === 'URL') continue;
-
             if (parsed.pageId) {
-              // Use getElementById for page content
               const element = articleDoc.getElementById(parsed.pageId);
               if (element) {
                 rowData[parsed.columnName] = element.textContent?.trim() || '';
@@ -142,16 +267,16 @@ export class HtmlCrawler {
 
         if (Object.keys(rowData).length > 0) {
           results.push(rowData);
-          console.log(`Processed article: ${articleUrl}`, rowData);
+          console.log(`Processed item:`, rowData);
         }
 
         onProgress(
           10 + Math.round(((i + 1) / newsItems.length) * 90),
-          `Processing article ${i + 1} of ${newsItems.length}`
+          `Processing item ${i + 1} of ${newsItems.length}`
         );
       }
 
-      onProgress(100, `Successfully crawled ${results.length} articles`);
+      onProgress(100, `Successfully processed ${results.length} items`);
       return results;
     } catch (error) {
       console.error('Crawling error:', error);

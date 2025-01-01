@@ -125,6 +125,8 @@ export function DatasetCrawler({
   const [previewLoading, setPreviewLoading] = useState(false);
   const [rawHtml, setRawHtml] = useState<string>('');
   const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([]);
+  const [previewPage, setPreviewPage] = useState(1);
+  const previewPageSize = 5;
 
   useEffect(() => {
     const fetchColumnsAndRows = async () => {
@@ -446,7 +448,7 @@ export function DatasetCrawler({
     setPreviewLoading(true);
     try {
       const crawler = new HtmlCrawler();
-      const rows = await crawler.crawl({
+      const { mainPage, articlePreviews } = await crawler.getPreview({
         url: dataset.url,
         htmlIds: dataset.html_ids,
         onProgress: (progress, status) => {
@@ -455,77 +457,14 @@ export function DatasetCrawler({
         },
       });
 
-      setPreviewRows(rows);
+      setHtmlPreview(mainPage);
+      setPreviewRows(articlePreviews);
+
       const response = await fetch(
         `/api/proxy?url=${encodeURIComponent(dataset.url)}`
       );
       const html = await response.text();
       setRawHtml(html);
-      const preview: HtmlPreviewData[] = [];
-
-      for (const htmlId of dataset.html_ids) {
-        const match = htmlId.match(/{{(.+?)}}:(.+?)(?:->(.+?))?(?:{(.+?)})?$/);
-        if (!match) continue;
-
-        const [, columnName, rawSelector, subSelector, attribute] = match;
-
-        // Clean up array notation:
-        const cleanedSelector = rawSelector?.replace('[]', '').trim();
-
-        const previewData: HtmlPreviewData = {
-          url: dataset.url,
-          columnName: columnName || 'Unknown',
-          selector: cleanedSelector || '',
-          subSelector,
-          attribute,
-          sampleData: [],
-        };
-
-        // Fetch sample data for preview
-        try {
-          const response = await fetch(
-            `/api/proxy?url=${encodeURIComponent(dataset.url)}`
-          );
-          const html = await response.text();
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-
-          if (subSelector && cleanedSelector) {
-            const baseElements = doc.querySelectorAll(cleanedSelector);
-            const samples: string[] = [];
-
-            baseElements.forEach((base) => {
-              if (samples.length < 3) {
-                // Show max 3 samples
-                const element = base.querySelector(subSelector);
-                if (element) {
-                  const content = attribute
-                    ? element.getAttribute(attribute) || ''
-                    : element.textContent?.trim() || '';
-                  samples.push(content);
-                }
-              }
-            });
-
-            previewData.sampleData = samples;
-          } else {
-            if (!cleanedSelector) continue;
-            const element = doc.querySelector(cleanedSelector);
-            if (element) {
-              const content = attribute
-                ? element.getAttribute(attribute) || ''
-                : element.textContent?.trim() || '';
-              previewData.sampleData = [content];
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching preview:', error);
-        }
-
-        preview.push(previewData);
-      }
-
-      setHtmlPreview(preview);
     } finally {
       setPreviewLoading(false);
     }
@@ -734,61 +673,125 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
         </TabsContent>
 
         <TabsContent value="rows" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">Preview Rows</h3>
-                  <Badge>{previewRows.length} rows found</Badge>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border">
-                    <thead>
-                      <tr className="bg-muted">
-                        {dataset.html_ids?.map((id) => {
-                          const match = id.match(/{{(.+?)}}/);
-                          return match ? (
-                            <th key={match[1]} className="border p-2 text-left">
-                              {match[1]}
-                            </th>
-                          ) : null;
-                        })}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewRows.slice(0, 5).map((row, i) => (
-                        <tr key={i}>
-                          {Object.entries(row).map(([key, value]) => (
-                            <td key={key} className="border p-2">
-                              {key === 'URL' ? (
-                                <a
-                                  href={value}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-500 hover:underline"
-                                >
-                                  {value}
-                                </a>
-                              ) : (
-                                value
-                              )}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {previewRows.length > 5 && (
-                  <div className="text-muted-foreground text-center text-sm">
-                    Showing first 5 of {previewRows.length} rows
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {renderPreviewRows()}
         </TabsContent>
       </Tabs>
+    );
+  };
+
+  const renderPreviewRows = () => {
+    const startIdx = (previewPage - 1) * previewPageSize;
+    const endIdx = startIdx + previewPageSize;
+    const totalPages = Math.ceil(previewRows.length / previewPageSize);
+
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Preview Rows</h3>
+              <Badge>{previewRows.length} rows found</Badge>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border">
+                <thead>
+                  <tr className="bg-muted">
+                    {dataset.html_ids?.map((id) => {
+                      const match = id.match(/{{(.+?)}}/);
+                      return match ? (
+                        <th key={match[1]} className="border p-2 text-left">
+                          {match[1]}
+                        </th>
+                      ) : null;
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewRows.slice(0, 5).map((row, i) => (
+                    <tr key={i}>
+                      {Object.entries(row).map(([key, value]) => (
+                        <td key={key} className="border p-2">
+                          {key === 'URL' ? (
+                            <a
+                              href={value}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:underline"
+                            >
+                              {value}
+                            </a>
+                          ) : (
+                            value
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-muted-foreground text-sm">
+                Showing {startIdx + 1} to {Math.min(endIdx, previewRows.length)}{' '}
+                of {previewRows.length} rows
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setPreviewPage((p) => Math.max(1, p - 1))}
+                      className={
+                        previewPage === 1
+                          ? 'pointer-events-none opacity-50'
+                          : ''
+                      }
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(
+                      (page) =>
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= previewPage - 1 && page <= previewPage + 1)
+                    )
+                    .map((page, index, array) => {
+                      if (index > 0 && array[index - 1] !== page - 1) {
+                        return (
+                          <PaginationItem key={`ellipsis-${page}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href={getPageHref(page)}
+                            onClick={(e) => handlePageClick(e, page)}
+                            isActive={page === previewPage}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setPreviewPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      className={
+                        previewPage === totalPages
+                          ? 'pointer-events-none opacity-50'
+                          : ''
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -995,25 +998,6 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
-
-            <div className="mt-4 flex flex-col gap-2">
-              {loading && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">
-                      {syncStatus}
-                    </span>
-                    <span className="text-sm font-medium">{syncProgress}%</span>
-                  </div>
-                  <Progress value={syncProgress} className="h-2" />
-                </>
-              )}
-              <div className="flex justify-end">
-                <Button onClick={syncDataset} disabled={loading}>
-                  {loading ? 'Syncing...' : 'Sync Dataset'}
-                </Button>
-              </div>
-            </div>
           </div>
         )}
       </>
