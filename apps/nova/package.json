@@ -190,7 +190,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.13",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.10.2",
+    "@types/node": "^22.10.3",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@types/uuid": "^10.0.0",
