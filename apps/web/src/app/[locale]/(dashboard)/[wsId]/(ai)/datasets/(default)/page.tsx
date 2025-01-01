@@ -1,7 +1,7 @@
 import { getColumns } from '../columns';
 import ModelForm from '../form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import type { WorkspaceAIModel } from '@/types/db';
+import type { WorkspaceDataset } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -55,6 +55,7 @@ export default async function WorkspaceDatasetsPage({
         count={count}
         defaultVisibility={{
           id: false,
+          description: false,
           url: false,
           created_at: false,
         }}
@@ -106,7 +107,10 @@ async function getData(
     ),
     count,
   } as unknown as {
-    data: WorkspaceAIModel[];
+    data: (WorkspaceDataset & {
+      columns: number;
+      rows: number;
+    })[];
     count: number;
   };
 }
