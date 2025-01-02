@@ -38,7 +38,7 @@
     "@deepgram/sdk": "^3.9.0",
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
-    "@formatjs/intl-localematcher": "^0.5.9",
+    "@formatjs/intl-localematcher": "^0.5.10",
     "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^3.9.1",
     "@repo/types": "workspace:*",
