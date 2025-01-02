@@ -115,7 +115,7 @@
     "@upstash/qstash": "^2.7.20",
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
-    "ai": "^4.0.22",
+    "ai": "^4.0.23",
     "babel-plugin-react-compiler": "19.0.0-beta-55955c9-20241229",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
