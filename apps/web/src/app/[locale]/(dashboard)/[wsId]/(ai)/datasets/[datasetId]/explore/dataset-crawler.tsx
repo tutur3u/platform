@@ -54,7 +54,16 @@ import {
   TabsList,
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
-import { Bug, Code2, ExternalLink, RefreshCw, ScanSearch } from 'lucide-react';
+import {
+  Bug,
+  Check,
+  Clock,
+  Code2,
+  ExternalLink,
+  RefreshCw,
+  ScanSearch,
+  X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as XLSX from 'xlsx';
@@ -93,6 +102,18 @@ interface HtmlPreviewData {
   sampleData?: string[];
 }
 
+interface UrlLog {
+  url: string;
+  timestamp: number;
+  success: boolean;
+}
+
+interface QueueItem {
+  url: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  timestamp: number;
+}
+
 export function DatasetCrawler({
   wsId,
   dataset,
@@ -127,6 +148,9 @@ export function DatasetCrawler({
   const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([]);
   const [previewPage, setPreviewPage] = useState(1);
   const previewPageSize = 5;
+  const [urlLogs, setUrlLogs] = useState<UrlLog[]>([]);
+  const [urlQueue, setUrlQueue] = useState<QueueItem[]>([]);
+  const [activeUrl, setActiveUrl] = useState<string>('');
 
   useEffect(() => {
     const fetchColumnsAndRows = async () => {
@@ -274,8 +298,7 @@ export function DatasetCrawler({
       setLoading(true);
       setSyncProgress(0);
       setSyncStatus('Analyzing dataset...');
-
-      const startTime = Date.now();
+      setUrlLogs([]); // Clear previous logs
 
       // Handle HTML crawling
       if (dataset.type === 'html' && dataset?.html_ids?.length) {
@@ -288,6 +311,12 @@ export function DatasetCrawler({
           onProgress: (progress, status) => {
             setSyncProgress(progress);
             setSyncStatus(status);
+          },
+          onUrlFetch: (url, success) => {
+            setUrlLogs((prev) => [
+              ...prev,
+              { url, success, timestamp: Date.now() },
+            ]);
           },
         });
 
@@ -338,7 +367,6 @@ export function DatasetCrawler({
         totalRows: allRows.length,
         syncedColumns: 0,
         syncedRows: 0,
-        startTime,
         rowBatches: Math.ceil(allRows.length / 100),
         currentBatch: 0,
       });
@@ -446,6 +474,10 @@ export function DatasetCrawler({
     if (!dataset.url || !dataset.html_ids?.length) return;
 
     setPreviewLoading(true);
+    setUrlLogs([]);
+    setUrlQueue([]);
+    setActiveUrl('');
+
     try {
       const crawler = new HtmlCrawler();
       const { mainPage, articlePreviews } = await crawler.getPreview({
@@ -454,6 +486,36 @@ export function DatasetCrawler({
         onProgress: (progress, status) => {
           setSyncProgress(progress);
           setSyncStatus(status);
+        },
+        onUrlFetch: (url, success) => {
+          setUrlLogs((prev) => [
+            ...prev,
+            { url, success, timestamp: Date.now() },
+          ]);
+          setActiveUrl(url);
+
+          // Update queue
+          setUrlQueue((prev) => {
+            const newQueue = [...prev];
+            const existingIndex = newQueue.findIndex(
+              (item) => item.url === url
+            );
+
+            if (existingIndex >= 0 && newQueue[existingIndex]) {
+              newQueue[existingIndex].status = success ? 'completed' : 'failed';
+            }
+
+            return newQueue;
+          });
+        },
+        onQueueUpdate: (urls: string[]) => {
+          setUrlQueue(
+            urls.map((url) => ({
+              url,
+              status: 'pending',
+              timestamp: Date.now(),
+            }))
+          );
         },
       });
 
@@ -467,6 +529,7 @@ export function DatasetCrawler({
       setRawHtml(html);
     } finally {
       setPreviewLoading(false);
+      setActiveUrl('');
     }
   };
 
@@ -507,6 +570,10 @@ export function DatasetCrawler({
             <ScanSearch className="h-4 w-4" />
             Preview Rows
           </TabsTrigger>
+          <TabsTrigger value="logs" className="flex items-center gap-2">
+            <Bug className="h-4 w-4" />
+            URL Logs
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="preview" className="space-y-4">
@@ -533,9 +600,116 @@ export function DatasetCrawler({
           </Card>
 
           {previewLoading ? (
-            <div className="space-y-2">
-              <div className="bg-muted h-[100px] animate-pulse rounded-md" />
-              <div className="bg-muted h-[100px] animate-pulse rounded-md" />
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">Current Progress</h3>
+                        <Badge variant="outline" className="animate-pulse">
+                          Processing...
+                        </Badge>
+                      </div>
+                      <span className="text-muted-foreground text-sm">
+                        {syncProgress}% Complete
+                      </span>
+                    </div>
+
+                    <Progress value={syncProgress} className="h-2" />
+
+                    {activeUrl && (
+                      <div className="flex items-center gap-2 rounded-md border p-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <code className="text-muted-foreground flex-1 truncate text-xs">
+                          {activeUrl}
+                        </code>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Queue Card */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">URL Queue</h3>
+                        <Badge variant="outline">
+                          {urlQueue.length} pending
+                        </Badge>
+                      </div>
+                      <div className="max-h-[200px] space-y-2 overflow-y-auto">
+                        {urlQueue.map((item, index) => (
+                          <div
+                            key={index}
+                            className={`flex items-center gap-2 rounded-md border p-2 ${
+                              item.status === 'processing' ? 'bg-muted/50' : ''
+                            }`}
+                          >
+                            {item.status === 'pending' && (
+                              <Clock className="text-muted-foreground h-4 w-4" />
+                            )}
+                            {item.status === 'processing' && (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            )}
+                            {item.status === 'completed' && (
+                              <Check className="h-4 w-4 text-green-500" />
+                            )}
+                            {item.status === 'failed' && (
+                              <X className="h-4 w-4 text-red-500" />
+                            )}
+                            <code className="text-muted-foreground flex-1 truncate text-xs">
+                              {item.url}
+                            </code>
+                            <time className="text-muted-foreground shrink-0 text-xs">
+                              {new Date(item.timestamp).toLocaleTimeString()}
+                            </time>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Recent Logs Card */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">Recent Activity</h3>
+                        <Badge variant="outline">
+                          {urlLogs.length} processed
+                        </Badge>
+                      </div>
+                      <div className="max-h-[200px] space-y-2 overflow-y-auto">
+                        {urlLogs.slice(-5).map((log, index) => (
+                          <div
+                            key={index}
+                            className={`flex items-center gap-2 rounded-md border p-2 ${
+                              log.success ? 'bg-green-500/5' : 'bg-red-500/5'
+                            }`}
+                          >
+                            {log.success ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <X className="h-4 w-4 text-red-500" />
+                            )}
+                            <code className="text-muted-foreground flex-1 truncate text-xs">
+                              {log.url}
+                            </code>
+                            <time className="text-muted-foreground shrink-0 text-xs">
+                              {new Date(log.timestamp).toLocaleTimeString()}
+                            </time>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           ) : (
             <div className="grid gap-4">
@@ -674,6 +848,79 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
 
         <TabsContent value="rows" className="space-y-4">
           {renderPreviewRows()}
+        </TabsContent>
+
+        <TabsContent value="logs" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">URL Fetch Logs</h3>
+                    <Badge variant="outline">{urlLogs.length} requests</Badge>
+                  </div>
+                  {loading && (
+                    <Badge variant="secondary" className="animate-pulse">
+                      Fetching...
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="max-h-[400px] overflow-y-auto rounded-md border">
+                  {urlLogs.length > 0 ? (
+                    <div className="divide-y">
+                      {urlLogs.map((log, index) => (
+                        <div
+                          key={index}
+                          className={`flex items-center justify-between p-3 ${
+                            log.success ? 'bg-green-500/5' : 'bg-red-500/5'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            {log.success ? (
+                              <Badge variant="success" className="shrink-0">
+                                Success
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive" className="shrink-0">
+                                Failed
+                              </Badge>
+                            )}
+                            <code className="text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap text-xs">
+                              {log.url}
+                            </code>
+                          </div>
+                          <time className="text-muted-foreground shrink-0 text-xs">
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                          </time>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex h-32 items-center justify-center">
+                      <span className="text-muted-foreground text-sm">
+                        No URLs fetched yet
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {loading && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">
+                        {syncStatus}
+                      </span>
+                      <span className="text-sm font-medium">
+                        {syncProgress}%
+                      </span>
+                    </div>
+                    <Progress value={syncProgress} className="h-2" />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     );
