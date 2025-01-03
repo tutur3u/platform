@@ -1,7 +1,7 @@
 'use client';
 
-// Fix imports - remove duplicate
 import { HtmlCrawler } from './html-crawler';
+import { cn } from '@/lib/utils';
 import type { WorkspaceDataset } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -112,6 +112,16 @@ interface QueueItem {
   url: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   timestamp: number;
+  progress: number;
+  subStatus?: string;
+}
+
+interface PageProgress {
+  pageNumber: number;
+  progress: number;
+  status: 'pending' | 'fetching' | 'processing' | 'complete' | 'error';
+  articleCount?: number;
+  fetchedArticles?: number;
 }
 
 export function DatasetCrawler({
@@ -151,6 +161,8 @@ export function DatasetCrawler({
   const [urlLogs, setUrlLogs] = useState<UrlLog[]>([]);
   const [urlQueue, setUrlQueue] = useState<QueueItem[]>([]);
   const [activeUrl, setActiveUrl] = useState<string>('');
+  const [pageProgresses, setPageProgresses] = useState<PageProgress[]>([]);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     const fetchColumnsAndRows = async () => {
@@ -175,7 +187,7 @@ export function DatasetCrawler({
 
   // Calculate pagination values
   const totalRows = processedData.length - 1; // Subtract header row
-  const totalPages = Math.ceil(totalRows / pageSize);
+  const datasetTotalPages = Math.ceil(totalRows / pageSize);
   const startIndex = (currentPage - 1) * pageSize + 1; // +1 to skip header
   const endIndex = Math.min(startIndex + pageSize - 1, totalRows);
 
@@ -299,6 +311,7 @@ export function DatasetCrawler({
       setSyncProgress(0);
       setSyncStatus('Analyzing dataset...');
       setUrlLogs([]); // Clear previous logs
+      setPageProgresses([]);
 
       // Handle HTML crawling
       if (dataset.type === 'html' && dataset?.html_ids?.length) {
@@ -317,6 +330,66 @@ export function DatasetCrawler({
               ...prev,
               { url, success, timestamp: Date.now() },
             ]);
+            setActiveUrl(url);
+
+            // Update queue
+            setUrlQueue((prev) => {
+              const newQueue = [...prev];
+              const existingIndex = newQueue.findIndex(
+                (item) => item.url === url
+              );
+
+              if (existingIndex >= 0 && newQueue[existingIndex]) {
+                newQueue[existingIndex].status = success
+                  ? 'completed'
+                  : 'failed';
+              }
+
+              return newQueue;
+            });
+          },
+          onQueueUpdate: (urls: string[]) => {
+            setUrlQueue(
+              urls.map((url) => ({
+                url,
+                status: 'pending',
+                timestamp: Date.now(),
+                progress: 0,
+              }))
+            );
+          },
+          onUrlProgress: (
+            url: string,
+            progress: number,
+            subStatus?: string
+          ) => {
+            updateUrlProgress(url, progress, subStatus);
+          },
+          onPageProgress: (pageProgress) => {
+            setPageProgresses((prev) => {
+              const newProgresses = [...prev];
+              const index = newProgresses.findIndex(
+                (p) => p.pageNumber === pageProgress.pageNumber
+              );
+              if (index >= 0) {
+                newProgresses[index] = pageProgress;
+              } else {
+                newProgresses.push(pageProgress);
+              }
+
+              // Calculate and update global progress based on all pages
+              const globalProgress = Math.round(
+                (newProgresses.reduce((sum, p) => sum + p.progress, 0) /
+                  (totalPages * 100)) *
+                  100
+              );
+              setSyncProgress(globalProgress);
+
+              return newProgresses;
+            });
+          },
+          onTotalPages: (pages) => {
+            setTotalPages(pages);
           },
         });
 
@@ -514,8 +587,12 @@ export function DatasetCrawler({
               url,
               status: 'pending',
               timestamp: Date.now(),
+              progress: 0,
             }))
           );
+        },
+        onUrlProgress: (url: string, progress: number, subStatus?: string) => {
+          updateUrlProgress(url, progress, subStatus);
         },
       });
 
@@ -632,47 +709,7 @@ export function DatasetCrawler({
 
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Queue Card */}
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold">URL Queue</h3>
-                        <Badge variant="outline">
-                          {urlQueue.length} pending
-                        </Badge>
-                      </div>
-                      <div className="max-h-[200px] space-y-2 overflow-y-auto">
-                        {urlQueue.map((item, index) => (
-                          <div
-                            key={index}
-                            className={`flex items-center gap-2 rounded-md border p-2 ${
-                              item.status === 'processing' ? 'bg-muted/50' : ''
-                            }`}
-                          >
-                            {item.status === 'pending' && (
-                              <Clock className="text-muted-foreground h-4 w-4" />
-                            )}
-                            {item.status === 'processing' && (
-                              <RefreshCw className="h-4 w-4 animate-spin" />
-                            )}
-                            {item.status === 'completed' && (
-                              <Check className="h-4 w-4 text-green-500" />
-                            )}
-                            {item.status === 'failed' && (
-                              <X className="h-4 w-4 text-red-500" />
-                            )}
-                            <code className="text-muted-foreground flex-1 truncate text-xs">
-                              {item.url}
-                            </code>
-                            <time className="text-muted-foreground shrink-0 text-xs">
-                              {new Date(item.timestamp).toLocaleTimeString()}
-                            </time>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {renderQueueCard()}
 
                 {/* Recent Logs Card */}
                 <Card>
@@ -851,76 +888,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">URL Fetch Logs</h3>
-                    <Badge variant="outline">{urlLogs.length} requests</Badge>
-                  </div>
-                  {loading && (
-                    <Badge variant="secondary" className="animate-pulse">
-                      Fetching...
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="max-h-[400px] overflow-y-auto rounded-md border">
-                  {urlLogs.length > 0 ? (
-                    <div className="divide-y">
-                      {urlLogs.map((log, index) => (
-                        <div
-                          key={index}
-                          className={`flex items-center justify-between p-3 ${
-                            log.success ? 'bg-green-500/5' : 'bg-red-500/5'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            {log.success ? (
-                              <Badge variant="success" className="shrink-0">
-                                Success
-                              </Badge>
-                            ) : (
-                              <Badge variant="destructive" className="shrink-0">
-                                Failed
-                              </Badge>
-                            )}
-                            <code className="text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap text-xs">
-                              {log.url}
-                            </code>
-                          </div>
-                          <time className="text-muted-foreground shrink-0 text-xs">
-                            {new Date(log.timestamp).toLocaleTimeString()}
-                          </time>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex h-32 items-center justify-center">
-                      <span className="text-muted-foreground text-sm">
-                        No URLs fetched yet
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {loading && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground text-sm">
-                        {syncStatus}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {syncProgress}%
-                      </span>
-                    </div>
-                    <Progress value={syncProgress} className="h-2" />
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {renderUrlLogs()}
         </TabsContent>
       </Tabs>
     );
@@ -929,7 +897,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
   const renderPreviewRows = () => {
     const startIdx = (previewPage - 1) * previewPageSize;
     const endIdx = startIdx + previewPageSize;
-    const totalPages = Math.ceil(previewRows.length / previewPageSize);
+    const previewTotalPages = Math.ceil(previewRows.length / previewPageSize);
 
     return (
       <Card>
@@ -984,7 +952,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
               </div>
               <Pagination>
                 <PaginationContent>
-                  <PaginationItem>
+                  <PaginationItemWithProgress page={previewPage - 1}>
                     <PaginationPrevious
                       onClick={() => setPreviewPage((p) => Math.max(1, p - 1))}
                       className={
@@ -993,24 +961,27 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                           : ''
                       }
                     />
-                  </PaginationItem>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  </PaginationItemWithProgress>
+                  {Array.from({ length: previewTotalPages }, (_, i) => i + 1)
                     .filter(
                       (page) =>
                         page === 1 ||
-                        page === totalPages ||
+                        page === previewTotalPages ||
                         (page >= previewPage - 1 && page <= previewPage + 1)
                     )
                     .map((page, index, array) => {
                       if (index > 0 && array[index - 1] !== page - 1) {
                         return (
-                          <PaginationItem key={`ellipsis-${page}`}>
+                          <PaginationItemWithProgress
+                            key={`ellipsis-${page}`}
+                            page={page}
+                          >
                             <PaginationEllipsis />
-                          </PaginationItem>
+                          </PaginationItemWithProgress>
                         );
                       }
                       return (
-                        <PaginationItem key={page}>
+                        <PaginationItemWithProgress key={page} page={page}>
                           <PaginationLink
                             href={getPageHref(page)}
                             onClick={(e) => handlePageClick(e, page)}
@@ -1018,21 +989,24 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                           >
                             {page}
                           </PaginationLink>
-                        </PaginationItem>
+                          {renderPageProgress(page)}
+                        </PaginationItemWithProgress>
                       );
                     })}
-                  <PaginationItem>
+                  <PaginationItemWithProgress page={previewPage + 1}>
                     <PaginationNext
                       onClick={() =>
-                        setPreviewPage((p) => Math.min(totalPages, p + 1))
+                        setPreviewPage((p) =>
+                          Math.min(previewTotalPages, p + 1)
+                        )
                       }
                       className={
-                        previewPage === totalPages
+                        previewPage === previewTotalPages
                           ? 'pointer-events-none opacity-50'
                           : ''
                       }
                     />
-                  </PaginationItem>
+                  </PaginationItemWithProgress>
                 </PaginationContent>
               </Pagination>
             </div>
@@ -1194,7 +1168,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
 
             <Pagination>
               <PaginationContent>
-                <PaginationItem>
+                <PaginationItemWithProgress page={currentPage - 1}>
                   <PaginationPrevious
                     href={getPageHref(currentPage - 1)}
                     onClick={(e) => handlePageClick(e, currentPage - 1)}
@@ -1202,25 +1176,28 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                       currentPage === 1 ? 'pointer-events-none opacity-50' : ''
                     }
                   />
-                </PaginationItem>
+                </PaginationItemWithProgress>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                {Array.from({ length: datasetTotalPages }, (_, i) => i + 1)
                   .filter(
                     (page) =>
                       page === 1 ||
-                      page === totalPages ||
+                      page === datasetTotalPages ||
                       (page >= currentPage - 1 && page <= currentPage + 1)
                   )
                   .map((page, index, array) => {
                     if (index > 0 && array[index - 1] !== page - 1) {
                       return (
-                        <PaginationItem key={`ellipsis-${page}`}>
+                        <PaginationItemWithProgress
+                          key={`ellipsis-${page}`}
+                          page={page}
+                        >
                           <PaginationEllipsis />
-                        </PaginationItem>
+                        </PaginationItemWithProgress>
                       );
                     }
                     return (
-                      <PaginationItem key={page}>
+                      <PaginationItemWithProgress key={page} page={page}>
                         <PaginationLink
                           href={getPageHref(page)}
                           onClick={(e) => handlePageClick(e, page)}
@@ -1228,21 +1205,22 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                         >
                           {page}
                         </PaginationLink>
-                      </PaginationItem>
+                        {renderPageProgress(page)}
+                      </PaginationItemWithProgress>
                     );
                   })}
 
-                <PaginationItem>
+                <PaginationItemWithProgress page={currentPage + 1}>
                   <PaginationNext
                     href={getPageHref(currentPage + 1)}
                     onClick={(e) => handlePageClick(e, currentPage + 1)}
                     className={
-                      currentPage === totalPages
+                      currentPage === datasetTotalPages
                         ? 'pointer-events-none opacity-50'
                         : ''
                     }
                   />
-                </PaginationItem>
+                </PaginationItemWithProgress>
               </PaginationContent>
             </Pagination>
           </div>
@@ -1250,6 +1228,247 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
       </>
     );
   };
+
+  const renderPageProgress = (page: number) => {
+    const progress = pageProgresses.find((p) => p.pageNumber === page);
+    if (!progress) return null;
+
+    return (
+      <div className="absolute inset-x-0 -bottom-1">
+        <div className="bg-muted relative h-1 w-full overflow-hidden rounded-full">
+          <div
+            className={cn(
+              'h-full transition-all duration-300',
+              progress.status === 'complete' && 'bg-green-500',
+              progress.status === 'error' && 'bg-red-500',
+              progress.status === 'processing' && 'bg-blue-500',
+              progress.status === 'fetching' && 'bg-yellow-500'
+            )}
+            style={{ width: `${progress.progress}%` }}
+          />
+        </div>
+        {progress.articleCount && (
+          <div className="absolute -top-4 right-0 text-xs">
+            {progress.fetchedArticles}/{progress.articleCount}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Add interface for PaginationItemWithProgress props
+  interface PaginationItemWithProgressProps extends React.PropsWithChildren {
+    page: number;
+    className?: string;
+  }
+
+  // Update the component definition
+  const PaginationItemWithProgress = ({
+    page,
+    children,
+    className,
+  }: PaginationItemWithProgressProps) => (
+    <PaginationItem className={cn('relative', className)}>
+      {children}
+      {renderPageProgress(page)}
+    </PaginationItem>
+  );
+
+  const renderUrlLogs = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">URL Fetch Logs</h3>
+              <Badge variant="outline">{urlLogs.length} requests</Badge>
+            </div>
+            {loading && (
+              <Badge variant="secondary" className="animate-pulse">
+                Fetching...
+              </Badge>
+            )}
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto rounded-md border">
+            {urlLogs.length > 0 ? (
+              <div className="divide-y">
+                {urlLogs.map((log, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center justify-between p-3 ${
+                      log.success ? 'bg-green-500/5' : 'bg-red-500/5'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      {log.success ? (
+                        <Badge variant="success" className="shrink-0">
+                          Success
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive" className="shrink-0">
+                          Failed
+                        </Badge>
+                      )}
+                      <code className="text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap text-xs">
+                        {log.url}
+                      </code>
+                    </div>
+                    <time className="text-muted-foreground shrink-0 text-xs">
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </time>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex h-32 items-center justify-center">
+                <span className="text-muted-foreground text-sm">
+                  No URLs fetched yet
+                </span>
+              </div>
+            )}
+          </div>
+
+          {loading && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-sm">
+                  {syncStatus}
+                </span>
+                <span className="text-sm font-medium">{syncProgress}%</span>
+              </div>
+              <Progress value={syncProgress} className="h-2" />
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Page Progress</h4>
+            <div className="grid gap-2">
+              {pageProgresses.map((progress) => (
+                <div key={progress.pageNumber} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>
+                      Page {progress.pageNumber}
+                      {progress.articleCount
+                        ? ` (${progress.fetchedArticles}/${progress.articleCount} articles)`
+                        : ''}
+                    </span>
+                    <Badge variant={getStatusVariant(progress.status)}>
+                      {progress.status}
+                    </Badge>
+                  </div>
+                  <Progress value={progress.progress} className="h-2" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return 'success';
+      case 'error':
+        return 'destructive';
+      case 'processing':
+        return 'default';
+      case 'fetching':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  const updateUrlProgress = (
+    url: string,
+    progress: number,
+    subStatus?: string
+  ) => {
+    setUrlQueue((prev) => {
+      const newQueue = [...prev];
+      const index = newQueue.findIndex((item) => item.url === url);
+      if (index >= 0 && newQueue[index]) {
+        newQueue[index] = {
+          ...newQueue[index],
+          progress,
+          subStatus,
+        };
+      }
+
+      // Calculate global progress based on all queue items
+      const totalProgress = newQueue.reduce((sum, item) => {
+        return sum + (item.status === 'completed' ? 100 : item.progress);
+      }, 0);
+      const globalProgress = Math.round(
+        (totalProgress / (newQueue.length * 100)) * 100
+      );
+      setSyncProgress(globalProgress);
+
+      return newQueue;
+    });
+  };
+
+  const renderQueueCard = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">URL Queue</h3>
+            <Badge variant="outline">
+              {urlQueue.filter((i) => i.status === 'pending').length} pending
+            </Badge>
+          </div>
+          <div className="max-h-[200px] space-y-2 overflow-y-auto">
+            {urlQueue.map((item, index) => (
+              <div
+                key={index}
+                className={cn(
+                  'space-y-2 rounded-md border p-2',
+                  item.status === 'processing' && 'bg-muted/50'
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {item.status === 'pending' && (
+                      <Clock className="text-muted-foreground h-4 w-4" />
+                    )}
+                    {item.status === 'processing' && (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    )}
+                    {item.status === 'completed' && (
+                      <Check className="h-4 w-4 text-green-500" />
+                    )}
+                    {item.status === 'failed' && (
+                      <X className="h-4 w-4 text-red-500" />
+                    )}
+                    <code className="text-muted-foreground flex-1 truncate text-xs">
+                      {item.url}
+                    </code>
+                  </div>
+                  <time className="text-muted-foreground shrink-0 text-xs">
+                    {new Date(item.timestamp).toLocaleTimeString()}
+                  </time>
+                </div>
+                {(item.status === 'processing' || item.progress > 0) && (
+                  <div className="space-y-1">
+                    {item.subStatus && (
+                      <div className="text-muted-foreground text-xs">
+                        {item.subStatus}
+                      </div>
+                    )}
+                    <Progress value={item.progress} className="h-1" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

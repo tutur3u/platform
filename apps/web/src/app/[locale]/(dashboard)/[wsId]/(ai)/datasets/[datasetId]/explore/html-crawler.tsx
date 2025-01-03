@@ -1,5 +1,13 @@
 'use client';
 
+interface PageProgress {
+  pageNumber: number;
+  progress: number;
+  status: 'pending' | 'fetching' | 'processing' | 'complete' | 'error';
+  articleCount?: number;
+  fetchedArticles?: number;
+}
+
 interface HtmlCrawlerProps {
   url: string;
   htmlIds: string[];
@@ -9,6 +17,12 @@ interface HtmlCrawlerProps {
   onUrlFetch?: (url: string, success: boolean) => void;
   // eslint-disable-next-line no-unused-vars
   onQueueUpdate?: (urls: string[]) => void;
+  // eslint-disable-next-line no-unused-vars
+  onPageProgress?: (progress: PageProgress) => void;
+  // eslint-disable-next-line no-unused-vars
+  onTotalPages?: (pages: number) => void;
+  // eslint-disable-next-line no-unused-vars
+  onUrlProgress?: (url: string, progress: number, subStatus?: string) => void;
 }
 
 interface ParsedHtmlId {
@@ -32,6 +46,8 @@ interface HtmlPreviewData {
 export class HtmlCrawler {
   private baseUrl: string = '';
   private currentCallback?: HtmlCrawlerProps;
+  private urlCache: Map<string, Document> = new Map();
+  private inProgressFetches: Map<string, Promise<Document | null>> = new Map();
 
   private parseHtmlId(htmlId: string): ParsedHtmlId {
     // Format: "{{COLUMN_NAME}}:selector[]?->subSelector{attribute}->#id"
@@ -61,19 +77,56 @@ export class HtmlCrawler {
   }
 
   private async fetchAndParse(url: string): Promise<Document | null> {
+    // Check cache first
+    const cachedDoc = this.urlCache.get(url);
+    if (cachedDoc) {
+      console.log('📦 Cache hit:', url);
+      this.currentCallback?.onUrlProgress?.(url, 100, 'Loaded from cache');
+      return cachedDoc;
+    }
+
+    // Check if there's already a fetch in progress for this URL
+    const inProgressFetch = this.inProgressFetches.get(url);
+    if (inProgressFetch) {
+      console.log('⏳ Reusing in-progress fetch:', url);
+      return inProgressFetch;
+    }
+
     try {
-      this.currentCallback?.onUrlFetch?.(url, true);
-      console.log('📥 Fetching:', url);
+      // Create a new fetch promise
+      const fetchPromise = (async () => {
+        this.currentCallback?.onUrlFetch?.(url, true);
+        this.currentCallback?.onUrlProgress?.(url, 10, 'Starting fetch');
+        console.log('📥 Fetching:', url);
 
-      const response = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
-      const html = await response.text();
-      console.log(`✅ Fetched ${url} (${html.length} bytes)`);
+        const response = await fetch(
+          `/api/proxy?url=${encodeURIComponent(url)}`
+        );
+        this.currentCallback?.onUrlProgress?.(url, 50, 'Downloaded');
 
-      const parser = new DOMParser();
-      return parser.parseFromString(html, 'text/html');
+        const html = await response.text();
+        this.currentCallback?.onUrlProgress?.(url, 75, 'Parsing HTML');
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Cache the parsed document
+        this.urlCache.set(url, doc);
+        this.currentCallback?.onUrlProgress?.(url, 100, 'Complete');
+
+        // Remove from in-progress fetches
+        this.inProgressFetches.delete(url);
+
+        return doc;
+      })();
+
+      // Store the promise in the in-progress map
+      this.inProgressFetches.set(url, fetchPromise);
+      return fetchPromise;
     } catch (e) {
       console.error('❌ Error fetching page:', url, e);
       this.currentCallback?.onUrlFetch?.(url, false);
+      this.inProgressFetches.delete(url);
       return null;
     }
   }
@@ -124,50 +177,57 @@ export class HtmlCrawler {
     return data;
   }
 
+  private generatePaginationUrls(baseUrl: string, maxPage: number): string[] {
+    const urls: string[] = [];
+    const baseDir = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+
+    for (let i = 1; i <= maxPage; i++) {
+      const pageUrl =
+        i === 1
+          ? baseUrl // First page uses the original URL
+          : new URL(`p${i}_9Lua-gao.html`, baseDir).toString();
+      urls.push(pageUrl);
+    }
+
+    return urls;
+  }
+
+  private extractMaxPageNumber(pagingElement: Element): number {
+    // Get all page links
+    const pageLinks = Array.from(pagingElement.querySelectorAll('a'));
+
+    // Find the last numbered link
+    const lastLink = pageLinks[pageLinks.length - 1];
+    if (!lastLink) return 1;
+
+    // Extract the page number from href (p367_9Lua-gao.html -> 367)
+    const match = lastLink.getAttribute('href')?.match(/p(\d+)_/);
+    return match ? parseInt(match?.[1] || '1') : 1;
+  }
+
   private async fetchPaginatedUrls(
     url: string,
     // eslint-disable-next-line no-unused-vars
     onProgress: (progress: number, status: string) => void
   ): Promise<string[]> {
-    const paginatedUrls: Set<string> = new Set();
-    let nextPageUrl = url;
-    let pageCount = 0;
+    // Fetch first page to analyze pagination
+    const doc = await this.fetchAndParse(url);
+    if (!doc) return [url];
 
-    // Notify initial URL
-    this.currentCallback?.onQueueUpdate?.([url]);
+    const pagingElement = doc.querySelector('.paging');
+    if (!pagingElement) return [url];
 
-    while (nextPageUrl) {
-      onProgress(10 + pageCount, `Fetching page ${pageCount + 1}`);
-      const doc = await this.fetchAndParse(nextPageUrl);
-      if (!doc) break;
+    // Extract max page number and generate all URLs
+    const maxPage = this.extractMaxPageNumber(pagingElement);
+    const allUrls = this.generatePaginationUrls(url, maxPage);
 
-      paginatedUrls.add(nextPageUrl);
-      pageCount++;
+    console.log(`📚 Generated ${allUrls.length} pagination URLs`);
+    onProgress(10, `Found ${allUrls.length} pages to process`);
 
-      const pagingElement = doc.querySelector('.paging');
-      const nextLink = pagingElement?.querySelector('a.active + a');
-      if (nextLink) {
-        const href = nextLink.getAttribute('href');
-        if (href) {
-          nextPageUrl = href.startsWith('..')
-            ? new URL(href.replace('..', ''), this.baseUrl).toString()
-            : new URL(href, this.baseUrl).toString();
+    // Update the queue with all URLs at once
+    this.currentCallback?.onQueueUpdate?.(allUrls);
 
-          // Update queue with next URL
-          this.currentCallback?.onQueueUpdate?.([
-            ...Array.from(paginatedUrls),
-            nextPageUrl,
-          ]);
-        } else {
-          nextPageUrl = '';
-        }
-      } else {
-        nextPageUrl = '';
-      }
-    }
-
-    onProgress(10 + pageCount, `Fetched ${pageCount} pages`);
-    return Array.from(paginatedUrls);
+    return allUrls;
   }
 
   async getPreview(props: HtmlCrawlerProps): Promise<{
@@ -275,6 +335,23 @@ export class HtmlCrawler {
     return { mainPage: mainPagePreviews, articlePreviews };
   }
 
+  private async getArticleUrls(newsItems: Element[]): Promise<string[]> {
+    const uniqueUrls = new Set<string>();
+
+    for (const item of newsItems) {
+      const href = item.getAttribute('href');
+      if (!href) continue;
+
+      const articleUrl = href.startsWith('..')
+        ? new URL(href.replace('..', ''), this.baseUrl).toString()
+        : new URL(href, this.baseUrl).toString();
+
+      uniqueUrls.add(articleUrl);
+    }
+
+    return Array.from(uniqueUrls);
+  }
+
   async crawl(props: HtmlCrawlerProps): Promise<any[]> {
     this.currentCallback = props;
     try {
@@ -288,24 +365,24 @@ export class HtmlCrawler {
     url,
     htmlIds,
     onProgress,
+    onPageProgress,
+    onTotalPages,
   }: HtmlCrawlerProps): Promise<any[]> {
     this.baseUrl = url;
     const results: any[] = [];
     const parsedIds = htmlIds.map((id) => this.parseHtmlId(id));
+    const needsPageContent = parsedIds.some((p) => p.pageId);
 
     try {
-      onProgress(10, 'Fetching paginated URLs...');
+      onProgress(5, 'Fetching paginated URLs...');
       const paginatedUrls = await this.fetchPaginatedUrls(url, onProgress);
+      onTotalPages?.(paginatedUrls.length);
+
       console.log(`Found ${paginatedUrls.length} paginated URLs`);
 
-      for (let pageIndex = 0; pageIndex < paginatedUrls.length; pageIndex++) {
-        const pageUrl = paginatedUrls[pageIndex];
-        onProgress(
-          10 + Math.round((pageIndex / paginatedUrls.length) * 90),
-          `Processing page ${pageIndex + 1} of ${paginatedUrls.length}`
-        );
-
-        if (!pageUrl) continue;
+      // Pre-collect all article URLs
+      const allArticleUrls: string[] = [];
+      for (const pageUrl of paginatedUrls) {
         const mainDoc = await this.fetchAndParse(pageUrl);
         if (!mainDoc) continue;
 
@@ -313,44 +390,113 @@ export class HtmlCrawler {
         if (!newsContainer) continue;
 
         const newsItems = Array.from(newsContainer.querySelectorAll('a.item'));
-        console.log(
-          `Found ${newsItems.length} news items on page ${pageIndex + 1}`
+        const pageArticleUrls = await this.getArticleUrls(newsItems);
+        allArticleUrls.push(...pageArticleUrls);
+      }
+
+      // Remove duplicates
+      const uniqueArticleUrls = [...new Set(allArticleUrls)];
+      console.log(
+        `Found ${uniqueArticleUrls.length} unique articles (${allArticleUrls.length - uniqueArticleUrls.length} duplicates removed)`
+      );
+
+      // Pre-fetch all article pages if needed
+      if (needsPageContent) {
+        await Promise.all(
+          uniqueArticleUrls.map(async (articleUrl) => {
+            await this.fetchAndParse(articleUrl);
+          })
+        );
+      }
+
+      // Process pages and articles
+      for (let pageIndex = 0; pageIndex < paginatedUrls.length; pageIndex++) {
+        const pageUrl = paginatedUrls[pageIndex];
+        const pageNumber = pageIndex + 1;
+
+        // Initialize page progress
+        onPageProgress?.({
+          pageNumber,
+          progress: 0,
+          status: 'fetching',
+        });
+
+        onProgress(
+          10 + Math.round((pageIndex / paginatedUrls.length) * 90),
+          `Processing page ${pageNumber} of ${paginatedUrls.length}`
         );
 
-        for (let i = 0; i < newsItems.length; i++) {
-          const item = newsItems[i];
+        if (!pageUrl) {
+          onPageProgress?.({
+            pageNumber,
+            progress: 100,
+            status: 'error',
+          });
+          continue;
+        }
+
+        const mainDoc = await this.fetchAndParse(pageUrl);
+        if (!mainDoc) {
+          onPageProgress?.({
+            pageNumber,
+            progress: 100,
+            status: 'error',
+          });
+          continue;
+        }
+
+        onPageProgress?.({
+          pageNumber,
+          progress: 30,
+          status: 'processing',
+        });
+
+        const newsContainer = mainDoc.querySelector('.news');
+        if (!newsContainer) continue;
+
+        const newsItems = Array.from(newsContainer.querySelectorAll('a.item'));
+        const totalArticles = newsItems.length;
+        let processedArticles = 0;
+
+        onPageProgress?.({
+          pageNumber,
+          progress: 40,
+          status: 'processing',
+          articleCount: totalArticles,
+          fetchedArticles: 0,
+        });
+
+        // Process only unique articles on this page
+        const pageArticleUrls = await this.getArticleUrls(newsItems);
+
+        for (const articleUrl of pageArticleUrls) {
           const rowData: Record<string, string> = {};
-          const href = item?.getAttribute('href');
-          if (!href) continue;
 
-          const articleUrl = href.startsWith('..')
-            ? new URL(href.replace('..', ''), this.baseUrl).toString()
-            : new URL(href, this.baseUrl).toString();
-
-          // First handle main page selectors (including URL)
+          // Process main page content
           for (const parsed of parsedIds) {
             if (!parsed.pageId) {
               // Handle main page content
               if (parsed.attribute === 'href' && parsed.subSelector === 'a') {
                 rowData[parsed.columnName] = articleUrl;
               } else {
-                const elements = parsed.isMultiple
-                  ? item?.querySelectorAll(parsed.selector)
-                  : [item?.querySelector(parsed.selector)];
+                for (const item of newsItems) {
+                  const elements = parsed.isMultiple
+                    ? item?.querySelectorAll(parsed.selector)
+                    : [item?.querySelector(parsed.selector)];
 
-                elements?.forEach((el) => {
-                  if (!el) return;
-                  const content = this.extractContent(el, parsed);
-                  if (content) rowData[parsed.columnName] = content;
-                });
+                  elements?.forEach((el) => {
+                    if (!el) return;
+                    const content = this.extractContent(el, parsed);
+                    if (content) rowData[parsed.columnName] = content;
+                  });
+                }
               }
             }
           }
 
-          // Check if we need page-specific content
-          const needsPageContent = parsedIds.some((p) => p.pageId);
+          // Process article-specific content using cached data
           if (needsPageContent) {
-            const articleDoc = await this.fetchAndParse(articleUrl);
+            const articleDoc = this.urlCache.get(articleUrl);
             if (!articleDoc) continue;
 
             for (const parsed of parsedIds) {
@@ -364,11 +510,28 @@ export class HtmlCrawler {
             }
           }
 
+          processedArticles++;
+          onPageProgress?.({
+            pageNumber,
+            progress: 40 + Math.round((processedArticles / totalArticles) * 60),
+            status: 'processing',
+            articleCount: totalArticles,
+            fetchedArticles: processedArticles,
+          });
+
           if (Object.keys(rowData).length > 0) {
             results.push(rowData);
-            console.log(`Processed item:`, rowData);
           }
         }
+
+        // Mark page as complete
+        onPageProgress?.({
+          pageNumber,
+          progress: 100,
+          status: 'complete',
+          articleCount: totalArticles,
+          fetchedArticles: processedArticles,
+        });
       }
 
       onProgress(100, `Successfully processed ${results.length} items`);
