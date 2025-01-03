@@ -96,7 +96,7 @@
     "@tanstack/react-query-devtools": "^5.62.11",
     "@testing-library/react": "^16.1.0",
     "@types/js-cookie": "^3.0.6",
-    "@types/lodash": "^4.17.13",
+    "@types/lodash": "^4.17.14",
     "@types/negotiator": "^0.6.3",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.2",

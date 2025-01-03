@@ -189,7 +189,7 @@
     "@types/eslint": "^9.6.1",
     "@types/file-saver": "^2.0.7",
     "@types/js-cookie": "^3.0.6",
-    "@types/lodash": "^4.17.13",
+    "@types/lodash": "^4.17.14",
     "@types/negotiator": "^0.6.3",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.2",
