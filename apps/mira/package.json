@@ -182,7 +182,7 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tanstack/eslint-plugin-query": "^5.62.9",
-    "@tanstack/react-query-devtools": "^5.62.11",
+    "@tanstack/react-query-devtools": "^5.62.12",
     "@testing-library/react": "^16.1.0",
     "@types/eslint": "^9.6.1",
     "@types/file-saver": "^2.0.7",
