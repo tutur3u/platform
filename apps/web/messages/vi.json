@@ -398,7 +398,11 @@
     "invalid_verification_code": "Mã xác thực không hợp lệ.",
     "resend": "Gửi lại",
     "processing": "Đang xử lý...",
-    "continue": "Tiếp tục"
+    "continue": "Tiếp tục",
+    "continue_with_google": "Tiếp tục với Google",
+    "continue_with_github": "Tiếp tục với GitHub",
+    "continue_with_apple": "Tiếp tục với Apple",
+    "continue_with_discord": "Tiếp tục với Discord"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",

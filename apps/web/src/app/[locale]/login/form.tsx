@@ -18,8 +18,16 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from '@repo/ui/components/ui/input-otp';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { IconBrandGmail, IconBrandWindows } from '@tabler/icons-react';
+import {
+  IconBrandApple,
+  IconBrandDiscord,
+  IconBrandGithub,
+  IconBrandGmail,
+  IconBrandGoogle,
+  IconBrandWindows,
+} from '@tabler/icons-react';
 import { Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -164,6 +172,49 @@ export default function LoginForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+        {DEV_MODE && (
+          <>
+            <div className="mt-8 grid gap-2 text-center md:grid-cols-2">
+              <Button
+                type="button"
+                className="w-full items-center justify-between"
+                disabled
+              >
+                <IconBrandGoogle size={18} className="mr-2" />
+                {t('continue_with_google')}
+                <div />
+              </Button>
+              <Button
+                type="button"
+                className="w-full items-center justify-between"
+                disabled
+              >
+                <IconBrandApple size={18} className="mr-2" />
+                {t('continue_with_apple')}
+                <div />
+              </Button>
+              <Button
+                type="button"
+                className="w-full items-center justify-between"
+                disabled
+              >
+                <IconBrandGithub size={18} className="mr-2" />
+                {t('continue_with_github')}
+                <div />
+              </Button>
+              <Button
+                type="button"
+                className="w-full items-center justify-between"
+                disabled
+              >
+                <IconBrandDiscord size={18} className="mr-2" />
+                {t('continue_with_discord')}
+                <div />
+              </Button>
+            </div>
+            <Separator />
+          </>
+        )}
         <FormField
           control={form.control}
           name="email"

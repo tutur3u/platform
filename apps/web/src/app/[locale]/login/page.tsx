@@ -31,7 +31,7 @@ export default async function Login() {
         {t('common.back')}
       </Link>
 
-      <div className="grid gap-2 sm:max-w-md">
+      <div className="grid max-w-md gap-2">
         <div className="flex items-center justify-center">
           <h1 className="relative flex w-fit items-center gap-2">
             <Image
