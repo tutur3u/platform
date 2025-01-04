@@ -96,62 +96,6 @@ export default async function Layout({ children, params }: LayoutProps) {
     //   experimental: 'beta',
     // },
     {
-      title: t('sidebar_tabs.models'),
-      href: `/${wsId}/models`,
-      icon: <Box className="h-4 w-4" />,
-      disabled:
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_AI',
-          value: 'true',
-        })) || withoutPermission('ai_lab'),
-      experimental: 'beta',
-    },
-    {
-      title: t('sidebar_tabs.datasets'),
-      href: `/${wsId}/datasets`,
-      icon: <Database className="h-4 w-4" />,
-      disabled:
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_AI',
-          value: 'true',
-        })) || withoutPermission('ai_lab'),
-      shortcut: 'A',
-      experimental: 'beta',
-    },
-    // {
-    //   title: t('sidebar_tabs.pipelines'),
-    //   href: `/${wsId}/pipelines`,
-    //   icon: <Play className="h-4 w-4" />,
-    //   disabled:
-    //     !(await verifySecret({
-    //       forceAdmin: true,
-    //       wsId,
-    //       name: 'ENABLE_AI',
-    //       value: 'true',
-    //     })) || withoutPermission('ai_lab'),
-    //   shortcut: 'A',
-    //   experimental: 'beta',
-    // },
-    {
-      title: t('sidebar_tabs.cron'),
-      href: `/${wsId}/cron`,
-      icon: <Clock className="h-4 w-4" />,
-      disabled:
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_AI',
-          value: 'true',
-        })) || withoutPermission('ai_lab'),
-      shortcut: 'A',
-      experimental: 'beta',
-    },
-    null,
-    {
       title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
       icon: <Calendar className="h-4 w-4" />,
@@ -244,6 +188,63 @@ export default async function Layout({ children, params }: LayoutProps) {
       experimental: 'alpha',
     },
     null,
+
+    {
+      title: t('sidebar_tabs.models'),
+      href: `/${wsId}/models`,
+      icon: <Box className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'beta',
+    },
+    {
+      title: t('sidebar_tabs.datasets'),
+      href: `/${wsId}/datasets`,
+      icon: <Database className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      shortcut: 'A',
+      experimental: 'beta',
+    },
+    // {
+    //   title: t('sidebar_tabs.pipelines'),
+    //   href: `/${wsId}/pipelines`,
+    //   icon: <Play className="h-4 w-4" />,
+    //   disabled:
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_AI',
+    //       value: 'true',
+    //     })) || withoutPermission('ai_lab'),
+    //   shortcut: 'A',
+    //   experimental: 'beta',
+    // },
+    {
+      title: t('sidebar_tabs.cron'),
+      href: `/${wsId}/cron`,
+      icon: <Clock className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      shortcut: 'A',
+      experimental: 'beta',
+    },
+    null,
     {
       title: t('sidebar_tabs.education'),
       href: `/${wsId}/education`,
@@ -256,7 +257,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           value: 'true',
         })) || withoutPermission('ai_lab'),
       shortcut: 'A',
-      experimental: 'alpha',
+      experimental: 'beta',
     },
     {
       title: t('sidebar_tabs.slides'),
@@ -269,7 +270,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         value: 'true',
       })),
       shortcut: 'S',
-      experimental: 'beta',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.mail'),

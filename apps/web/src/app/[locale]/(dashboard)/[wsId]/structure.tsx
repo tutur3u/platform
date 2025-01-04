@@ -189,7 +189,7 @@ export function Structure({
               'flex-col justify-between overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
-            <div className="flex-shrink overflow-auto">
+            <div className="scrollbar-none flex-shrink overflow-auto">
               <div className="py-2 md:p-0">
                 <div
                   className={cn(

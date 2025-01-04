@@ -98,7 +98,7 @@ export function Nav({
       <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
         {links
           .map((link, idx) => {
-            if (!link) return <Separator key={idx} className="my-2" />;
+            if (!link) return <Separator key={idx} className="my-1" />;
 
             // If the link is disabled, don't render it
             if (!link || link?.disabled) return null;
