@@ -473,7 +473,12 @@
     "models": "Các mô hình",
     "datasets": "Bộ dữ liệu",
     "pipelines": "Quy trình",
-    "cron": "Công việc định kỳ"
+    "cron": "Công việc định kỳ",
+    "workouts": "Vận động thể chất",
+    "readings": "Đọc sách",
+    "diet_and_nutrition": "Ăn uống",
+    "progress": "Tiến độ",
+    "metrics": "Chỉ số"
   },
   "team-tabs": {
     "overview": "Tổng quan",

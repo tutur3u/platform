@@ -18,13 +18,17 @@ import {
 import {
   Archive,
   Banknote,
+  Book,
   Box,
   Calendar,
   ChartArea,
+  ChartColumn,
   CircleCheck,
+  CircleDashed,
   Clock,
   Cog,
   Database,
+  Dumbbell,
   FileText,
   GraduationCap,
   HardDrive,
@@ -32,6 +36,7 @@ import {
   MessageCircleIcon,
   Presentation,
   Users,
+  Utensils,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
@@ -147,6 +152,99 @@ export default async function Layout({ children, params }: LayoutProps) {
     },
     null,
     {
+      title: t('sidebar_tabs.calendar'),
+      href: `/${wsId}/calendar`,
+      icon: <Calendar className="h-4 w-4" />,
+      disabled: withoutPermission('manage_calendar'),
+      shortcut: 'C',
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.tasks'),
+      href: `/${wsId}/tasks/boards`,
+      icon: <CircleCheck className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) || withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.workouts'),
+      href: `/${wsId}/workouts`,
+      icon: <Dumbbell className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) || withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.readings'),
+      href: `/${wsId}/readings`,
+      icon: <Book className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) || withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.diet_and_nutrition'),
+      href: `/${wsId}/diet`,
+      icon: <Utensils className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) || withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.progress'),
+      href: `/${wsId}/progress`,
+      icon: <CircleDashed className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) || withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.metrics'),
+      href: `/${wsId}/metrics`,
+      icon: <ChartColumn className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) || withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'alpha',
+    },
+    null,
+    {
       title: t('sidebar_tabs.education'),
       href: `/${wsId}/education`,
       icon: <GraduationCap className="h-4 w-4" />,
@@ -187,28 +285,6 @@ export default async function Layout({ children, params }: LayoutProps) {
         })) || withoutPermission('send_user_group_post_emails'),
       shortcut: 'M',
       experimental: 'beta',
-    },
-    {
-      title: t('sidebar_tabs.calendar'),
-      href: `/${wsId}/calendar`,
-      icon: <Calendar className="h-4 w-4" />,
-      disabled: withoutPermission('manage_calendar'),
-      shortcut: 'C',
-      experimental: 'alpha',
-    },
-    {
-      title: t('sidebar_tabs.tasks'),
-      href: `/${wsId}/tasks/boards`,
-      icon: <CircleCheck className="h-4 w-4" />,
-      disabled:
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_TASKS',
-          value: 'true',
-        })) || withoutPermission('manage_projects'),
-      shortcut: 'T',
-      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.documents'),

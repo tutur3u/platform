@@ -186,10 +186,10 @@ export function Structure({
               isCollapsed
                 ? 'hidden min-w-[50px] md:flex'
                 : 'bg-background/70 absolute inset-0 z-40 flex md:static md:bg-transparent',
-              'flex-col justify-between backdrop-blur-lg transition-all duration-300 ease-in-out'
+              'flex-col justify-between overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
-            <div>
+            <div className="flex-shrink overflow-auto">
               <div className="py-2 md:p-0">
                 <div
                   className={cn(
@@ -248,7 +248,7 @@ export function Structure({
                 onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
               />
             </div>
-            <div className="border-foreground/10 border-t p-2">
+            <div className="border-foreground/10 flex-none border-t p-2">
               {isCollapsed ? userPopover : actions}
             </div>
           </ResizablePanel>

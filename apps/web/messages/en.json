@@ -473,7 +473,12 @@
     "models": "Models",
     "datasets": "Datasets",
     "pipelines": "Pipelines",
-    "cron": "Cron Jobs"
+    "cron": "Cron Jobs",
+    "workouts": "Workouts",
+    "readings": "Readings",
+    "diet_and_nutrition": "Diet & Nutrition",
+    "progress": "Progress",
+    "metrics": "Metrics"
   },
   "team-tabs": {
     "overview": "Overview",
