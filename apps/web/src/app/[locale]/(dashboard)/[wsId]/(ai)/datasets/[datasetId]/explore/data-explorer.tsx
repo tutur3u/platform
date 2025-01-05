@@ -101,6 +101,12 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
   const handleAddRow = async () => {
     try {
+      // Optimistic update
+      queryClient.setQueryData(['rows'], (old: any) => ({
+        ...old,
+        data: [...(old?.data || []), { cells: newRow, id: 'temp' }],
+      }));
+
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`,
         {
@@ -110,14 +116,16 @@ export function DataExplorer({ wsId, dataset }: Props) {
         }
       );
 
-      if (response.ok) {
-        setIsAddingRow(false);
-        setNewRow({});
-        // Invalidate rows query to trigger refetch
-        queryClient.invalidateQueries({ queryKey: ['rows'] });
-      }
+      if (!response.ok) throw new Error('Failed to add row');
+
+      setIsAddingRow(false);
+      setNewRow({});
+      queryClient.invalidateQueries({ queryKey: ['rows'] });
     } catch (error) {
       console.error('Error adding row:', error);
+      // Revert optimistic update
+      queryClient.invalidateQueries({ queryKey: ['rows'] });
+      // Show error to user (implement your error UI)
     }
   };
 
@@ -144,6 +152,12 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
   const handleDeleteRow = async (rowId: string) => {
     try {
+      // Optimistic delete
+      queryClient.setQueryData(['rows'], (old: any) => ({
+        ...old,
+        data: old?.data?.filter((row: any) => row.id !== rowId) || [],
+      }));
+
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`,
         {
@@ -153,11 +167,14 @@ export function DataExplorer({ wsId, dataset }: Props) {
         }
       );
 
-      if (response.ok) {
-        queryClient.invalidateQueries({ queryKey: ['rows'] });
-      }
+      if (!response.ok) throw new Error('Failed to delete row');
+
+      queryClient.invalidateQueries({ queryKey: ['rows'] });
     } catch (error) {
       console.error('Error deleting row:', error);
+      // Revert optimistic delete
+      queryClient.invalidateQueries({ queryKey: ['rows'] });
+      // Show error to user (implement your error UI)
     }
   };
 

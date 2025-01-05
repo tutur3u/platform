@@ -73,44 +73,55 @@ async function getData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('workspace_datasets')
-    .select(
-      '*, workspace_dataset_columns(id.count()), workspace_dataset_rows(id.count())'
-    )
-    .order('name', { ascending: true, nullsFirst: false });
+    const queryBuilder = supabase
+      .from('workspace_datasets')
+      .select(
+        '*, workspace_dataset_columns(id.count()), workspace_dataset_rows(id.count())'
+      )
+      .order('name', { ascending: true, nullsFirst: false });
 
-  if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    if (page && pageSize) {
+      const parsedPage = parseInt(page);
+      const parsedSize = parseInt(pageSize);
+      const start = (parsedPage - 1) * parsedSize;
+      const end = parsedPage * parsedSize;
+      queryBuilder.range(start, end).limit(parsedSize);
+    }
+
+    const { data, error, count } = await queryBuilder;
+
+    if (error) {
+      console.error('Error fetching datasets:', error);
+      if (!retry) throw error;
+      return getData(wsId, { q, pageSize, retry: false });
+    }
+
+    // Add input validation
+    if (!data || !Array.isArray(data)) {
+      throw new Error('Invalid data format received');
+    }
+
+    return {
+      data: data.map(
+        ({ workspace_dataset_columns, workspace_dataset_rows, ...rest }) => ({
+          ...rest,
+          columns: workspace_dataset_columns?.[0]?.count ?? 0,
+          rows: workspace_dataset_rows?.[0]?.count ?? 0,
+        })
+      ),
+      count: count ?? 0,
+    } as unknown as {
+      data: (WorkspaceDataset & {
+        columns: number;
+        rows: number;
+      })[];
+      count: number;
+    };
+  } catch (error) {
+    console.error('Failed to fetch datasets:', error);
+    throw error;
   }
-
-  const { data, error, count } = await queryBuilder;
-
-  if (error) {
-    if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
-  }
-
-  return {
-    data: data.map(
-      ({ workspace_dataset_columns, workspace_dataset_rows, ...rest }) => ({
-        ...rest,
-        columns: workspace_dataset_columns?.[0]?.count,
-        rows: workspace_dataset_rows?.[0]?.count,
-      })
-    ),
-    count,
-  } as unknown as {
-    data: (WorkspaceDataset & {
-      columns: number;
-      rows: number;
-    })[];
-    count: number;
-  };
 }

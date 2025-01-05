@@ -48,6 +48,45 @@ export class HtmlCrawler {
   private currentCallback?: HtmlCrawlerProps;
   private urlCache: Map<string, Document> = new Map();
   private inProgressFetches: Map<string, Promise<Document | null>> = new Map();
+  private rateLimiter: {
+    queue: Array<() => Promise<void>>;
+    isProcessing: boolean;
+  } = {
+    queue: [],
+    isProcessing: false,
+  };
+
+  private async processFetchQueue() {
+    if (this.rateLimiter.isProcessing) return;
+    this.rateLimiter.isProcessing = true;
+
+    while (this.rateLimiter.queue.length > 0) {
+      const task = this.rateLimiter.queue.shift();
+      if (task) {
+        await task();
+        // Add delay between requests to prevent overloading
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    this.rateLimiter.isProcessing = false;
+  }
+
+  private async fetchWithRateLimit(url: string): Promise<Response> {
+    return new Promise((resolve, reject) => {
+      this.rateLimiter.queue.push(async () => {
+        try {
+          const response = await fetch(
+            `/api/proxy?url=${encodeURIComponent(url)}`
+          );
+          resolve(response);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      this.processFetchQueue();
+    });
+  }
 
   private parseHtmlId(htmlId: string): ParsedHtmlId {
     // Format: "{{COLUMN_NAME}}:selector[]?->subSelector{attribute}->#id"
@@ -99,9 +138,9 @@ export class HtmlCrawler {
         this.currentCallback?.onUrlProgress?.(url, 10, 'Starting fetch');
         console.log('📥 Fetching:', url);
 
-        const response = await fetch(
-          `/api/proxy?url=${encodeURIComponent(url)}`
-        );
+        const response = await this.fetchWithRateLimit(url);
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
         this.currentCallback?.onUrlProgress?.(url, 50, 'Downloaded');
 
         const html = await response.text();
