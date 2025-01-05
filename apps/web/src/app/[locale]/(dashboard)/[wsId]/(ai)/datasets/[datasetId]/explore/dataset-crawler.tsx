@@ -60,11 +60,14 @@ import {
   Clock,
   Code2,
   ExternalLink,
+  Pause,
+  Play,
   RefreshCw,
   ScanSearch,
+  StopCircle,
   X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
@@ -81,17 +84,6 @@ const FormSchema = z.object({
     message: 'Data row is required.',
   }),
 });
-
-interface SyncMetrics {
-  totalColumns: number;
-  syncedColumns: number;
-  totalRows: number;
-  syncedRows: number;
-  rowBatches: number;
-  currentBatch: number;
-  startTime: number;
-  estimatedTimeLeft: string;
-}
 
 interface HtmlPreviewData {
   url: string;
@@ -124,6 +116,31 @@ interface PageProgress {
   fetchedArticles?: number;
 }
 
+interface CrawlMetrics {
+  startTime: number;
+  totalPages: number;
+  completedPages: number;
+  totalArticles: number;
+  processedArticles: number;
+  requestCount: number;
+  successfulRequests: number;
+  failedRequests: number;
+  averageRequestTime: number;
+  estimatedTimeLeft: string;
+}
+
+interface UrlWithProgress extends QueueItem {
+  subPages?: {
+    total: number;
+    processed: number;
+  };
+}
+
+interface ActiveFetches {
+  controller: AbortController;
+  url: string;
+}
+
 export function DatasetCrawler({
   wsId,
   dataset,
@@ -142,16 +159,6 @@ export function DatasetCrawler({
   const [, setRows] = useState<any[]>([]);
   const [syncProgress, setSyncProgress] = useState(0);
   const [syncStatus, setSyncStatus] = useState('');
-  const [, setSyncMetrics] = useState<SyncMetrics>({
-    totalColumns: 0,
-    syncedColumns: 0,
-    totalRows: 0,
-    syncedRows: 0,
-    rowBatches: 0,
-    currentBatch: 0,
-    startTime: 0,
-    estimatedTimeLeft: '-',
-  });
   const [htmlPreview, setHtmlPreview] = useState<HtmlPreviewData[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [rawHtml, setRawHtml] = useState<string>('');
@@ -162,7 +169,25 @@ export function DatasetCrawler({
   const [urlQueue, setUrlQueue] = useState<QueueItem[]>([]);
   const [activeUrl, setActiveUrl] = useState<string>('');
   const [pageProgresses, setPageProgresses] = useState<PageProgress[]>([]);
-  const [totalPages, setTotalPages] = useState(0);
+  const [, setTotalPages] = useState(0);
+  const [metrics, setMetrics] = useState<CrawlMetrics>({
+    startTime: 0,
+    totalPages: 0,
+    completedPages: 0,
+    totalArticles: 0,
+    processedArticles: 0,
+    requestCount: 0,
+    successfulRequests: 0,
+    failedRequests: 0,
+    averageRequestTime: 0,
+    estimatedTimeLeft: '',
+  });
+  const [crawlState, setCrawlState] = useState<
+    'idle' | 'running' | 'paused' | 'completed'
+  >('idle');
+  const activeFetchesRef = useRef<ActiveFetches[]>([]);
+  const [recentFetches, setRecentFetches] = useState<UrlWithProgress[]>([]);
+  const [pendingUrls, setPendingUrls] = useState<UrlWithProgress[]>([]);
 
   useEffect(() => {
     const fetchColumnsAndRows = async () => {
@@ -184,6 +209,27 @@ export function DatasetCrawler({
 
     fetchColumnsAndRows();
   }, [wsId, dataset.id]);
+
+  // Remove the automatic fetchHtmlPreview call on dialog open
+  useEffect(() => {
+    if (isOpen) {
+      // Just prepare the initial state
+      setSyncStatus('Ready to start crawling');
+      setCrawlState('idle');
+      setMetrics({
+        startTime: 0,
+        totalPages: 0,
+        completedPages: 0,
+        totalArticles: 0,
+        processedArticles: 0,
+        requestCount: 0,
+        successfulRequests: 0,
+        failedRequests: 0,
+        averageRequestTime: 0,
+        estimatedTimeLeft: '',
+      });
+    }
+  }, [isOpen]);
 
   // Calculate pagination values
   const totalRows = processedData.length - 1; // Subtract header row
@@ -282,263 +328,38 @@ export function DatasetCrawler({
     setCurrentPage(page);
   };
 
-  const updateProgress = (metrics: Partial<SyncMetrics>) => {
-    setSyncMetrics((prev) => {
-      const updated = { ...prev, ...metrics };
-      // Calculate estimated time left based on progress
-      if (updated.startTime && (updated.syncedRows || updated.syncedColumns)) {
-        const elapsed = (Date.now() - updated.startTime) / 1000; // seconds
-        const totalItems = updated.totalRows + updated.totalColumns;
-        const completedItems = updated.syncedRows + updated.syncedColumns;
-        const itemsPerSecond = completedItems / elapsed;
-        const remainingItems = totalItems - completedItems;
-        const remainingSeconds = remainingItems / itemsPerSecond;
-
-        if (remainingSeconds > 0) {
-          updated.estimatedTimeLeft =
-            remainingSeconds > 60
-              ? `${Math.ceil(remainingSeconds / 60)}m`
-              : `${Math.ceil(remainingSeconds)}s`;
-        }
-      }
-      return updated;
-    });
-  };
-
   const syncDataset = async () => {
     try {
       setLoading(true);
       setSyncProgress(0);
-      setSyncStatus('Analyzing dataset...');
-      setUrlLogs([]); // Clear previous logs
+      setSyncStatus('Ready to start crawling...');
+      setUrlLogs([]);
       setPageProgresses([]);
 
-      // Handle HTML crawling
-      if (dataset.type === 'html' && dataset?.html_ids?.length) {
-        const crawler = new HtmlCrawler();
-        setSyncStatus('Starting HTML crawling...');
-
-        const htmlData = await crawler.crawl({
-          url: dataset.url!,
-          htmlIds: dataset.html_ids,
-          onProgress: (progress, status) => {
-            setSyncProgress(progress);
-            setSyncStatus(status);
-          },
-          onUrlFetch: (url, success) => {
-            setUrlLogs((prev) => [
-              ...prev,
-              { url, success, timestamp: Date.now() },
-            ]);
-            setActiveUrl(url);
-
-            // Update queue
-            setUrlQueue((prev) => {
-              const newQueue = [...prev];
-              const existingIndex = newQueue.findIndex(
-                (item) => item.url === url
-              );
-
-              if (existingIndex >= 0 && newQueue[existingIndex]) {
-                newQueue[existingIndex].status = success
-                  ? 'completed'
-                  : 'failed';
-              }
-
-              return newQueue;
-            });
-          },
-          onQueueUpdate: (urls: string[]) => {
-            setUrlQueue(
-              urls.map((url) => ({
-                url,
-                status: 'pending',
-                timestamp: Date.now(),
-                progress: 0,
-              }))
-            );
-          },
-          onUrlProgress: (
-            url: string,
-            progress: number,
-            subStatus?: string
-          ) => {
-            updateUrlProgress(url, progress, subStatus);
-          },
-          onPageProgress: (pageProgress) => {
-            setPageProgresses((prev) => {
-              const newProgresses = [...prev];
-              const index = newProgresses.findIndex(
-                (p) => p.pageNumber === pageProgress.pageNumber
-              );
-              if (index >= 0) {
-                newProgresses[index] = pageProgress;
-              } else {
-                newProgresses.push(pageProgress);
-              }
-
-              // Calculate and update global progress based on all pages
-              const globalProgress = Math.round(
-                (newProgresses.reduce((sum, p) => sum + p.progress, 0) /
-                  (totalPages * 100)) *
-                  100
-              );
-              setSyncProgress(globalProgress);
-
-              return newProgresses;
-            });
-          },
-          onTotalPages: (pages) => {
-            setTotalPages(pages);
-          },
-        });
-
-        // Get column names from HTML IDs
-        const columnNames = dataset.html_ids
-          .map((id) => {
-            const match = id.match(/{{(.+?)}}/);
-            return match ? match[1] : '';
-          })
-          .filter(Boolean);
-
-        // Sync columns
-        const columnsToSync = columnNames.map((name) => ({ name }));
-        await fetch(
-          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ columns: columnsToSync }),
-          }
-        );
-
-        // Sync rows
-        await fetch(
-          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/sync`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rows: htmlData }),
-          }
-        );
-
-        setSyncProgress(100);
-        setSyncStatus('Sync completed successfully!');
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setIsOpen(false);
-        window.location.reload();
-        return;
-      }
-
-      const headers = processedData[0];
-      const allRows = processedData.slice(1); // Get all rows
-
-      console.log('Total rows to sync:', allRows.length); // Debug log
-
-      updateProgress({
-        totalColumns: headers?.length,
-        totalRows: allRows.length,
-        syncedColumns: 0,
-        syncedRows: 0,
-        rowBatches: Math.ceil(allRows.length / 100),
-        currentBatch: 0,
+      // Initialize metrics
+      setMetrics({
+        startTime: 0, // Reset to 0 since we haven't started yet
+        totalPages: 0,
+        completedPages: 0,
+        totalArticles: 0,
+        processedArticles: 0,
+        requestCount: 0,
+        successfulRequests: 0,
+        failedRequests: 0,
+        averageRequestTime: 0,
+        estimatedTimeLeft: '--:--',
       });
 
-      // Sync columns first
-      setSyncProgress(5);
-      setSyncStatus(`Preparing to sync ${headers?.length || 0} columns...`);
-
-      const columnsToSync = headers
-        ?.map((name: string) => ({
-          name: String(name).trim(),
-        }))
-        .filter((col) => !!col.name);
-
-      const columnsResponse = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ columns: columnsToSync }),
-        }
-      );
-
-      if (!columnsResponse.ok) {
-        throw new Error('Failed to sync columns');
-      }
-
-      updateProgress({ syncedColumns: headers?.length });
-      setSyncProgress(30);
-      setSyncStatus(`Columns synced successfully (${headers?.length} columns)`);
-
-      // Sync rows in batches
-      const batchSize = 100;
-      const totalBatches = Math.ceil(allRows.length / batchSize);
-
-      for (let i = 0; i < allRows.length; i += batchSize) {
-        const batch = allRows.slice(i, Math.min(i + batchSize, allRows.length));
-        const currentBatch = Math.floor(i / batchSize) + 1;
-
-        console.log(
-          `Processing batch ${currentBatch}/${totalBatches}, size: ${batch.length}`
-        ); // Debug log
-
-        setSyncStatus(
-          `Syncing rows (Batch ${currentBatch}/${totalBatches}): ` +
-            `${i + 1} to ${Math.min(i + batchSize, allRows.length)} of ${allRows.length} rows`
-        );
-
-        updateProgress({
-          currentBatch,
-          syncedRows: i,
-        });
-
-        const processedBatch = batch.map((row: any[]) => {
-          const rowData: Record<string, any> = {};
-          headers?.forEach((header: string, index: number) => {
-            if (header && index < row.length) {
-              const value = row[index];
-              rowData[String(header).trim()] =
-                value !== undefined ? value : null;
-            }
-          });
-          return rowData;
-        });
-
-        console.log(`Processed batch size: ${processedBatch.length}`); // Debug log
-
-        const rowsResponse = await fetch(
-          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/sync`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rows: processedBatch }),
-          }
-        );
-
-        if (!rowsResponse.ok) {
-          const error = await rowsResponse.json();
-          throw new Error(error.error || 'Failed to sync rows batch');
-        }
-
-        const progress = 30 + (70 * (i + batch.length)) / allRows.length;
-        setSyncProgress(Math.round(progress));
-        updateProgress({ syncedRows: i + batch.length });
-      }
-
-      setSyncProgress(100);
-      setSyncStatus('Sync completed successfully!');
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setIsOpen(false);
-      window.location.reload();
+      // Just set to idle and let user start manually
+      setCrawlState('idle');
+      setIsOpen(true); // Keep dialog open
+      setLoading(false); // Remove loading state since we're just preparing
     } catch (error) {
-      console.error('Error syncing dataset:', error);
+      console.error('Error preparing dataset sync:', error);
+      setCrawlState('idle');
       if (error instanceof Error) {
-        setSyncStatus(`Sync failed: ${error.message}`);
-      } else {
-        setSyncStatus('Sync failed: An unknown error occurred');
+        setSyncStatus(`Failed to prepare: ${error.message}`);
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -580,6 +401,12 @@ export function DatasetCrawler({
 
             return newQueue;
           });
+          setMetrics((prev) => ({
+            ...prev,
+            requestCount: prev.requestCount + 1,
+            successfulRequests: prev.successfulRequests + (success ? 1 : 0),
+            failedRequests: prev.failedRequests + (success ? 0 : 1),
+          }));
         },
         onQueueUpdate: (urls: string[]) => {
           setUrlQueue(
@@ -594,6 +421,7 @@ export function DatasetCrawler({
         onUrlProgress: (url: string, progress: number, subStatus?: string) => {
           updateUrlProgress(url, progress, subStatus);
         },
+        onPageProgress: handlePageProgress,
       });
 
       setHtmlPreview(mainPage);
@@ -610,11 +438,31 @@ export function DatasetCrawler({
     }
   };
 
-  useEffect(() => {
-    if (isOpen && dataset.type === 'html') {
-      fetchHtmlPreview();
-    }
-  }, [isOpen, dataset.type]);
+  const renderPreviewTab = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ExternalLink className="h-4 w-4" />
+            {dataset.url && (
+              <a
+                href={dataset.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-500 hover:underline"
+              >
+                {dataset.url}
+              </a>
+            )}
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchHtmlPreview}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Load Preview
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   const renderHtmlPreview = () => {
     if (!dataset.url || !dataset.html_ids?.length) {
@@ -654,28 +502,7 @@ export function DatasetCrawler({
         </TabsList>
 
         <TabsContent value="preview" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  <a
-                    href={dataset.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-500 hover:underline"
-                  >
-                    {dataset.url}
-                  </a>
-                </div>
-                <Button variant="outline" size="sm" onClick={fetchHtmlPreview}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh Preview
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
+          {renderPreviewTab()}
           {previewLoading ? (
             <div className="space-y-4">
               <Card>
@@ -1017,213 +844,236 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
   };
 
   const renderDialogContent = () => {
-    if (dataset.type === 'html') {
-      return (
-        <>
-          <DialogHeader>
-            <DialogTitle>HTML Dataset Preview</DialogTitle>
-            <DialogDescription>
-              Preview and debug HTML selectors
-            </DialogDescription>
-          </DialogHeader>
-          {renderHtmlPreview()}
-        </>
-      );
-    }
-
-    // Excel/CSV content
     return (
       <>
         <DialogHeader>
-          <DialogTitle>Excel Dataset Preview</DialogTitle>
+          <DialogTitle>Dataset Synchronization</DialogTitle>
           <DialogDescription>
-            {sheetInfo.name
-              ? `Sheet: ${sheetInfo.name} (${sheetInfo.rows} rows, ${sheetInfo.columns} columns)`
-              : 'Configure and fetch your Excel dataset'}
+            {dataset.type === 'html'
+              ? 'HTML Crawler Status'
+              : 'Excel Import Status'}
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Excel File URL</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="https://example.com/data.xlsx"
-                      {...field}
-                      disabled
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Enter the URL of an Excel file (.xlsx or .xls)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="headerRow"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Header Row</FormLabel>
-                    <FormControl>
-                      <Input placeholder="1" {...field} />
-                    </FormControl>
-                    <FormDescription>Leave blank for no header</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="dataRow"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data Start Row</FormLabel>
-                    <FormControl>
-                      <Input placeholder="2" {...field} />
-                    </FormControl>
-                    <FormDescription>1-based row index</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Processing...' : 'Fetch and Process'}
-            </Button>
-          </form>
-        </Form>
-
-        {processedData.length > 0 && <Separator />}
-        {processedData.length > 0 && (
-          <div className="mt-4 flex flex-col space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">
-                  Rows per page:
-                </span>
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={handlePageSizeChange}
-                >
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue placeholder="10" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[10, 20, 50, 100].map((size) => (
-                      <SelectItem key={size} value={size.toString()}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="text-muted-foreground text-sm">
-                Showing rows {startIndex} to {endIndex} of {totalRows}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 overflow-x-auto">
-              <div className="w-fit">
-                <table className="border-foreground/30 w-full table-auto border-collapse border">
-                  <thead>
-                    <tr className="[&_th]:bg-foreground/20">
-                      {processedData[0]?.map((header: any, index: number) => (
-                        <th
-                          key={index}
-                          className="border-foreground/30 border px-4 py-2"
-                        >
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {processedData
-                      .slice(startIndex, startIndex + pageSize)
-                      .map((row: any[], rowIndex: number) => (
-                        <tr key={rowIndex}>
-                          {row.map((cell: any, cellIndex: number) => (
-                            <td
-                              key={cellIndex}
-                              className="border-foreground/30 border px-4 py-2"
-                            >
-                              {cell}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <Pagination>
-              <PaginationContent>
-                <PaginationItemWithProgress page={currentPage - 1}>
-                  <PaginationPrevious
-                    href={getPageHref(currentPage - 1)}
-                    onClick={(e) => handlePageClick(e, currentPage - 1)}
-                    className={
-                      currentPage === 1 ? 'pointer-events-none opacity-50' : ''
-                    }
-                  />
-                </PaginationItemWithProgress>
-
-                {Array.from({ length: datasetTotalPages }, (_, i) => i + 1)
-                  .filter(
-                    (page) =>
-                      page === 1 ||
-                      page === datasetTotalPages ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                  )
-                  .map((page, index, array) => {
-                    if (index > 0 && array[index - 1] !== page - 1) {
-                      return (
-                        <PaginationItemWithProgress
-                          key={`ellipsis-${page}`}
-                          page={page}
-                        >
-                          <PaginationEllipsis />
-                        </PaginationItemWithProgress>
-                      );
-                    }
-                    return (
-                      <PaginationItemWithProgress key={page} page={page}>
-                        <PaginationLink
-                          href={getPageHref(page)}
-                          onClick={(e) => handlePageClick(e, page)}
-                          isActive={page === currentPage}
-                        >
-                          {page}
-                        </PaginationLink>
-                        {renderPageProgress(page)}
-                      </PaginationItemWithProgress>
-                    );
-                  })}
-
-                <PaginationItemWithProgress page={currentPage + 1}>
-                  <PaginationNext
-                    href={getPageHref(currentPage + 1)}
-                    onClick={(e) => handlePageClick(e, currentPage + 1)}
-                    className={
-                      currentPage === datasetTotalPages
-                        ? 'pointer-events-none opacity-50'
-                        : ''
-                    }
-                  />
-                </PaginationItemWithProgress>
-              </PaginationContent>
-            </Pagination>
+        {/* Show controls for HTML datasets */}
+        {dataset.type === 'html' && (
+          <div className="flex items-center justify-between border-b pb-4">
+            <CrawlControls />
+            <div className="text-muted-foreground text-sm">{syncStatus}</div>
           </div>
+        )}
+
+        {/* Show metrics panel when crawling */}
+        {crawlState !== 'idle' && dataset.type === 'html' && (
+          <>
+            <MetricsPanel metrics={metrics} />
+            {renderMetricsAndQueues()}
+          </>
+        )}
+
+        {/* Existing content */}
+        {dataset.type === 'html' ? (
+          renderHtmlPreview()
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Excel Dataset Preview</DialogTitle>
+              <DialogDescription>
+                {sheetInfo.name
+                  ? `Sheet: ${sheetInfo.name} (${sheetInfo.rows} rows, ${sheetInfo.columns} columns)`
+                  : 'Configure and fetch your Excel dataset'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Excel File URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/data.xlsx"
+                          {...field}
+                          disabled
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Enter the URL of an Excel file (.xlsx or .xls)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="headerRow"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Header Row</FormLabel>
+                        <FormControl>
+                          <Input placeholder="1" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Leave blank for no header
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="dataRow"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data Start Row</FormLabel>
+                        <FormControl>
+                          <Input placeholder="2" {...field} />
+                        </FormControl>
+                        <FormDescription>1-based row index</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </form>
+            </Form>
+
+            {processedData.length > 0 && <Separator />}
+            {processedData.length > 0 && (
+              <div className="mt-4 flex flex-col space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-sm">
+                      Rows per page:
+                    </span>
+                    <Select
+                      value={pageSize.toString()}
+                      onValueChange={handlePageSizeChange}
+                    >
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue placeholder="10" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[10, 20, 50, 100].map((size) => (
+                          <SelectItem key={size} value={size.toString()}>
+                            {size}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="text-muted-foreground text-sm">
+                    Showing rows {startIndex} to {endIndex} of {totalRows}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 overflow-x-auto">
+                  <div className="w-fit">
+                    <table className="border-foreground/30 w-full table-auto border-collapse border">
+                      <thead>
+                        <tr className="[&_th]:bg-foreground/20">
+                          {processedData[0]?.map(
+                            (header: any, index: number) => (
+                              <th
+                                key={index}
+                                className="border-foreground/30 border px-4 py-2"
+                              >
+                                {header}
+                              </th>
+                            )
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {processedData
+                          .slice(startIndex, startIndex + pageSize)
+                          .map((row: any[], rowIndex: number) => (
+                            <tr key={rowIndex}>
+                              {row.map((cell: any, cellIndex: number) => (
+                                <td
+                                  key={cellIndex}
+                                  className="border-foreground/30 border px-4 py-2"
+                                >
+                                  {cell}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItemWithProgress page={currentPage - 1}>
+                      <PaginationPrevious
+                        href={getPageHref(currentPage - 1)}
+                        onClick={(e) => handlePageClick(e, currentPage - 1)}
+                        className={
+                          currentPage === 1
+                            ? 'pointer-events-none opacity-50'
+                            : ''
+                        }
+                      />
+                    </PaginationItemWithProgress>
+
+                    {Array.from({ length: datasetTotalPages }, (_, i) => i + 1)
+                      .filter(
+                        (page) =>
+                          page === 1 ||
+                          page === datasetTotalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                      )
+                      .map((page, index, array) => {
+                        if (index > 0 && array[index - 1] !== page - 1) {
+                          return (
+                            <PaginationItemWithProgress
+                              key={`ellipsis-${page}`}
+                              page={page}
+                            >
+                              <PaginationEllipsis />
+                            </PaginationItemWithProgress>
+                          );
+                        }
+                        return (
+                          <PaginationItemWithProgress key={page} page={page}>
+                            <PaginationLink
+                              href={getPageHref(page)}
+                              onClick={(e) => handlePageClick(e, page)}
+                              isActive={page === currentPage}
+                            >
+                              {page}
+                            </PaginationLink>
+                            {renderPageProgress(page)}
+                          </PaginationItemWithProgress>
+                        );
+                      })}
+
+                    <PaginationItemWithProgress page={currentPage + 1}>
+                      <PaginationNext
+                        href={getPageHref(currentPage + 1)}
+                        onClick={(e) => handlePageClick(e, currentPage + 1)}
+                        className={
+                          currentPage === datasetTotalPages
+                            ? 'pointer-events-none opacity-50'
+                            : ''
+                        }
+                      />
+                    </PaginationItemWithProgress>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </>
         )}
       </>
     );
@@ -1470,36 +1320,562 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
     </Card>
   );
 
+  const formatDuration = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (hours > 0) return `${hours}h ${minutes % 60}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+    return `${seconds}s`;
+  };
+
+  const formatTime = (timestamp: number) => {
+    if (!timestamp) return '--:--';
+    return new Date(timestamp).toLocaleTimeString();
+  };
+
+  const calculateEstimatedTime = (
+    completedPages: number,
+    totalPages: number,
+    startTime: number
+  ) => {
+    if (completedPages === 0 || !startTime) return '--:--';
+
+    const elapsed = Date.now() - startTime;
+    const avgTimePerPage = elapsed / completedPages;
+    const remainingPages = totalPages - completedPages;
+    const estimatedRemaining = avgTimePerPage * remainingPages;
+
+    return formatDuration(Math.max(0, estimatedRemaining));
+  };
+
+  const startCrawl = async () => {
+    try {
+      setCrawlState('running');
+      setSyncStatus('Starting crawl process...');
+      setLoading(true);
+
+      // Reset all metrics at start
+      setMetrics({
+        startTime: Date.now(),
+        totalPages: 0,
+        completedPages: 0,
+        totalArticles: 0,
+        processedArticles: 0,
+        requestCount: 0,
+        successfulRequests: 0,
+        failedRequests: 0,
+        averageRequestTime: 0,
+        estimatedTimeLeft: '--:--',
+      });
+
+      // Reset progress states
+      setPageProgresses([]);
+      setUrlLogs([]);
+      setUrlQueue([]);
+      setSyncProgress(0);
+
+      if (dataset.type === 'html' && dataset?.html_ids?.length) {
+        const crawler = new HtmlCrawler();
+        const htmlData = await crawler.crawl({
+          url: dataset.url!,
+          htmlIds: dataset.html_ids,
+          onProgress: (progress, status) => {
+            if (crawlState === 'paused') return;
+            setSyncProgress(progress);
+            setSyncStatus(status);
+          },
+          onUrlFetch: handleUrlFetch,
+          onQueueUpdate: handleQueueUpdate,
+          onUrlProgress: updateUrlProgress,
+          onPageProgress: handlePageProgress,
+          onTotalPages: (pages) => {
+            setTotalPages(pages);
+            setMetrics((prev) => ({
+              ...prev,
+              totalPages: pages,
+            }));
+          },
+        });
+
+        // Process and sync data
+        if (htmlData?.length > 0) {
+          await syncWithBackend(htmlData);
+        }
+
+        setCrawlState('completed');
+        setSyncStatus('Crawl completed successfully!');
+      }
+    } catch (error) {
+      console.error('Error during crawl:', error);
+      setCrawlState('idle');
+      setSyncStatus(
+        'Crawl failed: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageProgress = (progress: PageProgress) => {
+    if (crawlState === 'paused') return;
+
+    setPageProgresses((prev) => {
+      const newProgresses = [...prev];
+      const index = newProgresses.findIndex(
+        (p) => p.pageNumber === progress.pageNumber
+      );
+
+      if (index >= 0) {
+        newProgresses[index] = progress;
+      } else {
+        newProgresses.push(progress);
+      }
+
+      // Update metrics with correct calculations
+      const completedPages = newProgresses.filter(
+        (p) => p.status === 'complete'
+      ).length;
+      const totalArticles = newProgresses.reduce(
+        (sum, p) => sum + (p.articleCount || 0),
+        0
+      );
+      const processedArticles = newProgresses.reduce(
+        (sum, p) => sum + (p.fetchedArticles || 0),
+        0
+      );
+
+      setMetrics((prev) => {
+        const elapsed = Date.now() - prev.startTime;
+        const avgRequestTime = prev.requestCount
+          ? elapsed / prev.requestCount
+          : 0;
+
+        return {
+          ...prev,
+          completedPages,
+          totalPages: Math.max(prev.totalPages, newProgresses.length),
+          totalArticles: Math.max(prev.totalArticles, totalArticles),
+          processedArticles,
+          averageRequestTime: avgRequestTime,
+          estimatedTimeLeft: calculateEstimatedTime(
+            completedPages,
+            prev.totalPages,
+            prev.startTime
+          ),
+        };
+      });
+
+      return newProgresses;
+    });
+  };
+
+  const handleUrlFetch = (
+    url: string,
+    success: boolean,
+    subPages?: { total: number; processed: number }
+  ) => {
+    if (crawlState === 'paused') return;
+
+    const timestamp = Date.now();
+    const urlWithProgress: UrlWithProgress = {
+      url,
+      status: success ? 'completed' : 'failed',
+      timestamp,
+      progress: success ? 100 : 0,
+      subPages,
+    };
+
+    setRecentFetches((prev) => [...prev.slice(-4), urlWithProgress]);
+    setPendingUrls((prev) => prev.filter((item) => item.url !== url));
+
+    setUrlLogs((prev) => [...prev, { url, success, timestamp }]);
+    setActiveUrl(url);
+
+    setMetrics((prev) => {
+      const elapsed = timestamp - prev.startTime;
+      const requestCount = prev.requestCount + 1;
+      const successfulRequests = prev.successfulRequests + (success ? 1 : 0);
+      const failedRequests = prev.failedRequests + (success ? 0 : 1);
+      const avgRequestTime = elapsed / requestCount;
+
+      return {
+        ...prev,
+        requestCount,
+        successfulRequests,
+        failedRequests,
+        averageRequestTime: avgRequestTime,
+      };
+    });
+  };
+
+  const syncWithBackend = async (htmlData: any[]) => {
+    // Get column names from HTML IDs
+    const columnNames = dataset.html_ids
+      ?.map((id) => {
+        const match = id.match(/{{(.+?)}}/);
+        return match ? match[1] : '';
+      })
+      .filter(Boolean);
+
+    // Sync columns
+    const columnsToSync = columnNames?.map((name) => ({ name }));
+    await fetch(
+      `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columns: columnsToSync }),
+      }
+    );
+
+    // Sync rows
+    await fetch(`/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows: htmlData }),
+    });
+  };
+
+  const CrawlControls = () => {
+    const canPause = crawlState === 'running';
+    const canResume = crawlState === 'paused';
+    const canStart = crawlState === 'idle';
+    const canStop = ['running', 'paused'].includes(crawlState);
+
+    return (
+      <div className="flex items-center gap-2">
+        {canStart && (
+          <Button onClick={startCrawl} variant="default">
+            <Play className="mr-2 h-4 w-4" />
+            Start Crawling
+          </Button>
+        )}
+
+        {canPause && (
+          <Button onClick={() => setCrawlState('paused')} variant="outline">
+            <Pause className="mr-2 h-4 w-4" />
+            Pause
+          </Button>
+        )}
+
+        {canResume && (
+          <Button onClick={() => setCrawlState('running')} variant="outline">
+            <Play className="mr-2 h-4 w-4" />
+            Resume
+          </Button>
+        )}
+
+        {canStop && (
+          <Button onClick={stopCrawl} variant="destructive">
+            <StopCircle className="mr-2 h-4 w-4" />
+            Stop
+          </Button>
+        )}
+      </div>
+    );
+  };
+
+  const stopCrawl = () => {
+    // Cancel all active fetches
+    activeFetchesRef.current.forEach((fetch) => {
+      fetch.controller.abort();
+    });
+    activeFetchesRef.current = [];
+
+    // Clear queues
+    setPendingUrls([]);
+    setUrlQueue([]);
+    setCrawlState('idle');
+    setSyncStatus('Crawl stopped');
+  };
+
+  const MetricsPanel = ({ metrics }: { metrics: CrawlMetrics }) => {
+    return (
+      <div className="grid gap-4">
+        {/* Overview Card */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Crawl Progress</h4>
+                <div className="flex items-center gap-2">
+                  <div className="text-2xl font-bold">
+                    {(
+                      (metrics.processedArticles /
+                        Math.max(metrics.totalArticles, 1)) *
+                      100
+                    ).toFixed(1)}
+                    %
+                  </div>
+                  <Badge
+                    variant={crawlState === 'running' ? 'default' : 'outline'}
+                  >
+                    {crawlState}
+                  </Badge>
+                </div>
+                <Progress
+                  value={
+                    (metrics.processedArticles /
+                      Math.max(metrics.totalArticles, 1)) *
+                    100
+                  }
+                  className="h-2"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Articles Found</h4>
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold">
+                    {metrics.totalArticles}
+                  </div>
+                  <Badge variant="outline">
+                    {metrics.processedArticles} processed
+                  </Badge>
+                </div>
+                <div className="text-muted-foreground text-sm">
+                  {(
+                    (metrics.processedArticles /
+                      Math.max(metrics.totalArticles, 1)) *
+                    100
+                  ).toFixed(1)}
+                  % complete
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Request Stats</h4>
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold">
+                    {metrics.requestCount}
+                  </div>
+                  <Badge
+                    variant={
+                      metrics.failedRequests === 0 ? 'success' : 'destructive'
+                    }
+                  >
+                    {metrics.failedRequests} failed
+                  </Badge>
+                </div>
+                <div className="text-muted-foreground text-sm">
+                  {metrics.averageRequestTime.toFixed(0)}ms average
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Time Stats</h4>
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold">
+                    {formatDuration(Date.now() - metrics.startTime)}
+                  </div>
+                  <Badge variant="outline">
+                    {metrics.estimatedTimeLeft} left
+                  </Badge>
+                </div>
+                <div className="text-muted-foreground text-sm">
+                  Started {formatTime(metrics.startTime)}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Detailed Stats */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <h4 className="font-medium">Page Progress</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-bold">
+                      {metrics.completedPages}/{metrics.totalPages}
+                    </div>
+                    <Badge variant="outline">
+                      {(
+                        (metrics.completedPages /
+                          Math.max(metrics.totalPages, 1)) *
+                        100
+                      ).toFixed(1)}
+                      %
+                    </Badge>
+                  </div>
+                  <Progress
+                    value={
+                      (metrics.completedPages /
+                        Math.max(metrics.totalPages, 1)) *
+                      100
+                    }
+                    className="h-2"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <h4 className="font-medium">Request Performance</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-2xl font-bold">
+                      {metrics.successfulRequests}/{metrics.requestCount}
+                    </div>
+                    <Badge
+                      variant={
+                        metrics.failedRequests === 0 ? 'success' : 'destructive'
+                      }
+                    >
+                      {(
+                        (metrics.successfulRequests /
+                          Math.max(metrics.requestCount, 1)) *
+                        100
+                      ).toFixed(1)}
+                      % success
+                    </Badge>
+                  </div>
+                  <Progress
+                    value={
+                      (metrics.successfulRequests /
+                        Math.max(metrics.requestCount, 1)) *
+                      100
+                    }
+                    className="h-2"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
+  const RecentFetchesCard = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Recent Fetches</h3>
+            <Badge variant="outline">{recentFetches.length} urls</Badge>
+          </div>
+          <div className="space-y-2">
+            {recentFetches.slice(-5).map((item, index) => (
+              <div
+                key={index}
+                className={cn(
+                  'space-y-2 rounded-md border p-2',
+                  item.status === 'processing' && 'bg-muted/50'
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {item.status === 'completed' && (
+                      <Check className="h-4 w-4 text-green-500" />
+                    )}
+                    {item.status === 'failed' && (
+                      <X className="h-4 w-4 text-red-500" />
+                    )}
+                    <code className="text-muted-foreground flex-1 truncate text-xs">
+                      {item.url}
+                    </code>
+                  </div>
+                </div>
+                {item.subPages && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      {item.subPages.processed} / {item.subPages.total} pages
+                    </span>
+                    <Progress
+                      value={
+                        (item.subPages.processed / item.subPages.total) * 100
+                      }
+                      className="h-1 w-24"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const PendingUrlsCard = () => (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Pending URLs</h3>
+            <Badge variant="outline">{pendingUrls.length} remaining</Badge>
+          </div>
+          <div className="space-y-2">
+            {pendingUrls.slice(0, 5).map((item, index) => (
+              <div key={index} className="rounded-md border p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="text-muted-foreground h-4 w-4" />
+                    <code className="text-muted-foreground flex-1 truncate text-xs">
+                      {item.url}
+                    </code>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {pendingUrls.length > 5 && (
+              <div className="text-muted-foreground text-center text-sm">
+                +{pendingUrls.length - 5} more URLs
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderMetricsAndQueues = () => (
+    <div className="grid gap-4 md:grid-cols-2">
+      <RecentFetchesCard />
+      <PendingUrlsCard />
+    </div>
+  );
+
+  const handleQueueUpdate = (urls: string[]) => {
+    if (crawlState === 'paused') return;
+    const queueItems = urls.map((url) => ({
+      url,
+      status: 'pending' as const,
+      timestamp: Date.now(),
+      progress: 0,
+    }));
+    setUrlQueue(queueItems);
+    setPendingUrls(queueItems);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button onClick={() => setIsOpen(true)} disabled={!dataset.url}>
-          <RefreshCw className="h-4 w-4" />
-          Sync Dataset
+          <RefreshCw className="mr-2 h-4 w-4" />
+          {dataset.type === 'html' ? 'Start Crawler' : 'Sync Dataset'}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-auto sm:max-w-[90vw]">
         {renderDialogContent()}
 
-        {/* Move sync status and button outside tabs but inside dialog */}
-        <div className="mt-4 flex flex-col gap-2">
-          {loading && (
-            <>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">
-                  {syncStatus}
-                </span>
-                <span className="text-sm font-medium">{syncProgress}%</span>
-              </div>
-              <Progress value={syncProgress} className="h-2" />
-            </>
-          )}
-          <div className="flex justify-end">
+        {/* Only show sync button for non-HTML datasets */}
+        {dataset.type !== 'html' && (
+          <div className="mt-4 flex justify-end">
             <Button onClick={syncDataset} disabled={loading}>
               {loading ? 'Syncing...' : 'Sync Dataset'}
             </Button>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
