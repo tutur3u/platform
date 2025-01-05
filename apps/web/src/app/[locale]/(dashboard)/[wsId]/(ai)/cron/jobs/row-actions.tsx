@@ -1,7 +1,9 @@
 'use client';
 
+import { CronJobForm } from './form';
 import type { WorkspaceCronJob } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
+import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +16,7 @@ import { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface RowActionsProps {
@@ -26,15 +28,12 @@ interface RowActionsProps {
 export function RowActions({ row, href }: RowActionsProps) {
   const t = useTranslations();
   const router = useRouter();
-  const pathname = usePathname();
 
   const data = row.original;
 
-  const [, setOpen] = useState(false);
-
   const deleteData = async () => {
     const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/users/${data.id}`,
+      `/api/v1/workspaces/${data.ws_id}/cron/jobs/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -45,11 +44,13 @@ export function RowActions({ row, href }: RowActionsProps) {
     } else {
       const data = await res.json();
       toast({
-        title: 'Failed to delete workspace user',
+        title: 'Failed to delete cron job',
         description: data.message,
       });
     }
   };
+
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -73,21 +74,28 @@ export function RowActions({ row, href }: RowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setOpen(true)}>
+          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
             {t('common.edit')}
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
-          {pathname.includes('/users/database') && (
-            <DropdownMenuItem
-              onClick={deleteData}
-              disabled={!data.id || !data.ws_id}
-            >
-              {t('common.delete')}
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={deleteData}
+            disabled={!data.id || !data.ws_id}
+          >
+            {t('common.delete')}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ModifiableDialogTrigger
+        data={data}
+        open={showEditDialog}
+        title={t('ws-cron-jobs.edit')}
+        editDescription={t('ws-cron-jobs.edit_description')}
+        setOpen={setShowEditDialog}
+        form={<CronJobForm wsId={data.ws_id} data={data} />}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { getColumns } from './columns';
-import { CronJobs } from './jobs';
+import { CronJobForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceCronJob } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
@@ -42,7 +42,7 @@ export default async function WorkspaceCronJobsPage({
         description={t('ws-cron-jobs.description')}
         createTitle={t('ws-cron-jobs.create')}
         createDescription={t('ws-cron-jobs.create_description')}
-        // form={<ModelForm wsId={wsId} />}
+        form={<CronJobForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -56,8 +56,6 @@ export default async function WorkspaceCronJobsPage({
           created_at: false,
         }}
       />
-
-      <CronJobs />
     </>
   );
 }

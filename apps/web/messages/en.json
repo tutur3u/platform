@@ -834,6 +834,10 @@
     "status": "Status",
     "last_run": "Last run",
     "next_run": "Next run",
+    "inactive": "Inactive",
+    "active": "Active",
+    "running": "Running",
+    "failed": "Failed",
     "created_at": "Created at"
   },
   "cron-execution-data-table": {
@@ -2021,7 +2025,9 @@
     "singular": "Cron Job",
     "create": "Create job",
     "create_description": "Create a new job",
-    "description": "Cron jobs are used to schedule tasks to run at specific times."
+    "description": "Cron jobs are used to schedule tasks to run at specific times.",
+    "edit": "Edit job",
+    "edit_description": "Edit an existing job"
   },
   "ws-cron-executions": {
     "plural": "Cron Executions",

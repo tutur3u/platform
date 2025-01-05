@@ -121,6 +121,8 @@
     "babel-plugin-react-compiler": "19.0.0-beta-55955c9-20241229",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cron-parser": "^4.9.0",
+    "cronstrue": "^2.52.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",

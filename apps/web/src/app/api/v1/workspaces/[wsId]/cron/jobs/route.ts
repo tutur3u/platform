@@ -9,17 +9,18 @@ interface Params {
 
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { wsId: id } = await params;
+  const { wsId } = await params;
 
   const { data, error } = await supabase
-    .from('workspace_datasets')
+    .from('workspace_cron_jobs')
     .select('*')
-    .eq('ws_id', id);
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
 
   if (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
-      { message: 'Error fetching workspace datasets' },
+      { message: 'Error fetching workspace cron jobs' },
       { status: 500 }
     );
   }
@@ -29,19 +30,19 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const { wsId: id } = await params;
+  const { wsId } = await params;
 
   const data = await req.json();
 
-  const { error } = await supabase.from('workspace_datasets').insert({
+  const { error } = await supabase.from('workspace_cron_jobs').insert({
     ...data,
-    ws_id: id,
+    ws_id: wsId,
   });
 
   if (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
-      { message: 'Error creating workspace dataset' },
+      { message: 'Error creating workspace cron job' },
       { status: 500 }
     );
   }

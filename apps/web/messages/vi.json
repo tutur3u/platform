@@ -834,6 +834,10 @@
     "status": "Trạng thái",
     "last_run": "Lần chạy cuối",
     "next_run": "Lần Chạy tới",
+    "inactive": "Không hoạt động",
+    "active": "Đang hoạt động",
+    "running": "Đang chạy",
+    "failed": "Thất bại",
     "created_at": "Tạo lúc"
   },
   "cron-execution-data-table": {
@@ -2021,7 +2025,9 @@
     "plural": "Công việc định kỳ",
     "create": "Tạo công việc",
     "create_description": "Tạo một công việc mới",
-    "description": "Công việc định kỳ được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể."
+    "description": "Công việc định kỳ được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể.",
+    "edit": "Chỉnh sửa công việc",
+    "edit_description": "Chỉnh sửa công việc hiện có"
   },
   "ws-cron-executions": {
     "plural": "Lịch sử chạy",

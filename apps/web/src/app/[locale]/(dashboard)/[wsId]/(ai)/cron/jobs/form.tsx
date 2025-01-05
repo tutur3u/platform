@@ -1,8 +1,10 @@
 'use client';
 
-import type { WorkspaceAIModel } from '@/types/db';
+import { useWorkspaceDatasets } from '@/hooks/useWorkspaceDatasets';
+import type { WorkspaceCronJob } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
+import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -14,52 +16,76 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@repo/ui/components/ui/select';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
+import cronstrue from 'cronstrue';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
+function getHumanReadableSchedule(cronExpression: string) {
+  try {
+    return cronstrue.toString(cronExpression, {
+      use24HourTimeFormat: true,
+      verbose: true,
+    });
+  } catch {
+    return 'Invalid cron expression';
+  }
+}
+
+const FormSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'Name is required'),
+  schedule: z.string().min(1, 'Schedule is required'),
+  active: z.boolean().default(true),
+  dataset_id: z.string({
+    required_error: 'Please select a dataset',
+  }),
+  ws_id: z.string(),
+});
+
 interface Props {
   wsId: string;
-  data?: WorkspaceAIModel;
+  data?: WorkspaceCronJob;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
-const FormSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  created_at: z.string(),
-  updated_at: z.string(),
-});
-
-export default function ModelForm({ wsId, data, onFinish }: Props) {
+export function CronJobForm({ wsId, data, onFinish }: Props) {
   const router = useRouter();
-
   const [saving, setSaving] = useState(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     values: {
-      id: data?.id || '',
+      id: data?.id || undefined,
       name: data?.name || '',
-      description: data?.description || '',
-      created_at: data?.created_at || '',
-      updated_at: data?.updated_at || '',
+      schedule: data?.schedule || '',
+      active: data?.active ?? true,
+      dataset_id: data?.dataset_id || '',
+      ws_id: wsId,
     },
   });
+
+  const { data: datasets, isLoading: loadingDatasets } =
+    useWorkspaceDatasets(wsId);
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
     setSaving(true);
     try {
       const res = await fetch(
         formData.id
-          ? `/api/v1/workspaces/${wsId}/users/${formData.id}`
-          : `/api/v1/workspaces/${wsId}/users`,
+          ? `/api/v1/workspaces/${wsId}/cron/jobs/${formData.id}`
+          : `/api/v1/workspaces/${wsId}/cron/jobs`,
         {
           method: formData.id ? 'PUT' : 'POST',
           body: JSON.stringify(formData),
@@ -72,13 +98,13 @@ export default function ModelForm({ wsId, data, onFinish }: Props) {
       } else {
         const resData = await res.json();
         toast({
-          title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
+          title: `Failed to ${formData.id ? 'update' : 'create'} cron job`,
           description: resData.message,
         });
       }
     } catch (error) {
       toast({
-        title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
+        title: `Failed to ${formData.id ? 'update' : 'create'} cron job`,
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -87,10 +113,10 @@ export default function ModelForm({ wsId, data, onFinish }: Props) {
   };
 
   return (
-    <>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
-          <ScrollArea className="grid gap-3 border-b">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
+        <ScrollArea className="max-h-96">
+          <div className="grid gap-2">
             {data?.id && (
               <>
                 <FormField
@@ -98,15 +124,13 @@ export default function ModelForm({ wsId, data, onFinish }: Props) {
                   name="id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Model ID</FormLabel>
+                      <FormLabel>Job ID</FormLabel>
                       <FormControl>
                         <Input {...field} disabled />
                       </FormControl>
                       <FormMessage />
                       <FormDescription>
-                        The identification number of this user in your
-                        workspace. This is automatically managed by Tuturuuu,
-                        and cannot be changed.
+                        This ID is automatically assigned and cannot be changed.
                       </FormDescription>
                     </FormItem>
                   )}
@@ -122,7 +146,7 @@ export default function ModelForm({ wsId, data, onFinish }: Props) {
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="Daily Update Job" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -131,26 +155,98 @@ export default function ModelForm({ wsId, data, onFinish }: Props) {
 
             <FormField
               control={form.control}
-              name="description"
+              name="schedule"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Schedule (Cron Expression)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Empty" {...field} />
+                    <Input placeholder="0 0 * * *" {...field} />
                   </FormControl>
+                  <FormDescription className="flex flex-col gap-1">
+                    <span>Common examples:</span>
+                    <span className="text-muted-foreground text-xs">
+                      • "0 0 * * *" - At midnight, every day
+                      <br />
+                      • "*/15 * * * *" - Every 15 minutes
+                      <br />• "0 9 * * 1-5" - At 9 AM, Monday through Friday
+                    </span>
+                    {field.value && (
+                      <span className="text-muted-foreground mt-2 text-sm">
+                        ↳ {getHumanReadableSchedule(field.value)}
+                      </span>
+                    )}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </ScrollArea>
 
-          <div className="flex justify-center gap-2">
-            <Button type="submit" className="w-full" disabled={saving}>
-              Save changes
-            </Button>
+            <FormField
+              control={form.control}
+              name="dataset_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dataset</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            loadingDatasets ? 'Loading...' : 'Select a dataset'
+                          }
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {datasets?.map((dataset) => (
+                        <SelectItem key={dataset.id} value={dataset.id}>
+                          {dataset.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the dataset this job will work with
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Separator />
+
+            <FormField
+              control={form.control}
+              name="active"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      id="active"
+                    />
+                  </FormControl>
+                  <label
+                    htmlFor="active"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Active
+                  </label>
+                </FormItem>
+              )}
+            />
           </div>
-        </form>
-      </Form>
-    </>
+        </ScrollArea>
+
+        <Separator className="my-2" />
+
+        <div className="flex justify-center gap-2">
+          <Button type="submit" className="w-full" disabled={saving}>
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

@@ -25,7 +25,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
       />
       <Separator className="my-4" />
       <div className="grid items-end gap-4 md:grid-cols-2">
-        <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
+        <Suspense fallback={<LoadingStatisticCard />}>
           <JobsStatistics wsId={wsId} />
         </Suspense>
 
