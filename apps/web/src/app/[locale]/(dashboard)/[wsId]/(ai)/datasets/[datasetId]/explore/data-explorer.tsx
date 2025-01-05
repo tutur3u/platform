@@ -204,7 +204,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
               <tr className="bg-muted/50 border-b">
                 {headers.map((header: any, index: number) => (
                   <th key={index} className="p-2 text-left text-sm">
-                    {header}
+                    <div className="line-clamp-1">{header}</div>
                   </th>
                 ))}
                 <th className="p-2 text-left text-sm">{t('common.actions')}</th>
