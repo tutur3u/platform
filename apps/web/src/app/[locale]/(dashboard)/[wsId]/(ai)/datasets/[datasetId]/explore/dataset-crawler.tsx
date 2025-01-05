@@ -697,8 +697,8 @@ export function DatasetCrawler({
 
                     {activeUrl && (
                       <div className="flex items-center gap-2 rounded-md border p-2">
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        <code className="text-muted-foreground flex-1 truncate text-xs">
+                        <RefreshCw className="h-4 w-4 flex-none animate-spin" />
+                        <code className="text-muted-foreground line-clamp-1 w-full text-xs">
                           {activeUrl}
                         </code>
                       </div>
