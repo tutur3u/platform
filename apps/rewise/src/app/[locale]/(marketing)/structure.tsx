@@ -22,6 +22,7 @@ import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
 import {
   ChevronDown,
   Crown,
+  Gem,
   Home,
   ImagePlay,
   Menu,
@@ -79,6 +80,11 @@ export function Structure({
       href: '/imagine',
       title: t('common.image_generator'),
       icon: <ImagePlay className="h-5 w-5 flex-none" />,
+    },
+    {
+      href: '/crystal',
+      title: 'Crystal',
+      icon: <Gem className="h-5 w-5 flex-none" />,
     },
     {
       href: '/plans',
