@@ -22,43 +22,24 @@ export async function GET(
 
     const supabase = await createClient();
 
-    // Get total count first
+    // Get total count
     const { count } = await supabase
       .from('workspace_dataset_rows')
       .select('*', { count: 'exact', head: true })
       .eq('dataset_id', datasetId);
 
-    // Then get paginated rows with their cells
+    // Get rows using the view
     const { data: rows, error } = await supabase
-      .from('workspace_dataset_rows')
-      .select(
-        `
-        id,
-        workspace_dataset_cell (
-          data,
-          workspace_dataset_columns (
-            name
-          )
-        )
-      `
-      )
+      .from('workspace_dataset_row_cells')
+      .select('*')
       .eq('dataset_id', datasetId)
-      .order('created_at', { ascending: true })
+      .order('row_id')
       .range(start, end);
 
     if (error) throw error;
 
-    // Transform the data to a more usable format
-    const transformedRows = rows?.map((row) => {
-      const rowData: Record<string, any> = {};
-      row.workspace_dataset_cell?.forEach((cell: any) => {
-        rowData[cell.workspace_dataset_columns.name] = cell.data;
-      });
-      return { id: row.id, ...rowData };
-    });
-
     return NextResponse.json({
-      data: transformedRows || [],
+      data: rows || [],
       totalRows: count || 0,
       page,
       pageSize,

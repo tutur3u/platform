@@ -67,7 +67,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
     placeholderData: keepPreviousData,
   });
 
-  // Query for rows with pagination
+  // Query for rows with pagination using the new view
   const rowsQuery = useQuery({
     queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
     queryFn: async () => {
@@ -76,6 +76,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
           new URLSearchParams({
             page: currentPage.toString(),
             pageSize,
+            useView: 'true', // Add this flag to use the view
           })
       );
       if (!response.ok) throw new Error('Failed to fetch rows');
@@ -234,14 +235,18 @@ export function DataExplorer({ wsId, dataset }: Props) {
                           key={colIndex}
                           className="min-w-32 whitespace-pre-line p-2 text-sm"
                         >
-                          <span className="line-clamp-3">{row[header]}</span>
+                          <span className="line-clamp-3">
+                            {row.cells[header]}
+                          </span>
                         </td>
                       ))}
                       <td className="flex gap-2 p-2 text-sm">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setEditingRow(row)}
+                          onClick={() =>
+                            setEditingRow({ ...row, cells: row.cells })
+                          }
                         >
                           {t('common.edit')}
                         </Button>

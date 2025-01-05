@@ -3494,6 +3494,13 @@ export type Database = {
             foreignKeyName: 'workspace_dataset_cell_row_id_fkey';
             columns: ['row_id'];
             isOneToOne: false;
+            referencedRelation: 'workspace_dataset_row_cells';
+            referencedColumns: ['row_id'];
+          },
+          {
+            foreignKeyName: 'workspace_dataset_cell_row_id_fkey';
+            columns: ['row_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_dataset_rows';
             referencedColumns: ['id'];
           },
@@ -4975,6 +4982,22 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_dataset_row_cells: {
+        Row: {
+          cells: Json | null;
+          dataset_id: string | null;
+          row_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_dataset_rows_dataset_id_fkey';
+            columns: ['dataset_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_datasets';
             referencedColumns: ['id'];
           },
         ];
