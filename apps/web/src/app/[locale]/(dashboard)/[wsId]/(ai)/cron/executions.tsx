@@ -17,12 +17,12 @@ export default async function ExecutionStatistics({
 
   const { count } = enabled
     ? await supabase
-        .from('workspace_quizzes')
-        .select('*', {
+        .from('workspace_cron_executions')
+        .select('*, workspace_cron_jobs!inner(ws_id)', {
           count: 'exact',
           head: true,
         })
-        .eq('ws_id', wsId)
+        .eq('workspace_cron_jobs.ws_id', wsId)
     : { count: 0 };
 
   if (!enabled) return null;

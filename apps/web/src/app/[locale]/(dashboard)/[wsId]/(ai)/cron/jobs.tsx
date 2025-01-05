@@ -17,7 +17,7 @@ export default async function JobsStatistics({
 
   const { count } = enabled
     ? await supabase
-        .from('workspace_quizzes')
+        .from('workspace_cron_jobs')
         .select('*', {
           count: 'exact',
           head: true,
