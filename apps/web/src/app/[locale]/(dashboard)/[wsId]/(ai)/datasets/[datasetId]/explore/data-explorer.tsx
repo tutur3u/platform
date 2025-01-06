@@ -139,21 +139,26 @@ export function DataExplorer({ wsId, dataset }: Props) {
   // Similar updates for handleEditRow and handleDeleteRow
   const handleEditRow = async () => {
     try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rowId: editingRow.id, row: editingRow }),
-        }
+      const updates = Object.keys(editingRow.cells).map((header) => ({
+        rowId: editingRow.row_id,
+        columnId: columnsQuery.data.find((col: any) => col.name === header).id,
+        data: editingRow.cells[header],
+      }));
+
+      await Promise.all(
+        updates.map((update) =>
+          fetch(`/api/v1/workspaces/${wsId}/datasets/${dataset.id}/cells`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(update),
+          })
+        )
       );
 
-      if (response.ok) {
-        setEditingRow(null);
-        queryClient.invalidateQueries({
-          queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
-        });
-      }
+      setEditingRow(null);
+      queryClient.invalidateQueries({
+        queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
+      });
     } catch (error) {
       console.error('Error editing row:', error);
     }
@@ -280,7 +285,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            setEditingRow({ ...row, cells: row.cells })
+                            setEditingRow({ ...row, cells: { ...row.cells } })
                           }
                         >
                           {t('common.edit')}
@@ -497,9 +502,15 @@ export function DataExplorer({ wsId, dataset }: Props) {
                 <div key={header} className="space-y-2">
                   <label className="text-sm font-medium">{header}</label>
                   <Input
-                    value={editingRow[header] || ''}
+                    value={editingRow.cells[header] || ''}
                     onChange={(e) =>
-                      setEditingRow({ ...editingRow, [header]: e.target.value })
+                      setEditingRow({
+                        ...editingRow,
+                        cells: {
+                          ...editingRow.cells,
+                          [header]: e.target.value,
+                        },
+                      })
                     }
                     placeholder={`Enter ${header}`}
                   />
