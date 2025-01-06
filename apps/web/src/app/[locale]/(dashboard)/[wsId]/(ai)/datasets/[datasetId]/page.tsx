@@ -22,11 +22,9 @@ interface Props {
 export default async function DatasetDetailsPage({ params }: Props) {
   const { wsId, datasetId } = await params;
   const t = await getTranslations();
-  const dataset = await getDataset(datasetId);
+  const dataset = await getDataset(datasetId, wsId);
 
-  if (!dataset) {
-    notFound();
-  }
+  if (!dataset) notFound();
 
   const metrics = await getDatasetMetrics(datasetId);
 
@@ -140,12 +138,13 @@ export default async function DatasetDetailsPage({ params }: Props) {
   );
 }
 
-async function getDataset(id: string) {
+async function getDataset(id: string, wsId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from('workspace_datasets')
     .select('*')
     .eq('id', id)
+    .eq('ws_id', wsId)
     .single();
 
   return data;

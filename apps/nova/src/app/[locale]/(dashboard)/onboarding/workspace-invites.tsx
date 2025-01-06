@@ -19,7 +19,7 @@ export default async function WorkspaceInvites() {
         ))
       ) : (
         <div className="text-foreground/60 flex h-full items-center justify-center px-4 py-16 text-center text-lg font-semibold md:text-2xl">
-          {('no-invites')}
+          {'no-invites'}
         </div>
       )}
     </div>

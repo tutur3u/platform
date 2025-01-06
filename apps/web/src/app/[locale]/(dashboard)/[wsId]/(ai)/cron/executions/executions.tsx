@@ -111,8 +111,6 @@ export const Executions = () => {
 
   const t = translations['en'];
 
-
-
   const getStatusIcon = (
     status: CronJob['status'] | CronExecution['status']
   ) => {
@@ -129,7 +127,6 @@ export const Executions = () => {
   };
 
   const content = (
-
     <Table>
       <TableHeader>
         <TableRow>
@@ -155,8 +152,8 @@ export const Executions = () => {
           );
         })}
       </TableBody>
-    </Table>)
+    </Table>
+  );
 
   return content;
 };
-

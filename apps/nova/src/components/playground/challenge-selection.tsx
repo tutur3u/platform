@@ -1,4 +1,10 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/ui/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@repo/ui/components/ui/select';
 
 export interface Challenge {
   id: number;
@@ -9,22 +15,24 @@ export interface Challenge {
   exampleOutput: string;
 }
 
-
-
 interface ChallengeSelectionProps {
-  challenges: Challenge[]
-  currentChallenge: Challenge
-  onSelectChallenge: (challenge: Challenge) => void
+  challenges: Challenge[];
+  currentChallenge: Challenge;
+  onSelectChallenge: (challenge: Challenge) => void;
 }
 
-export function ChallengeSelection({ challenges, currentChallenge, onSelectChallenge }: ChallengeSelectionProps) {
+export function ChallengeSelection({
+  challenges,
+  currentChallenge,
+  onSelectChallenge,
+}: ChallengeSelectionProps) {
   return (
     <div className="w-[300px]">
       <Select
         value={currentChallenge.id?.toString()}
         onValueChange={(value) => {
-          const selected = challenges.find(c => c.id?.toString() === value)
-          if (selected) onSelectChallenge(selected)
+          const selected = challenges.find((c) => c.id?.toString() === value);
+          if (selected) onSelectChallenge(selected);
         }}
       >
         <SelectTrigger>
@@ -39,6 +47,5 @@ export function ChallengeSelection({ challenges, currentChallenge, onSelectChall
         </SelectContent>
       </Select>
     </div>
-  )
+  );
 }
-

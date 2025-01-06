@@ -1,15 +1,14 @@
 export interface ChallengeScore {
-  challengeId: number
-  challengeName: string
-  score: number
-  rank: number
-  aiReasoning: string
+  challengeId: number;
+  challengeName: string;
+  score: number;
+  rank: number;
+  aiReasoning: string;
 }
 
 export interface LeaderboardEntry {
-  userId: number
-  username: string
-  totalScore: number
-  challengeScores: ChallengeScore[]
+  userId: number;
+  username: string;
+  totalScore: number;
+  challengeScores: ChallengeScore[];
 }
-

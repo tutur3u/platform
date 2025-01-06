@@ -108,13 +108,7 @@ export default async function RootLayout({ children, params }: Props) {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body
-        className={cn(
-          ' overflow-y-scroll antialiased',
-          font.className
-        )}
-      >
-
+      <body className={cn('overflow-y-scroll antialiased', font.className)}>
         <VercelAnalytics />
         <VercelInsights />
         <NextIntlClientProvider messages={messages}>

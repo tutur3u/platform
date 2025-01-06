@@ -20,22 +20,22 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
 
   const creationDate = moment(ws?.created_at).locale(locale).fromNow();
 
-  const invitedTo = ('invited-to');
+  const invitedTo = 'invited-to';
 
-  const declineInviteLabel = ('decline-invite');
-  const acceptInviteLabel = ('accept-invite');
+  const declineInviteLabel = 'decline-invite';
+  const acceptInviteLabel = 'accept-invite';
 
-  const acceptInviteSuccessTitle = ('accept-invite-success-title');
-  const acceptInviteSuccessMessage = ('accept-invite-success-msg');
+  const acceptInviteSuccessTitle = 'accept-invite-success-title';
+  const acceptInviteSuccessMessage = 'accept-invite-success-msg';
 
-  const acceptInviteErrorTitle = ('accept-invite-error-title');
-  const acceptInviteErrorMessage = ('accept-invite-error-msg');
+  const acceptInviteErrorTitle = 'accept-invite-error-title';
+  const acceptInviteErrorMessage = 'accept-invite-error-msg';
 
-  const declineInviteSuccessTitle = ('decline-invite-success-title');
-  const declineInviteSuccessMessage = ('decline-invite-success-msg');
+  const declineInviteSuccessTitle = 'decline-invite-success-title';
+  const declineInviteSuccessMessage = 'decline-invite-success-msg';
 
-  const declineInviteErrorTitle = ('decline-invite-error-title');
-  const declineInviteErrorMessage = ('decline-invite-error-msg');
+  const declineInviteErrorTitle = 'decline-invite-error-title';
+  const declineInviteErrorMessage = 'decline-invite-error-msg';
 
   const acceptInvite = async (ws: Workspace) => {
     const response = await fetch(`/api/workspaces/${ws.id}/accept-invite`, {

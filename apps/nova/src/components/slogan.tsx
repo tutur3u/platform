@@ -9,14 +9,12 @@ export default function Slogan() {
   return (
     <section className="relative overflow-hidden p-4">
       <div className="mx-auto max-w-2xl">
-        <h2 className="mb-4 text-xl font-bold md:text-3xl">
-          {('slogan.title')}
-        </h2>
+        <h2 className="mb-4 text-xl font-bold md:text-3xl">{'slogan.title'}</h2>
         <p className="text-muted-foreground mb-8 text-balance">
-          {('slogan.description')}
+          {'slogan.description'}
         </p>
         <Link href="/contact">
-          <Button size="lg">{('slogan.join_waitlist')}</Button>
+          <Button size="lg">{'slogan.join_waitlist'}</Button>
         </Link>
       </div>
     </section>

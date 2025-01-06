@@ -5,13 +5,14 @@ import {
   CardTitle,
 } from '@repo/ui/components/ui/card';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+
 export interface Challenge {
   id?: number | null;
   title?: string | null;
-  topic?: string| null;
-  description?: string| null;
-  exampleInput?: string| null;
-  exampleOutput?: string| null;
+  topic?: string | null;
+  description?: string | null;
+  exampleInput?: string | null;
+  exampleOutput?: string | null;
 }
 interface ProblemDescriptionProps {
   challenge: Challenge;

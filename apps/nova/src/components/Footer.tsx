@@ -12,11 +12,7 @@ export default function Footer() {
 
   return (
     <div className="w-full text-center">
-      {pathname.startsWith('/contact') || (
-        <>
-  
-        </>
-      )}
+      {pathname.startsWith('/contact') || <></>}
 
       <Separator className="bg-foreground/5 my-8" />
 

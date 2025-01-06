@@ -38,10 +38,10 @@ export function SubmissionHistory({ submissions }: SubmissionHistoryProps) {
                   <Badge
                     variant={
                       submission.status === 'Accepted'
-                        ? 'success' 
+                        ? 'success'
                         : submission.status === 'Wrong Answer'
-                        ? 'destructive'
-                        : 'warning'
+                          ? 'destructive'
+                          : 'warning'
                     }
                   >
                     {submission.status}

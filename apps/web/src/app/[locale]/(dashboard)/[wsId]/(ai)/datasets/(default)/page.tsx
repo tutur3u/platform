@@ -81,7 +81,8 @@ async function getData(
       .select(
         '*, workspace_dataset_columns(id.count()), workspace_dataset_rows(id.count())'
       )
-      .order('name', { ascending: true, nullsFirst: false });
+      .order('name', { ascending: true, nullsFirst: false })
+      .eq('ws_id', wsId);
 
     if (page && pageSize) {
       const parsedPage = parseInt(page);
