@@ -274,7 +274,7 @@ export class HtmlCrawler {
         const href = element.getAttribute('href');
         if (href) {
           return href.startsWith('..')
-            ? new URL(href.replace('..', ''), this.baseUrl).toString()
+            ? new URL(href.replace(/\.\./g, ''), this.baseUrl).toString()
             : new URL(href, this.baseUrl).toString();
         }
       }
