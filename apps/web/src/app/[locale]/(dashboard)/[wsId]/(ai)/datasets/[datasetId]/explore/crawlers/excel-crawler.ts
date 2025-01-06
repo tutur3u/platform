@@ -33,34 +33,52 @@ export class ExcelCrawler {
     );
   }
 
-  private processHeaders(
-    worksheet: XLSX.WorkSheet,
-    headerRow?: number
-  ): string[] {
-    if (!headerRow) {
-      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-      return Array.from({ length: range.e.c + 1 }, (_, i) => `Column ${i + 1}`);
-    }
+  private cleanupData(data: any[][]): any[][] {
+    // Remove empty rows (all cells are null, undefined, or empty string)
+    const nonEmptyRows = data.filter((row) =>
+      row.some(
+        (cell) =>
+          cell !== null && cell !== undefined && cell.toString().trim() !== ''
+      )
+    );
 
-    const headers = XLSX.utils.sheet_to_json(worksheet, {
-      header: 1,
-    })[headerRow - 1] as string[];
+    if (nonEmptyRows.length === 0) return [];
 
-    return headers.map((header, index) =>
-      header ? header.toString() : `Column ${index + 1}`
+    // Find the last non-empty column index
+    const maxColIndex = Math.max(
+      ...nonEmptyRows.map((row) => {
+        let lastNonEmptyIndex = -1;
+        for (let i = row.length - 1; i >= 0; i--) {
+          if (
+            row[i] !== null &&
+            row[i] !== undefined &&
+            row[i].toString().trim() !== ''
+          ) {
+            lastNonEmptyIndex = i;
+            break;
+          }
+        }
+        return lastNonEmptyIndex;
+      })
+    );
+
+    // Trim rows to remove empty trailing columns
+    return nonEmptyRows.map((row) =>
+      row
+        .slice(0, maxColIndex + 1)
+        .map((cell) =>
+          cell !== null && cell !== undefined ? cell.toString().trim() : ''
+        )
     );
   }
 
-  private validateData(data: any[][]): void {
-    if (!Array.isArray(data) || data.length === 0) {
-      throw new Error('Invalid Excel data format');
-    }
+  private cleanupHeaders(headers: any[]): string[] {
+    if (!headers || headers.length === 0) return [];
 
-    const columnCount = data[0]?.length;
-    const invalidRows = data.filter((row) => row.length !== columnCount);
-    if (invalidRows.length > 0) {
-      throw new Error('Inconsistent column count in Excel data');
-    }
+    return headers.map((header, index) => {
+      const cleaned = header?.toString().trim() || '';
+      return cleaned || `Column ${index + 1}`;
+    });
   }
 
   async preloadFile(url: string): Promise<{
@@ -105,37 +123,58 @@ export class ExcelCrawler {
         };
       }
 
+      // Get all data as array of arrays
       const allData = XLSX.utils.sheet_to_json(worksheet, {
         header: 1,
+        raw: false, // Convert all cells to strings
+        defval: '', // Use empty string for empty cells
       }) as any[][];
 
-      // Get headers
-      const headers =
-        headerRow > 0 && allData[headerRow - 1]
-          ? allData[headerRow - 1]
-          : Array.from(
-              { length: allData[0]?.length || 0 },
-              (_, i) => `Column ${i + 1}`
-            );
-
-      // Get preview rows
-      const previewData = allData.slice(dataStartRow - 1, dataStartRow + 9);
-
-      // Validate column consistency
-      const columnCount = headers?.length || 0;
-      const invalidRows = previewData.filter(
-        (row) => row.length !== columnCount
-      );
-
-      if (invalidRows.length > 0) {
+      if (!allData || allData.length === 0) {
         return {
-          headers: headers || [],
-          preview: previewData,
-          error: `Inconsistent column count. Expected ${columnCount} columns but found rows with different counts.`,
+          headers: [],
+          preview: [],
+          error: 'Worksheet is empty',
         };
       }
 
-      return { headers: headers || [], preview: previewData };
+      // Clean up the data first
+      const cleanData = this.cleanupData(allData);
+
+      if (cleanData.length === 0) {
+        return {
+          headers: [],
+          preview: [],
+          error: 'No valid data found after cleanup',
+        };
+      }
+
+      if (headerRow === 0) {
+        return {
+          headers: [],
+          preview: [],
+          error: 'Header row cannot be 0',
+        };
+      }
+
+      // Get and clean headers
+      const headers =
+        headerRow > 0 && cleanData[headerRow - 1]
+          ? this.cleanupHeaders(cleanData[headerRow - 1] as any[])
+          : Array.from(
+              { length: cleanData[0]?.length || 0 },
+              (_, i) => `Column ${i + 1}`
+            );
+
+      // Get preview rows starting from dataStartRow
+      const startIndex = dataStartRow - 1;
+      const previewData = cleanData.slice(startIndex, startIndex + 10);
+
+      return {
+        headers,
+        preview: previewData,
+        error: undefined,
+      };
     } catch (error) {
       return {
         headers: [],
@@ -150,7 +189,7 @@ export class ExcelCrawler {
 
   async crawl({
     url,
-    headerRow,
+    headerRow = 1,
     dataStartRow,
     onProgress,
   }: ExcelCrawlerProps): Promise<{
@@ -177,36 +216,46 @@ export class ExcelCrawler {
       }
 
       onProgress(50, 'Processing worksheet...');
-      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-      const sheetInfo: SheetInfo = {
-        name: sheetName,
-        rows: range.e.r + 1,
-        columns: range.e.c + 1,
-      };
-
       onProgress(70, 'Extracting data...');
-      const excelData = XLSX.utils.sheet_to_json(worksheet, {
+      const rawData = XLSX.utils.sheet_to_json(worksheet, {
         header: 1,
+        raw: false,
+        defval: '',
       }) as any[][];
 
-      this.validateData(excelData);
+      // Clean up the data
+      const cleanData = this.cleanupData(rawData);
 
-      const headers = this.processHeaders(worksheet, headerRow);
-      const dataRows = excelData.slice(dataStartRow - 1);
+      if (cleanData.length === 0) {
+        throw new Error('No valid data found after cleanup');
+      }
 
-      onProgress(90, 'Finalizing data...');
-      const processedData = dataRows.map((row) =>
-        row.map((cell: any) =>
-          cell !== null && cell !== undefined ? cell.toString() : ''
-        )
+      if (headerRow === 0) {
+        throw new Error('Header row cannot be 0');
+      }
+
+      // Get and clean headers
+      const headers = this.cleanupHeaders(
+        headerRow > 0 && cleanData[headerRow - 1]
+          ? (cleanData[headerRow - 1] as any[])
+          : Array.from(
+              { length: cleanData[0]?.length || 0 },
+              (_, i) => `Column ${i + 1}`
+            )
       );
+
+      const dataRows = cleanData.slice(dataStartRow - 1);
 
       onProgress(100, 'Data processing complete');
 
       return {
         headers,
-        data: processedData,
-        sheetInfo,
+        data: dataRows,
+        sheetInfo: {
+          name: sheetName,
+          rows: cleanData.length,
+          columns: headers.length,
+        },
       };
     } catch (error) {
       console.error('Excel crawling error:', error);

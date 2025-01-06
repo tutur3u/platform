@@ -227,49 +227,6 @@ export function DatasetCrawler({
     setCurrentPage(page);
   };
 
-  const syncDataset = async () => {
-    try {
-      setLoading(true);
-      setSyncProgress(0);
-      setSyncStatus('Starting sync process...');
-
-      if (dataset.type === 'excel' && dataset.url) {
-        // Initialize Excel crawler
-        const crawler = new ExcelCrawler();
-
-        // Show preview first
-        const { headers, sampleData, sheetInfo } = await crawler.getPreview({
-          url: dataset.url,
-          headerRow: 1,
-          dataStartRow: 2,
-          onProgress: (progress, status) => {
-            setSyncProgress(progress);
-            setSyncStatus(status);
-          },
-        });
-
-        // Update UI with preview data
-        setSheetInfo(sheetInfo);
-        setProcessedData([headers, ...sampleData]);
-
-        // Don't automatically sync, let user confirm after seeing preview
-        setSyncStatus(
-          'Preview loaded. Please review and click Sync to continue.'
-        );
-        setIsOpen(true);
-        return;
-      }
-      // ...rest of existing syncDataset code...
-    } catch (error) {
-      console.error('Error during sync:', error);
-      setSyncStatus(
-        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleConfirmSync = async () => {
     try {
       setLoading(true);
@@ -291,19 +248,25 @@ export function DatasetCrawler({
         const rows = data.map((row) => {
           const rowData: Record<string, string> = {};
           headers.forEach((header, index) => {
-            rowData[header] = row[index]?.toString() || '';
+            const headerName =
+              header.toString().trim() ||
+              `Column ${headers.indexOf(header) + 1}`;
+            rowData[headerName] = row[index]?.toString()?.trim() || '';
           });
           return rowData;
         });
 
-        await syncWithBackend(rows);
+        // Sync data (columns will be synced automatically)
+        await syncWithBackend(rows, headers);
 
         // Refresh view
         queryClient.invalidateQueries({
-          queryKey: [wsId, dataset.id, 'rows'],
+          queryKey: [wsId, dataset.id],
         });
 
         setSyncStatus('Excel data synced successfully!');
+        // Auto close dialog after successful sync
+        setTimeout(() => setIsOpen(false), 1500);
       }
     } catch (error) {
       console.error('Error during sync:', error);
@@ -886,6 +849,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                           {...field}
                           type="number"
                           min="1"
+                          placeholder="1"
                           onChange={(e) => {
                             field.onChange(e);
                             handleConfigChange();
@@ -910,6 +874,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                           {...field}
                           type="number"
                           min="1"
+                          placeholder="2"
                           onChange={(e) => {
                             field.onChange(e);
                             handleConfigChange();
@@ -935,8 +900,31 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
           )}
 
           {processedData.length > 0 && (
-            <div className="mt-4">
-              {/* ...existing preview table code... */}
+            <div className="mt-4 overflow-auto">
+              <table className="w-full border-collapse border">
+                <thead>
+                  <tr className="bg-muted">
+                    {processedData[0]?.map((header: string, index: number) => (
+                      <th key={index} className="border p-2 text-left">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {processedData
+                    .slice(1)
+                    .map((row: any[], rowIndex: number) => (
+                      <tr key={rowIndex}>
+                        {row.map((cell: any, cellIndex: number) => (
+                          <td key={cellIndex} className="border p-2">
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
           )}
 
@@ -1409,35 +1397,52 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
     });
   };
 
-  const syncWithBackend = async (htmlData: any[]) => {
+  const syncWithBackend = async (data: any[], headers?: string[]) => {
     try {
-      // Get column names from HTML IDs
-      const columnNames = dataset.html_ids
-        ?.map((id) => {
-          const match = id.match(/{{(.+?)}}/);
-          return match ? match[1] : '';
-        })
-        .filter(Boolean);
+      // Handle column sync
+      if (headers && dataset.type === 'excel') {
+        // For Excel files, use provided headers
+        const columnsToSync = headers.map((header) => ({
+          name:
+            header.toString().trim() || `Column ${headers.indexOf(header) + 1}`,
+        }));
+        setSyncStatus('Syncing columns...');
+        await fetch(
+          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ columns: columnsToSync }),
+          }
+        );
+      } else if (dataset.type === 'html' && dataset.html_ids?.length) {
+        // For HTML files, use HTML IDs
+        const columnNames = dataset.html_ids
+          .map((id) => {
+            const match = id.match(/{{(.+?)}}/);
+            return match ? match[1] : '';
+          })
+          .filter(Boolean);
 
-      // Sync columns
-      const columnsToSync = columnNames?.map((name) => ({ name }));
-      await fetch(
-        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ columns: columnsToSync }),
-        }
-      );
+        const columnsToSync = columnNames.map((name) => ({ name }));
+        await fetch(
+          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ columns: columnsToSync }),
+          }
+        );
+      }
 
       // Sync rows in batches
       const BATCH_SIZE = 50;
-      const totalBatches = Math.ceil(htmlData.length / BATCH_SIZE);
+      const totalBatches = Math.ceil(data.length / BATCH_SIZE);
 
       for (let i = 0; i < totalBatches; i++) {
         const start = i * BATCH_SIZE;
-        const end = Math.min(start + BATCH_SIZE, htmlData.length);
-        const batch = htmlData.slice(start, end);
+        const end = Math.min(start + BATCH_SIZE, data.length);
+        const batch = data.slice(start, end);
 
         setSyncStatus(
           `Syncing batch ${i + 1}/${totalBatches} (${batch.length} rows)`
@@ -1456,6 +1461,10 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
       }
 
       setSyncStatus('Sync completed successfully');
+      // Auto close dialog after successful sync for HTML crawler
+      if (dataset.type === 'html') {
+        setTimeout(() => setIsOpen(false), 1500);
+      }
     } catch (error) {
       console.error('Error syncing data:', error);
       setSyncStatus(
@@ -1517,8 +1526,6 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
       // Set default values for form
       form.setValue('headerRow', '1');
       form.setValue('dataRow', '2');
-
-      // Generate initial preview
       updatePreview(workbook, sheetInfo.name, 1, 2);
     } catch (error) {
       setExcelError(
@@ -1572,15 +1579,6 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-auto sm:max-w-[90vw]">
         {renderDialogContent()}
-
-        {/* Only show sync button for non-HTML datasets */}
-        {dataset.type !== 'html' && (
-          <div className="mt-4 flex justify-end">
-            <Button onClick={syncDataset} disabled={loading}>
-              {loading ? 'Syncing...' : 'Sync Dataset'}
-            </Button>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );
