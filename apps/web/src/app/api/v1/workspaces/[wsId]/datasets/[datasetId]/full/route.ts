@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const query = supabase
     .from('workspace_dataset_row_cells')
-    .select('*', { count: 'exact' })
+    .select('row_id, cells', { count: 'exact' })
     .eq('dataset_id', datasetId);
 
   if (from && to) query.range(parseInt(from), parseInt(to));
