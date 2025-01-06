@@ -17,6 +17,9 @@ interface PageProgress {
 interface HtmlCrawlerProps {
   url: string;
   htmlIds: string[];
+  // Add new limit options
+  maxPages?: number;
+  maxArticles?: number;
   // eslint-disable-next-line no-unused-vars
   onProgress: (progress: number, status: string) => void;
 
@@ -469,6 +472,8 @@ export class HtmlCrawler {
   private async _crawl({
     url,
     htmlIds,
+    maxPages,
+    maxArticles,
     onProgress,
     onPageProgress,
     onTotalPages,
@@ -480,10 +485,16 @@ export class HtmlCrawler {
 
     try {
       onProgress(5, 'Fetching paginated URLs...');
-      const paginatedUrls = await this.fetchPaginatedUrls(url, onProgress);
-      onTotalPages?.(paginatedUrls.length);
+      let paginatedUrls = await this.fetchPaginatedUrls(url, onProgress);
 
-      console.log(`Found ${paginatedUrls.length} paginated URLs`);
+      // Apply page limit if specified
+      if (maxPages && maxPages > 0) {
+        paginatedUrls = paginatedUrls.slice(0, maxPages);
+        console.log(`Limited to ${maxPages} pages`);
+      }
+
+      onTotalPages?.(paginatedUrls.length);
+      console.log(`Processing ${paginatedUrls.length} paginated URLs`);
 
       // Initialize progress for all pages
       paginatedUrls.forEach((_, index) => {
@@ -517,13 +528,26 @@ export class HtmlCrawler {
         if (!newsContainer) continue;
 
         const newsItems = Array.from(newsContainer.querySelectorAll('a.item'));
-        totalArticlesAcrossPages += newsItems.length;
+
+        // Apply article limit if specified
+        const articleLimit = maxArticles
+          ? Math.min(maxArticles - totalArticlesAcrossPages, newsItems.length)
+          : newsItems.length;
+        totalArticlesAcrossPages += articleLimit;
+
+        if (maxArticles && totalArticlesAcrossPages >= maxArticles) {
+          console.log(`Reached article limit of ${maxArticles}`);
+          // Adjust paginated URLs to only include necessary pages
+          paginatedUrls = paginatedUrls.slice(0, pageIndex + 1);
+          onTotalPages?.(paginatedUrls.length);
+          break;
+        }
 
         onPageProgress?.({
           pageNumber,
           progress: 20,
           status: 'processing',
-          articleCount: newsItems.length,
+          articleCount: articleLimit,
           fetchedArticles: 0,
         });
       }
@@ -552,7 +576,14 @@ export class HtmlCrawler {
         if (!newsContainer) continue;
 
         const newsItems = Array.from(newsContainer.querySelectorAll('a.item'));
-        const pageArticleUrls = await this.getArticleUrls(newsItems);
+        let pageArticleUrls = await this.getArticleUrls(newsItems);
+
+        // Apply article limit for this page
+        if (maxArticles) {
+          const remainingArticles = maxArticles - processedArticlesTotal;
+          if (remainingArticles <= 0) break;
+          pageArticleUrls = pageArticleUrls.slice(0, remainingArticles);
+        }
 
         // Update progress for article fetching
         onPageProgress?.({

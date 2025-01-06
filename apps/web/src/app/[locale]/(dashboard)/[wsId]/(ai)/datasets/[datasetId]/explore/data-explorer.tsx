@@ -102,10 +102,13 @@ export function DataExplorer({ wsId, dataset }: Props) {
   const handleAddRow = async () => {
     try {
       // Optimistic update
-      queryClient.setQueryData(['rows'], (old: any) => ({
-        ...old,
-        data: [...(old?.data || []), { cells: newRow, id: 'temp' }],
-      }));
+      queryClient.setQueryData(
+        [wsId, dataset.id, 'rows', { currentPage, pageSize }],
+        (old: any) => ({
+          ...old,
+          data: [...(old?.data || []), { cells: newRow, id: 'temp' }],
+        })
+      );
 
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`,
@@ -120,11 +123,15 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
       setIsAddingRow(false);
       setNewRow({});
-      queryClient.invalidateQueries({ queryKey: ['rows'] });
+      queryClient.invalidateQueries({
+        queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
+      });
     } catch (error) {
       console.error('Error adding row:', error);
       // Revert optimistic update
-      queryClient.invalidateQueries({ queryKey: ['rows'] });
+      queryClient.invalidateQueries({
+        queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
+      });
       // Show error to user (implement your error UI)
     }
   };
@@ -143,7 +150,9 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
       if (response.ok) {
         setEditingRow(null);
-        queryClient.invalidateQueries({ queryKey: ['rows'] });
+        queryClient.invalidateQueries({
+          queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
+        });
       }
     } catch (error) {
       console.error('Error editing row:', error);
@@ -153,10 +162,13 @@ export function DataExplorer({ wsId, dataset }: Props) {
   const handleDeleteRow = async (rowId: string) => {
     try {
       // Optimistic delete
-      queryClient.setQueryData(['rows'], (old: any) => ({
-        ...old,
-        data: old?.data?.filter((row: any) => row.id !== rowId) || [],
-      }));
+      queryClient.setQueryData(
+        [wsId, dataset.id, 'rows', { currentPage, pageSize }],
+        (old: any) => ({
+          ...old,
+          data: old?.data?.filter((row: any) => row.id !== rowId) || [],
+        })
+      );
 
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`,
@@ -169,11 +181,15 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
       if (!response.ok) throw new Error('Failed to delete row');
 
-      queryClient.invalidateQueries({ queryKey: ['rows'] });
+      queryClient.invalidateQueries({
+        queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
+      });
     } catch (error) {
       console.error('Error deleting row:', error);
       // Revert optimistic delete
-      queryClient.invalidateQueries({ queryKey: ['rows'] });
+      queryClient.invalidateQueries({
+        queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
+      });
       // Show error to user (implement your error UI)
     }
   };
@@ -190,7 +206,9 @@ export function DataExplorer({ wsId, dataset }: Props) {
       );
 
       if (response.ok) {
-        queryClient.invalidateQueries({ queryKey: ['rows'] });
+        queryClient.invalidateQueries({
+          queryKey: [wsId, dataset.id, 'rows', { currentPage, pageSize }],
+        });
       }
     } catch (error) {
       console.error('Error clearing all rows:', error);

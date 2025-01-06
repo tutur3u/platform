@@ -54,6 +54,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Bug,
   Check,
@@ -148,6 +149,8 @@ export function DatasetCrawler({
   wsId: string;
   dataset: WorkspaceDataset;
 }) {
+  const queryClient = useQueryClient();
+
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [, setRawData] = useState<any[][]>([]);
@@ -188,6 +191,8 @@ export function DatasetCrawler({
   const activeFetchesRef = useRef<ActiveFetches[]>([]);
   const [recentFetches, setRecentFetches] = useState<UrlWithProgress[]>([]);
   const [pendingUrls, setPendingUrls] = useState<UrlWithProgress[]>([]);
+  const [maxPages, setMaxPages] = useState<string | undefined>();
+  const [maxArticles, setMaxArticles] = useState<string | undefined>();
 
   useEffect(() => {
     const fetchColumnsAndRows = async () => {
@@ -1381,6 +1386,8 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
         const htmlData = await crawler.crawl({
           url: dataset.url!,
           htmlIds: dataset.html_ids,
+          maxPages: maxPages ? Number(maxPages) : undefined,
+          maxArticles: maxArticles ? Number(maxArticles) : undefined,
           onProgress: (progress, status) => {
             if (crawlState === 'paused') return;
             setSyncProgress(progress);
@@ -1406,6 +1413,15 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
 
         setCrawlState('completed');
         setSyncStatus('Crawl completed successfully!');
+
+        queryClient.invalidateQueries({
+          queryKey: [
+            wsId,
+            dataset.id,
+            'rows',
+            { currentPage: 1, pageSize: '10' },
+          ],
+        });
       }
     } catch (error) {
       console.error('Error during crawl:', error);
@@ -1546,34 +1562,59 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
     const canStop = ['running', 'paused'].includes(crawlState);
 
     return (
-      <div className="flex items-center gap-2">
-        {canStart && (
-          <Button onClick={startCrawl} variant="default">
-            <Play className="mr-2 h-4 w-4" />
-            Start Crawling
-          </Button>
-        )}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          {canStart && (
+            <Button onClick={startCrawl} variant="default">
+              <Play className="mr-2 h-4 w-4" />
+              Start Crawling
+            </Button>
+          )}
 
-        {canPause && (
-          <Button onClick={() => setCrawlState('paused')} variant="outline">
-            <Pause className="mr-2 h-4 w-4" />
-            Pause
-          </Button>
-        )}
+          {canPause && (
+            <Button onClick={() => setCrawlState('paused')} variant="outline">
+              <Pause className="mr-2 h-4 w-4" />
+              Pause
+            </Button>
+          )}
 
-        {canResume && (
-          <Button onClick={() => setCrawlState('running')} variant="outline">
-            <Play className="mr-2 h-4 w-4" />
-            Resume
-          </Button>
-        )}
+          {canResume && (
+            <Button onClick={() => setCrawlState('running')} variant="outline">
+              <Play className="mr-2 h-4 w-4" />
+              Resume
+            </Button>
+          )}
 
-        {canStop && (
-          <Button onClick={stopCrawl} variant="destructive">
-            <StopCircle className="mr-2 h-4 w-4" />
-            Stop
-          </Button>
-        )}
+          {canStop && (
+            <Button onClick={stopCrawl} variant="destructive">
+              <StopCircle className="mr-2 h-4 w-4" />
+              Stop
+            </Button>
+          )}
+        </div>
+
+        {/* Add limit controls */}
+        <form className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="No limit"
+              className="w-24"
+              value={maxPages || ''}
+              onChange={(e) => setMaxPages(e.target.value)}
+            />
+            <span className="text-muted-foreground text-sm">Max Pages</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="No limit"
+              className="w-24"
+              value={maxArticles || ''}
+              onChange={(e) => setMaxArticles(e.target.value)}
+            />
+            <span className="text-muted-foreground text-sm">Max Articles</span>
+          </div>
+        </form>
       </div>
     );
   };
@@ -1775,13 +1816,13 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     {item.status === 'completed' && (
-                      <Check className="h-4 w-4 text-green-500" />
+                      <Check className="h-4 w-4 flex-none text-green-500" />
                     )}
                     {item.status === 'failed' && (
-                      <X className="h-4 w-4 text-red-500" />
+                      <X className="h-4 w-4 flex-none text-red-500" />
                     )}
                     <code className="text-muted-foreground flex-1 truncate text-xs">
-                      {item.url}
+                      <span className="line-clamp-1">{item.url}</span>
                     </code>
                   </div>
                 </div>
