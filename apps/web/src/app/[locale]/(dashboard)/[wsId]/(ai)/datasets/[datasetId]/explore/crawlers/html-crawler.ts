@@ -421,7 +421,7 @@ export class HtmlCrawler {
               const href = item.getAttribute('href');
               if (href) {
                 const fullUrl = href.startsWith('..')
-                  ? new URL(href.replace('..', ''), this.baseUrl).toString()
+                  ? new URL(href.replace(/\.\./g, ''), this.baseUrl).toString()
                   : new URL(href, this.baseUrl).toString();
                 previewData.sampleData?.push(fullUrl);
               }
@@ -447,7 +447,7 @@ export class HtmlCrawler {
             if (!href) continue;
 
             const articleUrl = href.startsWith('..')
-              ? new URL(href.replace('..', ''), this.baseUrl).toString()
+              ? new URL(href.replace(/\.\./g, ''), this.baseUrl).toString()
               : new URL(href, this.baseUrl).toString();
 
             const articleData = await this.getArticlePreview(articleUrl, [
