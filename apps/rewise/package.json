@@ -99,7 +99,7 @@
     "@types/lodash": "^4.17.14",
     "@types/negotiator": "^0.6.3",
     "@types/node": "^22.10.5",
-    "@types/react": "^19.0.2",
+    "@types/react": "^19.0.3",
     "@types/react-dom": "^19.0.2",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
