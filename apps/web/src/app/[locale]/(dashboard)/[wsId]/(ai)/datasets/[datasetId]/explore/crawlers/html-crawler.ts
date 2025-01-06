@@ -83,12 +83,16 @@ export class HtmlCrawler {
   // Add retry method with exponential backoff
   private async retryWithBackoff<T>(
     operation: () => Promise<T>,
-    attempt: number = 1
+    attempt: number = 1,
+    url?: string
   ): Promise<T> {
     try {
       return await operation();
     } catch (error) {
       if (attempt >= this.retryConfig.maxRetries) {
+        console.error(
+          `❌ Failed after ${attempt} retries${url ? ` for ${url}` : ''}`
+        );
         throw error;
       }
 
@@ -98,10 +102,18 @@ export class HtmlCrawler {
         this.retryConfig.maxDelay
       );
 
-      console.log(`Retry attempt ${attempt} after ${delay}ms delay`);
+      console.log(
+        `🔄 Retry attempt ${attempt}${url ? ` for ${url}` : ''} after ${delay}ms delay`
+      );
+      this.currentCallback?.onUrlProgress?.(
+        url || '',
+        0,
+        `Retry attempt ${attempt} of ${this.retryConfig.maxRetries}`
+      );
+
       await new Promise((resolve) => setTimeout(resolve, delay));
 
-      return this.retryWithBackoff(operation, attempt + 1);
+      return this.retryWithBackoff(operation, attempt + 1, url);
     }
   }
 
@@ -125,16 +137,31 @@ export class HtmlCrawler {
     return new Promise((resolve, reject) => {
       this.rateLimiter.queue.push(async () => {
         try {
-          // Wrap the fetch operation with retry logic
-          const response = await this.retryWithBackoff(async () => {
-            const res = await fetch(
-              `/api/proxy?url=${encodeURIComponent(url)}`
+          // Wrap the fetch operation with retry logic and pass URL for better logging
+          const response = await this.retryWithBackoff(
+            async () => {
+              const res = await fetch(
+                `/api/proxy?url=${encodeURIComponent(url)}`
+              );
+              if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+              }
+              return res;
+            },
+            1,
+            url
+          );
+
+          // Log successful retry if it wasn't first attempt
+          if (response.headers.get('x-retry-attempt')) {
+            console.log(`✅ Successfully retrieved ${url} after retries`);
+            this.currentCallback?.onUrlProgress?.(
+              url,
+              50,
+              'Succeeded after retries'
             );
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            return res;
-          });
+          }
+
           resolve(response);
         } catch (error) {
           reject(error);

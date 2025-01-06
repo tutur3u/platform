@@ -1,6 +1,5 @@
 'use client';
 
-import { HtmlCrawler } from './crawlers/html-crawler';
 import { cn } from '@/lib/utils';
 import type { WorkspaceDataset } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -72,6 +71,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
+import { HtmlCrawler } from './crawlers/html-crawler';
 
 const FormSchema = z.object({
   url: z
@@ -1528,31 +1528,52 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
   };
 
   const syncWithBackend = async (htmlData: any[]) => {
-    // Get column names from HTML IDs
-    const columnNames = dataset.html_ids
-      ?.map((id) => {
-        const match = id.match(/{{(.+?)}}/);
-        return match ? match[1] : '';
-      })
-      .filter(Boolean);
+    try {
+      // Get column names from HTML IDs
+      const columnNames = dataset.html_ids
+        ?.map((id) => {
+          const match = id.match(/{{(.+?)}}/);
+          return match ? match[1] : '';
+        })
+        .filter(Boolean);
 
-    // Sync columns
-    const columnsToSync = columnNames?.map((name) => ({ name }));
-    await fetch(
-      `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ columns: columnsToSync }),
+      // Sync columns
+      const columnsToSync = columnNames?.map((name) => ({ name }));
+      await fetch(
+        `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ columns: columnsToSync }),
+        }
+      );
+
+      // Sync rows in batches
+      const BATCH_SIZE = 50;
+      const totalBatches = Math.ceil(htmlData.length / BATCH_SIZE);
+      
+      for (let i = 0; i < totalBatches; i++) {
+        const start = i * BATCH_SIZE;
+        const end = Math.min(start + BATCH_SIZE, htmlData.length);
+        const batch = htmlData.slice(start, end);
+        
+        setSyncStatus(`Syncing batch ${i + 1}/${totalBatches} (${batch.length} rows)`);
+        
+        await fetch(`/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows: batch }),
+        });
+        
+        setSyncProgress(((i + 1) / totalBatches) * 100);
       }
-    );
 
-    // Sync rows
-    await fetch(`/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/sync`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows: htmlData }),
-    });
+      setSyncStatus('Sync completed successfully');
+    } catch (error) {
+      console.error('Error syncing data:', error);
+      setSyncStatus(`Sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
   };
 
   const CrawlControls = () => {
