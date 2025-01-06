@@ -1,6 +1,6 @@
 'use client';
 
-import { HtmlCrawler } from './html-crawler';
+import { HtmlCrawler } from './crawlers/html-crawler';
 import { cn } from '@/lib/utils';
 import type { WorkspaceDataset } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';

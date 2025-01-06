@@ -69,6 +69,39 @@ export class HtmlCrawler {
     isProcessing: false,
   };
 
+  // Add retry configuration
+  private retryConfig = {
+    maxRetries: 3,
+    initialDelay: 1000,
+    maxDelay: 10000,
+    backoffFactor: 2,
+  };
+
+  // Add retry method with exponential backoff
+  private async retryWithBackoff<T>(
+    operation: () => Promise<T>,
+    attempt: number = 1
+  ): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= this.retryConfig.maxRetries) {
+        throw error;
+      }
+
+      const delay = Math.min(
+        this.retryConfig.initialDelay *
+          Math.pow(this.retryConfig.backoffFactor, attempt - 1),
+        this.retryConfig.maxDelay
+      );
+
+      console.log(`Retry attempt ${attempt} after ${delay}ms delay`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+
+      return this.retryWithBackoff(operation, attempt + 1);
+    }
+  }
+
   private async processFetchQueue() {
     if (this.rateLimiter.isProcessing) return;
     this.rateLimiter.isProcessing = true;
@@ -89,9 +122,16 @@ export class HtmlCrawler {
     return new Promise((resolve, reject) => {
       this.rateLimiter.queue.push(async () => {
         try {
-          const response = await fetch(
-            `/api/proxy?url=${encodeURIComponent(url)}`
-          );
+          // Wrap the fetch operation with retry logic
+          const response = await this.retryWithBackoff(async () => {
+            const res = await fetch(
+              `/api/proxy?url=${encodeURIComponent(url)}`
+            );
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res;
+          });
           resolve(response);
         } catch (error) {
           reject(error);
@@ -148,15 +188,13 @@ export class HtmlCrawler {
     }
 
     try {
-      // Create a new fetch promise
+      // Create a new fetch promise with retry logic
       const fetchPromise = (async () => {
         this.currentCallback?.onUrlFetch?.(url, true);
         this.currentCallback?.onUrlProgress?.(url, 10, 'Starting fetch');
         console.log('📥 Fetching:', url);
 
         const response = await this.fetchWithRateLimit(url);
-        if (!response.ok)
-          throw new Error(`HTTP error! status: ${response.status}`);
         this.currentCallback?.onUrlProgress?.(url, 50, 'Downloaded');
 
         const html = await response.text();
@@ -164,6 +202,10 @@ export class HtmlCrawler {
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
+
+        if (!doc.querySelector('body')) {
+          throw new Error('Invalid HTML document received');
+        }
 
         // Cache the parsed document
         this.urlCache.set(url, doc);
@@ -183,6 +225,7 @@ export class HtmlCrawler {
         console.log('Fetch aborted:', url);
       } else {
         console.error('Error fetching page:', url, e);
+        this.currentCallback?.onUrlFetch?.(url, false);
       }
       return null;
     } finally {
