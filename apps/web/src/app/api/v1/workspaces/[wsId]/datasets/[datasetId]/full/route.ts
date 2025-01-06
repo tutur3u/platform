@@ -41,13 +41,13 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const query = supabase
     .from('workspace_dataset_row_cells')
-    .select('row_id, cells', { count: 'exact' })
+    .select('row_id, cells')
     .eq('dataset_id', datasetId);
 
   if (from && to) query.range(parseInt(from), parseInt(to));
   if (limit) query.limit(parseInt(limit));
 
-  const { data, count, error } = await query;
+  const { data, error } = await query;
 
   if (error) {
     console.log(error);
@@ -57,5 +57,5 @@ export async function GET(req: NextRequest, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ data, count });
+  return NextResponse.json({ data });
 }
