@@ -1,22 +1,44 @@
-import { createClient } from '@/utils/supabase/server';
-import { NextResponse } from 'next/server';
+import { createAdminClient, createClient } from '@/utils/supabase/server';
+import { headers } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
+    wsId: string;
     datasetId: string;
   }>;
 }
 
-export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+async function validateApiKey(wsId: string, apiKey: string) {
+  const sbAdmin = await createAdminClient();
+  const { error } = await sbAdmin
+    .from('workspace_api_keys')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('value', apiKey)
+    .single();
 
+  return !error;
+}
+
+export async function PUT(req: NextRequest, { params }: Params) {
+  const { wsId, datasetId } = await params;
+  const apiKey = (await headers()).get('API_KEY');
+
+  if (apiKey) {
+    const isValid = await validateApiKey(wsId, apiKey);
+    if (!isValid) {
+      return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
+    }
+  }
+
+  const supabase = apiKey ? await createAdminClient() : await createClient();
   const data = await req.json();
-  const { datasetId: id } = await params;
 
   const { error } = await supabase
     .from('workspace_datasets')
     .update(data)
-    .eq('id', id);
+    .eq('id', datasetId);
 
   if (error) {
     console.log(error);
@@ -29,14 +51,23 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { datasetId: id } = await params;
+export async function DELETE(_: NextRequest, { params }: Params) {
+  const { wsId, datasetId } = await params;
+  const apiKey = (await headers()).get('API_KEY');
+
+  if (apiKey) {
+    const isValid = await validateApiKey(wsId, apiKey);
+    if (!isValid) {
+      return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
+    }
+  }
+
+  const supabase = apiKey ? await createAdminClient() : await createClient();
 
   const { error } = await supabase
     .from('workspace_datasets')
     .delete()
-    .eq('id', id);
+    .eq('id', datasetId);
 
   if (error) {
     console.log(error);
