@@ -116,14 +116,12 @@ export function ManageColumns({ wsId, datasetId }: Props) {
       <div className="space-y-4">
         {loading ? (
           <div className="flex h-64 items-center justify-center">
-            <span className="text-muted-foreground text-sm">
-              {t('common.loading')}
-            </span>
+            <span className="text-muted-foreground text-sm">Loading...</span>
           </div>
         ) : columns.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center">
             <p className="text-muted-foreground text-sm">
-              {t('ws-datasets.no_data')}
+              No columns found in this dataset
             </p>
             <Button
               variant="outline"
@@ -131,7 +129,7 @@ export function ManageColumns({ wsId, datasetId }: Props) {
               className="mt-4"
             >
               <Plus className="mr-2 h-4 w-4" />
-              {t('common.add_column')}
+              Add Column
             </Button>
           </div>
         ) : (
@@ -171,7 +169,7 @@ export function ManageColumns({ wsId, datasetId }: Props) {
                     onClick={() => setIsAddingColumn(true)}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    {t('common.add')}
+                    Add Column
                   </Button>
                 </DialogTrigger>
               </div>
@@ -182,16 +180,14 @@ export function ManageColumns({ wsId, datasetId }: Props) {
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('common.add_column')}</DialogTitle>
+          <DialogTitle>Add Column</DialogTitle>
           <DialogDescription>
-            {t('common.add_column_description')}
+            Add a new column to your dataset
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              {t('common.column_name')}
-            </label>
+            <label className="text-sm font-medium">Column Name</label>
             <Input
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}
@@ -199,7 +195,7 @@ export function ManageColumns({ wsId, datasetId }: Props) {
             />
           </div>
           <Button onClick={addColumn} className="w-full">
-            {t('common.add')}
+            Add
           </Button>
         </div>
       </DialogContent>

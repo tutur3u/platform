@@ -1,5 +1,8 @@
+import { ClearDataDialog } from './clear-data-dialog';
+import { DeleteDatasetDialog } from './delete-dataset-dialog';
 import { ManageColumns } from './manage-columns';
 import { createClient } from '@/utils/supabase/server';
+import { Alert, AlertTitle } from '@repo/ui/components/ui/alert';
 import {
   Card,
   CardContent,
@@ -7,7 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/ui/card';
-import { getTranslations } from 'next-intl/server';
+import { Separator } from '@repo/ui/components/ui/separator';
+import { AlertCircle } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
 interface Props {
@@ -19,7 +23,6 @@ interface Props {
 
 export default async function DatasetSettingsPage({ params }: Props) {
   const { wsId, datasetId } = await params;
-  const t = await getTranslations();
   const dataset = await getDataset(datasetId);
 
   if (!dataset) {
@@ -30,13 +33,52 @@ export default async function DatasetSettingsPage({ params }: Props) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>{t('common.columns')}</CardTitle>
+          <CardTitle>Data Management</CardTitle>
           <CardDescription>
-            {t('ws-datasets.columns_description')}
+            Manage your dataset data, including columns and content
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ManageColumns wsId={wsId} datasetId={datasetId} />
+          <div className="space-y-4">
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>
+                Warning: These actions can result in data loss
+              </AlertTitle>
+            </Alert>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold">Clear Data</h3>
+                <p className="text-muted-foreground text-sm">
+                  Remove all data while keeping the dataset structure
+                </p>
+              </div>
+              <ClearDataDialog wsId={wsId} datasetId={dataset.id} />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold">Delete Dataset</h3>
+                <p className="text-muted-foreground text-sm">
+                  Permanently remove this dataset and all its data
+                </p>
+              </div>
+              <DeleteDatasetDialog wsId={wsId} dataset={dataset} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Columns</CardTitle>
+          <CardDescription>Manage the columns in your dataset</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ManageColumns wsId={wsId} datasetId={dataset.id} />
         </CardContent>
       </Card>
     </div>
