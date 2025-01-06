@@ -42,3 +42,24 @@ export async function DELETE(_: Request, { params }: Params) {
 
   return NextResponse.json({ message: 'success' });
 }
+
+export async function PUT(request: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { columnId } = await params;
+  const { name } = await request.json();
+
+  const { error: updateError } = await supabase
+    .from('workspace_dataset_columns')
+    .update({ name })
+    .eq('id', columnId);
+
+  if (updateError) {
+    console.log(updateError);
+    return NextResponse.json(
+      { message: 'Error updating column' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ message: 'success' });
+}

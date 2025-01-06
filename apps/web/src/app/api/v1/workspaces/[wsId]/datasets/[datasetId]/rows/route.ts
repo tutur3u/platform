@@ -150,35 +150,27 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(req: Request) {
-  const supabase = await createClient();
-  const { rowId } = await req.json();
+export async function DELETE(
+  _: Request,
+  { params }: { params: Promise<{ wsId: string; datasetId: string }> }
+) {
+  try {
+    const { datasetId } = await params;
+    const supabase = await createClient();
 
-  const { error: deleteCellsError } = await supabase
-    .from('workspace_dataset_cell')
-    .delete()
-    .eq('row_id', rowId);
+    const { error } = await supabase
+      .from('workspace_dataset_rows')
+      .delete()
+      .eq('dataset_id', datasetId);
 
-  if (deleteCellsError) {
-    console.log(deleteCellsError);
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting all rows:', error);
     return NextResponse.json(
-      { message: 'Error deleting cells' },
+      { error: 'Failed to delete all rows' },
       { status: 500 }
     );
   }
-
-  const { error: deleteRowError } = await supabase
-    .from('workspace_dataset_rows')
-    .delete()
-    .eq('id', rowId);
-
-  if (deleteRowError) {
-    console.log(deleteRowError);
-    return NextResponse.json(
-      { message: 'Error deleting row' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
 }

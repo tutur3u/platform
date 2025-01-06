@@ -1461,10 +1461,20 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
       }
 
       setSyncStatus('Sync completed successfully');
-      // Auto close dialog after successful sync for HTML crawler
-      if (dataset.type === 'html') {
-        setTimeout(() => setIsOpen(false), 1500);
-      }
+      setTimeout(() => setIsOpen(false), 1500);
+
+      queryClient.invalidateQueries({
+        queryKey: [wsId, dataset.id, 'columns'],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          wsId,
+          dataset.id,
+          'rows',
+          { currentPage: 1, pageSize: '10' },
+        ],
+      });
     } catch (error) {
       console.error('Error syncing data:', error);
       setSyncStatus(

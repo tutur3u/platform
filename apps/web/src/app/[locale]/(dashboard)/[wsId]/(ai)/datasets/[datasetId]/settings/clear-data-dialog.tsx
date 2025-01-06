@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -20,9 +21,11 @@ interface Props {
 }
 
 export function ClearDataDialog({ wsId, datasetId }: Props) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const clearData = async () => {
     try {
@@ -37,6 +40,9 @@ export function ClearDataDialog({ wsId, datasetId }: Props) {
       await fetch(`/api/v1/workspaces/${wsId}/datasets/${datasetId}/rows`, {
         method: 'DELETE',
       });
+
+      // Refresh the query
+      queryClient.invalidateQueries({ queryKey: [wsId, datasetId, 'columns'] });
 
       router.refresh();
       setOpen(false);
