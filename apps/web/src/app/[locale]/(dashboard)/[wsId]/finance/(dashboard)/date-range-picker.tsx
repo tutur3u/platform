@@ -3,8 +3,10 @@ import { useEffect } from 'react';
 
 interface Props {
   startDate?: Date;
+  // eslint-disable-next-line no-unused-vars
   setStartDate: (date?: Date) => void;
   endDate?: Date;
+  // eslint-disable-next-line no-unused-vars
   setEndDate: (date?: Date) => void;
   className?: string;
 }

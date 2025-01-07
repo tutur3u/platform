@@ -2,7 +2,6 @@ import AuditDescription from '../audit/AuditDescription';
 import AuditLabel from '../audit/AuditLabel';
 import { User } from '@/types/primitives/User';
 import { AuditLog } from '@/types/primitives/audit-log';
-import { Accordion } from '@mantine/core';
 import useSWR from 'swr';
 
 interface Props {
@@ -18,20 +17,22 @@ const AuditLogCard = ({ data, isExpanded }: Props) => {
   const isLoading = (userId && !user && !error) || false;
 
   return (
-    <Accordion.Item value={`log-${data.id}`}>
-      <Accordion.Control>
-        <AuditLabel
-          data={data}
-          isLoading={isLoading}
-          hasActor={!!userId}
-          actor={user}
-        />
-      </Accordion.Control>
+    <>
+      {/* <Accordion.Item value={`log-${data.id}`}>
+        <Accordion.Control> */}
+      <AuditLabel
+        data={data}
+        isLoading={isLoading}
+        hasActor={!!userId}
+        actor={user}
+      />
+      {/* </Accordion.Control> */}
 
-      <Accordion.Panel>
-        <AuditDescription data={data} isExpanded={isExpanded} />
-      </Accordion.Panel>
-    </Accordion.Item>
+      {/* <Accordion.Panel> */}
+      <AuditDescription data={data} isExpanded={isExpanded} />
+      {/* </Accordion.Panel>
+      </Accordion.Item> */}
+    </>
   );
 };
 

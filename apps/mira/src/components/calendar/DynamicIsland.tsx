@@ -1,6 +1,6 @@
 import { useCalendar } from '@/hooks/useCalendar';
 import { getCardColor } from '@/utils/color-helper';
-import { Divider } from '@mantine/core';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { Play, StopCircle } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
@@ -204,7 +204,7 @@ const DynamicIsland = () => {
           {pomodoroCycles > 0 && (
             <>
               {!isRunning && (
-                <Divider
+                <Separator
                   orientation="vertical"
                   className={`border-opacity-30 ${getCardColor(color)}`}
                 />
