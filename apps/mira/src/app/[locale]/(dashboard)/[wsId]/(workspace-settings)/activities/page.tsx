@@ -7,7 +7,7 @@ interface Props {
   params: Promise<{
     wsId?: string;
     page?: string;
-    ops?: string[];
+    ops?: ('INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE' | null)[];
     userIds?: string[];
     itemsPerPage?: string;
   }>;
@@ -36,7 +36,7 @@ export default async function WorkspaceActivitiesPage({ params }: Props) {
 async function getLogs(
   wsId: string,
   page: string,
-  ops: string[],
+  ops: ('INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE' | null)[],
   userIds: string[],
   itemsPerPage: string
 ) {

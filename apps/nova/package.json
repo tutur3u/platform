@@ -62,7 +62,7 @@
     "@repo/ui": "workspace:*",
     "@shadcn/ui": "^0.0.4",
     "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.47.11",
+    "@supabase/supabase-js": "2.47.10",
     "@tabler/icons-react": "^3.27.1",
     "@tanstack/react-query": "^5.62.16",
     "@tanstack/react-table": "^8.20.6",
