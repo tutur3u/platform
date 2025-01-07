@@ -55,18 +55,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       requireRootMember: true,
     },
     {
-      title: t('workspace-settings-layout.infrastructure'),
-      href: `/${wsId}/infrastructure`,
-      disabled: withoutPermission('view_infrastructure'),
-      requireRootWorkspace: true,
-    },
-    {
-      title: t('workspace-settings-layout.migrations'),
-      href: `/${wsId}/migrations`,
-      disabled: withoutPermission('manage_external_migrations'),
-      requireRootWorkspace: true,
-    },
-    {
       title: t('workspace-settings-layout.activities'),
       href: `/${wsId}/activities`,
       disabled: withoutPermission('manage_workspace_audit_logs'),
