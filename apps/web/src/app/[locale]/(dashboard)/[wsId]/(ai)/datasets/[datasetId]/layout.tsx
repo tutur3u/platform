@@ -28,6 +28,10 @@ export default async function DatasetDetailsLayout({
       href: `/${wsId}/datasets/${datasetId}/explore`,
     },
     {
+      title: 'API References',
+      href: `/${wsId}/datasets/${datasetId}/api-references`,
+    },
+    {
       title: t('common.settings'),
       href: `/${wsId}/datasets/${datasetId}/settings`,
     },

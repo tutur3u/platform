@@ -927,15 +927,17 @@
     "create": "Tạo mã bí mật"
   },
   "ws-api-keys": {
-    "api_key": "Khoá API",
-    "api_keys": "Khoá API",
-    "description": "Khoá bí mật để truy cập dữ liệu của bạn từ bên ngoài thông qua API của Tuturuuu một cách an toàn và bảo mật.",
+    "api_key": "Khóa API",
+    "api_keys": "Khóa API",
+    "description": "Khóa API được sử dụng để xác thực các yêu cầu API.",
     "name": "Tên",
     "value": "Giá trị",
-    "create_key": "Tạo khoá",
-    "edit_key": "Sửa khoá",
-    "add_new_workspace_key": "Thêm một khoá API mới cho không gian làm việc này.",
-    "edit_existing_workspace_key": "Sửa khoá API đã tồn tại cho không gian làm việc này."
+    "create_key": "Tạo khóa",
+    "edit_key": "Sửa khóa",
+    "add_new_workspace_key": "Thêm khóa mới",
+    "edit_existing_workspace_key": "Sửa khóa hiện có",
+    "no_api_keys_found": "Không tìm thấy khóa API nào",
+    "select_api_key": "Chọn khóa API"
   },
   "ws-reports": {
     "report": "Báo cáo",

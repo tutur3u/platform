@@ -935,7 +935,9 @@
     "create_key": "Create API Key",
     "edit_key": "Edit API Key",
     "add_new_workspace_key": "Add a new API key for this workspace.",
-    "edit_existing_workspace_key": "Edit an existing API key for this workspace."
+    "edit_existing_workspace_key": "Edit an existing API key for this workspace.",
+    "no_api_keys_found": "No API keys found",
+    "select_api_key": "Select an API key"
   },
   "ws-reports": {
     "report": "Report",
