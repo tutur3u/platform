@@ -58,18 +58,27 @@ export default async function Layout({ children, params }: LayoutProps) {
     wsId,
   });
 
+  const ENABLE_AI_ONLY = await verifySecret({
+    forceAdmin: true,
+    wsId,
+    name: 'ENABLE_AI_ONLY',
+    value: 'true',
+  });
+
   const navLinks: (NavLink | null)[] = [
     {
       title: t('sidebar_tabs.chat_with_ai'),
       href: `/${wsId}/chat`,
       icon: <MessageCircleIcon className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_CHAT',
           value: 'true',
-        })) || withoutPermission('ai_chat'),
+        })) ||
+        withoutPermission('ai_chat'),
       shortcut: 'X',
       experimental: 'beta',
     },
@@ -99,7 +108,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
       icon: <Calendar className="h-4 w-4" />,
-      disabled: withoutPermission('manage_calendar'),
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
       shortcut: 'C',
       experimental: 'alpha',
     },
@@ -108,12 +117,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/tasks/boards`,
       icon: <CircleCheck className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_TASKS',
           value: 'true',
-        })) || withoutPermission('manage_projects'),
+        })) ||
+        withoutPermission('manage_projects'),
       shortcut: 'T',
       experimental: 'alpha',
     },
@@ -122,12 +133,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/workouts`,
       icon: <Dumbbell className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_TASKS',
           value: 'true',
-        })) || withoutPermission('manage_projects'),
+        })) ||
+        withoutPermission('manage_projects'),
       shortcut: 'T',
       experimental: 'alpha',
     },
@@ -136,12 +149,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/readings`,
       icon: <Book className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_TASKS',
           value: 'true',
-        })) || withoutPermission('manage_projects'),
+        })) ||
+        withoutPermission('manage_projects'),
       shortcut: 'T',
       experimental: 'alpha',
     },
@@ -150,12 +165,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/diet`,
       icon: <Utensils className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_TASKS',
           value: 'true',
-        })) || withoutPermission('manage_projects'),
+        })) ||
+        withoutPermission('manage_projects'),
       shortcut: 'T',
       experimental: 'alpha',
     },
@@ -164,12 +181,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/progress`,
       icon: <CircleDashed className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_TASKS',
           value: 'true',
-        })) || withoutPermission('manage_projects'),
+        })) ||
+        withoutPermission('manage_projects'),
       shortcut: 'T',
       experimental: 'alpha',
     },
@@ -178,12 +197,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/metrics`,
       icon: <ChartColumn className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_TASKS',
           value: 'true',
-        })) || withoutPermission('manage_projects'),
+        })) ||
+        withoutPermission('manage_projects'),
       shortcut: 'T',
       experimental: 'alpha',
     },
@@ -250,12 +271,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/education`,
       icon: <GraduationCap className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_EDUCATION',
           value: 'true',
-        })) || withoutPermission('ai_lab'),
+        })) ||
+        withoutPermission('ai_lab'),
       shortcut: 'A',
       experimental: 'beta',
     },
@@ -263,12 +286,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('sidebar_tabs.slides'),
       href: `/${wsId}/slides`,
       icon: <Presentation className="h-4 w-4" />,
-      disabled: !(await verifySecret({
-        forceAdmin: true,
-        wsId,
-        name: 'ENABLE_SLIDES',
-        value: 'true',
-      })),
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_SLIDES',
+          value: 'true',
+        })),
       shortcut: 'S',
       experimental: 'alpha',
     },
@@ -278,12 +303,14 @@ export default async function Layout({ children, params }: LayoutProps) {
         wsId === ROOT_WORKSPACE_ID ? `/${wsId}/mail` : `/${wsId}/mail/posts`,
       icon: <Mail className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_EMAIL_SENDING',
           value: 'true',
-        })) || withoutPermission('send_user_group_post_emails'),
+        })) ||
+        withoutPermission('send_user_group_post_emails'),
       shortcut: 'M',
       experimental: 'beta',
     },
@@ -292,12 +319,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}/documents`,
       icon: <FileText className="h-4 w-4" />,
       disabled:
+        ENABLE_AI_ONLY ||
         !(await verifySecret({
           forceAdmin: true,
           wsId,
           name: 'ENABLE_DOCS',
           value: 'true',
-        })) || withoutPermission('manage_documents'),
+        })) ||
+        withoutPermission('manage_documents'),
       shortcut: 'O',
       experimental: 'beta',
     },
@@ -320,14 +349,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       aliases: [`/${wsId}/users`],
       href: `/${wsId}/users/database`,
       icon: <Users className="h-4 w-4" />,
-      disabled: withoutPermission('manage_users'),
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_users'),
       shortcut: 'U',
     },
     {
       title: t('sidebar_tabs.inventory'),
       href: `/${wsId}/inventory`,
       icon: <Archive className="h-4 w-4" />,
-      disabled: withoutPermission('manage_inventory'),
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_inventory'),
       shortcut: 'I',
     },
     {
@@ -335,7 +364,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       aliases: [`/${wsId}/finance`],
       href: `/${wsId}/finance/transactions`,
       icon: <Banknote className="h-4 w-4" />,
-      disabled: withoutPermission('manage_finance'),
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_finance'),
       shortcut: 'F',
     },
     null,
