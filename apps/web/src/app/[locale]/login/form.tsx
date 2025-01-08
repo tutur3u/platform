@@ -18,16 +18,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from '@repo/ui/components/ui/input-otp';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
-import {
-  IconBrandApple,
-  IconBrandDiscord,
-  IconBrandGithub,
-  IconBrandGmail,
-  IconBrandGoogle,
-  IconBrandWindows,
-} from '@tabler/icons-react';
 import { Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -172,49 +163,6 @@ export default function LoginForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-        {DEV_MODE && (
-          <>
-            <div className="mt-8 grid gap-2 text-center md:grid-cols-2">
-              <Button
-                type="button"
-                className="w-full items-center justify-between"
-                disabled
-              >
-                <IconBrandGoogle size={18} className="mr-2" />
-                {t('continue_with_google')}
-                <div />
-              </Button>
-              <Button
-                type="button"
-                className="w-full items-center justify-between"
-                disabled
-              >
-                <IconBrandApple size={18} className="mr-2" />
-                {t('continue_with_apple')}
-                <div />
-              </Button>
-              <Button
-                type="button"
-                className="w-full items-center justify-between"
-                disabled
-              >
-                <IconBrandGithub size={18} className="mr-2" />
-                {t('continue_with_github')}
-                <div />
-              </Button>
-              <Button
-                type="button"
-                className="w-full items-center justify-between"
-                disabled
-              >
-                <IconBrandDiscord size={18} className="mr-2" />
-                {t('continue_with_discord')}
-                <div />
-              </Button>
-            </div>
-            <Separator />
-          </>
-        )}
         <FormField
           control={form.control}
           name="email"
@@ -287,62 +235,24 @@ export default function LoginForm() {
           )}
         />
 
-        {otpSent && (
+        {otpSent && DEV_MODE && (
           <div className="grid gap-2 md:grid-cols-2">
-            {DEV_MODE ? (
-              <Link
-                href={
-                  window.location.origin.replace('7803', '8004') + '/monitor'
-                }
-                target="_blank"
-                className="col-span-full"
-                aria-disabled={loading}
+            <Link
+              href={window.location.origin.replace('7803', '8004') + '/monitor'}
+              target="_blank"
+              className="col-span-full"
+              aria-disabled={loading}
+            >
+              <Button
+                type="button"
+                className="w-full"
+                variant="outline"
+                disabled={loading}
               >
-                <Button
-                  type="button"
-                  className="w-full"
-                  variant="outline"
-                  disabled={loading}
-                >
-                  <Mail size={18} className="mr-1" />
-                  {t('open_inbucket')}
-                </Button>
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="https://mail.google.com/mail/u/0/#inbox"
-                  target="_blank"
-                  aria-disabled={loading}
-                >
-                  <Button
-                    type="button"
-                    className="w-full"
-                    variant="outline"
-                    disabled={loading}
-                  >
-                    <IconBrandGmail size={18} className="mr-1" />
-                    {t('open_gmail')}
-                  </Button>
-                </Link>
-
-                <Link
-                  href="https://outlook.live.com/mail/inbox"
-                  target="_blank"
-                  aria-disabled={loading}
-                >
-                  <Button
-                    type="button"
-                    className="w-full"
-                    variant="outline"
-                    disabled={loading}
-                  >
-                    <IconBrandWindows size={18} className="mr-1" />
-                    {t('open_outlook')}
-                  </Button>
-                </Link>
-              </>
-            )}
+                <Mail size={18} className="mr-1" />
+                {t('open_inbucket')}
+              </Button>
+            </Link>
           </div>
         )}
 

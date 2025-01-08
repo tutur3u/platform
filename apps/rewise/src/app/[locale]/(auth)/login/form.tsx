@@ -19,9 +19,8 @@ import {
   InputOTPSlot,
 } from '@repo/ui/components/ui/input-otp';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { IconBrandGmail, IconBrandWindows } from '@tabler/icons-react';
 import { Mail } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -35,16 +34,22 @@ const FormSchema = z.object({
 
 export default function LoginForm() {
   const t = useTranslations('login');
+  const locale = useLocale();
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      email: '',
+      email: DEV_MODE ? 'local@tuturuuu.com' : '',
       otp: '',
     },
   });
+
+  useEffect(() => {
+    if (DEV_MODE) form.setFocus('email');
+  }, [DEV_MODE]);
 
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -57,7 +62,17 @@ export default function LoginForm() {
 
   // Update resend cooldown OTP is sent
   useEffect(() => {
-    if (otpSent) setResendCooldown(cooldown);
+    if (otpSent) {
+      setResendCooldown(cooldown);
+
+      // if on DEV_MODE, auto-open inbucket
+      if (DEV_MODE) {
+        window.open(
+          window.location.origin.replace('7804', '8004') + '/monitor',
+          '_blank'
+        );
+      }
+    }
   }, [otpSent]);
 
   // Reduce cooldown by 1 every second
@@ -72,11 +87,12 @@ export default function LoginForm() {
   }, [resendCooldown]);
 
   const sendOtp = async (data: { email: string }) => {
+    if (!locale || !data.email) return;
     setLoading(true);
 
     const res = await fetch('/api/auth/otp/send', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, locale }),
     });
 
     if (res.ok) {
@@ -104,16 +120,17 @@ export default function LoginForm() {
   };
 
   const verifyOtp = async (data: { email: string; otp: string }) => {
+    if (!locale || !data.email || !data.otp) return;
     setLoading(true);
 
     const res = await fetch('/api/auth/otp/verify', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, locale }),
     });
 
     if (res.ok) {
       const nextUrl = searchParams.get('nextUrl');
-      router.push(nextUrl ?? '/');
+      router.push(nextUrl ?? '/onboarding');
       router.refresh();
     } else {
       setLoading(false);
@@ -218,60 +235,24 @@ export default function LoginForm() {
           )}
         />
 
-        {otpSent && (
+        {otpSent && DEV_MODE && (
           <div className="grid gap-2 md:grid-cols-2">
-            {DEV_MODE ? (
-              <Link
-                href="http://localhost:8004/monitor"
-                target="_blank"
-                className="col-span-full"
-                aria-disabled={loading}
+            <Link
+              href={window.location.origin.replace('7804', '8004') + '/monitor'}
+              target="_blank"
+              className="col-span-full"
+              aria-disabled={loading}
+            >
+              <Button
+                type="button"
+                className="w-full"
+                variant="outline"
+                disabled={loading}
               >
-                <Button
-                  type="button"
-                  className="w-full"
-                  variant="outline"
-                  disabled={loading}
-                >
-                  <Mail size={18} className="mr-1" />
-                  {t('open_inbucket')}
-                </Button>
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="https://mail.google.com/mail/u/0/#inbox"
-                  target="_blank"
-                  aria-disabled={loading}
-                >
-                  <Button
-                    type="button"
-                    className="w-full"
-                    variant="outline"
-                    disabled={loading}
-                  >
-                    <IconBrandGmail size={18} className="mr-1" />
-                    {t('open_gmail')}
-                  </Button>
-                </Link>
-
-                <Link
-                  href="https://outlook.live.com/mail/inbox"
-                  target="_blank"
-                  aria-disabled={loading}
-                >
-                  <Button
-                    type="button"
-                    className="w-full"
-                    variant="outline"
-                    disabled={loading}
-                  >
-                    <IconBrandWindows size={18} className="mr-1" />
-                    {t('open_outlook')}
-                  </Button>
-                </Link>
-              </>
-            )}
+                <Mail size={18} className="mr-1" />
+                {t('open_inbucket')}
+              </Button>
+            </Link>
           </div>
         )}
 

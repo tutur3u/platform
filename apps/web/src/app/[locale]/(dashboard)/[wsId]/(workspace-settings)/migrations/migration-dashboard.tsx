@@ -1,6 +1,5 @@
 'use client';
 
-import { MigrationModule, ModulePackage, generateModules } from './modules';
 import { useLocalStorage } from '@mantine/hooks';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
@@ -8,9 +7,9 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Label } from '@repo/ui/components/ui/label';
 import { Progress } from '@repo/ui/components/ui/progress';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { IconGitMerge } from '@tabler/icons-react';
-import { Play, RefreshCcw } from 'lucide-react';
+import { GitMerge, Play, RefreshCcw } from 'lucide-react';
 import { useState } from 'react';
+import { MigrationModule, ModulePackage, generateModules } from './modules';
 
 export default function MigrationDashboard() {
   const [apiEndpoint, setApiEndpoint] = useLocalStorage({
@@ -283,7 +282,7 @@ export default function MigrationDashboard() {
               size="icon"
               disabled={disabled || getLoading(module)}
             >
-              <IconGitMerge className="h-4 w-4" />
+              <GitMerge className="h-4 w-4" />
             </Button>
 
             <Button
@@ -435,7 +434,7 @@ export default function MigrationDashboard() {
             size="icon"
             disabled={loading}
           >
-            <IconGitMerge className="h-4 w-4" />
+            <GitMerge className="h-4 w-4" />
           </Button>
 
           <Button

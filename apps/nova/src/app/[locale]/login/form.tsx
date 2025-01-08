@@ -19,9 +19,8 @@ import {
   InputOTPSlot,
 } from '@repo/ui/components/ui/input-otp';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { IconBrandGmail, IconBrandWindows } from '@tabler/icons-react';
 import { Mail } from 'lucide-react';
-// import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -34,7 +33,9 @@ const FormSchema = z.object({
 });
 
 export default function LoginForm() {
-  // const t = useTranslations('login');
+  const t = useTranslations('login');
+  const locale = useLocale();
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -86,18 +87,19 @@ export default function LoginForm() {
   }, [resendCooldown]);
 
   const sendOtp = async (data: { email: string }) => {
+    if (!locale || !data.email) return;
     setLoading(true);
 
     const res = await fetch('/api/auth/otp/send', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, locale }),
     });
 
     if (res.ok) {
       // Notify user
       toast({
-        title: 'success',
-        description: 'otp_sent',
+        title: t('success'),
+        description: t('otp_sent'),
       });
 
       // OTP has been sent
@@ -109,8 +111,8 @@ export default function LoginForm() {
       setResendCooldown(cooldown);
     } else {
       toast({
-        title: 'failed',
-        description: 'failed_to_send',
+        title: t('failed'),
+        description: t('failed_to_send'),
       });
     }
 
@@ -118,11 +120,12 @@ export default function LoginForm() {
   };
 
   const verifyOtp = async (data: { email: string; otp: string }) => {
+    if (!locale || !data.email || !data.otp) return;
     setLoading(true);
 
     const res = await fetch('/api/auth/otp/verify', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, locale }),
     });
 
     if (res.ok) {
@@ -132,12 +135,12 @@ export default function LoginForm() {
     } else {
       setLoading(false);
 
-      form.setError('otp', { message: 'invalid_verification_code' });
+      form.setError('otp', { message: t('invalid_verification_code') });
       form.setValue('otp', '');
 
       toast({
-        title: 'failed',
-        description: 'failed_to_verify',
+        title: t('failed'),
+        description: t('failed_to_verify'),
       });
     }
   };
@@ -168,14 +171,14 @@ export default function LoginForm() {
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input
-                  placeholder={'email_placeholder'}
+                  placeholder={t('email_placeholder')}
                   {...field}
                   disabled={otpSent || loading}
                 />
               </FormControl>
 
               {otpSent || (
-                <FormDescription>{'email_description'}</FormDescription>
+                <FormDescription>{t('email_description')}</FormDescription>
               )}
               <FormMessage />
             </FormItem>
@@ -187,7 +190,7 @@ export default function LoginForm() {
           name="otp"
           render={({ field }) => (
             <FormItem className={otpSent ? '' : 'hidden'}>
-              <FormLabel>{'otp_code'}</FormLabel>
+              <FormLabel>{t('otp_code')}</FormLabel>
               <FormControl>
                 <div className="flex flex-col gap-2 md:flex-row">
                   <InputOTP
@@ -219,73 +222,37 @@ export default function LoginForm() {
                     type="button"
                   >
                     {resendCooldown > 0
-                      ? `${'resend'} (${resendCooldown})`
-                      : 'resend'}
+                      ? `${t('resend')} (${resendCooldown})`
+                      : t('resend')}
                   </Button>
                 </div>
               </FormControl>
               {form.formState.errors.otp && (
                 <FormMessage>{form.formState.errors.otp.message}</FormMessage>
               )}
-              <FormDescription>{'otp_description'}</FormDescription>
+              <FormDescription>{t('otp_description')}</FormDescription>
             </FormItem>
           )}
         />
 
-        {otpSent && (
+        {otpSent && DEV_MODE && (
           <div className="grid gap-2 md:grid-cols-2">
-            {DEV_MODE ? (
-              <Link
-                href="http://localhost:8004/monitor"
-                target="_blank"
-                className="col-span-full"
-                aria-disabled={loading}
+            <Link
+              href={window.location.origin.replace('7803', '8004') + '/monitor'}
+              target="_blank"
+              className="col-span-full"
+              aria-disabled={loading}
+            >
+              <Button
+                type="button"
+                className="w-full"
+                variant="outline"
+                disabled={loading}
               >
-                <Button
-                  type="button"
-                  className="w-full"
-                  variant="outline"
-                  disabled={loading}
-                >
-                  <Mail size={18} className="mr-1" />
-                  {'open_inbucket'}
-                </Button>
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="https://mail.google.com/mail/u/0/#inbox"
-                  target="_blank"
-                  aria-disabled={loading}
-                >
-                  <Button
-                    type="button"
-                    className="w-full"
-                    variant="outline"
-                    disabled={loading}
-                  >
-                    <IconBrandGmail size={18} className="mr-1" />
-                    {'open_gmail'}
-                  </Button>
-                </Link>
-
-                <Link
-                  href="https://outlook.live.com/mail/inbox"
-                  target="_blank"
-                  aria-disabled={loading}
-                >
-                  <Button
-                    type="button"
-                    className="w-full"
-                    variant="outline"
-                    disabled={loading}
-                  >
-                    <IconBrandWindows size={18} className="mr-1" />
-                    {'open_outlook'}
-                  </Button>
-                </Link>
-              </>
-            )}
+                <Mail size={18} className="mr-1" />
+                {t('open_inbucket')}
+              </Button>
+            </Link>
           </div>
         )}
 
@@ -300,7 +267,7 @@ export default function LoginForm() {
               (otpSent && !form.formState.dirtyFields.otp)
             }
           >
-            {loading ? 'processing' : 'continue'}
+            {loading ? t('processing') : t('continue')}
           </Button>
         </div>
       </form>

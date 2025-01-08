@@ -18,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from '@repo/ui/components/ui/table';
-import { IconStack } from '@tabler/icons-react';
 import {
   Archive,
   BarChart3,
@@ -32,6 +31,7 @@ import {
   Check,
   FileStack,
   GanttChartSquare,
+  Group,
   HardDrive,
   Minus,
   Network,
@@ -660,7 +660,7 @@ const categoryIcons = {
   'Productivity Tools': <Zap className="h-4 w-4" />,
   'Analytics & Reporting': <BarChart3 className="h-4 w-4" />,
   Collaboration: <Network className="h-4 w-4" />,
-  'Resource Management': <IconStack className="h-4 w-4" />,
+  'Resource Management': <Group className="h-4 w-4" />,
   'Business Tools': <Briefcase className="h-4 w-4" />,
   'Integration & API': <Boxes className="h-4 w-4" />,
   'Financial Tools': <Calculator className="h-4 w-4" />,
