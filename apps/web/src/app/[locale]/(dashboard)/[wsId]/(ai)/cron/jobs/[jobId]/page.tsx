@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from '@repo/ui/components/ui/card';
 import { ArrowLeft, CheckCircle, Clock, PowerOff, XCircle } from 'lucide-react';
-import moment from 'moment';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -123,9 +122,10 @@ export default async function DatasetCronJobDetailsPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {job.last_run
+                {/* {job.last_run
                   ? moment(job.last_run).format('DD/MM/YYYY HH:mm')
-                  : '-'}
+                  : '-'} */}
+                -
               </div>
             </CardContent>
           </Card>
@@ -136,9 +136,10 @@ export default async function DatasetCronJobDetailsPage({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {job.next_run
+                {/* {job.next_run
                   ? moment(job.next_run).format('DD/MM/YYYY HH:mm')
-                  : '-'}
+                  : '-'} */}
+                -
               </div>
             </CardContent>
           </Card>
