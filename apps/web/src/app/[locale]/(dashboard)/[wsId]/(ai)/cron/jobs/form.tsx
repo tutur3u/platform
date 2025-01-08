@@ -26,7 +26,7 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import cronstrue from 'cronstrue';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -62,7 +62,11 @@ interface Props {
 
 export function CronJobForm({ wsId, data, onFinish }: Props) {
   const router = useRouter();
+  const params = useParams();
   const [saving, setSaving] = useState(false);
+
+  // Get dataset ID from URL if available
+  const datasetId = params?.datasetId as string;
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -71,7 +75,7 @@ export function CronJobForm({ wsId, data, onFinish }: Props) {
       name: data?.name || '',
       schedule: data?.schedule || '',
       active: data?.active ?? true,
-      dataset_id: data?.dataset_id || '',
+      dataset_id: data?.dataset_id || datasetId || '',
       ws_id: wsId,
     },
   });
@@ -187,7 +191,11 @@ export function CronJobForm({ wsId, data, onFinish }: Props) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Dataset</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={!!datasetId}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue
@@ -206,7 +214,9 @@ export function CronJobForm({ wsId, data, onFinish }: Props) {
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Select the dataset this job will work with
+                    {datasetId
+                      ? 'Dataset is pre-selected based on the current context'
+                      : 'Select the dataset this job will work with'}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

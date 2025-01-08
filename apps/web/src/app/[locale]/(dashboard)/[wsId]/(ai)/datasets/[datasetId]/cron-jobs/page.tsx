@@ -1,10 +1,10 @@
-import { getColumns } from './columns';
+import { getColumns } from '../../../cron/jobs/columns';
+import { CronJobForm } from '../../../cron/jobs/form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import type { WorkspaceCronExecution } from '@/types/db';
+import type { WorkspaceCronJob } from '@/types/db';
 import { createClient } from '@/utils/supabase/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
   q?: string;
@@ -16,51 +16,52 @@ interface Props {
   params: Promise<{
     locale: string;
     wsId: string;
+    datasetId: string;
   }>;
   searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceCronExecutionsPage({
+export default async function DatasetCronJobsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { locale, wsId } = await params;
-  const { data, count } = await getData(wsId, await searchParams);
+  const { locale, wsId, datasetId } = await params;
+  const { data, count } = await getData(wsId, datasetId, await searchParams);
 
-  const executions = data.map((e) => ({
-    ...e,
-    href: `/${wsId}/cron/executions/${e.id}`,
+  const jobs = data.map((m) => ({
+    ...m,
+    href: `/${wsId}/cron/jobs/${m.id}`,
   }));
 
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-cron-jobs.plural')}
-        singularTitle={t('ws-cron-jobs.singular')}
-        description={t('ws-cron-jobs.description')}
-        createTitle={t('ws-cron-jobs.create')}
-        createDescription={t('ws-cron-jobs.create_description')}
+        pluralTitle="Dataset Cron Jobs"
+        singularTitle="Dataset Cron Job"
+        description="Automated tasks that run on a schedule to update or process this dataset"
+        createTitle="Create Cron Job"
+        createDescription="Set up a new automated task for this dataset"
+        form={<CronJobForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={executions}
-        namespace="cron-execution-data-table"
+        data={jobs}
+        namespace="cron-job-data-table"
         columnGenerator={getColumns}
         extraData={{ locale, wsId }}
         count={count}
         defaultVisibility={{
           id: false,
+          created_at: false,
         }}
       />
-
-      {/* {DEV_MODE && <Executions />} */}
     </>
   );
 }
 
 async function getData(
   wsId: string,
+  datasetId: string,
   {
     q,
     page = '1',
@@ -71,9 +72,10 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_cron_executions')
+    .from('workspace_cron_jobs')
     .select('*')
-    .order('created_at', { ascending: false });
+    .eq('dataset_id', datasetId)
+    .order('name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
@@ -87,11 +89,11 @@ async function getData(
 
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(wsId, datasetId, { q, pageSize, retry: false });
   }
 
   return { data, count } as unknown as {
-    data: WorkspaceCronExecution[];
+    data: WorkspaceCronJob[];
     count: number;
   };
 }
