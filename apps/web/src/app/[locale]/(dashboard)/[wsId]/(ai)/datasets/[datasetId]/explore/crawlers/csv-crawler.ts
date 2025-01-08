@@ -1,6 +1,6 @@
-import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 
-interface ExcelCrawlerProps {
+interface CsvCrawlerProps {
   url: string;
   headerRow?: number;
   dataStartRow: number;
@@ -14,23 +14,13 @@ interface SheetInfo {
   columns: number;
 }
 
-export class ExcelCrawler {
-  private async fetchExcelFile(url: string): Promise<ArrayBuffer> {
+export class CsvCrawler {
+  private async fetchCsvFile(url: string): Promise<string> {
     const response = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
     if (!response.ok) {
-      throw new Error(`Failed to fetch Excel file: ${response.statusText}`);
+      throw new Error(`Failed to fetch CSV file: ${response.statusText}`);
     }
-    return response.arrayBuffer();
-  }
-
-  private findRelevantSheet(workbook: XLSX.WorkBook): string | undefined {
-    return (
-      workbook.SheetNames.find(
-        (name) =>
-          name.toLowerCase().includes('monthly') ||
-          name.toLowerCase().includes('price')
-      ) || workbook.SheetNames[0]
-    );
+    return response.text();
   }
 
   private cleanupData(data: any[][]): any[][] {
@@ -64,11 +54,21 @@ export class ExcelCrawler {
 
     // Trim rows to remove empty trailing columns
     return nonEmptyRows.map((row) =>
-      row
-        .slice(0, maxColIndex + 1)
-        .map((cell) =>
-          cell !== null && cell !== undefined ? cell.toString().trim() : ''
-        )
+      row.slice(0, maxColIndex + 1).map((cell) => {
+        if (cell === null || cell === undefined) return '';
+
+        const trimmed = cell.toString().trim();
+
+        // Try to preserve numbers, but only if they're purely numeric
+        if (/^\d+(\.\d+)?$/.test(trimmed)) {
+          const num = Number(trimmed);
+          if (!isNaN(num)) {
+            return num;
+          }
+        }
+
+        return trimmed;
+      })
     );
   }
 
@@ -85,70 +85,63 @@ export class ExcelCrawler {
     data: any[][];
     sheetInfo: SheetInfo;
   }> {
-    const arrayBuffer = await this.fetchExcelFile(url);
-    const workbook = XLSX.read(arrayBuffer);
-    const sheetName = this.findRelevantSheet(workbook);
+    const csvText = await this.fetchCsvFile(url);
+    const parsedData = Papa.parse(csvText, {
+      delimiter: '\t', // Use tab as delimiter
+      skipEmptyLines: 'greedy',
+      transformHeader: (header) => header.trim(),
+      transform: (value) => {
+        if (value === null || value === undefined || value.trim() === '')
+          return '';
 
-    if (!sheetName || !workbook.Sheets[sheetName]) {
-      throw new Error('No valid worksheet found');
+        const trimmed = value.trim();
+
+        // Try to preserve numbers, but only if they're purely numeric
+        if (/^\d+(\.\d+)?$/.test(trimmed)) {
+          const num = Number(trimmed);
+          if (!isNaN(num)) {
+            return num;
+          }
+        }
+
+        return trimmed;
+      },
+    });
+
+    if (parsedData.errors?.length > 0 && parsedData.errors[0]?.message) {
+      throw new Error(
+        'Error parsing CSV file: ' + parsedData.errors[0].message
+      );
     }
 
-    const worksheet = workbook.Sheets[sheetName];
-    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-
-    // Get all data as array of arrays
-    const data = XLSX.utils.sheet_to_json(worksheet, {
-      header: 1,
-      raw: false,
-      defval: '',
-    }) as any[][];
+    const data = parsedData.data as any[][];
 
     return {
       data,
       sheetInfo: {
-        name: sheetName,
-        rows: range.e.r + 1,
-        columns: range.e.c + 1,
+        name: 'CSV Data',
+        rows: data.length,
+        columns: data[0]?.length || 0,
       },
     };
   }
 
-  getPreviewFromWorkbook(
-    data: XLSX.WorkBook | any[][],
-    sheetName: string,
+  getPreviewFromData(
+    data: any[][],
     headerRow: number,
     dataStartRow: number
   ): { headers: string[]; preview: any[][]; error?: string } {
     try {
-      let allData: any[][];
-      if (Array.isArray(data)) {
-        allData = data;
-      } else {
-        const worksheet = data.Sheets[sheetName];
-        if (!worksheet) {
-          return {
-            headers: [],
-            preview: [],
-            error: 'No valid worksheet found',
-          };
-        }
-        allData = XLSX.utils.sheet_to_json(worksheet, {
-          header: 1,
-          raw: false,
-          defval: '',
-        }) as any[][];
-      }
-
-      if (!allData || allData.length === 0) {
+      if (!data || data.length === 0) {
         return {
           headers: [],
           preview: [],
-          error: 'Worksheet is empty',
+          error: 'No data found in CSV file',
         };
       }
 
       // Clean up the data first
-      const cleanData = this.cleanupData(allData);
+      const cleanData = this.cleanupData(data);
 
       if (cleanData.length === 0) {
         return {
@@ -191,7 +184,7 @@ export class ExcelCrawler {
         error:
           error instanceof Error
             ? error.message
-            : 'Unknown error processing Excel file',
+            : 'Unknown error processing CSV file',
       };
     }
   }
@@ -201,36 +194,48 @@ export class ExcelCrawler {
     headerRow = 1,
     dataStartRow,
     onProgress,
-  }: ExcelCrawlerProps): Promise<{
+  }: CsvCrawlerProps): Promise<{
     headers: string[];
     data: any[][];
     sheetInfo: SheetInfo;
   }> {
     try {
-      onProgress(10, 'Fetching Excel file...');
-      const arrayBuffer = await this.fetchExcelFile(url);
+      onProgress(10, 'Fetching CSV file...');
+      const csvText = await this.fetchCsvFile(url);
 
-      onProgress(30, 'Parsing Excel data...');
-      const workbook = XLSX.read(arrayBuffer);
-      const sheetName = this.findRelevantSheet(workbook);
+      onProgress(30, 'Parsing CSV data...');
+      const parsedData = Papa.parse(csvText, {
+        delimiter: '\t', // Use tab as delimiter
+        skipEmptyLines: 'greedy',
+        transformHeader: (header) => header.trim(),
+        transform: (value) => {
+          if (value === null || value === undefined || value.trim() === '')
+            return '';
 
-      if (!sheetName) {
-        throw new Error('No valid sheet found');
+          const trimmed = value.trim();
+
+          // Try to preserve numbers, but only if they're purely numeric
+          if (/^\d+(\.\d+)?$/.test(trimmed)) {
+            const num = Number(trimmed);
+            if (!isNaN(num)) {
+              return num;
+            }
+          }
+
+          return trimmed;
+        },
+      });
+
+      if (parsedData.errors?.length > 0 && parsedData.errors[0]?.message) {
+        throw new Error(
+          'Error parsing CSV file: ' + parsedData.errors[0].message
+        );
       }
 
-      const worksheet = workbook.Sheets[sheetName];
+      const rawData = parsedData.data as any[][];
 
-      if (!worksheet) {
-        throw new Error('No valid worksheet found');
-      }
-
-      onProgress(50, 'Processing worksheet...');
+      onProgress(50, 'Processing data...');
       onProgress(70, 'Extracting data...');
-      const rawData = XLSX.utils.sheet_to_json(worksheet, {
-        header: 1,
-        raw: false,
-        defval: '',
-      }) as any[][];
 
       // Clean up the data
       const cleanData = this.cleanupData(rawData);
@@ -261,18 +266,18 @@ export class ExcelCrawler {
         headers,
         data: dataRows,
         sheetInfo: {
-          name: sheetName,
+          name: 'CSV Data',
           rows: cleanData.length,
           columns: headers.length,
         },
       };
     } catch (error) {
-      console.error('Excel crawling error:', error);
+      console.error('CSV crawling error:', error);
       throw error;
     }
   }
 
-  async getPreview(props: ExcelCrawlerProps): Promise<{
+  async getPreview(props: CsvCrawlerProps): Promise<{
     headers: string[];
     sampleData: any[][];
     sheetInfo: SheetInfo;

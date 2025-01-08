@@ -1,6 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+
+// Disable SSL certificate verification
+// eslint-disable-next-line turbo/no-undeclared-env-vars
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
@@ -39,8 +45,46 @@ export async function GET(request: Request) {
       });
     }
 
-    // Handle HTML content
-    const text = await response.text();
+    // Handle CSV files
+    if (url.match(/\.csv$/i)) {
+      const buffer = await response.arrayBuffer();
+      // Try to detect BOM for UTF-16/UTF-8
+      const firstBytes = new Uint8Array(buffer.slice(0, 4));
+      let decoder;
+
+      if (firstBytes[0] === 0xff && firstBytes[1] === 0xfe) {
+        decoder = new TextDecoder('utf-16le');
+      } else if (firstBytes[0] === 0xfe && firstBytes[1] === 0xff) {
+        decoder = new TextDecoder('utf-16be');
+      } else if (
+        firstBytes[0] === 0xef &&
+        firstBytes[1] === 0xbb &&
+        firstBytes[2] === 0xbf
+      ) {
+        decoder = new TextDecoder('utf-8');
+      } else {
+        // Try windows-1258 for Vietnamese or fallback to utf-8
+        try {
+          decoder = new TextDecoder('windows-1258');
+        } catch {
+          decoder = new TextDecoder('utf-8');
+        }
+      }
+
+      const text = decoder.decode(buffer);
+      return new NextResponse(text, {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename=dataset.csv',
+        },
+      });
+    }
+
+    // Default to text/html for other content
+    const buffer = await response.arrayBuffer();
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(buffer);
+
     return new NextResponse(text, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
@@ -48,6 +92,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Proxy error:', error);
-    return new NextResponse('Error fetching content', { status: 500 });
+    return new NextResponse(`Proxy error: ${error}`, { status: 500 });
   }
 }

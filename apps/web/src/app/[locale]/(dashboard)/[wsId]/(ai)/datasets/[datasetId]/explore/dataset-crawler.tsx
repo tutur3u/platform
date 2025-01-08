@@ -4,6 +4,7 @@ import { CrawlControls } from './components/CrawlControls';
 import { MetricsPanel } from './components/MetricsPanel';
 import { PendingUrlsCard } from './components/PendingUrlsCard';
 import { RecentFetchesCard } from './components/RecentFetchesCard';
+import { CsvCrawler } from './crawlers/csv-crawler';
 import { ExcelCrawler } from './crawlers/excel-crawler';
 import { HtmlCrawler } from './crawlers/html-crawler';
 import type { CrawlMetrics, QueueItem, UrlWithProgress } from './types';
@@ -159,7 +160,9 @@ export function DatasetCrawler({
   const [pendingUrls, setPendingUrls] = useState<UrlWithProgress[]>([]);
   const [maxPages, setMaxPages] = useState<string | undefined>();
   const [maxArticles, setMaxArticles] = useState<string | undefined>();
-  const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
+  const [workbook, setWorkbook] = useState<XLSX.WorkBook | any[][] | null>(
+    null
+  );
   const [excelError, setExcelError] = useState<string | null>(null);
   const [isFileLoaded, setIsFileLoaded] = useState(false);
 
@@ -232,9 +235,13 @@ export function DatasetCrawler({
       setLoading(true);
       setSyncStatus('Starting sync with server...');
 
-      if (dataset.type === 'excel' && dataset.url) {
-        const crawler = new ExcelCrawler();
-        const { headers, data } = await crawler.crawl({
+      if ((dataset.type === 'excel' || dataset.type === 'csv') && dataset.url) {
+        const crawler = dataset.url.toLowerCase().endsWith('.csv')
+          ? new CsvCrawler()
+          : new ExcelCrawler();
+
+        setSyncStatus('Fetching and parsing file...');
+        const { headers, data, sheetInfo } = await crawler.crawl({
           url: dataset.url,
           headerRow: parseInt(form.getValues('headerRow') || '1'),
           dataStartRow: parseInt(form.getValues('dataRow') || '2'),
@@ -244,27 +251,100 @@ export function DatasetCrawler({
           },
         });
 
-        // Convert and sync data
-        const rows = data.map((row) => {
-          const rowData: Record<string, string> = {};
-          headers.forEach((header, index) => {
+        setSyncStatus(`Found ${data.length} rows in ${sheetInfo.name}`);
+
+        // Ensure unique column names
+        const uniqueHeaders = headers.reduce(
+          (acc: string[], header: string, index: number) => {
             const headerName =
-              header.toString().trim() ||
-              `Column ${headers.indexOf(header) + 1}`;
-            rowData[headerName] = row[index]?.toString()?.trim() || '';
+              header.toString().trim() || `Column ${index + 1}`;
+            let uniqueName = headerName;
+            let counter = 1;
+
+            while (acc.includes(uniqueName)) {
+              uniqueName = `${headerName} (${counter})`;
+              counter++;
+            }
+
+            acc.push(uniqueName);
+            return acc;
+          },
+          []
+        );
+
+        // Sync columns first
+        setSyncStatus('Syncing columns...');
+        const columnsResponse = await fetch(
+          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              columns: uniqueHeaders.map((header) => ({
+                name: header,
+              })),
+            }),
+          }
+        );
+
+        if (!columnsResponse.ok) {
+          throw new Error('Failed to sync columns');
+        }
+
+        // Convert and sync data with unique column names
+        const rows = data.map((row) => {
+          const rowData: Record<string, any> = {};
+          uniqueHeaders.forEach((header, index) => {
+            // Preserve the original value type (number, string, etc.)
+            rowData[header] = row[index] !== undefined ? row[index] : '';
           });
           return rowData;
         });
 
-        // Sync data (columns will be synced automatically)
-        await syncWithBackend(rows, headers);
+        // Sync rows in batches
+        setSyncStatus(`Starting sync of ${rows.length} rows...`);
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+          const batch = rows.slice(i, i + BATCH_SIZE);
+          const response = await fetch(
+            `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/sync`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ rows: batch }),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to sync batch ${Math.floor(i / BATCH_SIZE) + 1}: ${
+                response.statusText
+              }`
+            );
+          }
+
+          const progress = Math.min(
+            ((i + batch.length) / rows.length) * 100,
+            100
+          );
+          setSyncProgress(progress);
+          setSyncStatus(
+            `Syncing data... (${i + batch.length} of ${rows.length} rows)`
+          );
+        }
 
         // Refresh view
         queryClient.invalidateQueries({
           queryKey: [wsId, dataset.id],
         });
 
-        setSyncStatus('Excel data synced successfully!');
+        setSyncStatus(
+          `Successfully synced ${rows.length} rows from ${sheetInfo.name}!`
+        );
         // Auto close dialog after successful sync
         setTimeout(() => setIsOpen(false), 1500);
       }
@@ -1188,6 +1268,61 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
     </Card>
   );
 
+  const syncWithBackend = async (data: any[]) => {
+    try {
+      const BATCH_SIZE = 100;
+      let processedBatches = 0;
+      let processedRows = 0;
+
+      // Process data in batches
+      for (let i = 0; i < data.length; i += BATCH_SIZE) {
+        if (crawlState === 'paused') {
+          throw new Error('Sync paused by user');
+        }
+
+        const batch = data.slice(i, i + BATCH_SIZE);
+        processedBatches++;
+        processedRows += batch.length;
+
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ rows: batch }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to sync batch ${processedBatches}: ${response.statusText}`
+          );
+        }
+
+        // Update sync progress
+        const progress = (processedRows / data.length) * 100;
+        setSyncProgress(progress);
+        setSyncStatus(
+          `Syncing data... (${processedRows.toLocaleString()} of ${data.length.toLocaleString()} rows)`
+        );
+      }
+
+      setSyncStatus(
+        `Successfully synced ${data.length.toLocaleString()} rows!`
+      );
+      setSyncProgress(100);
+    } catch (error) {
+      console.error('Error syncing with backend:', error);
+      setSyncStatus(
+        'Error syncing data: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
+      );
+      throw error;
+    }
+  };
+
   const startCrawl = async () => {
     try {
       setCrawlState('running');
@@ -1214,11 +1349,42 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
       setUrlQueue([]);
       setSyncProgress(0);
 
-      if (dataset.type === 'html' && dataset?.html_ids?.length) {
+      if (!dataset?.url) {
+        throw new Error('No URL provided');
+      }
+
+      if (!dataset?.id) {
+        throw new Error('No dataset ID provided');
+      }
+
+      if (
+        !dataset?.type ||
+        !['html', 'excel', 'csv'].includes(dataset.type as string)
+      ) {
+        throw new Error('Invalid dataset type');
+      }
+
+      // At this point, we know dataset exists and has required properties
+      const validatedDataset = dataset as {
+        id: string;
+        url: string;
+        type: 'html' | 'excel' | 'csv';
+        html_ids?: string[];
+      };
+
+      if (validatedDataset.type === 'html') {
+        if (
+          !validatedDataset.html_ids ||
+          !Array.isArray(validatedDataset.html_ids) ||
+          validatedDataset.html_ids.length === 0
+        ) {
+          throw new Error('No HTML IDs provided');
+        }
+
         const crawler = new HtmlCrawler();
         const htmlData = await crawler.crawl({
-          url: dataset.url!,
-          htmlIds: dataset.html_ids,
+          url: validatedDataset.url,
+          htmlIds: validatedDataset.html_ids,
           maxPages: maxPages ? Number(maxPages) : undefined,
           maxArticles: maxArticles ? Number(maxArticles) : undefined,
           onProgress: (progress, status) => {
@@ -1239,9 +1405,73 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
           },
         });
 
-        // Process and sync data
+        // Extract unique column names from HTML IDs
+        const uniqueHeaders = validatedDataset.html_ids.map((id) => {
+          const match = id.match(/{{(.+?)}}/);
+          return match ? match[1]?.trim() : `Column ${id}`;
+        });
+
+        // Sync columns first
+        setSyncStatus('Syncing columns...');
+        const columnsResponse = await fetch(
+          `/api/v1/workspaces/${wsId}/datasets/${validatedDataset.id}/columns/sync`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              columns: uniqueHeaders.map((header) => ({
+                name: header,
+                type: 'text',
+              })),
+            }),
+          }
+        );
+
+        if (!columnsResponse.ok) {
+          throw new Error('Failed to sync columns');
+        }
+
+        // Process and sync data in batches
         if (htmlData?.length > 0) {
-          await syncWithBackend(htmlData);
+          setSyncStatus(`Starting sync of ${htmlData.length} rows...`);
+          const BATCH_SIZE = 100;
+
+          for (let i = 0; i < htmlData.length; i += BATCH_SIZE) {
+            if (crawlState === 'paused') {
+              throw new Error('Sync paused by user');
+            }
+
+            const batch = htmlData.slice(i, i + BATCH_SIZE);
+            const response = await fetch(
+              `/api/v1/workspaces/${wsId}/datasets/${validatedDataset.id}/rows/sync`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ rows: batch }),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(
+                `Failed to sync batch ${Math.floor(i / BATCH_SIZE) + 1}: ${
+                  response.statusText
+                }`
+              );
+            }
+
+            const progress = Math.min(
+              ((i + batch.length) / htmlData.length) * 100,
+              100
+            );
+            setSyncProgress(progress);
+            setSyncStatus(
+              `Syncing data... (${i + batch.length} of ${htmlData.length} rows)`
+            );
+          }
         }
 
         setCrawlState('completed');
@@ -1250,44 +1480,64 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
         queryClient.invalidateQueries({
           queryKey: [
             wsId,
-            dataset.id,
+            validatedDataset.id,
             'rows',
             { currentPage: 1, pageSize: '10' },
           ],
         });
-      } else if (dataset.type === 'excel' && dataset.url) {
-        const crawler = new ExcelCrawler();
+      } else if (
+        validatedDataset.type === 'excel' ||
+        validatedDataset.type === 'csv'
+      ) {
+        const crawler = validatedDataset.url.toLowerCase().endsWith('.csv')
+          ? new CsvCrawler()
+          : new ExcelCrawler();
+
+        setSyncStatus('Fetching file data...');
         const { headers, data } = await crawler.crawl({
-          url: dataset.url,
-          headerRow: 1, // Default to first row
-          dataStartRow: 2, // Default to second row
+          url: validatedDataset.url,
+          headerRow: parseInt(form.getValues('headerRow') || '1'),
+          dataStartRow: parseInt(form.getValues('dataRow') || '2'),
           onProgress: (progress, status) => {
+            if (crawlState === 'paused') return;
             setSyncProgress(progress);
             setSyncStatus(status);
           },
         });
 
-        // Convert Excel data to the expected format
-        const formattedData = data.map((row) => {
-          const rowData: Record<string, string> = {};
-          headers.forEach((header, index) => {
-            rowData[header] = row[index]?.toString() || '';
+        if (!data || data.length === 0) {
+          throw new Error('No data found in the file');
+        }
+
+        setSyncStatus('Processing data for sync...');
+
+        // Convert data to the expected format
+        const formattedData = data.map((row: any[]) => {
+          const rowData: Record<string, any> = {};
+          headers.forEach((header: string, index: number) => {
+            // Preserve the original value type (number, string, etc.)
+            rowData[header] = row[index] !== undefined ? row[index] : '';
           });
           return rowData;
         });
 
         // Process and sync data
         if (formattedData.length > 0) {
+          setSyncStatus(`Starting sync of ${formattedData.length} rows...`);
           await syncWithBackend(formattedData);
         }
 
         setCrawlState('completed');
-        setSyncStatus('Excel data synced successfully!');
+        setSyncStatus(
+          validatedDataset.type === 'csv'
+            ? 'CSV data synced successfully!'
+            : 'Excel data synced successfully!'
+        );
 
         queryClient.invalidateQueries({
           queryKey: [
             wsId,
-            dataset.id,
+            validatedDataset.id,
             'rows',
             { currentPage: 1, pageSize: '10' },
           ],
@@ -1397,93 +1647,6 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
     });
   };
 
-  const syncWithBackend = async (data: any[], headers?: string[]) => {
-    try {
-      // Handle column sync
-      if (headers && dataset.type === 'excel') {
-        // For Excel files, use provided headers
-        const columnsToSync = headers.map((header) => ({
-          name:
-            header.toString().trim() || `Column ${headers.indexOf(header) + 1}`,
-        }));
-        setSyncStatus('Syncing columns...');
-        await fetch(
-          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ columns: columnsToSync }),
-          }
-        );
-      } else if (dataset.type === 'html' && dataset.html_ids?.length) {
-        // For HTML files, use HTML IDs
-        const columnNames = dataset.html_ids
-          .map((id) => {
-            const match = id.match(/{{(.+?)}}/);
-            return match ? match[1] : '';
-          })
-          .filter(Boolean);
-
-        const columnsToSync = columnNames.map((name) => ({ name }));
-        await fetch(
-          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/columns/sync`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ columns: columnsToSync }),
-          }
-        );
-      }
-
-      // Sync rows in batches
-      const BATCH_SIZE = 50;
-      const totalBatches = Math.ceil(data.length / BATCH_SIZE);
-
-      for (let i = 0; i < totalBatches; i++) {
-        const start = i * BATCH_SIZE;
-        const end = Math.min(start + BATCH_SIZE, data.length);
-        const batch = data.slice(start, end);
-
-        setSyncStatus(
-          `Syncing batch ${i + 1}/${totalBatches} (${batch.length} rows)`
-        );
-
-        await fetch(
-          `/api/v1/workspaces/${wsId}/datasets/${dataset.id}/rows/sync`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rows: batch }),
-          }
-        );
-
-        setSyncProgress(((i + 1) / totalBatches) * 100);
-      }
-
-      setSyncStatus('Sync completed successfully');
-      setTimeout(() => setIsOpen(false), 1500);
-
-      queryClient.invalidateQueries({
-        queryKey: [wsId, dataset.id, 'columns'],
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: [
-          wsId,
-          dataset.id,
-          'rows',
-          { currentPage: 1, pageSize: '10' },
-        ],
-      });
-    } catch (error) {
-      console.error('Error syncing data:', error);
-      setSyncStatus(
-        `Sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-      throw error;
-    }
-  };
-
   const stopCrawl = () => {
     // Cancel all active fetches
     activeFetchesRef.current.forEach((fetch) => {
@@ -1523,12 +1686,15 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
     try {
       setLoading(true);
       setExcelError(null);
-      setSyncStatus('Loading Excel file...');
+      setSyncStatus('Loading file...');
 
-      const crawler = new ExcelCrawler();
-      const { workbook, sheetInfo } = await crawler.preloadFile(dataset.url);
+      const crawler = dataset.url.toLowerCase().endsWith('.csv')
+        ? new CsvCrawler()
+        : new ExcelCrawler();
 
-      setWorkbook(workbook);
+      const { data, sheetInfo } = await crawler.preloadFile(dataset.url);
+
+      setWorkbook(data);
       setSheetInfo(sheetInfo);
       setIsFileLoaded(true);
       setSyncStatus('File loaded. Configure import settings below.');
@@ -1536,10 +1702,10 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
       // Set default values for form
       form.setValue('headerRow', '1');
       form.setValue('dataRow', '2');
-      updatePreview(workbook, sheetInfo.name, 1, 2);
+      updatePreview(data, sheetInfo.name, 1, 2);
     } catch (error) {
       setExcelError(
-        error instanceof Error ? error.message : 'Failed to load Excel file'
+        error instanceof Error ? error.message : 'Failed to load file'
       );
       setSyncStatus('Failed to load file');
     } finally {
@@ -1548,26 +1714,36 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
   };
 
   const updatePreview = (
-    wb: XLSX.WorkBook,
+    data: any[][] | XLSX.WorkBook,
     sheetName: string,
     headerRow: number,
     dataRow: number
   ) => {
-    const crawler = new ExcelCrawler();
-    const { headers, preview, error } = crawler.getPreviewFromWorkbook(
-      wb,
-      sheetName,
-      headerRow,
-      dataRow
-    );
+    let preview;
+    if (dataset.url?.toLowerCase().endsWith('.csv')) {
+      const csvCrawler = new CsvCrawler();
+      preview = csvCrawler.getPreviewFromData(
+        data as any[][],
+        headerRow,
+        dataRow
+      );
+    } else {
+      const excelCrawler = new ExcelCrawler();
+      preview = excelCrawler.getPreviewFromWorkbook(
+        data,
+        sheetName,
+        headerRow,
+        dataRow
+      );
+    }
 
-    if (error) {
-      setExcelError(error);
+    if (preview.error) {
+      setExcelError(preview.error);
     } else {
       setExcelError(null);
     }
 
-    setProcessedData([headers, ...preview]);
+    setProcessedData([preview.headers, ...preview.preview]);
   };
 
   const handleConfigChange = () => {
