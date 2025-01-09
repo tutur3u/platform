@@ -16,7 +16,7 @@ from
       c.data,
       col.name
     from
-      workspace_dataset_cell c
+      workspace_dataset_cells c
       join workspace_dataset_columns col on col.id = c.column_id
     where
       c.row_id = wdr.id
