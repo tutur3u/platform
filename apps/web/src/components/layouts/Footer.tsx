@@ -1,26 +1,23 @@
 'use client';
 
-import Slogan from './slogan';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 export default function Footer() {
   const t = useTranslations();
-  const pathname = usePathname();
 
   return (
     <div className="w-full text-center">
-      {pathname.startsWith('/contact') || (
+      {/* {pathname.startsWith('/contact') || (
         <>
           <Separator className="bg-foreground/5 mb-8" />
           <div className="flex flex-col items-center">
             <Slogan />
           </div>
         </>
-      )}
+      )} */}
 
       <Separator className="bg-foreground/5 my-8" />
 

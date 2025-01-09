@@ -2043,5 +2043,382 @@
     "plural": "Cron Executions",
     "singular": "Cron Execution",
     "description": "Cron executions are used to view the history of cron jobs."
+  },
+  "landing": {
+    "headline": "Your intelligent shortcut",
+    "subheadline": "Take control of workflows, supercharged by AI",
+    "features": {
+      "title": "Features",
+      "subtitle": "Discover powerful features designed to enhance your productivity and streamline your workflow.",
+      "ai_powered": {
+        "title": "Powered by AI",
+        "description": "Brainstorm and organize your ideas at the speed of thought, with our smart AI-powered tools."
+      },
+      "collaboration": {
+        "title": "Team Collaboration",
+        "description": "Seamless communication and collaboration features for your entire team."
+      },
+      "task_management": {
+        "title": "Task Management",
+        "description": "Create tasks, assign them to your team, and track their progress, all in one place."
+      },
+      "document_management": {
+        "title": "Document Management",
+        "description": "Write and maintain your documents with ease, with an intuitive and powerful document editor."
+      },
+      "finance_tracking": {
+        "title": "Finance Tracking",
+        "description": "Track your finances, and keep your team in the loop, so you can focus on what matters."
+      },
+      "open_source": {
+        "title": "Open Source",
+        "description": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone."
+      }
+    },
+    "products": {
+      "title": "Products",
+      "subtitle": "Explore our suite of powerful products designed to help you work smarter, not harder.",
+      "ai_assistant": {
+        "title": "AI Assistant",
+        "description": "Smart automation and intelligent insights powered by advanced AI."
+      },
+      "meet_together": {
+        "title": "Meet Together",
+        "description": "Virtual meetings, team collaboration, and project management in one place."
+      },
+      "calendar": {
+        "title": "Calendar",
+        "description": "Smart scheduling and time management tools."
+      },
+      "documents": {
+        "title": "Documents",
+        "description": "Centralized document storage, sharing, and collaboration."
+      },
+      "drive": {
+        "title": "Drive",
+        "description": "Secure cloud storage for all your business files and data."
+      },
+      "crm": {
+        "title": "CRM",
+        "description": "Build and maintain valuable customer relationships."
+      },
+      "finance": {
+        "title": "Finance",
+        "description": "Comprehensive financial management and reporting."
+      },
+      "inventory": {
+        "title": "Inventory",
+        "description": "Real-time inventory tracking and management."
+      },
+      "tasks": {
+        "title": "Tasks",
+        "description": "Streamlined task tracking and team coordination."
+      },
+      "workflows": {
+        "title": "Workflows",
+        "description": "Automated business processes and workflows."
+      }
+    },
+    "solutions": {
+      "title": "For Every Industry",
+      "subtitle": "Tailored solutions for every industry, from small businesses to large enterprises.",
+      "industries": {
+        "manufacturing": "Manufacturing",
+        "healthcare": "Healthcare",
+        "education": "Education",
+        "retail": "Retail",
+        "real_estate": "Real Estate",
+        "hospitality": "Hospitality",
+        "construction": "Construction",
+        "pharmacies": "Pharmacies"
+      }
+    },
+    "benefits": {
+      "title": "Tremendous Benefits",
+      "subtitle": "Experience the advantages of an all-in-one platform designed for modern businesses.",
+      "for_businesses": {
+        "title": "For Businesses",
+        "items": [
+          "Reduced operational costs",
+          "Improved efficiency and productivity",
+          "Better decision-making with AI insights",
+          "Enhanced team collaboration",
+          "Streamlined workflows",
+          "Scalable solutions for growth"
+        ]
+      },
+      "for_teams": {
+        "title": "For Teams",
+        "items": [
+          "Seamless communication",
+          "Real-time collaboration",
+          "Automated task management",
+          "Centralized information access",
+          "Integrated tools and features",
+          "Enhanced productivity"
+        ]
+      }
+    },
+    "how_it_works": {
+      "title": "How It Works",
+      "subtitle": "Get started with Tuturuuu in just a few simple steps",
+      "steps": {
+        "step1": {
+          "title": "Sign Up",
+          "description": "Create your account in seconds and get started with a free trial"
+        },
+        "step2": {
+          "title": "Set Up Your Workspace",
+          "description": "Customize your workspace and invite your team members"
+        },
+        "step3": {
+          "title": "Start Collaborating",
+          "description": "Begin using our powerful tools to boost your productivity"
+        },
+        "step4": {
+          "title": "Scale & Grow",
+          "description": "Expand your usage as your business grows with our flexible platform"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "What Our Users Say",
+      "subtitle": "Join thousands of satisfied users who trust Tuturuuu",
+      "items": [
+        {
+          "quote": "Tuturuuu has transformed how we work. The AI features are incredible!",
+          "author": "Sarah Chen",
+          "role": "Product Manager",
+          "company": "TechCorp"
+        },
+        {
+          "quote": "The best all-in-one solution we've found for our team's needs.",
+          "author": "Michael Rodriguez",
+          "role": "CEO",
+          "company": "StartupX"
+        },
+        {
+          "quote": "Intuitive interface and powerful features. Highly recommended!",
+          "author": "Emily Johnson",
+          "role": "Team Lead",
+          "company": "DesignPro"
+        }
+      ]
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "subtitle": "Choose the plan that's right for you",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "save_percent": "Save 20%",
+      "plans": {
+        "free": {
+          "title": "Free",
+          "description": "Perfect for individuals and small teams",
+          "price": "$0",
+          "period": "/month",
+          "features": [
+            "Up to 3 team members",
+            "Basic AI features",
+            "2GB storage",
+            "Community support"
+          ]
+        },
+        "pro": {
+          "title": "Pro",
+          "description": "Great for growing teams",
+          "price": "$12",
+          "period": "/user/month",
+          "features": [
+            "Unlimited team members",
+            "Advanced AI features",
+            "20GB storage per user",
+            "Priority support",
+            "Advanced analytics",
+            "Custom integrations"
+          ]
+        },
+        "enterprise": {
+          "title": "Enterprise",
+          "description": "For large organizations",
+          "price": "Custom",
+          "period": "",
+          "features": [
+            "Everything in Pro",
+            "Unlimited storage",
+            "24/7 dedicated support",
+            "Custom AI models",
+            "Advanced security",
+            "SLA guarantee"
+          ]
+        }
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Find answers to common questions about Tuturuuu",
+      "items": [
+        {
+          "question": "What is Tuturuuu?",
+          "answer": "Tuturuuu is an all-in-one workspace platform that combines AI-powered productivity tools, team collaboration features, and business management solutions."
+        },
+        {
+          "question": "How does the pricing work?",
+          "answer": "We offer flexible pricing plans starting from free. Our Pro plan is priced per user, and Enterprise plans are customized to your needs."
+        },
+        {
+          "question": "Can I try before I buy?",
+          "answer": "Yes! You can start with our free plan or request a demo of our Pro features."
+        },
+        {
+          "question": "How secure is my data?",
+          "answer": "We use enterprise-grade encryption and follow industry best practices to ensure your data is always secure."
+        },
+        {
+          "question": "Do you offer customer support?",
+          "answer": "Yes, we provide customer support through various channels depending on your plan, from community support to 24/7 dedicated assistance."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Ready to Get Started?",
+      "subtitle": "Join thousands of teams already using Tuturuuu",
+      "primary_button": "Start Free Trial",
+      "secondary_button": "Contact Sales",
+      "no_card_required": "No credit card required"
+    },
+    "ai_revolution": {
+      "title": "AI Revolution",
+      "subtitle": "Experience the future of work with AI that understands, adapts, and grows with you",
+      "items": [
+        {
+          "title": "Think Faster",
+          "description": "AI-powered insights and automation help you make decisions 10x faster"
+        },
+        {
+          "title": "Work Smarter",
+          "description": "Let AI handle repetitive tasks while you focus on what matters most"
+        },
+        {
+          "title": "Grow Bigger",
+          "description": "Scale your operations effortlessly with AI that learns and adapts"
+        },
+        {
+          "title": "Stay Ahead",
+          "description": "Always be at the cutting edge with continuously evolving AI capabilities"
+        }
+      ]
+    },
+    "universal_value": {
+      "title": "For Everyone, Everywhere",
+      "subtitle": "From solo entrepreneurs to global enterprises, Tuturuuu adapts to your needs",
+      "categories": {
+        "business_size": {
+          "title": "Any Size",
+          "items": [
+            "Solopreneurs & Freelancers",
+            "Small & Medium Businesses",
+            "Large Enterprises",
+            "Global Organizations"
+          ]
+        },
+        "industries": {
+          "title": "Any Industry",
+          "items": [
+            "Technology & Innovation",
+            "Healthcare & Wellness",
+            "Education & Learning",
+            "Retail & E-commerce",
+            "Manufacturing & Production",
+            "Services & Consulting",
+            "Creative & Entertainment",
+            "Non-profit & Social Impact"
+          ]
+        },
+        "use_cases": {
+          "title": "Any Goal",
+          "items": [
+            "Streamline Operations",
+            "Boost Productivity",
+            "Enhance Collaboration",
+            "Drive Innovation",
+            "Improve Customer Experience",
+            "Scale Globally",
+            "Reduce Costs",
+            "Achieve Sustainability"
+          ]
+        }
+      }
+    },
+    "ai_features": {
+      "title": "AI at Its Core",
+      "subtitle": "Every feature is enhanced by cutting-edge artificial intelligence",
+      "features": [
+        {
+          "title": "Smart Automation",
+          "description": "Automate complex workflows with AI that learns your preferences"
+        },
+        {
+          "title": "Intelligent Insights",
+          "description": "Get actionable recommendations based on your data and industry trends"
+        },
+        {
+          "title": "Natural Collaboration",
+          "description": "Work with AI that understands context and communicates naturally"
+        },
+        {
+          "title": "Predictive Analytics",
+          "description": "Anticipate challenges and opportunities with AI-powered forecasting"
+        },
+        {
+          "title": "Adaptive Learning",
+          "description": "AI that continuously improves based on your team's usage patterns"
+        },
+        {
+          "title": "Global Intelligence",
+          "description": "Access insights from worldwide data while maintaining privacy"
+        }
+      ]
+    },
+    "success_metrics": {
+      "title": "Real Impact",
+      "subtitle": "Join thousands of organizations achieving remarkable results",
+      "metrics": [
+        {
+          "value": "10x",
+          "label": "Faster Decision Making"
+        },
+        {
+          "value": "80%",
+          "label": "Time Saved on Routine Tasks"
+        },
+        {
+          "value": "50%",
+          "label": "Reduction in Operating Costs"
+        },
+        {
+          "value": "3x",
+          "label": "Increase in Team Productivity"
+        }
+      ]
+    },
+    "transformation": {
+      "title": "Transform Your Work",
+      "subtitle": "Experience the power of AI-driven transformation",
+      "steps": [
+        {
+          "title": "Start Instantly",
+          "description": "Get up and running in minutes with intuitive onboarding"
+        },
+        {
+          "title": "Scale Effortlessly",
+          "description": "Grow from one to thousands of users without friction"
+        },
+        {
+          "title": "Evolve Continuously",
+          "description": "Stay ahead with AI that learns and improves every day"
+        }
+      ]
+    }
   }
 }

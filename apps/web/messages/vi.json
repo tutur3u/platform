@@ -2043,5 +2043,307 @@
     "plural": "Lịch sử chạy",
     "singular": "Lịch sử chạy",
     "description": "Lịch sử chạy được sử dụng để xem lịch sử của các công việc định kỳ."
+  },
+  "landing": {
+    "headline": "Lối tắt thông minh của bạn",
+    "subheadline": "Kiểm soát quy trình làm việc, được tăng cường bởi AI",
+    "features": {
+      "title": "Tính năng",
+      "subtitle": "Khám phá các tính năng mạnh mẽ được thiết kế để nâng cao năng suất và tối ưu hóa quy trình làm việc của bạn",
+      "ai_powered": {
+        "title": "Được hỗ trợ bởi AI",
+        "description": "Phát triển và tổ chức ý tưởng của bạn với tốc độ tư duy, với các công cụ thông minh được hỗ trợ bởi AI"
+      },
+      "collaboration": {
+        "title": "Hợp tác Nhóm",
+        "description": "Tính năng giao tiếp và hợp tác liền mạch cho toàn bộ đội ngũ của bạn"
+      },
+      "task_management": {
+        "title": "Quản lý Công việc",
+        "description": "Tạo công việc, giao cho đội ngũ của bạn và theo dõi tiến độ, tất cả trong một nơi"
+      },
+      "document_management": {
+        "title": "Quản lý Tài liệu",
+        "description": "Viết và duy trì tài liệu của bạn một cách dễ dàng, với trình soạn thảo trực quan và mạnh mẽ"
+      },
+      "finance_tracking": {
+        "title": "Theo dõi Tài chính",
+        "description": "Theo dõi tài chính và cập nhật cho đội ngũ của bạn, để bạn có thể tập trung vào những điều quan trọng"
+      },
+      "open_source": {
+        "title": "Mã nguồn Mở",
+        "description": "Tuturuuu là mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và làm cho nó tốt hơn cho mọi người"
+      }
+    },
+    "products": {
+      "title": "Sản phẩm",
+      "subtitle": "Khám phá bộ sản phẩm mạnh mẽ được thiết kế để giúp bạn làm việc thông minh hơn",
+      "ai_assistant": {
+        "title": "Trợ lý AI",
+        "description": "Tự động hóa thông minh và thông tin chi tiết được hỗ trợ bởi AI tiên tiến"
+      },
+      "meet_together": {
+        "title": "Họp cùng nhau",
+        "description": "Cuộc họp trực tuyến, hợp tác nhóm và quản lý dự án trong một nơi"
+      },
+      "calendar": {
+        "title": "Lịch",
+        "description": "Công cụ lập lịch và quản lý thời gian thông minh"
+      },
+      "documents": {
+        "title": "Tài liệu",
+        "description": "Lưu trữ, chia sẻ và cộng tác tài liệu tập trung"
+      },
+      "drive": {
+        "title": "Kho lưu trữ",
+        "description": "Lưu trữ đám mây an toàn cho tất cả tệp và dữ liệu kinh doanh của bạn"
+      },
+      "crm": {
+        "title": "CRM",
+        "description": "Xây dựng và duy trì các mối quan hệ khách hàng có giá trị"
+      },
+      "finance": {
+        "title": "Tài chính",
+        "description": "Quản lý và báo cáo tài chính toàn diện"
+      },
+      "inventory": {
+        "title": "Kho hàng",
+        "description": "Theo dõi và quản lý kho hàng theo thời gian thực"
+      },
+      "tasks": {
+        "title": "Công việc",
+        "description": "Theo dõi công việc và phối hợp nhóm được tối ưu hóa"
+      },
+      "workflows": {
+        "title": "Quy trình",
+        "description": "Quy trình kinh doanh và công việc tự động hóa"
+      }
+    },
+    "solutions": {
+      "title": "Giải pháp",
+      "subtitle": "Giải pháp tùy chỉnh cho từng ngành",
+      "industries": {
+        "manufacturing": "Sản xuất",
+        "healthcare": "Y tế",
+        "education": "Giáo dục",
+        "retail": "Bán lẻ",
+        "real_estate": "Bất động sản",
+        "hospitality": "Khách sạn",
+        "construction": "Xây dựng",
+        "pharmacies": "Nhà thuốc"
+      }
+    },
+    "benefits": {
+      "title": "Lợi ích Vượt trội",
+      "subtitle": "Trải nghiệm những ưu điểm của nền tảng tất cả trong một được thiết kế cho doanh nghiệp hiện đại",
+      "for_businesses": {
+        "title": "Cho Doanh nghiệp",
+        "items": [
+          "Giảm chi phí vận hành",
+          "Cải thiện hiệu quả và năng suất",
+          "Ra quyết định tốt hơn với thông tin chi tiết từ AI",
+          "Tăng cường hợp tác nhóm",
+          "Tối ưu hóa quy trình làm việc",
+          "Giải pháp có thể mở rộng cho sự phát triển"
+        ]
+      },
+      "for_teams": {
+        "title": "Cho Đội ngũ",
+        "items": [
+          "Giao tiếp liền mạch",
+          "Hợp tác thời gian thực",
+          "Quản lý công việc tự động",
+          "Truy cập thông tin tập trung",
+          "Công cụ và tính năng tích hợp",
+          "Nâng cao năng suất"
+        ]
+      }
+    },
+    "how_it_works": {
+      "title": "Cách Hoạt động",
+      "subtitle": "Bắt đầu với Tuturuuu chỉ trong vài bước đơn giản",
+      "steps": {
+        "step1": {
+          "title": "Đăng Ký",
+          "description": "Tạo tài khoản trong vài giây và bắt đầu dùng thử miễn phí"
+        },
+        "step2": {
+          "title": "Thiết Lập Không Gian Làm Việc",
+          "description": "Tùy chỉnh không gian làm việc và mời các thành viên trong nhóm"
+        },
+        "step3": {
+          "title": "Bắt Đầu Cộng Tác",
+          "description": "Bắt đầu sử dụng các công cụ mạnh mẽ để tăng năng suất"
+        },
+        "step4": {
+          "title": "Mở Rộng & Phát Triển",
+          "description": "Mở rộng việc sử dụng khi doanh nghiệp phát triển với nền tảng linh hoạt của chúng tôi"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Người Dùng Nói Gì",
+      "subtitle": "Tham gia cùng hàng nghìn người dùng hài lòng tin tưởng Tuturuuu",
+      "items": [
+        {
+          "quote": "Tuturuuu đã thay đổi cách chúng tôi làm việc. Các tính năng AI thật đáng kinh ngạc!",
+          "author": "Sarah Chen",
+          "role": "Quản lý Sản phẩm",
+          "company": "TechCorp"
+        },
+        {
+          "quote": "Giải pháp tất cả trong một tốt nhất mà chúng tôi từng tìm thấy cho nhu cầu của đội ngũ.",
+          "author": "Michael Rodriguez",
+          "role": "Giám đốc Điều hành",
+          "company": "StartupX"
+        },
+        {
+          "quote": "Giao diện trực quan và tính năng mạnh mẽ. Rất đáng để giới thiệu!",
+          "author": "Emily Johnson",
+          "role": "Trưởng nhóm",
+          "company": "DesignPro"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Sẵn Sàng Bắt Đầu?",
+      "subtitle": "Tham gia cùng hàng nghìn đội nhóm đang sử dụng Tuturuuu",
+      "primary_button": "Dùng Thử Miễn Phí",
+      "secondary_button": "Liên Hệ Bán Hàng",
+      "no_card_required": "Không cần thẻ tín dụng"
+    },
+    "ai_revolution": {
+      "title": "Cuộc Cách Mạng AI",
+      "subtitle": "Trải nghiệm tương lai của công việc với AI hiểu, thích nghi và phát triển cùng bạn",
+      "items": [
+        {
+          "title": "Tư duy Nhanh hơn",
+          "description": "Thông tin chi tiết và tự động hóa được hỗ trợ bởi AI giúp bạn ra quyết định nhanh hơn 10 lần"
+        },
+        {
+          "title": "Làm việc Thông minh hơn",
+          "description": "Để AI xử lý các công việc lặp lại trong khi bạn tập trung vào những điều quan trọng nhất"
+        },
+        {
+          "title": "Phát triển Lớn mạnh hơn",
+          "description": "Mở rộng hoạt động một cách dễ dàng với AI học hỏi và thích nghi"
+        },
+        {
+          "title": "Luôn Dẫn đầu",
+          "description": "Luôn ở vị trí dẫn đầu với khả năng AI không ngừng phát triển"
+        }
+      ]
+    },
+    "universal_value": {
+      "title": "Cho Mọi người, Mọi nơi",
+      "subtitle": "Từ doanh nhân cá nhân đến doanh nghiệp toàn cầu, Tuturuuu thích nghi với nhu cầu của bạn",
+      "categories": {
+        "business_size": {
+          "title": "Mọi Quy mô",
+          "items": [
+            "Doanh nhân & Freelancer",
+            "Doanh nghiệp Vừa và Nhỏ",
+            "Doanh nghiệp Lớn",
+            "Tổ chức Toàn cầu"
+          ]
+        },
+        "industries": {
+          "title": "Mọi Ngành nghề",
+          "items": [
+            "Công nghệ & Đổi mới",
+            "Y tế & Sức khỏe",
+            "Giáo dục & Học tập",
+            "Bán lẻ & Thương mại điện tử",
+            "Sản xuất & Chế tạo",
+            "Dịch vụ & Tư vấn",
+            "Sáng tạo & Giải trí",
+            "Phi lợi nhuận & Tác động xã hội"
+          ]
+        },
+        "use_cases": {
+          "title": "Mọi Mục tiêu",
+          "items": [
+            "Tối ưu hóa Hoạt động",
+            "Tăng Năng suất",
+            "Nâng cao Hợp tác",
+            "Thúc đẩy Đổi mới",
+            "Cải thiện Trải nghiệm Khách hàng",
+            "Mở rộng Toàn cầu",
+            "Giảm Chi phí",
+            "Đạt được Tính bền vững"
+          ]
+        }
+      }
+    },
+    "ai_features": {
+      "title": "AI là Cốt lõi",
+      "subtitle": "Mọi tính năng đều được nâng cao bởi trí tuệ nhân tạo tiên tiến",
+      "features": [
+        {
+          "title": "Tự động hóa Thông minh",
+          "description": "Tự động hóa quy trình phức tạp với AI học hỏi từ sở thích của bạn"
+        },
+        {
+          "title": "Thông tin Chi tiết Thông minh",
+          "description": "Nhận các đề xuất hữu ích dựa trên dữ liệu và xu hướng ngành của bạn"
+        },
+        {
+          "title": "Hợp tác Tự nhiên",
+          "description": "Làm việc với AI hiểu ngữ cảnh và giao tiếp tự nhiên"
+        },
+        {
+          "title": "Phân tích Dự đoán",
+          "description": "Dự đoán thách thức và cơ hội với dự báo được hỗ trợ bởi AI"
+        },
+        {
+          "title": "Học hỏi Thích nghi",
+          "description": "AI liên tục cải thiện dựa trên mô hình sử dụng của đội ngũ bạn"
+        },
+        {
+          "title": "Trí tuệ Toàn cầu",
+          "description": "Truy cập thông tin từ dữ liệu toàn cầu trong khi vẫn đảm bảo quyền riêng tư"
+        }
+      ]
+    },
+    "success_metrics": {
+      "title": "Tác động Thực tế",
+      "subtitle": "Tham gia cùng hàng nghìn tổ chức đạt được kết quả đáng kinh ngạc",
+      "metrics": [
+        {
+          "value": "10x",
+          "label": "Ra quyết định Nhanh hơn"
+        },
+        {
+          "value": "80%",
+          "label": "Thời gian Tiết kiệm cho Công việc Thường xuyên"
+        },
+        {
+          "value": "50%",
+          "label": "Giảm Chi phí Hoạt động"
+        },
+        {
+          "value": "3x",
+          "label": "Tăng Năng suất Đội ngũ"
+        }
+      ]
+    },
+    "transformation": {
+      "title": "Chuyển đổi Công việc",
+      "subtitle": "Trải nghiệm sức mạnh của chuyển đổi được hỗ trợ bởi AI",
+      "steps": [
+        {
+          "title": "Bắt đầu Ngay lập tức",
+          "description": "Bắt đầu và vận hành trong vài phút với hướng dẫn trực quan"
+        },
+        {
+          "title": "Mở rộng Dễ dàng",
+          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại"
+        },
+        {
+          "title": "Phát triển Liên tục",
+          "description": "Luôn dẫn đầu với AI học hỏi và cải thiện mỗi ngày"
+        }
+      ]
+    }
   }
 }
