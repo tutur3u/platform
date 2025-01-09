@@ -4,10 +4,10 @@ import { NextResponse } from 'next/server';
 
 export async function POST(
   _: Request,
-  { params }: { params: { wsId: string; datasetId: string } }
+  { params }: { params: Promise<{ wsId: string; datasetId: string }> }
 ) {
   try {
-    const { wsId, datasetId } = params;
+    const { wsId, datasetId } = await params;
 
     // Verify dataset exists and belongs to workspace
     const supabase = await createClient();
