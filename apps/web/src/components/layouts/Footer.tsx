@@ -111,14 +111,12 @@ export default function Footer() {
             </div>
             <Link
               href="/terms"
-              target="_blank"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.terms')}
             </Link>
             <Link
               href="/privacy"
-              target="_blank"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.privacy')}
@@ -143,7 +141,6 @@ export default function Footer() {
             </Link>
             <Link
               href="/branding"
-              target="_blank"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.branding')}
