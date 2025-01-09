@@ -227,7 +227,21 @@
     "retail": "Bán lẻ",
     "manufacturing": "Chế tạo",
     "hospitality": "Du lịch & Khách sạn",
-    "construction": "Thi công"
+    "construction": "Thi công",
+    "changelog": "Nhật ký thay đổi",
+    "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
+    "product-updates": "Cập nhật sản phẩm",
+    "product-updates-title": "Cập nhật sản phẩm",
+    "product-updates-description": "Theo dõi các tính năng, cải tiến và sửa lỗi mới nhất trong hành trình phát triển sản phẩm của chúng tôi.",
+    "new-features": "Tính năng mới",
+    "improvements": "Cải tiến",
+    "bug-fixes": "Sửa lỗi",
+    "stay-updated": "Cập nhật thường xuyên",
+    "changelog-subscribe-description": "Đăng ký nhận thông báo về các cập nhật và tính năng mới khi chúng được phát hành.",
+    "enter-email": "Nhập email của bạn",
+    "subscribe": "Đăng ký",
+    "view-full-documentation": "Xem tài liệu đầy đủ",
+    "company": "Công ty"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

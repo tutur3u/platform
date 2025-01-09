@@ -187,8 +187,13 @@ export function MainNavigationMenu() {
       href: '/blog',
       description: t('common.blog-description'),
       icon: <BookText className="h-4 w-4" />,
-      disabled: true,
       badge: t('common.coming_soon'),
+    },
+    {
+      title: t('common.changelog'),
+      href: '/changelog',
+      description: t('common.changelog-description'),
+      icon: <FileText className="h-4 w-4" />,
     },
     {
       title: t('common.documentation'),
@@ -295,7 +300,6 @@ export function MainNavigationMenu() {
                   title={resource.title}
                   href={resource.href}
                   icon={resource.icon}
-                  disabled={resource.disabled}
                   badge={resource.badge}
                 >
                   {resource.description}

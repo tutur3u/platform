@@ -10,6 +10,7 @@ import {
 } from '@repo/ui/components/ui/accordion';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
+import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -19,7 +20,15 @@ import {
   TableRow,
 } from '@repo/ui/components/ui/table';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@repo/ui/components/ui/tooltip';
+import { motion } from 'framer-motion';
+import {
   Archive,
+  ArrowRight,
   BarChart3,
   Bot,
   Boxes,
@@ -33,6 +42,7 @@ import {
   GanttChartSquare,
   Group,
   HardDrive,
+  HelpCircle,
   Minus,
   Network,
   Settings,
@@ -42,7 +52,8 @@ import {
   Zap,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Fragment } from 'react';
+import Link from 'next/link';
+import { Fragment, useState } from 'react';
 
 const plans = [
   {
@@ -457,196 +468,6 @@ const metricCategories = {
   },
 };
 
-const PlanCard = ({ plan }: { plan: (typeof plans)[number] }) => (
-  <Card
-    className={cn(
-      'relative flex flex-col overflow-hidden transition-all duration-300',
-      'from-background to-muted/20 bg-gradient-to-b',
-      plan.popular && 'border-primary shadow-lg',
-      plan.name === 'Business' && 'col-span-full lg:col-span-1',
-      plan.name === 'Enterprise' &&
-        'from-dynamic-light-red/30 via-dynamic-light-pink/40 to-dynamic-light-blue/60 text-background border-foreground/50 col-span-full border-2 bg-gradient-to-br'
-    )}
-  >
-    {plan.popular && (
-      <div className="bg-primary absolute inset-x-0 top-0 h-1 opacity-80" />
-    )}
-
-    <div className="p-6 lg:p-8">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <h2
-            className={cn(
-              'text-2xl font-bold',
-              plan.name === 'Enterprise' && 'text-foreground'
-            )}
-          >
-            {plan.name}
-          </h2>
-          {plan.popular && (
-            <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium">
-              Most Popular
-            </span>
-          )}
-        </div>
-        <p
-          className={cn(
-            'text-muted-foreground mt-2 text-sm',
-            plan.name === 'Enterprise' && 'text-foreground'
-          )}
-        >
-          {plan.description}
-        </p>
-      </div>
-
-      {plan.name === 'Enterprise' || (
-        <div
-          className={cn(
-            'bg-background/50 mb-6 rounded-lg border p-4 text-center',
-            plan.name === 'Enterprise' &&
-              'bg-background/20 border-foreground/30 text-foreground'
-          )}
-        >
-          <div
-            className={cn(
-              'flex items-end gap-2',
-              plan.name === 'Enterprise' && 'items-center justify-center'
-            )}
-          >
-            <span className="text-3xl font-bold lg:text-4xl">{plan.price}</span>
-            {plan.priceDetails && (
-              <span className="text-muted-foreground mb-1 text-sm">
-                {plan.priceDetails}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-6">
-        {/* Key Metrics Grid */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div
-            className={cn(
-              'bg-background/50 space-y-2 rounded-lg border p-3',
-              plan.name === 'Enterprise' &&
-                'bg-background/20 border-foreground/30 text-foreground'
-            )}
-          >
-            <div
-              className={cn(
-                'text-muted-foreground flex items-center gap-2 text-xs font-medium',
-                plan.name === 'Enterprise' && 'text-foreground'
-              )}
-            >
-              {metricCategories.workspace.icon} Workspace
-            </div>
-            <div className="text-sm font-semibold">
-              {plan.limits.workspace?.amount || 'Unlimited'}
-            </div>
-          </div>
-          <div
-            className={cn(
-              'bg-background/50 space-y-2 rounded-lg border p-3',
-              plan.name === 'Enterprise' &&
-                'bg-background/20 border-foreground/30 text-foreground'
-            )}
-          >
-            <div
-              className={cn(
-                'text-muted-foreground flex items-center gap-2 text-xs font-medium',
-                plan.name === 'Enterprise' && 'text-foreground'
-              )}
-            >
-              {metricCategories.storage.icon} Storage
-            </div>
-            <div className="text-sm font-semibold">
-              {plan.limits.workspace?.storage || 'Custom'}
-            </div>
-          </div>
-          <div
-            className={cn(
-              'bg-background/50 space-y-2 rounded-lg border p-3',
-              plan.name === 'Enterprise' &&
-                'bg-background/20 border-foreground/30 text-foreground'
-            )}
-          >
-            <div
-              className={cn(
-                'text-muted-foreground flex items-center gap-2 text-xs font-medium',
-                plan.name === 'Enterprise' && 'text-foreground'
-              )}
-            >
-              {metricCategories.ai.icon} AI Credits
-            </div>
-            <div className="text-sm font-semibold">
-              {plan.limits.ai?.credits || 'Custom'}
-            </div>
-          </div>
-          <div
-            className={cn(
-              'bg-background/50 space-y-2 rounded-lg border p-3',
-              plan.name === 'Enterprise' &&
-                'bg-background/20 border-foreground/30 text-foreground'
-            )}
-          >
-            <div
-              className={cn(
-                'text-muted-foreground flex items-center gap-2 text-xs font-medium',
-                plan.name === 'Enterprise' && 'text-foreground'
-              )}
-            >
-              {metricCategories.collaboration.icon} Team Size
-            </div>
-            <div className="text-sm font-semibold">
-              {plan.limits.workspace?.members || 'Unlimited'}
-            </div>
-          </div>
-        </div>
-
-        {/* Feature Highlights */}
-        <div className="space-y-3">
-          <div
-            className={cn(
-              'text-sm font-semibold',
-              plan.name === 'Enterprise' && 'text-foreground'
-            )}
-          >
-            Included Features
-          </div>
-          <ul
-            className={cn(
-              'text-muted-foreground grid gap-2 text-sm',
-              plan.name === 'Business' && 'md:grid-cols-2 lg:grid-cols-1',
-              plan.name === 'Enterprise' &&
-                'text-foreground md:grid-cols-2 lg:grid-cols-3'
-            )}
-          >
-            {plan.features.map((feature) => (
-              <li key={feature} className="flex items-center gap-2">
-                <Check className="h-4 w-4 shrink-0" />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <Button
-          className={cn(
-            'mt-6 w-full',
-            plan.name === 'Enterprise' && 'bg-background text-foreground'
-          )}
-          size="lg"
-          variant={plan.popular ? 'default' : 'outline'}
-          disabled
-        >
-          Coming Soon
-        </Button>
-      </div>
-    </div>
-  </Card>
-);
-
 const categoryIcons = {
   'Workspace Features': <Building2 className="h-4 w-4" />,
   'AI Features': <Bot className="h-4 w-4" />,
@@ -666,21 +487,229 @@ const categoryIcons = {
   'Financial Tools': <Calculator className="h-4 w-4" />,
 };
 
+const PlanCard = ({
+  plan,
+  isVisible = true,
+}: {
+  plan: (typeof plans)[number];
+  isVisible?: boolean;
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+      transition={{ duration: 0.5 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Card
+        className={cn(
+          'relative flex flex-col overflow-hidden transition-all duration-300',
+          'from-background to-muted/20 bg-gradient-to-b',
+          isHovered && 'scale-[1.02] shadow-lg',
+          plan.popular && 'border-primary shadow-lg',
+          plan.name === 'Business' && 'col-span-full lg:col-span-1',
+          plan.name === 'Enterprise' &&
+            'from-dynamic-light-red/30 via-dynamic-light-pink/40 to-dynamic-light-blue/60 text-background border-foreground/50 col-span-full border-2 bg-gradient-to-br'
+        )}
+      >
+        {plan.popular && (
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: '100%' }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-primary absolute inset-x-0 top-0 h-1 opacity-80"
+          />
+        )}
+
+        <div className="p-6 lg:p-8">
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <h2
+                className={cn(
+                  'text-2xl font-bold',
+                  plan.name === 'Enterprise' && 'text-foreground'
+                )}
+              >
+                {plan.name}
+              </h2>
+              {plan.popular && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.3 }}
+                  className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium"
+                >
+                  Most Popular
+                </motion.span>
+              )}
+            </div>
+            <p
+              className={cn(
+                'text-muted-foreground mt-2 text-sm',
+                plan.name === 'Enterprise' && 'text-foreground'
+              )}
+            >
+              {plan.description}
+            </p>
+          </div>
+
+          {plan.name === 'Enterprise' || (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              className={cn(
+                'bg-background/50 mb-6 rounded-lg border p-4 text-center',
+                plan.name === 'Enterprise' &&
+                  'bg-background/20 border-foreground/30 text-foreground'
+              )}
+            >
+              <div
+                className={cn(
+                  'flex items-end gap-2',
+                  plan.name === 'Enterprise' && 'items-center justify-center'
+                )}
+              >
+                <span className="text-3xl font-bold lg:text-4xl">
+                  {plan.price}
+                </span>
+                {plan.priceDetails && (
+                  <span className="text-muted-foreground mb-1 text-sm">
+                    {plan.priceDetails}
+                  </span>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          <div className="space-y-6">
+            {/* Key Metrics Grid */}
+            <div className="grid gap-4 lg:grid-cols-2">
+              {Object.entries(metricCategories)
+                .slice(0, 4)
+                .map(([key, { icon, label }], index) => (
+                  <motion.div
+                    key={key}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 * index }}
+                    className={cn(
+                      'bg-background/50 group space-y-2 rounded-lg border p-3 transition-colors duration-200',
+                      isHovered && 'bg-background/70',
+                      plan.name === 'Enterprise' &&
+                        'bg-background/20 border-foreground/30 text-foreground'
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'text-muted-foreground flex items-center gap-2 text-xs font-medium',
+                        plan.name === 'Enterprise' && 'text-foreground'
+                      )}
+                    >
+                      {icon} {label}
+                    </div>
+                    <div className="text-sm font-semibold">
+                      {(plan.limits[key as keyof typeof plan.limits] as any)
+                        ?.credits ||
+                        (plan.limits[key as keyof typeof plan.limits] as any)
+                          ?.members ||
+                        (plan.limits[key as keyof typeof plan.limits] as any)
+                          ?.storage ||
+                        'Custom'}
+                    </div>
+                  </motion.div>
+                ))}
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="space-y-3">
+              <div
+                className={cn(
+                  'text-sm font-semibold',
+                  plan.name === 'Enterprise' && 'text-foreground'
+                )}
+              >
+                Included Features
+              </div>
+              <motion.ul
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className={cn(
+                  'text-muted-foreground grid gap-2 text-sm',
+                  plan.name === 'Business' && 'md:grid-cols-2 lg:grid-cols-1',
+                  plan.name === 'Enterprise' &&
+                    'text-foreground md:grid-cols-2 lg:grid-cols-3'
+                )}
+              >
+                {plan.features.map((feature, index) => (
+                  <motion.li
+                    key={feature}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 * index }}
+                    className="flex items-center gap-2"
+                  >
+                    <Check className="text-primary h-4 w-4 shrink-0" />
+                    <span>{feature}</span>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            </div>
+
+            <Button
+              className={cn(
+                'mt-6 w-full transition-transform duration-200',
+                isHovered && 'scale-[1.02]',
+                plan.name === 'Enterprise' && 'bg-background text-foreground'
+              )}
+              size="lg"
+              variant={plan.popular ? 'default' : 'outline'}
+              disabled
+            >
+              Coming Soon
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </motion.div>
+  );
+};
+
 export default function PricingPage() {
   const locale = useLocale();
   const t = useTranslations();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   return (
     <div className="container relative mx-auto mt-8 flex max-w-7xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Background decoration */}
-      <div className="absolute left-0 right-0 top-0 -z-10 h-[400px] rounded-t-lg bg-gradient-to-b from-transparent to-transparent" />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+        className="from-primary/5 via-primary/2 absolute left-0 right-0 top-0 -z-10 h-[400px] rounded-t-lg bg-gradient-to-b to-transparent"
+      />
 
-      <div className="mb-16 text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="mb-16 text-center"
+      >
         {locale !== 'vi' && (
-          <span className="bg-primary/10 text-primary mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium">
+          <motion.span
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="bg-primary/10 text-primary mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium"
+          >
             <Sparkles className="h-4 w-4" />
             {t('common.pricing_hook')}
-          </span>
+          </motion.span>
         )}
 
         <h1
@@ -694,16 +723,28 @@ export default function PricingPage() {
         <p className="text-muted-foreground mx-auto max-w-2xl text-balance text-lg">
           {t('common.usage_based_pricing_description')}
         </p>
-      </div>
+      </motion.div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-        {plans.map((plan) => (
-          <PlanCard key={plan.name} plan={plan} />
+      {/* Existing pricing cards grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:gap-8">
+        {plans.map((plan, index) => (
+          <PlanCard
+            key={plan.name}
+            plan={plan}
+            isVisible={!selectedCategory || index === plans.length - 1}
+          />
         ))}
       </div>
 
-      {/* Enhanced Comparison Table */}
-      <section className="mt-24 scroll-mt-24" id="comparison">
+      {/* Enhanced Feature Comparison Table */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="mt-24 scroll-mt-24"
+        id="comparison"
+      >
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold">Compare Plans</h2>
           <p className="text-muted-foreground mt-2">
@@ -711,89 +752,143 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="bg-background relative overflow-hidden rounded-lg border shadow-sm">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-[300px]">Features</TableHead>
-                  <TableHead>
-                    <div className="text-center">
-                      <div className="font-bold">{t('common.free')}</div>
-                      <div className="text-muted-foreground text-sm">$0</div>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="text-center">
-                      <div className="font-bold">Pro</div>
-                      <div className="text-muted-foreground text-sm">
-                        $25/workspace
-                      </div>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="text-center">
-                      <div className="font-bold">Business</div>
-                      <div className="text-muted-foreground text-sm">
-                        $199/workspace
-                      </div>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="text-center">
-                      <div className="font-bold">Enterprise</div>
-                      <div className="text-muted-foreground text-sm">
-                        Custom pricing
-                      </div>
-                    </div>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.entries(allComparisons).map(([category, features]) => (
-                  <Fragment key={category}>
-                    <TableRow className="bg-muted/50">
-                      <TableCell colSpan={5}>
-                        <div className="flex items-center gap-2 font-medium">
-                          {
-                            categoryIcons[
-                              category as keyof typeof categoryIcons
-                            ]
-                          }
-                          {category}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {Object.entries(features).map(([feature, values]) => (
-                      <TableRow key={feature} className="hover:bg-muted/20">
-                        <TableCell className="font-medium">{feature}</TableCell>
-                        {(
-                          ['Free', 'Pro', 'Business', 'Enterprise'] as const
-                        ).map((plan) => (
-                          <TableCell key={plan} className="text-center">
-                            {typeof values[plan] === 'boolean' ? (
-                              values[plan] ? (
-                                <Check className="text-primary mx-auto h-4 w-4" />
-                              ) : (
-                                <Minus className="text-muted-foreground mx-auto h-4 w-4" />
-                              )
-                            ) : (
-                              <span className="text-sm">{values[plan]}</span>
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+        {/* Category Filter */}
+        <div className="mb-6 flex flex-wrap justify-center gap-2">
+          {Object.keys(allComparisons).map((category) => (
+            <Button
+              key={category}
+              variant={selectedCategory === category ? 'default' : 'outline'}
+              size="sm"
+              onClick={() =>
+                setSelectedCategory(
+                  selectedCategory === category ? null : category
+                )
+              }
+              className="transition-all duration-200"
+            >
+              {categoryIcons[category as keyof typeof categoryIcons]}
+              <span className="ml-2">{category}</span>
+            </Button>
+          ))}
         </div>
-      </section>
 
-      {/* FAQ section with improved styling */}
-      <section className="bg-muted/50 mt-32 rounded-2xl px-6 py-12 lg:px-8 lg:py-16">
+        <Card className="bg-background relative overflow-hidden shadow-sm">
+          <ScrollArea className="h-[600px] w-full">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-[300px]">Features</TableHead>
+                    <TableHead>
+                      <div className="text-center">
+                        <div className="font-bold">{t('common.free')}</div>
+                        <div className="text-muted-foreground text-sm">$0</div>
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      <div className="text-center">
+                        <div className="font-bold">Pro</div>
+                        <div className="text-muted-foreground text-sm">
+                          $25/workspace
+                        </div>
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      <div className="text-center">
+                        <div className="font-bold">Business</div>
+                        <div className="text-muted-foreground text-sm">
+                          $199/workspace
+                        </div>
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      <div className="text-center">
+                        <div className="font-bold">Enterprise</div>
+                        <div className="text-muted-foreground text-sm">
+                          Custom pricing
+                        </div>
+                      </div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Object.entries(allComparisons)
+                    .filter(
+                      ([category]) =>
+                        !selectedCategory || category === selectedCategory
+                    )
+                    .map(([category, features]) => (
+                      <Fragment key={category}>
+                        <TableRow className="bg-muted/50">
+                          <TableCell colSpan={5}>
+                            <div className="flex items-center gap-2 font-medium">
+                              {
+                                categoryIcons[
+                                  category as keyof typeof categoryIcons
+                                ]
+                              }
+                              {category}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {Object.entries(features).map(([feature, values]) => (
+                          <TableRow
+                            key={feature}
+                            className="hover:bg-muted/20 transition-colors duration-200"
+                          >
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                {feature}
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <HelpCircle className="text-muted-foreground h-4 w-4" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">
+                                        Learn more about {feature.toLowerCase()}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            </TableCell>
+                            {(
+                              ['Free', 'Pro', 'Business', 'Enterprise'] as const
+                            ).map((plan) => (
+                              <TableCell key={plan} className="text-center">
+                                {typeof values[plan] === 'boolean' ? (
+                                  values[plan] ? (
+                                    <Check className="text-primary mx-auto h-4 w-4" />
+                                  ) : (
+                                    <Minus className="text-muted-foreground mx-auto h-4 w-4" />
+                                  )
+                                ) : (
+                                  <span className="text-sm">
+                                    {values[plan]}
+                                  </span>
+                                )}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </Fragment>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </ScrollArea>
+        </Card>
+      </motion.section>
+
+      {/* Enhanced FAQ Section */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="bg-muted/50 mt-32 rounded-2xl px-6 py-12 lg:px-8 lg:py-16"
+      >
         <h2 className="mb-12 text-center text-3xl font-bold">
           Frequently Asked Questions
         </h2>
@@ -803,21 +898,84 @@ export default function PricingPage() {
           className="mx-auto grid max-w-3xl gap-4"
         >
           {faqs.map((faq, index) => (
-            <AccordionItem
+            <motion.div
               key={index}
-              value={`item-${index}`}
-              className="bg-background rounded-lg px-4"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
             >
-              <AccordionTrigger className="hover:no-underline">
-                {faq.question}
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
+              <AccordionItem
+                value={`item-${index}`}
+                className="bg-background data-[state=open]:bg-muted/50 rounded-lg px-4 transition-colors duration-200"
+              >
+                <AccordionTrigger className="hover:no-underline">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            </motion.div>
           ))}
         </Accordion>
-      </section>
+      </motion.section>
+
+      {/* New Enterprise Section */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="mt-24"
+      >
+        <Card className="from-primary/20 to-primary/5 overflow-hidden bg-gradient-to-br p-8">
+          <div className="grid gap-8 md:grid-cols-2">
+            <div>
+              <h2 className="mb-4 text-3xl font-bold">Enterprise Solutions</h2>
+              <p className="text-muted-foreground mb-6">
+                Need a custom solution? Let's build something together that
+                perfectly fits your enterprise needs.
+              </p>
+              <ul className="mb-8 space-y-4">
+                <li className="flex items-center gap-2">
+                  <Check className="text-primary h-5 w-5" />
+                  <span>Custom deployment options</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-primary h-5 w-5" />
+                  <span>Dedicated support team</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-primary h-5 w-5" />
+                  <span>Custom integrations</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-primary h-5 w-5" />
+                  <span>Advanced security features</span>
+                </li>
+              </ul>
+              <Link href="/contact">
+                <Button className="gap-2">
+                  Contact Sales
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <Building2 className="text-primary mx-auto mb-4 h-16 w-16" />
+                <h3 className="mb-2 text-xl font-bold">
+                  Custom Enterprise Quote
+                </h3>
+                <p className="text-muted-foreground">
+                  Get a tailored solution that scales with your business
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </motion.section>
     </div>
   );
 }

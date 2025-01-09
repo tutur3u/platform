@@ -21,11 +21,11 @@ export default function Footer() {
 
       <Separator className="bg-foreground/5 my-8" />
 
-      <div className="flex flex-col items-center justify-between gap-4 px-4 md:gap-8 md:px-32 lg:flex-row lg:gap-16 xl:px-64">
+      <div className="flex flex-col flex-wrap items-center justify-between gap-4 px-4 md:gap-8 md:px-32 lg:flex-row lg:gap-16 xl:px-64">
         <div className="flex flex-col items-center justify-center gap-4">
           <Link
             href="/"
-            className="flex items-center gap-4 transition dark:hover:text-blue-200"
+            className="flex items-center gap-4 transition"
             aria-label="Tuturuuu"
           >
             <Image
@@ -104,29 +104,23 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-none flex-col items-center gap-4 md:flex-row md:items-start md:gap-16 lg:gap-32">
+        <div className="flex flex-none flex-col flex-wrap items-center gap-4 md:flex-row md:items-start md:gap-16 lg:gap-32">
           <div className="grid gap-1 md:items-start">
-            <div className="text-lg font-semibold md:w-fit md:text-xl">
-              {t('common.legal')}
-            </div>
-            <Link
-              href="/terms"
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
-            >
-              {t('common.terms')}
-            </Link>
-            <Link
-              href="/privacy"
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
-            >
-              {t('common.privacy')}
-            </Link>
-          </div>
-
-          <div className="grid gap-1 md:items-start">
-            <div className="text-lg font-semibold md:w-fit md:text-xl">
+            <div className="mb-2 text-lg font-bold md:w-fit md:text-xl">
               {t('common.resources')}
             </div>
+            <Link
+              href="/blog"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+            >
+              {t('common.blog')}
+            </Link>
+            <Link
+              href="/changelog"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+            >
+              {t('common.changelog')}
+            </Link>
             <Link
               href="/meet-together"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
@@ -148,7 +142,49 @@ export default function Footer() {
           </div>
 
           <div className="grid gap-1 md:items-start">
-            <div className="text-lg font-semibold md:w-fit md:text-xl">
+            <div className="mb-2 text-lg font-bold md:w-fit md:text-xl">
+              {t('common.company')}
+            </div>
+            <Link
+              href="/about"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+            >
+              {t('common.about')}
+            </Link>
+            <Link
+              href="/contact"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+            >
+              {t('common.contact')}
+            </Link>
+            <Link
+              href="/pricing"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+            >
+              {t('common.pricing')}
+            </Link>
+          </div>
+
+          <div className="grid gap-1 md:items-start">
+            <div className="mb-2 text-lg font-bold md:w-fit md:text-xl">
+              {t('common.legal')}
+            </div>
+            <Link
+              href="/terms"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+            >
+              {t('common.terms')}
+            </Link>
+            <Link
+              href="/privacy"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+            >
+              {t('common.privacy')}
+            </Link>
+          </div>
+
+          <div className="grid gap-1 md:items-start">
+            <div className="mb-2 text-lg font-bold md:w-fit md:text-xl">
               {t('common.developers')}
             </div>
             <Link

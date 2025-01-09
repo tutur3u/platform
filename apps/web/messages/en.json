@@ -227,7 +227,21 @@
     "retail": "Retail",
     "manufacturing": "Manufacturing",
     "hospitality": "Hospitality",
-    "construction": "Construction"
+    "construction": "Construction",
+    "changelog": "Changelog",
+    "changelog-description": "Stay up to date with our latest product updates and improvements.",
+    "product-updates": "Product Updates",
+    "product-updates-title": "Product Updates",
+    "product-updates-description": "Stay up to date with the latest features, improvements, and fixes in our product journey.",
+    "new-features": "New Features",
+    "improvements": "Improvements",
+    "bug-fixes": "Bug Fixes",
+    "stay-updated": "Stay in the Loop",
+    "changelog-subscribe-description": "Subscribe to our newsletter to get notified about new updates and features as they roll out.",
+    "enter-email": "Enter your email",
+    "subscribe": "Subscribe",
+    "view-full-documentation": "View full documentation",
+    "company": "Company"
   },
   "date_helper": {
     "time-unit": "Time unit",
