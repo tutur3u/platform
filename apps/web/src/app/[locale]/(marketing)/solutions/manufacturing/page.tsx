@@ -12,110 +12,106 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
 import { motion } from 'framer-motion';
 import {
-  Activity,
   BarChart3,
+  Bell,
   Bot,
-  Box,
-  Calendar,
-  ClipboardList,
-  Database,
-  HeartPulse,
-  MessageSquare,
-  Pill,
-  Receipt,
+  Cog,
+  Factory,
+  Gauge,
+  LineChart,
+  PackageSearch,
+  Scan,
+  Settings,
   Shield,
-  ShieldCheck,
-  Smartphone,
-  Stethoscope,
-  Users,
+  Star,
+  Truck,
+  Warehouse,
+  Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function PharmaciesPage() {
+export default function ManufacturingPage() {
   const features = [
     {
-      title: 'Inventory Management',
-      description:
-        'Real-time tracking of medications and supplies with automated reordering.',
-      icon: <Box className="h-6 w-6" />,
+      title: 'Production Management',
+      description: 'Streamline manufacturing processes and workflows.',
+      icon: <Factory className="h-6 w-6" />,
     },
     {
-      title: 'Prescription Processing',
-      description:
-        'Streamlined prescription handling with digital verification.',
-      icon: <ClipboardList className="h-6 w-6" />,
+      title: 'Inventory Control',
+      description: 'Real-time tracking of materials and finished goods.',
+      icon: <Warehouse className="h-6 w-6" />,
     },
     {
-      title: 'Patient Records',
-      description: 'Secure electronic health records and medication history.',
-      icon: <Database className="h-6 w-6" />,
+      title: 'Quality Control',
+      description: 'Comprehensive quality assurance and testing tools.',
+      icon: <Shield className="h-6 w-6" />,
     },
     {
-      title: 'Insurance Claims',
-      description: 'Automated insurance processing and claims management.',
-      icon: <Receipt className="h-6 w-6" />,
+      title: 'Equipment Maintenance',
+      description: 'Preventive maintenance scheduling and tracking.',
+      icon: <Wrench className="h-6 w-6" />,
     },
     {
-      title: 'Clinical Services',
-      description: 'Support for vaccination programs and health screenings.',
-      icon: <Stethoscope className="h-6 w-6" />,
-    },
-    {
-      title: 'Analytics Dashboard',
-      description: 'Comprehensive reporting and business intelligence tools.',
+      title: 'Performance Analytics',
+      description: 'Real-time production metrics and insights.',
       icon: <BarChart3 className="h-6 w-6" />,
+    },
+    {
+      title: 'Supply Chain',
+      description: 'End-to-end supply chain management and optimization.',
+      icon: <Truck className="h-6 w-6" />,
     },
   ];
 
   const benefits = [
     {
-      title: 'Mobile App Integration',
-      description: 'Allow patients to manage prescriptions from their phones.',
-      icon: <Smartphone className="h-6 w-6" />,
-    },
-    {
-      title: 'Automated Compliance',
-      description: 'Stay compliant with regulatory requirements automatically.',
-      icon: <Shield className="h-6 w-6" />,
-    },
-    {
-      title: 'Patient Communication',
-      description: 'Automated refill reminders and health notifications.',
-      icon: <MessageSquare className="h-6 w-6" />,
-    },
-    {
-      title: 'AI-Powered Insights',
-      description:
-        'Smart analytics for better patient care and business growth.',
+      title: 'Smart Automation',
+      description: 'AI-powered process automation.',
       icon: <Bot className="h-6 w-6" />,
+    },
+    {
+      title: 'Real-time Monitoring',
+      description: 'Live production line monitoring.',
+      icon: <Gauge className="h-6 w-6" />,
+    },
+    {
+      title: 'Alerts & Notifications',
+      description: 'Instant alerts for critical events.',
+      icon: <Bell className="h-6 w-6" />,
+    },
+    {
+      title: 'Resource Planning',
+      description: 'Efficient resource allocation.',
+      icon: <Settings className="h-6 w-6" />,
     },
   ];
 
   const enhancedFaqs = [
     {
-      question: 'Is the system HIPAA compliant?',
+      question: 'How quickly can we implement the system?',
       answer:
-        'Yes, our pharmacy management system is fully HIPAA compliant and includes all necessary security features to protect patient data.',
+        'Implementation typically takes 4-6 weeks, including setup, training, and integration with existing systems.',
     },
     {
-      question: 'Can it integrate with existing healthcare systems?',
+      question: 'Can it integrate with our existing machinery?',
       answer:
-        'Yes, we offer integration with major EMR systems, insurance providers, and healthcare networks.',
+        'Yes, our system supports integration with most modern manufacturing equipment and legacy systems.',
     },
     {
-      question: 'What training and support do you provide?',
+      question: 'What kind of support do you provide?',
       answer:
-        'We provide comprehensive training for all staff members and 24/7 technical support.',
+        'We offer 24/7 technical support, on-site training, and dedicated implementation specialists.',
     },
     {
-      question: 'How do you handle system updates?',
+      question: 'How do you handle data security?',
       answer:
-        'Regular updates are automatically deployed with zero downtime, ensuring you always have the latest features and security patches.',
+        'We implement industry-leading security measures, including encryption and regular security audits.',
     },
     {
-      question: 'Can it handle multiple locations?',
+      question: 'Can it scale with our business?',
       answer:
-        'Yes, our system is designed to manage multiple pharmacy locations with centralized control and reporting.',
+        'Yes, our platform is designed to scale seamlessly as your manufacturing operations grow.',
     },
   ];
 
@@ -146,16 +142,16 @@ export default function PharmaciesPage() {
       {/* Hero Section */}
       <motion.div variants={itemVariants} className="mb-8 text-center">
         <Badge variant="secondary" className="mb-4">
-          Pharmacy Management Solutions
+          Manufacturing Management Solutions
         </Badge>
         <h1 className="mb-4 text-balance text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
           <GradientHeadline>
-            Modern Solutions for Modern Pharmacies
+            Transform Your Manufacturing Operations
           </GradientHeadline>
         </h1>
         <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-          Streamline your pharmacy operations, enhance patient care, and ensure
-          compliance with our comprehensive management system.
+          Optimize production, improve quality, and drive efficiency with our
+          comprehensive manufacturing management platform.
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <Button size="lg" asChild>
@@ -177,10 +173,10 @@ export default function PharmaciesPage() {
           <Image
             src={
               activeTheme === 'dark'
-                ? '/media/marketing/pharmacy/pharmacy-dark.jpeg'
-                : '/media/marketing/pharmacy/pharmacy-light.jpeg'
+                ? '/media/marketing/manufacturing/manufacturing-dark.jpeg'
+                : '/media/marketing/manufacturing/manufacturing-light.jpeg'
             }
-            alt="Pharmacy Management Interface"
+            alt="Manufacturing Management Interface"
             width={2980}
             height={1786}
             className="object-cover"
@@ -192,12 +188,12 @@ export default function PharmaciesPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="text-primary h-12 w-12" />
+            <Cog className="text-primary h-12 w-12" />
             <h2 className="text-2xl font-bold">
-              Trusted by Leading Pharmacies
+              Trusted by Leading Manufacturers
             </h2>
             <p className="text-muted-foreground">
-              Join thousands of pharmacies that have transformed their
+              Join thousands of manufacturers who have transformed their
               operations with our platform.
             </p>
           </div>
@@ -207,7 +203,7 @@ export default function PharmaciesPage() {
       {/* Features Grid */}
       <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center text-3xl font-bold">
-          Comprehensive Pharmacy Management
+          Comprehensive Manufacturing Management
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
@@ -235,11 +231,13 @@ export default function PharmaciesPage() {
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
-              <Pill className="text-primary mb-4 h-8 w-8" />
-              <h3 className="mb-2 text-xl font-bold">Enhanced Patient Care</h3>
+              <Factory className="text-primary mb-4 h-8 w-8" />
+              <h3 className="mb-2 text-xl font-bold">
+                Optimized Manufacturing
+              </h3>
               <p className="text-muted-foreground">
-                Improve patient outcomes with advanced medication management and
-                clinical decision support.
+                Improve production efficiency, reduce waste, and enhance quality
+                with our comprehensive solution.
               </p>
               <div className="bg-background/50 mt-4 flex-grow rounded-lg p-4">
                 <div className="space-y-2">
@@ -269,31 +267,29 @@ export default function PharmaciesPage() {
         </div>
       </motion.section>
 
-      {/* Clinical Services */}
+      {/* Core Features */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
-          Clinical Services Support
-        </h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
-            <HeartPulse className="text-primary mx-auto mb-4 h-8 w-8" />
-            <h3 className="mb-2 font-bold">Health Monitoring</h3>
+            <Scan className="text-primary mx-auto mb-4 h-8 w-8" />
+            <h3 className="mb-2 font-bold">Quality Tracking</h3>
             <p className="text-muted-foreground text-sm">
-              Track patient vitals and health metrics
+              Advanced quality control systems
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Calendar className="text-primary mx-auto mb-4 h-8 w-8" />
-            <h3 className="mb-2 font-bold">Appointment Scheduling</h3>
+            <LineChart className="text-primary mx-auto mb-4 h-8 w-8" />
+            <h3 className="mb-2 font-bold">Production Analytics</h3>
             <p className="text-muted-foreground text-sm">
-              Manage vaccinations and consultations
+              Real-time performance metrics
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Activity className="text-primary mx-auto mb-4 h-8 w-8" />
-            <h3 className="mb-2 font-bold">Health Analytics</h3>
+            <PackageSearch className="text-primary mx-auto mb-4 h-8 w-8" />
+            <h3 className="mb-2 font-bold">Inventory Tracking</h3>
             <p className="text-muted-foreground text-sm">
-              Monitor patient health trends
+              Automated stock management
             </p>
           </Card>
         </div>
@@ -304,42 +300,42 @@ export default function PharmaciesPage() {
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="p-8">
-              <Users className="text-primary mb-4 h-8 w-8" />
+              <Star className="text-primary mb-4 h-8 w-8" />
               <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
               <p className="text-muted-foreground mb-4">
-                "The system has revolutionized how we operate. We've seen
-                significant improvements in efficiency and patient satisfaction,
-                while ensuring perfect compliance with regulations."
+                "This platform has revolutionized our manufacturing processes.
+                We've seen significant improvements in efficiency, quality, and
+                overall productivity."
               </p>
-              <p className="font-semibold">- Dr. Sarah Johnson</p>
+              <p className="font-semibold">- Robert Chang</p>
               <p className="text-muted-foreground text-sm">
-                Chief Pharmacist, HealthCare Pharmacy
+                Operations Director, Global Manufacturing Inc.
               </p>
             </div>
             <div className="bg-primary/5 flex items-center justify-center p-8">
               <div className="grid gap-4 text-center">
                 <div>
                   <div className="text-primary mb-2 text-3xl font-bold">
-                    40%
+                    35%
                   </div>
                   <div className="text-muted-foreground text-sm">
-                    Time Saved
+                    Increased Efficiency
                   </div>
                 </div>
                 <div>
                   <div className="text-primary mb-2 text-3xl font-bold">
-                    99.9%
+                    45%
                   </div>
                   <div className="text-muted-foreground text-sm">
-                    Accuracy Rate
+                    Reduced Downtime
                   </div>
                 </div>
                 <div>
                   <div className="text-primary mb-2 text-3xl font-bold">
-                    50%
+                    99%
                   </div>
                   <div className="text-muted-foreground text-sm">
-                    Reduced Errors
+                    Quality Rate
                   </div>
                 </div>
               </div>
@@ -384,11 +380,11 @@ export default function PharmaciesPage() {
       <motion.section variants={itemVariants} className="mt-24 text-center">
         <Card className="border-primary bg-primary/5 p-12">
           <h2 className="mb-4 text-3xl font-bold">
-            Ready to Transform Your Pharmacy?
+            Ready to Transform Your Manufacturing Operations?
           </h2>
           <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
-            Join leading pharmacies using our platform to enhance patient care
-            and streamline operations.
+            Join leading manufacturers using our platform to optimize production
+            and drive growth.
           </p>
           <div className="flex justify-center gap-4">
             <Button size="lg" asChild>

@@ -191,7 +191,11 @@
     "blog-description": "Read our latest articles and updates.",
     "documentation-description": "Find detailed documentation and guides.",
     "education-description": "Solutions tailored for educational institutions.",
+    "retail-description": "Solutions tailored for retail businesses.",
+    "hospitality-description": "Solutions tailored for hospitality businesses.",
+    "construction-description": "Solutions tailored for construction businesses.",
     "restaurants-description": "Manage your restaurant operations efficiently.",
+    "manufacturing-description": "Solutions tailored for manufacturing businesses.",
     "pharmacies-description": "Streamline pharmacy management and services.",
     "realestate-description": "Optimize your real estate business operations.",
     "meet-together-description": "Schedule meetings effortlessly across time zones and teams.",
@@ -219,7 +223,11 @@
     "explore": "Explore",
     "actions": "Actions",
     "clear_all": "Clear all",
-    "clearing": "Clearing"
+    "clearing": "Clearing",
+    "retail": "Retail",
+    "manufacturing": "Manufacturing",
+    "hospitality": "Hospitality",
+    "construction": "Construction"
   },
   "date_helper": {
     "time-unit": "Time unit",

@@ -188,7 +188,11 @@
     "blog-description": "Đọc các bài viết và cập nhật mới nhất của chúng tôi.",
     "documentation-description": "Tìm tài liệu và hướng dẫn chi tiết.",
     "education-description": "Giải pháp dành riêng cho các tổ chức giáo dục.",
+    "retail-description": "Giải pháp dành riêng cho các doanh nghiệp bán lẻ.",
+    "hospitality-description": "Giải pháp dành riêng cho các doanh nghiệp khách sạn.",
+    "construction-description": "Giải pháp dành riêng cho các doanh nghiệp xây dựng.",
     "restaurants-description": "Quản lý hoạt động nhà hàng của bạn một cách hiệu quả.",
+    "manufacturing-description": "Giải pháp dành riêng cho các doanh nghiệp chế tạo.",
     "pharmacies-description": "Chuẩn hóa việc quản lý và dịch vụ nhà thuốc.",
     "realestate-description": "Tối ưu hóa hoạt động kinh doanh bất động sản của bạn.",
     "meet-together-description": "Lên lịch cuộc họp dễ dàng giữa các múi giờ khác nhau và đội ngũ khác nhau.",
@@ -219,7 +223,11 @@
     "explore": "Khám phá",
     "actions": "hành động",
     "clear_all": "Xóa tất cả",
-    "clearing": "Đang xoá"
+    "clearing": "Đang xoá",
+    "retail": "Bán lẻ",
+    "manufacturing": "Chế tạo",
+    "hospitality": "Du lịch & Khách sạn",
+    "construction": "Thi công"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

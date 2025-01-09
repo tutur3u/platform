@@ -12,110 +12,107 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
 import { motion } from 'framer-motion';
 import {
-  Activity,
   BarChart3,
-  Bot,
-  Box,
+  Bed,
+  Bell,
+  Building,
   Calendar,
-  ClipboardList,
-  Database,
-  HeartPulse,
+  Clock,
+  Coffee,
+  DollarSign,
+  Gift,
+  HeartHandshake,
+  Hotel,
+  Key,
   MessageSquare,
-  Pill,
-  Receipt,
-  Shield,
-  ShieldCheck,
-  Smartphone,
-  Stethoscope,
+  Settings,
+  Star,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function PharmaciesPage() {
+export default function HospitalityPage() {
   const features = [
     {
-      title: 'Inventory Management',
-      description:
-        'Real-time tracking of medications and supplies with automated reordering.',
-      icon: <Box className="h-6 w-6" />,
+      title: 'Property Management',
+      description: 'Comprehensive hotel and property management system.',
+      icon: <Building className="h-6 w-6" />,
     },
     {
-      title: 'Prescription Processing',
-      description:
-        'Streamlined prescription handling with digital verification.',
-      icon: <ClipboardList className="h-6 w-6" />,
+      title: 'Reservation System',
+      description: 'Smart booking and room allocation management.',
+      icon: <Calendar className="h-6 w-6" />,
     },
     {
-      title: 'Patient Records',
-      description: 'Secure electronic health records and medication history.',
-      icon: <Database className="h-6 w-6" />,
+      title: 'Guest Services',
+      description: 'Streamlined guest experience and request handling.',
+      icon: <Bell className="h-6 w-6" />,
     },
     {
-      title: 'Insurance Claims',
-      description: 'Automated insurance processing and claims management.',
-      icon: <Receipt className="h-6 w-6" />,
+      title: 'Front Desk Operations',
+      description: 'Efficient check-in/out and guest management.',
+      icon: <Hotel className="h-6 w-6" />,
     },
     {
-      title: 'Clinical Services',
-      description: 'Support for vaccination programs and health screenings.',
-      icon: <Stethoscope className="h-6 w-6" />,
+      title: 'Revenue Management',
+      description: 'Dynamic pricing and revenue optimization tools.',
+      icon: <DollarSign className="h-6 w-6" />,
     },
     {
       title: 'Analytics Dashboard',
-      description: 'Comprehensive reporting and business intelligence tools.',
+      description: 'Comprehensive reporting and business insights.',
       icon: <BarChart3 className="h-6 w-6" />,
     },
   ];
 
   const benefits = [
     {
-      title: 'Mobile App Integration',
-      description: 'Allow patients to manage prescriptions from their phones.',
-      icon: <Smartphone className="h-6 w-6" />,
+      title: 'Smart Room Control',
+      description: 'IoT-enabled room automation.',
+      icon: <Key className="h-6 w-6" />,
     },
     {
-      title: 'Automated Compliance',
-      description: 'Stay compliant with regulatory requirements automatically.',
-      icon: <Shield className="h-6 w-6" />,
-    },
-    {
-      title: 'Patient Communication',
-      description: 'Automated refill reminders and health notifications.',
+      title: 'Guest Communication',
+      description: 'Multi-channel guest messaging.',
       icon: <MessageSquare className="h-6 w-6" />,
     },
     {
-      title: 'AI-Powered Insights',
-      description:
-        'Smart analytics for better patient care and business growth.',
-      icon: <Bot className="h-6 w-6" />,
+      title: 'Loyalty Programs',
+      description: 'Guest rewards and retention.',
+      icon: <Gift className="h-6 w-6" />,
+    },
+    {
+      title: 'Staff Management',
+      description: 'Workforce scheduling and tasks.',
+      icon: <Settings className="h-6 w-6" />,
     },
   ];
 
   const enhancedFaqs = [
     {
-      question: 'Is the system HIPAA compliant?',
+      question: 'How quickly can we implement the system?',
       answer:
-        'Yes, our pharmacy management system is fully HIPAA compliant and includes all necessary security features to protect patient data.',
+        'Implementation typically takes 2-3 weeks, including staff training and data migration.',
     },
     {
-      question: 'Can it integrate with existing healthcare systems?',
+      question: 'Can it integrate with existing hotel systems?',
       answer:
-        'Yes, we offer integration with major EMR systems, insurance providers, and healthcare networks.',
+        'Yes, we offer integration with major PMS systems, booking engines, and channel managers.',
     },
     {
-      question: 'What training and support do you provide?',
+      question: 'What kind of support do you provide?',
       answer:
-        'We provide comprehensive training for all staff members and 24/7 technical support.',
+        'We provide 24/7 technical support, comprehensive training, and dedicated account management.',
     },
     {
-      question: 'How do you handle system updates?',
+      question: 'Is it suitable for different property types?',
       answer:
-        'Regular updates are automatically deployed with zero downtime, ensuring you always have the latest features and security patches.',
+        'Yes, our platform is customizable for hotels, resorts, boutique properties, and vacation rentals.',
     },
     {
-      question: 'Can it handle multiple locations?',
+      question: 'How do you handle guest data privacy?',
       answer:
-        'Yes, our system is designed to manage multiple pharmacy locations with centralized control and reporting.',
+        'We implement strict data protection measures and comply with global privacy regulations.',
     },
   ];
 
@@ -146,16 +143,16 @@ export default function PharmaciesPage() {
       {/* Hero Section */}
       <motion.div variants={itemVariants} className="mb-8 text-center">
         <Badge variant="secondary" className="mb-4">
-          Pharmacy Management Solutions
+          Hospitality Management Solutions
         </Badge>
         <h1 className="mb-4 text-balance text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
           <GradientHeadline>
-            Modern Solutions for Modern Pharmacies
+            Transform Your Hospitality Business
           </GradientHeadline>
         </h1>
         <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-          Streamline your pharmacy operations, enhance patient care, and ensure
-          compliance with our comprehensive management system.
+          Elevate guest experiences and streamline operations with our
+          comprehensive hospitality management platform.
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <Button size="lg" asChild>
@@ -167,38 +164,17 @@ export default function PharmaciesPage() {
         </div>
       </motion.div>
 
-      {/* Hero Image */}
-      {/* <motion.div
-        variants={itemVariants}
-        whileHover={{ scale: 1.02 }}
-        className="from-primary/10 to-primary/5 relative mx-auto mb-24 aspect-[1.67] w-full max-w-5xl overflow-hidden rounded-xl border bg-gradient-to-br"
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Image
-            src={
-              activeTheme === 'dark'
-                ? '/media/marketing/pharmacy/pharmacy-dark.jpeg'
-                : '/media/marketing/pharmacy/pharmacy-light.jpeg'
-            }
-            alt="Pharmacy Management Interface"
-            width={2980}
-            height={1786}
-            className="object-cover"
-          />
-        </div>
-      </motion.div> */}
-
       {/* Trust Indicators */}
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="text-primary h-12 w-12" />
+            <Star className="text-primary h-12 w-12" />
             <h2 className="text-2xl font-bold">
-              Trusted by Leading Pharmacies
+              Trusted by Leading Hospitality Brands
             </h2>
             <p className="text-muted-foreground">
-              Join thousands of pharmacies that have transformed their
-              operations with our platform.
+              Join thousands of properties that have transformed their guest
+              experience with our platform.
             </p>
           </div>
         </Card>
@@ -207,7 +183,7 @@ export default function PharmaciesPage() {
       {/* Features Grid */}
       <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center text-3xl font-bold">
-          Comprehensive Pharmacy Management
+          Comprehensive Hospitality Management
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
@@ -235,11 +211,13 @@ export default function PharmaciesPage() {
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
-              <Pill className="text-primary mb-4 h-8 w-8" />
-              <h3 className="mb-2 text-xl font-bold">Enhanced Patient Care</h3>
+              <Bed className="text-primary mb-4 h-8 w-8" />
+              <h3 className="mb-2 text-xl font-bold">
+                Enhanced Guest Experience
+              </h3>
               <p className="text-muted-foreground">
-                Improve patient outcomes with advanced medication management and
-                clinical decision support.
+                Deliver exceptional service and personalized experiences with
+                our comprehensive hospitality solution.
               </p>
               <div className="bg-background/50 mt-4 flex-grow rounded-lg p-4">
                 <div className="space-y-2">
@@ -269,31 +247,29 @@ export default function PharmaciesPage() {
         </div>
       </motion.section>
 
-      {/* Clinical Services */}
+      {/* Core Features */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
-          Clinical Services Support
-        </h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
-            <HeartPulse className="text-primary mx-auto mb-4 h-8 w-8" />
-            <h3 className="mb-2 font-bold">Health Monitoring</h3>
+            <Users className="text-primary mx-auto mb-4 h-8 w-8" />
+            <h3 className="mb-2 font-bold">Guest Management</h3>
             <p className="text-muted-foreground text-sm">
-              Track patient vitals and health metrics
+              Comprehensive guest profiles
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Calendar className="text-primary mx-auto mb-4 h-8 w-8" />
-            <h3 className="mb-2 font-bold">Appointment Scheduling</h3>
+            <Clock className="text-primary mx-auto mb-4 h-8 w-8" />
+            <h3 className="mb-2 font-bold">24/7 Operations</h3>
             <p className="text-muted-foreground text-sm">
-              Manage vaccinations and consultations
+              Round-the-clock service support
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Activity className="text-primary mx-auto mb-4 h-8 w-8" />
-            <h3 className="mb-2 font-bold">Health Analytics</h3>
+            <Coffee className="text-primary mx-auto mb-4 h-8 w-8" />
+            <h3 className="mb-2 font-bold">Service Management</h3>
             <p className="text-muted-foreground text-sm">
-              Monitor patient health trends
+              Streamlined service delivery
             </p>
           </Card>
         </div>
@@ -304,16 +280,16 @@ export default function PharmaciesPage() {
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="p-8">
-              <Users className="text-primary mb-4 h-8 w-8" />
+              <HeartHandshake className="text-primary mb-4 h-8 w-8" />
               <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
               <p className="text-muted-foreground mb-4">
-                "The system has revolutionized how we operate. We've seen
-                significant improvements in efficiency and patient satisfaction,
-                while ensuring perfect compliance with regulations."
+                "This platform has revolutionized how we manage our properties.
+                Guest satisfaction has soared, and our operations are more
+                efficient than ever."
               </p>
-              <p className="font-semibold">- Dr. Sarah Johnson</p>
+              <p className="font-semibold">- Sarah Thompson</p>
               <p className="text-muted-foreground text-sm">
-                Chief Pharmacist, HealthCare Pharmacy
+                General Manager, Luxury Hotels Group
               </p>
             </div>
             <div className="bg-primary/5 flex items-center justify-center p-8">
@@ -323,23 +299,23 @@ export default function PharmaciesPage() {
                     40%
                   </div>
                   <div className="text-muted-foreground text-sm">
-                    Time Saved
+                    Increased Efficiency
                   </div>
                 </div>
                 <div>
                   <div className="text-primary mb-2 text-3xl font-bold">
-                    99.9%
+                    95%
                   </div>
                   <div className="text-muted-foreground text-sm">
-                    Accuracy Rate
+                    Guest Satisfaction
                   </div>
                 </div>
                 <div>
                   <div className="text-primary mb-2 text-3xl font-bold">
-                    50%
+                    30%
                   </div>
                   <div className="text-muted-foreground text-sm">
-                    Reduced Errors
+                    Revenue Growth
                   </div>
                 </div>
               </div>
@@ -384,11 +360,11 @@ export default function PharmaciesPage() {
       <motion.section variants={itemVariants} className="mt-24 text-center">
         <Card className="border-primary bg-primary/5 p-12">
           <h2 className="mb-4 text-3xl font-bold">
-            Ready to Transform Your Pharmacy?
+            Ready to Transform Your Hospitality Business?
           </h2>
           <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
-            Join leading pharmacies using our platform to enhance patient care
-            and streamline operations.
+            Join leading hospitality brands using our platform to enhance guest
+            experiences and streamline operations.
           </p>
           <div className="flex justify-center gap-4">
             <Button size="lg" asChild>

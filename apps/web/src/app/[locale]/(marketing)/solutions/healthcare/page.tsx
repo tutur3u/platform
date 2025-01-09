@@ -14,80 +14,77 @@ import { motion } from 'framer-motion';
 import {
   Activity,
   BarChart3,
+  Bell,
   Bot,
-  Box,
+  Brain,
   Calendar,
   ClipboardList,
-  Database,
+  Clock,
+  FileText,
   HeartPulse,
   MessageSquare,
   Pill,
-  Receipt,
   Shield,
-  ShieldCheck,
-  Smartphone,
+  Star,
   Stethoscope,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function PharmaciesPage() {
+export default function HealthcarePage() {
   const features = [
     {
-      title: 'Inventory Management',
-      description:
-        'Real-time tracking of medications and supplies with automated reordering.',
-      icon: <Box className="h-6 w-6" />,
+      title: 'Patient Management',
+      description: 'Comprehensive patient records and appointment scheduling.',
+      icon: <Users className="h-6 w-6" />,
     },
     {
-      title: 'Prescription Processing',
-      description:
-        'Streamlined prescription handling with digital verification.',
+      title: 'Clinical Records',
+      description: 'Secure electronic health records and medical history.',
       icon: <ClipboardList className="h-6 w-6" />,
     },
     {
-      title: 'Patient Records',
-      description: 'Secure electronic health records and medication history.',
-      icon: <Database className="h-6 w-6" />,
+      title: 'Appointment System',
+      description: 'Smart scheduling and patient reminders.',
+      icon: <Calendar className="h-6 w-6" />,
     },
     {
-      title: 'Insurance Claims',
-      description: 'Automated insurance processing and claims management.',
-      icon: <Receipt className="h-6 w-6" />,
-    },
-    {
-      title: 'Clinical Services',
-      description: 'Support for vaccination programs and health screenings.',
-      icon: <Stethoscope className="h-6 w-6" />,
+      title: 'Prescription Management',
+      description: 'Digital prescriptions and medication tracking.',
+      icon: <Pill className="h-6 w-6" />,
     },
     {
       title: 'Analytics Dashboard',
-      description: 'Comprehensive reporting and business intelligence tools.',
+      description: 'Insights into practice performance and patient care.',
       icon: <BarChart3 className="h-6 w-6" />,
+    },
+    {
+      title: 'Medical Billing',
+      description: 'Streamlined insurance claims and payment processing.',
+      icon: <FileText className="h-6 w-6" />,
     },
   ];
 
   const benefits = [
     {
-      title: 'Mobile App Integration',
-      description: 'Allow patients to manage prescriptions from their phones.',
-      icon: <Smartphone className="h-6 w-6" />,
+      title: 'AI Diagnostics',
+      description: 'Advanced diagnostic support tools.',
+      icon: <Brain className="h-6 w-6" />,
     },
     {
-      title: 'Automated Compliance',
-      description: 'Stay compliant with regulatory requirements automatically.',
-      icon: <Shield className="h-6 w-6" />,
+      title: 'Virtual Care',
+      description: 'Telemedicine and remote consultations.',
+      icon: <Stethoscope className="h-6 w-6" />,
     },
     {
-      title: 'Patient Communication',
-      description: 'Automated refill reminders and health notifications.',
+      title: 'Patient Portal',
+      description: 'Self-service portal for patients.',
       icon: <MessageSquare className="h-6 w-6" />,
     },
     {
-      title: 'AI-Powered Insights',
-      description:
-        'Smart analytics for better patient care and business growth.',
-      icon: <Bot className="h-6 w-6" />,
+      title: 'Smart Alerts',
+      description: 'Critical updates and notifications.',
+      icon: <Bell className="h-6 w-6" />,
     },
   ];
 
@@ -95,27 +92,27 @@ export default function PharmaciesPage() {
     {
       question: 'Is the system HIPAA compliant?',
       answer:
-        'Yes, our pharmacy management system is fully HIPAA compliant and includes all necessary security features to protect patient data.',
+        'Yes, our healthcare management system is fully HIPAA compliant with advanced security features to protect patient data.',
     },
     {
-      question: 'Can it integrate with existing healthcare systems?',
+      question: 'Can it integrate with existing medical systems?',
       answer:
-        'Yes, we offer integration with major EMR systems, insurance providers, and healthcare networks.',
+        'Yes, we offer integration with major EMR systems, lab systems, and healthcare networks.',
     },
     {
-      question: 'What training and support do you provide?',
+      question: 'What support do you provide?',
       answer:
-        'We provide comprehensive training for all staff members and 24/7 technical support.',
+        'We provide 24/7 technical support, comprehensive training, and dedicated account management.',
     },
     {
-      question: 'How do you handle system updates?',
+      question: 'How do you handle patient data security?',
       answer:
-        'Regular updates are automatically deployed with zero downtime, ensuring you always have the latest features and security patches.',
+        'We implement bank-grade encryption, regular security audits, and strict access controls.',
     },
     {
-      question: 'Can it handle multiple locations?',
+      question: 'Can patients access their records?',
       answer:
-        'Yes, our system is designed to manage multiple pharmacy locations with centralized control and reporting.',
+        'Yes, patients get secure access to their medical records, appointments, and test results through our patient portal.',
     },
   ];
 
@@ -146,16 +143,16 @@ export default function PharmaciesPage() {
       {/* Hero Section */}
       <motion.div variants={itemVariants} className="mb-8 text-center">
         <Badge variant="secondary" className="mb-4">
-          Pharmacy Management Solutions
+          Healthcare Management Solutions
         </Badge>
         <h1 className="mb-4 text-balance text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
           <GradientHeadline>
-            Modern Solutions for Modern Pharmacies
+            Transform Your Healthcare Practice
           </GradientHeadline>
         </h1>
         <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-          Streamline your pharmacy operations, enhance patient care, and ensure
-          compliance with our comprehensive management system.
+          Streamline patient care, improve efficiency, and ensure compliance
+          with our comprehensive healthcare management platform.
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <Button size="lg" asChild>
@@ -177,10 +174,10 @@ export default function PharmaciesPage() {
           <Image
             src={
               activeTheme === 'dark'
-                ? '/media/marketing/pharmacy/pharmacy-dark.jpeg'
-                : '/media/marketing/pharmacy/pharmacy-light.jpeg'
+                ? '/media/marketing/healthcare/healthcare-dark.jpeg'
+                : '/media/marketing/healthcare/healthcare-light.jpeg'
             }
-            alt="Pharmacy Management Interface"
+            alt="Healthcare Management Interface"
             width={2980}
             height={1786}
             className="object-cover"
@@ -192,13 +189,13 @@ export default function PharmaciesPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="text-primary h-12 w-12" />
+            <Shield className="text-primary h-12 w-12" />
             <h2 className="text-2xl font-bold">
-              Trusted by Leading Pharmacies
+              Trusted by Healthcare Professionals
             </h2>
             <p className="text-muted-foreground">
-              Join thousands of pharmacies that have transformed their
-              operations with our platform.
+              Join thousands of healthcare providers who have transformed their
+              practice with our platform.
             </p>
           </div>
         </Card>
@@ -207,7 +204,7 @@ export default function PharmaciesPage() {
       {/* Features Grid */}
       <motion.section variants={itemVariants} className="mb-24">
         <h2 className="mb-12 text-center text-3xl font-bold">
-          Comprehensive Pharmacy Management
+          Comprehensive Healthcare Management
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
@@ -235,11 +232,11 @@ export default function PharmaciesPage() {
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
-              <Pill className="text-primary mb-4 h-8 w-8" />
+              <HeartPulse className="text-primary mb-4 h-8 w-8" />
               <h3 className="mb-2 text-xl font-bold">Enhanced Patient Care</h3>
               <p className="text-muted-foreground">
-                Improve patient outcomes with advanced medication management and
-                clinical decision support.
+                Improve patient outcomes with advanced healthcare management
+                tools and streamlined workflows.
               </p>
               <div className="bg-background/50 mt-4 flex-grow rounded-lg p-4">
                 <div className="space-y-2">
@@ -269,31 +266,29 @@ export default function PharmaciesPage() {
         </div>
       </motion.section>
 
-      {/* Clinical Services */}
+      {/* Core Features */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
-          Clinical Services Support
-        </h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
-            <HeartPulse className="text-primary mx-auto mb-4 h-8 w-8" />
+            <Activity className="text-primary mx-auto mb-4 h-8 w-8" />
             <h3 className="mb-2 font-bold">Health Monitoring</h3>
             <p className="text-muted-foreground text-sm">
-              Track patient vitals and health metrics
+              Real-time patient vitals tracking
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Calendar className="text-primary mx-auto mb-4 h-8 w-8" />
-            <h3 className="mb-2 font-bold">Appointment Scheduling</h3>
+            <Bot className="text-primary mx-auto mb-4 h-8 w-8" />
+            <h3 className="mb-2 font-bold">AI Assistance</h3>
             <p className="text-muted-foreground text-sm">
-              Manage vaccinations and consultations
+              Smart diagnostic support
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Activity className="text-primary mx-auto mb-4 h-8 w-8" />
-            <h3 className="mb-2 font-bold">Health Analytics</h3>
+            <Clock className="text-primary mx-auto mb-4 h-8 w-8" />
+            <h3 className="mb-2 font-bold">24/7 Access</h3>
             <p className="text-muted-foreground text-sm">
-              Monitor patient health trends
+              Always available patient care
             </p>
           </Card>
         </div>
@@ -304,16 +299,16 @@ export default function PharmaciesPage() {
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="p-8">
-              <Users className="text-primary mb-4 h-8 w-8" />
+              <Star className="text-primary mb-4 h-8 w-8" />
               <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
               <p className="text-muted-foreground mb-4">
-                "The system has revolutionized how we operate. We've seen
-                significant improvements in efficiency and patient satisfaction,
-                while ensuring perfect compliance with regulations."
+                "This platform has revolutionized how we deliver healthcare.
+                Patient satisfaction has improved dramatically, and our
+                administrative processes are more efficient than ever."
               </p>
-              <p className="font-semibold">- Dr. Sarah Johnson</p>
+              <p className="font-semibold">- Dr. James Wilson</p>
               <p className="text-muted-foreground text-sm">
-                Chief Pharmacist, HealthCare Pharmacy
+                Medical Director, Advanced Care Clinic
               </p>
             </div>
             <div className="bg-primary/5 flex items-center justify-center p-8">
@@ -328,10 +323,10 @@ export default function PharmaciesPage() {
                 </div>
                 <div>
                   <div className="text-primary mb-2 text-3xl font-bold">
-                    99.9%
+                    95%
                   </div>
                   <div className="text-muted-foreground text-sm">
-                    Accuracy Rate
+                    Patient Satisfaction
                   </div>
                 </div>
                 <div>
@@ -384,11 +379,11 @@ export default function PharmaciesPage() {
       <motion.section variants={itemVariants} className="mt-24 text-center">
         <Card className="border-primary bg-primary/5 p-12">
           <h2 className="mb-4 text-3xl font-bold">
-            Ready to Transform Your Pharmacy?
+            Ready to Transform Your Healthcare Practice?
           </h2>
           <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
-            Join leading pharmacies using our platform to enhance patient care
-            and streamline operations.
+            Join leading healthcare providers using our platform to enhance
+            patient care and streamline operations.
           </p>
           <div className="flex justify-center gap-4">
             <Button size="lg" asChild>
