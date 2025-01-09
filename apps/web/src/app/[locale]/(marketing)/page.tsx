@@ -551,7 +551,7 @@ export default function MarketingPage() {
             >
               <div className="bg-primary/5 group-hover:bg-primary/10 absolute -inset-px rounded-xl transition-all duration-300" />
               <div className="relative p-6">
-                <div className="text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg">
+                <div className="bg-foreground text-background mb-4 flex h-12 w-12 items-center justify-center rounded-full shadow-lg">
                   <span className="text-xl font-bold">{index + 1}</span>
                 </div>
                 <h3 className="mb-2 text-xl font-bold">
@@ -860,7 +860,7 @@ export default function MarketingPage() {
               >
                 <Card className="h-full overflow-hidden">
                   <div className="bg-primary/5 group-hover:bg-primary/10 flex h-full flex-col p-6 transition-all duration-300">
-                    <div className="text-primary mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg">
+                    <div className="bg-foreground text-background mb-4 flex h-12 w-12 items-center justify-center rounded-full shadow-lg">
                       <span className="text-xl font-bold">{index + 1}</span>
                     </div>
                     <h3 className="mb-2 text-xl font-bold">{step.title}</h3>
@@ -888,7 +888,7 @@ export default function MarketingPage() {
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/login"
-              className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-8 py-3 font-medium text-white transition-all duration-300"
+              className="bg-foreground hover:bg-foreground/90 text-background inline-flex items-center gap-2 rounded-lg px-8 py-3 font-medium transition-all duration-300"
             >
               {t('landing.cta.primary_button')}
               <ArrowRight className="h-4 w-4" />
