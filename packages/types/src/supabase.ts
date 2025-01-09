@@ -3450,7 +3450,7 @@ export type Database = {
           },
         ];
       };
-      workspace_dataset_cell: {
+      workspace_dataset_cells: {
         Row: {
           column_id: string;
           created_at: string;
@@ -4989,6 +4989,7 @@ export type Database = {
       workspace_dataset_row_cells: {
         Row: {
           cells: Json | null;
+          created_at: string | null;
           dataset_id: string | null;
           row_id: string | null;
         };

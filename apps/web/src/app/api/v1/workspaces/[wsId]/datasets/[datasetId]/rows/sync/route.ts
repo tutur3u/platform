@@ -70,7 +70,7 @@ export async function POST(
     for (let i = 0; i < cellsToCreate.length; i += cellBatchSize) {
       const batch = cellsToCreate.slice(i, i + cellBatchSize);
       const { error: cellError } = await supabase
-        .from('workspace_dataset_cell')
+        .from('workspace_dataset_cells')
         .insert(batch);
 
       if (cellError) throw cellError;

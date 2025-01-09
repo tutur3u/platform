@@ -97,7 +97,7 @@ export async function POST(req: Request, { params }: Params) {
   );
 
   const { error } = await supabase
-    .from('workspace_dataset_cell')
+    .from('workspace_dataset_cells')
     .insert(insertData);
 
   if (error) {
@@ -136,7 +136,7 @@ export async function PUT(req: Request, { params }: Params) {
   }));
 
   const { error } = await supabase
-    .from('workspace_dataset_cell')
+    .from('workspace_dataset_cells')
     .upsert(updateData);
 
   if (error) {

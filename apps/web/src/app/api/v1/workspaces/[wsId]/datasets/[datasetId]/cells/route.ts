@@ -12,7 +12,7 @@ export async function GET(_: Request, { params }: Params) {
   const { datasetId } = await params;
 
   const { data, error } = await supabase
-    .from('workspace_dataset_cell')
+    .from('workspace_dataset_cells')
     .select('*')
     .eq('dataset_id', datasetId)
     .order('created_at', { ascending: true });
@@ -34,7 +34,7 @@ export async function POST(req: Request, { params }: Params) {
   const { rowId, columnId, data } = await req.json();
 
   const { data: cell, error } = await supabase
-    .from('workspace_dataset_cell')
+    .from('workspace_dataset_cells')
     .insert({
       dataset_id: datasetId,
       row_id: rowId,
@@ -61,7 +61,7 @@ export async function PUT(req: Request, { params }: Params) {
   const { rowId, columnId, data } = await req.json();
 
   const { error } = await supabase
-    .from('workspace_dataset_cell')
+    .from('workspace_dataset_cells')
     .update({ data })
     .eq('dataset_id', datasetId)
     .eq('row_id', rowId)
@@ -84,7 +84,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const { rowId, columnId } = await req.json();
 
   const { error } = await supabase
-    .from('workspace_dataset_cell')
+    .from('workspace_dataset_cells')
     .delete()
     .eq('dataset_id', datasetId)
     .eq('row_id', rowId)

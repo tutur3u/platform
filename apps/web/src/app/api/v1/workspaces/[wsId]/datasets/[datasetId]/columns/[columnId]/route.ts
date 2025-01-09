@@ -14,7 +14,7 @@ export async function DELETE(_: Request, { params }: Params) {
 
   // Delete all cells using this column first
   const { error: cellsError } = await supabase
-    .from('workspace_dataset_cell')
+    .from('workspace_dataset_cells')
     .delete()
     .eq('column_id', columnId);
 

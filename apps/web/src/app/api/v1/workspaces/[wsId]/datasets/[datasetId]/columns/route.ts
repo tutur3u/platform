@@ -66,7 +66,7 @@ export async function POST(req: Request, { params }: Params) {
     }));
 
     const { error: cellsError } = await supabase
-      .from('workspace_dataset_cell')
+      .from('workspace_dataset_cells')
       .insert(cellsToCreate);
 
     if (cellsError) {
