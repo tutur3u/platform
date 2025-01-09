@@ -57,6 +57,13 @@ export default async function WorkspaceHomePage({
   // const { data: monthlyData } = await getMonthlyData(wsId);
   // const { data: hourlyData } = await getHourlyData(wsId);
 
+  const ENABLE_AI_ONLY = await verifySecret({
+    forceAdmin: true,
+    wsId,
+    name: 'ENABLE_AI_ONLY',
+    value: 'true',
+  });
+
   return (
     <>
       <FeatureSummary
@@ -94,63 +101,65 @@ export default async function WorkspaceHomePage({
           </>
         )}
 
-      <Separator className="my-4" />
-      <FinanceStatistics wsId={wsId} searchParams={searchParams} />
-      <InventoryCategoryStatistics wsId={wsId} />
+      {ENABLE_AI_ONLY || (
+        <>
+          {' '}
+          <Separator className="my-4" />
+          <FinanceStatistics wsId={wsId} searchParams={searchParams} />
+          <InventoryCategoryStatistics wsId={wsId} />
+          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <ProductsStatistics wsId={wsId} />
+            </Suspense>
 
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <ProductsStatistics wsId={wsId} />
-        </Suspense>
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <InventoryProductsStatistics wsId={wsId} />
+            </Suspense>
 
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <InventoryProductsStatistics wsId={wsId} />
-        </Suspense>
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <ProductCategoriesStatistics wsId={wsId} />
+            </Suspense>
 
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <ProductCategoriesStatistics wsId={wsId} />
-        </Suspense>
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <BatchesStatistics wsId={wsId} />
+            </Suspense>
 
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <BatchesStatistics wsId={wsId} />
-        </Suspense>
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <WarehousesStatistics wsId={wsId} />
+            </Suspense>
 
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <WarehousesStatistics wsId={wsId} />
-        </Suspense>
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <UnitsStatistics wsId={wsId} />
+            </Suspense>
 
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <UnitsStatistics wsId={wsId} />
-        </Suspense>
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <SuppliersStatistics wsId={wsId} />
+            </Suspense>
 
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <SuppliersStatistics wsId={wsId} />
-        </Suspense>
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <PromotionsStatistics wsId={wsId} />
+            </Suspense>
+          </div>
+          <UsersCategoryStatistics wsId={wsId} />
+          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <UsersStatistics wsId={wsId} />
+            </Suspense>
 
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <PromotionsStatistics wsId={wsId} />
-        </Suspense>
-      </div>
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <UserGroupsStatistics wsId={wsId} />
+            </Suspense>
 
-      <UsersCategoryStatistics wsId={wsId} />
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <UserGroupTagsStatistics wsId={wsId} />
+            </Suspense>
 
-      <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <UsersStatistics wsId={wsId} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <UserGroupsStatistics wsId={wsId} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <UserGroupTagsStatistics wsId={wsId} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <UserReportsStatistics wsId={wsId} />
-        </Suspense>
-      </div>
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <UserReportsStatistics wsId={wsId} />
+            </Suspense>
+          </div>
+        </>
+      )}
 
       {/* {containsPermission('manage_workspace_roles') &&
         wsId === ROOT_WORKSPACE_ID && (

@@ -62,7 +62,7 @@ export default function ApiKeySelector({
           </div>
         )}
       </div>
-      <Link href={`/${wsId}/settings/api-keys`}>
+      <Link href={`/${wsId}/api-keys`}>
         <Button
           variant={apiKeys.length > 0 ? 'outline' : 'default'}
           size="sm"
