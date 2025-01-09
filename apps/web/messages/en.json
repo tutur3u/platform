@@ -230,6 +230,7 @@
     "construction": "Construction",
     "changelog": "Changelog",
     "changelog-description": "Stay up to date with our latest product updates and improvements.",
+    "pitch-description": "Tuturuuu's business plan pitch deck.",
     "product-updates": "Product Updates",
     "product-updates-title": "Product Updates",
     "product-updates-description": "Stay up to date with the latest features, improvements, and fixes in our product journey.",
@@ -241,7 +242,8 @@
     "enter-email": "Enter your email",
     "subscribe": "Subscribe",
     "view-full-documentation": "View full documentation",
-    "company": "Company"
+    "company": "Company",
+    "pitch": "Pitch Deck"
   },
   "date_helper": {
     "time-unit": "Time unit",
