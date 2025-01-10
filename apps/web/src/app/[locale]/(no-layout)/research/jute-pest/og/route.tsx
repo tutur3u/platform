@@ -24,7 +24,7 @@ export async function GET() {
           src={
             DEV_MODE
               ? 'http://localhost:7803/media/rmit-light.png'
-              : 'https://tuturuuu.com/media/rmit-light.png'
+              : 'https://rmit.tuturuuu.com/media/rmit-light.png'
           }
           style={{
             width: '453px',
