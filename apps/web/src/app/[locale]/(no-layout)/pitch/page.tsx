@@ -1,6 +1,7 @@
 'use client';
 
 import GradientHeadline from '../../(marketing)/gradient-headline';
+import { ThemeToggle } from '../../theme-toggle';
 import { cn } from '@/lib/utils';
 import { Button } from '@repo/ui/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -3069,6 +3070,10 @@ export default function PitchPage() {
           'transition-opacity duration-500',
           isFirstOrLastSlide ? 'opacity-0' : 'opacity-100'
         )}
+      />
+      <ThemeToggle
+        forceDisplay={true}
+        className="absolute right-4 top-4 z-50"
       />
 
       <button
