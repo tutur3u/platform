@@ -1,216 +1,133 @@
 import { motion } from 'framer-motion';
-import {
-  Activity,
-  Brain,
-  CircleDot,
-  Cloud,
-  Database,
-  Network,
-  Phone,
-  Star,
-  Timer,
-  TrendingUp,
-} from 'lucide-react';
+import { BarChart3, Brain, Microscope, Target } from 'lucide-react';
 
-const ResultMetric = ({
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const item = {
+  hidden: { y: 20, opacity: 0 },
+  show: { y: 0, opacity: 1 },
+};
+
+const ResultCard = ({
   icon: Icon,
   title,
-  value,
-  description,
+  findings,
+  color = 'text-primary',
+  bgColor = 'bg-primary/10',
 }: {
-  icon: any;
+  icon: React.ElementType;
   title: string;
-  value: string;
-  description: string;
+  findings: string[];
+  color?: string;
+  bgColor?: string;
 }) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    whileHover={{ scale: 1.02 }}
+    variants={item}
     className="bg-foreground/5 hover:bg-foreground/10 rounded-xl p-6 transition-colors"
   >
     <div className="mb-4 flex items-center gap-3">
-      <div className="bg-primary/10 text-primary rounded-lg p-2">
+      <div className={`${bgColor} ${color} rounded-lg p-2`}>
         <Icon className="h-5 w-5" />
       </div>
       <h4 className="font-medium">{title}</h4>
     </div>
-    <div className="mb-2">
-      <span className="text-2xl font-bold">{value}</span>
-    </div>
-    <p className="text-foreground/80 text-sm">{description}</p>
-  </motion.div>
-);
-
-const ResultDetail = ({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: any;
-  title: string;
-  description: string;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="flex items-start gap-4"
-  >
-    <div className="bg-foreground/5 text-primary mt-1 rounded-lg p-2">
-      <Icon className="h-5 w-5" />
-    </div>
-    <div>
-      <h4 className="font-medium">{title}</h4>
-      <p className="text-foreground/60 text-sm">{description}</p>
-    </div>
+    <ul className="text-foreground/80 space-y-2 text-sm">
+      {findings.map((finding) => (
+        <motion.li
+          key={finding}
+          variants={item}
+          className="flex items-center gap-2"
+        >
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-xs text-emerald-500">
+            ✓
+          </div>
+          <span>{finding}</span>
+        </motion.li>
+      ))}
+    </ul>
   </motion.div>
 );
 
 export const rq4ResultsSlide = {
-  title: '📊 Model Optimization Results',
-  subtitle: 'Comprehensive Performance and Deployment Analysis',
+  title: 'RQ4: Key Findings',
+  subtitle: 'Morphological Feature Analysis Results',
   content: (
-    <div className="space-y-8">
-      {/* Key Result Metrics */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <ResultMetric
-          icon={Star}
-          title="Overall Performance"
-          value="95.6%"
-          description="Final model accuracy"
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-8"
+    >
+      <motion.div
+        variants={item}
+        className="text-foreground/80 text-center text-lg"
+      >
+        Our comprehensive morphological analysis confirms statistically
+        significant differences between pest species, enabling reliable
+        identification through physical characteristics.
+      </motion.div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <ResultCard
+          icon={Microscope}
+          title="Primary Findings"
+          findings={[
+            'Significant morphological variations between species (p < 0.001)',
+            'Distinct size ranges and proportions for each species',
+            'Species-specific segment patterns and counts',
+            'Unique combinations of physical traits per species',
+          ]}
+          color="text-blue-500"
+          bgColor="bg-blue-500/10"
         />
-        <ResultMetric
-          icon={Timer}
-          title="Inference Speed"
-          value="42ms"
-          description="Average latency per request"
+
+        <ResultCard
+          icon={Brain}
+          title="Feature Effectiveness"
+          findings={[
+            'Shape descriptors provide 91% discrimination accuracy',
+            'Color patterns show high species specificity (85%)',
+            'Texture features offer reliable secondary markers',
+            'Combined features achieve 95% identification rate',
+          ]}
+          color="text-purple-500"
+          bgColor="bg-purple-500/10"
         />
-        <ResultMetric
-          icon={TrendingUp}
-          title="Efficiency Gain"
-          value="82%"
-          description="Resource utilization improvement"
+
+        <ResultCard
+          icon={BarChart3}
+          title="Statistical Evidence"
+          findings={[
+            'Strong effect sizes across all features (η² > 0.80)',
+            'Robust cross-validation results (95% CI)',
+            'High inter-rater reliability (κ = 0.89)',
+            'Minimal overlap between species clusters',
+          ]}
+          color="text-emerald-500"
+          bgColor="bg-emerald-500/10"
+        />
+
+        <ResultCard
+          icon={Target}
+          title="Research Impact"
+          findings={[
+            'Established quantitative identification criteria',
+            'Created comprehensive morphological profiles',
+            'Developed standardized measurement protocols',
+            'Enabled reliable automated classification',
+          ]}
+          color="text-amber-500"
+          bgColor="bg-amber-500/10"
         />
       </div>
-
-      {/* Detailed Results */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
-      >
-        <h3 className="mb-6 text-xl font-bold">Platform Performance</h3>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-6">
-            <ResultDetail
-              icon={Phone}
-              title="Mobile Devices"
-              description="42ms inference, 95.6% accuracy on iOS/Android"
-            />
-            <ResultDetail
-              icon={Cloud}
-              title="Cloud Infrastructure"
-              description="1200 req/s throughput with auto-scaling"
-            />
-            <ResultDetail
-              icon={Network}
-              title="Edge Devices"
-              description="48ms inference on IoT devices"
-            />
-          </div>
-          <div className="space-y-6">
-            <ResultDetail
-              icon={Brain}
-              title="Model Efficiency"
-              description="8.2MB size with 95.6% accuracy retention"
-            />
-            <ResultDetail
-              icon={Database}
-              title="Resource Usage"
-              description="68% reduction in memory consumption"
-            />
-            <ResultDetail
-              icon={Activity}
-              title="Battery Impact"
-              description="82% reduction in power consumption"
-            />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Statistical Analysis */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
-      >
-        <h3 className="mb-6 text-xl font-bold">Performance Analysis</h3>
-        <div className="space-y-4">
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Optimization Metrics</h4>
-            <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`• Model Size: 124MB → 8.2MB (93.4% reduction)
-• Inference Time: 320ms → 42ms (86.9% reduction)
-• Memory Usage: 128MB → 42MB (67.2% reduction)
-• Power Usage: 100% → 18% (82% reduction)`}
-            </pre>
-          </div>
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Accuracy Analysis</h4>
-            <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`• Original Accuracy: 96.8%
-• Post-optimization: 95.6%
-• Confidence Score: 0.92
-• F1-Score: 0.946`}
-            </pre>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Key Findings */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
-      >
-        <h3 className="mb-6 text-xl font-bold">Key Findings</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Optimization Impact</h4>
-            <ul className="text-foreground/80 space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Minimal accuracy trade-off
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Significant size reduction
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Enhanced deployment flexibility
-              </li>
-            </ul>
-          </div>
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Deployment Success</h4>
-            <ul className="text-foreground/80 space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                98% device compatibility
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Seamless cross-platform performance
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Cost-effective scaling solution
-              </li>
-            </ul>
-          </div>
-        </div>
-      </motion.div>
-    </div>
+    </motion.div>
   ),
 };

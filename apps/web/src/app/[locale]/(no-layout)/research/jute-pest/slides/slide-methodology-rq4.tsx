@@ -1,217 +1,145 @@
 import { motion } from 'framer-motion';
-import {
-  Activity,
-  BarChart3,
-  Brain,
-  CircleDot,
-  Database,
-  GitBranch,
-  LineChart,
-  Network,
-  Sigma,
-  Timer,
-} from 'lucide-react';
+import { Camera, Ruler, Scale, Target } from 'lucide-react';
 
-const MethodologyMetric = ({
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const item = {
+  hidden: { y: 20, opacity: 0 },
+  show: { y: 0, opacity: 1 },
+};
+
+const MethodStep = ({
   icon: Icon,
   title,
-  value,
   description,
+  steps,
+  color = 'text-primary',
+  bgColor = 'bg-primary/10',
 }: {
-  icon: any;
+  icon: React.ElementType;
   title: string;
-  value: string;
   description: string;
+  steps: string[];
+  color?: string;
+  bgColor?: string;
 }) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    whileHover={{ scale: 1.02 }}
-    className="bg-foreground/5 hover:bg-foreground/10 rounded-xl p-6 transition-colors"
+    variants={item}
+    className="bg-foreground/5 hover:bg-foreground/10 flex flex-col gap-4 rounded-xl p-6 transition-colors"
   >
-    <div className="mb-4 flex items-center gap-3">
-      <div className="bg-primary/10 text-primary rounded-lg p-2">
-        <Icon className="h-5 w-5" />
+    <div className="flex items-start gap-4">
+      <div className={`${bgColor} ${color} mt-1 rounded-lg p-2`}>
+        <Icon className="h-6 w-6" />
       </div>
-      <h4 className="font-medium">{title}</h4>
+      <div className="flex-1 space-y-2">
+        <h3 className="font-medium">{title}</h3>
+        <p className="text-foreground/60 text-sm">{description}</p>
+      </div>
     </div>
-    <div className="mb-2">
-      <span className="text-2xl font-bold">{value}</span>
-    </div>
-    <p className="text-foreground/80 text-sm">{description}</p>
-  </motion.div>
-);
-
-const ProcessStep = ({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: any;
-  title: string;
-  description: string;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="flex items-start gap-4"
-  >
-    <div className="bg-foreground/5 text-primary mt-1 rounded-lg p-2">
-      <Icon className="h-5 w-5" />
-    </div>
-    <div>
-      <h4 className="font-medium">{title}</h4>
-      <p className="text-foreground/60 text-sm">{description}</p>
+    <div className="pl-14">
+      <div className="text-foreground/80 space-y-2 text-sm">
+        {steps.map((step, index) => (
+          <motion.div
+            key={step}
+            variants={item}
+            className="flex items-center gap-2"
+          >
+            <div
+              className={`${color} flex h-5 w-5 items-center justify-center rounded-full text-xs`}
+            >
+              {index + 1}
+            </div>
+            <span>{step}</span>
+          </motion.div>
+        ))}
+      </div>
     </div>
   </motion.div>
 );
 
 export const methodologyRQ4Slide = {
-  title: '🔄 Model Optimization Methodology',
-  subtitle: 'Performance Enhancement and Resource Optimization',
+  title: 'RQ4: Methodology',
+  subtitle: 'Analyzing Morphological Differences Between Species',
   content: (
-    <div className="space-y-8">
-      {/* Key Methodology Metrics */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <MethodologyMetric
-          icon={Timer}
-          title="Inference Time"
-          value="<50ms"
-          description="Target latency per prediction"
-        />
-        <MethodologyMetric
-          icon={Database}
-          title="Model Size"
-          value="<10MB"
-          description="Target compressed model size"
-        />
-        <MethodologyMetric
-          icon={Activity}
-          title="Accuracy Goal"
-          value=">95%"
-          description="Target classification accuracy"
-        />
-      </div>
-
-      {/* Optimization Process */}
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
+        variants={item}
+        className="text-foreground/80 text-center text-lg"
       >
-        <h3 className="mb-6 text-xl font-bold">Optimization Process</h3>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-6">
-            <ProcessStep
-              icon={Brain}
-              title="Model Architecture"
-              description="Lightweight CNN with optimized layers"
-            />
-            <ProcessStep
-              icon={Network}
-              title="Quantization"
-              description="8-bit integer quantization for reduced size"
-            />
-            <ProcessStep
-              icon={GitBranch}
-              title="Pruning"
-              description="Iterative weight pruning for sparsity"
-            />
-          </div>
-          <div className="space-y-6">
-            <ProcessStep
-              icon={Sigma}
-              title="Knowledge Distillation"
-              description="Teacher-student model compression"
-            />
-            <ProcessStep
-              icon={BarChart3}
-              title="Hyperparameter Tuning"
-              description="Bayesian optimization for parameters"
-            />
-            <ProcessStep
-              icon={LineChart}
-              title="Performance Monitoring"
-              description="Continuous evaluation and adjustment"
-            />
-          </div>
-        </div>
+        Our systematic approach to quantifying and validating morphological
+        differences between pest species involves the following key steps:
       </motion.div>
 
-      {/* Implementation Details */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
-      >
-        <h3 className="mb-6 text-xl font-bold">Implementation Highlights</h3>
-        <div className="space-y-4">
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Optimization Pipeline</h4>
-            <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`1. Baseline model training
-2. Architecture optimization
-3. Quantization and pruning
-4. Knowledge distillation
-5. Fine-tuning and validation`}
-            </pre>
-          </div>
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Key Technologies</h4>
-            <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`• TensorFlow Lite for deployment
-• TensorRT for acceleration
-• ONNX for model conversion
-• PyTorch for prototyping`}
-            </pre>
-          </div>
-        </div>
-      </motion.div>
+      <motion.div variants={container} className="space-y-4">
+        <MethodStep
+          icon={Camera}
+          title="Data Collection & Preprocessing"
+          description="Standardized image capture and preparation for morphological analysis."
+          steps={[
+            'Capture high-resolution images under controlled conditions',
+            'Apply image enhancement and normalization',
+            'Segment pest regions from background',
+            'Extract region of interest for analysis',
+          ]}
+          color="text-blue-500"
+          bgColor="bg-blue-500/10"
+        />
 
-      {/* Key Considerations */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
-      >
-        <h3 className="mb-6 text-xl font-bold">Key Considerations</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Resource Constraints</h4>
-            <ul className="text-foreground/80 space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Memory footprint optimization
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                CPU/GPU utilization balance
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Battery efficiency for mobile
-              </li>
-            </ul>
-          </div>
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Performance Metrics</h4>
-            <ul className="text-foreground/80 space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Latency-accuracy tradeoff
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Model size reduction
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Inference throughput
-              </li>
-            </ul>
-          </div>
-        </div>
+        <MethodStep
+          icon={Ruler}
+          title="Morphometric Analysis"
+          description="Comprehensive measurement and analysis of physical characteristics."
+          steps={[
+            'Measure body length, width, and segment proportions',
+            'Calculate shape descriptors and ratios',
+            'Extract color and texture features',
+            'Document species-specific patterns',
+          ]}
+          color="text-purple-500"
+          bgColor="bg-purple-500/10"
+        />
+
+        <MethodStep
+          icon={Scale}
+          title="Statistical Analysis"
+          description="Rigorous statistical testing to validate morphological differences."
+          steps={[
+            'Perform one-way ANOVA for feature comparison',
+            'Conduct post-hoc tests for pairwise analysis',
+            'Calculate effect sizes and confidence intervals',
+            'Validate results through cross-validation',
+          ]}
+          color="text-emerald-500"
+          bgColor="bg-emerald-500/10"
+        />
+
+        <MethodStep
+          icon={Target}
+          title="Feature Validation"
+          description="Verification and documentation of distinguishing characteristics."
+          steps={[
+            'Identify most discriminative features',
+            'Establish classification thresholds',
+            'Create species-specific morphological profiles',
+            'Document feature reliability metrics',
+          ]}
+          color="text-amber-500"
+          bgColor="bg-amber-500/10"
+        />
       </motion.div>
-    </div>
+    </motion.div>
   ),
 };

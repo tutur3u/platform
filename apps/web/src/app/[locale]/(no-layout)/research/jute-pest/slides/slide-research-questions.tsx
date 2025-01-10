@@ -1,276 +1,156 @@
-import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import {
-  ArrowRight,
-  Brain,
-  Camera,
-  ChartBar,
-  Code2,
-  Database,
-  FileImage,
-  Filter,
-  Layers,
-  Network,
-  Scale,
-  Search,
-  Target,
-  TestTube,
-} from 'lucide-react';
+import { Brain, Lightbulb, Microscope, Puzzle } from 'lucide-react';
 
-const ResearchQuestion = ({
-  number,
-  icon: Icon,
-  color,
-  title,
-  description,
-  objectives,
-}: {
-  number: number;
-  icon: any;
-  color: string;
-  title: string;
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const item = {
+  hidden: { y: 20, opacity: 0 },
+  show: { y: 0, opacity: 1 },
+};
+
+interface ResearchQuestionProps {
+  icon: React.ElementType;
+  number: string;
+  question: string;
   description: string;
   objectives: string[];
-}) => (
+  color?: string;
+  bgColor?: string;
+}
+
+const ResearchQuestion = ({
+  icon: Icon,
+  number,
+  question,
+  description,
+  objectives,
+  color = 'text-primary',
+  bgColor = 'bg-primary/10',
+}: ResearchQuestionProps) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: number * 0.1 }}
-    className="bg-foreground/5 hover:bg-foreground/10 group relative overflow-hidden rounded-xl p-6 transition-colors"
+    variants={item}
+    className="bg-foreground/5 hover:bg-foreground/10 flex flex-col gap-4 rounded-xl p-6 transition-colors"
   >
-    <div className="absolute right-0 top-0 -translate-y-1/4 translate-x-1/4 opacity-5">
-      <Icon className="h-32 w-32" />
-    </div>
-    <div className="mb-4 flex items-center gap-3">
-      <div
-        className={cn(
-          'flex h-10 w-10 items-center justify-center rounded-lg text-lg font-bold',
-          color.replace('text-', 'bg-') + '/10',
-          color
-        )}
-      >
-        {number}
+    <div className="flex items-start gap-4">
+      <div className={`${bgColor} ${color} mt-1 rounded-lg p-2`}>
+        <Icon className="h-6 w-6" />
       </div>
-      <div>
-        <h4 className="font-medium">{title}</h4>
+      <div className="flex-1 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className={`${color} font-semibold`}>{number}</span>
+          <h3 className="font-medium">{question}</h3>
+        </div>
         <p className="text-foreground/60 text-sm">{description}</p>
       </div>
     </div>
-    <ul className="space-y-2">
-      {objectives.map((objective, i) => (
-        <motion.li
-          key={objective}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 + i * 0.1 }}
-          className="flex items-center gap-2"
-        >
-          <div
-            className={cn(
-              'flex h-5 w-5 items-center justify-center rounded-full text-xs',
-              color.replace('text-', 'bg-') + '/10',
-              color
-            )}
+    <div className="pl-14">
+      <div className="text-foreground/80 space-y-2 text-sm">
+        {objectives.map((objective, index) => (
+          <motion.div
+            key={objective}
+            variants={item}
+            className="flex items-center gap-2"
           >
-            {String.fromCharCode(97 + i)}
-          </div>
-          <span className="text-foreground/80 text-sm">{objective}</span>
-        </motion.li>
-      ))}
-    </ul>
-  </motion.div>
-);
-
-const MethodologyStep = ({
-  icon: Icon,
-  color,
-  title,
-  description,
-}: {
-  icon: any;
-  color: string;
-  title: string;
-  description: string;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="flex items-center gap-4"
-  >
-    <div
-      className={cn(
-        'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
-        color.replace('text-', 'bg-') + '/10'
-      )}
-    >
-      <Icon className={cn('h-6 w-6', color)} />
-    </div>
-    <div>
-      <h4 className="font-medium">{title}</h4>
-      <p className="text-foreground/60 text-sm">{description}</p>
+            <div
+              className={`${color} flex h-5 w-5 items-center justify-center rounded-full text-xs`}
+            >
+              {String.fromCharCode(97 + index)}
+            </div>
+            <span>{objective}</span>
+          </motion.div>
+        ))}
+      </div>
     </div>
   </motion.div>
-);
-
-const Divider = () => (
-  <div className="text-foreground/40">
-    <ArrowRight className="h-4 w-4" />
-  </div>
 );
 
 export const researchQuestionsSlide = {
-  id: 'research-questions',
-  title: '🔍 Research Questions',
-  subtitle: 'Key Objectives & Methodology',
+  title: 'Research Questions',
+  subtitle: 'Key Areas of Investigation',
   content: (
-    <div className="space-y-8">
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
+        variants={item}
+        className="text-foreground/80 text-center text-lg"
       >
-        <h3 className="mb-6 text-center text-xl font-bold">Research Flow</h3>
-        <div className="flex items-center justify-center gap-4 text-sm">
-          <MethodologyStep
-            icon={Camera}
-            color="text-blue-500"
-            title="Data Collection"
-            description="High-quality pest images"
-          />
-          <Divider />
-          <MethodologyStep
-            icon={Filter}
-            color="text-purple-500"
-            title="Preprocessing"
-            description="Image enhancement"
-          />
-          <Divider />
-          <MethodologyStep
-            icon={Brain}
-            color="text-emerald-500"
-            title="Analysis"
-            description="Feature extraction"
-          />
-          <Divider />
-          <MethodologyStep
-            icon={Target}
-            color="text-orange-500"
-            title="Validation"
-            description="Statistical testing"
-          />
-        </div>
+        Our research focuses on four key questions to advance jute pest
+        classification using computer vision and deep learning.
       </motion.div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <motion.div variants={container} className="space-y-4">
         <ResearchQuestion
-          number={1}
-          icon={FileImage}
+          icon={Microscope}
+          number="RQ1"
+          question="What are the morphological features that differentiate Jute pest species?"
+          description="Investigating distinctive physical characteristics across different pest species in our dataset to establish reliable identification markers."
+          objectives={[
+            'Analyze shape-based features and their variations',
+            'Study color distribution patterns',
+            'Examine texture characteristics',
+            'Quantify feature importance',
+          ]}
           color="text-blue-500"
-          title="Feature Extraction"
-          description="What are the most distinctive morphological features for jute pest classification?"
-          objectives={[
-            'Identify key shape-based features',
-            'Extract color distribution patterns',
-            'Analyze texture characteristics',
-            'Evaluate feature importance',
-          ]}
+          bgColor="bg-blue-500/10"
         />
-        <ResearchQuestion
-          number={2}
-          icon={Layers}
-          color="text-purple-500"
-          title="Environmental Impact"
-          description="How do environmental conditions affect feature stability?"
-          objectives={[
-            'Assess lighting condition effects',
-            'Evaluate background variations',
-            'Measure feature robustness',
-            'Quantify environmental impact',
-          ]}
-        />
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
         <ResearchQuestion
-          number={3}
-          icon={Network}
+          icon={Lightbulb}
+          number="RQ2"
+          question="To what extent do environmental conditions affect feature visibility?"
+          description="Analyzing the impact of varying environmental conditions on the reliability and consistency of pest feature detection."
+          objectives={[
+            'Evaluate lighting condition effects',
+            'Assess background variation impact',
+            'Measure feature stability',
+            'Determine optimal conditions',
+          ]}
+          color="text-amber-500"
+          bgColor="bg-amber-500/10"
+        />
+
+        <ResearchQuestion
+          icon={Puzzle}
+          number="RQ3"
+          question="Which combinations of image features show the strongest statistical associations?"
+          description="Identifying and validating the most reliable feature combinations for accurate pest species classification."
+          objectives={[
+            'Calculate feature correlations',
+            'Identify optimal feature combinations',
+            'Validate statistical significance',
+            'Determine feature importance weights',
+          ]}
           color="text-emerald-500"
-          title="Classification Model"
-          description="Which deep learning architecture performs best for pest classification?"
-          objectives={[
-            'Compare model architectures',
-            'Optimize hyperparameters',
-            'Evaluate transfer learning',
-            'Analyze model performance',
-          ]}
+          bgColor="bg-emerald-500/10"
         />
-        <ResearchQuestion
-          number={4}
-          icon={ChartBar}
-          color="text-orange-500"
-          title="Statistical Analysis"
-          description="Are the morphological differences statistically significant?"
-          objectives={[
-            'Conduct ANOVA testing',
-            'Perform post-hoc analysis',
-            'Calculate effect sizes',
-            'Validate findings',
-          ]}
-        />
-      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="bg-foreground/5 rounded-xl p-6"
-      >
-        <h3 className="mb-6 text-lg font-bold">Expected Outcomes</h3>
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="space-y-6">
-            <MethodologyStep
-              icon={Database}
-              color="text-blue-500"
-              title="Feature Database"
-              description="Comprehensive morphological feature repository"
-            />
-            <MethodologyStep
-              icon={Scale}
-              color="text-emerald-500"
-              title="Statistical Evidence"
-              description="Validated feature significance and relationships"
-            />
-          </div>
-          <div className="space-y-6">
-            <MethodologyStep
-              icon={Brain}
-              color="text-purple-500"
-              title="Optimized Model"
-              description="High-accuracy classification system"
-            />
-            <MethodologyStep
-              icon={Search}
-              color="text-orange-500"
-              title="Best Practices"
-              description="Guidelines for feature selection and analysis"
-            />
-          </div>
-          <div className="space-y-6">
-            <MethodologyStep
-              icon={TestTube}
-              color="text-amber-500"
-              title="Methodology"
-              description="Reproducible research framework"
-            />
-            <MethodologyStep
-              icon={Code2}
-              color="text-violet-500"
-              title="Implementation"
-              description="Open-source analysis toolkit"
-            />
-          </div>
-        </div>
+        <ResearchQuestion
+          icon={Brain}
+          number="RQ4"
+          question="Do morphological features significantly differ between pest species?"
+          description="Quantifying and validating the statistical significance of morphological differences between pest species."
+          objectives={[
+            'Conduct morphometric analysis',
+            'Perform statistical testing',
+            'Calculate effect sizes',
+            'Establish classification criteria',
+          ]}
+          color="text-purple-500"
+          bgColor="bg-purple-500/10"
+        />
       </motion.div>
-    </div>
+    </motion.div>
   ),
 };

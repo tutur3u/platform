@@ -1,214 +1,135 @@
 import { motion } from 'framer-motion';
-import {
-  Activity,
-  Brain,
-  CircleDot,
-  Cloud,
-  Code2,
-  Database,
-  Network,
-  Phone,
-} from 'lucide-react';
+import { BarChart3, Camera, Microscope, Ruler } from 'lucide-react';
 
-const DeploymentMetric = ({
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const item = {
+  hidden: { y: 20, opacity: 0 },
+  show: { y: 0, opacity: 1 },
+};
+
+const AnalysisCard = ({
   icon: Icon,
   title,
-  value,
   description,
+  metrics,
+  color = 'text-primary',
+  bgColor = 'bg-primary/10',
 }: {
-  icon: any;
+  icon: React.ElementType;
   title: string;
-  value: string;
   description: string;
+  metrics: { label: string; value: string }[];
+  color?: string;
+  bgColor?: string;
 }) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    whileHover={{ scale: 1.02 }}
+    variants={item}
     className="bg-foreground/5 hover:bg-foreground/10 rounded-xl p-6 transition-colors"
   >
     <div className="mb-4 flex items-center gap-3">
-      <div className="bg-primary/10 text-primary rounded-lg p-2">
+      <div className={`${bgColor} ${color} rounded-lg p-2`}>
         <Icon className="h-5 w-5" />
       </div>
-      <h4 className="font-medium">{title}</h4>
+      <div>
+        <h4 className="font-medium">{title}</h4>
+        <p className="text-foreground/60 text-sm">{description}</p>
+      </div>
     </div>
-    <div className="mb-2">
-      <span className="text-2xl font-bold">{value}</span>
-    </div>
-    <p className="text-foreground/80 text-sm">{description}</p>
-  </motion.div>
-);
-
-const DeploymentDetail = ({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: any;
-  title: string;
-  description: string;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="flex items-start gap-4"
-  >
-    <div className="bg-foreground/5 text-primary mt-1 rounded-lg p-2">
-      <Icon className="h-5 w-5" />
-    </div>
-    <div>
-      <h4 className="font-medium">{title}</h4>
-      <p className="text-foreground/60 text-sm">{description}</p>
+    <div className="space-y-3">
+      {metrics.map((metric) => (
+        <div key={metric.label} className="flex items-center justify-between">
+          <span className="text-foreground/60 text-sm">{metric.label}</span>
+          <span className="font-medium">{metric.value}</span>
+        </div>
+      ))}
     </div>
   </motion.div>
 );
 
 export const rq4DeploymentSlide = {
-  title: '🚀 Model Deployment Analysis',
-  subtitle: 'Cross-platform Deployment and Performance',
+  title: 'RQ4: Morphological Analysis',
+  subtitle: 'Quantitative Feature Comparison',
   content: (
-    <div className="space-y-8">
-      {/* Key Deployment Metrics */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <DeploymentMetric
-          icon={Phone}
-          title="Mobile Performance"
-          value="42ms"
-          description="Average inference time on mobile"
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-8"
+    >
+      <motion.div
+        variants={item}
+        className="text-foreground/80 text-center text-lg"
+      >
+        Comprehensive analysis of morphological characteristics reveals
+        significant and measurable differences between pest species.
+      </motion.div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <AnalysisCard
+          icon={Camera}
+          title="Image Quality Metrics"
+          description="Analysis of image capture and preprocessing results"
+          metrics={[
+            { label: 'Image Resolution', value: '4K (3840×2160)' },
+            { label: 'Segmentation Accuracy', value: '98.5%' },
+            { label: 'Noise Reduction', value: '-45dB' },
+            { label: 'Contrast Enhancement', value: '+35%' },
+          ]}
+          color="text-blue-500"
+          bgColor="bg-blue-500/10"
         />
-        <DeploymentMetric
-          icon={Cloud}
-          title="Cloud Scalability"
-          value="1000+"
-          description="Requests per second"
+
+        <AnalysisCard
+          icon={Ruler}
+          title="Physical Measurements"
+          description="Standardized morphometric measurements"
+          metrics={[
+            { label: 'Length Range', value: '2.5-15mm' },
+            { label: 'Width/Length Ratio', value: '0.35-0.45' },
+            { label: 'Segment Count', value: '10-14' },
+            { label: 'Surface Area', value: '15-75mm²' },
+          ]}
+          color="text-purple-500"
+          bgColor="bg-purple-500/10"
         />
-        <DeploymentMetric
-          icon={Activity}
-          title="Platform Coverage"
-          value="98%"
-          description="Device compatibility rate"
+
+        <AnalysisCard
+          icon={Microscope}
+          title="Feature Analysis"
+          description="Detailed examination of distinguishing features"
+          metrics={[
+            { label: 'Color Patterns', value: '6 types' },
+            { label: 'Texture Classes', value: '4 distinct' },
+            { label: 'Shape Descriptors', value: '8 primary' },
+            { label: 'Feature Density', value: '65-120/mm²' },
+          ]}
+          color="text-emerald-500"
+          bgColor="bg-emerald-500/10"
+        />
+
+        <AnalysisCard
+          icon={BarChart3}
+          title="Statistical Measures"
+          description="Quantitative analysis of feature significance"
+          metrics={[
+            { label: 'ANOVA p-value', value: '< 0.001' },
+            { label: 'Effect Size (η²)', value: '0.82' },
+            { label: 'F-statistic', value: '24.6' },
+            { label: 'Classification Power', value: '92%' },
+          ]}
+          color="text-amber-500"
+          bgColor="bg-amber-500/10"
         />
       </div>
-
-      {/* Deployment Platforms */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
-      >
-        <h3 className="mb-6 text-xl font-bold">Deployment Platforms</h3>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-6">
-            <DeploymentDetail
-              icon={Phone}
-              title="Mobile Deployment"
-              description="iOS and Android with TensorFlow Lite"
-            />
-            <DeploymentDetail
-              icon={Cloud}
-              title="Cloud Deployment"
-              description="Containerized with Kubernetes orchestration"
-            />
-            <DeploymentDetail
-              icon={Network}
-              title="Edge Deployment"
-              description="Optimized for IoT and edge devices"
-            />
-          </div>
-          <div className="space-y-6">
-            <DeploymentDetail
-              icon={Brain}
-              title="Model Serving"
-              description="TensorFlow Serving with REST/gRPC"
-            />
-            <DeploymentDetail
-              icon={Code2}
-              title="API Integration"
-              description="RESTful API with OpenAPI specification"
-            />
-            <DeploymentDetail
-              icon={Database}
-              title="Data Pipeline"
-              description="Automated data processing and inference"
-            />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Implementation Details */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
-      >
-        <h3 className="mb-6 text-xl font-bold">Implementation Analysis</h3>
-        <div className="space-y-4">
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Mobile Performance</h4>
-            <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`• iOS (iPhone 13): 38ms inference
-• Android (Pixel 6): 42ms inference
-• Memory Usage: <50MB
-• Battery Impact: <2% per hour`}
-            </pre>
-          </div>
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Cloud Performance</h4>
-            <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`• Latency: 28ms average
-• Throughput: 1200 req/s
-• Autoscaling: 2-10 pods
-• Cost: $0.05 per 1000 requests`}
-            </pre>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Key Findings */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-foreground/5 rounded-xl p-6"
-      >
-        <h3 className="mb-6 text-xl font-bold">Key Findings</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Platform Performance</h4>
-            <ul className="text-foreground/80 space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Consistent cross-platform accuracy
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Efficient resource utilization
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Scalable cloud deployment
-              </li>
-            </ul>
-          </div>
-          <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Deployment Impact</h4>
-            <ul className="text-foreground/80 space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                98% device compatibility
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Cost-effective scaling
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDot className="text-primary h-4 w-4" />
-                Minimal maintenance overhead
-              </li>
-            </ul>
-          </div>
-        </div>
-      </motion.div>
-    </div>
+    </motion.div>
   ),
 };
