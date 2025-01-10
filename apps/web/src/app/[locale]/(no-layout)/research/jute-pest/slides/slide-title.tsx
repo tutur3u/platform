@@ -1,5 +1,13 @@
 import { motion } from 'framer-motion';
-import { Brain, Bug, Database, Shield, Sparkles, Target } from 'lucide-react';
+import {
+  Brain,
+  Bug,
+  Cpu,
+  Database,
+  School,
+  Shield,
+  Target,
+} from 'lucide-react';
 
 const HighlightCard = ({
   icon: Icon,
@@ -73,18 +81,14 @@ export const titleSlide = {
             transition={{ delay: 0.4 }}
             className="mb-4"
           >
-            <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-xl font-semibold text-transparent">
+            <span className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text text-2xl font-semibold text-transparent lg:text-4xl">
               Research Methods for Engineers
             </span>
           </motion.div>
-          <h2 className="from-foreground to-foreground/70 bg-gradient-to-br bg-clip-text text-5xl font-bold text-transparent md:text-6xl">
+          <h2 className="from-foreground to-foreground/70 bg-gradient-to-br bg-clip-text text-2xl font-bold text-transparent md:text-4xl">
             Unveiling the Secrets of Jute Pest Classification
           </h2>
         </div>
-
-        <p className="text-foreground/80 text-xl font-medium leading-relaxed md:text-2xl">
-          A Data-Driven Approach to Sustainable Pest Management
-        </p>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <HighlightCard
@@ -138,7 +142,7 @@ export const titleSlide = {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="text-foreground/60 space-y-2 text-sm"
+            className="text-foreground/60 flex flex-wrap items-center justify-center gap-2 text-sm"
           >
             <div className="flex items-center justify-center gap-8">
               <div className="flex items-center gap-2">
@@ -146,11 +150,14 @@ export const titleSlide = {
                 <span>EEET2485 – Research Methods for Engineers</span>
               </div>
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
+                <School className="h-4 w-4" />
                 <span>RMIT University Vietnam</span>
               </div>
             </div>
-            <p>School of Technology • Semester 2024C • January 16, 2025</p>
+            <div className="flex items-center gap-2">
+              <Cpu className="h-4 w-4" />
+              <p>School of Technology • Semester 2024C • January 16, 2025</p>
+            </div>
           </motion.div>
         </div>
       </motion.div>
