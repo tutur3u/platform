@@ -47,7 +47,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import {
@@ -483,15 +483,19 @@ const slides: Slide[] = [
             Revolutionizing enterprise software with AI-powered innovation and
             open-source freedom.
           </p>
-          <div className="mt-4 flex gap-4">
-            <Link href="/login">
-              <Button size="lg" className="group gap-2">
+          <div className="mt-4 flex flex-col gap-4 md:flex-row">
+            <Link href="/login" className="w-full md:w-auto">
+              <Button size="lg" className="group w-full gap-2 md:w-auto">
                 Get Started
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link href="/contact">
-              <Button size="lg" variant="outline" className="gap-2">
+            <Link href="/contact" className="w-full md:w-auto">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full gap-2 md:w-auto"
+              >
                 Watch Demo
                 <ArrowUpRight className="h-4 w-4" />
               </Button>
@@ -1406,7 +1410,7 @@ const slides: Slide[] = [
     title: '📊 SWOT Analysis',
     subtitle: 'Strategic Position & Market Outlook',
     content: (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -3002,16 +3006,20 @@ const slides: Slide[] = [
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex gap-4"
+            className="flex flex-col gap-4 md:flex-row"
           >
-            <Link href="/login">
-              <Button size="lg" className="group gap-2">
+            <Link href="/login" className="w-full md:w-auto">
+              <Button size="lg" className="group w-full gap-2 md:w-auto">
                 Get Started Now
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link href="/contact">
-              <Button size="lg" variant="outline" className="gap-2">
+            <Link href="/contact" className="w-full md:w-auto">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full gap-2 md:w-auto"
+              >
                 Contact Sales
                 <ArrowUpRight className="h-4 w-4" />
               </Button>
@@ -3028,6 +3036,8 @@ export default function PitchPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [scale, setScale] = useState(1);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const handlePaginate = (newDirection: number) => {
     if (
@@ -3039,6 +3049,27 @@ export default function PitchPage() {
     setDirection(newDirection);
     setCurrentSlide(currentSlide + newDirection);
   };
+
+  useEffect(() => {
+    const calculateScale = () => {
+      if (!contentRef.current) return;
+
+      const contentHeight = contentRef.current.scrollHeight;
+      const viewportHeight = window.innerHeight;
+      const padding = 64; // 16px top + 16px bottom padding
+
+      if (contentHeight > viewportHeight - padding) {
+        const newScale = (viewportHeight - padding) / contentHeight;
+        setScale(Math.min(1, newScale));
+      } else {
+        setScale(1);
+      }
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, [currentSlide]);
 
   useEffect(() => {
     if (currentSlide === 0 || currentSlide === slides.length - 1) {
@@ -3071,6 +3102,7 @@ export default function PitchPage() {
           isFirstOrLastSlide ? 'opacity-0' : 'opacity-100'
         )}
       />
+
       <ThemeToggle
         forceDisplay={true}
         className="absolute right-4 top-4 z-50"
@@ -3143,7 +3175,15 @@ export default function PitchPage() {
               gravity={0.1}
             />
           )}
-          <div className="flex max-w-6xl flex-col items-center gap-12">
+          <div
+            ref={contentRef}
+            className="flex max-w-6xl flex-col items-center gap-12"
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: 'center center',
+              transition: 'transform 0.3s ease-out',
+            }}
+          >
             <div className="text-center">
               <h1 className="mb-4 text-4xl font-bold md:text-5xl lg:text-6xl">
                 {slides[currentSlide]?.title}
