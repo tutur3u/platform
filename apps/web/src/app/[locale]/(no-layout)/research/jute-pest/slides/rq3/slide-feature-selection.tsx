@@ -4,15 +4,15 @@ import {
   BarChart3,
   Brain,
   CircleDot,
-  Database,
+  Filter,
   GitBranch,
   LineChart,
   Network,
   Sigma,
-  Timer,
+  Target,
 } from 'lucide-react';
 
-const MethodologyMetric = ({
+const SelectionMetric = ({
   icon: Icon,
   title,
   value,
@@ -42,7 +42,7 @@ const MethodologyMetric = ({
   </motion.div>
 );
 
-const ProcessStep = ({
+const SelectionMethod = ({
   icon: Icon,
   title,
   description,
@@ -66,73 +66,73 @@ const ProcessStep = ({
   </motion.div>
 );
 
-export const methodologyRQ4Slide = {
-  title: '🔄 Model Optimization Methodology',
-  subtitle: 'Performance Enhancement and Resource Optimization',
+export const rq3FeatureSelectionSlide = {
+  title: '🎯 Feature Selection Analysis',
+  subtitle: 'Optimal Feature Subset Identification',
   content: (
     <div className="space-y-8">
-      {/* Key Methodology Metrics */}
+      {/* Key Selection Metrics */}
       <div className="grid gap-6 md:grid-cols-3">
-        <MethodologyMetric
-          icon={Timer}
-          title="Inference Time"
-          value="<50ms"
-          description="Target latency per prediction"
+        <SelectionMetric
+          icon={Filter}
+          title="Selected Features"
+          value="48"
+          description="Final optimal feature subset"
         />
-        <MethodologyMetric
-          icon={Database}
-          title="Model Size"
-          value="<10MB"
-          description="Target compressed model size"
+        <SelectionMetric
+          icon={Target}
+          title="Selection Score"
+          value="0.924"
+          description="Average feature importance score"
         />
-        <MethodologyMetric
+        <SelectionMetric
           icon={Activity}
-          title="Accuracy Goal"
-          value=">95%"
-          description="Target classification accuracy"
+          title="Performance"
+          value="+4.2%"
+          description="Accuracy improvement after selection"
         />
       </div>
 
-      {/* Optimization Process */}
+      {/* Selection Methods */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Optimization Process</h3>
+        <h3 className="mb-6 text-xl font-bold">Selection Methods</h3>
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-6">
-            <ProcessStep
+            <SelectionMethod
               icon={Brain}
-              title="Model Architecture"
-              description="Lightweight CNN with optimized layers"
+              title="Random Forest Importance"
+              description="Tree-based feature importance ranking"
             />
-            <ProcessStep
+            <SelectionMethod
               icon={Network}
-              title="Quantization"
-              description="8-bit integer quantization for reduced size"
+              title="Recursive Elimination"
+              description="Iterative feature elimination with cross-validation"
             />
-            <ProcessStep
+            <SelectionMethod
               icon={GitBranch}
-              title="Pruning"
-              description="Iterative weight pruning for sparsity"
+              title="Mutual Information"
+              description="Information-theoretic feature relevance analysis"
             />
           </div>
           <div className="space-y-6">
-            <ProcessStep
+            <SelectionMethod
               icon={Sigma}
-              title="Knowledge Distillation"
-              description="Teacher-student model compression"
+              title="Statistical Tests"
+              description="ANOVA and chi-square feature selection"
             />
-            <ProcessStep
+            <SelectionMethod
               icon={BarChart3}
-              title="Hyperparameter Tuning"
-              description="Bayesian optimization for parameters"
+              title="L1-based Selection"
+              description="Lasso regularization for feature selection"
             />
-            <ProcessStep
+            <SelectionMethod
               icon={LineChart}
-              title="Performance Monitoring"
-              description="Continuous evaluation and adjustment"
+              title="Stability Selection"
+              description="Randomized feature selection with bootstrapping"
             />
           </div>
         </div>
@@ -147,49 +147,49 @@ export const methodologyRQ4Slide = {
         <h3 className="mb-6 text-xl font-bold">Implementation Highlights</h3>
         <div className="space-y-4">
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Optimization Pipeline</h4>
+            <h4 className="mb-2 font-medium">Selection Pipeline</h4>
             <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`1. Baseline model training
-2. Architecture optimization
-3. Quantization and pruning
-4. Knowledge distillation
-5. Fine-tuning and validation`}
+              {`1. Initial feature ranking
+2. Cross-validation splits
+3. Recursive elimination
+4. Stability analysis
+5. Final selection`}
             </pre>
           </div>
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Key Technologies</h4>
+            <h4 className="mb-2 font-medium">Key Python Libraries</h4>
             <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`• TensorFlow Lite for deployment
-• TensorRT for acceleration
-• ONNX for model conversion
-• PyTorch for prototyping`}
+              {`from sklearn.feature_selection import RFE, SelectKBest
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import Lasso
+from sklearn.preprocessing import StandardScaler`}
             </pre>
           </div>
         </div>
       </motion.div>
 
-      {/* Key Considerations */}
+      {/* Key Findings */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Key Considerations</h3>
+        <h3 className="mb-6 text-xl font-bold">Key Findings</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Resource Constraints</h4>
+            <h4 className="mb-2 font-medium">Selection Results</h4>
             <ul className="text-foreground/80 space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Memory footprint optimization
+                Shape features: 18 selected
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                CPU/GPU utilization balance
+                Color features: 12 selected
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Battery efficiency for mobile
+                Texture features: 18 selected
               </li>
             </ul>
           </div>
@@ -198,15 +198,15 @@ export const methodologyRQ4Slide = {
             <ul className="text-foreground/80 space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Latency-accuracy tradeoff
+                Selection stability: 0.892
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Model size reduction
+                Cross-validation: 0.934
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Inference throughput
+                Feature redundancy: 0.124
               </li>
             </ul>
           </div>

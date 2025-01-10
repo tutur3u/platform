@@ -3,6 +3,12 @@
 import { slides } from './slides';
 import { ThemeToggle } from '@/app/[locale]/theme-toggle';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@repo/ui/components/ui/tooltip';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -49,22 +55,21 @@ const LogoComponent = ({
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
       className={cn(
-        'relative transition-all duration-500',
+        'relative',
         isCenter ? 'mb-8' : 'fixed left-8 top-8 z-50 hover:scale-110',
         className
       )}
     >
-      <Link href="/" className="group relative block">
-        <div className="from-primary/20 absolute inset-0 -z-10 rounded-full bg-gradient-to-br via-transparent to-transparent opacity-50 blur-lg transition-all duration-300 group-hover:opacity-100" />
+      <Link href="/">
         <Image
           src="/media/rmit-dark.png"
           width={906}
           height={406}
-          alt="Tuturuuu Logo"
+          alt="RMIT Logo"
           className={cn(
-            'transition-all duration-300',
+            'fixed left-8 top-8 transition-all duration-300',
             isCenter ? 'w-64 md:w-96' : 'w-32',
-            theme !== 'dark' && 'hidden',
+            theme !== 'dark' ? 'opacity-0' : 'opacity-100',
             'group-hover:brightness-110'
           )}
         />
@@ -72,11 +77,11 @@ const LogoComponent = ({
           src="/media/rmit-light.png"
           width={906}
           height={406}
-          alt="Tuturuuu Logo"
+          alt="RMIT Logo"
           className={cn(
-            'transition-all duration-300',
+            'fixed left-8 top-8 transition-all duration-300',
             isCenter ? 'w-64 md:w-96' : 'w-32',
-            theme !== 'light' && 'hidden',
+            theme !== 'light' ? 'opacity-0' : 'opacity-100',
             'group-hover:brightness-110'
           )}
         />
@@ -206,19 +211,30 @@ export default function JutePestResearchSlides() {
 
       <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
         <div className="flex gap-2">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setPage([index, index > page ? 1 : -1])}
-              className={cn(
-                'h-2 w-2 rounded-full transition-all duration-300',
-                page === index
-                  ? 'bg-primary w-6'
-                  : 'bg-foreground/20 hover:bg-foreground/40'
-              )}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+          <TooltipProvider delayDuration={0}>
+            {slides.map((slide, index) => (
+              <Tooltip key={index}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setPage([index, index > page ? 1 : -1])}
+                    className={cn(
+                      'h-2 w-2 cursor-pointer rounded-full transition-all duration-300',
+                      page === index
+                        ? 'bg-primary w-6'
+                        : 'bg-foreground/20 hover:bg-foreground/40'
+                    )}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="pointer-events-none cursor-default text-xs"
+                >
+                  <p>{slide.title || `Slide ${index + 1}`}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </TooltipProvider>
         </div>
       </div>
 

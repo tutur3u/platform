@@ -1,18 +1,18 @@
 import { motion } from 'framer-motion';
 import {
-  Activity,
   BarChart3,
-  Brain,
   CircleDot,
-  Database,
   GitBranch,
+  Grid,
   LineChart,
   Network,
   Sigma,
-  Timer,
+  Target,
+  TrendingUp,
+  Waves,
 } from 'lucide-react';
 
-const MethodologyMetric = ({
+const CorrelationMetric = ({
   icon: Icon,
   title,
   value,
@@ -42,7 +42,7 @@ const MethodologyMetric = ({
   </motion.div>
 );
 
-const ProcessStep = ({
+const AnalysisFeature = ({
   icon: Icon,
   title,
   description,
@@ -66,73 +66,73 @@ const ProcessStep = ({
   </motion.div>
 );
 
-export const methodologyRQ4Slide = {
-  title: '🔄 Model Optimization Methodology',
-  subtitle: 'Performance Enhancement and Resource Optimization',
+export const rq3CorrelationAnalysisSlide = {
+  title: '🔄 Feature Correlation Analysis',
+  subtitle: 'Comprehensive Feature Relationship Study',
   content: (
     <div className="space-y-8">
-      {/* Key Methodology Metrics */}
+      {/* Key Correlation Metrics */}
       <div className="grid gap-6 md:grid-cols-3">
-        <MethodologyMetric
-          icon={Timer}
-          title="Inference Time"
-          value="<50ms"
-          description="Target latency per prediction"
+        <CorrelationMetric
+          icon={Network}
+          title="Feature Pairs"
+          value="52,326"
+          description="Total feature pairs analyzed for correlations"
         />
-        <MethodologyMetric
-          icon={Database}
-          title="Model Size"
-          value="<10MB"
-          description="Target compressed model size"
+        <CorrelationMetric
+          icon={Target}
+          title="Strong Correlations"
+          value="324"
+          description="Feature pairs with |r| > 0.7"
         />
-        <MethodologyMetric
-          icon={Activity}
-          title="Accuracy Goal"
-          value=">95%"
-          description="Target classification accuracy"
+        <CorrelationMetric
+          icon={TrendingUp}
+          title="Avg. Correlation"
+          value="0.42"
+          description="Mean absolute correlation coefficient"
         />
       </div>
 
-      {/* Optimization Process */}
+      {/* Analysis Methods */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Optimization Process</h3>
+        <h3 className="mb-6 text-xl font-bold">Analysis Methods</h3>
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-6">
-            <ProcessStep
-              icon={Brain}
-              title="Model Architecture"
-              description="Lightweight CNN with optimized layers"
+            <AnalysisFeature
+              icon={Grid}
+              title="Correlation Matrix"
+              description="Pearson and Spearman correlation coefficient computation"
             />
-            <ProcessStep
-              icon={Network}
-              title="Quantization"
-              description="8-bit integer quantization for reduced size"
-            />
-            <ProcessStep
+            <AnalysisFeature
               icon={GitBranch}
-              title="Pruning"
-              description="Iterative weight pruning for sparsity"
+              title="Feature Clustering"
+              description="Hierarchical clustering of correlated feature groups"
+            />
+            <AnalysisFeature
+              icon={Waves}
+              title="Time Series Analysis"
+              description="Temporal correlation patterns and stability"
             />
           </div>
           <div className="space-y-6">
-            <ProcessStep
+            <AnalysisFeature
               icon={Sigma}
-              title="Knowledge Distillation"
-              description="Teacher-student model compression"
+              title="Statistical Tests"
+              description="Significance testing and p-value computation"
             />
-            <ProcessStep
+            <AnalysisFeature
               icon={BarChart3}
-              title="Hyperparameter Tuning"
-              description="Bayesian optimization for parameters"
+              title="Distribution Analysis"
+              description="Feature distribution and relationship patterns"
             />
-            <ProcessStep
+            <AnalysisFeature
               icon={LineChart}
-              title="Performance Monitoring"
-              description="Continuous evaluation and adjustment"
+              title="Trend Analysis"
+              description="Cross-feature trend and pattern identification"
             />
           </div>
         </div>
@@ -147,66 +147,66 @@ export const methodologyRQ4Slide = {
         <h3 className="mb-6 text-xl font-bold">Implementation Highlights</h3>
         <div className="space-y-4">
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Optimization Pipeline</h4>
+            <h4 className="mb-2 font-medium">Correlation Analysis Pipeline</h4>
             <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`1. Baseline model training
-2. Architecture optimization
-3. Quantization and pruning
-4. Knowledge distillation
-5. Fine-tuning and validation`}
+              {`1. Feature pair extraction
+2. Correlation computation
+3. Statistical testing
+4. Clustering analysis
+5. Visualization generation`}
             </pre>
           </div>
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Key Technologies</h4>
+            <h4 className="mb-2 font-medium">Key Python Libraries</h4>
             <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`• TensorFlow Lite for deployment
-• TensorRT for acceleration
-• ONNX for model conversion
-• PyTorch for prototyping`}
+              {`import numpy as np
+from scipy.stats import pearsonr, spearmanr
+from scipy.cluster.hierarchy import linkage
+import seaborn as sns`}
             </pre>
           </div>
         </div>
       </motion.div>
 
-      {/* Key Considerations */}
+      {/* Key Findings */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Key Considerations</h3>
+        <h3 className="mb-6 text-xl font-bold">Key Findings</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Resource Constraints</h4>
+            <h4 className="mb-2 font-medium">Feature Relationships</h4>
             <ul className="text-foreground/80 space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Memory footprint optimization
+                Shape-Texture: Strong correlation
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                CPU/GPU utilization balance
+                Color-Shape: Weak correlation
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Battery efficiency for mobile
+                Color-Texture: Moderate correlation
               </li>
             </ul>
           </div>
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Performance Metrics</h4>
+            <h4 className="mb-2 font-medium">Statistical Significance</h4>
             <ul className="text-foreground/80 space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Latency-accuracy tradeoff
+                85.2% significant correlations
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Model size reduction
+                12 major feature clusters
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Inference throughput
+                94.7% confidence level
               </li>
             </ul>
           </div>

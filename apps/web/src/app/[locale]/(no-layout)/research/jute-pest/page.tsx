@@ -27,6 +27,18 @@ export const metadata: Metadata = {
       },
     ],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Jute Pest Research - Advanced Morphological Analysis',
+    description:
+      'Advanced morphological feature analysis and classification of jute pests using computer vision and machine learning techniques, achieving 97.2% accuracy in species identification.',
+    images: [
+      DEV_MODE
+        ? 'http://localhost:7803/research/jute-pest/og'
+        : 'https://rmit.tuturuuu.com/research/jute-pest/og',
+    ],
+    creator: '@tutur3u',
+  },
 };
 
 export default function ResearchPage() {

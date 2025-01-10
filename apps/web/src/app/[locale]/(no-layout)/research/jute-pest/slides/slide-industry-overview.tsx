@@ -1,36 +1,53 @@
 import { motion } from 'framer-motion';
 import {
+  BarChart3,
   DollarSign,
   Factory,
   Leaf,
   LineChart,
-  Recycle,
   Sprout,
   TreePine,
-  Waves,
 } from 'lucide-react';
 
-const StatCard = ({
-  icon: Icon,
-  value,
-  label,
-}: {
-  icon: any;
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const item = {
+  hidden: { y: 20, opacity: 0 },
+  show: { y: 0, opacity: 1 },
+};
+
+const listItem = {
+  hidden: { opacity: 0, x: -20 },
+  show: { opacity: 1, x: 0 },
+};
+
+interface StatCardProps {
+  icon: React.ElementType;
+  title: string;
   value: string;
-  label: string;
-}) => (
+  subtitle: string;
+}
+
+const StatCard = ({ icon: Icon, title, value, subtitle }: StatCardProps) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    whileHover={{ scale: 1.05 }}
-    className="bg-foreground/5 hover:bg-foreground/10 flex items-center gap-4 rounded-xl p-4 transition-colors"
+    variants={item}
+    className="bg-foreground/5 hover:bg-foreground/10 flex flex-col gap-4 rounded-xl p-6 transition-colors"
   >
-    <div className="bg-primary/10 text-primary rounded-lg p-2">
+    <div className="bg-primary/10 text-primary w-fit rounded-lg p-2">
       <Icon className="h-6 w-6" />
     </div>
-    <div>
+    <div className="space-y-1">
+      <h3 className="text-foreground/60 text-sm">{title}</h3>
       <p className="text-2xl font-bold">{value}</p>
-      <p className="text-foreground/60 text-sm">{label}</p>
+      <p className="text-foreground/60 text-sm">{subtitle}</p>
     </div>
   </motion.div>
 );
@@ -40,13 +57,12 @@ const FeatureCard = ({
   title,
   items,
 }: {
-  icon: any;
+  icon: React.ElementType;
   title: string;
   items: string[];
 }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
+    variants={item}
     className="bg-foreground/5 hover:bg-foreground/10 rounded-xl p-6 transition-colors"
   >
     <div className="mb-4 flex items-center gap-3">
@@ -56,18 +72,16 @@ const FeatureCard = ({
       <h4 className="font-medium">{title}</h4>
     </div>
     <ul className="space-y-2">
-      {items.map((item, i) => (
+      {items.map((text) => (
         <motion.li
-          key={item}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 + i * 0.1 }}
+          key={text}
+          variants={listItem}
           className="flex items-center gap-2"
         >
           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-xs text-emerald-500">
             ✓
           </div>
-          <span className="text-foreground/80">{item}</span>
+          <span className="text-foreground/80">{text}</span>
         </motion.li>
       ))}
     </ul>
@@ -75,28 +89,56 @@ const FeatureCard = ({
 );
 
 export const industryOverviewSlide = {
-  id: 'background-1',
   title: '🌱 Jute Industry Overview',
   subtitle: 'Economic Significance & Environmental Impact',
   content: (
-    <div className="space-y-8">
-      <div className="grid gap-4 md:grid-cols-3">
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-8"
+    >
+      <motion.div
+        variants={item}
+        className="text-foreground/80 text-center text-lg"
+      >
+        Jute, often called the "golden fiber," plays a crucial role in the
+        global textile and packaging industries, particularly in South and
+        Southeast Asian economies.
+      </motion.div>
+
+      <motion.div
+        variants={container}
+        className="grid grid-cols-1 gap-4 md:grid-cols-4"
+      >
         <StatCard
           icon={DollarSign}
-          value="$1.5B"
-          label="Annual Export Earnings"
+          title="Market Value"
+          value="$2.7B"
+          subtitle="Global market size (2023)"
         />
-        <StatCard icon={Factory} value="40%" label="Global Jute Production" />
-        <StatCard icon={Sprout} value="3M+" label="Dependent Farmers" />
-      </div>
+        <StatCard
+          icon={Factory}
+          title="Production"
+          value="3.3M"
+          subtitle="Annual tonnes produced"
+        />
+        <StatCard
+          icon={Sprout}
+          title="Employment"
+          value="4M+"
+          subtitle="Direct & indirect jobs"
+        />
+        <StatCard
+          icon={BarChart3}
+          title="Growth Rate"
+          value="4.8%"
+          subtitle="Expected CAGR (2024-2030)"
+        />
+      </motion.div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="space-y-6"
-        >
+        <motion.div variants={item}>
           <FeatureCard
             icon={LineChart}
             title="Economic Impact"
@@ -110,12 +152,7 @@ export const industryOverviewSlide = {
           />
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="space-y-6"
-        >
+        <motion.div variants={item}>
           <FeatureCard
             icon={Leaf}
             title="Environmental Benefits"
@@ -130,40 +167,28 @@ export const industryOverviewSlide = {
         </motion.div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="grid gap-6 md:grid-cols-3"
-      >
-        <FeatureCard
-          icon={Recycle}
-          title="Sustainability"
-          items={[
-            'Eco-friendly alternatives',
-            'Renewable resource',
-            'Low carbon footprint',
-          ]}
-        />
+      <motion.div variants={item} className="grid gap-6 md:grid-cols-2">
+        <div className="bg-foreground/5 space-y-4 rounded-xl p-6">
+          <h3 className="text-xl font-semibold">Key Markets</h3>
+          <ul className="text-foreground/80 space-y-2">
+            <li>• Bangladesh (World's largest producer)</li>
+            <li>• India (Leading exporter)</li>
+            <li>• China (Major consumer)</li>
+            <li>• Southeast Asian countries</li>
+          </ul>
+        </div>
+
         <FeatureCard
           icon={TreePine}
-          title="Market Growth"
+          title="Sustainability Goals"
           items={[
-            'Plastic alternative market',
-            'Growing sustainable markets',
-            'Increasing adoption',
-          ]}
-        />
-        <FeatureCard
-          icon={Waves}
-          title="Innovation Areas"
-          items={[
-            'Smart agriculture',
-            'Pest management',
-            'Quality improvement',
+            'Eco-friendly alternatives',
+            'Renewable resource utilization',
+            'Carbon footprint reduction',
+            'Sustainable farming practices',
           ]}
         />
       </motion.div>
-    </div>
+    </motion.div>
   ),
 };

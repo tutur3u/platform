@@ -4,15 +4,14 @@ import {
   BarChart3,
   Brain,
   CircleDot,
-  Database,
   GitBranch,
   LineChart,
   Network,
   Sigma,
-  Timer,
+  Target,
 } from 'lucide-react';
 
-const MethodologyMetric = ({
+const ReductionMetric = ({
   icon: Icon,
   title,
   value,
@@ -42,7 +41,7 @@ const MethodologyMetric = ({
   </motion.div>
 );
 
-const ProcessStep = ({
+const ReductionDetail = ({
   icon: Icon,
   title,
   description,
@@ -66,73 +65,73 @@ const ProcessStep = ({
   </motion.div>
 );
 
-export const methodologyRQ4Slide = {
-  title: '🔄 Model Optimization Methodology',
-  subtitle: 'Performance Enhancement and Resource Optimization',
+export const rq3DimensionalityReductionSlide = {
+  title: '📉 Dimensionality Reduction Analysis',
+  subtitle: 'Feature Space Optimization and Visualization',
   content: (
     <div className="space-y-8">
-      {/* Key Methodology Metrics */}
+      {/* Key Reduction Metrics */}
       <div className="grid gap-6 md:grid-cols-3">
-        <MethodologyMetric
-          icon={Timer}
-          title="Inference Time"
-          value="<50ms"
-          description="Target latency per prediction"
+        <ReductionMetric
+          icon={Target}
+          title="Dimensions Reduced"
+          value="86%"
+          description="Feature space compression"
         />
-        <MethodologyMetric
-          icon={Database}
-          title="Model Size"
-          value="<10MB"
-          description="Target compressed model size"
-        />
-        <MethodologyMetric
+        <ReductionMetric
           icon={Activity}
-          title="Accuracy Goal"
-          value=">95%"
-          description="Target classification accuracy"
+          title="Variance Retained"
+          value="94.2%"
+          description="Information preservation"
+        />
+        <ReductionMetric
+          icon={Brain}
+          title="Performance Impact"
+          value="+2.8%"
+          description="Accuracy improvement"
         />
       </div>
 
-      {/* Optimization Process */}
+      {/* Reduction Techniques */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Optimization Process</h3>
+        <h3 className="mb-6 text-xl font-bold">Reduction Techniques</h3>
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-6">
-            <ProcessStep
+            <ReductionDetail
               icon={Brain}
-              title="Model Architecture"
-              description="Lightweight CNN with optimized layers"
+              title="Principal Component Analysis"
+              description="94.2% variance explained with 12 components"
             />
-            <ProcessStep
+            <ReductionDetail
               icon={Network}
-              title="Quantization"
-              description="8-bit integer quantization for reduced size"
+              title="t-SNE"
+              description="Non-linear dimensionality reduction for visualization"
             />
-            <ProcessStep
+            <ReductionDetail
               icon={GitBranch}
-              title="Pruning"
-              description="Iterative weight pruning for sparsity"
+              title="UMAP"
+              description="Manifold learning for feature space exploration"
             />
           </div>
           <div className="space-y-6">
-            <ProcessStep
+            <ReductionDetail
               icon={Sigma}
-              title="Knowledge Distillation"
-              description="Teacher-student model compression"
+              title="Linear Discriminant Analysis"
+              description="Supervised dimensionality reduction"
             />
-            <ProcessStep
+            <ReductionDetail
               icon={BarChart3}
-              title="Hyperparameter Tuning"
-              description="Bayesian optimization for parameters"
+              title="Autoencoder"
+              description="Deep learning based feature compression"
             />
-            <ProcessStep
+            <ReductionDetail
               icon={LineChart}
-              title="Performance Monitoring"
-              description="Continuous evaluation and adjustment"
+              title="Feature Agglomeration"
+              description="Hierarchical feature clustering"
             />
           </div>
         </div>
@@ -144,69 +143,69 @@ export const methodologyRQ4Slide = {
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Implementation Highlights</h3>
+        <h3 className="mb-6 text-xl font-bold">Implementation Analysis</h3>
         <div className="space-y-4">
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Optimization Pipeline</h4>
+            <h4 className="mb-2 font-medium">Reduction Pipeline</h4>
             <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`1. Baseline model training
-2. Architecture optimization
-3. Quantization and pruning
-4. Knowledge distillation
-5. Fine-tuning and validation`}
+              {`1. Feature standardization
+2. PCA transformation
+3. Component selection
+4. Visualization mapping
+5. Performance validation`}
             </pre>
           </div>
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Key Technologies</h4>
+            <h4 className="mb-2 font-medium">Key Libraries</h4>
             <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`• TensorFlow Lite for deployment
-• TensorRT for acceleration
-• ONNX for model conversion
-• PyTorch for prototyping`}
+              {`from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+from umap import UMAP
+import tensorflow as tf`}
             </pre>
           </div>
         </div>
       </motion.div>
 
-      {/* Key Considerations */}
+      {/* Key Findings */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Key Considerations</h3>
+        <h3 className="mb-6 text-xl font-bold">Key Findings</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Resource Constraints</h4>
+            <h4 className="mb-2 font-medium">Reduction Results</h4>
             <ul className="text-foreground/80 space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Memory footprint optimization
+                12 principal components selected
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                CPU/GPU utilization balance
+                94.2% variance explained
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Battery efficiency for mobile
+                Clear class separation achieved
               </li>
             </ul>
           </div>
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Performance Metrics</h4>
+            <h4 className="mb-2 font-medium">Performance Impact</h4>
             <ul className="text-foreground/80 space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Latency-accuracy tradeoff
+                2.8% accuracy improvement
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Model size reduction
+                86% feature reduction
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Inference throughput
+                68% faster training time
               </li>
             </ul>
           </div>

@@ -1,18 +1,16 @@
 import { motion } from 'framer-motion';
 import {
   Activity,
-  BarChart3,
   Brain,
   CircleDot,
+  Cloud,
+  Code2,
   Database,
-  GitBranch,
-  LineChart,
   Network,
-  Sigma,
-  Timer,
+  Phone,
 } from 'lucide-react';
 
-const MethodologyMetric = ({
+const DeploymentMetric = ({
   icon: Icon,
   title,
   value,
@@ -42,7 +40,7 @@ const MethodologyMetric = ({
   </motion.div>
 );
 
-const ProcessStep = ({
+const DeploymentDetail = ({
   icon: Icon,
   title,
   description,
@@ -66,73 +64,73 @@ const ProcessStep = ({
   </motion.div>
 );
 
-export const methodologyRQ4Slide = {
-  title: '🔄 Model Optimization Methodology',
-  subtitle: 'Performance Enhancement and Resource Optimization',
+export const rq4DeploymentSlide = {
+  title: '🚀 Model Deployment Analysis',
+  subtitle: 'Cross-platform Deployment and Performance',
   content: (
     <div className="space-y-8">
-      {/* Key Methodology Metrics */}
+      {/* Key Deployment Metrics */}
       <div className="grid gap-6 md:grid-cols-3">
-        <MethodologyMetric
-          icon={Timer}
-          title="Inference Time"
-          value="<50ms"
-          description="Target latency per prediction"
+        <DeploymentMetric
+          icon={Phone}
+          title="Mobile Performance"
+          value="42ms"
+          description="Average inference time on mobile"
         />
-        <MethodologyMetric
-          icon={Database}
-          title="Model Size"
-          value="<10MB"
-          description="Target compressed model size"
+        <DeploymentMetric
+          icon={Cloud}
+          title="Cloud Scalability"
+          value="1000+"
+          description="Requests per second"
         />
-        <MethodologyMetric
+        <DeploymentMetric
           icon={Activity}
-          title="Accuracy Goal"
-          value=">95%"
-          description="Target classification accuracy"
+          title="Platform Coverage"
+          value="98%"
+          description="Device compatibility rate"
         />
       </div>
 
-      {/* Optimization Process */}
+      {/* Deployment Platforms */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Optimization Process</h3>
+        <h3 className="mb-6 text-xl font-bold">Deployment Platforms</h3>
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-6">
-            <ProcessStep
-              icon={Brain}
-              title="Model Architecture"
-              description="Lightweight CNN with optimized layers"
+            <DeploymentDetail
+              icon={Phone}
+              title="Mobile Deployment"
+              description="iOS and Android with TensorFlow Lite"
             />
-            <ProcessStep
+            <DeploymentDetail
+              icon={Cloud}
+              title="Cloud Deployment"
+              description="Containerized with Kubernetes orchestration"
+            />
+            <DeploymentDetail
               icon={Network}
-              title="Quantization"
-              description="8-bit integer quantization for reduced size"
-            />
-            <ProcessStep
-              icon={GitBranch}
-              title="Pruning"
-              description="Iterative weight pruning for sparsity"
+              title="Edge Deployment"
+              description="Optimized for IoT and edge devices"
             />
           </div>
           <div className="space-y-6">
-            <ProcessStep
-              icon={Sigma}
-              title="Knowledge Distillation"
-              description="Teacher-student model compression"
+            <DeploymentDetail
+              icon={Brain}
+              title="Model Serving"
+              description="TensorFlow Serving with REST/gRPC"
             />
-            <ProcessStep
-              icon={BarChart3}
-              title="Hyperparameter Tuning"
-              description="Bayesian optimization for parameters"
+            <DeploymentDetail
+              icon={Code2}
+              title="API Integration"
+              description="RESTful API with OpenAPI specification"
             />
-            <ProcessStep
-              icon={LineChart}
-              title="Performance Monitoring"
-              description="Continuous evaluation and adjustment"
+            <DeploymentDetail
+              icon={Database}
+              title="Data Pipeline"
+              description="Automated data processing and inference"
             />
           </div>
         </div>
@@ -144,69 +142,68 @@ export const methodologyRQ4Slide = {
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Implementation Highlights</h3>
+        <h3 className="mb-6 text-xl font-bold">Implementation Analysis</h3>
         <div className="space-y-4">
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Optimization Pipeline</h4>
+            <h4 className="mb-2 font-medium">Mobile Performance</h4>
             <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`1. Baseline model training
-2. Architecture optimization
-3. Quantization and pruning
-4. Knowledge distillation
-5. Fine-tuning and validation`}
+              {`• iOS (iPhone 13): 38ms inference
+• Android (Pixel 6): 42ms inference
+• Memory Usage: <50MB
+• Battery Impact: <2% per hour`}
             </pre>
           </div>
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Key Technologies</h4>
+            <h4 className="mb-2 font-medium">Cloud Performance</h4>
             <pre className="text-foreground/80 overflow-x-auto text-sm">
-              {`• TensorFlow Lite for deployment
-• TensorRT for acceleration
-• ONNX for model conversion
-• PyTorch for prototyping`}
+              {`• Latency: 28ms average
+• Throughput: 1200 req/s
+• Autoscaling: 2-10 pods
+• Cost: $0.05 per 1000 requests`}
             </pre>
           </div>
         </div>
       </motion.div>
 
-      {/* Key Considerations */}
+      {/* Key Findings */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-foreground/5 rounded-xl p-6"
       >
-        <h3 className="mb-6 text-xl font-bold">Key Considerations</h3>
+        <h3 className="mb-6 text-xl font-bold">Key Findings</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Resource Constraints</h4>
+            <h4 className="mb-2 font-medium">Platform Performance</h4>
             <ul className="text-foreground/80 space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Memory footprint optimization
+                Consistent cross-platform accuracy
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                CPU/GPU utilization balance
+                Efficient resource utilization
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Battery efficiency for mobile
+                Scalable cloud deployment
               </li>
             </ul>
           </div>
           <div className="bg-foreground/10 rounded-lg p-4">
-            <h4 className="mb-2 font-medium">Performance Metrics</h4>
+            <h4 className="mb-2 font-medium">Deployment Impact</h4>
             <ul className="text-foreground/80 space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Latency-accuracy tradeoff
+                98% device compatibility
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Model size reduction
+                Cost-effective scaling
               </li>
               <li className="flex items-center gap-2">
                 <CircleDot className="text-primary h-4 w-4" />
-                Inference throughput
+                Minimal maintenance overhead
               </li>
             </ul>
           </div>
