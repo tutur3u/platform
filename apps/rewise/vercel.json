@@ -1,4 +1,7 @@
 {
+  "github": {
+    "enabled": false
+  },
   "functions": {
     "src/app/api/**/*": {
       "maxDuration": 60
