@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { ChatModelSelector } from './chat-model-selector';
 import LoadingIndicator from './common/LoadingIndicator';
+import { OnlineUsers } from './online-users';
 import { PromptForm, ResponseMode } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
@@ -29,6 +30,7 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
+import { RealtimePresenceState } from '@supabase/supabase-js';
 import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
 import {
@@ -47,6 +49,19 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { QRCode } from 'react-qrcode-logo';
+
+interface PresenceUser {
+  id: string;
+  display_name?: string;
+  email?: string;
+  avatar_url?: string;
+}
+
+interface PresenceState {
+  user: PresenceUser;
+  online_at: string;
+  presence_ref: string;
+}
 
 export interface ChatPanelProps
   extends Pick<
@@ -75,6 +90,8 @@ export interface ChatPanelProps
   mode: ResponseMode;
   setMode: (mode: ResponseMode) => void;
   disabled?: boolean;
+  presenceState?: RealtimePresenceState<PresenceState>;
+  currentUserId?: string;
 }
 
 export function ChatPanel({
@@ -97,6 +114,8 @@ export function ChatPanel({
   mode,
   setMode,
   disabled,
+  presenceState,
+  currentUserId,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
 
@@ -286,31 +305,30 @@ export function ChatPanel({
                   </div>
                 </div>
               </div>
-
-              {/* {isLoading ? (
-                <Button
-                  variant="outline"
-                  onClick={() => stop()}
-                  className="bg-background/20"
-                >
-                  <IconStop className="mr-2" />
-                  {t('stop_generating')}
-                </Button>
-              ) : null} */}
             </div>
 
             <div className="bg-background/70 flex flex-col items-start justify-start border p-2 shadow-lg backdrop-blur-lg transition-all md:rounded-xl md:p-4">
-              <ChatModelSelector
-                open={showExtraOptions}
-                model={model}
-                className={`${
-                  showExtraOptions
-                    ? 'pointer-events-auto mb-2 opacity-100'
-                    : 'pointer-events-none h-0 p-0 opacity-0'
-                } transition-all ease-in-out`}
-                setOpen={setShowExtraOptions}
-                onChange={setModel}
-              />
+              <div className="flex w-full items-center justify-between">
+                <ChatModelSelector
+                  open={showExtraOptions}
+                  model={model}
+                  className={`${
+                    showExtraOptions
+                      ? 'pointer-events-auto mb-2 opacity-100'
+                      : 'pointer-events-none h-0 p-0 opacity-0'
+                  } transition-all ease-in-out`}
+                  setOpen={setShowExtraOptions}
+                  onChange={setModel}
+                />
+                {presenceState && (
+                  <div className="mb-2">
+                    <OnlineUsers
+                      presenceState={presenceState}
+                      currentUserId={currentUserId}
+                    />
+                  </div>
+                )}
+              </div>
               <PromptForm
                 id={id}
                 key={`${model?.provider}-${model?.value}`}

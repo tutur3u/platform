@@ -1,10 +1,25 @@
 import { ChatMessage } from '@/components/chat-message';
+import { OnlineUsers } from '@/components/online-users';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
+import { RealtimePresenceState } from '@supabase/supabase-js';
 import { type Message } from 'ai';
 import { Box, Globe, Lock, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
+
+interface PresenceUser {
+  id: string;
+  display_name?: string;
+  email?: string;
+  avatar_url?: string;
+}
+
+interface PresenceState {
+  user: PresenceUser;
+  online_at: string;
+  presence_ref: string;
+}
 
 export interface ChatListProps {
   chatId?: string | null;
@@ -23,6 +38,8 @@ export interface ChatListProps {
   model?: string;
   anonymize?: boolean;
   summarizing?: boolean;
+  presenceState?: RealtimePresenceState<PresenceState>;
+  currentUserId?: string;
   // eslint-disable-next-line no-unused-vars
   setInput: (input: string) => void;
 }
@@ -39,6 +56,8 @@ export function ChatList({
   model,
   anonymize,
   summarizing,
+  presenceState,
+  currentUserId,
   setInput,
 }: ChatListProps) {
   const t = useTranslations('ai_chat');
@@ -97,6 +116,15 @@ export function ChatList({
                 </span>
               )}
             </div>
+
+            {presenceState && (
+              <div className="mt-4 flex justify-center">
+                <OnlineUsers
+                  presenceState={presenceState}
+                  currentUserId={currentUserId}
+                />
+              </div>
+            )}
 
             {(chatSummary || summarizing) && (
               <Fragment key={`chat-${chatId}-${chatSummary}`}>

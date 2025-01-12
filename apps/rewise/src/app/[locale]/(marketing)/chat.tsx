@@ -6,6 +6,7 @@ import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { ResponseMode } from '@/components/prompt-form';
 import { Model, defaultModel, models } from '@/data/models';
+import { usePresence } from '@/hooks/use-presence';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
 import { useChat } from '@ai-sdk/react';
@@ -47,6 +48,21 @@ const Chat = ({
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(inputModel);
   const [mode, setMode] = useState<ResponseMode>('medium');
+  const [currentUserId, setCurrentUserId] = useState<string>();
+
+  const { presenceState } = usePresence(chat?.id);
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+    };
+
+    getCurrentUser();
+  }, []);
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
@@ -351,6 +367,8 @@ const Chat = ({
         mode={mode}
         setMode={setMode}
         disabled={disabled}
+        presenceState={presenceState}
+        currentUserId={currentUserId}
       />
     </div>
   );

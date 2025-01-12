@@ -112,6 +112,12 @@ export interface ChatMessageProps {
     prompt_tokens?: number;
     completion_tokens?: number;
     created_at?: string;
+    user?: {
+      id: string;
+      display_name?: string;
+      email?: string;
+      avatar_url?: string;
+    };
   };
   embeddedUrl?: string;
   locale?: string;
@@ -146,7 +152,21 @@ export function ChatMessage({
             )}
           >
             {message.role === 'user' ? (
-              <IconUser className="h-5 w-5" />
+              message.user?.avatar_url ? (
+                <Avatar className="h-12 w-12 rounded-md border">
+                  <AvatarImage
+                    src={message.user.avatar_url}
+                    alt={message.user.display_name || 'User'}
+                  />
+                  <AvatarFallback className="rounded-lg font-semibold">
+                    {message.user.display_name?.[0]?.toUpperCase() || (
+                      <IconUser className="h-5 w-5" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <IconUser className="h-5 w-5" />
+              )
             ) : (
               <Avatar className="h-12 w-12 rounded-md border">
                 <AvatarImage
@@ -174,7 +194,7 @@ export function ChatMessage({
               {message.role === 'user'
                 ? anonymize
                   ? t('anonymous')
-                  : t('you')
+                  : message.user?.display_name || t('you')
                 : 'Mira'}
             </span>
 
