@@ -20,14 +20,14 @@ const getChat = async (chatId: string) => {
     .select('*')
     .eq('id', chatId)
     .eq('is_public', true)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error(error);
     notFound();
   }
 
-  return data as AIChat;
+  return data as AIChat | null;
 };
 
 export const generateMetadata = async ({
@@ -46,8 +46,8 @@ export const generateMetadata = async ({
 
   const chat = await getChat(chatId);
 
-  const chatTitle = chat.title || untitled;
-  const chatSummary = chat.summary || defaultDescription;
+  const chatTitle = chat?.title || untitled;
+  const chatSummary = chat?.summary || defaultDescription;
 
   const title = chatTitle;
   const description = chatSummary;

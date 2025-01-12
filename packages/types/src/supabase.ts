@@ -9,6 +9,32 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_chat_members: {
+        Row: {
+          chat_id: string;
+          created_at: string;
+          email: string;
+        };
+        Insert: {
+          chat_id: string;
+          created_at?: string;
+          email: string;
+        };
+        Update: {
+          chat_id?: string;
+          created_at?: string;
+          email?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_chat_members_chat_id_fkey';
+            columns: ['chat_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_chats';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       ai_chat_messages: {
         Row: {
           chat_id: string;
@@ -81,7 +107,6 @@ export type Database = {
           created_at: string;
           creator_id: string | null;
           id: string;
-          is_externally_editable: boolean;
           is_public: boolean;
           latest_summarized_message_id: string | null;
           model: string | null;
@@ -93,7 +118,6 @@ export type Database = {
           created_at?: string;
           creator_id?: string | null;
           id?: string;
-          is_externally_editable?: boolean;
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;
@@ -105,7 +129,6 @@ export type Database = {
           created_at?: string;
           creator_id?: string | null;
           id?: string;
-          is_externally_editable?: boolean;
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;

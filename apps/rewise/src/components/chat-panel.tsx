@@ -1,15 +1,9 @@
 /* eslint-disable no-unused-vars */
-import { ChatModelSelector } from './chat-model-selector';
-import LoadingIndicator from './common/LoadingIndicator';
-import { OnlineUsers } from './online-users';
 import { PromptForm, ResponseMode } from './prompt-form';
-import { ScrollToBottomButton } from './scroll-to-bottom-button';
-import { ScrollToTopButton } from './scroll-to-top-button';
-import { TTR_URL } from '@/constants/common';
+import { ChatPermissions } from '@/components/chat-permissions';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
 import { createDynamicClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
 import {
   FileUploader,
   StatedFile,
@@ -21,34 +15,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { Separator } from '@repo/ui/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { cn } from '@repo/ui/lib/utils';
 import { RealtimePresenceState } from '@supabase/supabase-js';
 import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
-import {
-  ArrowDownToLine,
-  Check,
-  CheckCheck,
-  ExternalLink,
-  Eye,
-  FolderOpen,
-  Globe2,
-  LinkIcon,
-  Lock,
-  PenLine,
-} from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 
 interface PresenceUser {
   id: string;
@@ -172,411 +143,87 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="fixed inset-x-0 bottom-0 md:sticky md:bottom-4">
-        <div
-          className={cn(
-            'absolute z-10 -mb-4 flex items-end gap-2 md:-mb-1 md:flex-col lg:mb-4',
-            chats
-              ? 'right-2 md:right-4 lg:-right-4 xl:-right-12'
-              : 'right-2 md:right-4'
-          )}
-          style={{
-            bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',
-          }}
-        >
-          <ScrollToTopButton />
-          <ScrollToBottomButton />
+      <div className="from-muted/30 to-muted/30 dark:from-background/10 dark:to-background/80 fixed inset-x-0 bottom-0 bg-gradient-to-b from-0% to-50% dark:from-10%">
+        <div className="mx-auto sm:max-w-2xl sm:px-4">
+          <div className="bg-background space-y-4 border-t px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
+            <PromptForm
+              id={id}
+              key={`${model?.provider}-${model?.value}`}
+              provider={model?.provider}
+              model={model?.label}
+              chat={chat}
+              onSubmit={async (value) => {
+                // If there is no id, create a new chat
+                if (!id) return await createChat(value);
 
-          {!!chats && count !== undefined && (
-            <div className="flex w-full gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
-                onClick={() => setCollapsed(!collapsed)}
-              >
-                {collapsed ? (
-                  <FolderOpen className="h-5 w-5" />
-                ) : (
-                  <ArrowDownToLine className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {!!chats && count !== undefined && (
-          <div
-            id="chat-input"
-            className="mx-auto flex flex-col gap-2 md:px-4 lg:max-w-4xl xl:max-w-6xl"
-          >
-            <div className="relative flex items-center justify-center gap-2">
-              <div
-                id="chat-sidebar"
-                className={`absolute -bottom-1 z-20 w-full rounded-lg border-t p-2 transition-all duration-500 md:border ${
-                  collapsed
-                    ? 'pointer-events-none border-transparent bg-transparent'
-                    : 'border-border bg-background shadow-lg'
-                }`}
-              >
-                <div
-                  className={`transition duration-300 ${
-                    collapsed ? 'pointer-events-none opacity-0' : 'opacity-100'
-                  }`}
-                >
-                  <div className="text-center">
-                    <div className="text-foreground font-semibold">
-                      {t('chats')}
-                      {count ? (
-                        <span className="opacity-50"> ({count})</span>
-                      ) : (
-                        ''
-                      )}
-                    </div>
-                    <Separator className="my-2" />
-                    <ScrollArea className="h-96">
-                      <div className="grid w-full grid-cols-1 items-center justify-center gap-1 overflow-hidden md:grid-cols-2 lg:grid-cols-3">
-                        {chats.length > 0 ? (
-                          chats.map((chat) =>
-                            chat.id === id ? (
-                              <Button
-                                key={chat.id}
-                                variant="secondary"
-                                className="inline-block w-full"
-                                disabled
-                              >
-                                <div className="max-w-full truncate">
-                                  {chat?.title || chat.id}
-                                </div>
-                              </Button>
-                            ) : (
-                              <Link
-                                key={chat.id}
-                                href={`/c/${chat.id}`}
-                                className="w-full"
-                              >
-                                <Button
-                                  variant="secondary"
-                                  className="inline-block w-full"
-                                  disabled={collapsed}
-                                >
-                                  <div className="max-w-full truncate">
-                                    {chat?.title || chat.id}
-                                  </div>
-                                </Button>
-                              </Link>
-                            )
-                          )
-                        ) : (
-                          <div className="text-foreground/60 mt-8 p-8">
-                            {t('no_chats')}
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
-                    <Separator className="my-2" />
-                    <div className="flex flex-row-reverse gap-2 lg:flex-row">
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className={`flex-none ${
-                          collapsed
-                            ? 'pointer-events-none opacity-0'
-                            : 'opacity-100'
-                        } transition duration-300`}
-                        onClick={() => setCollapsed(true)}
-                      >
-                        <ArrowDownToLine className="h-5 w-5" />
-                      </Button>
-                      <Link
-                        href="/new"
-                        className={`w-full ${
-                          collapsed
-                            ? 'pointer-events-none opacity-0'
-                            : 'opacity-100'
-                        } ${id ? '' : 'cursor-default'} transition duration-300`}
-                        onClick={clearChat}
-                      >
-                        <Button className="w-full" disabled={!id || collapsed}>
-                          <div className="line-clamp-1">{t('new_chat')}</div>
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-background/70 flex flex-col items-start justify-start border p-2 shadow-lg backdrop-blur-lg transition-all md:rounded-xl md:p-4">
-              <div className="flex w-full items-center justify-between">
-                <ChatModelSelector
-                  open={showExtraOptions}
-                  model={model}
-                  className={`${
-                    showExtraOptions
-                      ? 'pointer-events-auto mb-2 opacity-100'
-                      : 'pointer-events-none h-0 p-0 opacity-0'
-                  } transition-all ease-in-out`}
-                  setOpen={setShowExtraOptions}
-                  onChange={setModel}
-                />
-                {presenceState && (
-                  <div className="mb-2">
-                    <OnlineUsers
-                      presenceState={presenceState}
-                      currentUserId={currentUserId}
-                    />
-                  </div>
-                )}
-              </div>
-              <PromptForm
-                id={id}
-                key={`${model?.provider}-${model?.value}`}
-                provider={model?.provider}
-                model={model?.label}
-                chat={chat}
-                onSubmit={async (value) => {
-                  // If there is no id, create a new chat
-                  if (!id) return await createChat(value);
-
-                  // If there is an id, append the message to the chat
-                  await append({
-                    id,
-                    content: value,
-                    role: 'user',
-                  });
-                }}
-                files={files}
-                setFiles={setFiles}
-                input={input}
-                inputRef={inputRef}
-                setInput={setInput}
-                isLoading={isLoading}
-                showExtraOptions={showExtraOptions}
-                setShowExtraOptions={setShowExtraOptions}
-                toggleChatFileUpload={() => {
-                  setDialogType('files');
-                  setShowDialog((prev) => !prev);
-                }}
-                toggleChatVisibility={() => {
-                  setDialogType('visibility');
-                  setShowDialog((prev) => !prev);
-                }}
-                mode={mode}
-                setMode={setMode}
-                disabled={disabled}
-              />
-            </div>
+                // If there is an id, append the message to the chat
+                await append({
+                  id,
+                  content: value,
+                  role: 'user',
+                });
+              }}
+              files={files}
+              setFiles={setFiles}
+              input={input}
+              inputRef={inputRef}
+              setInput={setInput}
+              isLoading={isLoading}
+              showExtraOptions={showExtraOptions}
+              setShowExtraOptions={setShowExtraOptions}
+              toggleChatFileUpload={() => {
+                setDialogType('files');
+                setShowDialog((prev) => !prev);
+              }}
+              toggleChatVisibility={() => {
+                setDialogType('visibility');
+                setShowDialog((prev) => !prev);
+              }}
+              mode={mode}
+              setMode={setMode}
+              disabled={disabled}
+            />
           </div>
-        )}
+        </div>
       </div>
 
-      <DialogContent className="sm:max-w-[425px]">
-        <div className="text-center">
-          <DialogHeader className="mb-4">
-            <DialogTitle>
-              {dialogType === 'files'
-                ? t('upload_files')
-                : t('chat_visibility.chat_visibility')}
-            </DialogTitle>
-            <DialogDescription>
-              {dialogType === 'files'
-                ? t('upload_file_description')
-                : t('chat_visibility.chat_visibility_description')}
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {dialogType === 'files'
+              ? t('upload_files')
+              : t('chat_visibility.chat_visibility')}
+          </DialogTitle>
+          <DialogDescription>
+            {dialogType === 'files'
+              ? t('upload_file_description')
+              : t('chat_visibility.chat_visibility_description')}
+          </DialogDescription>
+        </DialogHeader>
 
-          {dialogType === 'files' ? (
-            <div className="grid gap-4">
-              <FileUploader
-                value={files}
-                onValueChange={setFiles}
-                maxFileCount={10}
-                maxSize={50 * 1024 * 1024}
-                onUpload={onUpload}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col gap-3">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="w-full"
-                        onClick={async () => {
-                          setUpdating(true);
-                          await updateChat({
-                            is_public: true,
-                            is_externally_editable: true,
-                          });
-                          setCopiedLink(false);
-                          setUpdating(false);
-                        }}
-                        disabled={
-                          !id ||
-                          (chat?.is_public && chat?.is_externally_editable)
-                        }
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {chat?.is_public && chat?.is_externally_editable ? (
-                              <Check className="h-4 w-4" />
-                            ) : updating ? (
-                              <LoadingIndicator className="h-4 w-4" />
-                            ) : (
-                              <Globe2 className="h-4 w-4" />
-                            )}
-                            <div className="line-clamp-1">
-                              {t('chat_visibility.public_edit')}
-                            </div>
-                          </div>
-                          <PenLine className="h-4 w-4 opacity-50" />
-                        </div>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>{t('chat_visibility.public_edit_desc')}</p>
-                    </TooltipContent>
-                  </Tooltip>
+        {dialogType === 'visibility' && (
+          <ChatPermissions
+            chatId={chat?.id || ''}
+            isPublic={chat?.is_public || false}
+            creatorId={chat?.creator_id || ''}
+            currentUserId={currentUserId}
+            onUpdateVisibility={(isPublic) =>
+              updateChat({ is_public: isPublic })
+            }
+          />
+        )}
 
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="w-full"
-                        onClick={async () => {
-                          setUpdating(true);
-                          await updateChat({
-                            is_public: true,
-                            is_externally_editable: false,
-                          });
-                          setCopiedLink(false);
-                          setUpdating(false);
-                        }}
-                        disabled={
-                          !id ||
-                          (chat?.is_public && !chat?.is_externally_editable)
-                        }
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {chat?.is_public &&
-                            !chat?.is_externally_editable ? (
-                              <Check className="h-4 w-4" />
-                            ) : updating ? (
-                              <LoadingIndicator className="h-4 w-4" />
-                            ) : (
-                              <Globe2 className="h-4 w-4" />
-                            )}
-                            <div className="line-clamp-1">
-                              {t('chat_visibility.public_read')}
-                            </div>
-                          </div>
-                          <Eye className="h-4 w-4 opacity-50" />
-                        </div>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>{t('chat_visibility.public_read_desc')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="w-full"
-                        onClick={async () => {
-                          setUpdating(true);
-                          await updateChat({
-                            is_public: false,
-                            is_externally_editable: false,
-                          });
-                          setCopiedLink(false);
-                          setUpdating(false);
-                        }}
-                        disabled={!id || !chat?.is_public}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {!chat?.is_public ? (
-                              <Check className="h-4 w-4" />
-                            ) : updating ? (
-                              <LoadingIndicator className="h-4 w-4" />
-                            ) : (
-                              <Lock className="h-4 w-4" />
-                            )}
-                            <div className="line-clamp-1">
-                              {t('chat_visibility.only_me')}
-                            </div>
-                          </div>
-                          <Lock className="h-4 w-4 opacity-50" />
-                        </div>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>{t('chat_visibility.only_me_desc')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-
-              {chat?.is_public && (
-                <>
-                  <Separator className="my-4" />
-
-                  <div className="flex flex-col items-center justify-center gap-4">
-                    <QRCode
-                      value={`${TTR_URL}/ai/chats/${id}`}
-                      size={200}
-                      style={{
-                        borderRadius: '0.5rem',
-                      }}
-                    />
-
-                    <div className="grid w-full gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            `${TTR_URL}/ai/chats/${id}`
-                          );
-                          setCopiedLink(true);
-                          setTimeout(() => setCopiedLink(false), 2000);
-                        }}
-                        disabled={disablePublicLink || copiedLink}
-                      >
-                        {copiedLink ? (
-                          <CheckCheck className="mr-2 h-4 w-4" />
-                        ) : (
-                          <LinkIcon className="mr-2 h-4 w-4" />
-                        )}
-                        {t('copy_public_link')}
-                      </Button>
-
-                      <Button
-                        type="button"
-                        className="w-full"
-                        onClick={() => window.open(`${TTR_URL}/ai/chats/${id}`)}
-                        disabled={disablePublicLink}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        {t('open_public_link')}
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
+        {dialogType === 'files' && (
+          <div className="grid gap-4">
+            <FileUploader
+              value={files}
+              onValueChange={setFiles}
+              maxFileCount={10}
+              maxSize={50 * 1024 * 1024}
+              onUpload={onUpload}
+            />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

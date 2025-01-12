@@ -6,6 +6,7 @@ import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { ResponseMode } from '@/components/prompt-form';
 import { Model, defaultModel, models } from '@/data/models';
+import { useMessages } from '@/hooks/use-messages';
 import { usePresence } from '@/hooks/use-presence';
 import { AIChat } from '@/types/db';
 import { createClient } from '@/utils/supabase/client';
@@ -52,6 +53,49 @@ const Chat = ({
 
   const { presenceState } = usePresence(chat?.id);
 
+  const {
+    messages,
+    append,
+    reload,
+    stop,
+    isLoading,
+    input,
+    setInput,
+    setMessages,
+  } = useChat({
+    id: chat?.id,
+    initialMessages,
+    api:
+      chat?.model || model?.value
+        ? `/api/ai/chat/${(chat?.model
+            ? models
+                .find((m) => m.value === chat.model)
+                ?.provider.toLowerCase() || model?.provider.toLowerCase()
+            : model?.provider.toLowerCase()
+          )?.replace(' ', '-')}`
+        : undefined,
+    body: {
+      id: chat?.id,
+      model: chat?.model || model?.value,
+      mode,
+    },
+    onResponse(response) {
+      if (!response.ok)
+        toast({
+          title: t('ai_chat.something_went_wrong'),
+          description: t('ai_chat.try_again_later'),
+        });
+    },
+    onError() {
+      toast({
+        title: t('ai_chat.something_went_wrong'),
+        description: t('ai_chat.try_again_later'),
+      });
+    },
+  });
+
+  useMessages(chat?.id || '', messages, setMessages);
+
   useEffect(() => {
     const getCurrentUser = async () => {
       const supabase = createClient();
@@ -63,39 +107,6 @@ const Chat = ({
 
     getCurrentUser();
   }, []);
-
-  const { messages, append, reload, stop, isLoading, input, setInput } =
-    useChat({
-      id: chat?.id,
-      initialMessages,
-      api:
-        chat?.model || model?.value
-          ? `/api/ai/chat/${(chat?.model
-              ? models
-                  .find((m) => m.value === chat.model)
-                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
-              : model?.provider.toLowerCase()
-            )?.replace(' ', '-')}`
-          : undefined,
-      body: {
-        id: chat?.id,
-        model: chat?.model || model?.value,
-        mode,
-      },
-      onResponse(response) {
-        if (!response.ok)
-          toast({
-            title: t('ai_chat.something_went_wrong'),
-            description: t('ai_chat.try_again_later'),
-          });
-      },
-      onError() {
-        toast({
-          title: t('ai_chat.something_went_wrong'),
-          description: t('ai_chat.try_again_later'),
-        });
-      },
-    });
 
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | undefined>(

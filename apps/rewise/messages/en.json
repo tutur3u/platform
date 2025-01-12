@@ -1298,12 +1298,27 @@
       "chat_visibility": "Chat Visibility",
       "chat_visibility_description": "Choose who can view and edit this chat.",
       "public_edit": "Public - Anyone can edit",
-      "public_edit_desc": "Anyone with the link can view and edit this chat.",
-      "public_read": "Public - Read only",
-      "public_read_desc": "Anyone with the link can view this chat, but only you can edit it.",
-      "only_me": "Private",
-      "only_me_desc": "Only you can view and edit this chat."
-    }
+      "qr_code": "Scan QR Code",
+      "qr_code_description": "Scan this QR code to access the chat",
+      "link_copied": "Link copied to clipboard"
+    },
+    "public_chat": "Public Chat",
+    "add_member": "Add Member",
+    "enter_email": "Enter email address",
+    "members": "Members",
+    "loading": "Loading...",
+    "no_members": "No members yet",
+    "unnamed_user": "Unnamed User",
+    "user_not_found": "User not found",
+    "check_email_and_try_again": "Please check the email address and try again",
+    "already_member": "Already a member",
+    "user_already_has_access": "This user already has access to the chat",
+    "error_adding_member": "Error adding member",
+    "member_added": "Member added",
+    "user_now_has_access": "User now has access to the chat",
+    "error_removing_member": "Error removing member",
+    "member_removed": "Member removed",
+    "user_access_revoked": "User's access has been revoked"
   },
   "crud-ops": {
     "ops": "Operations",
