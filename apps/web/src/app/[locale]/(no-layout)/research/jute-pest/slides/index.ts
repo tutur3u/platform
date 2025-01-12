@@ -11,10 +11,19 @@ import { rq2FeatureStabilitySlide } from './rq2/slide-feature-stability';
 import { rq2LightingAnalysisSlide } from './rq2/slide-lighting-analysis';
 import { rq2ResultsSlide } from './rq2/slide-results';
 // RQ3 Deep Dive Slides
+import { rq3AblationStudySlide } from './rq3/slide-ablation-study';
 import { rq3CorrelationAnalysisSlide } from './rq3/slide-correlation-analysis';
+import { rq3CrossValidationSlide } from './rq3/slide-cross-validation';
+import { rq3DataDistributionSlide } from './rq3/slide-data-distribution';
 import { rq3DimensionalityReductionSlide } from './rq3/slide-dimensionality-reduction';
 import { rq3FeatureEngineeringSlide } from './rq3/slide-feature-engineering';
+import { rq3FeatureImportanceSlide } from './rq3/slide-feature-importance';
+import { rq3FeatureInteractionsSlide } from './rq3/slide-feature-interactions';
 import { rq3FeatureSelectionSlide } from './rq3/slide-feature-selection';
+import { rq3FeatureStabilitySlide } from './rq3/slide-feature-stability';
+import { rq3HypothesisTestingSlide } from './rq3/slide-hypothesis-testing';
+import { rq3MulticollinearitySlide } from './rq3/slide-multicollinearity';
+import { rq3PrincipalComponentsSlide } from './rq3/slide-principal-components';
 import { rq3ResultsSlide } from './rq3/slide-results';
 // RQ4 Deep Dive Slides
 import { rq4DeploymentSlide } from './rq4/slide-deployment-analysis';
@@ -79,10 +88,19 @@ export const slides = [
 
   // RQ3: Feature Correlation Analysis
   methodologyRQ3Slide,
+  rq3DataDistributionSlide,
   rq3CorrelationAnalysisSlide,
+  rq3MulticollinearitySlide,
+  rq3FeatureImportanceSlide,
+  rq3FeatureInteractionsSlide,
   rq3FeatureEngineeringSlide,
+  rq3FeatureStabilitySlide,
   rq3DimensionalityReductionSlide,
+  rq3PrincipalComponentsSlide,
   rq3FeatureSelectionSlide,
+  rq3AblationStudySlide,
+  rq3CrossValidationSlide,
+  rq3HypothesisTestingSlide,
   rq3ResultsSlide,
 
   // RQ4: Model Optimization
