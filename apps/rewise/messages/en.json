@@ -1251,7 +1251,6 @@
     "created": "Created",
     "anonymous": "Anonymous",
     "you": "You",
-    "chat_visibility": "Chat visibility",
     "chat_visibility_description": "Choose who can view this chat.",
     "public": "Public",
     "only_me": "Only me",
@@ -1294,7 +1293,17 @@
     "short_and_concise": "Short and concise",
     "medium_and_informative": "Medium and informative",
     "long_and_detailed": "Long and detailed",
-    "imagine_placeholder": "Imagine..."
+    "imagine_placeholder": "Imagine...",
+    "chat_visibility": {
+      "chat_visibility": "Chat Visibility",
+      "chat_visibility_description": "Choose who can view and edit this chat.",
+      "public_edit": "Public - Anyone can edit",
+      "public_edit_desc": "Anyone with the link can view and edit this chat.",
+      "public_read": "Public - Read only",
+      "public_read_desc": "Anyone with the link can view this chat, but only you can edit it.",
+      "only_me": "Private",
+      "only_me_desc": "Only you can view and edit this chat."
+    }
   },
   "crud-ops": {
     "ops": "Operations",

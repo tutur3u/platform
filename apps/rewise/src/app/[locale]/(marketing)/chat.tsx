@@ -240,12 +240,11 @@ const Chat = ({
   const updateChat = async (newData: Partial<AIChat>) => {
     if (!chat?.id) return;
 
-    const { is_public } = newData;
     const supabase = createClient();
 
     const { error } = await supabase
       .from('ai_chats')
-      .update({ is_public })
+      .update(newData)
       .eq('id', chat?.id);
 
     if (error) {
@@ -256,7 +255,7 @@ const Chat = ({
       return;
     }
 
-    setChat({ ...chat, is_public });
+    setChat({ ...chat, ...newData });
     toast({
       title: t('ai_chat.chat_updated'),
       description: t('ai_chat.visibility_updated_desc'),

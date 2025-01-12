@@ -22,6 +22,12 @@ import {
 } from '@repo/ui/components/ui/dialog';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
 import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
@@ -30,10 +36,12 @@ import {
   Check,
   CheckCheck,
   ExternalLink,
+  Eye,
   FolderOpen,
-  Globe,
+  Globe2,
   LinkIcon,
   Lock,
+  PenLine,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -345,18 +353,18 @@ export function ChatPanel({
         )}
       </div>
 
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <div className="text-center">
           <DialogHeader className="mb-4">
             <DialogTitle>
               {dialogType === 'files'
                 ? t('upload_files')
-                : t('chat_visibility')}
+                : t('chat_visibility.chat_visibility')}
             </DialogTitle>
             <DialogDescription>
               {dialogType === 'files'
                 ? t('upload_file_description')
-                : t('chat_visibility_description')}
+                : t('chat_visibility.chat_visibility_description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -372,98 +380,182 @@ export function ChatPanel({
             </div>
           ) : (
             <>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    setUpdating(true);
-                    await updateChat({ is_public: true });
-                    setCopiedLink(false);
-                    setUpdating(false);
-                  }}
-                  disabled={!id || chat?.is_public}
-                >
-                  {chat?.is_public ? (
-                    <Check className="mr-2 h-4 w-4" />
-                  ) : updating ? (
-                    <LoadingIndicator className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Globe className="mr-2 h-4 w-4" />
-                  )}
-                  <div className="line-clamp-1">{t('public')}</div>
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    setUpdating(true);
-                    await updateChat({ is_public: false });
-                    setCopiedLink(false);
-                    setUpdating(false);
-                  }}
-                  disabled={!id || !chat?.is_public}
-                >
-                  {!chat?.is_public ? (
-                    <Check className="mr-2 h-4 w-4" />
-                  ) : updating ? (
-                    <LoadingIndicator className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Lock className="mr-2 h-4 w-4" />
-                  )}
-                  <div className="line-clamp-1">{t('only_me')}</div>
-                </Button>
+              <div className="flex flex-col gap-3">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        onClick={async () => {
+                          setUpdating(true);
+                          await updateChat({
+                            is_public: true,
+                            is_externally_editable: true,
+                          });
+                          setCopiedLink(false);
+                          setUpdating(false);
+                        }}
+                        disabled={
+                          !id ||
+                          (chat?.is_public && chat?.is_externally_editable)
+                        }
+                      >
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {chat?.is_public && chat?.is_externally_editable ? (
+                              <Check className="h-4 w-4" />
+                            ) : updating ? (
+                              <LoadingIndicator className="h-4 w-4" />
+                            ) : (
+                              <Globe2 className="h-4 w-4" />
+                            )}
+                            <div className="line-clamp-1">
+                              {t('chat_visibility.public_edit')}
+                            </div>
+                          </div>
+                          <PenLine className="h-4 w-4 opacity-50" />
+                        </div>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>{t('chat_visibility.public_edit_desc')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        onClick={async () => {
+                          setUpdating(true);
+                          await updateChat({
+                            is_public: true,
+                            is_externally_editable: false,
+                          });
+                          setCopiedLink(false);
+                          setUpdating(false);
+                        }}
+                        disabled={
+                          !id ||
+                          (chat?.is_public && !chat?.is_externally_editable)
+                        }
+                      >
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {chat?.is_public &&
+                            !chat?.is_externally_editable ? (
+                              <Check className="h-4 w-4" />
+                            ) : updating ? (
+                              <LoadingIndicator className="h-4 w-4" />
+                            ) : (
+                              <Globe2 className="h-4 w-4" />
+                            )}
+                            <div className="line-clamp-1">
+                              {t('chat_visibility.public_read')}
+                            </div>
+                          </div>
+                          <Eye className="h-4 w-4 opacity-50" />
+                        </div>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>{t('chat_visibility.public_read_desc')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        onClick={async () => {
+                          setUpdating(true);
+                          await updateChat({
+                            is_public: false,
+                            is_externally_editable: false,
+                          });
+                          setCopiedLink(false);
+                          setUpdating(false);
+                        }}
+                        disabled={!id || !chat?.is_public}
+                      >
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {!chat?.is_public ? (
+                              <Check className="h-4 w-4" />
+                            ) : updating ? (
+                              <LoadingIndicator className="h-4 w-4" />
+                            ) : (
+                              <Lock className="h-4 w-4" />
+                            )}
+                            <div className="line-clamp-1">
+                              {t('chat_visibility.only_me')}
+                            </div>
+                          </div>
+                          <Lock className="h-4 w-4 opacity-50" />
+                        </div>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>{t('chat_visibility.only_me_desc')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
 
               {chat?.is_public && (
                 <>
                   <Separator className="my-4" />
 
-                  <div className="flex items-center justify-center">
+                  <div className="flex flex-col items-center justify-center gap-4">
                     <QRCode
                       value={`${TTR_URL}/ai/chats/${id}`}
-                      size={256}
+                      size={200}
                       style={{
                         borderRadius: '0.5rem',
                       }}
                     />
+
+                    <div className="grid w-full gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            `${TTR_URL}/ai/chats/${id}`
+                          );
+                          setCopiedLink(true);
+                          setTimeout(() => setCopiedLink(false), 2000);
+                        }}
+                        disabled={disablePublicLink || copiedLink}
+                      >
+                        {copiedLink ? (
+                          <CheckCheck className="mr-2 h-4 w-4" />
+                        ) : (
+                          <LinkIcon className="mr-2 h-4 w-4" />
+                        )}
+                        {t('copy_public_link')}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        className="w-full"
+                        onClick={() => window.open(`${TTR_URL}/ai/chats/${id}`)}
+                        disabled={disablePublicLink}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        {t('open_public_link')}
+                      </Button>
+                    </div>
                   </div>
                 </>
               )}
-
-              <Separator className="my-4" />
-
-              <div className="grid w-full gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${TTR_URL}/ai/chats/${id}`);
-                    setCopiedLink(true);
-                    setTimeout(() => setCopiedLink(false), 2000);
-                  }}
-                  disabled={disablePublicLink || copiedLink}
-                >
-                  {copiedLink ? (
-                    <CheckCheck className="mr-2 h-4 w-4" />
-                  ) : (
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                  )}
-                  {t('copy_public_link')}
-                </Button>
-                <Button
-                  type="button"
-                  className="w-full"
-                  onClick={() => window.open(`${TTR_URL}/ai/chats/${id}`)}
-                  disabled={disablePublicLink}
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  {t('open_public_link')}
-                </Button>
-              </div>
             </>
           )}
         </div>

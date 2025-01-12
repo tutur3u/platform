@@ -578,11 +578,13 @@ export function PromptForm({
                 >
                   {chat?.is_public ? <Globe /> : <Lock />}
                   <span className="sr-only">
-                    {t('ai_chat.chat_visibility')}
+                    {t('ai_chat.chat_visibility.chat_visibility')}
                   </span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{t('ai_chat.chat_visibility')}</TooltipContent>
+              <TooltipContent>
+                {t('ai_chat.chat_visibility.chat_visibility')}
+              </TooltipContent>
             </Tooltip>
 
             <Tooltip>

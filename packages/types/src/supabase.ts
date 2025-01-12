@@ -81,6 +81,7 @@ export type Database = {
           created_at: string;
           creator_id: string | null;
           id: string;
+          is_externally_editable: boolean;
           is_public: boolean;
           latest_summarized_message_id: string | null;
           model: string | null;
@@ -92,6 +93,7 @@ export type Database = {
           created_at?: string;
           creator_id?: string | null;
           id?: string;
+          is_externally_editable?: boolean;
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;
@@ -103,6 +105,7 @@ export type Database = {
           created_at?: string;
           creator_id?: string | null;
           id?: string;
+          is_externally_editable?: boolean;
           is_public?: boolean;
           latest_summarized_message_id?: string | null;
           model?: string | null;

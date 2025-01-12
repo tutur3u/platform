@@ -1251,7 +1251,6 @@
     "created": "Đã tạo",
     "anonymous": "Ẩn danh",
     "you": "Bạn",
-    "chat_visibility": "Hiển thị trò chuyện",
     "chat_visibility_description": "Chọn ai có thể xem cuộc trò chuyện này.",
     "public": "Công khai",
     "only_me": "Chỉ mình tôi",
@@ -1294,7 +1293,17 @@
     "short_and_concise": "Ngắn gọn và súc tích",
     "medium_and_informative": "Vừa đủ thông tin",
     "long_and_detailed": "Dài và chi tiết",
-    "imagine_placeholder": "Hãy tưởng tượng..."
+    "imagine_placeholder": "Hãy tưởng tượng...",
+    "chat_visibility": {
+      "chat_visibility": "Hiển thị trò chuyện",
+      "chat_visibility_description": "Chọn ai có thể xem và chỉnh sửa trò chuyện này.",
+      "public_edit": "Công khai - Mọi người có thể chỉnh sửa",
+      "public_edit_desc": "Bất kỳ ai có đường dẫn đều có thể xem và chỉnh sửa trò chuyện này.",
+      "public_read": "Công khai - Chỉ xem",
+      "public_read_desc": "Bất kỳ ai có đường dẫn đều có thể xem trò chuyện này, nhưng chỉ bạn mới có thể chỉnh sửa.",
+      "only_me": "Riêng tư",
+      "only_me_desc": "Chỉ bạn mới có thể xem và chỉnh sửa trò chuyện này."
+    }
   },
   "crud-ops": {
     "ops": "Thao tác",
