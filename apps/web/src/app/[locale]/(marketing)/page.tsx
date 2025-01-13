@@ -144,7 +144,7 @@ export default function MarketingPage() {
 
   return (
     <div
-      className="relative flex w-full flex-col items-center"
+      className="relative -mt-[53px] flex w-full flex-col items-center"
       suppressHydrationWarning
     >
       <FloatingElements />
@@ -153,19 +153,58 @@ export default function MarketingPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="from-background via-background to-dynamic-light-pink/10 relative min-h-[calc(100vh-3.5rem)] w-full bg-gradient-to-b"
+        className="from-background via-background to-dynamic-light-pink/10 relative min-h-[calc(100vh-3.5rem+53px)] w-full bg-gradient-to-b"
       >
         {/* Enhanced Animated Background Patterns */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="animate-aurora absolute inset-0 opacity-20" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_100%_100%,rgba(var(--primary-rgb),0.1),transparent)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_0%_0%,rgba(var(--primary-rgb),0.1),transparent)]" />
-          <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.1)_1px,transparent_1px)] bg-[size:40px_40px]" />
-          </div>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.5, 0.3],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute -left-32 top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          />
+          <motion.div
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.2, 0.4, 0.2],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute -right-32 top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          />
+          <motion.div
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.2, 0.3, 0.2],
+            }}
+            transition={{
+              duration: 12,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute -bottom-32 left-1/2 h-[22.5rem] w-[22.5rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-[45rem] sm:w-[45rem]"
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:120px] opacity-20" />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.1, 0.15, 0.1] }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
+          />
         </div>
 
         {/* Main Content */}
