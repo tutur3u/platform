@@ -1,5 +1,6 @@
 'use client';
 
+import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
@@ -13,8 +14,10 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { Textarea } from '@repo/ui/components/ui/textarea';
+import { toast } from '@repo/ui/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Brain, Github, Globe, Mail, MessageCircle, Star } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -68,6 +71,10 @@ const highlights = [
 ];
 
 export default function ContactPage() {
+  const supabase = createClient();
+
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -79,8 +86,28 @@ export default function ContactPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Implement form submission logic here
-    console.log(values);
+    setIsLoading(true);
+    const { error } = await supabase.from('support_inquiries').insert({
+      name: values.name,
+      email: values.email,
+      subject: values.subject,
+      message: values.message,
+    });
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Something went wrong',
+        variant: 'destructive',
+      });
+    } else {
+      form.reset();
+      toast({
+        title: 'Success',
+        description: 'Your message has been sent',
+      });
+    }
+    setIsLoading(false);
   }
 
   return (
@@ -325,8 +352,13 @@ export default function ContactPage() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full" size="lg">
-                    Send Message
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    size="lg"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Sending...' : 'Send Message'}
                   </Button>
                 </form>
               </Form>
