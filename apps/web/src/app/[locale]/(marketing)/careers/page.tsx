@@ -198,7 +198,7 @@ export default function CareersPage() {
         </motion.div>
 
         <motion.h1
-          className="text-foreground mb-6 text-balance text-7xl font-bold tracking-tight"
+          className="text-foreground mb-6 text-balance text-4xl font-bold tracking-tight md:text-7xl"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
@@ -216,7 +216,7 @@ export default function CareersPage() {
         </motion.h1>
 
         <motion.p
-          className="text-foreground/80 mx-auto mb-12 max-w-2xl text-balance text-xl leading-relaxed"
+          className="text-foreground/80 mx-auto mb-12 max-w-2xl text-balance text-lg leading-relaxed md:text-xl"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}

@@ -5,6 +5,12 @@ import { ThemeToggle } from './theme-toggle';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@repo/ui/components/ui/accordion';
+import {
   Sheet,
   SheetContent,
   SheetTitle,
@@ -40,9 +46,9 @@ const navItems = (t: any) => {
   return [
     // Main Links
     { href: '/', label: t('common.home') },
-    { href: '/meet-together', label: t('common.meet-together') },
 
     // Products
+    { href: '/meet-together', label: t('common.meet-together') },
     {
       href: '/products/ai',
       label: t('common.ai-assistant'),
@@ -165,37 +171,22 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   );
 };
 
-const DesktopMenu: React.FC<{ t: any }> = () => {
-  return <div />;
-  // const pathname = usePathname();
-
-  // if (
-  //   pathname !== '/' &&
-  //   !PUBLIC_PATHS.some((path) => pathname.startsWith(path)) &&
-  //   !pathname.startsWith('/settings')
-  // )
-  //   return null;
-
-  // return (
-  //   <div className="hidden gap-8 font-semibold md:flex">
-  //     {navItems(t).map((item) => (
-  //       <NavLink key={item.href} item={item} />
-  //     ))}
-  //   </div>
-  // );
-};
-
-const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
-  <NavLink item={item} onClick={onClick} />
-);
+const MobileNavLink: React.FC<NavLinkProps> = ({
+  item,
+  className,
+  onClick,
+}) => <NavLink item={item} className={className} onClick={onClick} />;
 
 const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
   const [isOpened, setIsOpened] = useState(false);
   const closeMenu = () => setIsOpened(false);
 
   const items = navItems(t);
-  const mainLinks = items.slice(0, 2);
-  const products = items.filter((item) => item.href.startsWith('/products'));
+  const mainLinks = items.slice(0, 1); // Only home
+  const products = items.filter(
+    (item) =>
+      item.href === '/meet-together' || item.href.startsWith('/products')
+  );
   const solutions = items.filter((item) => item.href.startsWith('/solutions'));
   const resources = items.filter(
     (item) =>
@@ -211,7 +202,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="hover:bg-accent rounded-lg p-2 transition-colors">
+      <SheetTrigger className="hover:bg-accent active:bg-accent/80 rounded-lg p-2 transition-all">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
 
@@ -219,8 +210,8 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
         <SheetTitle />
         <div className="flex h-full flex-col">
           {/* Header with Auth and Theme */}
-          <div className="border-b px-4 py-6">
-            <div className={cn('items-center gap-2', user ? 'grid' : 'flex')}>
+          <div className="border-b px-6 py-6">
+            <div className={cn('items-center gap-3', user ? 'grid' : 'flex')}>
               <AuthButton
                 user={sbUser}
                 className="w-full items-center justify-center"
@@ -232,81 +223,98 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto">
-            <div className="flex flex-col gap-6 px-4 py-6">
+            <div className="flex flex-col space-y-4 py-6">
               {/* Main Links */}
-              <div className="grid gap-2 font-medium">
-                {mainLinks.map((item) => (
-                  <MobileNavLink
-                    key={item.href}
-                    item={item}
-                    onClick={closeMenu}
-                  />
-                ))}
-              </div>
-
-              {/* Products Section */}
-              <div className="grid gap-2">
-                <div className="text-foreground/60 text-sm font-semibold">
-                  Products
-                </div>
+              <div className="px-6">
                 <div className="grid gap-2 font-medium">
-                  {products.map((item) => (
+                  {mainLinks.map((item) => (
                     <MobileNavLink
                       key={item.href}
                       item={item}
                       onClick={closeMenu}
+                      className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                     />
                   ))}
                 </div>
               </div>
 
-              {/* Solutions Section */}
-              <div className="grid gap-2">
-                <div className="text-foreground/60 text-sm font-semibold">
-                  Solutions
-                </div>
-                <div className="grid gap-2 font-medium">
-                  {solutions.map((item) => (
-                    <MobileNavLink
-                      key={item.href}
-                      item={item}
-                      onClick={closeMenu}
-                    />
-                  ))}
-                </div>
-              </div>
+              <Accordion type="multiple" className="space-y-3">
+                {/* Products Section */}
+                <AccordionItem value="products" className="border-none px-4">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                    <span className="text-sm font-semibold">Products</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2 pt-3">
+                    <div className="grid gap-2 px-2">
+                      {products.map((item) => (
+                        <MobileNavLink
+                          key={item.href}
+                          item={item}
+                          onClick={closeMenu}
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
 
-              {/* Resources Section */}
-              <div className="grid gap-2">
-                <div className="text-foreground/60 text-sm font-semibold">
-                  Resources
-                </div>
-                <div className="grid gap-2 font-medium">
-                  {resources.map((item) => (
-                    <MobileNavLink
-                      key={item.href}
-                      item={item}
-                      onClick={closeMenu}
-                    />
-                  ))}
-                </div>
-              </div>
+                {/* Solutions Section */}
+                <AccordionItem value="solutions" className="border-none px-4">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                    <span className="text-sm font-semibold">Solutions</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2 pt-3">
+                    <div className="grid gap-2 px-2">
+                      {solutions.map((item) => (
+                        <MobileNavLink
+                          key={item.href}
+                          item={item}
+                          onClick={closeMenu}
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
 
-              {/* Company Section */}
-              <div className="grid gap-2">
-                <div className="text-foreground/60 text-sm font-semibold">
-                  Company
-                </div>
-                <div className="grid gap-2 font-medium">
-                  {company.map((item) => (
-                    <MobileNavLink
-                      key={item.href}
-                      item={item}
-                      onClick={closeMenu}
-                    />
-                  ))}
-                </div>
-              </div>
+                {/* Resources Section */}
+                <AccordionItem value="resources" className="border-none px-4">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                    <span className="text-sm font-semibold">Resources</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2 pt-3">
+                    <div className="grid gap-2 px-2">
+                      {resources.map((item) => (
+                        <MobileNavLink
+                          key={item.href}
+                          item={item}
+                          onClick={closeMenu}
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Company Section */}
+                <AccordionItem value="company" className="border-none px-4">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                    <span className="text-sm font-semibold">Company</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2 pt-3">
+                    <div className="grid gap-2 px-2">
+                      {company.map((item) => (
+                        <MobileNavLink
+                          key={item.href}
+                          item={item}
+                          onClick={closeMenu}
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </div>
         </div>
@@ -320,7 +328,6 @@ const Menu: React.FC<MenuProps> = ({ sbUser, user }) => {
 
   return (
     <>
-      <DesktopMenu t={t} />
       <div className="flex gap-2 md:hidden">
         <MobileMenu sbUser={sbUser} user={user} t={t} />
       </div>
