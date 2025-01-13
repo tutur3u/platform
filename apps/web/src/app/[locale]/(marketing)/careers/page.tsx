@@ -8,6 +8,7 @@ import {
   Clock,
   Code2,
   Compass,
+  Github,
   Globe2,
   GraduationCap,
   Heart,
@@ -17,9 +18,11 @@ import {
   MapPin,
   MessageCircle,
   Rocket,
+  Shield,
   Sparkles,
   Star,
   Sun,
+  Timer,
   Users2,
 } from 'lucide-react';
 import { ReactNode } from 'react';
@@ -882,55 +885,196 @@ export default function CareersPage() {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="text-center"
+        className="relative"
       >
-        <Card className="group relative overflow-hidden p-12">
-          <div className="absolute inset-0">
-            <div className="from-primary/10 absolute inset-0 bg-gradient-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-          </div>
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
+          <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
+        </div>
 
-          <div className="relative">
-            <motion.div
-              initial={{ scale: 0.95 }}
-              whileHover={{ scale: 1 }}
-              className="bg-primary/10 group-hover:bg-primary/20 mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full transition-colors duration-300"
-            >
-              <Mail className="text-primary h-10 w-10" />
-            </motion.div>
+        <div className="relative mx-auto max-w-6xl">
+          <Card className="group relative overflow-hidden">
+            <div className="absolute inset-0">
+              <div className="from-primary/10 absolute inset-0 bg-gradient-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
+              <div className="absolute -left-32 -top-32 h-64 w-64 rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
+              <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
+            </div>
 
-            <h2 className="text-foreground mb-6 text-4xl font-bold">
-              <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                Shape the Future with Us
-              </span>
-            </h2>
-            <p className="text-foreground/80 mx-auto mb-12 max-w-2xl text-lg">
-              While we don't have any open positions at the moment, we're always
-              excited to connect with talented individuals who share our vision.
-              If you're passionate about technology and innovation, we'd love to
-              hear from you.
-            </p>
+            <div className="relative grid gap-12 p-12 md:grid-cols-2">
+              <div className="relative space-y-8">
+                <motion.div
+                  initial={{ scale: 0.95 }}
+                  whileHover={{ scale: 1 }}
+                  className="bg-primary/10 group-hover:bg-primary/20 relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl transition-colors duration-300 md:mx-0"
+                >
+                  <div className="animate-spin-slow absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
+                  <div className="bg-background/80 absolute inset-[2px] rounded-xl backdrop-blur-sm" />
+                  <Mail className="text-primary relative h-10 w-10" />
+                </motion.div>
 
-            <motion.a
-              href="mailto:contact@tuturuuu.com"
-              className="bg-foreground hover:bg-foreground/90 text-background inline-flex items-center gap-2 rounded-lg px-8 py-4 font-semibold transition-all duration-300"
-              whileHover={{ scale: 1.05 }}
-            >
-              <Mail className="h-5 w-5" />
-              <span>Get in Touch</span>
-            </motion.a>
+                <div className="space-y-4 text-center md:text-left">
+                  <h2 className="text-foreground text-4xl font-bold">
+                    <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                      Shape the Future with Us
+                    </span>
+                  </h2>
+                  <p className="text-foreground/80 mx-auto max-w-2xl text-lg">
+                    While we don't have any open positions at the moment, we're
+                    always excited to connect with talented individuals who
+                    share our vision.
+                  </p>
+                </div>
 
-            <p className="text-foreground/60 mt-6 text-sm">
-              Email us at{' '}
-              <span className="font-semibold underline">
-                contact@tuturuuu.com
-              </span>{' '}
-              with your story and future role in mind
-            </p>
-          </div>
-        </Card>
+                <div className="flex flex-wrap justify-center gap-4 md:justify-start">
+                  <motion.a
+                    href="mailto:contact@tuturuuu.com"
+                    className="bg-foreground hover:bg-foreground/90 text-background group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="from-primary/20 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <Mail className="relative h-5 w-5" />
+                    <span className="relative">Get in Touch</span>
+                  </motion.a>
+
+                  <motion.a
+                    href="https://github.com/tutur3u"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-foreground/10 hover:bg-foreground/20 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="from-primary/10 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <Github className="relative h-5 w-5" />
+                    <span className="relative">View Our Work</span>
+                  </motion.a>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-6 md:justify-start">
+                  <div className="flex items-center gap-2">
+                    <Timer className="text-primary h-5 w-5" />
+                    <span className="text-foreground/60 text-sm">
+                      Quick Response
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="text-primary h-5 w-5" />
+                    <span className="text-foreground/60 text-sm">
+                      Secure Communication
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Globe2 className="text-primary h-5 w-5" />
+                    <span className="text-foreground/60 text-sm">
+                      Global Opportunities
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="bg-foreground/5 group relative overflow-hidden rounded-2xl p-8 backdrop-blur-sm">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="relative space-y-6">
+                    <h3 className="text-foreground text-2xl font-bold">
+                      What We're Looking For
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="bg-background/50 border-primary/10 flex items-center gap-3 rounded-lg border p-4 backdrop-blur-sm">
+                        <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                          <Code2 className="text-primary h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">
+                            Technical Excellence
+                          </h4>
+                          <p className="text-foreground/60 text-sm">
+                            Strong problem-solving abilities
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-background/50 border-primary/10 flex items-center gap-3 rounded-lg border p-4 backdrop-blur-sm">
+                        <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                          <Users2 className="text-primary h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">Team Player</h4>
+                          <p className="text-foreground/60 text-sm">
+                            Collaborative mindset
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-background/50 border-primary/10 flex items-center gap-3 rounded-lg border p-4 backdrop-blur-sm">
+                        <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                          <Rocket className="text-primary h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">Growth Mindset</h4>
+                          <p className="text-foreground/60 text-sm">
+                            Eager to learn and grow
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-background/50 border-primary/10 flex items-center gap-3 rounded-lg border p-4 backdrop-blur-sm">
+                        <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                          <Globe2 className="text-primary h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">Global Vision</h4>
+                          <p className="text-foreground/60 text-sm">
+                            International mindset
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-foreground/60 mt-6 text-center text-sm">
+                      Email us at{' '}
+                      <span className="text-primary font-semibold">
+                        contact@tuturuuu.com
+                      </span>
+                      <br />
+                      with your story and future role in mind
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
       </motion.section>
+
+      {/* Add styles for animations */}
+      <style jsx global>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        @keyframes spin-slow {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 8s linear infinite;
+        }
+      `}</style>
     </main>
   );
 }
