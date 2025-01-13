@@ -31,9 +31,9 @@ export default function NavbarSeparator() {
 
     if (scroll > 0) {
       navbarContent.classList.remove('bg-transparent');
-      navbarContent.classList.add('bg-background');
+      navbarContent.classList.add('bg-background/50');
     } else {
-      navbarContent.classList.remove('bg-background');
+      navbarContent.classList.remove('bg-background/50');
       navbarContent.classList.add('bg-transparent');
     }
   }, [scroll]);
