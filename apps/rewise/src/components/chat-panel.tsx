@@ -19,7 +19,7 @@ import { RealtimePresenceState } from '@supabase/supabase-js';
 import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 interface PresenceUser {
   id: string;
@@ -68,43 +68,24 @@ export interface ChatPanelProps
 export function ChatPanel({
   id,
   chat,
-  chats,
-  count,
   isLoading,
   append,
   input,
   inputRef,
   setInput,
   model,
-  setModel,
   createChat,
   updateChat,
-  clearChat,
-  collapsed,
-  setCollapsed,
   mode,
   setMode,
   disabled,
-  presenceState,
   currentUserId,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
 
-  const [updating, setUpdating] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
-
   const [showDialog, setShowDialog] = useState(false);
   const [dialogType, setDialogType] = useState<'files' | 'visibility'>();
   const [showExtraOptions, setShowExtraOptions] = useState(false);
-
-  const disablePublicLink = isLoading || updating || !id || !chat?.is_public;
-
-  const [chatInputHeight, setChatInputHeight] = useState(0);
-
-  useEffect(() => {
-    const chatInput = document.getElementById('chat-input');
-    if (chatInput) setChatInputHeight(chatInput.clientHeight);
-  }, [input]);
 
   const [files, setFiles] = useState<StatedFile[]>([]);
 
