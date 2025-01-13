@@ -23,6 +23,21 @@ export default function NavbarSeparator() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // when scrolled down, remove bg-transparent and add bg-background
+  // to the navbar-content's className
+  useEffect(() => {
+    const navbarContent = document.getElementById('navbar-content');
+    if (!navbarContent) return;
+
+    if (scroll > 0) {
+      navbarContent.classList.remove('bg-transparent');
+      navbarContent.classList.add('bg-background');
+    } else {
+      navbarContent.classList.remove('bg-background');
+      navbarContent.classList.add('bg-transparent');
+    }
+  }, [scroll]);
+
   const forceShow = pathname.startsWith('/docs');
 
   return (

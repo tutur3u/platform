@@ -21,7 +21,10 @@ export default function Navbar({
       id="navbar"
       className={cn('fixed inset-x-0 top-0 z-50', onlyOnMobile && 'md:hidden')}
     >
-      <div className="bg-background px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32">
+      <div
+        id="navbar-content"
+        className="bg-transparent px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32"
+      >
         <div className="relative flex items-center justify-between gap-2 md:gap-4">
           <div className="flex w-full items-center gap-2">
             <Link href="/" className="flex flex-none items-center gap-2">

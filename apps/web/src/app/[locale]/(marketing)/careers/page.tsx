@@ -2,7 +2,7 @@
 
 import { Badge } from '@repo/ui/components/ui/badge';
 import { Card } from '@repo/ui/components/ui/card';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import {
   Building2,
   Clock,
@@ -25,7 +25,7 @@ import {
   Timer,
   Users2,
 } from 'lucide-react';
-import { ReactNode } from 'react';
+import { ReactNode, useRef } from 'react';
 
 interface ValueProps {
   icon: ReactNode;
@@ -166,8 +166,78 @@ const badges: BadgeProps[] = [
 ];
 
 export default function CareersPage() {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end end'],
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
+  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.5, 0]);
+
   return (
-    <main className="container relative space-y-32 py-24">
+    <main
+      ref={containerRef}
+      className="-pt-[53px] container relative mx-auto space-y-24 px-4 pb-12"
+    >
+      {/* Enhanced Floating Orbs */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+          style={{ y }}
+          className="absolute -left-64 top-0 h-[40rem] w-[40rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.2, 0.4, 0.2],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+          style={{ y: opacity }}
+          className="absolute -right-64 top-[30%] h-[35rem] w-[35rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+          className="absolute -bottom-64 left-1/2 h-[45rem] w-[45rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl"
+        />
+      </div>
+
+      {/* Enhanced Background Patterns */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:120px] opacity-20" />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0.1, 0.15, 0.1] }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
+          className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
+        />
+      </div>
+
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -252,635 +322,7 @@ export default function CareersPage() {
         </div>
       </motion.section>
 
-      {/* About Tuturuuu Section - Creative Layout */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="relative"
-      >
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-40%,rgba(var(--primary-rgb),0.15),transparent)]" />
-          <div className="absolute inset-0 bg-[conic-gradient(from_90deg_at_80%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
-        </div>
-
-        <div className="relative grid gap-16 md:grid-cols-12">
-          <motion.div
-            initial={{ x: -20, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            className="space-y-6 md:col-span-5"
-          >
-            <div className="sticky top-24 space-y-6">
-              <h2 className="text-foreground text-4xl font-bold">
-                <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                  About Tuturuuu
-                </span>
-              </h2>
-              <p className="text-foreground/80 text-lg leading-relaxed">
-                We're a dynamic tech startup revolutionizing how people interact
-                with technology. Starting from Vietnam, we're building
-                world-class products that combine innovation with accessibility,
-                powered by cutting-edge AI and automation.
-              </p>
-              <p className="text-foreground/80 text-lg leading-relaxed">
-                Our mission is to democratize access to powerful technology
-                tools, making them intuitive and accessible to everyone. We
-                believe in pushing boundaries while ensuring technology serves
-                humanity's best interests.
-              </p>
-
-              <div className="relative mt-8">
-                <div className="via-foreground/5 absolute inset-0 bg-gradient-to-r from-transparent to-transparent" />
-                <div className="divide-foreground/5 relative grid grid-cols-3 divide-x">
-                  <div className="space-y-2 px-4 first:pl-0">
-                    <div className="text-primary text-3xl font-bold">2022</div>
-                    <div className="text-foreground/60 text-sm">
-                      Founded in Vietnam
-                    </div>
-                  </div>
-                  <div className="space-y-2 px-4">
-                    <div className="text-primary text-3xl font-bold">24/7</div>
-                    <div className="text-foreground/60 text-sm">Innovation</div>
-                  </div>
-                  <div className="space-y-2 px-4">
-                    <div className="text-primary text-3xl font-bold">∞</div>
-                    <div className="text-foreground/60 text-sm">
-                      Possibilities
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            className="relative space-y-8 md:col-span-7"
-          >
-            <div className="bg-foreground/5 group relative overflow-hidden rounded-2xl backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="relative p-8">
-                <div className="from-primary/20 absolute -right-16 -top-16 h-32 w-32 rotate-12 rounded-3xl bg-gradient-to-br via-purple-500/10 to-pink-500/20 blur-3xl" />
-                <div className="relative space-y-6">
-                  <h3 className="text-foreground text-2xl font-bold">
-                    Our Vision
-                  </h3>
-                  <p className="text-foreground/80">
-                    To become one of the world's most innovative technology
-                    companies, creating life-changing breakthroughs that touch
-                    lives across the globe, making the impossible possible for
-                    everyone, everywhere.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <Badge
-                      variant="secondary"
-                      className="bg-primary/10 text-primary"
-                    >
-                      Innovation First
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="bg-primary/10 text-primary"
-                    >
-                      User-Centric
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="bg-primary/10 text-primary"
-                    >
-                      Global Impact
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-foreground/5 group relative overflow-hidden rounded-2xl backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="relative p-8">
-                <div className="to-primary/20 absolute -left-16 -top-16 h-32 w-32 -rotate-12 rounded-3xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 blur-3xl" />
-                <div className="relative space-y-6">
-                  <h3 className="text-foreground text-2xl font-bold">
-                    Our Culture
-                  </h3>
-                  <p className="text-foreground/80">
-                    We foster an environment of continuous learning, innovation,
-                    and collaboration. Our team members are empowered to think
-                    big, take initiative, and make a real impact on the future
-                    of technology.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <Badge
-                      variant="secondary"
-                      className="bg-primary/10 text-primary"
-                    >
-                      Open Culture
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="bg-primary/10 text-primary"
-                    >
-                      Rapid Growth
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="bg-primary/10 text-primary"
-                    >
-                      Work-Life Balance
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* Join Our Vision Section - Creative Grid */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="relative"
-      >
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_140%,rgba(var(--primary-rgb),0.15),transparent)]" />
-          <div className="absolute inset-0 bg-[conic-gradient(from_180deg_at_20%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
-        </div>
-
-        <div className="mb-16 text-center">
-          <h2 className="text-foreground mb-4 text-4xl font-bold">
-            <span className="from-primary bg-gradient-to-r via-blue-500 to-cyan-500 bg-clip-text text-transparent">
-              Join Our Vision
-            </span>
-          </h2>
-          <p className="text-foreground/60 mx-auto max-w-2xl text-lg">
-            We're looking for exceptional individuals who share our passion for
-            innovation and making a difference
-          </p>
-        </div>
-
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <motion.div
-            whileHover={{ y: -5 }}
-            className="group relative overflow-hidden rounded-xl"
-          >
-            <div className="bg-foreground/5 relative flex h-full flex-col p-8">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="absolute -right-8 -top-8 h-24 w-24 rotate-12 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="relative space-y-4">
-                <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
-                  <Code2 className="text-primary h-6 w-6" />
-                </div>
-                <h3 className="text-foreground text-xl font-bold">
-                  Technical Excellence
-                </h3>
-                <ul className="text-foreground/60 space-y-2 text-left">
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Strong problem-solving abilities
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Passion for clean, efficient code
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Eager to learn new technologies
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Innovative thinking
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            whileHover={{ y: -5 }}
-            className="group relative overflow-hidden rounded-xl"
-          >
-            <div className="bg-foreground/5 relative flex h-full flex-col p-8">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="absolute -right-8 -top-8 h-24 w-24 rotate-12 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="relative space-y-4">
-                <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
-                  <Users2 className="text-primary h-6 w-6" />
-                </div>
-                <h3 className="text-foreground text-xl font-bold">
-                  Team Player
-                </h3>
-                <ul className="text-foreground/60 space-y-2 text-left">
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Excellent communication skills
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Collaborative mindset
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Values diverse perspectives
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Empathetic leadership
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            whileHover={{ y: -5 }}
-            className="group relative overflow-hidden rounded-xl"
-          >
-            <div className="bg-foreground/5 relative flex h-full flex-col p-8">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-red-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="absolute -right-8 -top-8 h-24 w-24 rotate-12 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="relative space-y-4">
-                <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
-                  <Rocket className="text-primary h-6 w-6" />
-                </div>
-                <h3 className="text-foreground text-xl font-bold">
-                  Growth Mindset
-                </h3>
-                <ul className="text-foreground/60 space-y-2 text-left">
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Embraces challenges
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Takes initiative
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Thrives in fast-paced environments
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Continuous learner
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            whileHover={{ y: -5 }}
-            className="group relative overflow-hidden rounded-xl"
-          >
-            <div className="bg-foreground/5 relative flex h-full flex-col p-8">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="absolute -right-8 -top-8 h-24 w-24 rotate-12 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="relative space-y-4">
-                <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
-                  <Globe2 className="text-primary h-6 w-6" />
-                </div>
-                <h3 className="text-foreground text-xl font-bold">
-                  Global Vision
-                </h3>
-                <ul className="text-foreground/60 space-y-2 text-left">
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    International mindset
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Cultural awareness
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Adaptability
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="bg-primary/10 h-1.5 w-1.5 rounded-full" />
-                    Forward-thinking
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* Add styles for the new animation */}
-      <style jsx global>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-      `}</style>
-
-      {/* Values Section - Enhanced with Creative UI */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="relative"
-      >
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-          <div className="absolute inset-0 bg-[conic-gradient(from_270deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-        </div>
-
-        <div className="relative text-center">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            className="mb-16"
-          >
-            <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
-              <Star className="text-primary h-8 w-8" />
-            </div>
-            <h2 className="text-foreground mb-4 text-4xl font-bold">
-              <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                Our Values
-              </span>
-            </h2>
-            <p className="text-foreground/60 mx-auto max-w-2xl text-lg">
-              We're building a company culture that celebrates diversity,
-              encourages innovation, and empowers every team member to do their
-              best work
-            </p>
-          </motion.div>
-
-          <div className="grid gap-8 md:grid-cols-4">
-            {values.map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ y: 20, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="group relative"
-              >
-                <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="relative p-8">
-                    <div className="absolute -right-8 -top-8 h-24 w-24 rotate-12 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-                    <motion.div
-                      whileHover={{ rotate: 360, scale: 1.1 }}
-                      transition={{ duration: 0.5 }}
-                      className="relative mb-6"
-                    >
-                      <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
-                        {item.icon}
-                      </div>
-                    </motion.div>
-                    <h3 className="text-foreground relative mb-4 text-xl font-bold">
-                      {item.title}
-                    </h3>
-                    <p className="text-foreground/60 relative">
-                      {item.description}
-                    </p>
-                  </div>
-                  <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Benefits Section - Enhanced with Creative UI */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="relative"
-      >
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-          <div className="absolute inset-0 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-        </div>
-
-        <div className="relative text-center">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            className="mb-16"
-          >
-            <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
-              <Heart className="text-primary h-8 w-8" />
-            </div>
-            <h2 className="text-foreground mb-4 text-4xl font-bold">
-              <span className="from-primary bg-gradient-to-r via-blue-500 to-cyan-500 bg-clip-text text-transparent">
-                Benefits & Perks
-              </span>
-            </h2>
-            <p className="text-foreground/60 mx-auto max-w-2xl text-lg">
-              We believe in taking care of our team with comprehensive benefits
-              that support both professional growth and personal well-being
-            </p>
-          </motion.div>
-
-          <div className="grid gap-8 md:grid-cols-4">
-            {benefits.map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ y: 20, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="group relative"
-              >
-                <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="relative p-8">
-                    <div className="absolute -right-8 -top-8 h-24 w-24 rotate-12 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-                    <motion.div
-                      whileHover={{ rotate: 360, scale: 1.1 }}
-                      transition={{ duration: 0.5 }}
-                      className="relative mb-6"
-                    >
-                      <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
-                        {item.icon}
-                      </div>
-                    </motion.div>
-                    <h3 className="text-foreground relative mb-4 text-xl font-bold">
-                      {item.title}
-                    </h3>
-                    <p className="text-foreground/60 relative">
-                      {item.description}
-                    </p>
-                  </div>
-                  <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Cultural Pillars Section - Enhanced with Creative UI */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="relative"
-      >
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-          <div className="absolute inset-0 bg-[conic-gradient(from_180deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-        </div>
-
-        <div className="relative text-center">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            className="mb-16"
-          >
-            <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
-              <Building2 className="text-primary h-8 w-8" />
-            </div>
-            <h2 className="text-foreground mb-4 text-4xl font-bold">
-              <span className="from-primary bg-gradient-to-r via-orange-500 to-red-500 bg-clip-text text-transparent">
-                Cultural Pillars
-              </span>
-            </h2>
-            <p className="text-foreground/60 mx-auto max-w-2xl text-lg">
-              Our culture is built on strong foundations that guide how we work,
-              collaborate, and grow together
-            </p>
-          </motion.div>
-
-          <div className="grid gap-8 md:grid-cols-4">
-            {culturalPillars.map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ y: 20, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="group relative"
-              >
-                <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-red-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="relative p-8">
-                    <div className="absolute -right-8 -top-8 h-24 w-24 rotate-12 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-                    <motion.div
-                      whileHover={{ rotate: 360, scale: 1.1 }}
-                      transition={{ duration: 0.5 }}
-                      className="relative mb-6"
-                    >
-                      <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
-                        {item.icon}
-                      </div>
-                    </motion.div>
-                    <h3 className="text-foreground relative mb-4 text-xl font-bold">
-                      {item.title}
-                    </h3>
-                    <p className="text-foreground/60 relative">
-                      {item.description}
-                    </p>
-                  </div>
-                  <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Team Highlights Section - Enhanced with Creative UI */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="relative"
-      >
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-          <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-        </div>
-
-        <div className="relative text-center">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            className="mb-16"
-          >
-            <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
-              <Users2 className="text-primary h-8 w-8" />
-            </div>
-            <h2 className="text-foreground mb-4 text-4xl font-bold">
-              <span className="from-primary bg-gradient-to-r via-green-500 to-emerald-500 bg-clip-text text-transparent">
-                Team Highlights
-              </span>
-            </h2>
-            <p className="text-foreground/60 mx-auto max-w-2xl text-lg">
-              Join a diverse, global team working together to build something
-              extraordinary
-            </p>
-          </motion.div>
-
-          <div className="grid gap-8 md:grid-cols-4">
-            {teamHighlights.map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ y: 20, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="group relative"
-              >
-                <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="relative p-8">
-                    <div className="absolute -right-8 -top-8 h-24 w-24 rotate-12 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl transition-opacity duration-300 group-hover:opacity-100" />
-                    <motion.div
-                      whileHover={{ rotate: 360, scale: 1.1 }}
-                      transition={{ duration: 0.5 }}
-                      className="relative mb-6"
-                    >
-                      <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
-                        {item.icon}
-                      </div>
-                    </motion.div>
-                    <h3 className="text-foreground relative mb-4 text-xl font-bold">
-                      {item.title}
-                    </h3>
-                    <p className="text-foreground/60 relative">
-                      {item.description}
-                    </p>
-                  </div>
-                  <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Get in Touch Section - Enhanced with Creative UI */}
+      {/* Get in Touch Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -1049,19 +491,759 @@ export default function CareersPage() {
         </div>
       </motion.section>
 
-      {/* Add styles for animations */}
+      {/* Values Section - Enhanced with Creative UI */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="relative"
+      >
+        <div className="absolute inset-0 -z-10">
+          <motion.div
+            animate={{
+              opacity: [0.1, 0.15, 0.1],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]"
+          />
+          <motion.div
+            animate={{
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 60,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute inset-0 bg-[conic-gradient(from_270deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
+        </div>
+
+        <div className="relative text-center">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            className="mb-16"
+          >
+            <motion.div
+              whileHover={{
+                scale: 1.1,
+                rotate: [0, 10, -10, 0],
+              }}
+              transition={{
+                rotate: {
+                  duration: 0.5,
+                  ease: 'easeInOut',
+                },
+              }}
+              className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+            >
+              <Star className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
+            </motion.div>
+            <motion.h2
+              className="text-foreground mb-4 text-4xl font-bold"
+              whileHover={{
+                scale: 1.02,
+              }}
+            >
+              <motion.span
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+                className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              >
+                Our Values
+              </motion.span>
+            </motion.h2>
+            <motion.p
+              className="text-foreground/60 mx-auto max-w-2xl text-lg"
+              whileHover={{
+                scale: 1.01,
+              }}
+            >
+              We're building a company culture that celebrates diversity,
+              encourages innovation, and empowers every team member to do their
+              best work
+            </motion.p>
+          </motion.div>
+
+          <div className="grid gap-8 md:grid-cols-4">
+            {values.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ y: 20, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{
+                  y: -5,
+                  transition: {
+                    duration: 0.2,
+                    ease: 'easeOut',
+                  },
+                }}
+                className="group relative"
+              >
+                <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
+                  />
+                  <motion.div
+                    animate={{
+                      rotate: [0, 360],
+                      scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                      duration: 20,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
+                    className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                  />
+                  <div className="relative p-8">
+                    <motion.div
+                      whileHover={{
+                        rotate: [0, 10, -10, 0],
+                        scale: 1.1,
+                      }}
+                      transition={{
+                        duration: 0.3,
+                      }}
+                      className="relative mb-6"
+                    >
+                      <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
+                        <motion.div
+                          animate={{
+                            scale: [1, 1.1, 1],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
+                        >
+                          {item.icon}
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                    <motion.h3
+                      className="text-foreground relative mb-4 text-xl font-bold"
+                      whileHover={{
+                        scale: 1.05,
+                        color: 'hsl(var(--primary))',
+                      }}
+                    >
+                      {item.title}
+                    </motion.h3>
+                    <motion.p
+                      className="text-foreground/60 relative"
+                      whileHover={{
+                        scale: 1.02,
+                      }}
+                    >
+                      {item.description}
+                    </motion.p>
+                  </div>
+                  <motion.div
+                    initial={{ scaleX: 0 }}
+                    whileHover={{ scaleX: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Benefits Section - Enhanced with Creative UI */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="relative"
+      >
+        <div className="absolute inset-0 -z-10">
+          <motion.div
+            animate={{
+              opacity: [0.1, 0.15, 0.1],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]"
+          />
+          <motion.div
+            animate={{
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 60,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute inset-0 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
+        </div>
+
+        <div className="relative text-center">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            className="mb-16"
+          >
+            <motion.div
+              whileHover={{
+                scale: 1.1,
+                rotate: [0, 10, -10, 0],
+              }}
+              transition={{
+                rotate: {
+                  duration: 0.5,
+                  ease: 'easeInOut',
+                },
+              }}
+              className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+            >
+              <Heart className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
+            </motion.div>
+            <motion.h2
+              className="text-foreground mb-4 text-4xl font-bold"
+              whileHover={{
+                scale: 1.02,
+              }}
+            >
+              <motion.span
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+                className="from-primary relative bg-gradient-to-r via-blue-500 to-cyan-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              >
+                Benefits & Perks
+              </motion.span>
+            </motion.h2>
+            <motion.p
+              className="text-foreground/60 mx-auto max-w-2xl text-lg"
+              whileHover={{
+                scale: 1.01,
+              }}
+            >
+              We believe in taking care of our team with comprehensive benefits
+              that support both professional growth and personal well-being
+            </motion.p>
+          </motion.div>
+
+          <div className="grid gap-8 md:grid-cols-4">
+            {benefits.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ y: 20, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{
+                  y: -5,
+                  transition: {
+                    duration: 0.2,
+                    ease: 'easeOut',
+                  },
+                }}
+                className="group relative"
+              >
+                <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent transition-opacity duration-300"
+                  />
+                  <motion.div
+                    animate={{
+                      rotate: [0, 360],
+                      scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                      duration: 20,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
+                    className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+                  />
+                  <div className="relative p-8">
+                    <motion.div
+                      whileHover={{
+                        rotate: [0, 10, -10, 0],
+                        scale: 1.1,
+                      }}
+                      transition={{
+                        duration: 0.3,
+                      }}
+                      className="relative mb-6"
+                    >
+                      <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
+                        <motion.div
+                          animate={{
+                            scale: [1, 1.1, 1],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
+                        >
+                          {item.icon}
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                    <motion.h3
+                      className="text-foreground relative mb-4 text-xl font-bold"
+                      whileHover={{
+                        scale: 1.05,
+                        color: 'hsl(var(--primary))',
+                      }}
+                    >
+                      {item.title}
+                    </motion.h3>
+                    <motion.p
+                      className="text-foreground/60 relative"
+                      whileHover={{
+                        scale: 1.02,
+                      }}
+                    >
+                      {item.description}
+                    </motion.p>
+                  </div>
+                  <motion.div
+                    initial={{ scaleX: 0 }}
+                    whileHover={{ scaleX: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Cultural Pillars Section - Enhanced with Creative UI */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="relative"
+      >
+        <div className="absolute inset-0 -z-10">
+          <motion.div
+            animate={{
+              opacity: [0.1, 0.15, 0.1],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]"
+          />
+          <motion.div
+            animate={{
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 60,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute inset-0 bg-[conic-gradient(from_180deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
+          />
+          <motion.div
+            animate={{
+              opacity: [0.1, 0.2, 0.1],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px]"
+          />
+        </div>
+
+        <div className="relative text-center">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            className="mb-16"
+          >
+            <motion.div
+              whileHover={{
+                scale: 1.1,
+                rotate: [0, 10, -10, 0],
+              }}
+              transition={{
+                rotate: {
+                  duration: 0.5,
+                  ease: 'easeInOut',
+                },
+              }}
+              className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+            >
+              <Building2 className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
+            </motion.div>
+            <motion.h2
+              className="text-foreground mb-4 text-4xl font-bold"
+              whileHover={{
+                scale: 1.02,
+              }}
+            >
+              <motion.span
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+                className="from-primary relative bg-gradient-to-r via-orange-500 to-red-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              >
+                Cultural Pillars
+              </motion.span>
+            </motion.h2>
+            <motion.p
+              className="text-foreground/60 mx-auto max-w-2xl text-lg"
+              whileHover={{
+                scale: 1.01,
+              }}
+            >
+              Our culture is built on strong foundations that guide how we work,
+              collaborate, and grow together
+            </motion.p>
+          </motion.div>
+
+          <div className="grid gap-8 md:grid-cols-4">
+            {culturalPillars.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ y: 20, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{
+                  y: -5,
+                  transition: {
+                    duration: 0.2,
+                    ease: 'easeOut',
+                  },
+                }}
+                className="group relative"
+              >
+                <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-red-500/5 to-transparent transition-opacity duration-300"
+                  />
+                  <motion.div
+                    animate={{
+                      rotate: [0, 360],
+                      scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                      duration: 20,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
+                    className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                  />
+                  <div className="relative p-8">
+                    <motion.div
+                      whileHover={{
+                        rotate: [0, 10, -10, 0],
+                        scale: 1.1,
+                      }}
+                      transition={{
+                        duration: 0.3,
+                      }}
+                      className="relative mb-6"
+                    >
+                      <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
+                        <motion.div
+                          animate={{
+                            scale: [1, 1.1, 1],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
+                        >
+                          {item.icon}
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                    <motion.h3
+                      className="text-foreground relative mb-4 text-xl font-bold"
+                      whileHover={{
+                        scale: 1.05,
+                        color: 'hsl(var(--primary))',
+                      }}
+                    >
+                      {item.title}
+                    </motion.h3>
+                    <motion.p
+                      className="text-foreground/60 relative"
+                      whileHover={{
+                        scale: 1.02,
+                      }}
+                    >
+                      {item.description}
+                    </motion.p>
+                  </div>
+                  <motion.div
+                    initial={{ scaleX: 0 }}
+                    whileHover={{ scaleX: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Team Highlights Section - Enhanced with Creative UI */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="relative"
+      >
+        <div className="absolute inset-0 -z-10">
+          <motion.div
+            animate={{
+              opacity: [0.1, 0.15, 0.1],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]"
+          />
+          <motion.div
+            animate={{
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 60,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+            className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
+          />
+          <motion.div
+            animate={{
+              opacity: [0.1, 0.2, 0.1],
+              y: [0, -10, 0],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px]"
+          />
+        </div>
+
+        <div className="relative text-center">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            className="mb-16"
+          >
+            <motion.div
+              whileHover={{
+                scale: 1.1,
+                rotate: [0, 10, -10, 0],
+              }}
+              transition={{
+                rotate: {
+                  duration: 0.5,
+                  ease: 'easeInOut',
+                },
+              }}
+              className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+            >
+              <Users2 className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
+            </motion.div>
+            <motion.h2
+              className="text-foreground mb-4 text-4xl font-bold"
+              whileHover={{
+                scale: 1.02,
+              }}
+            >
+              <motion.span
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+                className="from-primary relative bg-gradient-to-r via-green-500 to-emerald-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              >
+                Team Highlights
+              </motion.span>
+            </motion.h2>
+            <motion.p
+              className="text-foreground/60 mx-auto max-w-2xl text-lg"
+              whileHover={{
+                scale: 1.01,
+              }}
+            >
+              Join a diverse, global team working together to build something
+              extraordinary
+            </motion.p>
+          </motion.div>
+
+          <div className="grid gap-8 md:grid-cols-4">
+            {teamHighlights.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ y: 20, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{
+                  y: -5,
+                  transition: {
+                    duration: 0.2,
+                    ease: 'easeOut',
+                  },
+                }}
+                className="group relative"
+              >
+                <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent transition-opacity duration-300"
+                  />
+                  <motion.div
+                    animate={{
+                      rotate: [0, 360],
+                      scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                      duration: 20,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
+                    className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
+                  />
+                  <div className="relative p-8">
+                    <motion.div
+                      whileHover={{
+                        rotate: [0, 10, -10, 0],
+                        scale: 1.1,
+                      }}
+                      transition={{
+                        duration: 0.3,
+                      }}
+                      className="relative mb-6"
+                    >
+                      <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
+                        <motion.div
+                          animate={{
+                            scale: [1, 1.1, 1],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
+                        >
+                          {item.icon}
+                        </motion.div>
+                      </div>
+                    </motion.div>
+                    <motion.h3
+                      className="text-foreground relative mb-4 text-xl font-bold"
+                      whileHover={{
+                        scale: 1.05,
+                        color: 'hsl(var(--primary))',
+                      }}
+                    >
+                      {item.title}
+                    </motion.h3>
+                    <motion.p
+                      className="text-foreground/60 relative"
+                      whileHover={{
+                        scale: 1.02,
+                      }}
+                    >
+                      {item.description}
+                    </motion.p>
+                  </div>
+                  <motion.div
+                    initial={{ scaleX: 0 }}
+                    whileHover={{ scaleX: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ... Rest of the sections with similar enhancements ... */}
+
+      {/* Enhanced Animation Styles */}
       <style jsx global>{`
         @keyframes float {
           0%,
           100% {
-            transform: translateY(0px);
+            transform: translateY(0px) rotate(0deg);
           }
           50% {
-            transform: translateY(-10px);
+            transform: translateY(-10px) rotate(2deg);
           }
         }
         .animate-float {
-          animation: float 3s ease-in-out infinite;
+          animation: float 4s ease-in-out infinite;
         }
         @keyframes spin-slow {
           from {
@@ -1072,7 +1254,54 @@ export default function CareersPage() {
           }
         }
         .animate-spin-slow {
-          animation: spin-slow 8s linear infinite;
+          animation: spin-slow 12s linear infinite;
+        }
+        @keyframes pulse-glow {
+          0%,
+          100% {
+            opacity: 0.5;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+        }
+        .animate-pulse-glow {
+          animation: pulse-glow 4s ease-in-out infinite;
+        }
+        @keyframes gradient-shift {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        .animate-gradient {
+          animation: gradient-shift 8s ease infinite;
+          background-size: 200% 200%;
+        }
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+        .animate-shimmer {
+          animation: shimmer 3s linear infinite;
+          background: linear-gradient(
+            90deg,
+            rgba(var(--primary-rgb), 0.1) 25%,
+            rgba(var(--primary-rgb), 0.2) 50%,
+            rgba(var(--primary-rgb), 0.1) 75%
+          );
+          background-size: 200% 100%;
         }
       `}</style>
     </main>
