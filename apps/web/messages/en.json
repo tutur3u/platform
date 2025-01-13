@@ -243,7 +243,8 @@
     "subscribe": "Subscribe",
     "view-full-documentation": "View full documentation",
     "company": "Company",
-    "pitch": "Pitch Deck"
+    "pitch": "Pitch Deck",
+    "careers": "Careers"
   },
   "date_helper": {
     "time-unit": "Time unit",

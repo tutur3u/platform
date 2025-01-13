@@ -345,6 +345,21 @@ export function MainNavigationMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
+          <Link href="/careers" legacyBehavior passHref>
+            <NavigationMenuLink
+              className={cn(
+                navigationMenuTriggerStyle(),
+                'hover:from-primary/10 hover:to-primary/5 group bg-gradient-to-r px-6 font-semibold transition-all duration-300'
+              )}
+            >
+              <span className="flex items-center gap-2">
+                {t('common.careers')}
+              </span>
+            </NavigationMenuLink>
+          </Link>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
           <Link href="/contact" legacyBehavior passHref>
             <NavigationMenuLink
               className={cn(
