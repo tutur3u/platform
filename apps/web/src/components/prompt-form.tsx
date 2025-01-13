@@ -43,6 +43,7 @@ export interface PromptProps
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  // eslint-disable-next-line no-unused-vars
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
   showExtraOptions: boolean;
@@ -489,13 +490,11 @@ export function PromptForm({
                 >
                   {chat?.is_public ? <Globe /> : <Lock />}
                   <span className="sr-only">
-                    {t('ai_chat.chat_visibility.chat_visibility')}
+                    {t('ai_chat.chat_visibility')}
                   </span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                {t('ai_chat.chat_visibility.chat_visibility')}
-              </TooltipContent>
+              <TooltipContent>{t('ai_chat.chat_visibility')}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -600,6 +599,7 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}
