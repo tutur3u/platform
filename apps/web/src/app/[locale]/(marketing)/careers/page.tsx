@@ -176,12 +176,9 @@ export default function CareersPage() {
   const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.5, 0]);
 
   return (
-    <main
-      ref={containerRef}
-      className="relative mx-auto overflow-x-hidden pb-12"
-    >
+    <main ref={containerRef} className="relative mx-auto overflow-x-clip pb-12">
       {/* Enhanced Floating Orbs - Adjusted for mobile */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 -z-10">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -193,7 +190,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y }}
-          className="absolute -left-32 top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="absolute -left-[8rem] top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -206,7 +203,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y: opacity }}
-          className="absolute -right-32 top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="absolute -right-[8rem] top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -346,7 +343,7 @@ export default function CareersPage() {
                 <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
               </div>
 
-              <div className="relative grid gap-12 p-12 md:grid-cols-2">
+              <div className="relative grid gap-12 p-4 md:grid-cols-2 md:p-12">
                 <div className="relative space-y-8">
                   <motion.div
                     initial={{ scale: 0.95 }}
@@ -418,10 +415,10 @@ export default function CareersPage() {
                 </div>
 
                 <div className="relative">
-                  <div className="bg-foreground/5 group relative overflow-hidden rounded-2xl p-8 backdrop-blur-sm">
+                  <div className="bg-foreground/5 group relative overflow-hidden rounded-2xl p-4 backdrop-blur-sm md:p-8">
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <div className="relative space-y-6">
-                      <h3 className="text-foreground text-2xl font-bold">
+                      <h3 className="text-foreground text-balance text-center text-2xl font-bold">
                         What We're Looking For
                       </h3>
                       <div className="space-y-4">
@@ -597,7 +594,7 @@ export default function CareersPage() {
                   }}
                   className="group relative"
                 >
-                  <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
+                  <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
@@ -777,7 +774,7 @@ export default function CareersPage() {
                   }}
                   className="group relative"
                 >
-                  <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
+                  <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
@@ -966,7 +963,7 @@ export default function CareersPage() {
                   }}
                   className="group relative"
                 >
-                  <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
+                  <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
@@ -1156,7 +1153,7 @@ export default function CareersPage() {
                   }}
                   className="group relative"
                 >
-                  <div className="bg-foreground/5 relative overflow-hidden rounded-2xl backdrop-blur-sm">
+                  <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
