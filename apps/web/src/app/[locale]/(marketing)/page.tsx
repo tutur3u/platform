@@ -1306,7 +1306,7 @@ export default function MarketingPage() {
                       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:10px_10px] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-0 transition-opacity duration-300 group-hover:opacity-20" />
                     </div>
-                    <div className="relative">
+                    <div className="relative flex flex-col items-center">
                       <div className="bg-primary/10 mb-4 flex h-16 w-16 items-center justify-center rounded-full">
                         {index === 0 && (
                           <Users2 className="text-primary h-8 w-8" />

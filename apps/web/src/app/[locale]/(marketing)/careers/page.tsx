@@ -426,7 +426,7 @@ export default function CareersPage() {
                           <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
                             <Code2 className="text-primary h-5 w-5" />
                           </div>
-                          <div>
+                          <div className="flex flex-col items-start">
                             <h4 className="font-semibold">
                               Technical Excellence
                             </h4>
@@ -440,7 +440,7 @@ export default function CareersPage() {
                           <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
                             <Users2 className="text-primary h-5 w-5" />
                           </div>
-                          <div>
+                          <div className="flex flex-col items-start">
                             <h4 className="font-semibold">Team Player</h4>
                             <p className="text-foreground/60 text-sm">
                               Collaborative mindset
@@ -452,7 +452,7 @@ export default function CareersPage() {
                           <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
                             <Rocket className="text-primary h-5 w-5" />
                           </div>
-                          <div>
+                          <div className="flex flex-col items-start">
                             <h4 className="font-semibold">Growth Mindset</h4>
                             <p className="text-foreground/60 text-sm">
                               Eager to learn and grow
@@ -464,7 +464,7 @@ export default function CareersPage() {
                           <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
                             <Globe2 className="text-primary h-5 w-5" />
                           </div>
-                          <div>
+                          <div className="flex flex-col items-start">
                             <h4 className="font-semibold">Global Vision</h4>
                             <p className="text-foreground/60 text-sm">
                               International mindset
