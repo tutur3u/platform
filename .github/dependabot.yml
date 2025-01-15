@@ -4,12 +4,17 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+registries:
+  npm-tiptap:
+    type: npm-registry
+    url: https://registry.tiptap.dev
+    token: ${{secrets.TIPTAP_PRO_TOKEN}}
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
-      
+
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
