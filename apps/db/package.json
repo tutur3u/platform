@@ -15,9 +15,8 @@
     "sb:up": "pnpm supabase migration up",
     "sb:typegen": "pnpm supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts"
   },
-  "dependencies": {},
   "devDependencies": {
-    "supabase": "^2.2.1"
+    "supabase": "^2.6.8"
   },
   "workspaces": [
     "apps/*",
