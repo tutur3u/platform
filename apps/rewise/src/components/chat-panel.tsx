@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm, ResponseMode } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
 import { Model } from '@/data/models';
@@ -74,6 +75,7 @@ export function ChatPanel({
   inputRef,
   setInput,
   model,
+  setModel,
   createChat,
   updateChat,
   mode,
@@ -127,6 +129,14 @@ export function ChatPanel({
       <div className="from-muted/30 to-muted/30 dark:from-background/10 dark:to-background/80 fixed inset-x-0 bottom-0 bg-gradient-to-b from-0% to-50% dark:from-10%">
         <div className="mx-auto sm:max-w-2xl sm:px-4">
           <div className="bg-background space-y-4 border-t px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
+            {showExtraOptions && (
+              <ChatModelSelector
+                open={showExtraOptions}
+                setOpen={setShowExtraOptions}
+                model={model}
+                onChange={setModel}
+              />
+            )}
             <PromptForm
               id={id}
               key={`${model?.provider}-${model?.value}`}
@@ -186,7 +196,7 @@ export function ChatPanel({
           <ChatPermissions
             chatId={chat?.id || ''}
             isPublic={chat?.is_public || false}
-            creatorId={chat?.creator_id || ''}
+            creatorId={chat?.creator_id || currentUserId || ''}
             currentUserId={currentUserId}
             onUpdateVisibility={(isPublic) =>
               updateChat({ is_public: isPublic })

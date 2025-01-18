@@ -28,18 +28,13 @@ export const THEME_COOKIE_NAME = 'NEXT_THEME';
 export const SHOW_TAILWIND_INDICATOR =
   process.env.SHOW_TAILWIND_INDICATOR === 'true';
 
-export const PUBLIC_PATHS = ['/login', '/chats'].reduce(
-  (acc: string[], path) => {
-    // Add the original path
-    acc.push(path);
+export const PUBLIC_PATHS = ['/login'].reduce((acc: string[], path) => {
+  // Add the original path
+  acc.push(path);
 
-    // Add localized paths
-    const localizedPaths = supportedLocales.map(
-      (locale) => `/${locale}${path}`
-    );
-    acc.push(...localizedPaths);
+  // Add localized paths
+  const localizedPaths = supportedLocales.map((locale) => `/${locale}${path}`);
+  acc.push(...localizedPaths);
 
-    return acc;
-  },
-  []
-);
+  return acc;
+}, []);
