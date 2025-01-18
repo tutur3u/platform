@@ -364,7 +364,7 @@ export const models: {
 
 const fallbackModel = models.find((model) => !model.disabled);
 export const defaultModel =
-  models.find((model) => model.value === 'gemini-2.0-flash-exp') ||
+  models.find((model) => model.value === 'gemini-1.5-flash-002') ||
   fallbackModel;
 
 export const providers = models.reduce((acc, model) => {
