@@ -57,8 +57,9 @@ export default async function WorkspaceStorageObjectsPage({
         createDescription={t('ws-storage-objects.upload_description')}
         action={<NewActions wsId={wsId} path={path} />}
       />
+      <Separator className="my-4" />
 
-      <div className="mb-8 mt-4 grid gap-4 text-center md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-4 grid gap-4 text-center md:grid-cols-2 xl:grid-cols-4">
         <div className="border-border bg-foreground/5 rounded-lg border p-4">
           <h2 className="text-lg font-semibold">
             {t('ws-storage-objects.total_files')}
