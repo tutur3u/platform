@@ -18,25 +18,21 @@ import {
 import {
   Archive,
   Banknote,
-  Book,
   Box,
   Calendar,
   ChartArea,
-  ChartColumn,
   CircleCheck,
-  CircleDashed,
   Clock,
   Cog,
   Database,
-  Dumbbell,
   FileText,
   GraduationCap,
   HardDrive,
   Mail,
   MessageCircleIcon,
   Presentation,
+  Sparkles,
   Users,
-  Utensils,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
@@ -105,6 +101,22 @@ export default async function Layout({ children, params }: LayoutProps) {
     //   experimental: 'beta',
     // },
     {
+      title: 'Spark',
+      href: `/${wsId}/ai/spark`,
+      icon: <Sparkles className="h-4 w-4" />,
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_TASKS',
+          value: 'true',
+        })) ||
+        withoutPermission('manage_projects'),
+      shortcut: 'T',
+      experimental: 'alpha',
+    },
+    {
       title: t('sidebar_tabs.calendar'),
       href: `/${wsId}/calendar`,
       icon: <Calendar className="h-4 w-4" />,
@@ -128,86 +140,86 @@ export default async function Layout({ children, params }: LayoutProps) {
       shortcut: 'T',
       experimental: 'alpha',
     },
-    {
-      title: t('sidebar_tabs.workouts'),
-      href: `/${wsId}/workouts`,
-      icon: <Dumbbell className="h-4 w-4" />,
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_TASKS',
-          value: 'true',
-        })) ||
-        withoutPermission('manage_projects'),
-      shortcut: 'T',
-      experimental: 'alpha',
-    },
-    {
-      title: t('sidebar_tabs.readings'),
-      href: `/${wsId}/readings`,
-      icon: <Book className="h-4 w-4" />,
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_TASKS',
-          value: 'true',
-        })) ||
-        withoutPermission('manage_projects'),
-      shortcut: 'T',
-      experimental: 'alpha',
-    },
-    {
-      title: t('sidebar_tabs.diet_and_nutrition'),
-      href: `/${wsId}/diet`,
-      icon: <Utensils className="h-4 w-4" />,
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_TASKS',
-          value: 'true',
-        })) ||
-        withoutPermission('manage_projects'),
-      shortcut: 'T',
-      experimental: 'alpha',
-    },
-    {
-      title: t('sidebar_tabs.progress'),
-      href: `/${wsId}/progress`,
-      icon: <CircleDashed className="h-4 w-4" />,
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_TASKS',
-          value: 'true',
-        })) ||
-        withoutPermission('manage_projects'),
-      shortcut: 'T',
-      experimental: 'alpha',
-    },
-    {
-      title: t('sidebar_tabs.metrics'),
-      href: `/${wsId}/metrics`,
-      icon: <ChartColumn className="h-4 w-4" />,
-      disabled:
-        ENABLE_AI_ONLY ||
-        !(await verifySecret({
-          forceAdmin: true,
-          wsId,
-          name: 'ENABLE_TASKS',
-          value: 'true',
-        })) ||
-        withoutPermission('manage_projects'),
-      shortcut: 'T',
-      experimental: 'alpha',
-    },
+    // {
+    //   title: t('sidebar_tabs.workouts'),
+    //   href: `/${wsId}/workouts`,
+    //   icon: <Dumbbell className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
+    // {
+    //   title: t('sidebar_tabs.readings'),
+    //   href: `/${wsId}/readings`,
+    //   icon: <Book className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
+    // {
+    //   title: t('sidebar_tabs.diet_and_nutrition'),
+    //   href: `/${wsId}/diet`,
+    //   icon: <Utensils className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
+    // {
+    //   title: t('sidebar_tabs.progress'),
+    //   href: `/${wsId}/progress`,
+    //   icon: <CircleDashed className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
+    // {
+    //   title: t('sidebar_tabs.metrics'),
+    //   href: `/${wsId}/metrics`,
+    //   icon: <ChartColumn className="h-4 w-4" />,
+    //   disabled:
+    //     ENABLE_AI_ONLY ||
+    //     !(await verifySecret({
+    //       forceAdmin: true,
+    //       wsId,
+    //       name: 'ENABLE_TASKS',
+    //       value: 'true',
+    //     })) ||
+    //     withoutPermission('manage_projects'),
+    //   shortcut: 'T',
+    //   experimental: 'alpha',
+    // },
     null,
 
     {

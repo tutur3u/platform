@@ -244,7 +244,8 @@
     "view-full-documentation": "View full documentation",
     "company": "Company",
     "pitch": "Pitch Deck",
-    "careers": "Careers"
+    "careers": "Careers",
+    "not_whitelisted": "Not whitelisted"
   },
   "date_helper": {
     "time-unit": "Time unit",

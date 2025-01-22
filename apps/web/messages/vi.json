@@ -244,7 +244,8 @@
     "view-full-documentation": "Xem tài liệu đầy đủ",
     "company": "Công ty",
     "pitch": "Kế hoạch kinh doanh",
-    "careers": "Việc làm"
+    "careers": "Việc làm",
+    "not_whitelisted": "Không có trong danh sách trắng"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
