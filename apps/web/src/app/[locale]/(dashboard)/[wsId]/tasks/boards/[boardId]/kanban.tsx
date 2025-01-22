@@ -1,12 +1,15 @@
 'use client';
 
 import { coordinateGetter } from './keyboard-preset';
-import { type Task, TaskCard } from './task';
+import { TaskCard } from './task';
 import type { Column } from './task-list';
 import { BoardColumn, BoardContainer } from './task-list';
+import { TaskListForm } from './task-list-form';
 import { hasDraggableData } from './utils';
+import { getTaskLists, getTasks, moveTask } from '@/lib/task-helper';
+import { type Task as TaskType } from '@/types/primitives/TaskBoard';
+import { createClient } from '@/utils/supabase/client';
 import {
-  Announcements,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
@@ -15,136 +18,72 @@ import {
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
-  UniqueIdentifier,
+  closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { SortableContext, arrayMove } from '@dnd-kit/sortable';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { SortableContext } from '@dnd-kit/sortable';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useRef, useState } from 'react';
 
-const defaultCols = [
-  {
-    id: 'backlog' as const,
-    title: 'Backlog',
-  },
-  {
-    id: 'todo' as const,
-    title: 'Todo',
-  },
-  {
-    id: 'in-progress' as const,
-    title: 'In progress',
-  },
-  {
-    id: 'reviewing' as const,
-    title: 'Reviewing',
-  },
-  {
-    id: 'done' as const,
-    title: 'Done',
-  },
-] satisfies Column[];
+interface Props {
+  boardId: string;
+}
 
-export type ColumnId = (typeof defaultCols)[number]['id'];
-
-const initialTasks: Task[] = [
-  {
-    id: 'task1',
-    columnId: 'done',
-    content: 'Project initiation and planning',
-  },
-  {
-    id: 'task2',
-    columnId: 'done',
-    content: 'Gather requirements from stakeholders',
-  },
-  {
-    id: 'task3',
-    columnId: 'done',
-    content: 'Create wireframes and mockups',
-  },
-  {
-    id: 'task4',
-    columnId: 'in-progress',
-    content: 'Develop homepage layout',
-  },
-  {
-    id: 'task5',
-    columnId: 'reviewing',
-    content: 'Design color scheme and typography',
-  },
-  {
-    id: 'task6',
-    columnId: 'todo',
-    content: 'Implement user authentication',
-  },
-  {
-    id: 'task7',
-    columnId: 'backlog',
-    content: 'Build contact us page',
-  },
-  {
-    id: 'task8',
-    columnId: 'backlog',
-    content: 'Create product catalog',
-  },
-  {
-    id: 'task9',
-    columnId: 'backlog',
-    content: 'Develop about us page',
-  },
-  {
-    id: 'task10',
-    columnId: 'backlog',
-    content: 'Optimize website for mobile devices',
-  },
-  {
-    id: 'task11',
-    columnId: 'todo',
-    content: 'Integrate payment gateway',
-  },
-  {
-    id: 'task12',
-    columnId: 'todo',
-    content: 'Perform testing and bug fixing',
-  },
-  {
-    id: 'task13',
-    columnId: 'todo',
-    content: 'Launch website and deploy to server',
-  },
-];
-
-export function KanbanBoard() {
-  const [columns, setColumns] = useState<Column[]>(defaultCols);
-  const pickedUpTaskColumn = useRef<ColumnId | null>(null);
-  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
-
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-
+export function KanbanBoard({ boardId }: Props) {
+  const queryClient = useQueryClient();
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [portal, setPortal] = useState<React.ReactPortal | null>(null);
+  const [activeTask, setActiveTask] = useState<TaskType | null>(null);
+  const pickedUpTaskColumn = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (window !== undefined && 'document' in window) {
-      const portal = createPortal(
-        <DragOverlay>
-          {activeColumn && (
-            <BoardColumn
-              isOverlay
-              column={activeColumn}
-              tasks={tasks.filter((task) => task.columnId === activeColumn.id)}
-            />
-          )}
-          {activeTask && <TaskCard task={activeTask} isOverlay />}
-        </DragOverlay>,
-        document.body
+  // Query for lists
+  const { data: columns = [], isLoading: isLoadingColumns } = useQuery({
+    queryKey: ['taskLists', boardId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const lists = await getTaskLists(supabase, boardId);
+      return lists.map((list) => ({
+        id: list.id,
+        title: list.name,
+      }));
+    },
+  });
+
+  // Query for tasks
+  const { data: tasks = [], isLoading: isLoadingTasks } = useQuery({
+    queryKey: ['tasks', boardId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const lists = await getTaskLists(supabase, boardId);
+      const allTasks = await Promise.all(
+        lists.map((list) => getTasks(supabase, list.id))
       );
-      setPortal(portal);
-    }
-  }, [activeColumn, activeTask]);
+      return allTasks.flat();
+    },
+  });
+
+  // Mutation for moving tasks
+  const moveTaskMutation = useMutation({
+    mutationFn: async ({
+      taskId,
+      targetListId,
+    }: {
+      taskId: string;
+      targetListId: string;
+    }) => {
+      const supabase = createClient();
+      if (!supabase) throw new Error('Failed to create Supabase client');
+      await moveTask(supabase, taskId, targetListId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    },
+  });
+
+  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -154,231 +93,227 @@ export function KanbanBoard() {
     })
   );
 
-  function getDraggingTaskData(taskId: UniqueIdentifier, columnId: ColumnId) {
-    const tasksInColumn = tasks.filter((task) => task.columnId === columnId);
-    const taskPosition = tasksInColumn.findIndex((task) => task.id === taskId);
-    const column = columns.find((col) => col.id === columnId);
-    return {
-      tasksInColumn,
-      taskPosition,
-      column,
-    };
-  }
-
-  const announcements: Announcements = {
-    onDragStart({ active }) {
-      if (!hasDraggableData(active)) return;
-      if (active.data.current?.type === 'Column') {
-        const startColumnIdx = columnsId.findIndex((id) => id === active.id);
-        const startColumn = columns[startColumnIdx];
-        return `Picked up Column ${startColumn?.title} at position: ${
-          startColumnIdx + 1
-        } of ${columnsId.length}`;
-      } else if (active.data.current?.type === 'Task') {
-        pickedUpTaskColumn.current = active.data.current.task.columnId;
-        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(
-          active.id,
-          pickedUpTaskColumn.current || 'todo'
-        );
-        return `Picked up Task ${
-          active.data.current.task.content
-        } at position: ${taskPosition + 1} of ${
-          tasksInColumn.length
-        } in column ${column?.title}`;
-      }
-    },
-    onDragOver({ active, over }) {
-      if (!hasDraggableData(active) || !hasDraggableData(over)) return;
-
-      if (
-        active.data.current?.type === 'Column' &&
-        over.data.current?.type === 'Column'
-      ) {
-        const overColumnIdx = columnsId.findIndex((id) => id === over.id);
-        return `Column ${active.data.current.column.title} was moved over ${
-          over.data.current.column.title
-        } at position ${overColumnIdx + 1} of ${columnsId.length}`;
-      } else if (
-        active.data.current?.type === 'Task' &&
-        over.data.current?.type === 'Task'
-      ) {
-        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(
-          over.id,
-          over.data.current.task.columnId
-        );
-        if (over.data.current.task.columnId !== pickedUpTaskColumn.current) {
-          return `Task ${
-            active.data.current.task.content
-          } was moved over column ${column?.title} in position ${
-            taskPosition + 1
-          } of ${tasksInColumn.length}`;
-        }
-        return `Task was moved over position ${taskPosition + 1} of ${
-          tasksInColumn.length
-        } in column ${column?.title}`;
-      }
-    },
-    onDragEnd({ active, over }) {
-      if (!hasDraggableData(active) || !hasDraggableData(over)) {
-        pickedUpTaskColumn.current = null;
-        return;
-      }
-      if (
-        active.data.current?.type === 'Column' &&
-        over.data.current?.type === 'Column'
-      ) {
-        const overColumnPosition = columnsId.findIndex((id) => id === over.id);
-
-        return `Column ${
-          active.data.current.column.title
-        } was dropped into position ${overColumnPosition + 1} of ${
-          columnsId.length
-        }`;
-      } else if (
-        active.data.current?.type === 'Task' &&
-        over.data.current?.type === 'Task'
-      ) {
-        const { tasksInColumn, taskPosition, column } = getDraggingTaskData(
-          over.id,
-          over.data.current.task.columnId
-        );
-        if (over.data.current.task.columnId !== pickedUpTaskColumn.current) {
-          return `Task was dropped into column ${column?.title} in position ${
-            taskPosition + 1
-          } of ${tasksInColumn.length}`;
-        }
-        return `Task was dropped into position ${taskPosition + 1} of ${
-          tasksInColumn.length
-        } in column ${column?.title}`;
-      }
-      pickedUpTaskColumn.current = null;
-    },
-    onDragCancel({ active }) {
-      pickedUpTaskColumn.current = null;
-      if (!hasDraggableData(active)) return;
-      return `Dragging ${active.data.current?.type} cancelled.`;
-    },
-  };
-
-  return (
-    <DndContext
-      accessibility={{
-        announcements,
-      }}
-      sensors={sensors}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-    >
-      <BoardContainer>
-        <SortableContext items={columnsId}>
-          {columns.map((col) => (
-            <BoardColumn
-              key={col.id}
-              column={col}
-              tasks={tasks.filter((task) => task.columnId === col.id)}
-            />
-          ))}
-        </SortableContext>
-      </BoardContainer>
-      {portal}
-    </DndContext>
-  );
-
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;
-    const data = event.active.data.current;
-    if (data?.type === 'Column') {
-      setActiveColumn(data.column);
+    const { active } = event;
+    if (!active.data?.current) return;
+
+    const { type } = active.data.current;
+    if (type === 'Column') {
+      setActiveColumn(active.data.current.column);
       return;
     }
-
-    if (data?.type === 'Task') {
-      setActiveTask(data.task);
+    if (type === 'Task') {
+      const task = active.data.current.task;
+      setActiveTask(task);
+      pickedUpTaskColumn.current = String(task.list_id);
+      console.log(
+        'DragStart - Picked up task from list:',
+        pickedUpTaskColumn.current
+      );
       return;
     }
-  }
-
-  function onDragEnd(event: DragEndEvent) {
-    setActiveColumn(null);
-    setActiveTask(null);
-
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (!hasDraggableData(active)) return;
-
-    const activeData = active.data.current;
-
-    if (activeId === overId) return;
-
-    const isActiveAColumn = activeData?.type === 'Column';
-    if (!isActiveAColumn) return;
-
-    setColumns((columns) => {
-      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
-
-      const overColumnIndex = columns.findIndex((col) => col.id === overId);
-
-      return arrayMove(columns, activeColumnIndex, overColumnIndex);
-    });
   }
 
   function onDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = active.id;
-    const overId = over.id;
+    const activeType = active.data?.current?.type;
+    if (!activeType) return;
 
-    if (activeId === overId) return;
+    if (activeType === 'Task') {
+      const activeTask = active.data?.current?.task;
+      if (!activeTask) return;
 
-    if (!hasDraggableData(active) || !hasDraggableData(over)) return;
+      let targetListId: string;
+      if (over.data?.current?.type === 'Column') {
+        targetListId = String(over.id);
+      } else if (over.data?.current?.type === 'Task') {
+        targetListId = String(over.data.current.task.list_id);
+      } else {
+        return;
+      }
 
-    const activeData = active.data.current;
-    const overData = over.data.current;
+      // Use the original list ID from ref instead of current task list_id
+      const originalListId = pickedUpTaskColumn.current;
+      if (!originalListId) return;
 
-    const isActiveATask = activeData?.type === 'Task';
-    const isOverATask = overData?.type === 'Task';
+      // Verify the lists exist
+      const sourceListExists = columns.some(
+        (col) => String(col.id) === originalListId
+      );
+      const targetListExists = columns.some(
+        (col) => String(col.id) === targetListId
+      );
 
-    if (!isActiveATask) return;
+      if (!sourceListExists || !targetListExists) return;
 
-    // Im dropping a Task over another Task
-    if (isActiveATask && isOverATask) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
-        const overIndex = tasks.findIndex((t) => t.id === overId);
-        const activeTask = tasks[activeIndex];
-        const overTask = tasks[overIndex];
-        if (
-          activeTask &&
-          overTask &&
-          activeTask.columnId !== overTask.columnId
-        ) {
-          activeTask.columnId = overTask.columnId;
-          return arrayMove(tasks, activeIndex, overIndex - 1);
+      if (originalListId === targetListId) return;
+
+      // Optimistically update the UI
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (oldTasks: TaskType[] | undefined) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((task) =>
+            task.id === activeTask.id
+              ? { ...task, list_id: targetListId }
+              : task
+          );
         }
-
-        return arrayMove(tasks, activeIndex, overIndex);
-      });
-    }
-
-    const isOverAColumn = overData?.type === 'Column';
-
-    // Im dropping a Task over a column
-    if (isActiveATask && isOverAColumn) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
-        const activeTask = tasks[activeIndex];
-        if (activeTask) {
-          activeTask.columnId = overId as ColumnId;
-          return arrayMove(tasks, activeIndex, activeIndex);
-        }
-        return tasks;
-      });
+      );
     }
   }
+
+  async function onDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    setActiveColumn(null);
+    setActiveTask(null);
+
+    if (!over) {
+      console.log('DragEnd - No target found');
+      pickedUpTaskColumn.current = null;
+      return;
+    }
+
+    const activeType = active.data?.current?.type;
+    if (!activeType) {
+      console.log('DragEnd - No active type');
+      pickedUpTaskColumn.current = null;
+      return;
+    }
+
+    // Handle task movement
+    if (activeType === 'Task') {
+      const activeTask = active.data?.current?.task;
+      if (!activeTask) {
+        console.log('DragEnd - No active task data');
+        pickedUpTaskColumn.current = null;
+        return;
+      }
+
+      // Get target list ID
+      let targetListId: string;
+      if (over.data?.current?.type === 'Column') {
+        targetListId = String(over.id);
+        console.log('DragEnd - Dropping on column:', targetListId);
+      } else if (over.data?.current?.type === 'Task') {
+        targetListId = String(over.data.current.task.list_id);
+        console.log('DragEnd - Dropping on task in list:', targetListId);
+      } else {
+        console.log('DragEnd - Invalid drop target type');
+        pickedUpTaskColumn.current = null;
+        return;
+      }
+
+      // Use the original list ID from ref
+      const originalListId = pickedUpTaskColumn.current;
+      if (!originalListId) {
+        console.log('DragEnd - No original list ID found');
+        pickedUpTaskColumn.current = null;
+        return;
+      }
+
+      console.log('DragEnd - List IDs:', {
+        originalListId,
+        targetListId,
+        currentType: typeof originalListId,
+        targetType: typeof targetListId,
+        isEqual: originalListId === targetListId,
+      });
+
+      // Verify the lists exist
+      const sourceListExists = columns.some(
+        (col) => String(col.id) === originalListId
+      );
+      const targetListExists = columns.some(
+        (col) => String(col.id) === targetListId
+      );
+
+      if (!sourceListExists || !targetListExists) {
+        console.log('DragEnd - Invalid list ID:', {
+          sourceListExists,
+          targetListExists,
+        });
+        pickedUpTaskColumn.current = null;
+        return;
+      }
+
+      if (originalListId === targetListId) {
+        console.log('DragEnd - Same list, skipping');
+        pickedUpTaskColumn.current = null;
+        return;
+      }
+
+      console.log('DragEnd - Moving task:', {
+        taskId: activeTask.id,
+        from: originalListId,
+        to: targetListId,
+      });
+
+      moveTaskMutation.mutate({
+        taskId: activeTask.id,
+        targetListId,
+      });
+    }
+
+    pickedUpTaskColumn.current = null;
+  }
+
+  if (isLoadingColumns || isLoadingTasks) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+    >
+      <BoardContainer>
+        <SortableContext items={columnsId}>
+          {columns.map((column) => (
+            <BoardColumn
+              key={column.id}
+              column={column}
+              tasks={tasks.filter((task) => task.list_id === column.id)}
+              onTaskCreated={() =>
+                queryClient.invalidateQueries({ queryKey: ['tasks', boardId] })
+              }
+              onListUpdated={() => {
+                queryClient.invalidateQueries({
+                  queryKey: ['taskLists', boardId],
+                });
+                queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+              }}
+            />
+          ))}
+        </SortableContext>
+        <TaskListForm
+          boardId={boardId}
+          onListCreated={() => {
+            queryClient.invalidateQueries({ queryKey: ['taskLists', boardId] });
+            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+          }}
+        />
+      </BoardContainer>
+      <DragOverlay>
+        {activeColumn && (
+          <BoardColumn
+            isOverlay
+            column={activeColumn}
+            tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
+            onTaskCreated={() =>
+              queryClient.invalidateQueries({ queryKey: ['tasks', boardId] })
+            }
+          />
+        )}
+        {activeTask && <TaskCard task={activeTask} isOverlay />}
+      </DragOverlay>
+    </DndContext>
+  );
 }

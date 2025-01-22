@@ -1,32 +1,23 @@
-import { ColumnId } from './kanban';
-import type { UniqueIdentifier } from '@dnd-kit/core';
+import { Task as TaskType } from '@/types/primitives/TaskBoard';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card, CardContent, CardHeader } from '@repo/ui/components/ui/card';
-import { cva } from 'class-variance-authority';
-import { GripVertical } from 'lucide-react';
+import { Card } from '@repo/ui/components/ui/card';
+import { cn } from '@repo/ui/lib/utils';
 
-export interface Task {
-  id: UniqueIdentifier;
-  columnId: ColumnId;
-  content: string;
-}
+export interface Task extends TaskType {}
 
-interface TaskCardProps {
+interface Props {
   task: Task;
   isOverlay?: boolean;
 }
 
-export type TaskType = 'Task';
+export function TaskCard({ task, isOverlay }: Props) {
+  console.log('Rendering task card:', {
+    taskId: task.id,
+    listId: task.list_id,
+    taskData: task,
+  });
 
-export interface TaskDragData {
-  type: TaskType;
-  task: Task;
-}
-
-export function TaskCard({ task, isOverlay }: TaskCardProps) {
   const {
     setNodeRef,
     attributes,
@@ -38,52 +29,45 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
     id: task.id,
     data: {
       type: 'Task',
-      task,
-    } satisfies TaskDragData,
-    attributes: {
-      roleDescription: 'Task',
+      task: {
+        ...task,
+        list_id: String(task.list_id), // Ensure list_id is a string
+      },
     },
   });
 
   const style = {
     transition,
-    transform: CSS.Translate.toString(transform),
+    transform: CSS.Transform.toString(transform),
   };
-
-  const variants = cva('', {
-    variants: {
-      dragging: {
-        over: 'ring-2 opacity-30',
-        overlay: 'ring-2 ring-primary',
-      },
-    },
-  });
 
   return (
     <Card
       ref={setNodeRef}
       style={style}
-      className={variants({
-        dragging: isOverlay ? 'overlay' : isDragging ? 'over' : undefined,
-      })}
+      className={cn(
+        'flex h-[90px] cursor-grab flex-col gap-2 rounded-lg border p-3 text-left text-sm',
+        isDragging && 'opacity-50',
+        isOverlay && 'cursor-grabbing'
+      )}
+      {...attributes}
+      {...listeners}
     >
-      <CardHeader className="space-between border-secondary relative flex flex-row border-b-2 px-3 py-3">
-        <Button
-          variant={'ghost'}
-          {...attributes}
-          {...listeners}
-          className="text-secondary-foreground/50 -ml-2 h-auto cursor-grab p-1"
-        >
-          <span className="sr-only">Move task</span>
-          <GripVertical />
-        </Button>
-        <Badge variant={'outline'} className="ml-auto font-semibold">
-          Task
-        </Badge>
-      </CardHeader>
-      <CardContent className="whitespace-pre-wrap px-3 pb-6 pt-3 text-left">
-        {task.content}
-      </CardContent>
+      <p className="line-clamp-2 flex-grow text-sm font-medium">{task.name}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {task.priority && (
+            <span className="text-muted-foreground text-xs">
+              Priority: {task.priority}
+            </span>
+          )}
+        </div>
+        {task.end_date && (
+          <span className="text-muted-foreground text-xs">
+            Due: {new Date(task.end_date).toLocaleDateString()}
+          </span>
+        )}
+      </div>
     </Card>
   );
 }

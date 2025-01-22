@@ -1,10 +1,7 @@
 'use client';
 
-import AIWhitelistEmailForm from './form';
-import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { AIWhitelistEmail } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +12,6 @@ import { Row } from '@tanstack/react-table';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 interface AIWhitelistEmailRowActionsProps {
   row: Row<AIWhitelistEmail>;
@@ -42,8 +38,6 @@ export function AIWhitelistEmailRowActions({
     }
   };
 
-  const [showEditDialog, setShowEditDialog] = useState(false);
-
   return (
     <div className="flex items-center justify-end gap-2">
       <DropdownMenu modal={false}>
@@ -62,15 +56,6 @@ export function AIWhitelistEmailRowActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <ModifiableDialogTrigger
-        data={data}
-        open={showEditDialog}
-        title={t('ws-flashcards.edit')}
-        editDescription={t('ws-flashcards.edit_description')}
-        setOpen={setShowEditDialog}
-        form={<AIWhitelistEmailForm wsId={ROOT_WORKSPACE_ID} data={data} />}
-      />
     </div>
   );
 }
