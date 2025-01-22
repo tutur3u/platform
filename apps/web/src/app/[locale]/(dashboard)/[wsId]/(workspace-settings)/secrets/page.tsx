@@ -67,7 +67,7 @@ async function getSecrets(
       count: 'exact',
     })
     .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
+    .order('name', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
