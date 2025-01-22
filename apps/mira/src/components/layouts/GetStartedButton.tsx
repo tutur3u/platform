@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '../components/ui/Button';
 import { cn } from '@/lib/utils';
+import { Button } from '@repo/ui/components/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
