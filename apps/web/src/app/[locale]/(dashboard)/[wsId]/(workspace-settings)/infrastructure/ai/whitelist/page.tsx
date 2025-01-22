@@ -1,3 +1,4 @@
+import WhitelistEmailClient from './client-page';
 import { getAIWhitelistEmailColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@/utils/supabase/server';
@@ -36,7 +37,7 @@ export default async function WorkspaceCoursesPage({
         description={t('ws-ai-whitelist-emails.description')}
         createTitle={t('ws-ai-whitelist-emails.create')}
         createDescription={t('ws-ai-whitelist-emails.create_description')}
-        // form={<CourseForm wsId={wsId} />}
+        form={<WhitelistEmailClient wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable

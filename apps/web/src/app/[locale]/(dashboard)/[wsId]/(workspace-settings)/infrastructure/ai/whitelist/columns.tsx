@@ -4,32 +4,74 @@ import { AIWhitelistEmailRowActions } from './row-actions';
 import { AIWhitelistEmail } from '@/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { Switch } from '@repo/ui/components/ui/switch';
+import {
+  useIsFetching,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { Loader2 } from 'lucide-react';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 export const getAIWhitelistEmailColumns = (
   t: any
 ): ColumnDef<AIWhitelistEmail>[] => {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const isFetching = useIsFetching({ queryKey: ['ai-whitelist'] });
 
-  const [pendingEmails, setPendingEmails] = useState<string[]>([]);
+  const toggleMutation = useMutation({
+    mutationFn: async ({
+      email,
+      enabled,
+    }: {
+      email: string;
+      enabled: boolean;
+    }) => {
+      const res = await fetch(`/api/v1/infrastructure/ai/whitelist/${email}`, {
+        method: 'PUT',
+        body: JSON.stringify({ email, enabled }),
+      });
 
-  const toggleWhitelist = async (email: string, enabled: boolean) => {
-    setPendingEmails((prev) => [...prev, email]);
+      if (!res.ok) {
+        throw new Error('Failed to toggle whitelist status');
+      }
 
-    const res = await fetch(`/api/v1/infrastructure/ai/whitelist/${email}`, {
-      method: 'PUT',
-      body: JSON.stringify({ email, enabled }),
-    });
+      return res.json();
+    },
+    onMutate: async ({ email, enabled }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['ai-whitelist'] });
 
-    if (res.ok) {
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData<AIWhitelistEmail[]>([
+        'ai-whitelist',
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<AIWhitelistEmail[]>(['ai-whitelist'], (old) => {
+        if (!old) return [];
+        return old.map((item) =>
+          item.email === email ? { ...item, enabled } : item
+        );
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousData };
+    },
+    onError: (_err, _variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousData) {
+        queryClient.setQueryData(['ai-whitelist'], context.previousData);
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure data is in sync
+      queryClient.invalidateQueries({ queryKey: ['ai-whitelist'] });
       router.refresh();
-    } else {
-      setPendingEmails((prev) => prev.filter((e) => e !== email));
-    }
-  };
+    },
+  });
 
   return [
     // {
@@ -71,23 +113,28 @@ export const getAIWhitelistEmailColumns = (
           title={t(`common.enabled`)}
         />
       ),
-      cell: ({ row }) => (
-        <Switch
-          id="enabled"
-          checked={row.getValue('enabled')}
-          onCheckedChange={(checked) => {
-            const email = row.getValue('email');
-            toggleWhitelist(email as string, checked);
-          }}
-          disabled={
-            pendingEmails.includes(row.getValue('email') || '-') &&
-            pendingEmails.some(
-              (e) =>
-                e !== row.getValue('enabled') && e !== row.getValue('email')
-            )
-          }
-        />
-      ),
+      cell: ({ row }) => {
+        const email = row.getValue('email') as string;
+        const enabled = row.getValue('enabled') as boolean;
+        const isLoading =
+          (toggleMutation.isPending &&
+            toggleMutation.variables?.email === email) ||
+          (isFetching > 0 && toggleMutation.variables?.email === email);
+
+        return (
+          <div className="flex items-center gap-2">
+            <Switch
+              id="enabled"
+              checked={enabled}
+              onCheckedChange={(checked) =>
+                toggleMutation.mutate({ email, enabled: checked })
+              }
+              disabled={isLoading}
+            />
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'created_at',

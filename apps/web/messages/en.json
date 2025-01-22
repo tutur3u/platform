@@ -245,7 +245,9 @@
     "company": "Company",
     "pitch": "Pitch Deck",
     "careers": "Careers",
-    "not_whitelisted": "Not whitelisted"
+    "not_whitelisted": "Not whitelisted",
+    "email_added": "Email added",
+    "error_adding_email": "Error adding email"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -2438,5 +2440,8 @@
         }
       ]
     }
+  },
+  "ai-whitelist": {
+    "add_email": "Add email"
   }
 }

@@ -245,7 +245,9 @@
     "company": "Công ty",
     "pitch": "Kế hoạch kinh doanh",
     "careers": "Việc làm",
-    "not_whitelisted": "Không có trong danh sách trắng"
+    "not_whitelisted": "Không có trong danh sách trắng",
+    "email_added": "Đã thêm email",
+    "error_adding_email": "Lỗi khi thêm email"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -2363,5 +2365,8 @@
         }
       ]
     }
+  },
+  "ai-whitelist": {
+    "add_email": "Thêm email"
   }
 }
