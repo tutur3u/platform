@@ -13,15 +13,21 @@ import { ArrowRight, Star } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-export default async function ChallengesPage() {
+interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
+}
+export default async function ChallengesPage({ params }: Props) {
   const database = await createClient();
   const {
     data: { user },
   } = await database.auth.getUser();
-
+  const { wsId } = await params;
   if (!user?.id) {
     redirect('/login');
   }
+
   const challenges = getChallenges();
 
   return (
@@ -53,7 +59,7 @@ export default async function ChallengesPage() {
             </CardContent>
             <CardFooter>
               <Link
-                href={`/playground?challenge=${challenge.id}`}
+                href={`/${wsId}/challenges/${challenge.id}`}
                 className="w-full"
               >
                 <Button className="w-full gap-2">
