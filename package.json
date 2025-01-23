@@ -49,6 +49,7 @@
   },
   "trustedDependencies": [
     "@vercel/speed-insights",
+    "canvas",
     "esbuild",
     "sharp",
     "supabase"
