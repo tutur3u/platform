@@ -252,7 +252,7 @@ export default function MarketingPage() {
               <span className="from-primary/20 to-primary/10 absolute -inset-1 rounded-lg bg-gradient-to-r opacity-0 blur transition-all duration-300 group-hover:opacity-100" />
               <GradientHeadline title={t('landing.headline')} />
             </h1>
-            <h2 className="text-foreground mb-12 max-w-3xl text-balance text-lg font-bold tracking-tight md:text-2xl lg:text-3xl">
+            <h2 className="text-foreground mb-12 text-balance text-lg font-bold tracking-tight md:text-2xl lg:text-3xl">
               {t('landing.subheadline')}
             </h2>
 

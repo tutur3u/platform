@@ -92,14 +92,14 @@ export default function BlogPage() {
               </p>
 
               {/* Categories Preview */}
-              <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
+              <div className="mb-8 grid gap-4 text-center md:grid-cols-2 lg:grid-cols-3">
                 {categories.map((category, index) => (
                   <motion.div
                     key={index}
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.6 + index * 0.1 }}
-                    className="bg-foreground/10 flex items-center gap-2 rounded-lg p-3"
+                    className="bg-foreground/10 flex items-center justify-center gap-2 rounded-lg p-3"
                   >
                     <div className="text-primary">{category.icon}</div>
                     <span className="text-sm font-medium">{category.name}</span>
