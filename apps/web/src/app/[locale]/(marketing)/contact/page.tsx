@@ -17,7 +17,7 @@ import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Brain, Github, Globe, Mail, MessageCircle, Star } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -83,6 +83,19 @@ export default function ContactPage() {
       message: '',
     },
   });
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user?.email) {
+        form.setValue('email', user.email);
+      }
+    };
+
+    getUser();
+  }, []);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
