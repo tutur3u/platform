@@ -27,6 +27,14 @@ const updates: MonthlyUpdate[] = [
     month: 'January 2025',
     updates: [
       {
+        title: 'Security Center Launch',
+        description:
+          'Introduced our new Security Center, a comprehensive hub for understanding our security practices and commitments. Features detailed information about our data protection measures, encryption standards, compliance frameworks, and security best practices. Includes guidelines for responsible disclosure and our bug bounty program, demonstrating our commitment to maintaining the highest security standards.',
+        type: 'feature',
+        date: 'January 23, 2025',
+        tags: ['Security', 'New', 'Company'],
+      },
+      {
         title: 'Enhanced Changelog Experience',
         description:
           'Revamped our changelog page with powerful new features for better update tracking. Added interactive tag filtering system, improved timeline navigation, and enhanced visual design. New features include clickable tags for filtering updates, smooth animations, better visual hierarchy, and a responsive timeline view. The new design provides a more intuitive and engaging way to explore product updates.',

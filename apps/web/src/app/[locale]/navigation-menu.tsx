@@ -31,6 +31,7 @@ import {
   Paintbrush,
   Pill,
   Presentation,
+  Shield,
   Store,
   Users,
   UsersRound,
@@ -195,6 +196,12 @@ export function MainNavigationMenu() {
       href: '/changelog',
       description: t('common.changelog-description'),
       icon: <FileText className="h-4 w-4" />,
+    },
+    {
+      title: t('common.security'),
+      href: '/security',
+      description: t('common.security-description'),
+      icon: <Shield className="h-4 w-4" />,
     },
     {
       title: t('common.pitch'),

@@ -612,7 +612,7 @@ export default function CareersPage() {
                       }}
                       className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                     />
-                    <div className="relative p-8">
+                    <div className="pointer-events-none relative p-8">
                       <motion.div
                         whileHover={{
                           rotate: [0, 10, -10, 0],
@@ -792,7 +792,7 @@ export default function CareersPage() {
                       }}
                       className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
                     />
-                    <div className="relative p-8">
+                    <div className="pointer-events-none relative p-8">
                       <motion.div
                         whileHover={{
                           rotate: [0, 10, -10, 0],
@@ -981,7 +981,7 @@ export default function CareersPage() {
                       }}
                       className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                     />
-                    <div className="relative p-8">
+                    <div className="pointer-events-none relative p-8">
                       <motion.div
                         whileHover={{
                           rotate: [0, 10, -10, 0],
@@ -1171,7 +1171,7 @@ export default function CareersPage() {
                       }}
                       className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
                     />
-                    <div className="relative p-8">
+                    <div className="pointer-events-none relative p-8">
                       <motion.div
                         whileHover={{
                           rotate: [0, 10, -10, 0],

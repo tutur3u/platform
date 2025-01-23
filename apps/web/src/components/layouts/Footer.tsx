@@ -174,6 +174,12 @@ export default function Footer() {
               {t('common.legal')}
             </div>
             <Link
+              href="/security"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+            >
+              {t('common.security')}
+            </Link>
+            <Link
               href="/terms"
               className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
