@@ -3,7 +3,7 @@ import { Task, TaskCard } from './task';
 import { TaskForm } from './task-form';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Button } from '@repo/ui/components/ui/button';
+import { Badge } from '@repo/ui/components/ui/badge';
 import { Card } from '@repo/ui/components/ui/card';
 import { cn } from '@repo/ui/lib/utils';
 import { GripVertical } from 'lucide-react';
@@ -15,6 +15,7 @@ export interface Column {
 
 interface Props {
   column: Column;
+  boardId: string;
   tasks: Task[];
   isOverlay?: boolean;
   onTaskCreated?: () => void;
@@ -23,18 +24,12 @@ interface Props {
 
 export function BoardColumn({
   column,
+  boardId,
   tasks,
   isOverlay,
   onTaskCreated,
   onListUpdated,
 }: Props) {
-  console.log('Rendering board column:', {
-    columnId: column.id,
-    columnTitle: column.title,
-    tasksCount: tasks.length,
-    tasks: tasks.map((t) => ({ id: t.id, list_id: t.list_id })),
-  });
-
   const {
     setNodeRef,
     attributes,
@@ -48,14 +43,14 @@ export function BoardColumn({
       type: 'Column',
       column: {
         ...column,
-        id: String(column.id), // Ensure column id is a string
+        id: String(column.id),
       },
     },
   });
 
   const style = {
-    transition,
     transform: CSS.Transform.toString(transform),
+    transition,
   };
 
   const handleUpdate = () => {
@@ -72,34 +67,51 @@ export function BoardColumn({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex h-full w-[350px] flex-col rounded-lg',
-        isDragging && 'opacity-50',
-        isOverlay && 'cursor-grabbing'
+        'group flex h-full w-[350px] flex-col rounded-lg transition-colors',
+        'touch-none select-none',
+        isDragging && 'rotate-[2deg] scale-[1.02] opacity-90 shadow-lg',
+        isOverlay && 'shadow-lg'
       )}
     >
       <div className="flex items-center gap-2 border-b p-3">
-        <Button
-          variant={'ghost'}
+        <div
           {...attributes}
           {...listeners}
-          className="-ml-2 h-auto cursor-grab p-1"
+          className={cn(
+            '-ml-2 h-auto cursor-grab p-1 opacity-50 transition-opacity',
+            'group-hover:opacity-100',
+            isDragging && 'opacity-100',
+            isOverlay && 'cursor-grabbing'
+          )}
         >
           <span className="sr-only">Move list</span>
           <GripVertical className="h-4 w-4" />
-        </Button>
-        <h3 className="font-medium">{column.title}</h3>
-        <span className="text-muted-foreground ml-auto text-sm">
-          {tasks.length} tasks
-        </span>
+        </div>
+        <div className="flex flex-1 items-center gap-2">
+          <h3 className="text-sm font-medium">{column.title}</h3>
+          <Badge variant="secondary" className="text-xs font-normal">
+            {tasks.length}
+          </Badge>
+        </div>
         <ListActions
           listId={column.id}
           listName={column.title}
           onUpdate={handleUpdate}
         />
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto p-2">
+      <style jsx global>{`
+        :root {
+          --task-height: auto;
+        }
+      `}</style>
+      <div className="flex-1 space-y-2.5 overflow-y-auto p-2">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            boardId={boardId}
+            onUpdate={handleUpdate}
+          />
         ))}
       </div>
       <div className="border-t p-2">

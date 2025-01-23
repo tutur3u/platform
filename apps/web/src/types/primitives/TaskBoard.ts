@@ -23,17 +23,20 @@ export interface TaskList {
 export interface Task {
   id: string;
   name: string;
-  created_at: string;
-  archived: boolean;
-  deleted: boolean;
+  description?: string;
   list_id: string;
-  completed: boolean;
-  creator_id: string;
-  start_date: string | null;
-  end_date: string | null;
-  description: string | null;
-  priority: number | null;
-  href?: string;
+  priority?: number | null;
+  start_date?: string;
+  end_date?: string;
+  archived: boolean;
+  created_at: string;
+  assignees?: {
+    id: string;
+    display_name?: string;
+    email?: string;
+    avatar_url?: string;
+    handle?: string;
+  }[];
 }
 
 export interface TaskAssignee {

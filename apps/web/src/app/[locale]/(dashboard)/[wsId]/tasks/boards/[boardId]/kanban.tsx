@@ -6,7 +6,7 @@ import type { Column } from './task-list';
 import { BoardColumn, BoardContainer } from './task-list';
 import { TaskListForm } from './task-list-form';
 import { hasDraggableData } from './utils';
-import { getTaskLists, getTasks, moveTask } from '@/lib/task-helper';
+import { getTaskLists, moveTask } from '@/lib/task-helper';
 import { type Task as TaskType } from '@/types/primitives/TaskBoard';
 import { createClient } from '@/utils/supabase/client';
 import {
@@ -23,65 +23,69 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
   boardId: string;
+  tasks: TaskType[];
+  isLoading: boolean;
 }
 
-export function KanbanBoard({ boardId }: Props) {
-  const queryClient = useQueryClient();
+export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
+  const [columns, setColumns] = useState<Column[]>([]);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
   const pickedUpTaskColumn = useRef<string | null>(null);
+  const queryClient = useQueryClient();
 
-  // Query for lists
-  const { data: columns = [], isLoading: isLoadingColumns } = useQuery({
-    queryKey: ['taskLists', boardId],
-    queryFn: async () => {
-      const supabase = createClient();
-      const lists = await getTaskLists(supabase, boardId);
-      return lists.map((list) => ({
-        id: list.id,
-        title: list.name,
-      }));
-    },
-  });
+  const handleTaskCreated = () => {
+    // Invalidate the tasks query to trigger a refetch
+    queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+  };
 
-  // Query for tasks
-  const { data: tasks = [], isLoading: isLoadingTasks } = useQuery({
-    queryKey: ['tasks', boardId],
-    queryFn: async () => {
-      const supabase = createClient();
-      const lists = await getTaskLists(supabase, boardId);
-      const allTasks = await Promise.all(
-        lists.map((list) => getTasks(supabase, list.id))
-      );
-      return allTasks.flat();
-    },
-  });
+  useEffect(() => {
+    let mounted = true;
+    const supabase = createClient();
 
-  // Mutation for moving tasks
-  const moveTaskMutation = useMutation({
-    mutationFn: async ({
-      taskId,
-      targetListId,
-    }: {
-      taskId: string;
-      targetListId: string;
-    }) => {
-      const supabase = createClient();
-      if (!supabase) throw new Error('Failed to create Supabase client');
-      await moveTask(supabase, taskId, targetListId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    },
-    onError: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    },
-  });
+    // Initial data fetch and real-time updates for lists only
+    async function loadLists() {
+      try {
+        const lists = await getTaskLists(supabase, boardId);
+        const columns = lists.map((list) => ({
+          id: list.id,
+          title: list.name,
+        }));
+
+        if (mounted) {
+          setColumns(columns);
+        }
+      } catch (error) {
+        console.error('Failed to load lists:', error);
+      }
+    }
+
+    // Set up real-time subscription for lists
+    const listsSubscription = supabase
+      .channel('lists-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_lists',
+        },
+        loadLists
+      )
+      .subscribe();
+
+    loadLists();
+
+    return () => {
+      mounted = false;
+      listsSubscription.unsubscribe();
+    };
+  }, [boardId]);
 
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
@@ -107,10 +111,6 @@ export function KanbanBoard({ boardId }: Props) {
       const task = active.data.current.task;
       setActiveTask(task);
       pickedUpTaskColumn.current = String(task.list_id);
-      console.log(
-        'DragStart - Picked up task from list:',
-        pickedUpTaskColumn.current
-      );
       return;
     }
   }
@@ -135,11 +135,9 @@ export function KanbanBoard({ boardId }: Props) {
         return;
       }
 
-      // Use the original list ID from ref instead of current task list_id
       const originalListId = pickedUpTaskColumn.current;
       if (!originalListId) return;
 
-      // Verify the lists exist
       const sourceListExists = columns.some(
         (col) => String(col.id) === originalListId
       );
@@ -149,17 +147,13 @@ export function KanbanBoard({ boardId }: Props) {
 
       if (!sourceListExists || !targetListExists) return;
 
-      if (originalListId === targetListId) return;
-
-      // Optimistically update the UI
+      // Optimistically update the task in the cache for preview
       queryClient.setQueryData(
         ['tasks', boardId],
-        (oldTasks: TaskType[] | undefined) => {
-          if (!oldTasks) return oldTasks;
-          return oldTasks.map((task) =>
-            task.id === activeTask.id
-              ? { ...task, list_id: targetListId }
-              : task
+        (oldData: TaskType[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map((t) =>
+            t.id === activeTask.id ? { ...t, list_id: targetListId } : t
           );
         }
       );
@@ -173,58 +167,41 @@ export function KanbanBoard({ boardId }: Props) {
     setActiveTask(null);
 
     if (!over) {
-      console.log('DragEnd - No target found');
+      // Reset the cache if dropped outside
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       pickedUpTaskColumn.current = null;
       return;
     }
 
     const activeType = active.data?.current?.type;
     if (!activeType) {
-      console.log('DragEnd - No active type');
       pickedUpTaskColumn.current = null;
       return;
     }
 
-    // Handle task movement
     if (activeType === 'Task') {
       const activeTask = active.data?.current?.task;
       if (!activeTask) {
-        console.log('DragEnd - No active task data');
         pickedUpTaskColumn.current = null;
         return;
       }
 
-      // Get target list ID
       let targetListId: string;
       if (over.data?.current?.type === 'Column') {
         targetListId = String(over.id);
-        console.log('DragEnd - Dropping on column:', targetListId);
       } else if (over.data?.current?.type === 'Task') {
         targetListId = String(over.data.current.task.list_id);
-        console.log('DragEnd - Dropping on task in list:', targetListId);
       } else {
-        console.log('DragEnd - Invalid drop target type');
         pickedUpTaskColumn.current = null;
         return;
       }
 
-      // Use the original list ID from ref
       const originalListId = pickedUpTaskColumn.current;
       if (!originalListId) {
-        console.log('DragEnd - No original list ID found');
         pickedUpTaskColumn.current = null;
         return;
       }
 
-      console.log('DragEnd - List IDs:', {
-        originalListId,
-        targetListId,
-        currentType: typeof originalListId,
-        targetType: typeof targetListId,
-        isEqual: originalListId === targetListId,
-      });
-
-      // Verify the lists exist
       const sourceListExists = columns.some(
         (col) => String(col.id) === originalListId
       );
@@ -233,87 +210,101 @@ export function KanbanBoard({ boardId }: Props) {
       );
 
       if (!sourceListExists || !targetListExists) {
-        console.log('DragEnd - Invalid list ID:', {
-          sourceListExists,
-          targetListExists,
-        });
         pickedUpTaskColumn.current = null;
         return;
       }
 
-      if (originalListId === targetListId) {
-        console.log('DragEnd - Same list, skipping');
-        pickedUpTaskColumn.current = null;
-        return;
+      try {
+        // Optimistically update the task in the cache
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (oldData: TaskType[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.map((t) =>
+              t.id === activeTask.id ? { ...t, list_id: targetListId } : t
+            );
+          }
+        );
+
+        const supabase = createClient();
+        const updatedTask = await moveTask(
+          supabase,
+          activeTask.id,
+          targetListId
+        );
+
+        // Update the cache with the server response
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (oldData: TaskType[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.map((t) =>
+              t.id === updatedTask.id ? updatedTask : t
+            );
+          }
+        );
+      } catch (error) {
+        // Revert the optimistic update by invalidating the query
+        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        console.error('Failed to move task:', error);
       }
-
-      console.log('DragEnd - Moving task:', {
-        taskId: activeTask.id,
-        from: originalListId,
-        to: targetListId,
-      });
-
-      moveTaskMutation.mutate({
-        taskId: activeTask.id,
-        targetListId,
-      });
     }
 
     pickedUpTaskColumn.current = null;
   }
 
-  if (isLoadingColumns || isLoadingTasks) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-    >
-      <BoardContainer>
-        <SortableContext items={columnsId}>
-          {columns.map((column) => (
+    <div className="h-full p-4">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragEnd={onDragEnd}
+      >
+        <BoardContainer>
+          <SortableContext items={columnsId}>
+            <div className="flex gap-3">
+              {columns.map((column) => (
+                <BoardColumn
+                  key={column.id}
+                  column={column}
+                  boardId={boardId}
+                  tasks={tasks.filter((task) => task.list_id === column.id)}
+                  onTaskCreated={handleTaskCreated}
+                />
+              ))}
+              <TaskListForm
+                boardId={boardId}
+                onListCreated={handleTaskCreated}
+              />
+            </div>
+          </SortableContext>
+        </BoardContainer>
+
+        <DragOverlay>
+          {activeColumn && (
             <BoardColumn
-              key={column.id}
-              column={column}
-              tasks={tasks.filter((task) => task.list_id === column.id)}
-              onTaskCreated={() =>
-                queryClient.invalidateQueries({ queryKey: ['tasks', boardId] })
-              }
-              onListUpdated={() => {
-                queryClient.invalidateQueries({
-                  queryKey: ['taskLists', boardId],
-                });
-                queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-              }}
+              column={activeColumn}
+              boardId={boardId}
+              tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
+              isOverlay
             />
-          ))}
-        </SortableContext>
-        <TaskListForm
-          boardId={boardId}
-          onListCreated={() => {
-            queryClient.invalidateQueries({ queryKey: ['taskLists', boardId] });
-            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          }}
-        />
-      </BoardContainer>
-      <DragOverlay>
-        {activeColumn && (
-          <BoardColumn
-            isOverlay
-            column={activeColumn}
-            tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
-            onTaskCreated={() =>
-              queryClient.invalidateQueries({ queryKey: ['tasks', boardId] })
-            }
-          />
-        )}
-        {activeTask && <TaskCard task={activeTask} isOverlay />}
-      </DragOverlay>
-    </DndContext>
+          )}
+          {activeTask && (
+            <TaskCard
+              task={activeTask}
+              boardId={boardId}
+              isOverlay
+              onUpdate={handleTaskCreated}
+            />
+          )}
+        </DragOverlay>
+      </DndContext>
+    </div>
   );
 }

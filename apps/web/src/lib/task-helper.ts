@@ -29,16 +29,45 @@ export async function getTaskLists(supabase: SupabaseClient, boardId: string) {
   return data as TaskList[];
 }
 
-export async function getTasks(supabase: SupabaseClient, listId: string) {
+export async function getTasks(supabase: SupabaseClient, boardId: string) {
+  const { data: lists } = await supabase
+    .from('task_lists')
+    .select('id')
+    .eq('board_id', boardId)
+    .eq('deleted', false);
+
+  if (!lists?.length) return [];
+
   const { data, error } = await supabase
     .from('tasks')
-    .select('*')
-    .eq('list_id', listId)
+    .select(
+      `
+      *,
+      assignees:task_assignees(
+        user:users(
+          id,
+          display_name,
+          avatar_url
+        )
+      )
+    `
+    )
+    .in(
+      'list_id',
+      lists.map((list) => list.id)
+    )
     .eq('deleted', false)
     .order('created_at');
 
   if (error) throw error;
-  return data as Task[];
+
+  // Transform the nested assignees data
+  const transformedTasks = data.map((task) => ({
+    ...task,
+    assignees: task.assignees?.map((a: any) => a.user),
+  }));
+
+  return transformedTasks as Task[];
 }
 
 export async function getTaskAssignees(
@@ -105,13 +134,22 @@ export async function moveTask(
   taskId: string,
   newListId: string
 ) {
-  console.log('Moving task in database:', { taskId, newListId });
-
   const { data, error } = await supabase
     .from('tasks')
     .update({ list_id: newListId })
     .eq('id', taskId)
-    .select()
+    .select(
+      `
+      *,
+      assignees:task_assignees(
+        user:users(
+          id,
+          display_name,
+          avatar_url
+        )
+      )
+    `
+    )
     .single();
 
   if (error) {
@@ -119,8 +157,13 @@ export async function moveTask(
     throw error;
   }
 
-  console.log('Successfully moved task in database:', data);
-  return data as Task;
+  // Transform the nested assignees data
+  const transformedTask = {
+    ...data,
+    assignees: data.assignees?.map((a: any) => a.user),
+  };
+
+  return transformedTask as Task;
 }
 
 export async function assignTask(

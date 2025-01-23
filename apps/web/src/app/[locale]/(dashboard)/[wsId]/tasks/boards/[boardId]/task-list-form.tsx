@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 interface Props {
   boardId: string;
-  onListCreated: () => void;
+  onListCreated?: () => void;
 }
 
 export function TaskListForm({ boardId, onListCreated }: Props) {
@@ -23,7 +23,7 @@ export function TaskListForm({ boardId, onListCreated }: Props) {
 
     setName('');
     setIsAdding(false);
-    onListCreated();
+    onListCreated?.();
   }
 
   if (!isAdding) {
