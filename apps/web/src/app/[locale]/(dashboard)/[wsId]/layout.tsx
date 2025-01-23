@@ -138,7 +138,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         })) ||
         withoutPermission('manage_projects'),
       shortcut: 'T',
-      experimental: 'alpha',
+      experimental: 'beta',
     },
     // {
     //   title: t('sidebar_tabs.workouts'),

@@ -3,7 +3,7 @@
 import { Badge } from '@repo/ui/components/ui/badge';
 import { Card } from '@repo/ui/components/ui/card';
 import { motion } from 'framer-motion';
-import { ArrowRight, Bug, FileText, Rocket, Star, Wrench } from 'lucide-react';
+import { ArrowRight, Bug, FileText, Rocket, Wrench } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -24,6 +24,20 @@ const updates: MonthlyUpdate[] = [
   {
     month: 'January 2025',
     updates: [
+      {
+        title: 'Tuturuuu Tasks: Project Management Suite (Beta)',
+        description:
+          'Launched the beta version of Tuturuuu Tasks, a comprehensive project management solution. Features include customizable task boards with column management, detailed task tracking with start dates and deadlines, assignee management, and board-level progress summaries. Calendar integration functionality is under development for seamless task scheduling.',
+        type: 'feature',
+        date: 'January 23, 2025',
+      },
+      {
+        title: 'Tuturuuu Spark: AI-Powered Goal Planning (Alpha)',
+        description:
+          'Introduced Tuturuuu Spark, an intelligent companion that transforms annual goals into actionable, time-blocked tasks. This AI-powered system helps users break down objectives into manageable steps and integrates them seamlessly with their calendar for enhanced goal achievement. Currently available in private alpha by invitation only, with plans for deeper ecosystem integration.',
+        type: 'feature',
+        date: 'January 22, 2025',
+      },
       {
         title: 'Marketing Website Refresh',
         description:
@@ -185,7 +199,7 @@ export default function ChangelogPage() {
       </motion.section>
 
       {/* Subscribe Section */}
-      <motion.section
+      {/* <motion.section
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -215,7 +229,7 @@ export default function ChangelogPage() {
             </button>
           </div>
         </Card>
-      </motion.section>
+      </motion.section> */}
 
       {/* Documentation Link */}
       <motion.section
