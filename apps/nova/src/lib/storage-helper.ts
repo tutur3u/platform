@@ -1,4 +1,4 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@repo/supabase/next/client';
 
 export async function downloadPublicObject({
   supabase,
