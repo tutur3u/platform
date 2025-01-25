@@ -1,7 +1,7 @@
 import { Filter } from '../../../users/filters';
 import { Invoice } from '@/types/primitives/Invoice';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import {
   Card,
   CardContent,

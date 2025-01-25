@@ -1,7 +1,7 @@
 'use client';
 
-import { createClient } from '@/utils/supabase/client';
 import { generateUUID } from '@/utils/uuid-helper';
+import { createClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DialogClose,

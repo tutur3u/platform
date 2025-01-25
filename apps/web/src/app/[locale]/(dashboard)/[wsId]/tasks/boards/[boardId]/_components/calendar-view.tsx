@@ -1,7 +1,7 @@
 import { TaskActions } from '../task-actions';
 import { getTasks } from '@/lib/task-helper';
 import { Task } from '@/types/primitives/TaskBoard';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   HoverCard,

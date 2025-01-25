@@ -4,7 +4,7 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceUserReport } from '@/types/db';
 import { Invoice } from '@/types/primitives/Invoice';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TicketCheck, Users } from 'lucide-react';

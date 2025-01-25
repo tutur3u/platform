@@ -4,7 +4,7 @@ import { ProductCategory } from '@/types/primitives/ProductCategory';
 import { ProductInventory } from '@/types/primitives/ProductInventory';
 import { ProductUnit } from '@/types/primitives/ProductUnit';
 import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

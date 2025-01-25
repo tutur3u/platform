@@ -1,6 +1,6 @@
 import { DEV_MODE } from '@/constants/common';
 import { Workspace } from '@/types/primitives/Workspace';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,

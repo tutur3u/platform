@@ -1,7 +1,7 @@
 'use client';
 
 import { TailwindAdvancedEditor } from '../advanced-editor';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { JSONContent } from 'novel';
 
 export function DocumentEditor({

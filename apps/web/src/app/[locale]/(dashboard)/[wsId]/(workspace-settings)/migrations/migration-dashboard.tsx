@@ -1,5 +1,6 @@
 'use client';
 
+import { MigrationModule, ModulePackage, generateModules } from './modules';
 import { useLocalStorage } from '@mantine/hooks';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
@@ -9,7 +10,6 @@ import { Progress } from '@repo/ui/components/ui/progress';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { GitMerge, Play, RefreshCcw } from 'lucide-react';
 import { useState } from 'react';
-import { MigrationModule, ModulePackage, generateModules } from './modules';
 
 export default function MigrationDashboard() {
   const [apiEndpoint, setApiEndpoint] = useLocalStorage({

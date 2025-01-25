@@ -3,7 +3,7 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { availableConfigs } from '@/constants/configs/reports';
 import { getPermissions } from '@/lib/workspace-helper';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';

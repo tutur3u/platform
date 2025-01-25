@@ -2,7 +2,7 @@
 
 import { StorageObject } from '@/types/primitives/StorageObject';
 import { joinPath } from '@/utils/path-helper';
-import { createDynamicClient } from '@/utils/supabase/client';
+import { createDynamicClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

@@ -2,7 +2,7 @@ import { productCategoryColumns } from './columns';
 import { ProductCategoryForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { ProductCategory } from '@/types/primitives/ProductCategory';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

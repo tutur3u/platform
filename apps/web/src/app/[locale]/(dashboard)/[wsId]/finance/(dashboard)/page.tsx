@@ -12,7 +12,7 @@ import { Filter } from './filter';
 import { CustomDataTable } from '@/components/custom-data-table';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import type { Transaction } from '@/types/primitives/Transaction';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import { Suspense } from 'react';
 
 export interface FinanceDashboardSearchParams {

@@ -5,8 +5,8 @@ import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
 import { WorkspaceCourseModule } from '@/types/db';
-import { createClient, createDynamicClient } from '@/utils/supabase/server';
 import { extractYoutubeId } from '@/utils/url-helper';
+import { createClient, createDynamicClient } from '@repo/supabase/next/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
   BookText,

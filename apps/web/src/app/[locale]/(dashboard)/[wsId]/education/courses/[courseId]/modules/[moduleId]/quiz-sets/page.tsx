@@ -2,7 +2,7 @@ import { getQuizSetColumns } from './columns';
 import CourseModuleForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { type WorkspaceQuizSet } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

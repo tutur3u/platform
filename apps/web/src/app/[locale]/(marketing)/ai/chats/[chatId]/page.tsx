@@ -1,6 +1,6 @@
 import Chat from '@/app/[locale]/(dashboard)/[wsId]/chat/chat';
 import { AIChat } from '@/types/db';
-import { createAdminClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@repo/supabase/next/server';
 import { Message } from 'ai';
 import { notFound } from 'next/navigation';
 

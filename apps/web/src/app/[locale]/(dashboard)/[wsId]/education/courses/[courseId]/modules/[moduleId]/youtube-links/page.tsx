@@ -1,8 +1,8 @@
 import DeleteLinkButton from './delete-link';
 import { YoutubeEmbed } from './embed';
 import YouTubeLinkForm from './form';
-import { createClient } from '@/utils/supabase/server';
 import { extractYoutubeId } from '@/utils/url-helper';
+import { createClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Youtube } from 'lucide-react';

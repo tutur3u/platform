@@ -1,7 +1,7 @@
 import WorkspaceCard from '../../../../../../../components/cards/WorkspaceCard';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
 import { Workspace } from '@/types/primitives/Workspace';
-import { createAdminClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@repo/supabase/next/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { notFound } from 'next/navigation';
 

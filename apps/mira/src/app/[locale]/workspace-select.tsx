@@ -2,8 +2,8 @@
 
 import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createClient } from '@repo/supabase/next/client';
 import {
   Avatar,
   AvatarFallback,

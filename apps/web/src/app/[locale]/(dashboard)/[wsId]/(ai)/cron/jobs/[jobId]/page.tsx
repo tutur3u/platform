@@ -1,7 +1,7 @@
 import { getColumns } from '../../executions/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceCronExecution, WorkspaceCronJob } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Card,

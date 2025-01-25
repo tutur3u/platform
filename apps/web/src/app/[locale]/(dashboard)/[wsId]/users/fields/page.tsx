@@ -2,7 +2,7 @@ import { userFieldColumns } from './columns';
 import UserFieldEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Plus } from 'lucide-react';

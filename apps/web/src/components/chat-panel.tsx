@@ -6,7 +6,7 @@ import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
-import { createDynamicClient } from '@/utils/supabase/client';
+import { createDynamicClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   FileUploader,

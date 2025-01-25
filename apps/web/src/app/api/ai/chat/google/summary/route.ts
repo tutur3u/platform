@@ -1,6 +1,6 @@
 import { appConfig } from '@/constants/configs';
-import { createClient } from '@/utils/supabase/server';
 import { google } from '@ai-sdk/google';
+import { createClient } from '@repo/supabase/next/server';
 import { Message, generateText } from 'ai';
 import { NextResponse } from 'next/server';
 

@@ -2,7 +2,7 @@
 
 import { Filter } from '../../../../users/filters';
 import type { WorkspaceCourseModule } from '@/types/db';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 

@@ -2,7 +2,7 @@
 
 import { Team } from '@/types/primitives/Team';
 import { Workspace } from '@/types/primitives/Workspace';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { useRouter } from 'next/router';
 import {
   ReactNode,

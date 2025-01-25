@@ -4,6 +4,7 @@ import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import type { SupabaseUser } from '@repo/supabase/next/user';
 import {
   Accordion,
   AccordionContent,
@@ -16,7 +17,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@repo/ui/components/ui/sheet';
-import { User } from '@supabase/supabase-js';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -24,7 +24,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 interface MenuProps {
-  sbUser: User | null;
+  sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
   t?: any;
 }

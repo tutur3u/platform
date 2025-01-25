@@ -1,6 +1,6 @@
 import { AssigneeSelect } from './_components/assignee-select';
 import { deleteTask, updateTask } from '@/lib/task-helper';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { Checkbox } from '@repo/ui/components/ui/checkbox';

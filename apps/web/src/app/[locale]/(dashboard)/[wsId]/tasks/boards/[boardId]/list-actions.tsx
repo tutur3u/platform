@@ -1,5 +1,5 @@
 import { deleteTaskList } from '@/lib/task-helper';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,

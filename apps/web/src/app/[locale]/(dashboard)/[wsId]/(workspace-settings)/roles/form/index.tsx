@@ -8,8 +8,9 @@ import { permissionGroups, totalPermissions } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 import { PermissionId, WorkspaceRole } from '@/types/db';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createClient } from '@repo/supabase/next/client';
+import { SupabaseUser } from '@repo/supabase/next/user';
 import { Button } from '@repo/ui/components/ui/button';
 import { Form } from '@repo/ui/components/ui/form';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
@@ -20,7 +21,6 @@ import {
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { User } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
 import { Monitor, PencilRuler, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -59,15 +59,16 @@ type FormType = z.infer<typeof FormSchema>;
 
 interface Props {
   wsId: string;
-  user: User | null;
+  user: SupabaseUser | null;
   data?: WorkspaceRole;
   forceDefault?: boolean;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: FormType) => void;
 }
 
 export interface SectionProps {
   wsId: string;
-  user: User | null;
+  user: SupabaseUser | null;
   roleId?: string;
   form: ReturnType<typeof useForm<FormType>>;
   enabledPermissionsCount: { id: string; count: number }[];

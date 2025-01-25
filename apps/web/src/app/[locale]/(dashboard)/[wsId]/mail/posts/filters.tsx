@@ -1,7 +1,7 @@
 import { Filter } from '../../users/filters';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import { MinusCircle, PlusCircle, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 

@@ -3,8 +3,8 @@
 import { Filter } from '../filters';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { UserGroupTag } from '@/types/primitives/UserGroupTag';
-import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import { ColorPicker } from '@repo/ui/components/ui/color-picker';
 import {

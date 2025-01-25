@@ -6,7 +6,7 @@ import { WorkspaceUserReport } from '@/types/db';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
@@ -343,7 +343,9 @@ async function getConfigs(wsId: string) {
 
   queryBuilder.in(
     'id',
-    availableConfigs.map(({ id }) => id)
+    availableConfigs
+      .map(({ id }) => id)
+      .filter((id): id is string => id !== undefined)
   );
 
   const { data: rawData, error } = await queryBuilder;

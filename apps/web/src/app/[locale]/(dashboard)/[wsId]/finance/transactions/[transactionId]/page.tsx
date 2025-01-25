@@ -1,7 +1,7 @@
 import { Bill } from './bill';
 import { DetailObjects } from './objects';
 import { joinPath } from '@/utils/path-helper';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import 'dayjs/locale/vi';

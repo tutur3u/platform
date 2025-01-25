@@ -1,5 +1,5 @@
 import EnvironmentSetup from './environment-setup';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import {
   Card,
   CardContent,

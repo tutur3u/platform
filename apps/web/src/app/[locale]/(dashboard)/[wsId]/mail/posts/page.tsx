@@ -2,7 +2,7 @@ import { getPostEmailColumns } from './columns';
 import Filters from './filters';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { PostEmail } from '@/types/primitives/post-email';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { MailWarning, Send } from 'lucide-react';

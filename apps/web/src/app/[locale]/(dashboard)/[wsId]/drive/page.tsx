@@ -7,7 +7,7 @@ import {
 } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
 import { joinPath } from '@/utils/path-helper';
-import { createClient, createDynamicClient } from '@/utils/supabase/server';
+import { createClient, createDynamicClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

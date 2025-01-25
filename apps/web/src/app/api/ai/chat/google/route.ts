@@ -1,6 +1,6 @@
 import { appConfig } from '@/constants/configs';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { google } from '@ai-sdk/google';
+import { createAdminClient, createClient } from '@repo/supabase/next/server';
 import { CoreMessage, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 

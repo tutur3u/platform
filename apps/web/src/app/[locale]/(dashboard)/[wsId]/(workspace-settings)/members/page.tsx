@@ -8,7 +8,7 @@ import {
   verifyHasSecrets,
 } from '@/lib/workspace-helper';
 import { User } from '@/types/primitives/User';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@repo/supabase/next/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';

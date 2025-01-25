@@ -1,4 +1,4 @@
-import { createAdminClient, createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@repo/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 

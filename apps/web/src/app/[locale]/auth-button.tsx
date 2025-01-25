@@ -1,9 +1,9 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
+import type { SupabaseUser } from '@repo/supabase/next/user';
 import { Button } from '@repo/ui/components/ui/button';
-import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -12,7 +12,7 @@ export function AuthButton({
   onClick,
   className,
 }: {
-  user: User | null;
+  user: SupabaseUser | null;
   onClick?: () => void;
   className?: string;
 }) {

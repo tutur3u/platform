@@ -6,7 +6,7 @@ import PlanUserFilter from './plan-user-filter';
 import { TimeBlockingProvider } from './time-blocking-provider';
 import UtilityButtons from './utility-buttons';
 import { getCurrentUser } from '@/lib/user-helper';
-import { createAdminClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@repo/supabase/next/server';
 import { Separator } from '@repo/ui/components/ui/separator';
 import 'dayjs/locale/vi';
 import { notFound } from 'next/navigation';

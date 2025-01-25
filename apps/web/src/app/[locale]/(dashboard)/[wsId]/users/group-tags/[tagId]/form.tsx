@@ -3,7 +3,7 @@
 import { Filter } from '../../../users/filters';
 import { cn } from '@/lib/utils';
 import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import SearchBar from '@repo/ui/components/ui/custom/search-bar';
 import { useQuery } from '@tanstack/react-query';

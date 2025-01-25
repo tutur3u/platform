@@ -2,9 +2,9 @@ import Form from './form';
 import UserTime from './user-time';
 import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@repo/supabase/next/server';
+import type { SupabaseUser } from '@repo/supabase/next/user';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { User } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -149,6 +149,6 @@ async function getData() {
 
   return { data, user } as {
     data: MeetTogetherPlan[];
-    user: User;
+    user: SupabaseUser;
   };
 }

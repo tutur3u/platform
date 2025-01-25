@@ -1,6 +1,6 @@
 import { yearPlanSchema } from '@/app/api/ai/objects/types';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { vertex } from '@ai-sdk/google-vertex/edge';
+import { createAdminClient, createClient } from '@repo/supabase/next/server';
 import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
 

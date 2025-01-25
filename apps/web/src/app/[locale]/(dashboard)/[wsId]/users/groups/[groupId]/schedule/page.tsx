@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import { Button } from '@repo/ui/components/ui/button';
 import { YearCalendar } from '@repo/ui/components/ui/custom/calendar/year-calendar';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';

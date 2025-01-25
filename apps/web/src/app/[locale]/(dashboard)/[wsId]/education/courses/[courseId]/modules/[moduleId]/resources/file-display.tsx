@@ -1,7 +1,7 @@
 'use client';
 
 import type { StorageObject } from '@/types/primitives/StorageObject';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';

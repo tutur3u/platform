@@ -1,7 +1,7 @@
 'use client';
 
 import { TailwindAdvancedEditor } from '../../../../../../documents/advanced-editor';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { useTranslations } from 'next-intl';
 import { JSONContent } from 'novel';
 import { useEffect, useState } from 'react';

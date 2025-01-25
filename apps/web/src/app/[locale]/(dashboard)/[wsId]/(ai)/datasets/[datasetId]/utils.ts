@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 

@@ -4,7 +4,7 @@ import MailPosts from './posts';
 import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

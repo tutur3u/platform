@@ -1,7 +1,7 @@
 import { getColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import type { WorkspaceCronExecution } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

@@ -2,7 +2,7 @@ import UserCard from './card';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
 import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { format } from 'date-fns';

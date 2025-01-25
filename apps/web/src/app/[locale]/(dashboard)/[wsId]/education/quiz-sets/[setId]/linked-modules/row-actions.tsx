@@ -2,7 +2,7 @@
 
 import WorkspaceCourseModuleForm from './form';
 import { WorkspaceCourseModule } from '@/types/db';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

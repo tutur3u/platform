@@ -1,11 +1,11 @@
 import { appConfig } from '@/constants/configs';
-import { createClient } from '@/utils/supabase/server';
 import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import {
   GoogleGenerativeAI,
   HarmBlockThreshold,
   HarmCategory,
 } from '@google/generative-ai';
+import { createClient } from '@repo/supabase/next/server';
 import { Message } from 'ai';
 import { NextResponse } from 'next/server';
 

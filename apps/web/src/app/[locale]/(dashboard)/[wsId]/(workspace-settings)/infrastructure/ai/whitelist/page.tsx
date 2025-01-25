@@ -1,7 +1,7 @@
 import WhitelistEmailClient from './client-page';
 import { getAIWhitelistEmailColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createAdminClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@repo/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

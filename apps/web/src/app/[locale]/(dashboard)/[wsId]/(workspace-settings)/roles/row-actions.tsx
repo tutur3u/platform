@@ -2,6 +2,7 @@
 
 import { RoleForm } from './form';
 import { WorkspaceRole } from '@/types/db';
+import type { SupabaseUser } from '@repo/supabase/next/user';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
@@ -11,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { User } from '@supabase/supabase-js';
 import { Row } from '@tanstack/react-table';
 import { Ellipsis, Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -84,7 +84,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         form={
           <RoleForm
             wsId={data.ws_id}
-            user={{} as unknown as User}
+            user={{} as unknown as SupabaseUser}
             data={data}
           />
         }
