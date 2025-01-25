@@ -26,14 +26,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.18.0",
+    "@eslint/js": "^9.19.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@trivago/prettier-plugin-sort-imports": "^5.2.1",
-    "eslint": "^9.18.0",
+    "eslint": "^9.19.0",
     "prettier": "^3.4.2",
-    "prettier-plugin-tailwindcss": "^0.6.10",
-    "turbo": "^2.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "turbo": "^2.3.4",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"
   },
