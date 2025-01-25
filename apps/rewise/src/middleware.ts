@@ -1,8 +1,8 @@
 import { LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, defaultLocale, supportedLocales } from './i18n/routing';
-import { updateSession } from './utils/supabase/middleware';
 import { match } from '@formatjs/intl-localematcher';
-import { User } from '@supabase/supabase-js';
+import { updateSession } from '@repo/supabase/next/middleware';
+import { SupabaseUser } from '@repo/supabase/next/user';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
@@ -54,7 +54,7 @@ const handleRedirect = ({
 }: {
   req: NextRequest;
   res: NextResponse;
-  user: User | null;
+  user: SupabaseUser | null;
 }): {
   res: NextResponse;
   redirect: boolean;

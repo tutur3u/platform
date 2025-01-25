@@ -3,7 +3,7 @@ import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { PermissionId } from '@/types/db';
 import { Workspace } from '@/types/primitives/Workspace';
 import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@repo/supabase/next/server';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getWorkspace(id?: string) {

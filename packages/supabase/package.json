@@ -1,13 +1,17 @@
 {
-  "name": "@repo/ai",
-  "version": "0.1.0",
+  "name": "@repo/supabase",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "lint": "eslint ."
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.48.1",
+    "@repo/types": "workspace:*",
     "eslint": "^9.19.0",
+    "next": "^15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.24.1"

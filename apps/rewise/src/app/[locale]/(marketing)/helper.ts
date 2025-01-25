@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@repo/supabase/next/server';
 
 export const getChats = async () => {
   const supabase = await createClient();

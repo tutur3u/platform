@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import {
   Avatar,
   AvatarFallback,

@@ -11,10 +11,13 @@ export function checkEnvVariables({
 }: {
   useServiceKey?: boolean;
 }) {
+  // eslint-disable-next-line no-undef
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = useServiceKey
-    ? process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
-    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    ? // eslint-disable-next-line no-undef
+      process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+    : // eslint-disable-next-line no-undef
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url) throw Error('Missing Supabase URL');
   if (!key) throw Error(`Missing Supabase key: ${key}`);

@@ -1,7 +1,7 @@
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { NavLink } from '@/components/navigation';
 import { cn } from '@/lib/utils';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@repo/supabase/next/client';
 import { Button, buttonVariants } from '@repo/ui/components/ui/button';
 import { Star, StarOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';

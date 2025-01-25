@@ -3,16 +3,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@repo/ui/*": [
-        "./src/*"
-      ]
+      "@repo/ui/*": ["./src/*"]
     }
   },
-  "include": [
-    "src",
-    "../../apps/web/src/app/[locale]/ws-settings-dialog.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }

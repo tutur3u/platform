@@ -2,7 +2,7 @@ import Chat from '../../chat';
 import { getChats } from '../../helper';
 import { getCurrentUser } from '@/lib/user-helper';
 import { AIChat } from '@/types/db';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
+import { createAdminClient, createClient } from '@repo/supabase/next/server';
 import { Message } from 'ai';
 import { notFound, redirect } from 'next/navigation';
 

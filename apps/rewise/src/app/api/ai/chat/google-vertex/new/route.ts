@@ -1,6 +1,6 @@
-import { createClient } from '@/utils/supabase/server';
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import { AI_PROMPT, HUMAN_PROMPT } from '@anthropic-ai/sdk';
+import { createClient } from '@repo/supabase/next/server';
 import { Message, generateText } from 'ai';
 import { NextResponse } from 'next/server';
 

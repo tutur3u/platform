@@ -1,9 +1,9 @@
-import { createClient } from '@/utils/supabase/server';
 import {
   GoogleGenerativeAI,
   HarmBlockThreshold,
   HarmCategory,
 } from '@google/generative-ai';
+import { createClient } from '@repo/supabase/next/server';
 import { Message } from 'ai';
 import { NextResponse } from 'next/server';
 

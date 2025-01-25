@@ -1,6 +1,6 @@
 import { ResponseMode } from '@/components/prompt-form';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
 import { anthropic } from '@ai-sdk/anthropic';
+import { createAdminClient, createClient } from '@repo/supabase/next/server';
 import { CoreMessage, smoothStream, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 

@@ -5,13 +5,13 @@ import { ThemeToggle } from './theme-toggle';
 import { PUBLIC_PATHS } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { type SupabaseUser } from '@repo/supabase/next/user';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from '@repo/ui/components/ui/sheet';
-import { User } from '@supabase/supabase-js';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -19,7 +19,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 interface MenuProps {
-  sbUser: User | null;
+  sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
   t?: any;
 }
@@ -36,6 +36,7 @@ interface NavItem {
   external?: boolean;
 }
 
+// eslint-disable-next-line no-unused-vars
 const navItems = (_: any) => {
   return [
     // { href: '/', label: t('common.home') },

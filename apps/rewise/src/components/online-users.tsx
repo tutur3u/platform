@@ -1,4 +1,5 @@
 import { getInitials } from '@/utils/name-helper';
+import { RealtimePresenceState } from '@repo/supabase/next/realtime';
 import {
   Avatar,
   AvatarFallback,
@@ -10,7 +11,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
-import { RealtimePresenceState } from '@supabase/supabase-js';
 import { User } from 'lucide-react';
 
 interface PresenceUser {
