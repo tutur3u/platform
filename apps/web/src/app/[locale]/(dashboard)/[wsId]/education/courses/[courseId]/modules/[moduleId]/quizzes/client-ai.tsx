@@ -2,10 +2,10 @@
 
 import ClientQuizzes from './client-quizzes';
 import { GenerateDialog } from '@/components/generate-dialog';
+import { useObject } from '@repo/ai/object/core';
 import { quizSchema } from '@repo/ai/object/types';
 import { Button } from '@repo/ui/components/ui/button';
 import { toast } from '@repo/ui/hooks/use-toast';
-import { experimental_useObject as useObject } from 'ai/react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

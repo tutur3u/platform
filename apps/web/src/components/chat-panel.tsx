@@ -6,7 +6,7 @@ import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
-import { type Message } from '@repo/ai/types';
+import { type Message, type UseChatHelpers } from '@repo/ai/types';
 import { createDynamicClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -23,7 +23,6 @@ import {
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
-import { type UseChatHelpers } from 'ai/react';
 import {
   ArrowDownToLine,
   Check,
@@ -58,12 +57,16 @@ export interface ChatPanelProps
   defaultRoute: string;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   model?: Model;
+  // eslint-disable-next-line no-unused-vars
   setModel: (model: Model) => void;
+  // eslint-disable-next-line no-unused-vars
   createChat: (input: string) => Promise<void>;
+  // eslint-disable-next-line no-unused-vars
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;
   initialMessages?: Message[];
   collapsed: boolean;
+  // eslint-disable-next-line no-unused-vars
   setCollapsed: (collapsed: boolean) => void;
 }
 

@@ -1,9 +1,9 @@
 import AICompletionCommands from './ai-completion-command';
 import AISelectorCommands from './ai-selector-commands';
+import { useCompletion } from '@repo/ai/completion/core';
 import { Button } from '@repo/ui/components/ui/button';
 import { Command, CommandInput } from '@repo/ui/components/ui/command';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { useCompletion } from 'ai/react';
 import { ArrowUp, RotateCcw, Sparkles } from 'lucide-react';
 import { useEditor } from 'novel';
 import { addAIHighlight } from 'novel/extensions';

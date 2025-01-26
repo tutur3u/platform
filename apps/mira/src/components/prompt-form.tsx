@@ -1,6 +1,7 @@
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import type { AIChat } from '@/types/db';
+import { type UseChatHelpers } from '@repo/ai/types';
 import { Button } from '@repo/ui/components/ui/button';
 import { StatedFile } from '@repo/ui/components/ui/custom/file-uploader';
 import { Dialog } from '@repo/ui/components/ui/dialog';
@@ -12,7 +13,6 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
-import type { UseChatHelpers } from 'ai/react';
 import {
   ArrowDownWideNarrow,
   Bolt,
@@ -43,6 +43,7 @@ export interface PromptProps
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  // eslint-disable-next-line no-unused-vars
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
   showExtraOptions: boolean;
@@ -598,6 +599,7 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}

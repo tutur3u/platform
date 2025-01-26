@@ -1,6 +1,7 @@
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import type { AIChat } from '@/types/db';
+import { type UseChatHelpers } from '@repo/ai/types';
 import { Button } from '@repo/ui/components/ui/button';
 import { StatedFile } from '@repo/ui/components/ui/custom/file-uploader';
 import { Dialog } from '@repo/ui/components/ui/dialog';
@@ -12,7 +13,6 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
-import type { UseChatHelpers } from 'ai/react';
 import {
   ArrowDownWideNarrow,
   Bolt,
