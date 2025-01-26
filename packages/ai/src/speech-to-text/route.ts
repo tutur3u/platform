@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 async function run(model: string, input: { [key: string]: any }) {
+  // eslint-disable-next-line no-undef
   const ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
+
+  // eslint-disable-next-line no-undef
   const API_TOKEN = process.env.CF_API_TOKEN;
 
   if (!ACCOUNT_ID || !API_TOKEN) {
@@ -21,7 +24,7 @@ async function run(model: string, input: { [key: string]: any }) {
   return result;
 }
 
-export async function GET(_: NextRequest) {
+export async function GET() {
   try {
     const audio = await fetch(
       'https://github.com/Azure-Samples/cognitive-services-speech-sdk/raw/master/samples/cpp/windows/console/samples/enrollment_audio_katie.wav'

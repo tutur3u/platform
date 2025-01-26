@@ -1,8 +1,9 @@
-import {
-  POST,
-  maxDuration,
-  preferredRegion,
-  runtime,
-} from '@repo/ai/chat/anthropic/route';
+import { POST } from '@repo/ai/chat/anthropic/route';
 
-export { POST, maxDuration, preferredRegion, runtime };
+export const config = {
+  maxDuration: 60,
+  preferredRegion: 'sin1',
+  runtime: 'edge',
+};
+
+export { POST };

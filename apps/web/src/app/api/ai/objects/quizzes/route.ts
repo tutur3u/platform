@@ -1,8 +1,9 @@
-import {
-  POST,
-  maxDuration,
-  preferredRegion,
-  runtime,
-} from '@repo/ai/object/quizzes/route';
+import { POST } from '@repo/ai/object/quizzes/route';
 
-export { POST, maxDuration, preferredRegion, runtime };
+export const config = {
+  maxDuration: 60,
+  preferredRegion: 'sin1',
+  runtime: 'edge',
+};
+
+export { POST };
