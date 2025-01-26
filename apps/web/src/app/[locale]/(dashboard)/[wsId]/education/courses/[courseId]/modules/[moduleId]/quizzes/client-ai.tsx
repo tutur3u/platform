@@ -1,8 +1,8 @@
 'use client';
 
 import ClientQuizzes from './client-quizzes';
-import { quizSchema } from '@/app/api/ai/objects/types';
 import { GenerateDialog } from '@/components/generate-dialog';
+import { quizSchema } from '@repo/ai/object/types';
 import { Button } from '@repo/ui/components/ui/button';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { experimental_useObject as useObject } from 'ai/react';

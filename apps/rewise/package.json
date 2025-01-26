@@ -25,22 +25,13 @@
     "sb:typegen": "cd ../db && pnpm supabase gen types typescript --local --schema public > src/types/supabase.ts && prettier --write src/types/supabase.ts"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^1.1.2",
-    "@ai-sdk/anthropic": "^1.1.2",
-    "@ai-sdk/azure": "^1.1.2",
-    "@ai-sdk/cohere": "^1.1.2",
-    "@ai-sdk/google": "^1.1.2",
-    "@ai-sdk/google-vertex": "^2.1.2",
-    "@ai-sdk/mistral": "^1.1.2",
-    "@ai-sdk/openai": "^1.1.2",
-    "@ai-sdk/react": "^1.1.3",
-    "@anthropic-ai/sdk": "^0.33.1",
     "@deepgram/sdk": "^3.9.0",
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.5.10",
     "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^3.10.0",
+    "@repo/ai": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/ui": "workspace:*",
     "@tanstack/react-query": "^5.64.2",
@@ -48,7 +39,6 @@
     "@upstash/qstash": "^2.7.20",
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
-    "ai": "^4.1.5",
     "babel-plugin-react-compiler": "19.0.0-beta-55955c9-20241229",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
@@ -105,11 +95,11 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.19.0",
-    "jsdom": "^25.0.1",
+    "jsdom": "^26.0.0",
     "lint-staged": "^15.4.2",
     "postcss": "^8.5.1",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8"
+    "vitest": "^3.0.4"
   },
   "overrides": {
     "react-is": "^19.0.0"

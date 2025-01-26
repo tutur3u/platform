@@ -1,6 +1,7 @@
 'use client';
 
 import { Tool } from '../data';
+import { TTR_URL } from '@/constants/common';
 import type { AIChat } from '@/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
@@ -20,7 +21,7 @@ export function ToolForm({ tool }: { tool: Tool }) {
   const [formData, setFormData] = useState(tool);
 
   const createChat = async (input: string) => {
-    const res = await fetch(`/api/ai/chat/google-vertex/new`, {
+    const res = await fetch(`${TTR_URL}/api/ai/chat/google-vertex/new`, {
       method: 'POST',
       body: JSON.stringify({
         model: 'gemini-1.5-flash-002',

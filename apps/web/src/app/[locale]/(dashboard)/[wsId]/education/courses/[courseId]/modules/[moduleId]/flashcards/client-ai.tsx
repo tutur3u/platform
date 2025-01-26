@@ -1,8 +1,8 @@
 'use client';
 
 import ClientFlashcards from './client-flashcards';
-import { flashcardSchema } from '@/app/api/ai/objects/types';
 import { GenerateDialog } from '@/components/generate-dialog';
+import { flashcardSchema } from '@repo/ai/object/types';
 import { Button } from '@repo/ui/components/ui/button';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { experimental_useObject as useObject } from 'ai/react';

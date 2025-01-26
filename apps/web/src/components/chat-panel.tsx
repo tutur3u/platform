@@ -6,6 +6,7 @@ import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
+import { type Message } from '@repo/ai/types';
 import { createDynamicClient } from '@repo/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -22,7 +23,6 @@ import {
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
-import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
 import {
   ArrowDownToLine,

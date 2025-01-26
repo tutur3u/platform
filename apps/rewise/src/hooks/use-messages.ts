@@ -1,5 +1,5 @@
+import { type Message } from '@repo/ai/types';
 import { createClient } from '@repo/supabase/next/client';
-import { Message } from 'ai';
 import { useCallback, useEffect, useState } from 'react';
 
 export function useMessages(

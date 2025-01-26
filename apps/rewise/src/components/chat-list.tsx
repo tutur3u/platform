@@ -1,9 +1,9 @@
 import { ChatMessage } from '@/components/chat-message';
 import { OnlineUsers } from '@/components/online-users';
+import { type Message } from '@repo/ai/types';
 import { RealtimePresenceState } from '@repo/supabase/next/realtime';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
-import { type Message } from 'ai';
 import { Box, Globe, Lock, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';

@@ -3,8 +3,8 @@
 import FleetingAssistant from './fleeting-assistant';
 import FleetingNavigatorMenu from './fleeting-navigator-menu';
 import { AIChat } from '@/types/db';
-import { useChat } from '@ai-sdk/react';
 import { useClickOutside } from '@mantine/hooks';
+import { useChat } from '@repo/ai/react';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';

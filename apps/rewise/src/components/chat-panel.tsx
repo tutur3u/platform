@@ -4,6 +4,7 @@ import { PromptForm, ResponseMode } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
 import { Model } from '@/data/models';
 import { AIChat } from '@/types/db';
+import { type Message } from '@repo/ai/types';
 import { createDynamicClient } from '@repo/supabase/next/client';
 import { RealtimePresenceState } from '@repo/supabase/next/realtime';
 import {
@@ -17,7 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
-import { Message } from 'ai';
 import { type UseChatHelpers } from 'ai/react';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
