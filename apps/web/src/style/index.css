@@ -1,5 +1,3 @@
-@reference "../app/globals.css";
-
 @import './partials/animations.css';
 @import './partials/blocks.css';
 @import './partials/code.css';
@@ -8,6 +6,8 @@
 @import './partials/placeholder.css';
 @import './partials/table.css';
 @import './partials/typography.css';
+
+@reference "../app/globals.css";
 
 /* Then, continue with the other CSS rules */
 .ProseMirror {
