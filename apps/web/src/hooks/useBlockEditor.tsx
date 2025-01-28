@@ -1,287 +1,304 @@
-// import { userColors, userNames } from '../lib/constants';
-import type { EditorUser } from '@/components/components/BlockEditor/types';
 import { AiImage, AiWriter, StarterKit } from '@/extensions';
 import { Ai } from '@/extensions/Ai';
-import MentionList, { MentionListRef } from '@/extensions/Mention/MentionList';
 import { ExtensionKit } from '@/extensions/extension-kit';
-// import { randomElement } from '@/lib/utils/index';
-import { TiptapCollabProvider, WebSocketStatus } from '@hocuspocus/provider';
-import { useLiveblocksExtension } from '@liveblocks/react-tiptap';
-import type { AnyExtension, Editor } from '@tiptap/core';
+import { createClient } from '@repo/supabase/next/client';
+import type { AnyExtension } from '@tiptap/core';
 import { JSONContent } from '@tiptap/core';
-import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Mention from '@tiptap/extension-mention';
-import { useEditor, useEditorState } from '@tiptap/react';
-import { ReactRenderer } from '@tiptap/react';
-import { SuggestionKeyDownProps, SuggestionProps } from '@tiptap/suggestion';
-import { useEffect, useState } from 'react';
-import { KeyboardEvent as ReactKeyboardEvent } from 'react';
-import tippy, {
-  GetReferenceClientRect,
-  Instance as TippyInstance,
-} from 'tippy.js';
-import type { Doc as YDoc } from 'yjs';
+import { ReactRenderer, useEditor } from '@tiptap/react';
+import { SuggestionProps } from '@tiptap/suggestion';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef } from 'react';
 
-declare global {
-  interface Window {
-    editor: Editor | null;
-  }
+interface SyncStatus {
+  type: 'saving' | 'saved' | 'error';
+  message: string;
 }
+
+const renderItems = () => {
+  let component: ReactRenderer | null = null;
+
+  return {
+    onUpdate: (props: SuggestionProps) => {
+      if (!component) return;
+
+      component.updateProps({
+        ...props,
+        clientRect: props.clientRect,
+      });
+    },
+
+    onKeyDown: (props: { event: KeyboardEvent }) => {
+      if (!component?.element) return false;
+
+      const { event } = props;
+      const selectedItem = component.element.querySelector(
+        '.bg-gray-200'
+      ) as HTMLElement;
+
+      if (!selectedItem) return false;
+
+      if (event.key === 'ArrowUp') {
+        const prev = selectedItem.previousElementSibling as HTMLElement;
+        if (prev) prev.click();
+        return true;
+      }
+
+      if (event.key === 'ArrowDown') {
+        const next = selectedItem.nextElementSibling as HTMLElement;
+        if (next) next.click();
+        return true;
+      }
+
+      if (event.key === 'Enter') {
+        selectedItem.click();
+        return true;
+      }
+
+      if (event.key === 'Escape') {
+        component.destroy();
+        return true;
+      }
+
+      return false;
+    },
+
+    onExit: () => {
+      if (component) {
+        component.destroy();
+        component = null;
+      }
+    },
+  };
+};
+
+interface BlockEditorProps {
+  aiToken?: string;
+  document?: JSONContent;
+  userId?: string;
+  userName?: string;
+  wsId?: string | undefined | null;
+  editable?: boolean;
+  docId?: string;
+  provider?: any;
+  // eslint-disable-next-line no-unused-vars
+  onSyncStatusChange?: (status: SyncStatus) => void;
+}
+
 export const useBlockEditor = ({
   aiToken,
-  ydoc,
-  provider,
   document,
   userId,
   userName = 'Maxi',
   wsId,
-}: {
-  aiToken?: string;
-  ydoc: YDoc;
-  document?: JSONContent;
-  provider?: TiptapCollabProvider | null | undefined;
-  userId?: string;
-  userName?: string;
-  wsId?: string | undefined | null;
-}) => {
-  const [collabState, setCollabState] = useState<WebSocketStatus>(
-    provider ? WebSocketStatus.Connecting : WebSocketStatus.Disconnected
-  );
-  const liveblocks = useLiveblocksExtension();
-
+  editable = true,
+  docId,
+  onSyncStatusChange,
+}: BlockEditorProps) => {
+  const t = useTranslations();
   const editor = useEditor(
     {
-      immediatelyRender: true,
+      editable,
+      injectCSS: false,
+      immediatelyRender: false,
       shouldRerenderOnTransaction: false,
-      autofocus: true,
-      onCreate: async (ctx) => {
-        if (provider && !provider.isSynced) {
-          provider.on('synced', () => {
-            setTimeout(() => {
-              if (ctx.editor.isEmpty) {
-                ctx.editor.commands.setContent(document || {});
-              }
-            }, 0);
-          });
-        } else if (ctx.editor.isEmpty) {
-          const savedContent = localStorage.getItem('editorContent');
-          if (savedContent) {
-            ctx.editor.commands.setContent(JSON.parse(savedContent));
-          } else if (document) {
-            ctx.editor.commands.setContent(document || {});
+      editorProps: {
+        attributes: {
+          class: 'min-h-screen bg-grey-100 max-w-[1500px] bg-grey-100 mx-auto',
+        },
+      },
+      onCreate: ({ editor }) => {
+        if (typeof window !== 'undefined') {
+          (window as any).editor = editor;
+
+          // Set initial content from document prop
+          if (document) {
+            editor.commands.setContent(document);
+            lastSavedContent.current = JSON.stringify(document);
           }
-          ctx.editor.commands.focus('start', { scrollIntoView: true });
+        }
+      },
+      onBeforeCreate: ({ editor }) => {
+        if (typeof window !== 'undefined') {
+          (window as any).editor = editor;
+        }
+      },
+      onDestroy: () => {
+        if (typeof window !== 'undefined') {
+          (window as any).editor = null;
         }
       },
       extensions: [
         ...ExtensionKit({
-          provider,
+          provider: null,
         }),
-        liveblocks,
         StarterKit.configure({
           history: false,
+          paragraph: false,
+          bold: false,
+          bulletList: false,
+          code: false,
+          codeBlock: false,
+          document: false,
+          dropcursor: false,
+          gapcursor: false,
+          hardBreak: false,
+          heading: false,
+          horizontalRule: false,
+          italic: false,
+          listItem: false,
+          orderedList: false,
+          strike: false,
+          text: false,
         }),
-
-        Mention.configure({
-          HTMLAttributes: {
-            class:
-              'bg-purple-100 rounded-md text-purple-600 px-1 py-0.5 break-words',
-          },
-          suggestion: {
-            items: async ({ query }) => {
-              // Filter the list of names based on the user's query
-              const response = await fetch(
-                `/api/v1/workspaces/${wsId}/Mention`
-              );
-              const data = await response.json();
-              console.log(data, 'data in item');
-              console.log(data.email, 'email in item');
-
-              if (data.email.length === 0) {
-                return [];
-              }
-              return data.email
-                .filter((item: any) =>
-                  item.toLowerCase().startsWith(query.toLowerCase())
-                ) // Filter dynamic data based on query
-                .slice(0, 5);
-            },
-
-            render: () => {
-              let component: ReactRenderer | null = null;
-              let popup: TippyInstance[] = [];
-
-              return {
-                onStart: (props: SuggestionProps<any, any>): void => {
-                  if (!props.clientRect) {
-                    console.error('No clientRect available for mention popup');
-                    return;
-                  }
-
-                  component = new ReactRenderer(MentionList, {
-                    props,
-                    editor: props.editor,
-                  });
-
-                  popup = tippy('body', {
-                    getReferenceClientRect:
-                      props.clientRect as unknown as GetReferenceClientRect,
-                    appendTo: document?.body,
-                    content: component.element,
-                    showOnCreate: true,
-                    interactive: true,
-                    trigger: 'manual',
-                    placement: 'bottom-start',
-                  });
+        ...(editable
+          ? [
+              Mention.configure({
+                HTMLAttributes: {
+                  class:
+                    'bg-purple-100 rounded-md text-purple-600 px-1 py-0.5 break-words',
                 },
+                suggestion: {
+                  items: async ({ query }) => {
+                    try {
+                      const response = await fetch(
+                        `/api/v1/workspaces/${wsId}/Mention`
+                      );
+                      const data = await response.json();
 
-                onUpdate: (props: SuggestionProps<any, any>): void => {
-                  if (!props.clientRect) {
-                    console.error('No clientRect on update');
-                    return;
-                  }
-
-                  component?.updateProps(props);
-
-                  if (popup[0]) {
-                    popup[0].setProps({
-                      getReferenceClientRect: () => {
-                        return props.clientRect as unknown as DOMRect;
-                      },
-                    });
-                  }
-                },
-
-                onKeyDown: (props: SuggestionKeyDownProps): boolean => {
-                  const event: ReactKeyboardEvent = props.event as any;
-
-                  if (event.key === 'Escape') {
-                    popup[0]?.hide();
-                    return true; // Stop propagation
-                  }
-
-                  if (component?.ref) {
-                    const handled = (component.ref as MentionListRef).onKeyDown(
-                      {
-                        event,
+                      if (!data.email || !Array.isArray(data.email)) {
+                        return [];
                       }
-                    );
-                    return handled === undefined ? false : handled;
-                  }
 
-                  return false;
+                      return data.email
+                        .filter((item: any) =>
+                          item.toLowerCase().startsWith(query.toLowerCase())
+                        )
+                        .slice(0, 5);
+                    } catch (error) {
+                      console.error('Error fetching mentions:', error);
+                      return [];
+                    }
+                  },
+                  render: renderItems,
                 },
-
-                onExit: (): void => {
-                  if (popup[0]) {
-                    popup[0].destroy();
-                  }
-                  if (component) {
-                    component.destroy();
-                  }
-                },
-              };
-            },
-          },
-        }),
-        provider
-          ? Collaboration.configure({
-              document: ydoc,
-            })
-          : undefined,
-        provider
-          ? CollaborationCursor.configure({
-              provider,
-              user: {
-                // name: randomElement(userNames),
-                // color: randomElement(userColors),
-                name: 'Maxi',
-                color: '#000000',
-              },
-            })
-          : undefined,
-        aiToken
-          ? AiWriter.configure({
-              authorId: userId,
-              authorName: userName,
-            })
-          : undefined,
-        aiToken
-          ? AiImage.configure({
-              authorId: userId,
-              authorName: userName,
-            })
-          : undefined,
-        aiToken ? Ai.configure({ token: aiToken }) : undefined,
+              }),
+            ]
+          : []),
+        ...(editable && aiToken
+          ? [
+              AiWriter.configure({
+                authorId: userId,
+                authorName: userName,
+              }),
+              AiImage.configure({
+                authorId: userId,
+                authorName: userName,
+              }),
+              Ai.configure({ token: aiToken }),
+            ]
+          : []),
       ].filter((e): e is AnyExtension => e !== undefined),
-      editorProps: {
-        attributes: {
-          autocomplete: 'off',
-          autocorrect: 'off',
-          autocapitalize: 'off',
-          class: 'min-h-screen bg-grey-100 max-w-[1500px] bg-grey-100  mx-auto',
-        },
-      },
     },
-    [ydoc, provider]
+    [document, editable]
   );
 
-  const users = useEditorState({
-    editor,
-    selector: (ctx): (EditorUser & { initials: string })[] => {
-      if (!ctx.editor?.storage.collaborationCursor?.users) {
-        return [];
+  const lastSavedContent = useRef<string>('');
+  const isDirty = useRef<boolean>(false);
+  const saveTimeout = useRef<any>(undefined);
+  const supabase = createClient();
+
+  const saveContentToDatabase = useCallback(
+    async (content: JSONContent) => {
+      if (!docId) return;
+
+      try {
+        if (!isDirty.current) return; // Don't save if not dirty
+
+        onSyncStatusChange?.({
+          type: 'saving',
+          message: t('common.saving'),
+        });
+
+        const { error } = await supabase
+          .from('workspace_documents')
+          .update({ content })
+          .eq('id', docId);
+
+        if (error) {
+          throw error;
+        }
+
+        lastSavedContent.current = JSON.stringify(content);
+        isDirty.current = false;
+        onSyncStatusChange?.({
+          type: 'saved',
+          message: t('common.saved'),
+        });
+      } catch (error) {
+        console.error('Error saving document to database:', error);
+        onSyncStatusChange?.({
+          type: 'error',
+          message: t('common.error_saving'),
+        });
+        // Reset dirty state to allow retry
+        isDirty.current = true;
+      }
+    },
+    [docId, onSyncStatusChange]
+  );
+
+  const debouncedSave = useCallback(
+    (content: JSONContent) => {
+      // Clear any existing timeout
+      if (saveTimeout.current) {
+        clearTimeout(saveTimeout.current);
       }
 
-      return ctx.editor.storage.collaborationCursor.users.map(
-        (user: EditorUser) => {
-          const names = user.name?.split(' ');
-          const firstName = names?.[0];
-          const lastName = names?.[names.length - 1];
-          const initials = `${firstName?.[0] || '?'}${lastName?.[0] || '?'}`;
-
-          return { ...user, initials: initials.length ? initials : '?' };
-        }
-      );
+      // Set new timeout
+      saveTimeout.current = setTimeout(() => {
+        saveContentToDatabase(content);
+      }, 1000);
     },
-  });
+    [saveContentToDatabase]
+  );
 
   useEffect(() => {
-    const loadInitialContent = () => {
-      if (editor && editor.isEmpty) {
-        const savedContent = localStorage.getItem('editorContent');
-        if (savedContent) {
-          editor.commands.setContent(JSON.parse(savedContent));
-        } else if (document) {
-          editor.commands.setContent(document || {});
-        }
+    if (!editor) return;
+
+    const handleUpdate = () => {
+      const content = editor.getJSON();
+      const contentStr = JSON.stringify(content);
+
+      // Only show unsaved changes if content actually changed
+      if (contentStr !== lastSavedContent.current) {
+        isDirty.current = true;
+        onSyncStatusChange?.({
+          type: 'saving',
+          message: t('common.unsaved_changes'),
+        });
+        debouncedSave(content);
       }
     };
 
-    loadInitialContent();
-
-    const saveContentToLocalStorage = () => {
-      if (editor && !editor.isEmpty) {
-        const content = editor.getJSON();
-        localStorage.setItem('editorContent', JSON.stringify(content));
-      }
-    };
-
-    editor?.on('update', saveContentToLocalStorage);
+    editor.on('update', handleUpdate);
 
     return () => {
-      editor?.off('update', saveContentToLocalStorage);
+      editor.off('update', handleUpdate);
+      if (saveTimeout.current) {
+        clearTimeout(saveTimeout.current);
+      }
     };
-  }, [editor, document]);
+  }, [editor, debouncedSave, onSyncStatusChange]);
 
+  // Save on unmount if there are unsaved changes
   useEffect(() => {
-    provider?.on('status', (event: { status: WebSocketStatus }) => {
-      setCollabState(event.status);
-    });
-  }, [provider]);
+    return () => {
+      if (isDirty.current && editor) {
+        saveContentToDatabase(editor.getJSON());
+      }
+    };
+  }, [editor, saveContentToDatabase]);
 
-  window.editor = editor;
-
-  return { editor, users, collabState };
+  return { editor };
 };

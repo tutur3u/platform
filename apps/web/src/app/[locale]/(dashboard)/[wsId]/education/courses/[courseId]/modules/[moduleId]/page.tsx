@@ -1,9 +1,9 @@
-import { TailwindAdvancedEditor } from '../../../../../documents/advanced-editor';
 import { CourseSection } from '../../section';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
+import { BlockEditor } from '@/components/components/BlockEditor';
 import { WorkspaceCourseModule } from '@/types/db';
 import { extractYoutubeId } from '@/utils/url-helper';
 import { createClient, createDynamicClient } from '@repo/supabase/next/server';
@@ -17,7 +17,6 @@ import {
   Youtube,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { JSONContent } from 'novel';
 
 interface Props {
   params: Promise<{
@@ -71,14 +70,10 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
-        rawContent={data.content as JSONContent | undefined}
+        rawContent={data.content as any | undefined}
         content={
           data.content ? (
-            <TailwindAdvancedEditor
-              content={data.content as JSONContent}
-              disableLocalStorage
-              previewMode
-            />
+            <BlockEditor document={data.content as any} />
           ) : undefined
         }
       />
@@ -182,14 +177,10 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/extra-content`}
         title={t('course-details-tabs.extra_reading')}
         icon={<BookText className="h-5 w-5" />}
-        rawContent={data.extra_content as JSONContent | undefined}
+        rawContent={data.extra_content as any | undefined}
         content={
           data.extra_content ? (
-            <TailwindAdvancedEditor
-              content={data.extra_content as JSONContent}
-              disableLocalStorage
-              previewMode
-            />
+            <BlockEditor document={data.extra_content as any} />
           ) : undefined
         }
       />

@@ -1,23 +1,24 @@
-import tsParser from "@typescript-eslint/parser";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
+import js from "@eslint/js";
+import tsParser from "@typescript-eslint/parser";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const compat = new FlatCompat({
-    baseDirectory: __dirname,
+    baseDirectory: import.meta.dirname,
     recommendedConfig: js.configs.recommended,
     allConfig: js.configs.all
 });
 
-export default [{
-    ignores: ["apps/**/*", "packages/**/*"],
-}, ...compat.extends("@repo/eslint-config/library.js"), {
+export default [...compat.config({
+    extends: ['next'],
+    settings: {
+        next: {
+            rootDir: 'apps/web/',
+        },
+    },
+}), ...compat.extends("@repo/eslint-config/library.js"), {
     languageOptions: {
         parser: tsParser,
-        ecmaVersion: 5,
+        ecmaVersion: 2020,
         sourceType: "script",
 
         parserOptions: {

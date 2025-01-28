@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/ui/card';
-// import { DatePickerWithRange } from '@repo/ui/components/ui/date-picker-with-range';
 import {
   Select,
   SelectContent,
@@ -16,7 +15,6 @@ import {
 } from '@repo/ui/components/ui/select';
 import { addDays } from 'date-fns';
 import { useState } from 'react';
-// import { DateRange } from 'react-day-picker';
 import {
   Brush,
   CartesianGrid,
@@ -113,7 +111,6 @@ const PricePredictionChart = () => {
               <SelectItem value="corn">{t.corn}</SelectItem>
             </SelectContent>
           </Select>
-          {/* <DatePickerWithRange date={dateRange} setDate={setDateRange} /> */}
         </div>
         <div className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">

@@ -1,12 +1,18 @@
+import { TippyProps as HeadlessTippyProps } from '@tippyjs/react/headless';
 import React from 'react';
-import { Placement, Props } from 'tippy.js';
+import { Placement } from 'tippy.js';
 
-export interface TooltipProps {
-  children?: string | React.ReactNode;
+type HTMLSpanProps = Omit<
+  React.HTMLAttributes<HTMLSpanElement>,
+  'content' | 'title'
+>;
+
+export interface TooltipProps extends HTMLSpanProps {
+  children?: React.ReactNode;
   enabled?: boolean;
   title?: string;
   shortcut?: string[];
-  tippyOptions?: Omit<Partial<Props>, 'content'>;
+  tippyOptions?: Partial<HeadlessTippyProps>;
   content?: React.ReactNode;
 }
 
