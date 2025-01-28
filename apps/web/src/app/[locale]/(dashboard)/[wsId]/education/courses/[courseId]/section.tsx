@@ -2,7 +2,6 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { isEqual } from 'lodash';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
-import { JSONContent } from 'novel';
 import { ReactNode } from 'react';
 
 export async function CourseSection({
@@ -16,7 +15,7 @@ export async function CourseSection({
   href?: string;
   title: string;
   icon: ReactNode;
-  rawContent?: JSONContent;
+  rawContent?: any;
   content?: ReactNode;
   hideContent?: boolean;
 }) {

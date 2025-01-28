@@ -1,9 +1,8 @@
 'use client';
 
-import { TailwindAdvancedEditor } from '../../../../../../documents/advanced-editor';
+import { BlockEditor } from '@/components/components/BlockEditor';
 import { createClient } from '@repo/supabase/next/client';
 import { useTranslations } from 'next-intl';
-import { JSONContent } from 'novel';
 import { useEffect, useState } from 'react';
 
 export function ModuleContentEditor({
@@ -16,16 +15,16 @@ export function ModuleContentEditor({
   const t = useTranslations();
 
   const [loading, setLoading] = useState(true);
-  const [content, setContent] = useState<JSONContent | undefined>(undefined);
+  const [content, setContent] = useState<any | undefined>(undefined);
 
   useEffect(() => {
     getContent(courseId, moduleId).then((data) => {
-      setContent(data as JSONContent);
+      setContent(data as any);
       setLoading(false);
     });
   }, [courseId, moduleId]);
 
-  const onSave = async (data: JSONContent) => {
+  const onSave = async (data: any) => {
     const supabase = createClient();
 
     const { error } = await supabase
@@ -44,13 +43,12 @@ export function ModuleContentEditor({
   }
 
   return (
-    <>
-      <TailwindAdvancedEditor
-        content={content as JSONContent | undefined}
-        onSave={onSave}
-        disableLocalStorage
-      />
-    </>
+    <BlockEditor
+      wsId={courseId}
+      docId={moduleId}
+      onSave={onSave}
+      document={content as any | undefined}
+    />
   );
 }
 

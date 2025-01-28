@@ -2,7 +2,6 @@ import { ColorPicker } from '../../panels';
 import { Icon } from '../../ui/Icon';
 import { Surface } from '../../ui/Surface';
 import { Toolbar } from '../../ui/Toolbar';
-// import { AIDropdown } from './components/AIDropdown';
 import { ContentTypePicker } from './components/ContentTypePicker';
 import { EditLinkPopover } from './components/EditLinkPopover';
 import { FontFamilyPicker } from './components/FontFamilyPicker';
@@ -10,9 +9,10 @@ import { FontSizePicker } from './components/FontSizePicker';
 import { useTextmenuCommands } from './hooks/useTextmenuCommands';
 import { useTextmenuContentTypes } from './hooks/useTextmenuContentTypes';
 import { useTextmenuStates } from './hooks/useTextmenuStates';
+// import { AIDropdown } from './components/AIDropdown';
 import * as Popover from '@radix-ui/react-popover';
 import { BubbleMenu, Editor } from '@tiptap/react';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 
 // We memorize the button so each button is not rerendered
 // on every editor state change
@@ -26,10 +26,18 @@ export type TextMenuProps = {
   editor: Editor;
 };
 
-export const TextMenu = ({ editor }: TextMenuProps) => {
+export const TextMenu = memo(({ editor }: TextMenuProps) => {
   const commands = useTextmenuCommands(editor);
   const states = useTextmenuStates(editor);
   const blockOptions = useTextmenuContentTypes(editor);
+
+  const shouldRender = useMemo(() => {
+    return editor && editor.isEditable;
+  }, [editor]);
+
+  if (!shouldRender) {
+    return null;
+  }
 
   return (
     <BubbleMenu
@@ -224,4 +232,4 @@ export const TextMenu = ({ editor }: TextMenuProps) => {
       </Toolbar.Wrapper>
     </BubbleMenu>
   );
-};
+});

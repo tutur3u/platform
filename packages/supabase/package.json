@@ -7,9 +7,9 @@
   },
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
+    "@repo/types": "workspace:*",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
-    "@repo/types": "workspace:*",
     "eslint": "^9.19.0",
     "next": "^15.1.6",
     "react": "^19.0.0",
@@ -21,7 +21,7 @@
     "@eslint/js": "^9.19.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@types/node": "^22.10.10",
+    "@types/node": "^22.12.0",
     "@types/react": "^19.0.8",
     "typescript": "^5.7.3"
   },
