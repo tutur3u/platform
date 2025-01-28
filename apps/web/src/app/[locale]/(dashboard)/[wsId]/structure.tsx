@@ -30,12 +30,13 @@ import {
 } from '@repo/ui/components/ui/resizable';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
+import { debounce } from 'lodash';
 import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, Suspense, useState } from 'react';
+import { ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
 
 interface MailProps {
   wsId: string;
@@ -65,6 +66,42 @@ export function Structure({
   const t = useTranslations();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  // Add debounced function for saving sidebar sizes
+  const debouncedSaveSizes = useCallback(
+    debounce(async (sizes: { sidebar: number; main: number }) => {
+      await fetch('/api/v1/infrastructure/sidebar/sizes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sizes),
+      });
+    }, 500),
+    []
+  );
+
+  // Add debounced function for saving sidebar collapsed state
+  const debouncedSaveCollapsed = useCallback(
+    debounce(async (collapsed: boolean) => {
+      await fetch('/api/v1/infrastructure/sidebar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ collapsed }),
+      });
+    }, 500),
+    []
+  );
+
+  // Cleanup debounced functions on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSaveSizes.cancel();
+      debouncedSaveCollapsed.cancel();
+    };
+  }, [debouncedSaveSizes, debouncedSaveCollapsed]);
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
@@ -142,14 +179,11 @@ export function Structure({
       <TooltipProvider delayDuration={0}>
         <ResizablePanelGroup
           direction="horizontal"
-          onLayout={async (sizes: number[]) => {
-            await fetch('/api/v1/infrastructure/sidebar/sizes', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ sidebar: sizes[0], main: sizes[1] }),
-            });
+          onLayout={(sizes: number[]) => {
+            const [sidebar, main] = sizes;
+            if (typeof sidebar === 'number' && typeof main === 'number') {
+              debouncedSaveSizes({ sidebar, main });
+            }
           }}
           className={cn(
             'fixed h-screen max-h-screen items-stretch',
@@ -162,25 +196,13 @@ export function Structure({
             collapsible={true}
             minSize={15}
             maxSize={40}
-            onCollapse={async () => {
+            onCollapse={() => {
               setIsCollapsed(true);
-              await fetch('/api/v1/infrastructure/sidebar', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ collapsed: true }),
-              });
+              debouncedSaveCollapsed(true);
             }}
-            onResize={async () => {
+            onResize={() => {
               setIsCollapsed(false);
-              await fetch('/api/v1/infrastructure/sidebar', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ collapsed: false }),
-              });
+              debouncedSaveCollapsed(false);
             }}
             className={cn(
               isCollapsed
