@@ -48,11 +48,6 @@ CREATE OR REPLACE FUNCTION pgmq_public.send_batch(queue_name text, messages json
 AS $function$ begin return query select * from pgmq.send_batch( queue_name := queue_name, msgs := messages, delay := sleep_seconds ); end; $function$
 ;
 
-
-drop trigger if exists "delete_workspace_member_when_unlink" on "public"."workspace_user_linked_users";
-
-drop policy "Enable delete for workspace owners" on "public"."workspaces";
-
 set check_function_bodies = off;
 
 CREATE OR REPLACE FUNCTION public.get_user_tasks(_board_id uuid)
@@ -98,16 +93,3 @@ SELECT EXISTS (
 );
 $function$
 ;
-
-create policy "Enable delete for workspace owners"
-on "public"."workspaces"
-as permissive
-for delete
-to authenticated
-using (((id <> '00000000-0000-0000-0000-000000000000'::uuid) AND (id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid) AND (get_user_role(auth.uid(), id) = 'OWNER'::text)));
-
-
-CREATE TRIGGER delete_workspace_member_when_unlink AFTER DELETE ON public.workspace_user_linked_users FOR EACH ROW EXECUTE FUNCTION delete_workspace_member_when_unlink();
-ALTER TABLE "public"."workspace_user_linked_users" DISABLE TRIGGER "delete_workspace_member_when_unlink";
-
-
