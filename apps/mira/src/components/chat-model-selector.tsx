@@ -64,7 +64,7 @@ export function ChatModelSelector({
         sideOffset={8}
         onInteractOutside={() => setOpen(false)}
       >
-        <Command className="rounded-b-none border-b md:rounded-r-none md:border-b-0 md:border-r">
+        <Command className="rounded-b-none border-b md:rounded-r-none md:border-r md:border-b-0">
           <CommandInput placeholder="Search model..." />
           <CommandEmpty>No model found.</CommandEmpty>
           <CommandList>
@@ -105,7 +105,7 @@ export function ChatModelSelector({
         </Command>
 
         <div>
-          <div className="flex items-center px-2 pb-1 pt-3">
+          <div className="flex items-center px-2 pt-3 pb-1">
             <div className="text-sm font-semibold opacity-80">
               {previewModel?.provider}{' '}
             </div>

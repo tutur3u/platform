@@ -277,7 +277,7 @@ export function Nav({
                   />
                   <label
                     htmlFor="show-chat-name"
-                    className="line-clamp-1 break-all text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="line-clamp-1 text-sm leading-none font-medium break-all peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     {t('ai_chat.show_chat_name')}
                   </label>
@@ -295,7 +295,7 @@ export function Nav({
                   />
                   <label
                     htmlFor="show-favorites"
-                    className="line-clamp-1 break-all text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="line-clamp-1 text-sm leading-none font-medium break-all peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     {t('ai_chat.show_favorites')}
                   </label>

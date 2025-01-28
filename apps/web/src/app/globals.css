@@ -1,3 +1,5 @@
+@import '../../../../packages/ui/src/globals.css';
+
 @keyframes blob {
   0% {
     transform: translate(0px, 0px) scale(1);

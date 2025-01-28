@@ -502,7 +502,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
     return (
       <div className="relative space-y-8">
         {isLoading && (
-          <div className="absolute right-4 top-4">
+          <div className="absolute top-4 right-4">
             <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         )}
@@ -636,12 +636,12 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
     return (
       <div className="relative space-y-4">
         {isLoading && (
-          <div className="absolute right-4 top-4">
+          <div className="absolute top-4 right-4">
             <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         )}
 
-        <pre className="bg-muted/50 whitespace-pre-wrap rounded-lg p-4 text-sm">
+        <pre className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap">
           {JSON.stringify(yearPlan, null, 2)}
         </pre>
       </div>

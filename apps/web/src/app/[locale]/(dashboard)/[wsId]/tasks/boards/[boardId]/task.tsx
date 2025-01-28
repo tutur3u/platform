@@ -198,7 +198,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
               <div className="flex items-start justify-between gap-2">
                 <p
                   className={cn(
-                    'line-clamp-2 flex-1 font-medium leading-tight',
+                    'line-clamp-2 flex-1 leading-tight font-medium',
                     task.archived && 'text-muted-foreground line-through'
                   )}
                 >

@@ -13,7 +13,7 @@ export function TaskCard({ task }: TaskCardProps) {
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <h5 className="font-medium leading-none">{task.title}</h5>
+            <h5 className="leading-none font-medium">{task.title}</h5>
             <p className="text-muted-foreground text-sm">{task.description}</p>
             <div className="flex items-center gap-2 pt-2">
               <Badge variant="secondary">{task.milestone}</Badge>

@@ -190,7 +190,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y }}
-          className="absolute -left-[8rem] top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="absolute top-0 -left-[8rem] h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -203,7 +203,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y: opacity }}
-          className="absolute -right-[8rem] top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="absolute top-[30%] -right-[8rem] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -269,7 +269,7 @@ export default function CareersPage() {
           </motion.div>
 
           <motion.h1
-            className="text-foreground mb-6 text-balance text-4xl font-bold tracking-tight md:text-7xl"
+            className="text-foreground mb-6 text-4xl font-bold tracking-tight text-balance md:text-7xl"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
@@ -287,7 +287,7 @@ export default function CareersPage() {
           </motion.h1>
 
           <motion.p
-            className="text-foreground/80 mx-auto mb-12 max-w-2xl text-balance text-lg leading-relaxed md:text-xl"
+            className="text-foreground/80 mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-balance md:text-xl"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.5 }}
@@ -339,8 +339,8 @@ export default function CareersPage() {
                 <div className="from-primary/10 absolute inset-0 bg-gradient-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-                <div className="absolute -left-32 -top-32 h-64 w-64 rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
-                <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
+                <div className="absolute -top-32 -left-32 h-64 w-64 rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
+                <div className="absolute -right-32 -bottom-32 h-64 w-64 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
               </div>
 
               <div className="relative grid gap-12 p-4 md:grid-cols-2 md:p-12">
@@ -418,7 +418,7 @@ export default function CareersPage() {
                   <div className="bg-foreground/5 group relative overflow-hidden rounded-2xl p-4 backdrop-blur-sm md:p-8">
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <div className="relative space-y-6">
-                      <h3 className="text-foreground text-balance text-center text-2xl font-bold">
+                      <h3 className="text-foreground text-center text-2xl font-bold text-balance">
                         What We're Looking For
                       </h3>
                       <div className="space-y-4">
@@ -610,7 +610,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -660,7 +660,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                      className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r"
                     />
                   </div>
                 </motion.div>
@@ -790,7 +790,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -840,7 +840,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                      className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r"
                     />
                   </div>
                 </motion.div>
@@ -979,7 +979,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -1029,7 +1029,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                      className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r"
                     />
                   </div>
                 </motion.div>
@@ -1169,7 +1169,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
+                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -1219,7 +1219,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                      className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r"
                     />
                   </div>
                 </motion.div>

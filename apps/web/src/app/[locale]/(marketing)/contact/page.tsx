@@ -136,7 +136,7 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -left-[8rem] top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="absolute top-0 -left-[8rem] h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -148,7 +148,7 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -right-[8rem] top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="absolute top-[30%] -right-[8rem] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -286,7 +286,7 @@ export default function ContactPage() {
                           repeat: Infinity,
                           ease: 'linear',
                         }}
-                        className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                        className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                       />
                       <div className="relative flex flex-col gap-4">
                         <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
@@ -371,7 +371,7 @@ export default function ContactPage() {
                           repeat: Infinity,
                           ease: 'linear',
                         }}
-                        className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                        className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                       />
                       <div className="relative flex items-start gap-4">
                         <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
@@ -440,7 +440,7 @@ export default function ContactPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
+                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
                 />
                 <div className="relative flex flex-col gap-4">
                   <div>
@@ -513,7 +513,7 @@ export default function ContactPage() {
                   repeat: Infinity,
                   ease: 'linear',
                 }}
-                className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
               />
               <div className="bg-primary/5 p-6">
                 <p className="text-foreground/80">

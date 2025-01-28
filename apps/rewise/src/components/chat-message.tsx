@@ -76,7 +76,7 @@ function MermaidRenderer({ content }: { content: string }) {
     return (
       <div className="bg-dynamic-red/10 border-dynamic-red/20 text-dynamic-red rounded-lg border p-4 text-sm">
         <p className="font-semibold">Failed to render diagram:</p>
-        <pre className="mt-2 whitespace-pre-wrap font-mono text-xs">
+        <pre className="mt-2 font-mono text-xs whitespace-pre-wrap">
           {error}
         </pre>
       </div>
@@ -145,7 +145,7 @@ export function ChatMessage({
       {...props}
     >
       <div className="flex h-fit flex-wrap justify-between gap-2">
-        <div className="flex h-fit w-fit select-none items-center space-x-2 rounded-lg">
+        <div className="flex h-fit w-fit items-center space-x-2 rounded-lg select-none">
           <div
             className={cn(
               'bg-foreground/10 text-foreground flex h-12 w-12 shrink-0 items-center justify-center rounded-md border shadow'
@@ -266,7 +266,7 @@ export function ChatMessage({
           rehypePlugins={[rehypeKatex]}
           components={{
             h1({ children }) {
-              return <h1 className="text-foreground mb-2 mt-6">{children}</h1>;
+              return <h1 className="text-foreground mt-6 mb-2">{children}</h1>;
             },
             h2({ children }) {
               // Quiz component
@@ -412,7 +412,7 @@ export function ChatMessage({
                     <div className="text-foreground text-lg font-bold">
                       {question}
                     </div>
-                    <Separator className="mb-4 mt-2" />
+                    <Separator className="mt-2 mb-4" />
                     <button
                       className={`text-foreground w-full rounded border px-3 py-1 text-center font-semibold transition duration-300 ${
                         revealAnswer
@@ -483,19 +483,19 @@ export function ChatMessage({
                 );
               }
 
-              return <h2 className="text-foreground mb-2 mt-6">{children}</h2>;
+              return <h2 className="text-foreground mt-6 mb-2">{children}</h2>;
             },
             h3({ children }) {
-              return <h3 className="text-foreground mb-2 mt-6">{children}</h3>;
+              return <h3 className="text-foreground mt-6 mb-2">{children}</h3>;
             },
             h4({ children }) {
-              return <h4 className="text-foreground mb-2 mt-6">{children}</h4>;
+              return <h4 className="text-foreground mt-6 mb-2">{children}</h4>;
             },
             h5({ children }) {
-              return <h5 className="text-foreground mb-2 mt-6">{children}</h5>;
+              return <h5 className="text-foreground mt-6 mb-2">{children}</h5>;
             },
             h6({ children }) {
-              return <h6 className="text-foreground mb-2 mt-6">{children}</h6>;
+              return <h6 className="text-foreground mt-6 mb-2">{children}</h6>;
             },
             strong({ children }) {
               return (
@@ -657,7 +657,7 @@ export function ChatMessage({
                     <div className="text-foreground text-lg font-bold">
                       {question}
                     </div>
-                    <Separator className="mb-4 mt-2" />
+                    <Separator className="mt-2 mb-4" />
                     <button
                       className={`text-foreground w-full rounded border px-3 py-1 text-center font-semibold transition duration-300 ${
                         revealAnswer

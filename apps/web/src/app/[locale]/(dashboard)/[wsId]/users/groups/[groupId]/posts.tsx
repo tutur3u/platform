@@ -159,7 +159,7 @@ export default function UserGroupPosts({
             />
             <label
               htmlFor="show-post-content"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               {t('ws-user-groups.show_post_content')}
             </label>
@@ -177,7 +177,7 @@ export default function UserGroupPosts({
             />
             <label
               htmlFor="show-post-status"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               {t('ws-user-groups.show_post_status')}
             </label>
@@ -335,7 +335,7 @@ export default function UserGroupPosts({
                 )}
               </div>
               {configs.showContent && post.content && (
-                <div className="whitespace-pre-line text-sm opacity-70">
+                <div className="text-sm whitespace-pre-line opacity-70">
                   {post.content}
                 </div>
               )}

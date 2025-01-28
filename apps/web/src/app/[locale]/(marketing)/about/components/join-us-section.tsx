@@ -61,7 +61,7 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -left-32 top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="absolute top-0 -left-32 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -73,7 +73,7 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -right-32 top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="absolute top-[30%] -right-32 h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -138,7 +138,7 @@ export function JoinUsSection() {
                   repeat: Infinity,
                   ease: 'linear',
                 }}
-                className="from-primary relative text-balance bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-balance text-transparent"
               >
                 Be Part of Our Story
               </motion.span>
@@ -178,7 +178,7 @@ export function JoinUsSection() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 + index * 0.1 }}
-                  className="bg-background/50 border-primary/10 group flex items-center gap-4 rounded-full border py-3 pl-3 pr-6 backdrop-blur-sm"
+                  className="bg-background/50 border-primary/10 group flex items-center gap-4 rounded-full border py-3 pr-6 pl-3 backdrop-blur-sm"
                 >
                   <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110">
                     {item.icon}
@@ -221,7 +221,7 @@ export function JoinUsSection() {
                       repeat: Infinity,
                       ease: 'linear',
                     }}
-                    className={`absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br ${benefit.gradient} blur-2xl`}
+                    className={`absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br ${benefit.gradient} blur-2xl`}
                   />
                   <div className="pointer-events-none relative">
                     <div className="bg-primary/10 mb-6 flex h-14 w-14 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110">
@@ -263,7 +263,7 @@ export function JoinUsSection() {
                     initial={{ scaleX: 0 }}
                     whileHover={{ scaleX: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                    className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r"
                   />
                 </div>
               </Card>

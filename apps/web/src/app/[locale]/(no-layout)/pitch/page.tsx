@@ -103,7 +103,7 @@ const LogoComponent = ({
     transition={{ type: 'spring', stiffness: 200, damping: 20 }}
     className={cn(
       'relative transition-all duration-500',
-      isCenter ? 'mb-8' : 'fixed left-8 top-8 z-50 hover:scale-110',
+      isCenter ? 'mb-8' : 'fixed top-8 left-8 z-50 hover:scale-110',
       className
     )}
   >
@@ -479,7 +479,7 @@ const slides: Slide[] = [
           <h1 className="text-foreground relative mx-auto mb-4 text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
             <GradientHeadline title="Your intelligent shortcut" />
           </h1>
-          <p className="text-foreground/80 max-w-3xl text-balance text-center text-xl leading-relaxed">
+          <p className="text-foreground/80 max-w-3xl text-center text-xl leading-relaxed text-balance">
             Revolutionizing enterprise software with AI-powered innovation and
             open-source freedom.
           </p>
@@ -562,7 +562,7 @@ const slides: Slide[] = [
             >
               <div
                 className={cn(
-                  'absolute right-3 top-3 opacity-10',
+                  'absolute top-3 right-3 opacity-10',
                   problem.color
                 )}
               >
@@ -723,7 +723,7 @@ const slides: Slide[] = [
             >
               <div
                 className={cn(
-                  'absolute right-3 top-3 opacity-10',
+                  'absolute top-3 right-3 opacity-10',
                   solution.color
                 )}
               >
@@ -876,7 +876,7 @@ const slides: Slide[] = [
             >
               <div
                 className={cn(
-                  'absolute right-3 top-3 opacity-10',
+                  'absolute top-3 right-3 opacity-10',
                   metric.color
                 )}
               >
@@ -1028,7 +1028,7 @@ const slides: Slide[] = [
             >
               <div
                 className={cn(
-                  'absolute right-4 top-4 opacity-10 transition-opacity duration-300 group-hover:opacity-20',
+                  'absolute top-4 right-4 opacity-10 transition-opacity duration-300 group-hover:opacity-20',
                   metric.color
                 )}
               >
@@ -1417,7 +1417,7 @@ const slides: Slide[] = [
           transition={{ delay: 0.1 }}
           className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent p-5"
         >
-          <div className="absolute right-3 top-3 opacity-10">
+          <div className="absolute top-3 right-3 opacity-10">
             <ArrowUpRight className="h-16 w-16 text-emerald-500" />
           </div>
           <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-emerald-500">
@@ -1470,7 +1470,7 @@ const slides: Slide[] = [
           transition={{ delay: 0.2 }}
           className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-transparent p-5"
         >
-          <div className="absolute right-3 top-3 opacity-10">
+          <div className="absolute top-3 right-3 opacity-10">
             <Shield className="h-16 w-16 text-amber-500" />
           </div>
           <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-amber-500">
@@ -1528,7 +1528,7 @@ const slides: Slide[] = [
           transition={{ delay: 0.3 }}
           className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-transparent p-5"
         >
-          <div className="absolute right-3 top-3 opacity-10">
+          <div className="absolute top-3 right-3 opacity-10">
             <Rocket className="h-16 w-16 text-blue-500" />
           </div>
           <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-blue-500">
@@ -1586,7 +1586,7 @@ const slides: Slide[] = [
           transition={{ delay: 0.4 }}
           className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-red-500/20 via-red-500/10 to-transparent p-5"
         >
-          <div className="absolute right-3 top-3 opacity-10">
+          <div className="absolute top-3 right-3 opacity-10">
             <Shield className="h-16 w-16 text-red-500" />
           </div>
           <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-red-500">
@@ -2467,7 +2467,7 @@ const slides: Slide[] = [
               )}
             >
               {plan.popular && (
-                <div className="absolute right-0 top-0 -translate-y-1/2 translate-x-1/2 rotate-45">
+                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 rotate-45">
                   <div className="bg-primary px-8 py-1 text-xs font-medium text-white">
                     Popular
                   </div>
@@ -2684,7 +2684,7 @@ const slides: Slide[] = [
             >
               <div
                 className={cn(
-                  'absolute right-3 top-3 opacity-10',
+                  'absolute top-3 right-3 opacity-10',
                   metric.color
                 )}
               >
@@ -3105,7 +3105,7 @@ export default function PitchPage() {
 
       <ThemeToggle
         forceDisplay={true}
-        className="absolute right-4 top-4 z-50"
+        className="absolute top-4 right-4 z-50"
       />
 
       <button
@@ -3114,7 +3114,7 @@ export default function PitchPage() {
           'bg-foreground/5 hover:bg-foreground/10 absolute left-4 z-20 rounded-full p-3',
           'transform transition-all duration-300',
           'disabled:pointer-events-none disabled:opacity-0',
-          'focus:ring-primary/50 hover:scale-110 focus:outline-none focus:ring-2'
+          'focus:ring-primary/50 hover:scale-110 focus:ring-2 focus:outline-hidden'
         )}
         disabled={currentSlide === 0}
       >
@@ -3127,7 +3127,7 @@ export default function PitchPage() {
           'bg-foreground/5 hover:bg-foreground/10 absolute right-4 z-20 rounded-full p-3',
           'transform transition-all duration-300',
           'disabled:pointer-events-none disabled:opacity-0',
-          'focus:ring-primary/50 hover:scale-110 focus:outline-none focus:ring-2'
+          'focus:ring-primary/50 hover:scale-110 focus:ring-2 focus:outline-hidden'
         )}
         disabled={currentSlide === slides.length - 1}
       >

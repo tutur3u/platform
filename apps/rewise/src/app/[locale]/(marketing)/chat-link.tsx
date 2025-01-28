@@ -66,7 +66,7 @@ export default function ChatLink({
             size: isCollapsed ? 'icon' : 'sm',
           }),
           isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
-          'whitespace-normal font-semibold',
+          'font-semibold whitespace-normal',
           isActive
             ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-gradient-to-br text-white hover:text-white'
             : urlToLoad === link.href

@@ -170,7 +170,7 @@ export default function LMSProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-b-0 md:border-r">
+            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-r md:border-b-0">
               <LayoutDashboard className="text-primary h-8 w-8" />
               <h3 className="text-2xl font-bold">Learning Analytics</h3>
               <p className="text-muted-foreground">

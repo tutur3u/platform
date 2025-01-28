@@ -177,13 +177,13 @@ const processedData = flattenedData.map(row =>
             <TabsList className="w-full justify-start gap-6 border-b-0 bg-transparent p-0">
               <TabsTrigger
                 value="python"
-                className="text-muted-foreground data-[state=active]:bg-foreground/10 data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-11 rounded-none border-x-2 border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-2 font-semibold"
+                className="text-muted-foreground data-[state=active]:bg-foreground/10 data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-11 rounded-none border-x-2 border-b-2 border-b-transparent bg-transparent px-4 pt-2 pb-3 font-semibold"
               >
                 Python
               </TabsTrigger>
               <TabsTrigger
                 value="javascript"
-                className="text-muted-foreground data-[state=active]:bg-foreground/10 data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-11 rounded-none border-x-2 border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-2 font-semibold"
+                className="text-muted-foreground data-[state=active]:bg-foreground/10 data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-11 rounded-none border-x-2 border-b-2 border-b-transparent bg-transparent px-4 pt-2 pb-3 font-semibold"
               >
                 JavaScript
               </TabsTrigger>

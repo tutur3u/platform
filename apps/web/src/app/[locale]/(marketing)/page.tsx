@@ -167,7 +167,7 @@ export default function MarketingPage() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="absolute -left-32 top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+            className="absolute top-0 -left-32 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
           />
           <motion.div
             animate={{
@@ -179,7 +179,7 @@ export default function MarketingPage() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="absolute -right-32 top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+            className="absolute top-[30%] -right-32 h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
           />
           <motion.div
             animate={{
@@ -252,7 +252,7 @@ export default function MarketingPage() {
               <span className="from-primary/20 to-primary/10 absolute -inset-1 rounded-lg bg-gradient-to-r opacity-0 blur transition-all duration-300 group-hover:opacity-100" />
               <GradientHeadline title={t('landing.headline')} />
             </h1>
-            <h2 className="text-foreground mb-12 text-balance text-lg font-bold tracking-tight md:text-2xl lg:text-3xl">
+            <h2 className="text-foreground mb-12 text-lg font-bold tracking-tight text-balance md:text-2xl lg:text-3xl">
               {t('landing.subheadline')}
             </h2>
 
@@ -350,7 +350,7 @@ export default function MarketingPage() {
             <h2 className="group mb-4 text-center text-4xl font-bold">
               {t('landing.features.title')}
               <span className="ml-2 inline-block">
-                <Zap className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+                <Zap className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
               </span>
             </h2>
             <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -419,7 +419,7 @@ export default function MarketingPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </div>
               </Card>
             </motion.div>
@@ -477,7 +477,7 @@ export default function MarketingPage() {
                     />
                     <div className="relative">
                       <div className="bg-primary/10 mb-6 inline-flex rounded-full p-3">
-                        <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
+                        <div className="text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                           {feature.icon}
                         </div>
                       </div>
@@ -520,7 +520,7 @@ export default function MarketingPage() {
           <h2 className="group mb-4 text-center text-4xl font-bold">
             {t('landing.products.title')}
             <span className="ml-2 inline-block">
-              <Container className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <Container className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             </span>
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -677,7 +677,7 @@ export default function MarketingPage() {
           <h2 className="group mb-4 text-center text-4xl font-bold">
             {t('landing.solutions.title')}
             <span className="ml-2 inline-block">
-              <Building2 className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <Building2 className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             </span>
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -745,7 +745,7 @@ export default function MarketingPage() {
           <h2 className="group mb-4 text-center text-4xl font-bold">
             {t('landing.benefits.title')}
             <span className="ml-2 inline-block">
-              <Star className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <Star className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             </span>
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -890,7 +890,7 @@ export default function MarketingPage() {
           <h2 className="group mb-4 text-center text-4xl font-bold">
             {t('landing.transformation.title')}
             <span className="ml-2 inline-block">
-              <Rocket className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <Rocket className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             </span>
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -923,7 +923,7 @@ export default function MarketingPage() {
                             {index + 1}
                           </span>
                         </div>
-                        <div className="absolute -right-2 -top-2">
+                        <div className="absolute -top-2 -right-2">
                           {index === 0 && (
                             <Rocket className="text-primary h-6 w-6" />
                           )}
@@ -973,7 +973,7 @@ export default function MarketingPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   </div>
                 </Card>
               </motion.div>
@@ -994,7 +994,7 @@ export default function MarketingPage() {
           <h2 className="group mb-4 text-center text-4xl font-bold">
             {t('landing.testimonials.title')}
             <span className="ml-2 inline-block">
-              <MessageCircle className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <MessageCircle className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             </span>
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -1045,7 +1045,7 @@ export default function MarketingPage() {
           <h2 className="group mb-4 text-center text-4xl font-bold">
             {t('landing.ai_revolution.title')}
             <span className="ml-2 inline-block">
-              <Brain className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <Brain className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             </span>
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -1088,7 +1088,7 @@ export default function MarketingPage() {
           <h2 className="group mb-4 text-center text-4xl font-bold">
             {t('landing.universal_value.title')}
             <span className="ml-2 inline-block">
-              <Globe2 className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <Globe2 className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             </span>
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -1164,7 +1164,7 @@ export default function MarketingPage() {
           <h2 className="group mb-4 text-center text-4xl font-bold">
             {t('landing.ai_features.title')}
             <span className="ml-2 inline-block">
-              <Sparkles className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <Sparkles className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             </span>
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -1262,7 +1262,7 @@ export default function MarketingPage() {
                         </div>
                       )}
                     </div>
-                    <div className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   </div>
                 </Card>
               </motion.div>
@@ -1283,7 +1283,7 @@ export default function MarketingPage() {
           <h2 className="group mb-4 text-center text-4xl font-bold">
             {t('landing.success_metrics.title')}
             <span className="ml-2 inline-block">
-              <ChartBar className="text-primary h-8 w-8 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <ChartBar className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
             </span>
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">

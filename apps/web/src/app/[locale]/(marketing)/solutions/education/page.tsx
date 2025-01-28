@@ -145,7 +145,7 @@ export default function EducationPage() {
         <Badge variant="secondary" className="mb-4">
           Education Management Solutions
         </Badge>
-        <h1 className="mb-4 text-balance text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
           <GradientHeadline>
             Transform Your Educational Institution
           </GradientHeadline>

@@ -32,7 +32,7 @@ export default function BlogPage() {
   const t = useTranslations();
 
   return (
-    <main className="container relative space-y-24 py-24">
+    <main className="relative container space-y-24 py-24">
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -43,7 +43,7 @@ export default function BlogPage() {
         <Badge variant="secondary" className="mb-6">
           {t('common.blog')}
         </Badge>
-        <h1 className="text-foreground mb-6 text-balance text-5xl font-bold">
+        <h1 className="text-foreground mb-6 text-5xl font-bold text-balance">
           Insights & Innovation
         </h1>
         <p className="text-foreground/80 mx-auto max-w-2xl text-lg">
@@ -124,7 +124,7 @@ export default function BlogPage() {
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="bg-foreground/10 placeholder:text-foreground/40 flex-1 rounded-lg px-4 py-2 outline-none"
+                  className="bg-foreground/10 placeholder:text-foreground/40 flex-1 rounded-lg px-4 py-2 outline-hidden"
                 />
                 <button className="bg-foreground hover:bg-foreground/90 text-background flex items-center gap-2 rounded-lg px-6 py-2 font-medium transition-colors">
                   Notify Me

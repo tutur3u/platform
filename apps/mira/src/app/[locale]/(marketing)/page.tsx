@@ -125,7 +125,7 @@ export default function MarketingPage() {
             <h1 className="text-foreground mx-auto mb-2 text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
               <GradientHeadline title={t('home.headline')} />
             </h1>
-            <h2 className="text-foreground mb-8 max-w-3xl text-balance text-lg font-bold tracking-tight md:text-2xl lg:text-3xl">
+            <h2 className="text-foreground mb-8 max-w-3xl text-lg font-bold tracking-tight text-balance md:text-2xl lg:text-3xl">
               {t('home.subheadline')}
             </h2>
 
@@ -215,7 +215,7 @@ export default function MarketingPage() {
                     </Link>
                   )}
                 </div>
-                <div className="from-primary/50 to-primary absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="from-primary/50 to-primary absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r opacity-0 transition-opacity group-hover:opacity-100" />
               </Card>
             ))}
           </div>

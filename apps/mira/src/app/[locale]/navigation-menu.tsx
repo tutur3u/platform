@@ -286,7 +286,7 @@ const ListItem = React.forwardRef<
         <a
           ref={ref}
           className={cn(
-            'block h-full select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors',
+            'block h-full space-y-1 rounded-md p-3 leading-none no-underline outline-hidden transition-colors select-none',
             'opacity-80 hover:opacity-100',
             'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
             disabled && 'cursor-not-allowed opacity-50',
@@ -296,7 +296,7 @@ const ListItem = React.forwardRef<
         >
           <div className="flex items-center gap-2">
             {icon}
-            <div className="text-sm font-semibold leading-none">{title}</div>
+            <div className="text-sm leading-none font-semibold">{title}</div>
             {badge && (
               <Badge variant="secondary" className="ml-auto flex-none text-xs">
                 {badge}

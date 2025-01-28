@@ -193,7 +193,7 @@ export function Nav({
                               ) : (
                                 <FlaskConical className="h-2 w-2 flex-none" />
                               )}
-                              <span className="line-clamp-1 break-all text-xs font-semibold">
+                              <span className="line-clamp-1 text-xs font-semibold break-all">
                                 {t(`common.${link.experimental}`)}
                               </span>
                             </div>
@@ -258,7 +258,7 @@ export function Nav({
                             ) : (
                               <FlaskConical className="h-2 w-2 flex-none" />
                             )}
-                            <span className="line-clamp-1 break-all text-xs font-semibold">
+                            <span className="line-clamp-1 text-xs font-semibold break-all">
                               {t(`common.${link.experimental}`)}
                             </span>
                           </div>

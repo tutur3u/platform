@@ -478,7 +478,7 @@ export function ProductForm({
             </Card>
           </div>
 
-          <div className="w-full flex-shrink-0 space-y-4 lg:max-w-sm">
+          <div className="w-full shrink-0 space-y-4 lg:max-w-sm">
             <Card>
               <CardHeader>
                 <CardTitle>

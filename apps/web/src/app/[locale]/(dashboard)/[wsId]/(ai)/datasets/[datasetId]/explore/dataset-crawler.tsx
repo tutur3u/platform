@@ -695,7 +695,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                   </Button>
                 </div>
                 <div className="max-h-[500px] overflow-auto rounded-md border">
-                  <code className="w-full whitespace-pre-wrap p-4">
+                  <code className="w-full p-4 whitespace-pre-wrap">
                     {rawHtml || 'No HTML content loaded'}
                   </code>
                 </div>
@@ -1108,7 +1108,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                           Failed
                         </Badge>
                       )}
-                      <code className="text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap text-xs">
+                      <code className="text-muted-foreground overflow-hidden text-xs text-ellipsis whitespace-nowrap">
                         {log.url}
                       </code>
                     </div>

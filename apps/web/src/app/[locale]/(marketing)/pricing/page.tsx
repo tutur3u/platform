@@ -685,13 +685,13 @@ export default function PricingPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   return (
-    <div className="container relative mx-auto mt-8 flex max-w-7xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
+    <div className="relative container mx-auto mt-8 flex max-w-7xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Background decoration */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="from-primary/5 via-primary/2 absolute left-0 right-0 top-0 -z-10 h-[400px] rounded-t-lg bg-gradient-to-b to-transparent"
+        className="from-primary/5 via-primary/2 absolute top-0 right-0 left-0 -z-10 h-[400px] rounded-t-lg bg-gradient-to-b to-transparent"
       />
 
       <motion.div
@@ -720,7 +720,7 @@ export default function PricingPage() {
         >
           <GradientHeadline>{t('common.usage_based_pricing')}</GradientHeadline>
         </h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-balance text-lg">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-lg text-balance">
           {t('common.usage_based_pricing_description')}
         </p>
       </motion.div>

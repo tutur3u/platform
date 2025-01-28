@@ -236,7 +236,7 @@ export default function UserMonthAttendance({
               {differentGroups?.map((group, idx) => (
                 <div
                   key={group.id + idx}
-                  className="bg-foreground/5 dark:bg-foreground/10 flex-none whitespace-nowrap rounded border px-2 py-0.5 text-xs font-semibold"
+                  className="bg-foreground/5 dark:bg-foreground/10 flex-none rounded border px-2 py-0.5 text-xs font-semibold whitespace-nowrap"
                 >
                   {group.name}
                 </div>

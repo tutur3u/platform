@@ -273,7 +273,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
                       {headers.map((header: any, colIndex: number) => (
                         <td
                           key={colIndex}
-                          className="min-w-32 whitespace-pre-line p-2 text-sm"
+                          className="min-w-32 p-2 text-sm whitespace-pre-line"
                         >
                           <span className="line-clamp-3">
                             {row.cells[header]}

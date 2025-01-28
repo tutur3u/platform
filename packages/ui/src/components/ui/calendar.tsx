@@ -174,7 +174,7 @@ function Calendar({
             root: 'bg-transparent',
             months: 'flex flex-col',
             month:
-              'space-y-4 min-w-[276px] text-center p-2 font-semibold flex-shrink-0',
+              'space-y-4 min-w-[276px] text-center p-2 font-semibold shrink-0',
             caption: 'hidden',
             nav: 'hidden',
             nav_button: 'hidden',
