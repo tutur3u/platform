@@ -169,7 +169,7 @@ export function FutureVisionSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
                 />
                 <div className="pointer-events-none relative p-8">
                   <motion.div
@@ -219,7 +219,7 @@ export function FutureVisionSection() {
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
+                  className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r"
                 />
               </div>
             </motion.div>

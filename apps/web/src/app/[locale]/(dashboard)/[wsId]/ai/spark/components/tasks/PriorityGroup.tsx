@@ -41,7 +41,7 @@ export function PriorityGroup({ priority, tasks }: PriorityGroupProps) {
           </Badge>
         </div>
       </AccordionTrigger>
-      <AccordionContent className="rounded-b-lg border border-t-0 px-4 pb-4 pt-2">
+      <AccordionContent className="rounded-b-lg border border-t-0 px-4 pt-2 pb-4">
         <div className="grid gap-2">
           {tasks.map((task, idx) => (
             <TaskCard key={idx} task={task} />

@@ -10,7 +10,7 @@ const TimeTrail = () => {
             hour !== 23 && 'translate-y-3'
           }`}
         >
-          <span className="absolute bottom-0 right-0 px-2">
+          <span className="absolute right-0 bottom-0 px-2">
             {hour < 23 ? hour + 1 + ':00' : null}
           </span>
         </div>

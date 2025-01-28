@@ -177,7 +177,7 @@ export function MemberSettingsButton({
           </Avatar>
 
           <div className="flex-1 space-y-1">
-            <p className="line-clamp-1 text-sm font-medium leading-none">
+            <p className="line-clamp-1 text-sm leading-none font-medium">
               {user?.display_name ? (
                 user.display_name
               ) : (

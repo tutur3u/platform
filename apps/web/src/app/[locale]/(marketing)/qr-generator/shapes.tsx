@@ -13,7 +13,7 @@ function QRShapes({
 
   return (
     <>
-      <div className="mb-2 mt-4 font-semibold">{t('common.shapes')}</div>
+      <div className="mt-4 mb-2 font-semibold">{t('common.shapes')}</div>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
         <button
           className={cn(

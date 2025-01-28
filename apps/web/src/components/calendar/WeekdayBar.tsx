@@ -32,7 +32,7 @@ const WeekdayBar = ({
         ICT
       </div>
       <div
-        className={`border-border grid flex-1 rounded-tr-lg border-r border-t dark:border-zinc-800 ${getGridCols()}`}
+        className={`border-border grid flex-1 rounded-tr-lg border-t border-r dark:border-zinc-800 ${getGridCols()}`}
       >
         {dates.map((weekday, index) => (
           <div

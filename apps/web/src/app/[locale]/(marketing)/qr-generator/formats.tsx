@@ -12,7 +12,7 @@ function QRFormats({
 
   return (
     <>
-      <div className="mb-2 mt-4 font-semibold">{t('common.formats')}</div>
+      <div className="mt-4 mb-2 font-semibold">{t('common.formats')}</div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <button
           className={cn(

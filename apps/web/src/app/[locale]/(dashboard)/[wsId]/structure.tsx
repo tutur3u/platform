@@ -119,7 +119,7 @@ export function Structure({
             </Link>
           </div>
           <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
-          <div className="flex items-center gap-2 break-all text-lg font-semibold">
+          <div className="flex items-center gap-2 text-lg font-semibold break-all">
             {currentLink?.icon && (
               <div className="flex-none">{currentLink.icon}</div>
             )}

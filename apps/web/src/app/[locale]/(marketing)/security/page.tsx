@@ -80,7 +80,7 @@ const securityFeatures: SecurityFeature[] = [
 
 export default function SecurityPage() {
   return (
-    <main className="container relative space-y-24 py-16 md:py-24">
+    <main className="relative container space-y-24 py-16 md:py-24">
       {/* Enhanced Background Effects */}
       <div className="pointer-events-none fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
@@ -110,7 +110,7 @@ export default function SecurityPage() {
         >
           Security First
         </Badge>
-        <h1 className="text-foreground mb-6 text-balance text-4xl font-bold md:text-5xl lg:text-6xl">
+        <h1 className="text-foreground mb-6 text-4xl font-bold text-balance md:text-5xl lg:text-6xl">
           Your Security is Our{' '}
           <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
             Top Priority

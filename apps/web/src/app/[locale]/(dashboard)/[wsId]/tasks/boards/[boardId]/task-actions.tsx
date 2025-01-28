@@ -215,7 +215,7 @@ export function TaskActions({
             type="button"
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:bg-muted/50 absolute right-2 top-2 h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+            className="text-muted-foreground hover:bg-muted/50 absolute top-2 right-2 h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
           >
             <MoreHorizontal className="h-4 w-4" />
             <span className="sr-only">Open task menu</span>

@@ -422,7 +422,7 @@ export function GoalsInput({
                       />
                       <label
                         htmlFor="weekdays"
-                        className="text-sm font-medium leading-none"
+                        className="text-sm leading-none font-medium"
                       >
                         Weekdays
                       </label>
@@ -450,7 +450,7 @@ export function GoalsInput({
                       />
                       <label
                         htmlFor="weekends"
-                        className="text-sm font-medium leading-none"
+                        className="text-sm leading-none font-medium"
                       >
                         Weekends
                       </label>

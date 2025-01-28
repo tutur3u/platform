@@ -179,7 +179,7 @@ export default function ChangelogPage() {
   }, [selectedTags]);
 
   return (
-    <main className="container relative py-16 md:py-24">
+    <main className="relative container py-16 md:py-24">
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -193,7 +193,7 @@ export default function ChangelogPage() {
         >
           {t('common.product-updates')}
         </Badge>
-        <h1 className="text-foreground mb-6 text-balance text-4xl font-bold md:text-5xl lg:text-6xl">
+        <h1 className="text-foreground mb-6 text-4xl font-bold text-balance md:text-5xl lg:text-6xl">
           {t('common.product-updates-title')}
         </h1>
         <p className="text-foreground/80 mx-auto max-w-2xl text-lg md:text-xl">
@@ -277,10 +277,10 @@ export default function ChangelogPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
-          className="pointer-events-none fixed left-8 top-1/2 hidden -translate-y-1/2 lg:block"
+          className="pointer-events-none fixed top-1/2 left-8 hidden -translate-y-1/2 lg:block"
         >
           <div className="relative flex flex-col items-start gap-6">
-            <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute left-[5px] top-0 h-full w-[2px] bg-gradient-to-b" />
+            <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute top-0 left-[5px] h-full w-[2px] bg-gradient-to-b" />
 
             {filteredUpdates.map((monthlyUpdate) => (
               <Link
@@ -335,7 +335,7 @@ export default function ChangelogPage() {
                 </motion.h2>
 
                 <div className="relative space-y-8">
-                  <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute left-8 top-0 hidden h-full w-[2px] bg-gradient-to-b lg:block" />
+                  <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute top-0 left-8 hidden h-full w-[2px] bg-gradient-to-b lg:block" />
 
                   {monthlyUpdate.updates.map((update, updateIndex) => (
                     <motion.div
@@ -346,7 +346,7 @@ export default function ChangelogPage() {
                       transition={{ delay: 0.2 + updateIndex * 0.1 }}
                       className="group relative pl-0 lg:pl-24"
                     >
-                      <div className="absolute left-[29px] top-8 hidden h-3 w-3 lg:block">
+                      <div className="absolute top-8 left-[29px] hidden h-3 w-3 lg:block">
                         <div className="bg-foreground/20 group-hover:bg-foreground/40 absolute inset-0 rounded-full transition-colors" />
                         <div className="bg-background absolute inset-[3px] rounded-full transition-transform group-hover:scale-0" />
                       </div>
@@ -366,7 +366,7 @@ export default function ChangelogPage() {
                                 <div
                                   className={`${getUpdateColor(
                                     update.type
-                                  )} bg-current/10 flex h-12 w-12 items-center justify-center rounded-xl backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 group-hover:rounded-2xl`}
+                                  )} flex h-12 w-12 items-center justify-center rounded-xl bg-current/10 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 group-hover:rounded-2xl`}
                                 >
                                   {getUpdateIcon(update.type)}
                                 </div>

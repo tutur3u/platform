@@ -40,7 +40,7 @@ export function ResultsPanel({ results, isLoading }: ResultsPanelProps) {
                 key={index}
                 className="bg-muted flex items-start rounded-md p-3"
               >
-                <div className="mr-3 mt-1">{getStatusIcon(result)}</div>
+                <div className="mt-1 mr-3">{getStatusIcon(result)}</div>
                 <p className="flex-grow text-sm">{result}</p>
               </li>
             ))}

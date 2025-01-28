@@ -244,7 +244,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                   <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">Products</span>
                   </AccordionTrigger>
-                  <AccordionContent className="pb-2 pt-3">
+                  <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
                       {products.map((item) => (
                         <MobileNavLink
@@ -263,7 +263,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                   <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">Solutions</span>
                   </AccordionTrigger>
-                  <AccordionContent className="pb-2 pt-3">
+                  <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
                       {solutions.map((item) => (
                         <MobileNavLink
@@ -282,7 +282,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                   <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">Resources</span>
                   </AccordionTrigger>
-                  <AccordionContent className="pb-2 pt-3">
+                  <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
                       {resources.map((item) => (
                         <MobileNavLink
@@ -301,7 +301,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                   <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">Company</span>
                   </AccordionTrigger>
-                  <AccordionContent className="pb-2 pt-3">
+                  <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
                       {company.map((item) => (
                         <MobileNavLink

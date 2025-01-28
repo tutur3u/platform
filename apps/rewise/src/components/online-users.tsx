@@ -82,7 +82,7 @@ export function OnlineUsers({
                       </AvatarFallback>
                     </Avatar>
                     {instances.length > 1 && (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-medium text-white ring-2 ring-white">
+                      <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-medium text-white ring-2 ring-white">
                         {instances.length}
                       </span>
                     )}

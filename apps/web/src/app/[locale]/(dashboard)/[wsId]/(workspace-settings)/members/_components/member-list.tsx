@@ -99,7 +99,7 @@ export default async function MemberList({
       </div>
 
       {workspace && (
-        <div className="absolute right-4 top-4 flex gap-2">
+        <div className="absolute top-4 right-4 flex gap-2">
           <MemberSettingsButton
             workspace={workspace}
             user={member}

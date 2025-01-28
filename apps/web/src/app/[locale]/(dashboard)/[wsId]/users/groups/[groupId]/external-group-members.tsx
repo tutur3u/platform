@@ -66,7 +66,7 @@ export default function ExternalGroupMembers({
               <div className="w-full">
                 <Link
                   href={`/${wsId}/users/groups/${group.id}`}
-                  className="hover:bg-foreground/10 hover:border-foreground/10 line-clamp-1 break-all rounded border border-transparent text-center font-semibold"
+                  className="hover:bg-foreground/10 hover:border-foreground/10 line-clamp-1 rounded border border-transparent text-center font-semibold break-all"
                 >
                   {group.name}
                 </Link>

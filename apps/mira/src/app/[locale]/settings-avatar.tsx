@@ -232,7 +232,7 @@ export default function UserAvatar({ user }: AvatarProps) {
               </Avatar>
               <Button
                 size="icon"
-                className="absolute bottom-0 right-0 rounded-full backdrop-blur-lg"
+                className="absolute right-0 bottom-0 rounded-full backdrop-blur-lg"
               >
                 <Settings className="h-5 w-5" />
               </Button>

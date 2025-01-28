@@ -203,13 +203,13 @@ export default function FleetingAssistant({
           )}
         </div>
       </div>
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Separator />
         <div className="flex items-center gap-1 p-2">
           <Button
             variant="ghost"
             size="icon"
-            className="flex-shrink-0"
+            className="shrink-0"
             onClick={onBack}
           >
             <ArrowDownToLine className="h-5 w-5" />
@@ -242,7 +242,7 @@ export default function FleetingAssistant({
                 type="submit"
                 variant="ghost"
                 size="icon"
-                className="flex-shrink-0"
+                className="shrink-0"
                 disabled={
                   !form.formState.isValid ||
                   (!!chat?.id && isLoading) ||
@@ -257,7 +257,7 @@ export default function FleetingAssistant({
           {/* <Button
           variant="ghost"
           size="icon"
-          className="flex-shrink-0"
+          className="shrink-0"
           onClick={onBack}
         >
           <EllipsisHorizontalIcon className="h-5 w-5" />

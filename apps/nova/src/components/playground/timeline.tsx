@@ -52,7 +52,7 @@ export function Timeline({
                   challenge.id === currentChallenge ? 'default' : 'outline'
                 }
                 onClick={() => onSelectChallenge(challenge.id)}
-                className="flex-shrink-0"
+                className="shrink-0"
               >
                 {challenge.title}
               </Button>

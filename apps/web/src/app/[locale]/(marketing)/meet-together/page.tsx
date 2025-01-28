@@ -19,14 +19,14 @@ export default async function MeetTogetherPage() {
     <div className="flex w-full flex-col items-center">
       <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
         <div className="flex flex-col items-center">
-          <h1 className="text-foreground mx-auto mb-2 text-balance text-center text-2xl font-bold !leading-tight tracking-tight md:text-4xl lg:text-6xl">
+          <h1 className="text-foreground mx-auto mb-2 text-center text-2xl !leading-tight font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
             {t('headline-p1')}{' '}
             <GradientHeadline>{t('headline-p2')}</GradientHeadline>.
           </h1>
         </div>
       </div>
       <Form />
-      <Separator className="mb-4 mt-8 md:mt-16" />
+      <Separator className="mt-8 mb-4 md:mt-16" />
 
       <div className="text-foreground flex w-full flex-col items-center justify-center p-4 pb-8">
         <h2 className="text-center text-2xl font-bold">{t('your_plans')}</h2>

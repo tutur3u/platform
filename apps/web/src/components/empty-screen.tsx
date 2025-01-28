@@ -105,7 +105,7 @@ export function EmptyScreen({
                 onClick={() => setInput(message.message)}
               >
                 {message.icon}
-                <div className="line-clamp-1 whitespace-normal break-all">
+                <div className="line-clamp-1 break-all whitespace-normal">
                   {message.heading}
                 </div>
               </Button>

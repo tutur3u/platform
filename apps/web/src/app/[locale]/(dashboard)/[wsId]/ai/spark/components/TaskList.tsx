@@ -90,7 +90,7 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
                         </Badge>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="rounded-b-lg border border-t-0 px-4 pb-4 pt-2">
+                    <AccordionContent className="rounded-b-lg border border-t-0 px-4 pt-2 pb-4">
                       <div className="grid gap-2">
                         {tasks.map((task, idx) => (
                           <div
@@ -100,7 +100,7 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
                             <div className="space-y-2">
                               <div className="flex items-start justify-between gap-4">
                                 <div className="space-y-1">
-                                  <h5 className="font-medium leading-none">
+                                  <h5 className="leading-none font-medium">
                                     {task.title}
                                   </h5>
                                   <p className="text-muted-foreground text-sm">

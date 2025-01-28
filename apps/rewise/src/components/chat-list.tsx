@@ -129,13 +129,13 @@ export function ChatList({
             {(chatSummary || summarizing) && (
               <Fragment key={`chat-${chatId}-${chatSummary}`}>
                 <Separator className="my-2" />
-                <div className="mb-2 text-base font-bold uppercase tracking-widest">
+                <div className="mb-2 text-base font-bold tracking-widest uppercase">
                   {t('summary')}
                 </div>
                 {!chatSummary && summarizing ? (
                   <div className="bg-foreground/5 h-32 w-full animate-pulse rounded border" />
                 ) : (
-                  <div className="bg-foreground/5 w-full whitespace-pre-wrap break-words rounded border p-2 text-start text-lg font-normal">
+                  <div className="bg-foreground/5 w-full rounded border p-2 text-start text-lg font-normal break-words whitespace-pre-wrap">
                     {chatSummary?.trim()}
                   </div>
                 )}

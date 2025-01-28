@@ -33,9 +33,9 @@ export function TestCases({ results, isLoading }: TestCasesProps) {
                 className="bg-muted flex items-start space-x-2 rounded-md p-2"
               >
                 {result.passed ? (
-                  <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
                 ) : (
-                  <XCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
+                  <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
                 )}
                 <span>{result.message}</span>
               </li>

@@ -159,7 +159,7 @@ Response Time: Within 2 business days
   }));
 
   return (
-    <main className="container relative space-y-16 py-24">
+    <main className="relative container space-y-16 py-24">
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -170,7 +170,7 @@ Response Time: Within 2 business days
         <Badge variant="secondary" className="mb-6">
           Legal Documentation
         </Badge>
-        <h1 className="text-foreground mb-6 text-balance text-5xl font-bold">
+        <h1 className="text-foreground mb-6 text-5xl font-bold text-balance">
           Terms of Service
         </h1>
         <p className="text-foreground/80 mx-auto max-w-2xl text-lg">
