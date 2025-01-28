@@ -53,12 +53,6 @@ drop trigger if exists "delete_workspace_member_when_unlink" on "public"."worksp
 
 drop policy "Enable delete for workspace owners" on "public"."workspaces";
 
-alter table "public"."external_user_monthly_reports" drop constraint "external_user_monthly_reports_creator_id_fkey";
-
-alter table "public"."external_user_monthly_reports" add constraint "external_user_monthly_reports_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES workspace_users(id) ON UPDATE CASCADE ON DELETE SET DEFAULT not valid;
-
-alter table "public"."external_user_monthly_reports" validate constraint "external_user_monthly_reports_creator_id_fkey";
-
 set check_function_bodies = off;
 
 CREATE OR REPLACE FUNCTION public.get_user_tasks(_board_id uuid)
