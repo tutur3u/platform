@@ -52,7 +52,6 @@ Tuturuuu services include:
 
 2. **Configure Tiptap Pro Registry:**
 
-   > [!IMPORTANT]
    > Before installing dependencies, you need to configure Tiptap Pro registry access. Visit [cloud.tiptap.dev/pro-extensions](https://cloud.tiptap.dev/pro-extensions) and login, then find your auth token in the "Global setup (for CI/CD)" section. Run these commands:
    >
    > ```bash
