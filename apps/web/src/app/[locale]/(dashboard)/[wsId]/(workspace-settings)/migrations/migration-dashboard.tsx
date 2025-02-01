@@ -1,30 +1,38 @@
 'use client';
 
+import { ConfigurationPanel } from './components/ConfigurationPanel';
+import { KeyboardHelp } from './components/KeyboardHelp';
+import { MigrationHistory } from './components/MigrationHistory';
+import { ModuleCard } from './components/ModuleCard';
+import { ModuleSearch } from './components/ModuleSearch';
+import { ModuleStats } from './components/ModuleStats';
 import { MigrationModule, ModulePackage, generateModules } from './modules';
-import { useLocalStorage } from '@mantine/hooks';
+import { useKeyboardShortcuts } from './utils/keyboard';
+import { logger } from './utils/logging';
+import { rateLimiter } from './utils/rate-limiter';
+import { sanitizeApiEndpoint, validateModuleData } from './utils/validation';
 import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Progress } from '@repo/ui/components/ui/progress';
 import { Separator } from '@repo/ui/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@repo/ui/components/ui/tooltip';
 import { GitMerge, Play, RefreshCcw } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 export default function MigrationDashboard() {
-  const [apiEndpoint, setApiEndpoint] = useLocalStorage({
-    key: 'migration-api-endpoint',
-    defaultValue: '',
-  });
-
-  const [apiKey, setApiKey] = useLocalStorage({
-    key: 'migration-api-key',
-    defaultValue: '',
-  });
-
-  const [workspaceId, setWorkspaceId] = useLocalStorage({
-    key: 'migration-workspace-id',
-    defaultValue: '',
+  const [config, setConfig] = useState<{
+    apiEndpoint: string;
+    apiKey: string;
+    workspaceId: string;
+    isValid: boolean;
+  }>({
+    apiEndpoint: '',
+    apiKey: '',
+    workspaceId: '',
+    isValid: false,
   });
 
   const [migrationData, setMigrationData] = useState<{
@@ -38,9 +46,35 @@ export default function MigrationDashboard() {
     } | null;
   }>();
 
+  // Generate modules once and memoize
+  const allModules = useMemo(() => generateModules(), []);
+  const [filteredModules, setFilteredModules] =
+    useState<ModulePackage[]>(allModules);
+
   const loading = migrationData
     ? Object.values(migrationData).some((v) => v?.loading)
     : false;
+
+  const handleMigrateAll = useCallback(async () => {
+    for (const m of filteredModules) {
+      if (!m?.disabled) {
+        await handleMigrate(m);
+      }
+    }
+  }, [filteredModules]);
+
+  // Register keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'r',
+      description: 'Refresh all',
+      action: () => {
+        if (!loading && config.isValid) {
+          handleMigrateAll();
+        }
+      },
+    },
+  ]);
 
   const fetchData = async (
     url: string,
@@ -52,21 +86,28 @@ export default function MigrationDashboard() {
       onError?: (error: any) => void;
     }
   ) => {
-    const res = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        'TTR-API-KEY': apiKey,
-      },
-    });
+    try {
+      // Check rate limit before making request
+      await rateLimiter.checkRateLimit('external');
 
-    const data = await res.json();
+      const res = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'TTR-API-KEY': config.apiKey,
+        },
+      });
 
-    if (!res.ok || data?.error) {
-      onError?.(data);
-      return;
+      const data = await res.json();
+
+      if (!res.ok || data?.error) {
+        onError?.(data);
+        return;
+      }
+
+      onSuccess?.(data);
+    } catch (error) {
+      onError?.(error);
     }
-
-    onSuccess?.(data);
   };
 
   const setLoading = (module: MigrationModule, loading: boolean) => {
@@ -136,325 +177,236 @@ export default function MigrationDashboard() {
     mapping,
     skip,
   }: ModulePackage) => {
+    const startTime = logger.startMigration(module);
     setLoading(module, true);
     resetData(module);
 
-    const externalUrl = `${apiEndpoint}${externalPath}`;
-    const chunkSize = 1000;
+    try {
+      const externalUrl = `${sanitizeApiEndpoint(config.apiEndpoint)}${externalPath}`;
+      const chunkSize = 1000;
 
-    // Initialize external variables
-    let externalCount = -1;
-    let externalData: any[] = [];
-    let externalError: any = null;
+      // Initialize external variables
+      let externalCount = -1;
+      let externalData: any[] = [];
+      let externalError: any = null;
 
-    // Fetch external data
-    while (
-      externalError === null &&
-      (externalData.length < externalCount || externalCount === -1)
-    ) {
-      await fetchData(
-        `${externalUrl}?from=${externalData.length}&limit=${chunkSize}`
-          // if there are 2 or more '?' in url, replace the second and next ones with '&'
-          .replace(/\?([^?]*)(\?)/g, '?$1&'),
-        {
-          onSuccess: (newData) => {
-            if (externalCount === -1) externalCount = newData.count;
-            externalData = [
-              ...externalData,
-              ...newData?.[externalAlias ?? internalAlias ?? 'data'],
-            ];
-            setData('external', module, externalData, newData.count);
+      // Fetch external data
+      while (
+        externalError === null &&
+        (externalData.length < externalCount || externalCount === -1)
+      ) {
+        await fetchData(
+          `${externalUrl}?from=${externalData.length}&limit=${chunkSize}`.replace(
+            /\?([^?]*)(\?)/g,
+            '?$1&'
+          ),
+          {
+            onSuccess: (newData) => {
+              if (externalCount === -1) externalCount = newData.count;
+              externalData = [
+                ...externalData,
+                ...newData?.[externalAlias ?? internalAlias ?? 'data'],
+              ];
+              setData('external', module, externalData, newData.count);
 
-            // If count does not match, stop fetching
-            if (externalData.length !== externalCount) return;
-          },
-          onError: async (error) => {
-            setLoading(module, false);
-            setError(module, error);
-            externalError = error;
-            return;
-          },
-        }
-      );
-
-      // wait 200ms
-      await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    // Initialize internal variables
-    let internalData: any[] = [];
-    let internalError: any = null;
-
-    // Fetch internal data
-    if (skip) {
-      console.log('Skipping migration for', module);
-    } else if (internalPath && workspaceId) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      if (externalData !== null && externalData.length > 0) {
-        for (let i = 0; i < externalData.length; i += chunkSize) {
-          if (internalError !== null) break;
-
-          const chunkMax = Math.min(i + chunkSize, externalData.length);
-          const chunk = externalData.slice(i, chunkMax);
-
-          const newInternalData = mapping ? mapping(workspaceId, chunk) : chunk;
-
-          try {
-            const res = await fetch(
-              internalPath.replace('[wsId]', workspaceId),
-              {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  [internalAlias ?? externalAlias ?? 'data']: newInternalData,
-                }),
-              }
-            );
-
-            const data = await res.json();
-
-            if (!res.ok) {
+              if (externalData.length !== externalCount) return;
+            },
+            onError: async (error) => {
               setLoading(module, false);
-              setError(module, data);
-              internalError = data?.error;
+              setError(module, error);
+              externalError = error;
+              logger.endMigration(module, startTime, false, 0, error);
               return;
-            }
-
-            internalData.push(...newInternalData);
-            setData('internal', module, internalData, internalData.length);
-          } catch (error) {
-            setLoading(module, false);
-            setError(module, error);
-            internalError = error;
-            return;
-          } finally {
-            await new Promise((resolve) => setTimeout(resolve, 200));
+            },
           }
-        }
-      } else {
-        console.log('No external data to migrate');
-        setData('internal', module, internalData, 0);
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
+
+      // Validate external data
+      if (!validateModuleData(externalData)) {
+        throw new Error('Invalid external data structure');
+      }
+
+      // Initialize internal variables
+      let internalData: any[] = [];
+
+      // Fetch internal data
+      if (skip) {
+        logger.log('info', module, 'Skipping migration');
+      } else if (internalPath && config.workspaceId) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        if (externalData?.length > 0) {
+          for (let i = 0; i < externalData.length; i += chunkSize) {
+            const chunkMax = Math.min(i + chunkSize, externalData.length);
+            const chunk = externalData.slice(i, chunkMax);
+            const newInternalData = mapping
+              ? mapping(config.workspaceId, chunk)
+              : chunk;
+
+            try {
+              await rateLimiter.checkRateLimit('internal');
+
+              const res = await fetch(
+                internalPath.replace('[wsId]', config.workspaceId),
+                {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    [internalAlias ?? externalAlias ?? 'data']: newInternalData,
+                  }),
+                }
+              );
+
+              const data = await res.json();
+
+              if (!res.ok) {
+                throw data;
+              }
+
+              internalData.push(...newInternalData);
+              setData('internal', module, internalData, internalData.length);
+            } catch (error) {
+              throw error;
+            } finally {
+              await new Promise((resolve) => setTimeout(resolve, 200));
+            }
+          }
+        } else {
+          logger.log('info', module, 'No external data to migrate');
+          setData('internal', module, internalData, 0);
+        }
+      }
+
+      setLoading(module, false);
+      logger.endMigration(
+        module,
+        startTime,
+        true,
+        internalData.length,
+        undefined
+      );
+    } catch (error) {
+      setLoading(module, false);
+      setError(module, error);
+      logger.endMigration(module, startTime, false, 0, error);
     }
-
-    setLoading(module, false);
   };
-
-  const generateModule = ({
-    name,
-    module,
-    externalAlias,
-    internalAlias,
-    externalPath,
-    internalPath,
-    mapping,
-    skip,
-    disabled,
-  }: ModulePackage) => {
-    return (
-      <Card key={name} className="p-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="font-semibold">{name}</div>
-
-          <div className="flex gap-1">
-            {getData('external', module) !== null ? (
-              <div className="flex items-center justify-center rounded border px-2 py-0.5 text-sm font-semibold">
-                {getCount('external', module)}
-              </div>
-            ) : null}
-
-            <Button
-              onClick={() =>
-                handleMigrate({
-                  name,
-                  module,
-                  externalAlias,
-                  internalAlias,
-                  externalPath,
-                  internalPath,
-                  mapping,
-                })
-              }
-              variant="secondary"
-              size="icon"
-              disabled={disabled || getLoading(module)}
-            >
-              <GitMerge className="h-4 w-4" />
-            </Button>
-
-            <Button
-              onClick={() =>
-                handleMigrate({
-                  name,
-                  module,
-                  externalAlias,
-                  internalAlias,
-                  externalPath,
-                  internalPath,
-                  mapping,
-                })
-              }
-              variant="secondary"
-              size="icon"
-              disabled={disabled || getLoading(module)}
-            >
-              {getData('external', module) ? (
-                <RefreshCcw className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {disabled || (
-          <>
-            <Separator className="my-2" />
-
-            <div className="grid gap-2">
-              <div className="grid gap-1">
-                External
-                <Progress
-                  value={
-                    getData('external', module) !== null
-                      ? getData('external', module)?.length === 0
-                        ? 100
-                        : ((getData('external', module)?.length ?? 0) /
-                            getCount('external', module)) *
-                          100
-                      : 0
-                  }
-                />
-              </div>
-
-              <div className="mb-2 grid gap-1">
-                Synchronized
-                <Progress
-                  value={
-                    getData('external', module) !== null
-                      ? getData('external', module)?.length ===
-                        getData('internal', module)?.length
-                        ? 100
-                        : skip
-                          ? 100
-                          : ((getData('external', module) ?? []).filter((v) =>
-                              (getData('internal', module) ?? []).find(
-                                (iv) => iv.id === v.id || iv._id === v.id
-                              )
-                            ).length /
-                              (getData('external', module)?.length ?? 0)) *
-                            100
-                      : 0
-                  }
-                />
-              </div>
-
-              {/* <Button variant="outline" disabled>
-                View data
-              </Button> */}
-            </div>
-          </>
-        )}
-      </Card>
-    );
-  };
-
-  const modules = generateModules();
 
   const generateModuleComponents = () => {
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {modules.map((m) => generateModule(m))}
+        {filteredModules.map((m) => (
+          <ModuleCard
+            key={m.name}
+            module={m}
+            onMigrate={handleMigrate}
+            externalCount={getCount('external', m.module)}
+            internalCount={getCount('internal', m.module)}
+            isLoading={getLoading(m.module)}
+            error={migrationData?.[m.module]?.error}
+            externalData={getData('external', m.module)}
+            internalData={getData('internal', m.module)}
+          />
+        ))}
       </div>
     );
   };
 
-  const handleMigrateAll = async () => {
-    for (const m of modules) if (!m?.disabled) await handleMigrate(m);
-  };
-
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex h-full flex-col gap-2">
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          <div className="grid w-full items-center gap-1.5">
-            <Label>API endpoint</Label>
-            <Input
-              placeholder="https://tuturuuu.com/api/v1"
-              value={apiEndpoint}
-              onChange={(e) => setApiEndpoint(e.currentTarget.value)}
-            />
-          </div>
+      <ConfigurationPanel onConfigChange={setConfig} />
 
-          <div className="grid w-full items-center gap-1.5">
-            <Label>API key</Label>
-            <Input
-              placeholder="API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.currentTarget.value)}
-            />
-          </div>
+      <ModuleStats migrationData={migrationData} />
 
-          <div className="grid w-full items-center gap-1.5">
-            <Label>Workspace ID</Label>
-            <Input
-              placeholder="Workspace ID"
-              value={workspaceId}
-              onChange={(e) => setWorkspaceId(e.currentTarget.value)}
-              className="col-span-full xl:col-span-1"
-            />
-          </div>
-        </div>
-
-        <h2 className="mt-4 flex items-center gap-1 text-2xl font-semibold">
-          <div className="mr-1">Migrate data</div>
-          {Object.values(migrationData ?? {}).reduce(
-            (acc, v) => acc + (v?.externalTotal ?? 0),
-            0
-          ) !== 0 && (
-            <div className="rounded border px-2 py-0.5 text-sm font-semibold">
-              {Object.values(migrationData ?? {}).reduce(
-                (acc, v) => acc + (v?.externalData?.length ?? 0),
-                0
-              )}
-              {' / '}
+      <div className="flex h-full flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="flex items-center gap-1 text-2xl font-semibold">
+              <div className="mr-1">Migrate data</div>
               {Object.values(migrationData ?? {}).reduce(
                 (acc, v) => acc + (v?.externalTotal ?? 0),
                 0
+              ) !== 0 && (
+                <div className="rounded border px-2 py-0.5 text-sm font-semibold">
+                  {Object.values(migrationData ?? {}).reduce(
+                    (acc, v) => acc + (v?.externalData?.length ?? 0),
+                    0
+                  )}
+                  {' / '}
+                  {Object.values(migrationData ?? {}).reduce(
+                    (acc, v) => acc + (v?.externalTotal ?? 0),
+                    0
+                  )}
+                </div>
               )}
-            </div>
-          )}
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Migrate data from external system to internal system
+            </p>
+          </div>
 
-          <Button
-            onClick={handleMigrateAll}
-            variant="secondary"
-            size="icon"
-            disabled={loading}
-          >
-            <GitMerge className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <KeyboardHelp />
 
-          <Button
-            onClick={handleMigrateAll}
-            variant="secondary"
-            size="icon"
-            disabled={loading}
-          >
-            {Object.values(migrationData ?? {}).filter((v) => v?.externalData)
-              .length ? (
-              <RefreshCcw className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-          </Button>
-        </h2>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    data-migrate-button
+                    onClick={handleMigrateAll}
+                    variant="secondary"
+                    size="icon"
+                    disabled={loading || !config.isValid}
+                  >
+                    <GitMerge className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Migrate all modules (M)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    data-refresh-button
+                    onClick={handleMigrateAll}
+                    variant="secondary"
+                    size="icon"
+                    disabled={loading || !config.isValid}
+                  >
+                    {Object.values(migrationData ?? {}).filter(
+                      (v) => v?.externalData
+                    ).length ? (
+                      <RefreshCcw
+                        className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+                      />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Refresh all modules (R)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+
+        <ModuleSearch
+          modules={allModules}
+          onFilterChange={setFilteredModules}
+        />
 
         <Separator className="mb-2" />
         {generateModuleComponents()}
       </div>
+
+      <MigrationHistory />
     </div>
   );
 }
