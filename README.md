@@ -50,13 +50,24 @@ Tuturuuu services include:
    cd platform
    ```
 
-2. **Install dependencies:**
+2. **Configure Tiptap Pro Registry:**
+
+   > Before installing dependencies, you need to configure Tiptap Pro registry access. Visit [cloud.tiptap.dev/pro-extensions](https://cloud.tiptap.dev/pro-extensions) and login, then find your auth token in the "Global setup (for CI/CD)" section. Run these commands:
+   >
+   > ```bash
+   > npm config set "@tiptap-pro:registry" https://registry.tiptap.dev
+   > npm config set "//registry.tiptap.dev/:_authToken" [AUTH_TOKEN]
+   > ```
+   >
+   > Replace [AUTH_TOKEN] with your actual token from the Tiptap dashboard.
+
+3. **Install dependencies:**
 
    ```bash
    pnpm i
    ```
 
-3. **Start the Supabase local development environment:**
+4. **Start the Supabase local development environment:**
 
    ```bash
    pnpm sb:start
@@ -64,11 +75,11 @@ Tuturuuu services include:
 
    This will provide the necessary URLs and keys for local development.
 
-4. **Create environment files:**
+5. **Create environment files:**
 
    Create a `.env.local` file in each app directory (`apps/*/.env.local`) using the corresponding `.env.example` template and add the Supabase URLs and keys from the previous step.
 
-5. **Start the desired application(s):**
+6. **Start the desired application(s):**
 
    Use the appropriate pnpm scripts to start the applications.
 
@@ -159,8 +170,6 @@ To stop the local supabase instance, run the following command:
 ```bash
 pnpm sb:stop
 ```
-
-</CodeGroup>
 
 #### Better Development Experience
 
