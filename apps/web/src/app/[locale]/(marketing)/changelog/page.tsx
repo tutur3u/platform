@@ -27,6 +27,14 @@ const updates: MonthlyUpdate[] = [
     month: 'January 2025',
     updates: [
       {
+        title: 'Tailwind CSS v4.0 Support',
+        description:
+          'Upgraded our monorepo to Tailwind CSS v4.0, bringing significant performance improvements and modern features. This update includes a new high-performance engine with up to 5x faster builds, native cascade layers, automatic content detection, built-in import support, dynamic utility values, modernized P3 color palette, container queries, 3D transform utilities, and expanded gradient APIs. The upgrade enhances our development workflow and enables more sophisticated UI implementations.',
+        type: 'improvement',
+        date: 'January 28, 2025',
+        tags: ['UI/UX', 'Performance'],
+      },
+      {
         title: 'Security Center Launch',
         description:
           'Introduced our new Security Center, a comprehensive hub for understanding our security practices and commitments. Features detailed information about our data protection measures, encryption standards, compliance frameworks, and security best practices. Includes guidelines for responsible disclosure and our bug bounty program, demonstrating our commitment to maintaining the highest security standards.',
@@ -179,12 +187,17 @@ export default function ChangelogPage() {
   }, [selectedTags]);
 
   return (
-    <main className="relative container py-16 md:py-24">
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8, ease: 'easeInOut' }}
+      className="relative container py-16 md:py-24"
+    >
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="text-center"
       >
         <Badge
@@ -205,7 +218,7 @@ export default function ChangelogPage() {
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="mx-auto mt-16 max-w-4xl"
       >
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -213,9 +226,7 @@ export default function ChangelogPage() {
             <button
               key={tag}
               onClick={() => toggleTag(tag)}
-              className={`${getTagColor(
-                tag
-              )} group relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105 ${
+              className={`${getTagColor(tag)} group relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 hover:scale-105 ${
                 selectedTags.includes(tag)
                   ? 'ring-offset-background ring-2 ring-offset-2'
                   : 'opacity-70 hover:opacity-100'
@@ -243,7 +254,7 @@ export default function ChangelogPage() {
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="mx-auto mt-12 flex max-w-3xl flex-wrap items-center justify-center gap-6 md:gap-12"
       >
         <div className="flex items-center gap-2">
@@ -276,7 +287,7 @@ export default function ChangelogPage() {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="pointer-events-none fixed top-1/2 left-8 hidden -translate-y-1/2 lg:block"
         >
           <div className="relative flex flex-col items-start gap-6">
@@ -327,8 +338,12 @@ export default function ChangelogPage() {
                 <motion.h2
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.1 }}
+                  viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+                  transition={{
+                    delay: 0.1,
+                    duration: 0.6,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
                   className="mb-8 text-2xl font-bold md:text-3xl"
                 >
                   {monthlyUpdate.month}
@@ -342,8 +357,12 @@ export default function ChangelogPage() {
                       key={update.title}
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.2 + updateIndex * 0.1 }}
+                      viewport={{ once: true, margin: '0px 0px -50px 0px' }}
+                      transition={{
+                        delay: 0.2 + updateIndex * 0.1,
+                        duration: 0.6,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
                       className="group relative pl-0 lg:pl-24"
                     >
                       <div className="absolute top-8 left-[29px] hidden h-3 w-3 lg:block">
@@ -351,11 +370,11 @@ export default function ChangelogPage() {
                         <div className="bg-background absolute inset-[3px] rounded-full transition-transform group-hover:scale-0" />
                       </div>
 
-                      <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg">
+                      <Card className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                         <div className="absolute inset-0 overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-r opacity-100 transition-opacity duration-300 group-hover:opacity-100" />
+                          <div className="absolute inset-0 bg-gradient-to-r opacity-100 transition-opacity duration-500 group-hover:opacity-100" />
                           <div
-                            className={`bg-gradient-to-r ${getUpdateGradient(update.type)} absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
+                            className={`bg-gradient-to-r ${getUpdateGradient(update.type)} absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
                           />
                         </div>
 
@@ -426,7 +445,8 @@ export default function ChangelogPage() {
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        viewport={{ once: true, margin: '0px 0px -100px 0px' }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="mt-24 text-center"
       >
         <Link
@@ -440,6 +460,6 @@ export default function ChangelogPage() {
           <ArrowRight className="h-4 w-4" />
         </Link>
       </motion.section>
-    </main>
+    </motion.main>
   );
 }
