@@ -41,7 +41,7 @@ export default function PlanUserFilter({ users }: { users: any[] }) {
                 {user.is_guest ? (
                   <>
                     <br />
-                    <div className="bg-foreground text-background rounded px-1 py-0.5 text-sm">
+                    <div className="rounded bg-foreground px-1 py-0.5 text-sm text-background">
                       {t('guest')}
                     </div>
                   </>
@@ -50,7 +50,7 @@ export default function PlanUserFilter({ users }: { users: any[] }) {
                 )}
               </div>
               <Separator className="my-2" />
-              <div className="bg-foreground/10 w-full rounded p-2 text-center font-semibold lowercase">
+              <div className="w-full rounded bg-foreground/10 p-2 text-center font-semibold lowercase">
                 {user.timeblock_count} {t('timeblocks')}
               </div>
             </button>

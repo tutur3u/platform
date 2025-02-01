@@ -207,11 +207,11 @@ function UserCard({
           </Avatar>
         )}
         <div className="ml-4 w-full">
-          <h3 className="text-foreground text-lg font-semibold">
+          <h3 className="text-lg font-semibold text-foreground">
             {user.full_name}
           </h3>
           {(user.email || user.phone) && (
-            <p className="text-foreground text-sm">
+            <p className="text-sm text-foreground">
               {user.email || user.phone}
             </p>
           )}
@@ -259,7 +259,7 @@ function UserCard({
                 }
                 className={cn(
                   check?.is_completed != null && !check.is_completed
-                    ? 'bg-dynamic-red/10 border-dynamic-red/20 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
+                    ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20 hover:text-dynamic-red'
                     : '',
                   'w-full border'
                 )}
@@ -277,7 +277,7 @@ function UserCard({
                 }
                 className={cn(
                   check?.is_completed == null
-                    ? 'bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
+                    ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20 hover:text-dynamic-blue'
                     : '',
                   'w-full border'
                 )}
@@ -290,7 +290,7 @@ function UserCard({
                 onClick={() => handleSaveStatus({ isCompleted: true, notes })}
                 className={cn(
                   check?.is_completed != null && check.is_completed
-                    ? 'bg-dynamic-green/10 border-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
+                    ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20 hover:text-dynamic-green'
                     : '',
                   'w-full border'
                 )}

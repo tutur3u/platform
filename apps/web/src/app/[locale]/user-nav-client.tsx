@@ -64,7 +64,7 @@ export default function UserNavClient({
               'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
               hideMetadata
                 ? 'items-center justify-center'
-                : 'hover:bg-foreground/5 items-center justify-start'
+                : 'items-center justify-start hover:bg-foreground/5'
             )}
           >
             <Avatar className="relative cursor-pointer overflow-visible font-semibold">
@@ -107,7 +107,7 @@ export default function UserNavClient({
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </Link>
-              <p className="text-muted-foreground line-clamp-1 text-xs break-all">
+              <p className="line-clamp-1 text-xs break-all text-muted-foreground">
                 {user?.email}
               </p>
             </div>

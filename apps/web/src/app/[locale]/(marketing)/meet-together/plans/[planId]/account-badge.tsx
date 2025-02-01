@@ -11,7 +11,7 @@ export default function AccountBadge({ type }: { type: 'GUEST' | 'PLATFORM' }) {
     <div
       className={`${
         type === 'GUEST'
-          ? 'bg-foreground/10 border-foreground/20 border'
+          ? 'border border-foreground/20 bg-foreground/10'
           : isDark
             ? 'bg-gradient-to-r from-pink-300/70 to-blue-300/70'
             : 'bg-gradient-to-r from-pink-500/80 to-sky-600/80 dark:from-pink-300/70 dark:to-blue-300/70'

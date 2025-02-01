@@ -19,7 +19,7 @@ export default async function MeetTogetherPage() {
     <div className="flex w-full flex-col items-center">
       <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
         <div className="flex flex-col items-center">
-          <h1 className="text-foreground mx-auto mb-2 text-center text-2xl !leading-tight font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
+          <h1 className="mx-auto mb-2 text-center text-2xl !leading-tight font-bold tracking-tight text-balance text-foreground md:text-4xl lg:text-6xl">
             {t('headline-p1')}{' '}
             <GradientHeadline>{t('headline-p2')}</GradientHeadline>.
           </h1>
@@ -28,7 +28,7 @@ export default async function MeetTogetherPage() {
       <Form />
       <Separator className="mt-8 mb-4 md:mt-16" />
 
-      <div className="text-foreground flex w-full flex-col items-center justify-center p-4 pb-8">
+      <div className="flex w-full flex-col items-center justify-center p-4 pb-8 text-foreground">
         <h2 className="text-center text-2xl font-bold">{t('your_plans')}</h2>
 
         {plans?.length > 0 ? (
@@ -37,14 +37,14 @@ export default async function MeetTogetherPage() {
               <Link
                 href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
                 key={plan.id}
-                className="border-foreground/20 hover:border-foreground group grid w-full rounded-lg border p-4"
+                className="group grid w-full rounded-lg border border-foreground/20 p-4 hover:border-foreground"
               >
                 <div className="flex w-full items-center justify-between gap-2">
                   <h3 className="line-clamp-1 w-full flex-1 font-bold">
                     {plan.name}
                   </h3>
                   {plan.start_time && (
-                    <div className="bg-foreground text-background rounded px-2 py-0.5 text-sm font-semibold">
+                    <div className="rounded bg-foreground px-2 py-0.5 text-sm font-semibold text-background">
                       GMT
                       {Intl.NumberFormat('en-US', {
                         signDisplay: 'always',
@@ -79,7 +79,7 @@ export default async function MeetTogetherPage() {
                       {plan.dates?.slice(0, 5).map((date) => (
                         <div
                           key={date}
-                          className={`bg-foreground/20 flex items-center justify-center rounded px-2 py-0.5 text-sm ${(plan.dates?.length || 0) <= 2 && 'w-full'}`}
+                          className={`flex items-center justify-center rounded bg-foreground/20 px-2 py-0.5 text-sm ${(plan.dates?.length || 0) <= 2 && 'w-full'}`}
                         >
                           {dayjs(date)
                             .locale(locale)
@@ -89,7 +89,7 @@ export default async function MeetTogetherPage() {
                         </div>
                       ))}
                       {plan.dates.length > 5 && (
-                        <div className="bg-foreground/20 rounded px-2 py-0.5 text-sm">
+                        <div className="rounded bg-foreground/20 px-2 py-0.5 text-sm">
                           +{plan.dates.length - 5}
                         </div>
                       )}

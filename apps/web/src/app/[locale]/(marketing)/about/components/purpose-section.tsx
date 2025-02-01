@@ -12,19 +12,19 @@ interface ItemProps {
 
 const purposeItems: ItemProps[] = [
   {
-    icon: <Heart className="text-primary h-8 w-8" />,
+    icon: <Heart className="h-8 w-8 text-primary" />,
     title: 'Universal Access',
     description:
       'We believe everyone deserves access to life-changing technology. Our solutions are designed to reach and empower people from all walks of life, everywhere.',
   },
   {
-    icon: <Brain className="text-primary h-8 w-8" />,
+    icon: <Brain className="h-8 w-8 text-primary" />,
     title: 'Breakthrough Innovation',
     description:
       'Through cutting-edge AI and relentless innovation, we push the boundaries of what technology can achieve to create transformative solutions.',
   },
   {
-    icon: <Globe className="text-primary h-8 w-8" />,
+    icon: <Globe className="h-8 w-8 text-primary" />,
     title: 'Worldwide Impact',
     description:
       'From bustling cities to remote villages, we are committed to delivering technology that makes a real difference in daily lives.',
@@ -94,12 +94,12 @@ export function PurposeSection() {
                 ease: 'easeInOut',
               },
             }}
-            className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+            className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
           >
-            <Heart className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
+            <Heart className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
           <motion.h2
-            className="text-foreground mb-4 text-4xl font-bold"
+            className="mb-4 text-4xl font-bold text-foreground"
             whileHover={{
               scale: 1.02,
             }}
@@ -113,13 +113,13 @@ export function PurposeSection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="from-primary relative bg-gradient-to-r via-orange-500 to-red-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              className="relative bg-gradient-to-r from-primary via-orange-500 to-red-500 bg-[length:200%_auto] bg-clip-text text-transparent"
             >
               Our Purpose
             </motion.span>
           </motion.h2>
           <motion.p
-            className="text-foreground/60 mx-auto max-w-2xl text-lg"
+            className="mx-auto max-w-2xl text-lg text-foreground/60"
             whileHover={{
               scale: 1.01,
             }}
@@ -147,7 +147,7 @@ export function PurposeSection() {
               }}
               className="group relative"
             >
-              <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
+              <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
@@ -176,7 +176,7 @@ export function PurposeSection() {
                     }}
                     className="relative mb-6"
                   >
-                    <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
                       <motion.div
                         animate={{
                           scale: [1, 1.1, 1],
@@ -192,7 +192,7 @@ export function PurposeSection() {
                     </div>
                   </motion.div>
                   <motion.h3
-                    className="text-foreground relative mb-4 text-xl font-bold"
+                    className="relative mb-4 text-xl font-bold text-foreground"
                     whileHover={{
                       scale: 1.05,
                       color: 'hsl(var(--primary))',
@@ -201,7 +201,7 @@ export function PurposeSection() {
                     {item.title}
                   </motion.h3>
                   <motion.p
-                    className="text-foreground/60 relative"
+                    className="relative text-foreground/60"
                     whileHover={{
                       scale: 1.02,
                     }}
@@ -213,7 +213,7 @@ export function PurposeSection() {
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="from-primary/20 to-primary/5 absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r"
+                  className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r from-primary/20 to-primary/5"
                 />
               </div>
             </motion.div>

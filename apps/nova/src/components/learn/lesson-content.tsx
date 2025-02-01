@@ -21,7 +21,7 @@ export function LessonContent({ lesson }: LessonProps) {
         {lesson.sections.map((section, index) => (
           <div key={index} className="space-y-2">
             <h2 className="text-xl font-semibold">{section.title}</h2>
-            <p className="text-muted-foreground whitespace-pre-line">
+            <p className="whitespace-pre-line text-muted-foreground">
               {section.content}
             </p>
             {index < lesson.sections.length - 1 && (

@@ -141,7 +141,7 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="bg-background/70 fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
+        className="fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-4 py-2 backdrop-blur-lg md:hidden"
       >
         <div className="flex h-[52px] items-center gap-2">
           <div className="flex flex-none items-center gap-2">
@@ -155,7 +155,7 @@ export function Structure({
               />
             </Link>
           </div>
-          <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
+          <div className="mx-2 h-4 w-[1px] flex-none rotate-[30deg] bg-foreground/20" />
           <div className="flex items-center gap-2 text-lg font-semibold break-all">
             {currentLink?.icon && (
               <div className="flex-none">{currentLink.icon}</div>
@@ -207,7 +207,7 @@ export function Structure({
             className={cn(
               isCollapsed
                 ? 'hidden min-w-[50px] md:flex'
-                : 'bg-background/70 absolute inset-0 z-40 flex md:static md:bg-transparent',
+                : 'absolute inset-0 z-40 flex bg-background/70 md:static md:bg-transparent',
               'flex-col justify-between overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
@@ -243,7 +243,7 @@ export function Structure({
 
                     <Suspense
                       fallback={
-                        <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
+                        <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
                       }
                     >
                       <WorkspaceSelect hideLeading={isCollapsed} />
@@ -270,7 +270,7 @@ export function Structure({
                 onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
               />
             </div>
-            <div className="border-foreground/10 flex-none border-t p-2">
+            <div className="flex-none border-t border-foreground/10 p-2">
               {isCollapsed ? userPopover : actions}
             </div>
           </ResizablePanel>

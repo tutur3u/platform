@@ -115,8 +115,8 @@ export default function ClientQuizzes({
                       className={cn(
                         'rounded-md border p-2',
                         option?.is_correct
-                          ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
-                          : 'bg-foreground/5 border-foreground/5'
+                          ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+                          : 'border-foreground/5 bg-foreground/5'
                       )}
                     >
                       <span className="font-semibold">{option?.value}</span>

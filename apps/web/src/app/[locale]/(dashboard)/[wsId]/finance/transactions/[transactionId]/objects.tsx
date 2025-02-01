@@ -119,7 +119,7 @@ function DetailObjectGrid({
   object: StorageObject;
 }) {
   return (
-    <div className="bg-foreground/5 space-y-4 rounded-lg p-4">
+    <div className="space-y-4 rounded-lg bg-foreground/5 p-4">
       <div className="flex items-center justify-between gap-2">
         <FileText className="h-4 w-4 shrink-0" />
         <span className="flex-1 truncate">{object.name}</span>
@@ -141,7 +141,7 @@ function DetailObjectGrid({
             fill
           />
         ) : (
-          <div className="bg-background h-full w-full rounded" />
+          <div className="h-full w-full rounded bg-background" />
         )}
       </div>
     </div>

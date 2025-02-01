@@ -19,7 +19,7 @@ function QRStyles({
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
         <button
           className={cn(
-            'hover:border-foreground flex items-center justify-center rounded-lg border-2 p-4 text-center transition',
+            'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             style === 'default' && 'border-foreground bg-foreground/5'
           )}
           onClick={() => setStyle('default')}
@@ -28,7 +28,7 @@ function QRStyles({
         </button>
         <button
           className={cn(
-            'hover:border-foreground flex items-center justify-center rounded-lg border-2 p-4 text-center transition',
+            'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             style === 'brand' && 'border-foreground bg-foreground/5'
           )}
           onClick={() => setStyle('brand')}
@@ -44,7 +44,7 @@ function QRStyles({
         </button>
         <button
           className={cn(
-            'hover:border-foreground flex items-center justify-center rounded-lg border-2 p-4 text-center transition',
+            'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             style === 'scan-me' && 'border-foreground bg-foreground/5'
           )}
           onClick={() => setStyle('scan-me')}

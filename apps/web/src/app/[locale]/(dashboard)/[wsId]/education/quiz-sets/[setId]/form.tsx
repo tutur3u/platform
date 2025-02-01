@@ -173,7 +173,7 @@ export default function QuizForm({
                   placeholder={t('common.question')}
                   autoComplete="off"
                   {...field}
-                  className="border-foreground/20 rounded-md shadow-sm"
+                  className="rounded-md border-foreground/20 shadow-sm"
                 />
               </FormControl>
               <FormMessage />
@@ -213,7 +213,7 @@ export default function QuizForm({
                             placeholder={`${t('common.option')} ${index + 1}`}
                             autoComplete="off"
                             {...field}
-                            className="border-foreground/20 rounded-md shadow-sm"
+                            className="rounded-md border-foreground/20 shadow-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -261,7 +261,7 @@ export default function QuizForm({
                           placeholder={t('common.explanation')}
                           autoComplete="off"
                           {...field}
-                          className="border-foreground/20 rounded-md shadow-sm"
+                          className="rounded-md border-foreground/20 shadow-sm"
                         />
                       </FormControl>
                       <FormMessage />

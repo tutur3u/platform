@@ -160,7 +160,7 @@ export function Nav({
                 : t('ai_chat.anonymous')}
             </div>
             {link.createdAt && (
-              <span className="text-muted-foreground text-sm">
+              <span className="text-sm text-muted-foreground">
                 {new Date(link.createdAt).toLocaleString(locale, {
                   day: 'numeric',
                   month: 'long',
@@ -312,7 +312,7 @@ export function Nav({
                     <>
                       <div key={dateTag}>
                         {!isCollapsed && (
-                          <div className="text-muted-foreground mb-2 text-sm font-semibold">
+                          <div className="mb-2 text-sm font-semibold text-muted-foreground">
                             {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
                           </div>
                         )}
@@ -335,7 +335,7 @@ export function Nav({
                   return (
                     <div key={dateTag}>
                       {!isCollapsed && (
-                        <div className="text-muted-foreground mb-2 text-sm font-semibold">
+                        <div className="mb-2 text-sm font-semibold text-muted-foreground">
                           {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
                         </div>
                       )}

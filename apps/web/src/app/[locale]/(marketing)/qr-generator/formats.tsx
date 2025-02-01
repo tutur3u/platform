@@ -16,7 +16,7 @@ function QRFormats({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <button
           className={cn(
-            'hover:border-foreground flex items-center justify-center rounded-lg border-2 p-4 text-center transition',
+            'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             format === 'png' && 'border-foreground bg-foreground/5'
           )}
           onClick={() => setFormat('png')}
@@ -25,7 +25,7 @@ function QRFormats({
         </button>
         <button
           className={cn(
-            'hover:border-foreground flex items-center justify-center rounded-lg border-2 p-4 text-center transition',
+            'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             format === 'jpg' && 'border-foreground bg-foreground/5'
           )}
           onClick={() => setFormat('jpg')}
@@ -34,7 +34,7 @@ function QRFormats({
         </button>
         <button
           className={cn(
-            'hover:border-foreground flex items-center justify-center rounded-lg border-2 p-4 text-center transition',
+            'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             format === 'webp' && 'border-foreground bg-foreground/5'
           )}
           onClick={() => setFormat('webp')}

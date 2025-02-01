@@ -108,7 +108,7 @@ const LogoComponent = ({
     )}
   >
     <Link href="/" className="group relative block">
-      <div className="from-primary/20 absolute inset-0 -z-10 rounded-full bg-gradient-to-br via-transparent to-transparent opacity-50 blur-lg transition-all duration-300 group-hover:opacity-100" />
+      <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-50 blur-lg transition-all duration-300 group-hover:opacity-100" />
       <Image
         src="/media/logos/transparent.png"
         width={300}
@@ -461,7 +461,7 @@ const slides: Slide[] = [
           transition={{ type: 'spring', duration: 0.8 }}
           className="relative"
         >
-          <div className="from-primary/20 absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-br via-transparent to-transparent opacity-50 blur-xl" />
+          <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-50 blur-xl" />
           <Image
             src="/media/logos/transparent.png"
             width={300}
@@ -476,10 +476,10 @@ const slides: Slide[] = [
           transition={{ delay: 0.5 }}
           className="flex flex-col items-center gap-6"
         >
-          <h1 className="text-foreground relative mx-auto mb-4 text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
+          <h1 className="relative mx-auto mb-4 text-center text-2xl font-bold tracking-tight text-foreground md:text-4xl lg:text-6xl">
             <GradientHeadline title="Your intelligent shortcut" />
           </h1>
-          <p className="text-foreground/80 max-w-3xl text-center text-xl leading-relaxed text-balance">
+          <p className="max-w-3xl text-center text-xl leading-relaxed text-balance text-foreground/80">
             Revolutionizing enterprise software with AI-powered innovation and
             open-source freedom.
           </p>
@@ -571,7 +571,7 @@ const slides: Slide[] = [
               <div className="relative flex flex-col gap-4">
                 <div
                   className={cn(
-                    'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br',
+                    'flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-background/80 to-background',
                     problem.color
                   )}
                 >
@@ -581,7 +581,7 @@ const slides: Slide[] = [
                   <h3 className={cn('mb-2 text-xl font-bold', problem.color)}>
                     {problem.title}
                   </h3>
-                  <p className="text-foreground/80 mb-4">
+                  <p className="mb-4 text-foreground/80">
                     {problem.description}
                   </p>
                   <div className="space-y-2">
@@ -603,7 +603,7 @@ const slides: Slide[] = [
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-foreground/5 rounded-xl p-6"
+          className="rounded-xl bg-foreground/5 p-6"
         >
           <div className="grid gap-6 md:grid-cols-4">
             {[
@@ -646,7 +646,7 @@ const slides: Slide[] = [
                 <div className={cn('mb-2', stat.color)}>{stat.icon}</div>
                 <div className="text-3xl font-bold">{stat.value}</div>
                 <div className="font-medium">{stat.label}</div>
-                <div className="text-foreground/60 text-sm">{stat.trend}</div>
+                <div className="text-sm text-foreground/60">{stat.trend}</div>
               </motion.div>
             ))}
           </div>
@@ -732,7 +732,7 @@ const slides: Slide[] = [
               <div className="relative flex flex-col gap-6">
                 <div
                   className={cn(
-                    'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br',
+                    'flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-background/80 to-background',
                     solution.color
                   )}
                 >
@@ -742,7 +742,7 @@ const slides: Slide[] = [
                   <h3 className={cn('mb-4 text-xl font-bold', solution.color)}>
                     {solution.title}
                   </h3>
-                  <ul className="text-foreground/80 space-y-2">
+                  <ul className="space-y-2 text-foreground/80">
                     {solution.features.map((feature, j) => (
                       <li key={j} className="flex items-center gap-2">
                         <Check className={cn('h-4 w-4', solution.color)} />
@@ -757,7 +757,7 @@ const slides: Slide[] = [
                       <div className={cn('text-lg font-bold', solution.color)}>
                         {metric.value}
                       </div>
-                      <div className="text-foreground/60 text-xs">
+                      <div className="text-xs text-foreground/60">
                         {metric.label}
                       </div>
                     </div>
@@ -772,7 +772,7 @@ const slides: Slide[] = [
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-foreground/5 rounded-xl p-6"
+          className="rounded-xl bg-foreground/5 p-6"
         >
           <div className="grid gap-6 md:grid-cols-4">
             {[
@@ -815,7 +815,7 @@ const slides: Slide[] = [
                 <div className={cn('mb-2', metric.color)}>{metric.icon}</div>
                 <div className="text-3xl font-bold">{metric.value}</div>
                 <div className="font-medium">{metric.label}</div>
-                <div className="text-foreground/60 text-sm">{metric.trend}</div>
+                <div className="text-sm text-foreground/60">{metric.trend}</div>
               </motion.div>
             ))}
           </div>
@@ -885,7 +885,7 @@ const slides: Slide[] = [
               <div className="relative flex flex-col gap-3">
                 <div
                   className={cn(
-                    'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br',
+                    'flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-background/80 to-background',
                     metric.color
                   )}
                 >
@@ -895,7 +895,7 @@ const slides: Slide[] = [
                   {metric.value}
                 </div>
                 <div className="font-medium">{metric.label}</div>
-                <div className="text-foreground/60 text-sm">{metric.trend}</div>
+                <div className="text-sm text-foreground/60">{metric.trend}</div>
               </div>
             </motion.div>
           ))}
@@ -906,10 +906,10 @@ const slides: Slide[] = [
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-foreground/5 rounded-xl p-6 md:col-span-8"
+            className="rounded-xl bg-foreground/5 p-6 md:col-span-8"
           >
             <h3 className="mb-6 flex items-center gap-2 text-xl font-bold">
-              <TrendingUp className="text-primary h-5 w-5" />
+              <TrendingUp className="h-5 w-5 text-primary" />
               Market Growth Projection
             </h3>
             <div className="h-[300px]">
@@ -978,9 +978,9 @@ const slides: Slide[] = [
             transition={{ delay: 0.6 }}
             className="space-y-6 md:col-span-4"
           >
-            <div className="bg-foreground/5 rounded-xl p-6">
+            <div className="rounded-xl bg-foreground/5 p-6">
               <h3 className="mb-4 flex items-center gap-2 text-lg font-bold">
-                <Target className="text-primary h-5 w-5" />
+                <Target className="h-5 w-5 text-primary" />
                 Growth Drivers
               </h3>
               <ul className="space-y-3">
@@ -999,7 +999,7 @@ const slides: Slide[] = [
                     transition={{ delay: 0.7 + i * 0.1 }}
                     className="flex items-center gap-2 text-sm"
                   >
-                    <Check className="text-primary h-4 w-4 shrink-0" />
+                    <Check className="h-4 w-4 shrink-0 text-primary" />
                     <span className="text-foreground/80">{driver}</span>
                   </motion.li>
                 ))}
@@ -1024,7 +1024,7 @@ const slides: Slide[] = [
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-foreground/5 hover:bg-foreground/10 group relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover:shadow-lg"
+              className="group relative overflow-hidden rounded-xl bg-foreground/5 p-6 transition-all duration-300 hover:bg-foreground/10 hover:shadow-lg"
             >
               <div
                 className={cn(
@@ -1043,7 +1043,7 @@ const slides: Slide[] = [
                 >
                   {metric.value}
                 </div>
-                <div className="text-foreground/80 font-medium">
+                <div className="font-medium text-foreground/80">
                   {metric.label}
                 </div>
                 <div className="flex items-center gap-2">
@@ -1096,12 +1096,12 @@ const slides: Slide[] = [
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 + i * 0.1 }}
-              className="bg-foreground/5 hover:bg-foreground/10 group relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover:shadow-lg"
+              className="group relative overflow-hidden rounded-xl bg-foreground/5 p-6 transition-all duration-300 hover:bg-foreground/10 hover:shadow-lg"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div
                   className={cn(
-                    'bg-foreground/5 rounded-full p-2',
+                    'rounded-full bg-foreground/5 p-2',
                     section.color
                   )}
                 >
@@ -1112,10 +1112,10 @@ const slides: Slide[] = [
               <div className="grid gap-4">
                 {section.metrics.map((metric, j) => (
                   <div key={j} className="flex items-center justify-between">
-                    <div className="text-foreground/60 text-sm">
+                    <div className="text-sm text-foreground/60">
                       {metric.label}
                     </div>
-                    <div className="text-primary font-bold">{metric.value}</div>
+                    <div className="font-bold text-primary">{metric.value}</div>
                   </div>
                 ))}
               </div>
@@ -1128,10 +1128,10 @@ const slides: Slide[] = [
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="bg-foreground/5 rounded-xl p-6"
+          className="rounded-xl bg-foreground/5 p-6"
         >
           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
-            <Trophy className="text-primary h-5 w-5" />
+            <Trophy className="h-5 w-5 text-primary" />
             Key Achievements
           </h3>
           <div className="grid gap-4 md:grid-cols-4">
@@ -1164,7 +1164,7 @@ const slides: Slide[] = [
               <div key={i} className="flex items-center gap-3">
                 <div
                   className={cn(
-                    'bg-foreground/5 rounded-full p-2',
+                    'rounded-full bg-foreground/5 p-2',
                     achievement.color
                   )}
                 >
@@ -1172,7 +1172,7 @@ const slides: Slide[] = [
                 </div>
                 <div>
                   <div className="text-xl font-bold">{achievement.value}</div>
-                  <div className="text-foreground/60 text-sm">
+                  <div className="text-sm text-foreground/60">
                     {achievement.label}
                   </div>
                 </div>
@@ -1195,7 +1195,7 @@ const slides: Slide[] = [
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-foreground/5 hover:bg-foreground/10 group relative overflow-hidden rounded-xl p-6 transition-colors"
+            className="group relative overflow-hidden rounded-xl bg-foreground/5 p-6 transition-colors hover:bg-foreground/10"
           >
             <div
               className={`absolute inset-0 bg-gradient-to-br ${value.color} opacity-50 transition-opacity duration-300 group-hover:opacity-100`}
@@ -1209,10 +1209,10 @@ const slides: Slide[] = [
               <div className="grid grid-cols-2 gap-4">
                 {value.metrics.map((metric, j) => (
                   <div key={j} className="text-center">
-                    <div className="text-primary text-lg font-bold">
+                    <div className="text-lg font-bold text-primary">
                       {metric.value}
                     </div>
-                    <div className="text-foreground/60 text-sm">
+                    <div className="text-sm text-foreground/60">
                       {metric.label}
                     </div>
                   </div>
@@ -1235,10 +1235,10 @@ const slides: Slide[] = [
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-foreground/5 rounded-xl p-6 md:col-span-8"
+            className="rounded-xl bg-foreground/5 p-6 md:col-span-8"
           >
             <h3 className="mb-6 flex items-center gap-2 text-xl font-bold">
-              <TrendingUp className="text-primary h-5 w-5" />
+              <TrendingUp className="h-5 w-5 text-primary" />
               Market Growth Projection
             </h3>
             <div className="h-[400px]">
@@ -1307,10 +1307,10 @@ const slides: Slide[] = [
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-foreground/5 rounded-xl p-6"
+              className="rounded-xl bg-foreground/5 p-6"
             >
               <h3 className="mb-6 flex items-center gap-2 text-xl font-bold">
-                <Target className="text-primary h-5 w-5" />
+                <Target className="h-5 w-5 text-primary" />
                 Key Growth Metrics
               </h3>
               <div className="space-y-6">
@@ -1342,13 +1342,13 @@ const slides: Slide[] = [
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + i * 0.1 }}
-                    className="hover:bg-foreground/5 group space-y-2 rounded-lg p-2 transition-colors"
+                    className="group space-y-2 rounded-lg p-2 transition-colors hover:bg-foreground/5"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(
-                            'bg-foreground/5 rounded-full p-2',
+                            'rounded-full bg-foreground/5 p-2',
                             metric.color
                           )}
                         >
@@ -1358,7 +1358,7 @@ const slides: Slide[] = [
                           <div className="text-sm font-medium">
                             {metric.label}
                           </div>
-                          <div className="text-foreground/60 text-xs">
+                          <div className="text-xs text-foreground/60">
                             {metric.detail}
                           </div>
                         </div>
@@ -1374,10 +1374,10 @@ const slides: Slide[] = [
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-foreground/5 rounded-xl p-6"
+              className="rounded-xl bg-foreground/5 p-6"
             >
               <h3 className="mb-4 flex items-center gap-2 text-lg font-bold">
-                <Rocket className="text-primary h-5 w-5" />
+                <Rocket className="h-5 w-5 text-primary" />
                 Growth Drivers
               </h3>
               <ul className="space-y-3">
@@ -1394,7 +1394,7 @@ const slides: Slide[] = [
                     transition={{ delay: 0.6 + i * 0.1 }}
                     className="flex items-center gap-2 text-sm"
                   >
-                    <Check className="text-primary h-4 w-4 shrink-0" />
+                    <Check className="h-4 w-4 shrink-0 text-primary" />
                     <span className="text-foreground/80">{driver}</span>
                   </motion.li>
                 ))}
@@ -1455,7 +1455,7 @@ const slides: Slide[] = [
                 </div>
                 <div>
                   <div className="font-medium">{item.title}</div>
-                  <div className="text-foreground/70 text-sm">
+                  <div className="text-sm text-foreground/70">
                     {item.description}
                   </div>
                 </div>
@@ -1510,7 +1510,7 @@ const slides: Slide[] = [
                 </div>
                 <div>
                   <div className="font-medium">{item.title}</div>
-                  <div className="text-foreground/70 text-sm">
+                  <div className="text-sm text-foreground/70">
                     {item.description}
                   </div>
                   <div className="mt-1 text-xs font-medium text-amber-500">
@@ -1568,7 +1568,7 @@ const slides: Slide[] = [
                 </div>
                 <div>
                   <div className="font-medium">{item.title}</div>
-                  <div className="text-foreground/70 text-sm">
+                  <div className="text-sm text-foreground/70">
                     {item.description}
                   </div>
                   <div className="mt-1 text-xs font-medium text-blue-500">
@@ -1626,7 +1626,7 @@ const slides: Slide[] = [
                 </div>
                 <div>
                   <div className="font-medium">{item.title}</div>
-                  <div className="text-foreground/70 text-sm">
+                  <div className="text-sm text-foreground/70">
                     {item.description}
                   </div>
                   <div className="mt-1 text-xs font-medium text-red-500">
@@ -1651,10 +1651,10 @@ const slides: Slide[] = [
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-foreground/5 rounded-xl p-6 md:col-span-7"
+            className="rounded-xl bg-foreground/5 p-6 md:col-span-7"
           >
             <h3 className="mb-6 flex items-center gap-2 text-xl font-bold">
-              <Shield className="text-primary h-5 w-5" />
+              <Shield className="h-5 w-5 text-primary" />
               Risk Assessment Matrix
             </h3>
             <div className="space-y-4">
@@ -1729,15 +1729,15 @@ const slides: Slide[] = [
                     {category.risks.map((risk, j) => (
                       <div
                         key={j}
-                        className="bg-foreground/5 flex items-center justify-between rounded-lg p-3"
+                        className="flex items-center justify-between rounded-lg bg-foreground/5 p-3"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="text-primary bg-primary/10 rounded-full p-1">
+                          <div className="rounded-full bg-primary/10 p-1 text-primary">
                             {risk.icon}
                           </div>
                           <div>
                             <div className="font-medium">{risk.name}</div>
-                            <div className="text-foreground/60 text-sm">
+                            <div className="text-sm text-foreground/60">
                               Impact: {risk.impact} | Probability:{' '}
                               {risk.probability}
                             </div>
@@ -1770,10 +1770,10 @@ const slides: Slide[] = [
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-foreground/5 rounded-xl p-6"
+              className="rounded-xl bg-foreground/5 p-6"
             >
               <h3 className="mb-6 flex items-center gap-2 text-xl font-bold">
-                <Target className="text-primary h-5 w-5" />
+                <Target className="h-5 w-5 text-primary" />
                 Mitigation Strategy
               </h3>
               <div className="space-y-6">
@@ -1814,12 +1814,12 @@ const slides: Slide[] = [
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 + i * 0.1 }}
-                    className="hover:bg-foreground/5 group space-y-3 rounded-lg p-3 transition-colors"
+                    className="group space-y-3 rounded-lg p-3 transition-colors hover:bg-foreground/5"
                   >
                     <div className="flex items-center gap-2">
                       <div
                         className={cn(
-                          'bg-foreground/5 rounded-full p-2',
+                          'rounded-full bg-foreground/5 p-2',
                           strategy.color
                         )}
                       >
@@ -1827,7 +1827,7 @@ const slides: Slide[] = [
                       </div>
                       <div>
                         <div className="font-semibold">{strategy.title}</div>
-                        <div className="text-foreground/60 text-sm">
+                        <div className="text-sm text-foreground/60">
                           {strategy.description}
                         </div>
                       </div>
@@ -1835,10 +1835,10 @@ const slides: Slide[] = [
                     <div className="grid grid-cols-2 gap-4">
                       {strategy.metrics.map((metric, j) => (
                         <div key={j} className="text-center">
-                          <div className="text-primary text-lg font-bold">
+                          <div className="text-lg font-bold text-primary">
                             {metric.value}
                           </div>
-                          <div className="text-foreground/60 text-xs">
+                          <div className="text-xs text-foreground/60">
                             {metric.label}
                           </div>
                         </div>
@@ -1864,10 +1864,10 @@ const slides: Slide[] = [
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-foreground/5 rounded-xl p-6 md:col-span-5"
+            className="rounded-xl bg-foreground/5 p-6 md:col-span-5"
           >
             <h3 className="mb-6 flex items-center gap-2 text-xl font-bold">
-              <Shield className="text-primary h-5 w-5" />
+              <Shield className="h-5 w-5 text-primary" />
               Key Differentiators
             </h3>
             <div className="space-y-6">
@@ -1906,12 +1906,12 @@ const slides: Slide[] = [
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="hover:bg-foreground/5 group space-y-2 rounded-lg p-2 transition-colors"
+                  className="group space-y-2 rounded-lg p-2 transition-colors hover:bg-foreground/5"
                 >
                   <div className="flex items-center gap-2">
                     <div
                       className={cn(
-                        'bg-foreground/5 rounded-full p-2',
+                        'rounded-full bg-foreground/5 p-2',
                         diff.color
                       )}
                     >
@@ -1940,10 +1940,10 @@ const slides: Slide[] = [
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-foreground/5 rounded-xl p-6"
+              className="rounded-xl bg-foreground/5 p-6"
             >
               <h3 className="mb-6 flex items-center gap-2 text-xl font-bold">
-                <Target className="text-primary h-5 w-5" />
+                <Target className="h-5 w-5 text-primary" />
                 Market Position
               </h3>
               <div className="h-[300px]">
@@ -2050,12 +2050,12 @@ const slides: Slide[] = [
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 + i * 0.1 }}
-                  className="bg-foreground/5 rounded-xl p-4"
+                  className="rounded-xl bg-foreground/5 p-4"
                 >
                   <div className="mb-4 flex items-center gap-2">
                     <div
                       className={cn(
-                        'bg-foreground/5 rounded-full p-2',
+                        'rounded-full bg-foreground/5 p-2',
                         section.color
                       )}
                     >
@@ -2069,10 +2069,10 @@ const slides: Slide[] = [
                         key={j}
                         className="flex items-center justify-between"
                       >
-                        <div className="text-foreground/60 text-sm">
+                        <div className="text-sm text-foreground/60">
                           {metric.label}
                         </div>
-                        <div className="text-primary font-bold">
+                        <div className="font-bold text-primary">
                           {metric.value}
                         </div>
                       </div>
@@ -2098,13 +2098,13 @@ const slides: Slide[] = [
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-foreground/5 hover:bg-foreground/10 group relative overflow-hidden rounded-xl p-6 transition-colors"
+            className="group relative overflow-hidden rounded-xl bg-foreground/5 p-6 transition-colors hover:bg-foreground/10"
           >
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
                 <div
                   className={cn(
-                    'bg-foreground/5 rounded-full p-3',
+                    'rounded-full bg-foreground/5 p-3',
                     segment.color
                   )}
                 >
@@ -2127,10 +2127,10 @@ const slides: Slide[] = [
               <div className="grid grid-cols-2 gap-4">
                 {Object.entries(segment.metrics).map(([label, value], k) => (
                   <div key={k} className="text-center">
-                    <div className="text-primary text-lg font-bold">
+                    <div className="text-lg font-bold text-primary">
                       {value}
                     </div>
-                    <div className="text-foreground/60 text-sm">{label}</div>
+                    <div className="text-sm text-foreground/60">{label}</div>
                   </div>
                 ))}
               </div>
@@ -2152,13 +2152,13 @@ const slides: Slide[] = [
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-foreground/5 hover:bg-foreground/10 group relative overflow-hidden rounded-xl p-6 transition-colors"
+            className="group relative overflow-hidden rounded-xl bg-foreground/5 p-6 transition-colors hover:bg-foreground/10"
           >
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
                 <div
                   className={cn(
-                    'bg-foreground/5 rounded-full p-3',
+                    'rounded-full bg-foreground/5 p-3',
                     feature.color
                   )}
                 >
@@ -2166,16 +2166,16 @@ const slides: Slide[] = [
                 </div>
                 <h3 className="font-bold">{feature.title}</h3>
               </div>
-              <p className="text-foreground/80 text-sm">
+              <p className="text-sm text-foreground/80">
                 {feature.description}
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {feature.metrics.map((metric, j) => (
                   <div key={j} className="text-center">
-                    <div className="text-primary text-lg font-bold">
+                    <div className="text-lg font-bold text-primary">
                       {metric.value}
                     </div>
-                    <div className="text-foreground/60 text-xs">
+                    <div className="text-xs text-foreground/60">
                       {metric.label}
                     </div>
                   </div>
@@ -2199,13 +2199,13 @@ const slides: Slide[] = [
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-foreground/5 hover:bg-foreground/10 group relative overflow-hidden rounded-xl p-6 transition-colors"
+            className="group relative overflow-hidden rounded-xl bg-foreground/5 p-6 transition-colors hover:bg-foreground/10"
           >
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
                 <div
                   className={cn(
-                    'bg-foreground/5 rounded-full p-3',
+                    'rounded-full bg-foreground/5 p-3',
                     feature.color
                   )}
                 >
@@ -2213,16 +2213,16 @@ const slides: Slide[] = [
                 </div>
                 <h3 className="font-bold">{feature.title}</h3>
               </div>
-              <p className="text-foreground/80 text-sm">
+              <p className="text-sm text-foreground/80">
                 {feature.description}
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {feature.metrics.map((metric, j) => (
                   <div key={j} className="text-center">
-                    <div className="text-primary text-lg font-bold">
+                    <div className="text-lg font-bold text-primary">
                       {metric.value}
                     </div>
-                    <div className="text-foreground/60 text-xs">
+                    <div className="text-xs text-foreground/60">
                       {metric.label}
                     </div>
                   </div>
@@ -2309,13 +2309,13 @@ const slides: Slide[] = [
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-foreground/5 hover:bg-foreground/10 group relative overflow-hidden rounded-xl p-6 transition-colors"
+              className="group relative overflow-hidden rounded-xl bg-foreground/5 p-6 transition-colors hover:bg-foreground/10"
             >
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <div
                     className={cn(
-                      'bg-foreground/5 rounded-full p-3',
+                      'rounded-full bg-foreground/5 p-3',
                       advantage.color
                     )}
                   >
@@ -2327,10 +2327,10 @@ const slides: Slide[] = [
                 <div className="grid grid-cols-2 gap-4">
                   {advantage.metrics.map((metric, j) => (
                     <div key={j} className="text-center">
-                      <div className="text-primary text-lg font-bold">
+                      <div className="text-lg font-bold text-primary">
                         {metric.value}
                       </div>
-                      <div className="text-foreground/60 text-sm">
+                      <div className="text-sm text-foreground/60">
                         {metric.label}
                       </div>
                     </div>
@@ -2462,7 +2462,7 @@ const slides: Slide[] = [
               className={cn(
                 'group relative overflow-hidden rounded-xl p-6 transition-all duration-300',
                 plan.popular
-                  ? 'bg-primary/10 ring-primary ring-2'
+                  ? 'bg-primary/10 ring-2 ring-primary'
                   : 'bg-foreground/5 hover:bg-foreground/10'
               )}
             >
@@ -2477,7 +2477,7 @@ const slides: Slide[] = [
                 <div className="flex items-center gap-3">
                   <div
                     className={cn(
-                      'bg-foreground/5 rounded-full p-3',
+                      'rounded-full bg-foreground/5 p-3',
                       plan.color
                     )}
                   >
@@ -2485,7 +2485,7 @@ const slides: Slide[] = [
                   </div>
                   <div>
                     <h3 className="text-xl font-bold">{plan.name}</h3>
-                    <p className="text-foreground/60 text-sm">
+                    <p className="text-sm text-foreground/60">
                       {plan.description}
                     </p>
                   </div>
@@ -2494,7 +2494,7 @@ const slides: Slide[] = [
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold">{plan.price}</span>
                     {plan.priceDetails && (
-                      <span className="text-foreground/60 text-sm">
+                      <span className="text-sm text-foreground/60">
                         /{plan.priceDetails}
                       </span>
                     )}
@@ -2503,10 +2503,10 @@ const slides: Slide[] = [
                 <div className="grid grid-cols-2 gap-4">
                   {plan.metrics.map((metric, j) => (
                     <div key={j} className="text-center">
-                      <div className="text-primary text-lg font-bold">
+                      <div className="text-lg font-bold text-primary">
                         {metric.value}
                       </div>
-                      <div className="text-foreground/60 text-xs">
+                      <div className="text-xs text-foreground/60">
                         {metric.label}
                       </div>
                     </div>
@@ -2518,7 +2518,7 @@ const slides: Slide[] = [
                     {plan.features.map((feature, j) => (
                       <li key={j} className="flex items-start gap-2">
                         <Check className="mt-1 h-4 w-4 text-emerald-500" />
-                        <span className="text-foreground/80 text-sm">
+                        <span className="text-sm text-foreground/80">
                           {feature}
                         </span>
                       </li>
@@ -2554,14 +2554,14 @@ const slides: Slide[] = [
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
-              className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-xl bg-gradient-to-br to-transparent p-6"
+              className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-foreground/5 via-foreground/5 to-transparent p-6"
             >
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
-                        'from-background/80 to-background flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br',
+                        'flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-background/80 to-background',
                         phase.color
                       )}
                     >
@@ -2571,7 +2571,7 @@ const slides: Slide[] = [
                       <h3 className={cn('text-xl font-bold', phase.color)}>
                         {phase.phase}
                       </h3>
-                      <div className="text-foreground/60 text-sm">
+                      <div className="text-sm text-foreground/60">
                         {phase.timeline}
                       </div>
                     </div>
@@ -2597,7 +2597,7 @@ const slides: Slide[] = [
                       {phase.goals.map((goal, j) => (
                         <li key={j} className="flex items-start gap-2">
                           <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                          <span className="text-foreground/80 text-sm">
+                          <span className="text-sm text-foreground/80">
                             {goal}
                           </span>
                         </li>
@@ -2621,12 +2621,12 @@ const slides: Slide[] = [
                               {milestone.value}
                             </span>
                           </div>
-                          <div className="bg-foreground/10 h-1.5 overflow-hidden rounded-full">
+                          <div className="h-1.5 overflow-hidden rounded-full bg-foreground/10">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: milestone.value }}
                               transition={{ delay: 0.5 + j * 0.2, duration: 1 }}
-                              className="bg-primary h-full"
+                              className="h-full bg-primary"
                             />
                           </div>
                         </li>
@@ -2680,7 +2680,7 @@ const slides: Slide[] = [
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.6 + i * 0.1 }}
-              className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-xl bg-gradient-to-br to-transparent p-6"
+              className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-foreground/5 via-foreground/5 to-transparent p-6"
             >
               <div
                 className={cn(
@@ -2693,7 +2693,7 @@ const slides: Slide[] = [
               <div className="relative flex flex-col gap-3">
                 <div
                   className={cn(
-                    'from-background/80 to-background flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br',
+                    'flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-background/80 to-background',
                     metric.color
                   )}
                 >
@@ -2703,7 +2703,7 @@ const slides: Slide[] = [
                   {metric.value}
                 </div>
                 <div className="font-medium">{metric.title}</div>
-                <div className="text-foreground/60 text-sm">{metric.trend}</div>
+                <div className="text-sm text-foreground/60">{metric.trend}</div>
               </div>
             </motion.div>
           ))}
@@ -2722,10 +2722,10 @@ const slides: Slide[] = [
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
-            className="from-foreground/5 via-foreground/5 rounded-xl bg-gradient-to-br to-transparent p-6 md:col-span-8"
+            className="rounded-xl bg-gradient-to-br from-foreground/5 via-foreground/5 to-transparent p-6 md:col-span-8"
           >
             <h3 className="mb-6 flex items-center gap-2 text-xl font-bold">
-              <TrendingUp className="text-primary h-5 w-5" />
+              <TrendingUp className="h-5 w-5 text-primary" />
               Revenue Growth & Projections
             </h3>
             <div className="h-[300px]">
@@ -2809,10 +2809,10 @@ const slides: Slide[] = [
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="from-foreground/5 via-foreground/5 rounded-xl bg-gradient-to-br to-transparent p-6"
+              className="rounded-xl bg-gradient-to-br from-foreground/5 via-foreground/5 to-transparent p-6"
             >
               <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
-                <Target className="text-primary h-5 w-5" />
+                <Target className="h-5 w-5 text-primary" />
                 Key Metrics
               </h3>
               <div className="space-y-4">
@@ -2851,13 +2851,13 @@ const slides: Slide[] = [
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + i * 0.1 }}
-                    className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-lg bg-gradient-to-br to-transparent p-4"
+                    className="group relative overflow-hidden rounded-lg bg-gradient-to-br from-foreground/5 via-foreground/5 to-transparent p-4"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
                           className={cn(
-                            'from-background/80 to-background flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br',
+                            'flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-background/80 to-background',
                             metric.color
                           )}
                         >
@@ -2874,7 +2874,7 @@ const slides: Slide[] = [
                           </div>
                         </div>
                       </div>
-                      <div className="text-foreground/60 text-xs">
+                      <div className="text-xs text-foreground/60">
                         Target: {metric.target}
                       </div>
                     </div>
@@ -2932,10 +2932,10 @@ const slides: Slide[] = [
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.4 + i * 0.1 }}
-              className="from-foreground/5 via-foreground/5 group relative overflow-hidden rounded-xl bg-gradient-to-br to-transparent p-6"
+              className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-foreground/5 via-foreground/5 to-transparent p-6"
             >
               <div className="mb-4 flex items-center gap-2">
-                <div className="text-primary bg-primary/10 rounded-full p-2">
+                <div className="rounded-full bg-primary/10 p-2 text-primary">
                   {section.icon}
                 </div>
                 <h3 className="text-lg font-bold">{section.title}</h3>
@@ -2949,7 +2949,7 @@ const slides: Slide[] = [
                         {item.value}%
                       </span>
                     </div>
-                    <div className="bg-foreground/10 h-1.5 overflow-hidden rounded-full">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-foreground/10">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${item.value}%` }}
@@ -2995,7 +2995,7 @@ const slides: Slide[] = [
             className="max-w-3xl space-y-4"
           >
             <h2 className="text-4xl font-bold">Transform the Future of Work</h2>
-            <p className="text-foreground/80 text-xl leading-relaxed">
+            <p className="text-xl leading-relaxed text-foreground/80">
               Tuturuuu isn't just another platform—it's a movement towards a
               smarter, more efficient future of work. Join us in revolutionizing
               how teams collaborate, create, and succeed together.
@@ -3095,7 +3095,7 @@ export default function PitchPage() {
     currentSlide === 0 || currentSlide === slides.length - 1;
 
   return (
-    <div className="bg-background fixed inset-0 flex items-center justify-center">
+    <div className="fixed inset-0 flex items-center justify-center bg-background">
       <LogoComponent
         className={cn(
           'transition-opacity duration-500',
@@ -3111,10 +3111,10 @@ export default function PitchPage() {
       <button
         onClick={() => handlePaginate(-1)}
         className={cn(
-          'bg-foreground/5 hover:bg-foreground/10 absolute left-4 z-20 rounded-full p-3',
+          'absolute left-4 z-20 rounded-full bg-foreground/5 p-3 hover:bg-foreground/10',
           'transform transition-all duration-300',
           'disabled:pointer-events-none disabled:opacity-0',
-          'focus:ring-primary/50 hover:scale-110 focus:ring-2 focus:outline-hidden'
+          'hover:scale-110 focus:ring-2 focus:ring-primary/50 focus:outline-hidden'
         )}
         disabled={currentSlide === 0}
       >
@@ -3124,10 +3124,10 @@ export default function PitchPage() {
       <button
         onClick={() => handlePaginate(1)}
         className={cn(
-          'bg-foreground/5 hover:bg-foreground/10 absolute right-4 z-20 rounded-full p-3',
+          'absolute right-4 z-20 rounded-full bg-foreground/5 p-3 hover:bg-foreground/10',
           'transform transition-all duration-300',
           'disabled:pointer-events-none disabled:opacity-0',
-          'focus:ring-primary/50 hover:scale-110 focus:ring-2 focus:outline-hidden'
+          'hover:scale-110 focus:ring-2 focus:ring-primary/50 focus:outline-hidden'
         )}
         disabled={currentSlide === slides.length - 1}
       >
@@ -3143,7 +3143,7 @@ export default function PitchPage() {
               className={cn(
                 'h-2 w-2 rounded-full transition-all duration-300',
                 currentSlide === index
-                  ? 'bg-primary w-6'
+                  ? 'w-6 bg-primary'
                   : 'bg-foreground/20 hover:bg-foreground/40'
               )}
               aria-label={`Go to slide ${index + 1}`}
@@ -3189,7 +3189,7 @@ export default function PitchPage() {
                 {slides[currentSlide]?.title}
               </h1>
               {slides[currentSlide]?.subtitle && (
-                <p className="text-foreground/80 text-xl md:text-2xl">
+                <p className="text-xl text-foreground/80 md:text-2xl">
                   {slides[currentSlide]?.subtitle}
                 </p>
               )}

@@ -14,7 +14,7 @@ export type CommandButtonProps = {
 export const CommandButton = forwardRef<HTMLButtonElement, CommandButtonProps>(
   ({ active, icon, onClick, title }, ref) => {
     const wrapperClass = cn(
-      'flex text-neutral-500 items-center text-xs font-semibold justify-start p-1.5 gap-2 rounded',
+      'flex items-center justify-start gap-2 rounded p-1.5 text-xs font-semibold text-neutral-500',
       !active && 'bg-transparent hover:bg-neutral-50 hover:text-black',
       active && 'bg-neutral-100 text-black hover:bg-neutral-100'
     );

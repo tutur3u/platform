@@ -210,9 +210,9 @@ export function ChatPermissions({
       <div className="space-y-2">
         <Label className="font-medium">{t('members')}</Label>
         {loading ? (
-          <div className="text-muted-foreground text-sm">{t('loading')}</div>
+          <div className="text-sm text-muted-foreground">{t('loading')}</div>
         ) : members.length === 0 ? (
-          <div className="text-muted-foreground text-sm">{t('no_members')}</div>
+          <div className="text-sm text-muted-foreground">{t('no_members')}</div>
         ) : (
           <div className="space-y-2">
             {members.map((member) => (
@@ -233,7 +233,7 @@ export function ChatPermissions({
                     <div className="font-medium">
                       {member.display_name || t('unnamed_user')}
                     </div>
-                    <div className="text-muted-foreground text-xs">
+                    <div className="text-xs text-muted-foreground">
                       {member.email}
                     </div>
                   </div>

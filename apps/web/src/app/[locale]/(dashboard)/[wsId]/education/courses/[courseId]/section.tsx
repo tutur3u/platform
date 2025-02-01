@@ -35,7 +35,7 @@ export async function CourseSection({
       : !content);
 
   return (
-    <div className="bg-foreground/5 border-foreground/10 rounded-lg border p-4">
+    <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-4">
       {href ? (
         <Link
           href={href}

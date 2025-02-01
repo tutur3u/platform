@@ -68,7 +68,7 @@ export function OnlineUsers({
               <Tooltip key={userId}>
                 <TooltipTrigger asChild>
                   <div className="relative inline-block transition-transform hover:z-10 hover:scale-110">
-                    <Avatar className="border-background relative h-8 w-8 border-2 shadow-sm">
+                    <Avatar className="relative h-8 w-8 border-2 border-background shadow-sm">
                       <AvatarImage
                         src={user.avatar_url ?? undefined}
                         className="object-cover"
@@ -106,7 +106,7 @@ export function OnlineUsers({
             );
           })}
         </div>
-        <div className="text-muted-foreground text-xs">
+        <div className="text-xs text-muted-foreground">
           {Object.keys(userInstances).length}{' '}
           {Object.keys(userInstances).length === 1
             ? 'user online'

@@ -218,7 +218,7 @@ export default function UserAvatar({ user }: AvatarProps) {
         <DialogTrigger asChild>
           <div className="flex items-center justify-center">
             <div className="relative flex w-fit flex-col items-center justify-center gap-4">
-              <Avatar className="border-foreground h-32 w-32 cursor-pointer overflow-visible border text-3xl font-semibold">
+              <Avatar className="h-32 w-32 cursor-pointer overflow-visible border border-foreground text-3xl font-semibold">
                 <AvatarImage
                   src={previewSrc || undefined}
                   alt="Avatar"

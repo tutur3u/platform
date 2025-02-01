@@ -60,7 +60,7 @@ export default async function WorkspaceStorageObjectsPage({
       <Separator className="my-4" />
 
       <div className="mb-4 grid gap-4 text-center md:grid-cols-2 xl:grid-cols-4">
-        <div className="border-border bg-foreground/5 rounded-lg border p-4">
+        <div className="rounded-lg border border-border bg-foreground/5 p-4">
           <h2 className="text-lg font-semibold">
             {t('ws-storage-objects.total_files')}
           </h2>
@@ -68,7 +68,7 @@ export default async function WorkspaceStorageObjectsPage({
           <div className="text-3xl font-bold">{count}</div>
         </div>
 
-        <div className="border-border bg-foreground/5 rounded-lg border p-4">
+        <div className="rounded-lg border border-border bg-foreground/5 p-4">
           <h2 className="text-lg font-semibold">
             {t('ws-storage-objects.total_size')}
           </h2>
@@ -76,7 +76,7 @@ export default async function WorkspaceStorageObjectsPage({
           <div className="text-3xl font-bold">{formatBytes(totalSize)}</div>
         </div>
 
-        <div className="border-border bg-foreground/5 rounded-lg border p-4">
+        <div className="rounded-lg border border-border bg-foreground/5 p-4">
           <h2 className="text-lg font-semibold">
             {t('ws-storage-objects.largest_file')}
           </h2>
@@ -86,7 +86,7 @@ export default async function WorkspaceStorageObjectsPage({
           </div>
         </div>
 
-        <div className="border-border bg-foreground/5 rounded-lg border p-4">
+        <div className="rounded-lg border border-border bg-foreground/5 p-4">
           <h2 className="text-lg font-semibold">
             {t('ws-storage-objects.smallest_file')}
           </h2>

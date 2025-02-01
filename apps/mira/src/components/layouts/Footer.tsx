@@ -15,14 +15,14 @@ export default function Footer() {
     <div className="w-full text-center">
       {pathname.startsWith('/contact') || (
         <>
-          <Separator className="bg-foreground/5 mb-8" />
+          <Separator className="mb-8 bg-foreground/5" />
           <div className="flex flex-col items-center">
             <Slogan />
           </div>
         </>
       )}
 
-      <Separator className="bg-foreground/5 my-8" />
+      <Separator className="my-8 bg-foreground/5" />
 
       <div className="flex flex-col items-center justify-between gap-4 px-4 md:gap-8 md:px-32 lg:flex-row lg:gap-16 xl:px-64">
         <div className="flex flex-col items-center justify-center gap-4">
@@ -44,7 +44,7 @@ export default function Footer() {
           <div className="flex gap-8">
             <Link
               href="https://www.facebook.com/tuturuuu"
-              className="fill-foreground/50 hover:fill-foreground transition duration-300"
+              className="fill-foreground/50 transition duration-300 hover:fill-foreground"
               aria-label="Facebook"
             >
               <svg
@@ -58,7 +58,7 @@ export default function Footer() {
 
             <Link
               href="https://x.com/tutur3u"
-              className="fill-foreground/50 hover:fill-foreground transition duration-300"
+              className="fill-foreground/50 transition duration-300 hover:fill-foreground"
               aria-label="X (formerly Twitter)"
             >
               <svg
@@ -79,7 +79,7 @@ export default function Footer() {
 
             <Link
               href="https://github.com/tutur3u"
-              className="fill-foreground/50 hover:fill-foreground transition duration-300"
+              className="fill-foreground/50 transition duration-300 hover:fill-foreground"
               aria-label="Github"
             >
               <svg
@@ -93,7 +93,7 @@ export default function Footer() {
 
             <Link
               href="https://www.linkedin.com/company/tuturuuu/"
-              className="fill-foreground/50 hover:fill-foreground transition duration-300"
+              className="fill-foreground/50 transition duration-300 hover:fill-foreground"
               aria-label="LinkedIn"
             >
               <svg
@@ -115,14 +115,14 @@ export default function Footer() {
             <Link
               href="/terms"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.terms')}
             </Link>
             <Link
               href="/privacy"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.privacy')}
             </Link>
@@ -134,20 +134,20 @@ export default function Footer() {
             </div>
             <Link
               href="/meet-together"
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.meet-together')}
             </Link>
             <Link
               href="/qr-generator"
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.qr_generator')}
             </Link>
             <Link
               href="/branding"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.branding')}
             </Link>
@@ -160,14 +160,14 @@ export default function Footer() {
             <Link
               href="https://docs.tuturuuu.com"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.documentation')}
             </Link>
             <Link
               href="https://github.com/tutur3u/platform"
               target="_blank"
-              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.open-source')}
             </Link>
@@ -175,7 +175,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <Separator className="bg-foreground/5 mt-8" />
+      <Separator className="mt-8 bg-foreground/5" />
       <div className="p-4 text-center text-sm text-balance opacity-80 md:px-32 xl:px-64">
         {t('common.copyright')}
       </div>

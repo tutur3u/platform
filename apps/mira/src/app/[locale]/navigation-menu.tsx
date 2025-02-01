@@ -303,7 +303,7 @@ const ListItem = React.forwardRef<
               </Badge>
             )}
           </div>
-          <p className="text-muted-foreground line-clamp-2 text-sm leading-snug opacity-80">
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground opacity-80">
             {children}
           </p>
         </a>

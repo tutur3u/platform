@@ -44,7 +44,7 @@ export async function UserNav({
             'flex w-full gap-2 rounded border p-2 text-start transition',
             hideMetadata
               ? 'items-center justify-center border-transparent'
-              : 'hover:bg-foreground/10 hover:border-foreground/10 border-foreground/10 bg-foreground/10 items-start justify-start md:border-transparent md:bg-transparent'
+              : 'items-start justify-start border-foreground/10 bg-foreground/10 hover:border-foreground/10 hover:bg-foreground/10 md:border-transparent md:bg-transparent'
           )}
         >
           <Avatar className="relative cursor-pointer overflow-visible font-semibold">
@@ -85,7 +85,7 @@ export async function UserNav({
             >
               {user?.display_name || user?.handle || t('common.unnamed')}
             </Link>
-            <p className="text-muted-foreground line-clamp-1 text-xs break-all">
+            <p className="line-clamp-1 text-xs break-all text-muted-foreground">
               {user?.email}
             </p>
           </div>

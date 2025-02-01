@@ -136,7 +136,7 @@ export function TransactionObjectRowActions({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-6 w-6 p-0"
+            className="flex h-6 w-6 p-0 data-[state=open]:bg-muted"
             size="xs"
           >
             <Ellipsis className="h-4 w-4" />

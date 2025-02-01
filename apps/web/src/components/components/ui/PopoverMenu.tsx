@@ -87,13 +87,13 @@ export const Item = ({
   isActive?: boolean;
 }) => {
   const className = cn(
-    'flex items-center gap-2 p-1.5 text-sm font-medium text-neutral-500 text-left bg-transparent w-full rounded',
+    'flex w-full items-center gap-2 rounded bg-transparent p-1.5 text-left text-sm font-medium text-neutral-500',
     !isActive && !disabled,
     'hover:bg-neutral-100 hover:text-neutral-800 dark:hover:bg-neutral-900 dark:hover:text-neutral-200',
     isActive &&
       !disabled &&
       'bg-neutral-100 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200',
-    disabled && 'text-neutral-400 cursor-not-allowed dark:text-neutral-600'
+    disabled && 'cursor-not-allowed text-neutral-400 dark:text-neutral-600'
   );
 
   const IconComponent = icon ? icons[icon] : null;

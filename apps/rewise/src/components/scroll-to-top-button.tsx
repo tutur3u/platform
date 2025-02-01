@@ -22,7 +22,7 @@ export function ScrollToTopButton({ className, ...props }: ButtonProps) {
   return (
     <Button
       className={cn(
-        'bg-background/20 flex-none backdrop-blur-lg transition-opacity duration-300',
+        'flex-none bg-background/20 backdrop-blur-lg transition-opacity duration-300',
         className
       )}
       onClick={() => {

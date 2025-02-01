@@ -162,7 +162,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
       <span className="flex items-center gap-2">
         {item.label}
         {item.badge && (
-          <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
             {item.badge}
           </span>
         )}
@@ -202,7 +202,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="hover:bg-accent active:bg-accent/80 rounded-lg p-2 transition-all">
+      <SheetTrigger className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
 
@@ -232,7 +232,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                       key={item.href}
                       item={item}
                       onClick={closeMenu}
-                      className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                      className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
                     />
                   ))}
                 </div>
@@ -241,7 +241,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
               <Accordion type="multiple" className="space-y-3">
                 {/* Products Section */}
                 <AccordionItem value="products" className="border-none px-4">
-                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="text-sm font-semibold">Products</span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
@@ -251,7 +251,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
                         />
                       ))}
                     </div>
@@ -260,7 +260,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
                 {/* Solutions Section */}
                 <AccordionItem value="solutions" className="border-none px-4">
-                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="text-sm font-semibold">Solutions</span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
@@ -270,7 +270,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
                         />
                       ))}
                     </div>
@@ -279,7 +279,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
                 {/* Resources Section */}
                 <AccordionItem value="resources" className="border-none px-4">
-                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="text-sm font-semibold">Resources</span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
@@ -289,7 +289,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
                         />
                       ))}
                     </div>
@@ -298,7 +298,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
                 {/* Company Section */}
                 <AccordionItem value="company" className="border-none px-4">
-                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
+                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="text-sm font-semibold">Company</span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
@@ -308,7 +308,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
+                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
                         />
                       ))}
                     </div>

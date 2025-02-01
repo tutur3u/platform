@@ -72,7 +72,7 @@ export default function MarketingPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="from-background via-background to-dynamic-light-pink/10 relative min-h-[calc(100vh-3.5rem)] w-full bg-gradient-to-b"
+        className="relative min-h-[calc(100vh-3.5rem)] w-full bg-gradient-to-b from-background via-background to-dynamic-light-pink/10"
       >
         {/* Animated Background Patterns */}
         <div className="absolute inset-0 overflow-hidden">
@@ -122,10 +122,10 @@ export default function MarketingPage() {
             transition={{ delay: 0.2 }}
             className="relative text-center"
           >
-            <h1 className="text-foreground mx-auto mb-2 text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
+            <h1 className="mx-auto mb-2 text-center text-2xl font-bold tracking-tight text-foreground md:text-4xl lg:text-6xl">
               <GradientHeadline title={t('home.headline')} />
             </h1>
-            <h2 className="text-foreground mb-8 max-w-3xl text-lg font-bold tracking-tight text-balance md:text-2xl lg:text-3xl">
+            <h2 className="mb-8 max-w-3xl text-lg font-bold tracking-tight text-balance text-foreground md:text-2xl lg:text-3xl">
               {t('home.subheadline')}
             </h2>
 
@@ -141,7 +141,7 @@ export default function MarketingPage() {
           transition={{ repeat: Infinity, duration: 2 }}
           className="absolute inset-x-0 bottom-24 flex w-full flex-col items-center"
         >
-          <div className="text-muted-foreground flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <span className="text-sm">{t('common.scroll_to_explore')}</span>
             <motion.div
               animate={{ scale: [1, 1.2, 1] }}
@@ -166,14 +166,14 @@ export default function MarketingPage() {
           <h2 className="mb-12 text-center text-4xl font-bold">
             {t('common.features')}
             <span className="ml-2 inline-block">
-              <Zap className="text-primary h-8 w-8" />
+              <Zap className="h-8 w-8 text-primary" />
             </span>
           </h2>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {/* Large feature card */}
             <Card className="row-span-2 md:col-span-2 lg:col-span-2">
-              <div className="bg-primary/5 flex h-full flex-col p-8">
+              <div className="flex h-full flex-col bg-primary/5 p-8">
                 {features?.[0]?.icon}
                 <h3 className="mb-4 text-2xl font-bold">
                   {features?.[0]?.title}
@@ -184,7 +184,7 @@ export default function MarketingPage() {
                 {features?.[0]?.url && (
                   <Link
                     href={features[0].url}
-                    className="text-primary mt-auto inline-flex items-center gap-2 pt-4 hover:underline"
+                    className="mt-auto inline-flex items-center gap-2 pt-4 text-primary hover:underline"
                   >
                     {t('common.learn_more')}
                     <Rocket className="h-4 w-4" />
@@ -200,22 +200,22 @@ export default function MarketingPage() {
                 className="group relative overflow-hidden transition-all hover:-translate-y-1 hover:shadow-xl"
               >
                 <div className="flex h-full flex-col p-6">
-                  <div className="text-primary mb-4">{feature.icon}</div>
+                  <div className="mb-4 text-primary">{feature.icon}</div>
                   <h3 className="mb-2 text-xl font-bold">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     {feature.subtitle}
                   </p>
                   {feature.url && (
                     <Link
                       href={feature.url}
-                      className="text-primary mt-auto inline-flex items-center gap-2 pt-4 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="mt-auto inline-flex items-center gap-2 pt-4 text-primary opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       {t('common.learn_more')}
                       <Rocket className="h-4 w-4" />
                     </Link>
                   )}
                 </div>
-                <div className="from-primary/50 to-primary absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r from-primary/50 to-primary opacity-0 transition-opacity group-hover:opacity-100" />
               </Card>
             ))}
           </div>
@@ -228,7 +228,7 @@ export default function MarketingPage() {
         whileInView="show"
         viewport={{ once: true }}
         variants={containerVariants}
-        className="bg-primary/5 w-full py-24"
+        className="w-full bg-primary/5 py-24"
       >
         <div className="mx-auto max-w-6xl px-4">
           <motion.h2
@@ -237,7 +237,7 @@ export default function MarketingPage() {
           >
             {t('common.products')}
             <span className="animate-spin-slow ml-2 inline-block">
-              <Container className="text-primary h-8 w-8" />
+              <Container className="h-8 w-8 text-primary" />
             </span>
           </motion.h2>
 
@@ -320,13 +320,13 @@ export default function MarketingPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  'text-primary group inline-block h-full',
+                  'group inline-block h-full text-primary',
                   product.className
                 )}
               >
                 <Link href={product.href}>
                   <Card className="h-full p-6">
-                    <product.icon className="text-primary mb-4 h-8 w-8" />
+                    <product.icon className="mb-4 h-8 w-8 text-primary" />
                     <div className="flex items-center justify-between">
                       <h3 className="mb-4 text-xl font-bold">
                         {product.title}

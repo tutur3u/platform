@@ -101,7 +101,7 @@ export default function GroupSchedule({
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
-                <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
+                <div className="mx-2 h-4 w-[1px] rotate-[30deg] bg-foreground/20" />
                 <span className="text-lg font-semibold md:text-xl">
                   {thisMonth}
                 </span>
@@ -122,7 +122,7 @@ export default function GroupSchedule({
                 {days.map((day, idx) => (
                   <div
                     key={`day-${idx}`}
-                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded p-2 font-semibold transition duration-300 md:rounded-lg"
+                    className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
                   >
                     {day}
                   </div>
@@ -141,7 +141,7 @@ export default function GroupSchedule({
                     return (
                       <div
                         key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
-                        className="text-foreground/20 flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold transition duration-300 md:rounded-lg"
+                        className="flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold text-foreground/20 transition duration-300 md:rounded-lg"
                       >
                         {day.getDate()}
                       </div>
@@ -150,7 +150,7 @@ export default function GroupSchedule({
                   return (
                     <div
                       key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
-                      className={`border-foreground/10 bg-foreground/10 text-foreground flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg`}
+                      className={`flex flex-none cursor-default justify-center rounded border border-foreground/10 bg-foreground/10 p-2 font-semibold text-foreground transition duration-300 md:rounded-lg`}
                     >
                       {day.getDate()}
                     </div>

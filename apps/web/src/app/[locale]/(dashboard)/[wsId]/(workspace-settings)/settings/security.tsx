@@ -33,9 +33,9 @@ export default function Security({ workspace }: Props) {
   };
 
   return (
-    <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+    <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
       <div className="mb-1 text-2xl font-bold">{t('security')}</div>
-      <div className="text-foreground/80 mb-4 font-semibold">
+      <div className="mb-4 font-semibold text-foreground/80">
         {t('security_description')}
       </div>
 

@@ -283,8 +283,8 @@ export default function DocumentDetailsPage({ params }: Props) {
   if (!document) return null;
 
   return (
-    <div className="bg-background relative flex h-screen flex-col">
-      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
+    <div className="relative flex h-screen flex-col bg-background">
+      <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-4">
             <Button
@@ -310,9 +310,9 @@ export default function DocumentDetailsPage({ params }: Props) {
                   <div
                     className={cn(
                       'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                      'hover:bg-muted/50 cursor-default select-none',
+                      'cursor-default select-none hover:bg-muted/50',
                       syncStatus.type === 'saving' &&
-                        'text-muted-foreground bg-muted/30',
+                        'bg-muted/30 text-muted-foreground',
                       syncStatus.type === 'saved' && 'text-emerald-500',
                       syncStatus.type === 'error' &&
                         'text-destructive hover:bg-destructive/10'
@@ -368,14 +368,14 @@ export default function DocumentDetailsPage({ params }: Props) {
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground gap-1.5"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
               onClick={() => setIsShareDialogOpen(true)}
             >
               <Share2 className="h-4 w-4" />
               {t('common.share')}
             </Button>
 
-            <div className="bg-border mx-2 h-5 w-px" />
+            <div className="mx-2 h-5 w-px bg-border" />
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -391,7 +391,7 @@ export default function DocumentDetailsPage({ params }: Props) {
                   {document.is_public ? (
                     <Globe2 className="h-4 w-4 text-emerald-500" />
                   ) : (
-                    <Lock className="text-muted-foreground h-4 w-4" />
+                    <Lock className="h-4 w-4 text-muted-foreground" />
                   )}
                 </Button>
               </TooltipTrigger>

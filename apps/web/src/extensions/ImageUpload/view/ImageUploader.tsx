@@ -36,7 +36,7 @@ export const ImageUploader = ({
   }
 
   const wrapperClass = cn(
-    'flex flex-col items-center justify-center px-8 py-10 rounded-lg',
+    'flex flex-col items-center justify-center rounded-lg px-8 py-10',
     draggedInside && 'bg-neutral-100'
   );
 

@@ -2,7 +2,7 @@ const TimeTrail = () => {
   const hours = Array.from(Array(24).keys());
 
   return (
-    <div className="border-border grid h-fit w-14 grid-rows-[24] border-r md:w-20 dark:border-zinc-800">
+    <div className="grid h-fit w-14 grid-rows-[24] border-r border-border md:w-20 dark:border-zinc-800">
       {hours.map((hour, index) => (
         <div
           key={`trail-hour-${index}`}

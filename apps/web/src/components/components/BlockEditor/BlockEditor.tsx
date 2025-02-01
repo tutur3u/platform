@@ -197,7 +197,7 @@ export const BlockEditor = forwardRef<
     if (!editor) {
       return (
         <div className="flex h-fit items-center justify-center">
-          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       );
     }
@@ -227,20 +227,20 @@ export const BlockEditor = forwardRef<
               <EditorContent
                 editor={editor}
                 className={cn(
-                  'prose prose-neutral dark:prose-invert max-w-none',
+                  'prose max-w-none prose-neutral dark:prose-invert',
                   'prose-headings:font-medium prose-headings:tracking-tight',
-                  'prose-h1:text-4xl prose-h1:font-bold prose-h1:leading-tight',
+                  'prose-h1:text-4xl prose-h1:leading-tight prose-h1:font-bold',
                   'prose-h2:text-3xl prose-h2:font-semibold',
                   'prose-h3:text-2xl prose-h3:font-medium',
-                  'prose-p:leading-7 prose-p:my-4 prose-p:text-base',
-                  'prose-pre:bg-muted/50 prose-pre:p-4 prose-pre:rounded-lg',
-                  'prose-code:bg-muted/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none',
-                  'prose-a:text-primary hover:prose-a:text-primary/80 prose-a:no-underline hover:prose-a:underline',
+                  'prose-p:my-4 prose-p:text-base prose-p:leading-7',
+                  'prose-pre:rounded-lg prose-pre:bg-muted/50 prose-pre:p-4',
+                  'prose-code:rounded-md prose-code:bg-muted/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:before:content-none prose-code:after:content-none',
+                  'prose-a:text-primary prose-a:no-underline hover:prose-a:text-primary/80 hover:prose-a:underline',
                   'prose-blockquote:border-l-primary/50 prose-blockquote:bg-muted/20 prose-blockquote:py-0.5 prose-blockquote:text-muted-foreground prose-blockquote:italic',
-                  'prose-img:rounded-lg prose-img:shadow-lg prose-img:border prose-img:border-border/50',
+                  'prose-img:rounded-lg prose-img:border prose-img:border-border/50 prose-img:shadow-lg',
                   'prose-table:border prose-table:border-border',
-                  'prose-th:bg-muted/50 prose-th:p-2 prose-th:border prose-th:border-border',
-                  'prose-td:p-2 prose-td:border prose-td:border-border',
+                  'prose-th:border prose-th:border-border prose-th:bg-muted/50 prose-th:p-2',
+                  'prose-td:border prose-td:border-border prose-td:p-2',
                   'prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6',
                   'prose-ol:my-6 prose-ol:list-decimal prose-ol:pl-6',
                   'prose-li:my-2',

@@ -97,7 +97,7 @@ export default function TasksProductPage() {
           Coming Soon
         </Badge>
         <h1 className="mb-4 text-4xl font-bold">Smart Task Management</h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Transform your productivity with intelligent task management.
           Organize, prioritize, and complete tasks efficiently with AI-powered
           assistance and team collaboration features.
@@ -116,7 +116,7 @@ export default function TasksProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="text-primary h-12 w-12" />
+            <ShieldCheck className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your tasks and project data are protected with advanced security
@@ -151,12 +151,12 @@ export default function TasksProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <CircleCheck className="text-primary mb-4 h-8 w-8" />
+              <CircleCheck className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="text-muted-foreground space-y-2">
+              <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     {item}
                   </li>
                 ))}
@@ -170,8 +170,8 @@ export default function TasksProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-r md:border-b-0">
-              <Tag className="text-primary h-8 w-8" />
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+              <Tag className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Smart Organization</h3>
               <p className="text-muted-foreground">
                 Organize tasks with custom tags, labels, and categories for
@@ -179,7 +179,7 @@ export default function TasksProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <Bell className="text-primary h-8 w-8" />
+              <Bell className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Intelligent Reminders</h3>
               <p className="text-muted-foreground">
                 Never miss a deadline with smart notifications and
@@ -197,7 +197,7 @@ export default function TasksProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <LayoutDashboard className="text-primary mb-4 h-8 w-8" />
+            <LayoutDashboard className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Custom Dashboards</h3>
             <p className="text-muted-foreground">
               Create personalized dashboards to track tasks, deadlines, and team
@@ -205,7 +205,7 @@ export default function TasksProductPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <Clock className="text-primary mb-4 h-8 w-8" />
+            <Clock className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Time Tracking</h3>
             <p className="text-muted-foreground">
               Track time spent on tasks and analyze productivity patterns with

@@ -99,7 +99,7 @@ export default function CRMProductPage() {
         <h1 className="mb-4 text-4xl font-bold">
           Customer Relationship Management
         </h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Build stronger customer relationships and drive business growth with
           our intelligent CRM platform. Streamline sales, track interactions,
           and make data-driven decisions.
@@ -118,7 +118,7 @@ export default function CRMProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="text-primary h-12 w-12" />
+            <ShieldCheck className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your customer data is protected with industry-leading security
@@ -153,12 +153,12 @@ export default function CRMProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <Building className="text-primary mb-4 h-8 w-8" />
+              <Building className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="text-muted-foreground space-y-2">
+              <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     {item}
                   </li>
                 ))}
@@ -172,8 +172,8 @@ export default function CRMProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-r md:border-b-0">
-              <LayoutDashboard className="text-primary h-8 w-8" />
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+              <LayoutDashboard className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Insightful Dashboard</h3>
               <p className="text-muted-foreground">
                 Get a comprehensive view of your customer relationships with
@@ -181,7 +181,7 @@ export default function CRMProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <PieChart className="text-primary h-8 w-8" />
+              <PieChart className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Performance Metrics</h3>
               <p className="text-muted-foreground">
                 Track key performance indicators and make data-driven decisions
@@ -199,7 +199,7 @@ export default function CRMProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <FileText className="text-primary mb-4 h-8 w-8" />
+            <FileText className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Smart Documents</h3>
             <p className="text-muted-foreground">
               Generate and manage customer-related documents with intelligent
@@ -207,7 +207,7 @@ export default function CRMProductPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <HeartHandshake className="text-primary mb-4 h-8 w-8" />
+            <HeartHandshake className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Customer Success</h3>
             <p className="text-muted-foreground">
               Build lasting relationships with tools designed to track and

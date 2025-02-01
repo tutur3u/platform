@@ -96,7 +96,7 @@ export default function InventoryProductPage() {
           Coming Soon
         </Badge>
         <h1 className="mb-4 text-4xl font-bold">Smart Inventory Management</h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Transform your inventory operations with our intelligent management
           system. Track stock, automate orders, and optimize your supply chain
           with powerful analytics.
@@ -115,7 +115,7 @@ export default function InventoryProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="text-primary h-12 w-12" />
+            <ShieldCheck className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your inventory data is protected with advanced security measures,
@@ -150,12 +150,12 @@ export default function InventoryProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <Building2 className="text-primary mb-4 h-8 w-8" />
+              <Building2 className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="text-muted-foreground space-y-2">
+              <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     {item}
                   </li>
                 ))}
@@ -169,8 +169,8 @@ export default function InventoryProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-r md:border-b-0">
-              <Truck className="text-primary h-8 w-8" />
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+              <Truck className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Supply Chain Visibility</h3>
               <p className="text-muted-foreground">
                 Get complete visibility into your supply chain with real-time
@@ -178,7 +178,7 @@ export default function InventoryProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <PackageSearch className="text-primary h-8 w-8" />
+              <PackageSearch className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Inventory Insights</h3>
               <p className="text-muted-foreground">
                 Make informed decisions with detailed analytics on stock levels,
@@ -196,7 +196,7 @@ export default function InventoryProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <Settings className="text-primary mb-4 h-8 w-8" />
+            <Settings className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Process Automation</h3>
             <p className="text-muted-foreground">
               Automate routine tasks like reordering, stock counts, and report
@@ -204,7 +204,7 @@ export default function InventoryProductPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <History className="text-primary mb-4 h-8 w-8" />
+            <History className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Audit Trail</h3>
             <p className="text-muted-foreground">
               Maintain detailed records of all inventory movements and changes

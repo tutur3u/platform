@@ -59,7 +59,7 @@ export function FleetingAssistantMessage({
         >
           <div
             className={cn(
-              'bg-foreground/10 text-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-md border shadow'
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-foreground/10 text-foreground shadow'
             )}
           >
             {message.role === 'user' ? (
@@ -106,31 +106,31 @@ export function FleetingAssistantMessage({
 
       <div className="flex-1 space-y-2">
         <MemoizedReactMarkdown
-          className="text-foreground prose prose-p:before:hidden prose-p:after:hidden prose-li:marker:text-foreground/80 prose-code:before:hidden prose-code:after:hidden prose-th:border-foreground/20 prose-th:border prose-th:text-center prose-th:text-lg prose-th:p-2 prose-td:p-2 prose-th:border-b-4 prose-td:border prose-tr:border-border dark:prose-invert prose-p:leading-relaxed prose-pre:p-2 w-[calc(100%-2rem)] break-words md:w-[30.8rem]"
+          className="prose w-[calc(100%-2rem)] break-words text-foreground md:w-[30.8rem] dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2"
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
             h1({ children }) {
-              return <h1 className="text-foreground mt-6 mb-2">{children}</h1>;
+              return <h1 className="mt-6 mb-2 text-foreground">{children}</h1>;
             },
             h2({ children }) {
-              return <h2 className="text-foreground mt-6 mb-2">{children}</h2>;
+              return <h2 className="mt-6 mb-2 text-foreground">{children}</h2>;
             },
             h3({ children }) {
-              return <h3 className="text-foreground mt-6 mb-2">{children}</h3>;
+              return <h3 className="mt-6 mb-2 text-foreground">{children}</h3>;
             },
             h4({ children }) {
-              return <h4 className="text-foreground mt-6 mb-2">{children}</h4>;
+              return <h4 className="mt-6 mb-2 text-foreground">{children}</h4>;
             },
             h5({ children }) {
-              return <h5 className="text-foreground mt-6 mb-2">{children}</h5>;
+              return <h5 className="mt-6 mb-2 text-foreground">{children}</h5>;
             },
             h6({ children }) {
-              return <h6 className="text-foreground mt-6 mb-2">{children}</h6>;
+              return <h6 className="mt-6 mb-2 text-foreground">{children}</h6>;
             },
             strong({ children }) {
               return (
-                <strong className="text-foreground font-semibold">
+                <strong className="font-semibold text-foreground">
                   {children}
                 </strong>
               );
@@ -161,7 +161,7 @@ export function FleetingAssistantMessage({
                 if (setInput)
                   return (
                     <button
-                      className="text-foreground bg-foreground/5 hover:bg-foreground/10 mb-2 rounded-full border text-left font-semibold transition last:mb-0"
+                      className="mb-2 rounded-full border bg-foreground/5 text-left font-semibold text-foreground transition last:mb-0 hover:bg-foreground/10"
                       onClick={() => setInput(content || '')}
                     >
                       <span className="line-clamp-1 px-3 py-1">
@@ -171,7 +171,7 @@ export function FleetingAssistantMessage({
                   );
 
                 return (
-                  <span className="text-foreground bg-foreground/5 mb-2 inline-block rounded-full border text-left transition last:mb-0">
+                  <span className="mb-2 inline-block rounded-full border bg-foreground/5 text-left text-foreground transition last:mb-0">
                     <span className="line-clamp-1 px-3 py-1">
                       {content || '...'}
                     </span>
@@ -180,12 +180,12 @@ export function FleetingAssistantMessage({
               }
 
               return (
-                <p className="text-foreground mb-2 last:mb-0">{children}</p>
+                <p className="mb-2 text-foreground last:mb-0">{children}</p>
               );
             },
             blockquote({ children }) {
               return (
-                <blockquote className="border-foreground/30 text-foreground/80 border-l-4 pl-2">
+                <blockquote className="border-l-4 border-foreground/30 pl-2 text-foreground/80">
                   {children}
                 </blockquote>
               );
@@ -219,7 +219,7 @@ export function FleetingAssistantMessage({
                 />
               ) : (
                 <code
-                  className={cn('text-foreground font-semibold', className)}
+                  className={cn('font-semibold text-foreground', className)}
                   {...props}
                 >
                   {children}
@@ -231,7 +231,7 @@ export function FleetingAssistantMessage({
             },
             pre({ children }) {
               return (
-                <pre className="bg-foreground/5 rounded-lg border">
+                <pre className="rounded-lg border bg-foreground/5">
                   {children}
                 </pre>
               );

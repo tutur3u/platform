@@ -229,7 +229,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
               {paginatedData.map((row, index) => (
                 <div
                   key={index}
-                  className="bg-foreground/5 border-foreground/5 rounded border p-2"
+                  className="rounded border border-foreground/5 bg-foreground/5 p-2"
                 >
                   <div className="line-clamp-1 font-semibold">
                     {row.fullName}

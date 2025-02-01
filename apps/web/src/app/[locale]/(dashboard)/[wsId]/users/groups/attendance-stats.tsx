@@ -75,7 +75,7 @@ const GroupAttendanceStats = ({
 
   if (isLoading) {
     return (
-      <div className="border-foreground/10 bg-foreground/10 text-foreground flex items-center justify-center rounded border p-2 text-center font-semibold">
+      <div className="flex items-center justify-center rounded border border-foreground/10 bg-foreground/10 p-2 text-center font-semibold text-foreground">
         {t('common.loading')}
       </div>
     );
@@ -83,7 +83,7 @@ const GroupAttendanceStats = ({
 
   if (isError) {
     return (
-      <div className="border-dynamic-red/10 bg-dynamic-red/10 text-dynamic-red flex items-center justify-center rounded border p-2 text-center font-semibold">
+      <div className="flex items-center justify-center rounded border border-dynamic-red/10 bg-dynamic-red/10 p-2 text-center font-semibold text-dynamic-red">
         {t('common.error')}
       </div>
     );

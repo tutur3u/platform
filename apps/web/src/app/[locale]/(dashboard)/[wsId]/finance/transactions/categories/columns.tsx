@@ -78,11 +78,11 @@ export const transactionCategoryColumns = (
     cell: ({ row }) => (
       <div>
         {row.getValue('is_expense') ? (
-          <div className="bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20 w-fit rounded border px-1 font-semibold">
+          <div className="w-fit rounded border border-dynamic-red/20 bg-dynamic-red/10 px-1 font-semibold text-dynamic-red">
             {t(`${namespace}.expense`)}
           </div>
         ) : (
-          <div className="bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20 w-fit rounded border px-1 font-semibold">
+          <div className="w-fit rounded border border-dynamic-green/20 bg-dynamic-green/10 px-1 font-semibold text-dynamic-green">
             {t(`${namespace}.income`)}
           </div>
         )}

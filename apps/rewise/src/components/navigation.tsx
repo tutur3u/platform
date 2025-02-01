@@ -125,10 +125,10 @@ export function Navigation({
             }
             className={`text-sm md:text-base ${
               isActive
-                ? 'text-foreground border-border bg-foreground/[0.025] dark:bg-foreground/5'
+                ? 'border-border bg-foreground/[0.025] text-foreground dark:bg-foreground/5'
                 : urlToLoad === link.href
-                  ? 'text-foreground/70 dark:text-foreground/40 bg-foreground/5 animate-pulse'
-                  : 'text-foreground/70 dark:text-foreground/40 md:hover:text-foreground md:hover:bg-foreground/5 border-transparent'
+                  ? 'animate-pulse bg-foreground/5 text-foreground/70 dark:text-foreground/40'
+                  : 'border-transparent text-foreground/70 md:hover:bg-foreground/5 md:hover:text-foreground dark:text-foreground/40'
             } ${
               enableUnderline && notPublic
                 ? 'underline decoration-dashed underline-offset-4'

@@ -31,11 +31,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const buttonClassName = cn(
-      'flex group items-center justify-center border border-transparent gap-2 text-sm font-semibold rounded-md disabled:opacity-50 whitespace-nowrap',
+      'group flex items-center justify-center gap-2 rounded-md border border-transparent text-sm font-semibold whitespace-nowrap disabled:opacity-50',
 
       variant === 'primary' &&
         cn(
-          'text-white bg-black border-black dark:text-black dark:bg-white dark:border-white',
+          'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
           !disabled &&
             !active &&
             'hover:bg-neutral-800 active:bg-neutral-900 dark:hover:bg-neutral-200 dark:active:bg-neutral-300',
@@ -53,7 +53,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
       variant === 'tertiary' &&
         cn(
-          'bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-white dark:border-neutral-900',
+          'bg-neutral-50 text-neutral-900 dark:border-neutral-900 dark:bg-neutral-900 dark:text-white',
           !disabled &&
             !active &&
             'hover:bg-neutral-100 active:bg-neutral-200 dark:hover:bg-neutral-800 dark:active:bg-neutral-700',
@@ -62,7 +62,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
       variant === 'ghost' &&
         cn(
-          'bg-transparent border-transparent text-neutral-500 dark:text-neutral-400',
+          'border-transparent bg-transparent text-neutral-500 dark:text-neutral-400',
           !disabled &&
             !active &&
             'hover:bg-black/5 hover:text-neutral-700 active:bg-black/10 active:text-neutral-800 dark:hover:bg-white/10 dark:hover:text-neutral-300 dark:active:text-neutral-200',
@@ -73,10 +73,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             )
         ),
 
-      buttonSize === 'medium' && 'py-2 px-3',
-      buttonSize === 'small' && 'py-1 px-2',
-      buttonSize === 'icon' && 'w-8 h-8',
-      buttonSize === 'iconSmall' && 'w-6 h-6',
+      buttonSize === 'medium' && 'px-3 py-2',
+      buttonSize === 'small' && 'px-2 py-1',
+      buttonSize === 'icon' && 'h-8 w-8',
+      buttonSize === 'iconSmall' && 'h-6 w-6',
 
       className
     );

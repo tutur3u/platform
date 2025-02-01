@@ -77,7 +77,7 @@ export default function ClientFlashcards({
           key={card?.id || idx}
           className={cn(
             previewMode ||
-              'bg-foreground/5 border-foreground/5 rounded-lg border p-2 md:p-4'
+              'rounded-lg border border-foreground/5 bg-foreground/5 p-2 md:p-4'
           )}
         >
           {editingCardId === card?.id ? (

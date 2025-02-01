@@ -60,7 +60,7 @@ export default async function WorkspaceReportsSettingsPage({
         return (
           <span
             key={key + index}
-            className="text-background bg-foreground rounded px-1 py-0.5 font-semibold"
+            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
           >
             {key}
           </span>
@@ -74,7 +74,7 @@ export default async function WorkspaceReportsSettingsPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">{t('ws-reports.reports')}</h1>
           <p className="text-foreground/80">{t('ws-reports.description')}</p>

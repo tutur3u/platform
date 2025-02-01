@@ -32,7 +32,7 @@ function MarketingPage() {
   }));
 
   return (
-    <div className="from-deep-blue via-midnight-blue to-dark-purple relative flex h-full w-full flex-col items-center bg-gradient-to-b">
+    <div className="relative flex h-full w-full flex-col items-center bg-gradient-to-b from-deep-blue via-midnight-blue to-dark-purple">
       {/* Raining Effect */}
       <div className="absolute inset-0 h-screen overflow-hidden">
         {rainingElements.map((element) => (
@@ -107,14 +107,14 @@ function MarketingPage() {
           </motion.div>
         </div>
       </motion.div> */}
-      <Separator className="bg-foreground/5 mb-8" />
+      <Separator className="mb-8 bg-foreground/5" />
       <motion.section
         id="features"
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
         variants={containerVariants}
-        className="from-midnight-blue via-midnight-blue to-dark-purple w-full bg-gradient-to-b py-24 pt-16"
+        className="w-full bg-gradient-to-b from-midnight-blue via-midnight-blue to-dark-purple py-24 pt-16"
       >
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="mb-12 text-center text-4xl font-bold text-white">

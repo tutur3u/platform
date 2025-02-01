@@ -35,7 +35,7 @@ export default async function QuizSetDetailsLayout({
         title={
           <>
             <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="bg-dynamic-purple/10 border-dynamic-purple/20 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
+              <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-lg text-dynamic-purple max-md:hidden">
                 <Box className="h-6 w-6" />
                 {t('ws-quiz-sets.singular')}
               </div>

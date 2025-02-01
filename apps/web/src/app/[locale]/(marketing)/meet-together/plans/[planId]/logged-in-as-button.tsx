@@ -16,7 +16,7 @@ export default function LoggedInAsButton({
   const user = guestUser ?? platformUser;
 
   return (
-    <div className="bg-foreground/5 border-foreground/20 w-full rounded border p-2 text-center md:w-fit md:min-w-64">
+    <div className="w-full rounded border border-foreground/20 bg-foreground/5 p-2 text-center md:w-fit md:min-w-64">
       <div className="text-sm opacity-80">
         {user?.id
           ? t('meet-together-plan-details.interacting_as')
@@ -41,7 +41,7 @@ export default function LoggedInAsButton({
           }
         />
       ) : null}
-      <Separator className="bg-foreground/20 my-2" />
+      <Separator className="my-2 bg-foreground/20" />
       <Button
         className="w-full"
         onClick={() => {
