@@ -313,7 +313,7 @@ export class HtmlCrawler {
 
   private generatePaginationUrls(baseUrl: string, maxPage: number): string[] {
     const urls: string[] = [];
-    const baseDir = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+    const baseDir = new URL('.', baseUrl).toString(); // Fix base directory URL
 
     for (let i = 1; i <= maxPage; i++) {
       const pageUrl =
@@ -430,10 +430,10 @@ export class HtmlCrawler {
             // Other main page selectors
             newsItems.forEach((item) => {
               const elements = parsed.isMultiple
-                ? item.querySelectorAll(parsed.selector)
-                : [item.querySelector(parsed.selector)];
+                ? item?.querySelectorAll(parsed.selector)
+                : [item?.querySelector(parsed.selector)];
 
-              elements.forEach((el) => {
+              elements?.forEach((el) => {
                 if (!el) return;
                 const content = this.extractContent(el, parsed);
                 if (content) previewData.sampleData?.push(content);
@@ -536,6 +536,8 @@ export class HtmlCrawler {
 
       // First pass: Count total articles across all pages
       let totalArticlesAcrossPages = 0;
+      let totalArticlesNeeded = maxArticles || Infinity;
+
       for (let pageIndex = 0; pageIndex < paginatedUrls.length; pageIndex++) {
         const pageUrl = paginatedUrls[pageIndex];
         const pageNumber = pageIndex + 1;
@@ -555,14 +557,13 @@ export class HtmlCrawler {
         if (!newsContainer) continue;
 
         const newsItems = Array.from(newsContainer.querySelectorAll('a.item'));
+        const pageArticleCount = Math.min(
+          newsItems.length,
+          totalArticlesNeeded - totalArticlesAcrossPages
+        );
+        totalArticlesAcrossPages += pageArticleCount;
 
-        // Apply article limit if specified
-        const articleLimit = maxArticles
-          ? Math.min(maxArticles - totalArticlesAcrossPages, newsItems.length)
-          : newsItems.length;
-        totalArticlesAcrossPages += articleLimit;
-
-        if (maxArticles && totalArticlesAcrossPages >= maxArticles) {
+        if (totalArticlesAcrossPages >= totalArticlesNeeded) {
           console.log(`Reached article limit of ${maxArticles}`);
           // Adjust paginated URLs to only include necessary pages
           paginatedUrls = paginatedUrls.slice(0, pageIndex + 1);
@@ -574,7 +575,7 @@ export class HtmlCrawler {
           pageNumber,
           progress: 20,
           status: 'processing',
-          articleCount: articleLimit,
+          articleCount: pageArticleCount,
           fetchedArticles: 0,
         });
       }
@@ -621,7 +622,7 @@ export class HtmlCrawler {
           fetchedArticles: 0,
         });
 
-        // Fetch articles one by one for better progress tracking
+        // Process each article in order
         for (let i = 0; i < pageArticleUrls.length; i++) {
           const articleUrl = pageArticleUrls[i];
           const rowData: Record<string, string> = {};
@@ -639,17 +640,18 @@ export class HtmlCrawler {
               if (parsed.attribute === 'href' && parsed.subSelector === 'a') {
                 rowData[parsed.columnName] = articleUrl;
               } else {
-                for (const item of newsItems) {
-                  const elements = parsed.isMultiple
-                    ? item?.querySelectorAll(parsed.selector)
-                    : [item?.querySelector(parsed.selector)];
+                const item = newsItems[i]; // Use the same index to maintain order
+                if (!item) continue;
 
-                  elements?.forEach((el) => {
-                    if (!el) return;
-                    const content = this.extractContent(el, parsed);
-                    if (content) rowData[parsed.columnName] = content;
-                  });
-                }
+                const elements = parsed.isMultiple
+                  ? item.querySelectorAll(parsed.selector)
+                  : [item.querySelector(parsed.selector)];
+
+                elements?.forEach((el) => {
+                  if (!el) return;
+                  const content = this.extractContent(el, parsed);
+                  if (content) rowData[parsed.columnName] = content;
+                });
               }
             }
           }
