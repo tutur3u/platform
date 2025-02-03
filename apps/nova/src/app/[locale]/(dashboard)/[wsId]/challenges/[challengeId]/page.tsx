@@ -1,7 +1,7 @@
-import { getChallenges } from '../challenges';
+// import { getChallenges } from '../challenges';
 import ProblemComponent from './problem-component';
+import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
-import { Card } from '@repo/ui/components/ui/card';
 import React from 'react';
 
 interface Props {
@@ -21,11 +21,7 @@ export default async function Page({ params }: Props) {
         <TestCaseComponent />
       </div>
 
-      {/* Right side: Chat Box / Editor */}
-      <Card className="h-[813px] w-1/2 overflow-y-auto p-4 pt-10">
-        <h2 className="text-lg font-semibold">Chat Box</h2>
-        <p>Interact with the problem here...</p>
-      </Card>
+      <PromptComponent></PromptComponent>
     </div>
   );
 }
