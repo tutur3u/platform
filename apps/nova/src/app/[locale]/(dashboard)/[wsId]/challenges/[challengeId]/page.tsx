@@ -1,27 +1,59 @@
-// import { getChallenges } from '../challenges';
+'use client';
+
+import { getChallenge } from '../challenges';
+import CustomizedHeader from './customizedHeader';
 import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
-import React from 'react';
+import React, { useState } from 'react';
 
 interface Props {
-  params: Promise<{
+  params: {
     challengeId: string;
-  }>;
+  };
 }
 
-export default async function Page({ params }: Props) {
-  const { challengeId } = await params;
+export default function Page({ params }: Props) {
+  const challenge = getChallenge(parseInt(params.challengeId));
+  const problems = challenge?.problems || [];
+
+  const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
+
+  // Handle "Next" and "Previous" navigation
+  const nextProblem = () => {
+    setCurrentProblemIndex((prev) =>
+      prev < problems.length - 1 ? prev + 1 : prev
+    );
+  };
+
+  const prevProblem = () => {
+    setCurrentProblemIndex((prev) => (prev > 0 ? prev - 1 : prev));
+  };
 
   return (
-    <div className="flex gap-4 p-6">
-      {/* Left side: Problem & Test Cases */}
-      <div className="flex w-1/2 flex-col">
-        <ProblemComponent />
-        <TestCaseComponent />
-      </div>
+    <>
+      {/* Header with navigation */}
+      <CustomizedHeader
+        proNum={problems.length}
+        currentProblem={currentProblemIndex + 1}
+        onNext={nextProblem}
+        onPrev={prevProblem}
+      />
 
-      <PromptComponent></PromptComponent>
-    </div>
+      <div className="flex gap-4 p-6">
+        {/* Left side: Problem & Test Cases */}
+        <div className="flex w-1/2 flex-col">
+          {problems.length > 0 ? (
+            <ProblemComponent problem={problems[currentProblemIndex]} />
+          ) : (
+            <p>No problems available.</p>
+          )}
+          <TestCaseComponent />
+        </div>
+
+        {/* Right Side */}
+        <PromptComponent />
+      </div>
+    </>
   );
 }

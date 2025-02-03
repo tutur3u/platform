@@ -7,8 +7,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 import { Suspense } from 'react';
-
-export default function CustomizedHeader() {
+interface Props {
+    proNum: number;
+    currentProblem: number;
+    onNext: () => void;
+    onPrev: () => void;
+  }
+export default function CustomizedHeader({ proNum, currentProblem, onNext, onPrev }: Props) {
   return (
     <nav
       id="navbar"
@@ -30,7 +35,7 @@ export default function CustomizedHeader() {
           </div>
 
           <div className="flex flex-1 items-center justify-center">
-            <ProblemChanger />
+            <ProblemChanger onPrev={onPrev} onNext={onNext} currentProblem={currentProblem} proNum={proNum} />
           </div>
 
           <div className="flex items-center gap-4">

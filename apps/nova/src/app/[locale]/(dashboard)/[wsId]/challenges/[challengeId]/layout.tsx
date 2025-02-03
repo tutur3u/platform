@@ -7,7 +7,7 @@ interface LayoutProps {
 }
 export default function layout({children} : LayoutProps) {
   return <>
-    <Header></Header>
+   
     <div className=''>
         {children}
     </div>
