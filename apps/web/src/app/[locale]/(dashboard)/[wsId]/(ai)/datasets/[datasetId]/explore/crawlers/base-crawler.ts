@@ -1,14 +1,10 @@
 import { API_URL } from '@/constants/common';
 
 export abstract class BaseCrawler {
-  protected useProductionProxy = false;
+  protected useProductionProxy = true;
   protected proxyApiKey = process.env.NEXT_PUBLIC_PROXY_API_KEY || '';
 
-  constructor({
-    useProductionProxy = false,
-  }: {
-    useProductionProxy?: boolean;
-  }) {
+  constructor({ useProductionProxy = true }: { useProductionProxy?: boolean }) {
     this.useProductionProxy = useProductionProxy;
     this.proxyApiKey = process.env.NEXT_PUBLIC_PROXY_API_KEY || '';
   }

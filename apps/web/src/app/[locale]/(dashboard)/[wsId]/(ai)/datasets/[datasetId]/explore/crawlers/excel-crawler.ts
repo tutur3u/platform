@@ -17,7 +17,7 @@ interface SheetInfo {
 
 export class ExcelCrawler extends BaseCrawler {
   constructor(
-    options: { useProductionProxy: boolean } = { useProductionProxy: false }
+    options: { useProductionProxy: boolean } = { useProductionProxy: true }
   ) {
     super({ useProductionProxy: options.useProductionProxy });
     this.useProductionProxy = options.useProductionProxy;
