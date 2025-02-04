@@ -1,9 +1,10 @@
+import { BaseCrawler } from './base-crawler';
 import Papa from 'papaparse';
 
 interface CsvCrawlerProps {
   url: string;
   headerRow?: number;
-  dataStartRow: number;
+  dataStartRow?: number;
   // eslint-disable-next-line no-unused-vars
   onProgress: (progress: number, status: string) => void;
 }
@@ -14,9 +15,16 @@ interface SheetInfo {
   columns: number;
 }
 
-export class CsvCrawler {
+export class CsvCrawler extends BaseCrawler {
+  constructor(
+    options: { useProductionProxy: boolean } = { useProductionProxy: false }
+  ) {
+    super({ useProductionProxy: options.useProductionProxy });
+    this.useProductionProxy = options.useProductionProxy;
+  }
+
   private async fetchCsvFile(url: string): Promise<string> {
-    const response = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+    const response = await this.fetchWithProxy(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch CSV file: ${response.statusText}`);
     }
@@ -192,7 +200,7 @@ export class CsvCrawler {
   async crawl({
     url,
     headerRow = 1,
-    dataStartRow,
+    dataStartRow = 2,
     onProgress,
   }: CsvCrawlerProps): Promise<{
     headers: string[];

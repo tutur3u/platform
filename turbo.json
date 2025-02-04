@@ -22,6 +22,8 @@
     "DEFAULT_AI_MODEL",
     "CF_ACCOUNT_ID",
     "CF_API_TOKEN",
+    "NEXT_PUBLIC_PROXY_API_KEY",
+    "PROXY_API_KEY",
     "BASE_URL",
     "API_URL",
     "ANALYZE",

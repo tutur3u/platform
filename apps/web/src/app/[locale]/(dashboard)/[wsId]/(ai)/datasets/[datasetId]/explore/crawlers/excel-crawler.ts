@@ -1,3 +1,4 @@
+import { BaseCrawler } from './base-crawler';
 import * as XLSX from 'xlsx';
 
 interface ExcelCrawlerProps {
@@ -14,9 +15,16 @@ interface SheetInfo {
   columns: number;
 }
 
-export class ExcelCrawler {
+export class ExcelCrawler extends BaseCrawler {
+  constructor(
+    options: { useProductionProxy: boolean } = { useProductionProxy: false }
+  ) {
+    super({ useProductionProxy: options.useProductionProxy });
+    this.useProductionProxy = options.useProductionProxy;
+  }
+
   private async fetchExcelFile(url: string): Promise<ArrayBuffer> {
-    const response = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+    const response = await this.fetchWithProxy(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch Excel file: ${response.statusText}`);
     }

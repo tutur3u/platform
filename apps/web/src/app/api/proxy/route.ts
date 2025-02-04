@@ -9,17 +9,40 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user)
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-
     const { searchParams } = new URL(request.url);
     const url = searchParams.get('url');
+    const apiKey =
+      searchParams.get('apiKey') || request.headers.get('x-proxy-api-key');
+
+    // First check API key if provided
+    if (process.env.PROXY_API_KEY) {
+      if (!apiKey) {
+        console.error('API key required');
+        return NextResponse.json(
+          { message: 'API key required' },
+          { status: 401 }
+        );
+      }
+      if (apiKey !== process.env.PROXY_API_KEY) {
+        console.error('Invalid API key');
+        return NextResponse.json(
+          { message: 'Invalid API key' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Then check Supabase auth if no API key provided
+    if (!apiKey) {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('Unauthorized');
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
+    }
 
     if (!url) {
       return new NextResponse('URL is required', { status: 400 });

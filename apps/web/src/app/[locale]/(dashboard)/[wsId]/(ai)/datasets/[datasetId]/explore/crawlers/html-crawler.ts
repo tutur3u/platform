@@ -1,5 +1,7 @@
 'use client';
 
+import { BaseCrawler } from './base-crawler';
+
 const activeFetchesRef: {
   current: Array<{ controller: AbortController; url: string }>;
 } = {
@@ -59,7 +61,14 @@ interface HtmlPreviewData {
   sampleData?: string[];
 }
 
-export class HtmlCrawler {
+export class HtmlCrawler extends BaseCrawler {
+  constructor(
+    options: { useProductionProxy: boolean } = { useProductionProxy: false }
+  ) {
+    super({ useProductionProxy: options.useProductionProxy });
+    this.useProductionProxy = options.useProductionProxy;
+  }
+
   private baseUrl: string = '';
   private currentCallback?: HtmlCrawlerProps;
   private urlCache: Map<string, Document> = new Map();
@@ -137,12 +146,9 @@ export class HtmlCrawler {
     return new Promise((resolve, reject) => {
       this.rateLimiter.queue.push(async () => {
         try {
-          // Wrap the fetch operation with retry logic and pass URL for better logging
           const response = await this.retryWithBackoff(
             async () => {
-              const res = await fetch(
-                `/api/proxy?url=${encodeURIComponent(url)}`
-              );
+              const res = await this.fetchWithProxy(url);
               if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);
               }
@@ -704,7 +710,6 @@ export class HtmlCrawler {
           fetchedArticles: pageArticleUrls.length,
         });
       }
-
       onProgress(100, `Successfully processed ${results.length} items`);
       return results;
     } catch (error) {
