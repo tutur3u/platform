@@ -146,7 +146,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
                         // if "GOOGLE_GEMINI_PRO" is in the data, set it as the default model
                         const defaultModel = data.find(
                           (model: { id: string }) =>
-                            model.id === 'gemini-2.0-flash-exp'
+                            model.id === 'gemini-2.0-flash-001'
                         );
 
                         if (defaultModel) field.onChange(defaultModel.id);
@@ -189,7 +189,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
       <AccordionItem value="output">
         <AccordionTrigger>Output</AccordionTrigger>
         <AccordionContent>
-          <div className="rounded-lg border bg-foreground/5 p-2">
+          <div className="bg-foreground/5 rounded-lg border p-2">
             {output || 'No output generated yet.'}
           </div>
         </AccordionContent>

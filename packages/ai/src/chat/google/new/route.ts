@@ -14,7 +14,7 @@ export const preferredRegion = 'sin1';
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-exp';
+const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
 
 // eslint-disable-next-line no-undef
 const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';

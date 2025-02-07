@@ -7,11 +7,35 @@ export const models: {
   disabled?: boolean;
 }[] = [
   {
-    value: 'gemini-2.0-flash-exp',
+    value: 'gemini-2.0-pro-exp-02-05',
+    label: 'gemini-2.0-pro-exp-02-05',
+    provider: 'Google',
+    description:
+      'Gemini 2.0 Pro Exp 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+    context: 2000000,
+  },
+  {
+    value: 'gemini-2.0-flash-001',
     label: 'gemini-2.0-flash',
     provider: 'Google',
     description:
       'Gemini 2.0 Flash delivers next-gen features and improved capabilities, including superior speed, native tool use, multimodal generation, and a 1M token context window.',
+    context: 1000000,
+  },
+  {
+    value: 'gemini-2.0-flash-thinking-exp-01-21',
+    label: 'gemini-2.0-flash-thinking-exp-01-21',
+    provider: 'Google',
+    description:
+      'Gemini 2.0 Flash Thinking Exp 01-21 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+    context: 1000000,
+  },
+  {
+    value: 'gemini-2.0-flash-lite-preview-02-05',
+    label: 'gemini-2.0-flash-lite-preview-02-05',
+    provider: 'Google',
+    description:
+      'Gemini 2.0 Flash Lite Preview 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
     context: 1000000,
   },
   {
@@ -48,13 +72,36 @@ export const models: {
     disabled: true,
   },
   {
-    value: 'gemini-2.0-flash-exp',
+    value: 'gemini-2.0-pro-exp-02-05',
+    label: 'gemini-2.0-pro-exp-02-05',
+    provider: 'Google Vertex',
+    description:
+      'Gemini 2.0 Pro Exp 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+    context: 2000000,
+  },
+  {
+    value: 'gemini-2.0-flash-001',
     label: 'gemini-2.0-flash',
     provider: 'Google Vertex',
     description:
       'Gemini 2.0 Flash delivers next-gen features and improved capabilities, including superior speed, native tool use, multimodal generation, and a 1M token context window.',
     context: 1000000,
-    disabled: true,
+  },
+  {
+    value: 'gemini-2.0-flash-thinking-exp-01-21',
+    label: 'gemini-2.0-flash-thinking-exp-01-21',
+    provider: 'Google Vertex',
+    description:
+      'Gemini 2.0 Flash Thinking Exp 01-21 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+    context: 1000000,
+  },
+  {
+    value: 'gemini-2.0-flash-lite-preview-02-05',
+    label: 'gemini-2.0-flash-lite-preview-02-05',
+    provider: 'Google Vertex',
+    description:
+      'Gemini 2.0 Flash Lite Preview 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+    context: 1000000,
   },
   {
     value: 'gemini-1.5-flash-002',
@@ -80,6 +127,7 @@ export const models: {
     description:
       'Claude 3.5 Sonnet strikes the ideal balance between intelligence and speed—particularly for enterprise workloads. It delivers strong performance at a lower cost compared to its peers, and is engineered for high endurance in large-scale AI deployments.',
     context: 200000,
+    disabled: true,
   },
   {
     value: 'claude-3-5-haiku-latest',
@@ -88,6 +136,7 @@ export const models: {
     description:
       'Claude 3.5 Haiku is a high-performance model that excels at generating high-quality text. It is ideal for tasks that require a high level of creativity and language understanding.',
     context: 200000,
+    disabled: true,
   },
 
   {
@@ -364,8 +413,11 @@ export const models: {
 
 const fallbackModel = models.find((model) => !model.disabled);
 export const defaultModel =
-  models.find((model) => model.value === 'gemini-1.5-flash-002') ||
-  fallbackModel;
+  models.find(
+    (model) =>
+      model.value === 'gemini-2.0-flash-001' &&
+      model.provider === 'Google Vertex'
+  ) || fallbackModel;
 
 export const providers = models.reduce((acc, model) => {
   if (!acc.includes(model.provider)) acc.push(model.provider);
