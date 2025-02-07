@@ -7,7 +7,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "pnpm@10.2.0",
+  "packageManager": "pnpm@10.2.1",
   "dependencies": {
     "@repo/types": "workspace:*",
     "@supabase/ssr": "^0.5.2",

@@ -5,7 +5,7 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.2.0",
+  "packageManager": "pnpm@10.2.1",
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^1.1.6",
     "@ai-sdk/anthropic": "^1.1.6",
