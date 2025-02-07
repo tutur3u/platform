@@ -8,29 +8,6 @@ interface ProjectDetailProps {
   data: Project | undefined;
 }
 
-const contributors = [
-  {
-    name: 'Nguyen Nguyen Nguyen',
-    role: 'Project Leader',
-  },
-  {
-    name: 'Nguyen Nguyen Nguyen',
-    role: 'Designer',
-  },
-  {
-    name: 'Nguyen Nguyen Nguyen',
-    role: 'Developer',
-  },
-  {
-    name: 'Nguyen Nguyen Nguyen',
-    role: 'Developer',
-  },
-  {
-    name: 'Nguyen Nguyen Nguyen',
-    role: 'Developer',
-  },
-];
-
 export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
   if (!data) {
     return null;
