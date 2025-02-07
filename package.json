@@ -58,7 +58,10 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@vercel/speed-insights",
-      "esbuild"
+      "canvas",
+      "esbuild",
+      "sharp",
+      "supabase"
     ]
   }
 }
