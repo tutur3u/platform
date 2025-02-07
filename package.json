@@ -54,5 +54,11 @@
     "esbuild",
     "sharp",
     "supabase"
-  ]
+  ],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@vercel/speed-insights",
+      "esbuild"
+    ]
+  }
 }

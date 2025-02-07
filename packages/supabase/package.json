@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "packageManager": "pnpm@10.2.0",
   "dependencies": {
@@ -23,7 +25,8 @@
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.13.1",
     "@types/react": "^19.0.8",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
   },
   "exports": {
     "./*": "./src/*.ts"
