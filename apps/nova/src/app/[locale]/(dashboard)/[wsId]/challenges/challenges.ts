@@ -4,7 +4,6 @@ export interface Challenge {
   topic: string;
   description: string;
   problems: Problems[];
-  constraints?: string[];
 }
 
 export interface Problems {
@@ -13,6 +12,7 @@ export interface Problems {
   description: string;
   exampleInput: string;
   exampleOutput: string;
+  constraints?: string[];
 }
 
 const challenges: Challenge[] = [

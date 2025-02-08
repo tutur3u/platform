@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@repo/ui/components/ui/card';
+import { Card } from '@repo/ui/components/ui/card';
 import React from 'react';
 
 interface Problem {
