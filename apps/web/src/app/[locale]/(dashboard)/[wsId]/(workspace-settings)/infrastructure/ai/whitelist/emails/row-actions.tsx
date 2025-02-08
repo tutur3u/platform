@@ -1,6 +1,6 @@
 'use client';
 
-import { AIWhitelistEmail } from '@/types/db';
+import { AIWhitelistEmail } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

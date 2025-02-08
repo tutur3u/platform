@@ -1,7 +1,7 @@
 'use client';
 
-import { User } from '@/types/primitives/User';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { User } from '@repo/types/primitives/User';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,

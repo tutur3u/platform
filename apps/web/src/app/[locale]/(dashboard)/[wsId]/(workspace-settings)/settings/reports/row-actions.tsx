@@ -1,7 +1,7 @@
 'use client';
 
 import ConfigEditDialog from './edit-dialog';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

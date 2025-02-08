@@ -1,4 +1,4 @@
-import { AuditLog, Operation } from '@/types/primitives/audit-log';
+import { AuditLog, Operation } from '@repo/types/primitives/audit-log';
 
 const getLeadingLabel = (t: any, op: Operation, table: string) => {
   switch (op) {

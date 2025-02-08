@@ -1,10 +1,10 @@
 'use client';
 
 import { Filter } from '../filters';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@repo/supabase/next/client';
+import { UserGroup } from '@repo/types/primitives/UserGroup';
+import { UserGroupTag } from '@repo/types/primitives/UserGroupTag';
 import { Button } from '@repo/ui/components/ui/button';
 import { ColorPicker } from '@repo/ui/components/ui/color-picker';
 import {

@@ -1,10 +1,10 @@
 import { invoiceColumns } from '../../../finance/invoices/columns';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceUserReport } from '@/types/db';
-import { Invoice } from '@/types/primitives/Invoice';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@repo/supabase/next/server';
+import { WorkspaceUserReport } from '@repo/types/db';
+import { Invoice } from '@repo/types/primitives/Invoice';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TicketCheck, Users } from 'lucide-react';

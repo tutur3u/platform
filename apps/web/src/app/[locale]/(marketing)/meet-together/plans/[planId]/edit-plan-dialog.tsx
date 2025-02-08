@@ -1,7 +1,7 @@
 'use client';
 
-import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { MeetTogetherPlan } from '@repo/types/primitives/MeetTogetherPlan';
 import {
   AlertDialog,
   AlertDialogAction,

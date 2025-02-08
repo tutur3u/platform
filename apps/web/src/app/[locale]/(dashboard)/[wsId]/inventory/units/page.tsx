@@ -1,8 +1,8 @@
 import { productUnitColumns } from './columns';
 import { ProductUnitForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { ProductUnit } from '@/types/primitives/ProductUnit';
 import { createClient } from '@repo/supabase/next/server';
+import { ProductUnit } from '@repo/types/primitives/ProductUnit';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

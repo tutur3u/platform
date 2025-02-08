@@ -1,7 +1,7 @@
 'use client';
 
 import { RowActions } from './row-actions';
-import type { WorkspaceDataset } from '@/types/db';
+import type { WorkspaceDataset } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';

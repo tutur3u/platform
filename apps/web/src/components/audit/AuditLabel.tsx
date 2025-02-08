@@ -1,7 +1,7 @@
-import { User } from '@/types/primitives/User';
-import { Workspace } from '@/types/primitives/Workspace';
-import { AuditLog } from '@/types/primitives/audit-log';
 import { getLabel } from '@/utils/audit-helper';
+import { User } from '@repo/types/primitives/User';
+import { Workspace } from '@repo/types/primitives/Workspace';
+import { AuditLog } from '@repo/types/primitives/audit-log';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale, useTranslations } from 'next-intl';

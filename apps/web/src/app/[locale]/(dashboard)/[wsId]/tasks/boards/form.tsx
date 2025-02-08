@@ -1,7 +1,7 @@
 'use client';
 
-import { TaskBoard } from '@/types/primitives/TaskBoard';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { TaskBoard } from '@repo/types/primitives/TaskBoard';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,

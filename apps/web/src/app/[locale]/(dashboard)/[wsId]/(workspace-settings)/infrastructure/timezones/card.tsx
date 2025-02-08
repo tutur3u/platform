@@ -1,4 +1,4 @@
-import { Timezone } from '@/types/primitives/Timezone';
+import { Timezone } from '@repo/types/primitives/Timezone';
 import { Separator } from '@repo/ui/components/ui/separator';
 import moment from 'moment';
 

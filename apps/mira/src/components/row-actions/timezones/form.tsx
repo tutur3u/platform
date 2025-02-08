@@ -1,5 +1,5 @@
-import { Timezone } from '@/types/primitives/Timezone';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Timezone } from '@repo/types/primitives/Timezone';
 import { Button } from '@repo/ui/components/ui/button';
 import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import {

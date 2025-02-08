@@ -1,7 +1,7 @@
 'use client';
 
 import { AIPromptRowActions } from './row-actions';
-import { AIPrompt } from '@/types/db';
+import { AIPrompt } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';

@@ -1,8 +1,8 @@
 import { getWorkspaceFlashcardColumns } from './columns';
 import FlashcardForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceFlashcard } from '@/types/db';
 import { createClient } from '@repo/supabase/next/server';
+import { WorkspaceFlashcard } from '@repo/types/db';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

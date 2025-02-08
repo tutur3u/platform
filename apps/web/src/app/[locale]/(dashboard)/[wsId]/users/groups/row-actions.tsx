@@ -1,7 +1,7 @@
 'use client';
 
 import UserGroupForm from './form';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

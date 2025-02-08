@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkspaceDataset } from '@/types/db';
+import type { WorkspaceDataset } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,

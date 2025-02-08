@@ -1,7 +1,7 @@
 'use client';
 
 import { DatasetCrawler } from './dataset-crawler';
-import type { WorkspaceDataset } from '@/types/db';
+import type { WorkspaceDataset } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,

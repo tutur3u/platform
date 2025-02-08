@@ -1,7 +1,7 @@
 'use client';
 
 import { ProductSupplierRowActions } from './row-actions';
-import { ProductSupplier } from '@/types/primitives/ProductSupplier';
+import { ProductSupplier } from '@repo/types/primitives/ProductSupplier';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';

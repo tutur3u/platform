@@ -1,9 +1,9 @@
 'use client';
 
 import { StorageObjectRowActions } from './row-actions';
-import { StorageObject } from '@/types/primitives/StorageObject';
 import { formatBytes } from '@/utils/file-helper';
 import { joinPath, popPath } from '@/utils/path-helper';
+import { StorageObject } from '@repo/types/primitives/StorageObject';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { ChevronLeft, FileText, Folder } from 'lucide-react';

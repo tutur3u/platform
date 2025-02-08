@@ -3,11 +3,11 @@
 import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
 import { cn } from '@/lib/utils';
+import { createClient } from '@repo/supabase/next/client';
 import {
   WorkspaceUser,
   WorkspaceUserAttendance,
-} from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@repo/supabase/next/client';
+} from '@repo/types/primitives/WorkspaceUser';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Tooltip,

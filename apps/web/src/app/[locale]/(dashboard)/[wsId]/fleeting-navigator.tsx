@@ -2,9 +2,9 @@
 
 import FleetingAssistant from './fleeting-assistant';
 import FleetingNavigatorMenu from './fleeting-navigator-menu';
-import { AIChat } from '@/types/db';
 import { useClickOutside } from '@mantine/hooks';
 import { useChat } from '@repo/ai/react';
+import { AIChat } from '@repo/types/db';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -98,7 +98,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 hidden items-center justify-center md:flex">
         <div
           ref={ref}
-          className={`bg-secondary/10 pointer-events-auto backdrop-blur-lg md:m-4 ${
+          className={`pointer-events-auto bg-secondary/10 backdrop-blur-lg md:m-4 ${
             currentView
               ? 'h-[32rem] w-[32rem] rounded-t-lg border-t md:rounded-lg md:border'
               : 'mb-4 h-14 rounded-lg border p-2'

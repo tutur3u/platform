@@ -1,6 +1,6 @@
 import AuditSmartContent from './AuditSmartContent';
 import { DEV_MODE } from '@/constants/common';
-import { AuditLog } from '@/types/primitives/audit-log';
+import { AuditLog } from '@repo/types/primitives/audit-log';
 
 interface Props {
   data: AuditLog;

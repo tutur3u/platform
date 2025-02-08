@@ -1,7 +1,7 @@
 'use client';
 
 import { TransactionCategoryRowActions } from './row-actions';
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import { TransactionCategory } from '@repo/types/primitives/TransactionCategory';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';

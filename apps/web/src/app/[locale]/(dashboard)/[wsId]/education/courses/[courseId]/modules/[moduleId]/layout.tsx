@@ -1,7 +1,7 @@
 import LinkButton from '../../link-button';
 import ModuleToggles from './toggles';
-import { WorkspaceCourseModule } from '@/types/db';
 import { createClient, createDynamicClient } from '@repo/supabase/next/server';
+import { WorkspaceCourseModule } from '@repo/types/db';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {

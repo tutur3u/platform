@@ -1,8 +1,8 @@
 import { secretColumns } from './columns';
 import SecretForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { createClient } from '@repo/supabase/next/server';
+import { WorkspaceSecret } from '@repo/types/primitives/WorkspaceSecret';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

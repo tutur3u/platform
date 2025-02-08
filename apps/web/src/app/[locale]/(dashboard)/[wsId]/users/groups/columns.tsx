@@ -2,7 +2,7 @@
 
 import GroupAttendanceStats from './attendance-stats';
 import { UserGroupRowActions } from './row-actions';
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';

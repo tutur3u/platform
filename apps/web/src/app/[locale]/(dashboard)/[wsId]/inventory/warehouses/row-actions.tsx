@@ -1,7 +1,7 @@
 'use client';
 
 import { ProductWarehouseForm } from './form';
-import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
+import { ProductWarehouse } from '@repo/types/primitives/ProductWarehouse';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

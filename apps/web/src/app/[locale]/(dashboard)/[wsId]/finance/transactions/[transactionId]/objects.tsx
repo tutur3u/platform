@@ -1,8 +1,8 @@
 'use client';
 
 import { TransactionObjectRowActions } from './row-actions';
-import { StorageObject } from '@/types/primitives/StorageObject';
 import { joinPath } from '@/utils/path-helper';
+import { StorageObject } from '@repo/types/primitives/StorageObject';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { FileText, LayoutGrid, LayoutList } from 'lucide-react';

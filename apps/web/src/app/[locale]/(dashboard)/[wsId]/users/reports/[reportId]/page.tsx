@@ -1,11 +1,11 @@
 import { Filter } from '../../filters';
 import EditableReportPreview from './editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
-import { WorkspaceUserReport } from '@/types/db';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@repo/supabase/next/server';
+import { WorkspaceUserReport } from '@repo/types/db';
+import { UserGroup } from '@repo/types/primitives/UserGroup';
+import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { PlusCircle, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';

@@ -2,9 +2,9 @@
 
 import { Filter } from '../../../users/filters';
 import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
 import { createClient } from '@repo/supabase/next/client';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Avatar,
   AvatarFallback,

@@ -1,6 +1,6 @@
 import LinkButton from '../../courses/[courseId]/link-button';
-import { type WorkspaceQuizSet } from '@/types/db';
 import { createClient } from '@repo/supabase/next/server';
+import { type WorkspaceQuizSet } from '@repo/types/db';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Box, Eye, Paperclip } from 'lucide-react';

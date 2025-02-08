@@ -1,6 +1,6 @@
 import { capitalize, cn } from '@/lib/utils';
-import { AIChat } from '@/types/db';
 import { type UseChatHelpers } from '@repo/ai/types';
+import { AIChat } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import dayjs from 'dayjs';

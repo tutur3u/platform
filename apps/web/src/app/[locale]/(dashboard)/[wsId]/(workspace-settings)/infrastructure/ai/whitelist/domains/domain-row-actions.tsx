@@ -1,4 +1,4 @@
-import type { AIWhitelistDomain } from '@/types/db';
+import type { AIWhitelistDomain } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

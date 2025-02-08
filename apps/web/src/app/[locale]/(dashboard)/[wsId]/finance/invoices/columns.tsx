@@ -1,7 +1,7 @@
 'use client';
 
 import { InvoiceRowActions } from './row-actions';
-import { Invoice } from '@/types/primitives/Invoice';
+import { Invoice } from '@repo/types/primitives/Invoice';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,

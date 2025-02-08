@@ -2,10 +2,10 @@
 
 import AvailabilityPlanner from './availability-planner';
 import { useTimeBlocking } from './time-blocking-provider';
-import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@/types/primitives/Timeblock';
-import { User } from '@/types/primitives/User';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { MeetTogetherPlan } from '@repo/types/primitives/MeetTogetherPlan';
+import { Timeblock } from '@repo/types/primitives/Timeblock';
+import { User } from '@repo/types/primitives/User';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,

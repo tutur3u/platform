@@ -1,7 +1,7 @@
 'use client';
 
 import WorkspaceFlashcardForm from './form';
-import { WorkspaceFlashcard } from '@/types/db';
+import { WorkspaceFlashcard } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

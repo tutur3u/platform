@@ -1,6 +1,6 @@
 'use client';
 
-import { AIPrompt } from '@/types/db';
+import { AIPrompt } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

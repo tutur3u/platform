@@ -1,6 +1,6 @@
 import { useTimeBlocking } from './time-blocking-provider';
-import { Timeblock } from '@/types/primitives/Timeblock';
 import { timetzToTime } from '@/utils/date-helper';
+import { Timeblock } from '@repo/types/primitives/Timeblock';
 import dayjs from 'dayjs';
 
 export default function SelectableDayTime({

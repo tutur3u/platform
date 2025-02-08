@@ -1,7 +1,7 @@
 'use client';
 
 import ApiKeyEditDialog from './edit-dialog';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import { WorkspaceApiKey } from '@repo/types/primitives/WorkspaceApiKey';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

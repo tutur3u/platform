@@ -1,7 +1,7 @@
 'use client';
 
 import { TimezoneRowActions } from '@/components/row-actions/timezones';
-import { Timezone, TimezoneStatus } from '@/types/primitives/Timezone';
+import { Timezone, TimezoneStatus } from '@repo/types/primitives/Timezone';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, Clock, RefreshCw, RefreshCwOff, X } from 'lucide-react';

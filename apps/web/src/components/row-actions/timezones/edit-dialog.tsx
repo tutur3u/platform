@@ -1,7 +1,7 @@
 'use client';
 
 import TimezoneForm, { ApiConfigFormSchema } from './form';
-import { Timezone } from '@/types/primitives/Timezone';
+import { Timezone } from '@repo/types/primitives/Timezone';
 import {
   Dialog,
   DialogContent,

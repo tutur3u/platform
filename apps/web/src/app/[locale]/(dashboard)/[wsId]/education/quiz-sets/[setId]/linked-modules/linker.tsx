@@ -1,8 +1,8 @@
 'use client';
 
 import { Filter } from '../../../../users/filters';
-import type { WorkspaceCourseModule } from '@/types/db';
 import { createClient } from '@repo/supabase/next/client';
+import type { WorkspaceCourseModule } from '@repo/types/db';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 

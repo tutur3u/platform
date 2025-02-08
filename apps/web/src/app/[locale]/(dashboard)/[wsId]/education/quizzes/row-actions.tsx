@@ -1,7 +1,7 @@
 'use client';
 
 import WorkspaceQuizForm from './form';
-import { WorkspaceQuiz } from '@/types/db';
+import { WorkspaceQuiz } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

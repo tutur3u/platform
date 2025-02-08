@@ -4,7 +4,7 @@ import ChatLink from './chat-link';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE } from '@/constants/common';
 import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { Button } from '@repo/ui/components/ui/button';
 import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import { Separator } from '@repo/ui/components/ui/separator';

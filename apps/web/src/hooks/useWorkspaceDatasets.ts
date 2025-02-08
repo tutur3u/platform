@@ -1,4 +1,4 @@
-import type { WorkspaceDataset } from '@/types/db';
+import type { WorkspaceDataset } from '@repo/types/db';
 import { useQuery } from '@tanstack/react-query';
 
 export function useWorkspaceDatasets(wsId: string) {

@@ -1,8 +1,8 @@
 import { productWarehouseColumns } from './columns';
 import { ProductWarehouseForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
 import { createClient } from '@repo/supabase/next/server';
+import { ProductWarehouse } from '@repo/types/primitives/ProductWarehouse';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

@@ -1,7 +1,7 @@
 'use client';
 
 import DatasetForm from './form';
-import type { WorkspaceDataset } from '@/types/db';
+import type { WorkspaceDataset } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

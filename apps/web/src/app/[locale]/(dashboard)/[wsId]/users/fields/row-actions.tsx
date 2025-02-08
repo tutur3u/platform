@@ -1,7 +1,7 @@
 'use client';
 
 import UserFieldEditDialog from './edit-dialog';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

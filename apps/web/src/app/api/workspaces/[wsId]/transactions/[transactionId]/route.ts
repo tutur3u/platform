@@ -1,5 +1,5 @@
-import { Transaction } from '@/types/primitives/Transaction';
 import { createClient } from '@repo/supabase/next/server';
+import { Transaction } from '@repo/types/primitives/Transaction';
 import { NextResponse } from 'next/server';
 
 interface Params {

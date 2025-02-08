@@ -1,5 +1,5 @@
 import DayTime from './day-time';
-import { Timeblock } from '@/types/primitives/Timeblock';
+import { Timeblock } from '@repo/types/primitives/Timeblock';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { useLocale } from 'next-intl';

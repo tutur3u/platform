@@ -1,8 +1,8 @@
 'use client';
 
 import { downloadPrivateObject, uploadObject } from '@/lib/storage-helper';
-import { Workspace } from '@/types/primitives/Workspace';
 import { createClient } from '@repo/supabase/next/client';
+import { Workspace } from '@repo/types/primitives/Workspace';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';

@@ -1,7 +1,7 @@
 'use client';
 
 import { ConfigRowActions } from './row-actions';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';

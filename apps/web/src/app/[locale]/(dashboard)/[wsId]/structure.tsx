@@ -6,8 +6,8 @@ import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { cn } from '@/lib/utils';
-import { Workspace } from '@/types/primitives/Workspace';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { Workspace } from '@repo/types/primitives/Workspace';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Breadcrumb,
   BreadcrumbEllipsis,

@@ -1,7 +1,7 @@
 import { groupTagColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { UserGroupTag } from '@/types/primitives/UserGroupTag';
 import { createClient } from '@repo/supabase/next/server';
+import { UserGroupTag } from '@repo/types/primitives/UserGroupTag';
 import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';

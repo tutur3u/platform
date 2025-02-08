@@ -7,7 +7,7 @@ import {
   ROOT_WORKSPACE_ID,
 } from '@/constants/common';
 import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {

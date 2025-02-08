@@ -1,7 +1,7 @@
 'use client';
 
 import GroupTagForm from './form';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
+import { WorkspaceApiKey } from '@repo/types/primitives/WorkspaceApiKey';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

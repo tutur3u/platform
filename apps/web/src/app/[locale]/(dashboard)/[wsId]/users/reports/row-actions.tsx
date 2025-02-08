@@ -1,6 +1,6 @@
 'use client';
 
-import { WorkspaceUserReport } from '@/types/db';
+import { WorkspaceUserReport } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

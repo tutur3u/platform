@@ -1,8 +1,8 @@
 import { getWorkspaceCourseColumns } from './columns';
 import CourseForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { WorkspaceCourse } from '@/types/db';
 import { createClient } from '@repo/supabase/next/server';
+import { WorkspaceCourse } from '@repo/types/db';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

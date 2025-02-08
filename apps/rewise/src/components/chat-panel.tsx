@@ -2,11 +2,11 @@
 import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm, ResponseMode } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
-import { AIChat } from '@/types/db';
 import { Model } from '@repo/ai/models';
 import { type Message, type UseChatHelpers } from '@repo/ai/types';
 import { createDynamicClient } from '@repo/supabase/next/client';
 import { RealtimePresenceState } from '@repo/supabase/next/realtime';
+import { AIChat } from '@repo/types/db';
 import {
   FileUploader,
   StatedFile,
@@ -125,9 +125,9 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="from-muted/30 to-muted/30 dark:from-background/10 dark:to-background/80 fixed inset-x-0 bottom-0 bg-gradient-to-b from-0% to-50% dark:from-10%">
+      <div className="fixed inset-x-0 bottom-0 bg-gradient-to-b from-muted/30 from-0% to-muted/30 to-50% dark:from-background/10 dark:from-10% dark:to-background/80">
         <div className="mx-auto sm:max-w-2xl sm:px-4">
-          <div className="bg-background space-y-4 border-t px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
+          <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
             {showExtraOptions && (
               <ChatModelSelector
                 open={showExtraOptions}

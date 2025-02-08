@@ -1,6 +1,6 @@
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { isValidURL } from '@/utils/url-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';
 import { Button } from '@repo/ui/components/ui/button';
 import { AutosizeTextarea } from '@repo/ui/components/ui/custom/autosize-textarea';
 import {

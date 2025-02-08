@@ -1,7 +1,7 @@
 'use client';
 
-import { WorkspaceQuiz } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { WorkspaceQuiz } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import { AutosizeTextarea } from '@repo/ui/components/ui/custom/autosize-textarea';

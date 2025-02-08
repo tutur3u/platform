@@ -1,7 +1,7 @@
 'use client';
 
 import { UserRankingModal } from './user-ranking-modal';
-import { LeaderboardEntry } from '@/types/leaderboard';
+import { LeaderboardEntry } from '@repo/types/primitives/leaderboard';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Table,

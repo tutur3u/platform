@@ -10,8 +10,8 @@ import { HtmlCrawler } from './crawlers/html-crawler';
 import type { CrawlMetrics, QueueItem, UrlWithProgress } from './types';
 import { calculateEstimatedTime } from './utils/time';
 import { cn } from '@/lib/utils';
-import type { WorkspaceDataset } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { WorkspaceDataset } from '@repo/types/db';
 import {
   Alert,
   AlertDescription,

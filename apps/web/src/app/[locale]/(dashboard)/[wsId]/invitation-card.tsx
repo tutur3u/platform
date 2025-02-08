@@ -1,7 +1,7 @@
 'use client';
 
 import LoadingIndicator from '@/components/common/LoadingIndicator';
-import { Workspace } from '@/types/primitives/Workspace';
+import { Workspace } from '@repo/types/primitives/Workspace';
 import {
   Avatar,
   AvatarFallback,

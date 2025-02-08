@@ -1,6 +1,6 @@
 'use client';
 
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { Button } from '@repo/ui/components/ui/button';
 import { CheckCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';

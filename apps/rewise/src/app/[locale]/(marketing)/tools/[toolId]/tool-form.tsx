@@ -2,7 +2,7 @@
 
 import { Tool } from '../data';
 import { TTR_URL } from '@/constants/common';
-import type { AIChat } from '@/types/db';
+import type { AIChat } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
 import { Label } from '@repo/ui/components/ui/label';

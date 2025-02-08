@@ -2,7 +2,7 @@ import UserAvatar from './settings-avatar';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
 import SettingItemTab from '@/components/settings/SettingItemTab';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   DialogContent,
   DialogHeader,

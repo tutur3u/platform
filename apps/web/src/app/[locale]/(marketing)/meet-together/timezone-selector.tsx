@@ -1,5 +1,5 @@
 import timezones from '../../../../data/timezones.json';
-import { Timezone } from '@/types/primitives/Timezone';
+import { Timezone } from '@repo/types/primitives/Timezone';
 import {
   Select,
   SelectContent,

@@ -1,7 +1,7 @@
 'use client';
 
 import { RoleRowActions } from './row-actions';
-import { WorkspaceRole } from '@/types/db';
+import { WorkspaceRole } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { UserCircle } from 'lucide-react';

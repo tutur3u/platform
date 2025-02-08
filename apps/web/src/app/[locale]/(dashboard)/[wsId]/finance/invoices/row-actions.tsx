@@ -1,6 +1,6 @@
 'use client';
 
-import { Invoice } from '@/types/primitives/Invoice';
+import { Invoice } from '@repo/types/primitives/Invoice';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

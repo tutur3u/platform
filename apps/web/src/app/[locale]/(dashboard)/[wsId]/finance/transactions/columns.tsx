@@ -1,7 +1,7 @@
 'use client';
 
 import { TransactionRowActions } from './row-actions';
-import { Transaction } from '@/types/primitives/Transaction';
+import { Transaction } from '@repo/types/primitives/Transaction';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';

@@ -1,7 +1,7 @@
 'use client';
 
 import TimezoneEditDialog from './edit-dialog';
-import { Timezone } from '@/types/primitives/Timezone';
+import { Timezone } from '@repo/types/primitives/Timezone';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

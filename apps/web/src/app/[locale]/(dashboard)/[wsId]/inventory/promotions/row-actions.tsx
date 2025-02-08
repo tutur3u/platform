@@ -1,7 +1,7 @@
 'use client';
 
 import { PromotionForm } from './form';
-import { ProductPromotion } from '@/types/primitives/ProductPromotion';
+import { ProductPromotion } from '@repo/types/primitives/ProductPromotion';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,

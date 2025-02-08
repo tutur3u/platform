@@ -1,6 +1,6 @@
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
-import { PostEmail } from '@/types/primitives/post-email';
+import { PostEmail } from '@repo/types/primitives/post-email';
 import { Button } from '@repo/ui/components/ui/button';
 import dayjs from 'dayjs';
 import { CircleAlert, CircleSlash, MailCheck, Send } from 'lucide-react';

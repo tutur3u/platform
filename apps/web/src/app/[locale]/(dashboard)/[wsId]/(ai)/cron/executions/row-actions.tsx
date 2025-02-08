@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkspaceCronExecution } from '@/types/db';
+import type { WorkspaceCronExecution } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

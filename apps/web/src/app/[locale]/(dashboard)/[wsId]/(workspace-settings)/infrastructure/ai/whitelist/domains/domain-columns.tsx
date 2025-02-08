@@ -1,7 +1,7 @@
 'use client';
 
 import { AIWhitelistDomainRowActions } from './domain-row-actions';
-import { AIWhitelistDomain } from '@/types/db';
+import { AIWhitelistDomain } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { Switch } from '@repo/ui/components/ui/switch';
 import {

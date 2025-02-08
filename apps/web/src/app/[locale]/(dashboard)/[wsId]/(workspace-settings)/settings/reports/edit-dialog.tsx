@@ -1,7 +1,7 @@
 'use client';
 
 import ConfigForm, { ConfigFormSchema } from './form';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
+import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';
 import {
   Dialog,
   DialogContent,

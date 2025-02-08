@@ -6,9 +6,9 @@ import {
   BlockEditorRef,
 } from '@/components/components/BlockEditor';
 import { cn } from '@/lib/utils';
-import { WorkspaceDocument } from '@/types/db';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
 import { createClient } from '@repo/supabase/next/client';
+import { WorkspaceDocument } from '@repo/types/db';
 import {
   AlertDialog,
   AlertDialogAction,

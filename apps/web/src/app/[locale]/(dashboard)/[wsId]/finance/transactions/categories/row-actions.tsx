@@ -1,7 +1,7 @@
 'use client';
 
 import { TransactionCategoryForm } from './form';
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
+import { TransactionCategory } from '@repo/types/primitives/TransactionCategory';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

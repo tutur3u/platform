@@ -1,7 +1,7 @@
 'use client';
 
-import type { WorkspaceAIModel } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { WorkspaceAIModel } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,

@@ -1,7 +1,7 @@
 'use client';
 
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { createClient } from '@repo/supabase/next/client';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DialogClose,

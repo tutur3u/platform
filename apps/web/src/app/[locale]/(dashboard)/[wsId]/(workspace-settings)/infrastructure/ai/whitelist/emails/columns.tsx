@@ -1,7 +1,7 @@
 'use client';
 
 import { AIWhitelistEmailRowActions } from './row-actions';
-import { AIWhitelistEmail } from '@/types/db';
+import { AIWhitelistEmail } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { Switch } from '@repo/ui/components/ui/switch';
 import {

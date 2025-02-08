@@ -1,7 +1,7 @@
 'use client';
 
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { WorkspaceSecret } from '@repo/types/primitives/WorkspaceSecret';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,

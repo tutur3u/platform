@@ -1,7 +1,7 @@
 'use client';
 
-import { Transaction } from '@/types/primitives/Transaction';
 import { createClient } from '@repo/supabase/next/client';
+import { Transaction } from '@repo/types/primitives/Transaction';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DialogClose,

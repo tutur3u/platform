@@ -1,7 +1,7 @@
 'use client';
 
 import { WorkspaceFlashcardRowActions } from './row-actions';
-import { WorkspaceFlashcard } from '@/types/db';
+import { WorkspaceFlashcard } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import moment from 'moment';

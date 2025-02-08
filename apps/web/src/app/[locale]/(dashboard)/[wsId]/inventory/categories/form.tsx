@@ -1,7 +1,7 @@
 'use client';
 
-import { ProductCategory } from '@/types/primitives/ProductCategory';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ProductCategory } from '@repo/types/primitives/ProductCategory';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,

@@ -1,8 +1,8 @@
 'use client';
 
 import { RoleForm } from './form';
-import { WorkspaceRole } from '@/types/db';
 import type { SupabaseUser } from '@repo/supabase/next/user';
+import { WorkspaceRole } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

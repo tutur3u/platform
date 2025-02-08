@@ -3,8 +3,8 @@
 import DayPlanners from './day-planners';
 import { useTimeBlocking } from './time-blocking-provider';
 import TimeColumn from './time-column';
-import { Timeblock } from '@/types/primitives/Timeblock';
 import { timetzToHour } from '@/utils/date-helper';
+import { Timeblock } from '@repo/types/primitives/Timeblock';
 
 export default function DatePlanner({
   timeblocks,

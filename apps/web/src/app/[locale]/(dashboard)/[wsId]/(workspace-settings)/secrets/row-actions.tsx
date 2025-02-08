@@ -1,7 +1,7 @@
 'use client';
 
 import SecretForm from './form';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { WorkspaceSecret } from '@repo/types/primitives/WorkspaceSecret';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

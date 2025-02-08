@@ -2,11 +2,11 @@
 
 import { WalletForm } from '../wallets/form';
 import { TransactionCategoryForm } from './categories/form';
-import { Transaction } from '@/types/primitives/Transaction';
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
-import { Wallet } from '@/types/primitives/Wallet';
 import { fetcher } from '@/utils/fetcher';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Transaction } from '@repo/types/primitives/Transaction';
+import { TransactionCategory } from '@repo/types/primitives/TransactionCategory';
+import { Wallet } from '@repo/types/primitives/Wallet';
 import { Button } from '@repo/ui/components/ui/button';
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { Combobox } from '@repo/ui/components/ui/custom/combobox';

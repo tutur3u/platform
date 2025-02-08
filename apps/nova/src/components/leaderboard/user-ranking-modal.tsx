@@ -1,4 +1,4 @@
-import { LeaderboardEntry } from '@/types/leaderboard';
+import { LeaderboardEntry } from '@repo/types/primitives/leaderboard';
 import {
   Dialog,
   DialogContent,

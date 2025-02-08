@@ -1,7 +1,7 @@
 'use client';
 
 import { ProductSupplierForm } from './form';
-import { ProductSupplier } from '@/types/primitives/ProductSupplier';
+import { ProductSupplier } from '@repo/types/primitives/ProductSupplier';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

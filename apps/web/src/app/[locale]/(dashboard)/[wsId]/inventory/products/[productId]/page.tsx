@@ -1,10 +1,10 @@
 import { ProductForm } from './form';
-import { Product2 } from '@/types/primitives/Product';
-import { ProductCategory } from '@/types/primitives/ProductCategory';
-import { ProductInventory } from '@/types/primitives/ProductInventory';
-import { ProductUnit } from '@/types/primitives/ProductUnit';
-import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
 import { createClient } from '@repo/supabase/next/server';
+import { Product2 } from '@repo/types/primitives/Product';
+import { ProductCategory } from '@repo/types/primitives/ProductCategory';
+import { ProductInventory } from '@repo/types/primitives/ProductInventory';
+import { ProductUnit } from '@repo/types/primitives/ProductUnit';
+import { ProductWarehouse } from '@repo/types/primitives/ProductWarehouse';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';

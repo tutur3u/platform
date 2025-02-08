@@ -1,7 +1,7 @@
 'use client';
 
 import { ProductCategoryForm } from './form';
-import { ProductCategory } from '@/types/primitives/ProductCategory';
+import { ProductCategory } from '@repo/types/primitives/ProductCategory';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

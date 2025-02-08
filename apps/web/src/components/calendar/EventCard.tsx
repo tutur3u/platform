@@ -1,6 +1,6 @@
 import { useCalendar } from '@/hooks/useCalendar';
-import { CalendarEvent } from '@/types/primitives/calendar-event';
 import { useDebouncedState } from '@mantine/hooks';
+import { CalendarEvent } from '@repo/types/primitives/calendar-event';
 import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
 

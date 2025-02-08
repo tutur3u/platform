@@ -1,7 +1,7 @@
 'use client';
 
 import GroupTagForm from './form';
-import { UserGroupTag } from '@/types/primitives/UserGroupTag';
+import { UserGroupTag } from '@repo/types/primitives/UserGroupTag';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

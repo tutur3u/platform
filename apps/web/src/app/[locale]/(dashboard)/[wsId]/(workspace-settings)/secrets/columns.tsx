@@ -1,7 +1,7 @@
 'use client';
 
 import { SecretRowActions } from './row-actions';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
+import { WorkspaceSecret } from '@repo/types/primitives/WorkspaceSecret';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { Switch } from '@repo/ui/components/ui/switch';
 import {

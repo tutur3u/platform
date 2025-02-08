@@ -1,8 +1,8 @@
 'use client';
 
 import ApiKeyForm, { ApiConfigFormSchema } from './form';
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { generateRandomUUID } from '@/utils/uuid-helper';
+import { WorkspaceApiKey } from '@repo/types/primitives/WorkspaceApiKey';
 import {
   Dialog,
   DialogContent,

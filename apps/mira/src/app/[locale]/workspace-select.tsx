@@ -1,9 +1,9 @@
 'use client';
 
-import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@repo/supabase/next/client';
+import { Workspace } from '@repo/types/primitives/Workspace';
 import {
   Avatar,
   AvatarFallback,

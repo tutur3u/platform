@@ -1,10 +1,10 @@
 import { AssigneeSelect } from './_components/assignee-select';
 import { TaskActions } from './task-actions';
 import { updateTask } from '@/lib/task-helper';
-import { Task as TaskType } from '@/types/primitives/TaskBoard';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@repo/supabase/next/client';
+import { Task as TaskType } from '@repo/types/primitives/TaskBoard';
 import { Badge } from '@repo/ui/components/ui/badge';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';

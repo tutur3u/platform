@@ -1,7 +1,7 @@
 'use client';
 
 import UserFieldForm, { ApiConfigFormSchema } from './form';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import {
   Dialog,
   DialogContent,

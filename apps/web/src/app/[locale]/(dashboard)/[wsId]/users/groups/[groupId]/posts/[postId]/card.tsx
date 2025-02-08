@@ -3,10 +3,10 @@
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
 import { cn } from '@/lib/utils';
-import type { GroupPostCheck } from '@/types/db';
-import type { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { isEmail } from '@/utils/email-helper';
 import { createClient } from '@repo/supabase/next/client';
+import type { GroupPostCheck } from '@repo/types/db';
+import type { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';

@@ -1,8 +1,8 @@
 'use client';
 
 import { useWorkspaceDatasets } from '@/hooks/useWorkspaceDatasets';
-import type { WorkspaceCronJob } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { WorkspaceCronJob } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import {

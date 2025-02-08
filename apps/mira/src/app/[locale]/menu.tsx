@@ -3,8 +3,8 @@
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
 import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { SupabaseUser } from '@repo/supabase/next/user';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
   Sheet,

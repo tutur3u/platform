@@ -1,7 +1,7 @@
 'use client';
 
 import RowActions from './row-actions';
-import { PostEmail } from '@/types/primitives/post-email';
+import { PostEmail } from '@repo/types/primitives/post-email';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import 'dayjs/locale/vi';

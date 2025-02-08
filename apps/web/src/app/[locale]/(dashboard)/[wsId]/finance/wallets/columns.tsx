@@ -1,7 +1,7 @@
 'use client';
 
 import { WalletRowActions } from './row-actions';
-import { Wallet } from '@/types/primitives/Wallet';
+import { Wallet } from '@repo/types/primitives/Wallet';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';

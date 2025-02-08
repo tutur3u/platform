@@ -1,9 +1,9 @@
 'use client';
 
-import { User } from '@/types/primitives/User';
-import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { User } from '@repo/types/primitives/User';
+import { Workspace } from '@repo/types/primitives/Workspace';
 import {
   Avatar,
   AvatarFallback,

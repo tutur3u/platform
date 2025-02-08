@@ -1,7 +1,7 @@
 'use client';
 
 import { WorkspaceCourseModuleRowActions } from './row-actions';
-import { WorkspaceCourseModule } from '@/types/db';
+import { WorkspaceCourseModule } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { Check, X } from 'lucide-react';

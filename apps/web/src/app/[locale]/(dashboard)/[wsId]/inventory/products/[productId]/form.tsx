@@ -3,10 +3,10 @@
 import { ProductCategoryForm } from '../../categories/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
 import { cn } from '@/lib/utils';
-import { ProductCategory } from '@/types/primitives/ProductCategory';
-import { ProductUnit } from '@/types/primitives/ProductUnit';
-import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ProductCategory } from '@repo/types/primitives/ProductCategory';
+import { ProductUnit } from '@repo/types/primitives/ProductUnit';
+import { ProductWarehouse } from '@repo/types/primitives/ProductWarehouse';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Card,

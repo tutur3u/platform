@@ -1,5 +1,5 @@
-import { UserGroup } from '@/types/primitives/UserGroup';
 import { createClient } from '@repo/supabase/next/server';
+import { UserGroup } from '@repo/types/primitives/UserGroup';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { GraduationCap } from 'lucide-react';

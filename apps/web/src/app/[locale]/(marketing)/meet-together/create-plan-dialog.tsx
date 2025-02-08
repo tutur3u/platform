@@ -1,8 +1,8 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Timezone } from '@/types/primitives/Timezone';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Timezone } from '@repo/types/primitives/Timezone';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,

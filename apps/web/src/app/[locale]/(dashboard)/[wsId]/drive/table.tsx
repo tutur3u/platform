@@ -2,7 +2,7 @@
 
 import { storageObjectsColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { StorageObject } from '@/types/primitives/StorageObject';
+import { StorageObject } from '@repo/types/primitives/StorageObject';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { useState } from 'react';
 

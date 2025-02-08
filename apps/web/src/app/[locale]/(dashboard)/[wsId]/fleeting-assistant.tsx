@@ -1,9 +1,9 @@
 import AssistantGradientName from './assistant-gradient-name';
 import { FleetingAssistantMessage } from './fleeting-assistant-message';
-import { AIChat } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useChat } from '@repo/ai/react';
 import { type Message } from '@repo/ai/types';
+import { AIChat } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,

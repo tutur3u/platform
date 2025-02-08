@@ -1,5 +1,5 @@
-import { WorkspaceApiKey } from '@/types/primitives/WorkspaceApiKey';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { WorkspaceApiKey } from '@repo/types/primitives/WorkspaceApiKey';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,

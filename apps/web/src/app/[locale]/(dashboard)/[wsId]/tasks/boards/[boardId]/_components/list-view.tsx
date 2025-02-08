@@ -1,7 +1,7 @@
 import { TaskActions } from '../task-actions';
 import { getTasks } from '@/lib/task-helper';
-import { Task } from '@/types/primitives/TaskBoard';
 import { createClient } from '@repo/supabase/next/client';
+import { Task } from '@repo/types/primitives/TaskBoard';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

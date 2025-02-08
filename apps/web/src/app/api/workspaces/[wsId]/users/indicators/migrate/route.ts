@@ -1,5 +1,5 @@
-import { Vital } from '@/types/primitives/Vital';
 import { createClient } from '@repo/supabase/next/server';
+import { Vital } from '@repo/types/primitives/Vital';
 import { NextResponse } from 'next/server';
 
 interface Params {

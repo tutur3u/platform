@@ -4,10 +4,10 @@ import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
-import { AIChat } from '@/types/db';
 import { Model } from '@repo/ai/models';
 import { type Message, type UseChatHelpers } from '@repo/ai/types';
 import { createDynamicClient } from '@repo/supabase/next/client';
+import { AIChat } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   FileUploader,
@@ -163,7 +163,7 @@ export function ChatPanel({
               <Button
                 size="icon"
                 variant="outline"
-                className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
+                className="pointer-events-auto flex-none bg-background/20 backdrop-blur-lg"
                 onClick={() => setCollapsed(!collapsed)}
               >
                 {collapsed ? (
@@ -196,7 +196,7 @@ export function ChatPanel({
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-foreground font-semibold">
+                    <div className="font-semibold text-foreground">
                       {t('chats')}
                       {count ? (
                         <span className="opacity-50"> ({count})</span>
@@ -239,7 +239,7 @@ export function ChatPanel({
                             )
                           )
                         ) : (
-                          <div className="text-foreground/60 mt-8 p-8">
+                          <div className="mt-8 p-8 text-foreground/60">
                             {t('no_chats')}
                           </div>
                         )}
@@ -290,7 +290,7 @@ export function ChatPanel({
             </div>
 
             <div
-              className={`bg-background/70 flex flex-col items-start justify-start rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
+              className={`flex flex-col items-start justify-start rounded-xl border bg-background/70 p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
             >
               <ChatModelSelector
                 open={showExtraOptions}

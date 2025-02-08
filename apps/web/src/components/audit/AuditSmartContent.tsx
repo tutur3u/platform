@@ -1,5 +1,5 @@
-import { User } from '@/types/primitives/User';
-import { AuditLog } from '@/types/primitives/audit-log';
+import { User } from '@repo/types/primitives/User';
+import { AuditLog } from '@repo/types/primitives/audit-log';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
 

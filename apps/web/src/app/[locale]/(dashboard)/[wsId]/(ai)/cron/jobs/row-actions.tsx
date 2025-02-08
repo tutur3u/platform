@@ -1,7 +1,7 @@
 'use client';
 
 import { CronJobForm } from './form';
-import type { WorkspaceCronJob } from '@/types/db';
+import type { WorkspaceCronJob } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

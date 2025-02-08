@@ -1,7 +1,7 @@
 'use client';
 
-import { TransactionCategory } from '@/types/primitives/TransactionCategory';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { TransactionCategory } from '@repo/types/primitives/TransactionCategory';
 import { Button } from '@repo/ui/components/ui/button';
 import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {

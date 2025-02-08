@@ -1,7 +1,7 @@
 'use client';
 
 import WorkspaceCourseModuleForm from './form';
-import { WorkspaceCourseModule } from '@/types/db';
+import { WorkspaceCourseModule } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

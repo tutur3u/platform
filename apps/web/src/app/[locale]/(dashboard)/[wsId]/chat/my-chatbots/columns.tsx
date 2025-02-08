@@ -1,7 +1,7 @@
 'use client';
 
 import { GroupTagRowActions } from './row-actions';
-import { UserGroupTag } from '@/types/primitives/UserGroupTag';
+import { UserGroupTag } from '@repo/types/primitives/UserGroupTag';
 import { ColorPicker } from '@repo/ui/components/ui/color-picker';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';

@@ -1,7 +1,7 @@
 import { DatePicker } from '@/components/row-actions/users/date-picker';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { fetcher } from '@/utils/fetcher';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,

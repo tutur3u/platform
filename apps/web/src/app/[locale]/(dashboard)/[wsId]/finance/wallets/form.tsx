@@ -1,7 +1,7 @@
 'use client';
 
-import { Wallet } from '@/types/primitives/Wallet';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Wallet } from '@repo/types/primitives/Wallet';
 import { Button } from '@repo/ui/components/ui/button';
 import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {

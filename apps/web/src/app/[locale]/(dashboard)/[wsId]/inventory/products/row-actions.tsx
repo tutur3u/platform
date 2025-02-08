@@ -1,6 +1,6 @@
 'use client';
 
-import { Product } from '@/types/primitives/Product';
+import { Product } from '@repo/types/primitives/Product';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

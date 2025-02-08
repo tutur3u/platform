@@ -1,8 +1,8 @@
 'use client';
 
 import { UserRowActions } from './row-actions';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
+import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,

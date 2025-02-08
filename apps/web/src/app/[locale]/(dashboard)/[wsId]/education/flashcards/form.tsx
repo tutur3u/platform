@@ -1,7 +1,7 @@
 'use client';
 
-import { WorkspaceFlashcard } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { WorkspaceFlashcard } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,

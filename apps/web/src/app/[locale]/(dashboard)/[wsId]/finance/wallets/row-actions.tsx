@@ -1,7 +1,7 @@
 'use client';
 
 import { WalletForm } from './form';
-import { Wallet } from '@/types/primitives/Wallet';
+import { Wallet } from '@repo/types/primitives/Wallet';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {

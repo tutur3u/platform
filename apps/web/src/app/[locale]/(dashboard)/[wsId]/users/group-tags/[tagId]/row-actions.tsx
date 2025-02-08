@@ -1,6 +1,6 @@
 'use client';
 
-import { UserGroup } from '@/types/primitives/UserGroup';
+import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,

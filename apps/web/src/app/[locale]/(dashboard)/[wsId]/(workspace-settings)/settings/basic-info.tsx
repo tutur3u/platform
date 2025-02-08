@@ -2,7 +2,7 @@
 
 import WorkspaceIDCopy from './id-copy';
 import NameInput from './name-input';
-import { Workspace } from '@/types/primitives/Workspace';
+import { Workspace } from '@repo/types/primitives/Workspace';
 import { useTranslations } from 'next-intl';
 
 interface Props {

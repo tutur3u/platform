@@ -3,7 +3,7 @@
 import { aiPromptsColumns } from './columns';
 import { AIPromptForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { AIPrompt } from '@/types/db';
+import { AIPrompt } from '@repo/types/db';
 import { Dialog } from '@repo/ui/components/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
