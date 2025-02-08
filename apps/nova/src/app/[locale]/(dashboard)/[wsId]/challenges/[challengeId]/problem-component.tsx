@@ -13,7 +13,7 @@ interface Problem {
 export default function ProblemComponent({ problem }: { problem: Problem }) {
   return (
     <div>
-      <Card className="overflow-y-auto p-4 pt-10">
+      <Card className="min-h-[500px] overflow-y-auto p-4 pt-10">
         <h2 className="text-xl font-bold">{problem.title}</h2>
         <p className="mt-2">{problem.description}</p>
         <h3 className="mt-3 font-semibold">Example:</h3>
