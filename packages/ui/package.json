@@ -43,7 +43,7 @@
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "embla-carousel-react": "^8.5.2",
-    "eslint": "^9.19.0",
+    "eslint": "^9.20.0",
     "input-otp": "^1.4.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.474.0",
@@ -66,7 +66,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.19.0",
+    "@eslint/js": "^9.20.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.0.4",
