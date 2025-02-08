@@ -4,6 +4,7 @@ export interface Challenge {
   topic: string;
   description: string;
   problems: Problems[];
+  constraints?: string[];
 }
 
 export interface Problems {
@@ -30,11 +31,16 @@ const challenges: Challenge[] = [
           'The Industrial Revolution was a period of major industrialization and innovation during the late 18th and early 19th century. It started in Great Britain and spread worldwide, introducing mechanized agriculture, textile manufacturing, and steam-powered transportation.',
         exampleOutput:
           'The Industrial Revolution transformed industry with mechanization, starting in Britain and spreading globally.',
+        constraints: [
+          '1 ≤ s.length ≤ 3 * 10⁵',
+          's consists of printable ASCII characters.',
+        ],
       },
       {
         id: '1b',
         title: 'Summarization While Keeping Dates',
-        description: 'Summarize a text without **removing key numbers or dates**.',
+        description:
+          'Summarize a text without **removing key numbers or dates**.',
         exampleInput:
           'In 2023, the global AI industry was valued at $150 billion, with an expected growth rate of 40% annually until 2030.',
         exampleOutput:
@@ -54,7 +60,7 @@ const challenges: Challenge[] = [
         title: 'Positive vs. Negative Sentiment',
         description: 'Classify a given text as **positive or negative**.',
         exampleInput:
-          "I love this phone! The battery lasts forever, and the camera is amazing.",
+          'I love this phone! The battery lasts forever, and the camera is amazing.',
         exampleOutput: 'Positive',
       },
       {
@@ -70,8 +76,7 @@ const challenges: Challenge[] = [
     id: 3,
     title: 'Code Explanation',
     topic: 'Programming',
-    description:
-      'Explain programming concepts in simple terms.',
+    description: 'Explain programming concepts in simple terms.',
     problems: [
       {
         id: '3a',
