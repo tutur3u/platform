@@ -5,7 +5,7 @@ import CustomizedHeader from './customizedHeader';
 import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface Props {
   params: {
@@ -15,14 +15,15 @@ interface Props {
 
 export default function Page({ params }: Props) {
   const [challenge, setChallenge] = useState<any | null>(null);
-  
+
   useEffect(() => {
     // Wait for params to resolve
     const fetchData = async () => {
-      const challengeData = await getChallenge(parseInt(params.challengeId));
+      const { challengeId } = await params;
+      const challengeData = getChallenge(parseInt(challengeId));
       setChallenge(challengeData);
     };
-    
+
     fetchData();
   }, [params]);
 
