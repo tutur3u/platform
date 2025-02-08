@@ -7,9 +7,10 @@ import { useTranslations } from 'next-intl';
 
 interface Props {
   wsId: string;
+  onFinish?: () => void;
 }
 
-export default function WhitelistEmailClient({ wsId }: Props) {
+export default function WhitelistEmailClient({ wsId, onFinish }: Props) {
   const t = useTranslations();
   const { toast } = useToast();
 
@@ -20,6 +21,7 @@ export default function WhitelistEmailClient({ wsId }: Props) {
         title: t('common.success'),
         description: t('common.email_added'),
       });
+      onFinish?.();
       // eslint-disable-next-line no-unused-vars
     } catch (error) {
       toast({

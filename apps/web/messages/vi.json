@@ -58,7 +58,7 @@
     "download": "Tải xuống",
     "rename": "Đổi tên",
     "processing": "Đang xử lý...",
-    "saving": "Đang lưu",
+    "saving": "Đang lưu thay đổi...",
     "loading": "Đang tải",
     "success": "Thành công",
     "complete": "Hoàn tất",
@@ -141,7 +141,7 @@
     "share": "Chia sẻ",
     "confirm_delete_title": "Xác nhận xoá",
     "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được.",
-    "saved": "Đã lưu",
+    "saved": "Đã lưu tất cả thay đổi",
     "unsaved": "Chưa lưu",
     "previous": "Trước đó",
     "next": "Tiếp theo",
@@ -256,8 +256,6 @@
     "public_document": "Tài liệu công khai",
     "private_document": "Tài liệu riêng tư",
     "last_saved": "Lần lưu cuối: {time}",
-    "saving": "Đang lưu thay đổi...",
-    "saved": "Đã lưu tất cả thay đổi",
     "unsaved_changes": "Bạn có thay đổi chưa được lưu",
     "error_saving": "Lỗi khi lưu thay đổi",
     "save_failed": "Không thể lưu thay đổi",
@@ -270,7 +268,9 @@
     "error_updating_name": "Lỗi khi cập nhật tên",
     "visibility_updated": "Đã cập nhật quyền truy cập thành công",
     "error_updating_visibility": "Lỗi khi cập nhật quyền truy cập",
-    "error_deleting": "Lỗi khi xoá tài liệu"
+    "error_deleting": "Lỗi khi xoá tài liệu",
+    "domain_added": "Tên miền được thêm vào",
+    "error_adding_domain": "Không thể thêm miền"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -2390,6 +2390,14 @@
     }
   },
   "ai-whitelist": {
-    "add_email": "Thêm email"
+    "add_email": "Thêm email",
+    "add_domain": "Thêm tên miền"
+  },
+  "ws-ai-whitelist-domains": {
+    "plural": "Tên miền thuộc danh sách trắng",
+    "singular": "Tên miền thuộc danh sách trắng",
+    "description": "Các miền được liệt kê trắng được sử dụng để cho phép các miền cụ thể truy cập các tính năng AI.",
+    "create": "Tạo tên miền danh sách trắng",
+    "create_description": "Tạo một miền được liệt kê trong danh sách trắng"
   }
 }

@@ -23,6 +23,7 @@ export default async function InfrastructureOverviewPage({ params }: Props) {
   const workspaces = await getWorkspaceCount();
   const timezones = tzs.length;
   const aiWhitelistedEmails = await getAIWhitelistedEmailsCount();
+  const aiWhitelistedDomains = await getAIWhitelistedDomainsCount();
 
   return (
     <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -47,7 +48,13 @@ export default async function InfrastructureOverviewPage({ params }: Props) {
       <StatisticCard
         title={t('infrastructure-tabs.ai_whitelisted_emails')}
         value={aiWhitelistedEmails}
-        href={`/${wsId}/infrastructure/ai/whitelist`}
+        href={`/${wsId}/infrastructure/ai/whitelist/emails`}
+      />
+
+      <StatisticCard
+        title={t('ws-ai-whitelist-domains.plural')}
+        value={aiWhitelistedDomains}
+        href={`/${wsId}/infrastructure/ai/whitelist/domains`}
       />
     </div>
   );
@@ -83,6 +90,20 @@ async function getAIWhitelistedEmailsCount() {
 
   const { count } = await supabaseAdmin
     .from('ai_whitelisted_emails')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    });
+
+  return count;
+}
+
+async function getAIWhitelistedDomainsCount() {
+  const supabaseAdmin = await createAdminClient();
+  if (!supabaseAdmin) notFound();
+
+  const { count } = await supabaseAdmin
+    .from('ai_whitelisted_domains')
     .select('*', {
       count: 'exact',
       head: true,

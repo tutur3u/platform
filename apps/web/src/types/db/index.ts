@@ -46,6 +46,8 @@ export type WorkspaceCronExecution = Tables<'workspace_cron_executions'> & {
   href?: string;
 };
 
+export type AIWhitelistDomain = Tables<'ai_whitelisted_domains'>;
+
 export type PermissionId =
   Database['public']['Enums']['workspace_role_permission'];
 
