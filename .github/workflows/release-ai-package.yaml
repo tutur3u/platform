@@ -46,8 +46,24 @@ jobs:
         working-directory: packages/ai
         run: pnpm test
 
+  version-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check versions match
+        working-directory: packages/ai
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          JSR_VERSION=$(node -p "require('./jsr.json').version")
+          if [ "$PKG_VERSION" != "$JSR_VERSION" ]; then
+            echo "Version mismatch: package.json ($PKG_VERSION) != jsr.json ($JSR_VERSION)"
+            exit 1
+          fi
+          echo "Versions match: $PKG_VERSION"
+
   publish-gpr:
-    needs: build
+    needs: [build, version-check]
     runs-on: ubuntu-latest
 
     permissions:
@@ -80,7 +96,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
   publish-jsr:
-    needs: build
+    needs: [build, version-check]
     runs-on: ubuntu-latest
 
     permissions:
