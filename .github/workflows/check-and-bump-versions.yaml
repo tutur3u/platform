@@ -27,11 +27,13 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -40,6 +42,11 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
       - name: Configure Tiptap Pro
         run: |
@@ -52,7 +59,12 @@ jobs:
       - name: Get changed packages
         id: changed-packages
         run: |
-          CHANGED_PACKAGES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "^packages/" | cut -d/ -f2 | sort -u)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED_PACKAGES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "^packages/" | cut -d/ -f2 | sort -u || true)
+          else
+            CHANGED_PACKAGES=$(git diff --name-only HEAD~1 HEAD | grep "^packages/" | cut -d/ -f2 | sort -u || true)
+          fi
+          echo "Changed packages: $CHANGED_PACKAGES"
           echo "packages=${CHANGED_PACKAGES}" >> $GITHUB_OUTPUT
 
       - name: Check and bump versions
@@ -68,10 +80,17 @@ jobs:
               # Get current version
               CURRENT_VERSION=$(node -p "require('./package.json').version")
               
-              # Bump patch version if checksum changed
+              # Try to get old checksum, continue if file doesn't exist
               OLD_CHECKSUM=$(git show HEAD:packages/$package/.checksum 2>/dev/null || echo "")
+              
+              echo "Package: $package"
+              echo "Current version: $CURRENT_VERSION"
+              echo "Old checksum: $OLD_CHECKSUM"
+              echo "New checksum: $NEW_CHECKSUM"
+              
               if [ "$NEW_CHECKSUM" != "$OLD_CHECKSUM" ]; then
                 NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+                echo "Bumping version to: $NEW_VERSION"
                 
                 # Update package.json with new version
                 sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
@@ -79,23 +98,21 @@ jobs:
                 # Update checksum
                 echo "$NEW_CHECKSUM" > .checksum
                 
-                git config --local user.email "github-actions[bot]@users.noreply.github.com"
-                git config --local user.name "github-actions[bot]"
-                
                 # Create a new branch for version bump
                 BRANCH_NAME="bump-${package}-${NEW_VERSION}"
-                git checkout -b $BRANCH_NAME
+                git checkout -b "$BRANCH_NAME"
                 
                 git add package.json .checksum
                 git commit -m "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}"
-                git push origin $BRANCH_NAME
+                git push origin "$BRANCH_NAME"
                 
-                # Create PR
+                # Create PR using GitHub CLI
+                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 gh pr create \
                   --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
-                  --body "Automated version bump due to package changes\n\nChecksum changed from:\n$OLD_CHECKSUM\nto:\n$NEW_CHECKSUM" \
+                  --body "Automated version bump due to package changes\n\nChecksum changed from:\n\`\`\`\n$OLD_CHECKSUM\n\`\`\`\nto:\n\`\`\`\n$NEW_CHECKSUM\n\`\`\`" \
                   --base ${{ github.event.pull_request.base.ref || 'main' }} \
-                  --head $BRANCH_NAME
+                  --head "$BRANCH_NAME" || true
               fi
               
               cd ../..
@@ -103,3 +120,4 @@ jobs:
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
