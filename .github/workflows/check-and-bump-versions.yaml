@@ -106,8 +106,11 @@ jobs:
                 -not -name "*.log" \
                 -exec sha256sum {} \; | sort | sha256sum | cut -d ' ' -f1)
               
-              # Try to get old checksum, continue if file doesn't exist
-              OLD_CHECKSUM=$(git show HEAD:packages/$package/.checksum 2>/dev/null || echo "")
+              # Try to get old checksum, handle case where file doesn't exist yet
+              OLD_CHECKSUM=""
+              if git ls-files --error-unmatch .checksum >/dev/null 2>&1; then
+                OLD_CHECKSUM=$(git show HEAD:.checksum 2>/dev/null || echo "")
+              fi
               
               echo "Package: $package"
               echo "Current version: $CURRENT_VERSION"
@@ -116,10 +119,29 @@ jobs:
               
               # Check if there are meaningful changes (not just build artifacts)
               if [ "$NEW_CHECKSUM" != "$OLD_CHECKSUM" ]; then
-                # Check if the changes are in source files
-                SOURCE_FILES_CHANGED=$(git diff --name-only HEAD~1 HEAD "packages/$package" | grep -E "\.(ts|tsx|js|jsx|json|css|scss|md)$" || true)
+                # First, check if this is a new package (no old checksum)
+                if [ -z "$OLD_CHECKSUM" ]; then
+                  echo "New package detected, will create initial version"
+                  SHOULD_BUMP=true
+                else
+                  # For existing packages, check if source files changed
+                  SOURCE_FILES_CHANGED=$(git ls-files "packages/$package" | grep -E "\.(ts|tsx|js|jsx|json|css|scss|md)$" | while read -r file; do
+                    if [ -f "$file" ]; then
+                      echo "$file"
+                    fi
+                  done)
+                  
+                  if [ -n "$SOURCE_FILES_CHANGED" ]; then
+                    echo "Source files found:"
+                    echo "$SOURCE_FILES_CHANGED"
+                    SHOULD_BUMP=true
+                  else
+                    echo "No source files changed"
+                    SHOULD_BUMP=false
+                  fi
+                fi
                 
-                if [ -n "$SOURCE_FILES_CHANGED" ]; then
+                if [ "$SHOULD_BUMP" = true ]; then
                   NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
                   echo "Meaningful changes detected, bumping version to: $NEW_VERSION"
                   
