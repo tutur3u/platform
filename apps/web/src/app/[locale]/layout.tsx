@@ -4,6 +4,7 @@ import { Providers } from '@/components/providers';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { siteConfig } from '@/constants/configs';
 import { routing, supportedLocales } from '@/i18n/routing';
+import '@/style/prosemirror.css';
 import { Toaster } from '@repo/ui/components/ui/toaster';
 import '@repo/ui/globals.css';
 import { cn } from '@repo/ui/lib/utils';
@@ -14,7 +15,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
 import { notFound } from 'next/navigation';
-import '@/style/prosemirror.css';
 import { ReactNode } from 'react';
 
 const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
@@ -125,7 +125,7 @@ export default async function RootLayout({ children, params }: Props) {
         <VercelInsights />
         <Providers
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="dark"
           themes={[
             'system',
 
@@ -146,7 +146,7 @@ export default async function RootLayout({ children, params }: Props) {
             'dark-blue',
           ]}
           enableColorScheme={false}
-          enableSystem
+          enableSystem={false}
         >
           <NextIntlClientProvider messages={messages}>
             {children}

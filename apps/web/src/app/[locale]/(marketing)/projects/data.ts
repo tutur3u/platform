@@ -1,12 +1,79 @@
-export const projects: {
+export type Project = {
   name: string;
   description?: string;
-  type: 'web' | 'software' | 'hardware' | 'other';
+  type: 'web' | 'software' | 'hardware';
   manager?: string;
   techStack?: string[];
   purpose: string;
-  status: 'planning' | 'in-progress' | 'completed';
-}[] = [
+  status: 'planning' | 'ongoing' | 'completed';
+  members?: { name: string; role: string }[];
+};
+
+export const projects: Project[] = [
+  {
+    name: 'Neo ID Scanner',
+    description:
+      "An ID scanner used to retrieve student's name and ID in events.",
+    type: 'software',
+    techStack: ['Python', 'React.js'],
+    status: 'ongoing',
+    manager: 'Nguyen Ngoc Luong',
+    purpose:
+      "This project aims to save time for gathering participant's information.",
+  },
+  {
+    name: 'Neo Micromouse',
+    description:
+      'A micromouse robot with manual control and automatic navigation.',
+    type: 'hardware',
+    techStack: ['Arduino', 'C++', 'PlatformIO'],
+    status: 'ongoing',
+    manager: 'Huynh Hoang Duc',
+    purpose:
+      'This project aims to create a sophisticated micromouse capable of navigating mazes efficiently.',
+    members: [
+      { name: 'Pham Ngoc Phu Vinh', role: 'Hardware Engineer' },
+      { name: 'Tran Thanh Sang', role: 'Hardware Engineer' },
+      { name: 'Nguyen Gia Khang', role: 'Software Developer' },
+      { name: 'Tran Viet Duc', role: 'Software Developer' },
+      { name: 'Ngo Van Tai', role: 'CAD Designer' },
+      { name: 'Huynh Thai Duong', role: 'CAD Designer' },
+    ],
+  },
+  {
+    name: 'Neo Chess',
+    description:
+      'An in-house chess game with multiplayer and AI-based opponent.',
+    type: 'web',
+    techStack: [
+      'Next.js',
+      'Typescript',
+      'Tailwind CSS',
+      'Supabase Realtime',
+      'Shadcn UI',
+    ],
+    status: 'ongoing',
+    manager: 'Luong Ngoc Bao Tran',
+    purpose:
+      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
+    members: [{ name: 'Vo Hoang Phuc', role: 'Developer' }],
+  },
+  {
+    name: 'Neo Checker',
+    description: 'An in-house checkers game that is planning.',
+    type: 'web',
+    techStack: [
+      'Next.js',
+      'Typescript',
+      'Tailwind CSS',
+      'Supabase Realtime',
+      'Shadcn UI',
+    ],
+    status: 'planning',
+    manager: 'Vo Hoang Phuc',
+    purpose:
+      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
+  },
   {
     name: 'Neo Crush',
     description:
@@ -19,60 +86,14 @@ export const projects: {
       'Supabase Realtime',
       'Shadcn UI',
     ],
-    status: 'in-progress',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
-  },
-  {
-    name: 'Neo Chess',
-    description:
-      "An in-house chess game that is planned for RMIT 2024 Semester C's Club Day.",
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase Realtime',
-      'Shadcn UI',
-    ],
-    status: 'in-progress',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
-  },
-  {
-    name: 'Neo Checker',
-    description:
-      "An in-house checkers game that is planned for RMIT 2024 Semester C's Club Day.",
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase Realtime',
-      'Shadcn UI',
-    ],
-    status: 'in-progress',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
-  },
-  {
-    name: 'NCT-2024C Landing Page',
-    description:
-      "The landing page for RMIT 2024 Semester C's Club Day, showcasing the club's projects and activities.",
-    type: 'web',
-    techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
     status: 'planning',
     manager: 'Vo Hoang Phuc',
     purpose:
-      'A revamp of the club landing page to showcase the club projects and activities.',
+      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
   },
   {
-    name: 'NCT AI Chatbot',
-    description:
-      "An AI chatbot that is planned for RMIT 2024 Semester C's Club Day.",
+    name: 'Neo AI Chatbot',
+    description: 'An AI chatbot that is planning.',
     type: 'web',
     techStack: [
       'Next.js',
@@ -87,9 +108,27 @@ export const projects: {
       'A short-term project to demonstrate AI chatbot development with cutting-edge technologies.',
   },
   {
+    name: 'NCT Hub Landing Page',
+    description:
+      "The landing page showcasing the club's projects and activities.",
+    type: 'web',
+    techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
+    status: 'completed',
+    manager: 'Ngo Van Tai',
+    purpose:
+      'A revamp of the club landing page to showcase the club projects and activities.',
+
+    members: [
+      { name: 'Nguyen Phuong Anh', role: 'Developer' },
+      { name: 'Luong Ngoc Bao Tran', role: 'Developer' },
+      { name: 'Huynh Ngoc Nhat Mai', role: 'Developer' },
+      { name: 'Nguyen Gia Khang', role: 'Developer' },
+    ],
+  },
+  {
     name: 'Neo Crush Alpha',
     description:
-      "An 4-day internal hackathon game that was planned for RMIT 2024 Semester B's Club Day.",
+      "An 4-day internal hackathon game that was planned for RMIT Sem B 2024's Club Day.",
     type: 'web',
     techStack: [
       'Next.js',
@@ -140,10 +179,20 @@ export const projects: {
       'An alternative tool to When2meet with enhances UI/UX and additional features.',
   },
   {
+    name: 'Fingerprint Lock',
+    description: 'A fingerprint lock with sensors.',
+    type: 'hardware',
+    techStack: ['Arduino', 'C++', 'PlatformIO'],
+    status: 'completed',
+    manager: 'Cao Nguyen Viet Quang',
+    purpose:
+      'Hands on intermediate embedded project with hardware design and C programming.',
+  },
+  {
     name: 'NCT Web Platform',
     description: 'The first version of the club web platform.',
     type: 'web',
-    techStack: ['React.js', 'Node.js', 'Javascript'],
+    techStack: ['React.js'],
     status: 'completed',
     manager: 'Seokyung Kim',
     purpose:
@@ -185,16 +234,6 @@ export const projects: {
     status: 'completed',
     manager: 'Nguyen Son Tung',
     purpose: 'A simple game to practice React.js and its ecosystem.',
-  },
-  {
-    name: 'Fingerprint Lock',
-    description: 'A fingerprint lock with sensors.',
-    type: 'hardware',
-    techStack: ['C++', 'Arduino'],
-    status: 'completed',
-    manager: 'Cao Viet Quang',
-    purpose:
-      'Hands on intermediate embedded project with hardware design and C programming.',
   },
   {
     name: 'NCT Movie Website',
