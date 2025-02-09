@@ -8,9 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/ai
 
     env:
       # Use Vercel Remote Caching
@@ -45,15 +42,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Navigate to packages/ai
+        run: cd packages/ai
+
       - name: Run tests
         run: pnpm test
 
   publish-gpr:
     needs: build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/ai
+
     permissions:
       packages: write
       contents: read
@@ -77,6 +75,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Navigate to packages/ai
+        run: cd packages/ai
+
       - name: Publish package
         run: pnpm publish --no-git-checks
         env:
@@ -85,9 +86,7 @@ jobs:
   publish-jsr:
     needs: build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/ai
+
     permissions:
       packages: write
       contents: read
@@ -105,6 +104,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Navigate to packages/ai
+        run: cd packages/ai
 
       - name: Publish package
         run: pnpm dlx jsr publish
