@@ -62,8 +62,49 @@ jobs:
           fi
           echo "Versions match: $PKG_VERSION"
 
+  check-registries:
+    needs: [version-check]
+    runs-on: ubuntu-latest
+    outputs:
+      publish_gpr: ${{ steps.check-gpr.outputs.should_publish }}
+      publish_jsr: ${{ steps.check-jsr.outputs.should_publish }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get package version
+        id: get-version
+        working-directory: packages/ai
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check GPR
+        id: check-gpr
+        continue-on-error: true
+        run: |
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://npm.pkg.github.com/@tutur3u/ai@${{ steps.get-version.outputs.version }})
+          if [ "$STATUS_CODE" = "404" ]; then
+            echo "Version not found in GPR, will publish"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version already exists in GPR, skipping"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+
+      - name: Check JSR
+        id: check-jsr
+        continue-on-error: true
+        run: |
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://jsr.io/@tuturuuu/ai@${{ steps.get-version.outputs.version }})
+          if [ "$STATUS_CODE" = "404" ]; then
+            echo "Version not found in JSR, will publish"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version already exists in JSR, skipping"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+
   publish-gpr:
-    needs: [build, version-check]
+    needs: [build, check-registries]
+    if: needs.check-registries.outputs.publish_gpr == 'true'
     runs-on: ubuntu-latest
 
     permissions:
@@ -96,7 +137,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
   publish-jsr:
-    needs: [build, version-check]
+    needs: [build, check-registries]
+    if: needs.check-registries.outputs.publish_jsr == 'true'
     runs-on: ubuntu-latest
 
     permissions:
