@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -106,18 +106,21 @@ jobs:
                 git commit -m "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}"
                 git push origin "$BRANCH_NAME"
                 
-                # Create PR using GitHub CLI
-                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+                # Create PR using GitHub CLI with explicit token
+                echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
                 gh pr create \
                   --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
                   --body "Automated version bump due to package changes\n\nChecksum changed from:\n\`\`\`\n$OLD_CHECKSUM\n\`\`\`\nto:\n\`\`\`\n$NEW_CHECKSUM\n\`\`\`" \
                   --base ${{ github.event.pull_request.base.ref || 'main' }} \
-                  --head "$BRANCH_NAME" || true
+                  --head "$BRANCH_NAME" \
+                  --repo ${{ github.repository }} || {
+                    echo "Failed to create PR for $BRANCH_NAME. This may be because a PR already exists."
+                  }
               fi
               
               cd ../..
             fi
           done
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
