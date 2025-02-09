@@ -10,7 +10,6 @@ export const preferredRegion = 'sin1';
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
-
   const {
     id,
     model = appConfig.defaultModel,
