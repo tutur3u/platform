@@ -10,6 +10,11 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.5",
+    "@tutur3u/ai": "^0.0.8",
+    "@tutur3u/eslint-config": "^0.1.0",
+    "@tutur3u/supabase": "^0.0.3",
+    "@tutur3u/types": "^0.1.1",
+    "@tutur3u/typescript-config": "^0.1.0",
     "next": "15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

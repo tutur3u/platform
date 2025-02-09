@@ -56,6 +56,21 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.0.5
         version: 4.0.5
+      '@tutur3u/ai':
+        specifier: ^0.0.8
+        version: 0.0.8(@opentelemetry/api@1.9.0)(jiti@2.4.2)
+      '@tutur3u/eslint-config':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@tutur3u/supabase':
+        specifier: ^0.0.3
+        version: 0.0.3(@opentelemetry/api@1.9.0)(jiti@2.4.2)
+      '@tutur3u/types':
+        specifier: ^0.1.1
+        version: 0.1.1(jiti@2.4.2)
+      '@tutur3u/typescript-config':
+        specifier: ^0.1.0
+        version: 0.1.0
       next:
         specifier: 15.1.6
         version: 15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -308,10 +323,10 @@ importers:
         version: 2.7.20
       '@vercel/analytics':
         specifier: ^1.4.1
-        version: 1.4.1(next@15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.4.1(next@15.1.6(@babel/core@7.26.8)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       '@vercel/speed-insights':
         specifier: ^1.1.0
-        version: 1.1.0(next@15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.1.0(next@15.1.6(@babel/core@7.26.8)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-55955c9-20241229
         version: 19.0.0-beta-55955c9-20241229
@@ -365,10 +380,10 @@ importers:
         version: 1.0.0
       next:
         specifier: ^15.1.6
-        version: 15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 15.1.6(@babel/core@7.26.8)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-intl:
         specifier: ^3.26.3
-        version: 3.26.3(next@15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 3.26.3(next@15.1.6(@babel/core@7.26.8)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -777,10 +792,10 @@ importers:
         version: 2.7.20
       '@vercel/analytics':
         specifier: ^1.4.1
-        version: 1.4.1(next@15.1.6(@babel/core@7.26.8)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.4.1(next@15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       '@vercel/speed-insights':
         specifier: ^1.1.0
-        version: 1.1.0(next@15.1.6(@babel/core@7.26.8)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.1.0(next@15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-55955c9-20241229
         version: 19.0.0-beta-55955c9-20241229
@@ -834,10 +849,10 @@ importers:
         version: 1.0.0
       next:
         specifier: ^15.1.6
-        version: 15.1.6(@babel/core@7.26.8)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-intl:
         specifier: ^3.26.3
-        version: 3.26.3(next@15.1.6(@babel/core@7.26.8)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 3.26.3(next@15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -4939,6 +4954,21 @@ packages:
         optional: true
       svelte:
         optional: true
+
+  '@tutur3u/ai@0.0.8':
+    resolution: {integrity: sha512-AmX+/SLseh6HLxO2x92H+5C8AZHfQtl9hQ3Aypg/RJlQyt/kpsVnUgemgwvLKeGdxLaQ7kGQxxv196KCO+3HDw==}
+
+  '@tutur3u/eslint-config@0.1.0':
+    resolution: {integrity: sha512-qaFvWeQdnp7tEZntoUkOX+hRLBPm/vrpusd86S5MOpn00sCBRSciitJSdG9B6lMyk/F/dIErIG/c1WHQ0Mpn5Q==}
+
+  '@tutur3u/supabase@0.0.3':
+    resolution: {integrity: sha512-FucnY3k5rf8eA81W27P/wRq4Mpe7b0wcluwGuH2dDWw8C34MbxlcRhe4jF0gkEkHPcZvtcInOPk8acr57pclMA==}
+
+  '@tutur3u/types@0.1.1':
+    resolution: {integrity: sha512-m45JJNEicEaq0P/49IqHHPeMNHb0B34Ez7wiHywpkeb9Sxx1oZNQphAa2bHjWIaqUvqK0I/0kVFlN/SlqfOT7w==}
+
+  '@tutur3u/typescript-config@0.1.0':
+    resolution: {integrity: sha512-tyjyaEg1r0rRTBcoHJEmIEV0+14R/ISV/oVKj0h/jUyC7breM39uECnpuKtPxbRvdQcmTHm51eZapW/H0Rvy8Q==}
 
   '@types/aria-query@5.0.4':
     resolution: {integrity: sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw==}
@@ -12617,6 +12647,75 @@ snapshots:
       prettier: 3.5.0
     transitivePeerDependencies:
       - supports-color
+
+  '@tutur3u/ai@0.0.8(@opentelemetry/api@1.9.0)(jiti@2.4.2)':
+    dependencies:
+      '@ai-sdk/amazon-bedrock': 1.1.6(zod@3.24.1)
+      '@ai-sdk/anthropic': 1.1.6(zod@3.24.1)
+      '@ai-sdk/azure': 1.1.9(zod@3.24.1)
+      '@ai-sdk/cohere': 1.1.8(zod@3.24.1)
+      '@ai-sdk/google': 1.1.11(zod@3.24.1)
+      '@ai-sdk/google-vertex': 2.1.12(zod@3.24.1)
+      '@ai-sdk/mistral': 1.1.7(zod@3.24.1)
+      '@ai-sdk/openai': 1.1.9(zod@3.24.1)
+      '@ai-sdk/react': 1.1.11(react@19.0.0)(zod@3.24.1)
+      '@google/generative-ai': 0.21.0
+      '@tutur3u/supabase': 0.0.3(@opentelemetry/api@1.9.0)(jiti@2.4.2)
+      ai: 4.1.28(react@19.0.0)(zod@3.24.1)
+      eslint: 9.20.0(jiti@2.4.2)
+      next: 15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      zod: 3.24.1
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@opentelemetry/api'
+      - '@playwright/test'
+      - aws-crt
+      - babel-plugin-macros
+      - babel-plugin-react-compiler
+      - bufferutil
+      - encoding
+      - jiti
+      - sass
+      - supports-color
+      - utf-8-validate
+
+  '@tutur3u/eslint-config@0.1.0': {}
+
+  '@tutur3u/supabase@0.0.3(@opentelemetry/api@1.9.0)(jiti@2.4.2)':
+    dependencies:
+      '@supabase/ssr': 0.5.2(@supabase/supabase-js@2.48.1)
+      '@supabase/supabase-js': 2.48.1
+      '@tutur3u/types': 0.1.1(jiti@2.4.2)
+      eslint: 9.20.0(jiti@2.4.2)
+      next: 15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      zod: 3.24.1
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@opentelemetry/api'
+      - '@playwright/test'
+      - babel-plugin-macros
+      - babel-plugin-react-compiler
+      - bufferutil
+      - jiti
+      - sass
+      - supports-color
+      - utf-8-validate
+
+  '@tutur3u/types@0.1.1(jiti@2.4.2)':
+    dependencies:
+      eslint: 9.20.0(jiti@2.4.2)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      zod: 3.24.1
+    transitivePeerDependencies:
+      - jiti
+      - supports-color
+
+  '@tutur3u/typescript-config@0.1.0': {}
 
   '@types/aria-query@5.0.4': {}
 
