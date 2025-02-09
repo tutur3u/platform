@@ -1,6 +1,6 @@
 import { quizOptionExplanationSchema } from '../../types';
 import { google } from '@ai-sdk/google';
-import { createAdminClient, createClient } from '@repo/supabase/next/server';
+import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
 import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
 

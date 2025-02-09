@@ -1,5 +1,5 @@
 import { ProductForm } from './form';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { Product2 } from '@repo/types/primitives/Product';
 import { ProductCategory } from '@repo/types/primitives/ProductCategory';
 import { ProductInventory } from '@repo/types/primitives/ProductInventory';

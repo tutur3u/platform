@@ -1,7 +1,7 @@
 import { AiImage, AiWriter, StarterKit } from '@/extensions';
 import { Ai } from '@/extensions/Ai';
 import { ExtensionKit } from '@/extensions/extension-kit';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import type { AnyExtension } from '@tiptap/core';
 import { JSONContent } from '@tiptap/core';
 import Mention from '@tiptap/extension-mention';

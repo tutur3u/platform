@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   Avatar,
   AvatarFallback,

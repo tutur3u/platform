@@ -2,7 +2,7 @@ import { Filter } from '../../../users/filters';
 import { SectionProps } from './index';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Avatar,

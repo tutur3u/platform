@@ -2,7 +2,7 @@ import { getUserColumns } from '../../users/database/columns';
 import Filters from '../../users/database/filters';
 import MailPosts from './posts';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import type { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';

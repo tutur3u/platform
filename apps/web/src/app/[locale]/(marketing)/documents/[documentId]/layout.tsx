@@ -1,5 +1,5 @@
 import { siteConfig } from '@/constants/configs';
-import { createAdminClient } from '@repo/supabase/next/server';
+import { createAdminClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceDocument } from '@repo/types/db';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';

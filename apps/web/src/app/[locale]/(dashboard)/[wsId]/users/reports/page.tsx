@@ -1,7 +1,7 @@
 import { Filter } from '../filters';
 import { getUserReportColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceUserReport } from '@repo/types/db';
 import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';

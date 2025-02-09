@@ -2,7 +2,7 @@
 
 import { Filter } from '../../../users/filters';
 import { cn } from '@/lib/utils';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { Button } from '@repo/ui/components/ui/button';
 import SearchBar from '@repo/ui/components/ui/custom/search-bar';

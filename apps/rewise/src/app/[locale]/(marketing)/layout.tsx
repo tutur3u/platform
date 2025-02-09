@@ -4,7 +4,7 @@ import { getChats } from './helper';
 import { Structure } from './structure';
 import { NavLink } from '@/components/navigation';
 import { getCurrentUser } from '@/lib/user-helper';
-import { createAdminClient } from '@repo/supabase/next/server';
+import { createAdminClient } from '@tutur3u/supabase/next/server';
 import { MessageSquare } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cookies as c } from 'next/headers';

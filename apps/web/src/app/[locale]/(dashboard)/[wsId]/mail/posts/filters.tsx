@@ -1,5 +1,5 @@
 import { Filter } from '../../users/filters';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { MinusCircle, PlusCircle, User } from 'lucide-react';

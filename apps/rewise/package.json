@@ -32,7 +32,7 @@
     "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^3.10.0",
     "@tutur3u/ai": "workspace:*",
-    "@repo/supabase": "workspace:*",
+    "@tutur3u/supabase": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/ui": "workspace:*",
     "@tanstack/react-query": "^5.66.0",

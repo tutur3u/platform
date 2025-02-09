@@ -2,7 +2,7 @@
 
 import { Filter } from '../filters';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { UserGroupTag } from '@repo/types/primitives/UserGroupTag';
 import { Button } from '@repo/ui/components/ui/button';

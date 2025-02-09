@@ -3,7 +3,7 @@
 import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
 import { cn } from '@/lib/utils';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   WorkspaceUser,
   WorkspaceUserAttendance,

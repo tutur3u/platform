@@ -2,7 +2,7 @@ import Chat from '../chat';
 import { getChats } from '../helper';
 import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { type Message } from '@tutur3u/ai/types';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { AIChat } from '@repo/types/db';
 import { notFound } from 'next/navigation';
 

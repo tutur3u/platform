@@ -3,7 +3,7 @@ import StorageObjectsTable from './table';
 import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { formatBytes } from '@/utils/file-helper';
 import { joinPath } from '@/utils/path-helper';
-import { createClient, createDynamicClient } from '@repo/supabase/next/server';
+import { createClient, createDynamicClient } from '@tutur3u/supabase/next/server';
 import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
   StorageObject,

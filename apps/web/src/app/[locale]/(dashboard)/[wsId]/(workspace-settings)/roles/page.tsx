@@ -3,7 +3,7 @@ import { RoleForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { permissions, totalPermissions } from '@/lib/permissions';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceRole } from '@repo/types/db';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';

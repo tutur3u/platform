@@ -1,7 +1,7 @@
 import StatisticCard from '../../../../../../components/cards/StatisticCard';
 import tzs from '@/data/timezones.json';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
-import { createAdminClient } from '@repo/supabase/next/server';
+import { createAdminClient } from '@tutur3u/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 

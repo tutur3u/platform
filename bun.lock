@@ -46,7 +46,6 @@
         "@radix-ui/react-slot": "^1.1.2",
         "@react-email/components": "^0.0.32",
         "@react-email/tailwind": "^1.0.4",
-        "@repo/supabase": "workspace:*",
         "@repo/types": "workspace:*",
         "@repo/ui": "workspace:*",
         "@tanstack/react-query": "^5.66.0",
@@ -98,6 +97,7 @@
         "@tiptap/starter-kit": "^2.11.5",
         "@tiptap/suggestion": "^2.11.5",
         "@tutur3u/ai": "workspace:*",
+        "@tutur3u/supabase": "workspace:*",
         "@upstash/qstash": "^2.7.20",
         "@vercel/analytics": "^1.4.1",
         "@vercel/speed-insights": "^1.1.0",
@@ -208,7 +208,6 @@
         "@radix-ui/react-slot": "^1.1.2",
         "@react-email/components": "^0.0.32",
         "@react-email/tailwind": "^1.0.4",
-        "@repo/supabase": "workspace:*",
         "@repo/types": "workspace:*",
         "@repo/ui": "workspace:*",
         "@shadcn/ui": "^0.0.4",
@@ -261,6 +260,7 @@
         "@tiptap/starter-kit": "^2.11.5",
         "@tiptap/suggestion": "^2.11.5",
         "@tutur3u/ai": "workspace:*",
+        "@tutur3u/supabase": "workspace:*",
         "@upstash/qstash": "^2.7.20",
         "@vercel/analytics": "^1.4.1",
         "@vercel/speed-insights": "^1.1.0",
@@ -360,12 +360,12 @@
         "@formatjs/intl-localematcher": "^0.5.10",
         "@google/generative-ai": "^0.21.0",
         "@hookform/resolvers": "^3.10.0",
-        "@repo/supabase": "workspace:*",
         "@repo/types": "workspace:*",
         "@repo/ui": "workspace:*",
         "@tanstack/react-query": "^5.66.0",
         "@tanstack/react-table": "^8.20.6",
         "@tutur3u/ai": "workspace:*",
+        "@tutur3u/supabase": "workspace:*",
         "@upstash/qstash": "^2.7.20",
         "@vercel/analytics": "^1.4.1",
         "@vercel/speed-insights": "^1.1.0",
@@ -451,7 +451,6 @@
         "@radix-ui/react-slot": "^1.1.2",
         "@react-email/components": "^0.0.32",
         "@react-email/tailwind": "^1.0.4",
-        "@repo/supabase": "workspace:*",
         "@repo/types": "workspace:*",
         "@repo/ui": "workspace:*",
         "@tanstack/react-query": "^5.66.0",
@@ -504,6 +503,7 @@
         "@tiptap/starter-kit": "^2.11.5",
         "@tiptap/suggestion": "^2.11.5",
         "@tutur3u/ai": "workspace:*",
+        "@tutur3u/supabase": "workspace:*",
         "@types/canvas-confetti": "^1.9.0",
         "@types/papaparse": "^5.3.15",
         "@upstash/qstash": "^2.7.20",
@@ -604,7 +604,7 @@
     },
     "packages/ai": {
       "name": "@tutur3u/ai",
-      "version": "0.0.2",
+      "version": "0.0.4",
       "dependencies": {
         "@ai-sdk/amazon-bedrock": "^1.1.6",
         "@ai-sdk/anthropic": "^1.1.6",
@@ -616,7 +616,7 @@
         "@ai-sdk/openai": "^1.1.9",
         "@ai-sdk/react": "^1.1.11",
         "@google/generative-ai": "^0.21.0",
-        "@repo/supabase": "workspace:*",
+        "@tutur3u/supabase": "workspace:*",
         "ai": "^4.1.28",
         "eslint": "^9.20.0",
         "next": "^15.1.6",
@@ -647,7 +647,7 @@
       },
     },
     "packages/supabase": {
-      "name": "@repo/supabase",
+      "name": "@tutur3u/supabase",
       "version": "1.0.0",
       "dependencies": {
         "@repo/types": "workspace:*",
@@ -1345,8 +1345,6 @@
 
     "@repo/rewise": ["@repo/rewise@workspace:apps/rewise"],
 
-    "@repo/supabase": ["@repo/supabase@workspace:packages/supabase"],
-
     "@repo/types": ["@repo/types@workspace:packages/types"],
 
     "@repo/typescript-config": ["@repo/typescript-config@workspace:packages/typescript-config"],
@@ -1678,6 +1676,8 @@
     "@trivago/prettier-plugin-sort-imports": ["@trivago/prettier-plugin-sort-imports@5.2.2", "", { "dependencies": { "@babel/generator": "^7.26.5", "@babel/parser": "^7.26.7", "@babel/traverse": "^7.26.7", "@babel/types": "^7.26.7", "javascript-natural-sort": "^0.7.1", "lodash": "^4.17.21" }, "peerDependencies": { "@vue/compiler-sfc": "3.x", "prettier": "2.x - 3.x", "prettier-plugin-svelte": "3.x", "svelte": "4.x || 5.x" }, "optionalPeers": ["@vue/compiler-sfc", "prettier-plugin-svelte", "svelte"] }, "sha512-fYDQA9e6yTNmA13TLVSA+WMQRc5Bn/c0EUBditUHNfMMxN7M82c38b1kEggVE3pLpZ0FwkwJkUEKMiOi52JXFA=="],
 
     "@tutur3u/ai": ["@tutur3u/ai@workspace:packages/ai"],
+
+    "@tutur3u/supabase": ["@tutur3u/supabase@workspace:packages/supabase"],
 
     "@types/aria-query": ["@types/aria-query@5.0.4", "", {}, "sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw=="],
 

@@ -5,7 +5,7 @@ import FileDisplay from './resources/file-display';
 import { YoutubeEmbed } from './youtube-links/embed';
 import { BlockEditor } from '@/components/components/BlockEditor';
 import { extractYoutubeId } from '@/utils/url-helper';
-import { createClient, createDynamicClient } from '@repo/supabase/next/server';
+import { createClient, createDynamicClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceCourseModule } from '@repo/types/db';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {

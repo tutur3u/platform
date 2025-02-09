@@ -1,7 +1,7 @@
 'use client';
 
 import { BlockEditor } from '@/components/components/BlockEditor';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 

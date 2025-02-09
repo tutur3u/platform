@@ -1,4 +1,4 @@
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { Transaction } from '@repo/types/primitives/Transaction';
 import { NextResponse } from 'next/server';
 

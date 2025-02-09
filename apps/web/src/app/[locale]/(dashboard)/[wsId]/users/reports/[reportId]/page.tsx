@@ -1,7 +1,7 @@
 import { Filter } from '../../filters';
 import EditableReportPreview from './editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceUserReport } from '@repo/types/db';
 import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';

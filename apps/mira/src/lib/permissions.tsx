@@ -1,5 +1,5 @@
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { SupabaseUser } from '@repo/supabase/next/user';
+import { SupabaseUser } from '@tutur3u/supabase/next/user';
 import { PermissionId } from '@repo/types/db';
 import {
   Archive,

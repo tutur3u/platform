@@ -1,7 +1,7 @@
 import { invoiceColumns } from '../../../finance/invoices/columns';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceUserReport } from '@repo/types/db';
 import { Invoice } from '@repo/types/primitives/Invoice';
 import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';

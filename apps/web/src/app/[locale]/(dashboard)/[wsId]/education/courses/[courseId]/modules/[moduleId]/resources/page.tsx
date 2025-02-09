@@ -1,7 +1,7 @@
 import DeleteResourceButton from './delete-resource';
 import FileDisplay from './file-display';
 import { StorageObjectForm } from '@/app/[locale]/(dashboard)/[wsId]/drive/form';
-import { createDynamicClient } from '@repo/supabase/next/server';
+import { createDynamicClient } from '@tutur3u/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Paperclip } from 'lucide-react';

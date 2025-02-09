@@ -2,7 +2,7 @@ import { apiKeyColumns } from './columns';
 import ApiKeyEditDialog from './edit-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceApiKey } from '@repo/types/primitives/WorkspaceApiKey';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';

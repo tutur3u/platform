@@ -1,7 +1,7 @@
 'use client';
 
 import { downloadPublicObject, uploadObject } from '@/lib/storage-helper';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { Workspace } from '@repo/types/primitives/Workspace';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';

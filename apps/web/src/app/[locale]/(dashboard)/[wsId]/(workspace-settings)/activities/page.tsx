@@ -1,5 +1,5 @@
 import LogList from './log-list';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { AuditLog } from '@repo/types/primitives/audit-log';
 import { notFound } from 'next/navigation';
 

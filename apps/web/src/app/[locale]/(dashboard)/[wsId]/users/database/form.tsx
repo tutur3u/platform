@@ -4,7 +4,7 @@ import { DatePicker } from '@/components/row-actions/users/date-picker';
 import { getInitials } from '@/utils/name-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Avatar,

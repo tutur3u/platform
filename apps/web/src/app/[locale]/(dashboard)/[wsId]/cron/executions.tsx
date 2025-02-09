@@ -1,5 +1,5 @@
 import StatisticCard from '@/components/cards/StatisticCard';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
 
 export default async function ExecutionStatistics({

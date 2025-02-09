@@ -1,7 +1,7 @@
 'use client';
 
 import { getTasks } from '@/lib/task-helper';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { Progress } from '@repo/ui/components/ui/progress';
 import { cn } from '@repo/ui/lib/utils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';

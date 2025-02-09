@@ -1,7 +1,7 @@
 import { LanguageWrapper } from './language-wrapper';
 import { ThemeToggle } from './theme-toggle';
 import { UserNavWrapper } from './user-nav-wrapper';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 
 export default async function NavbarActions({
   hideMetadata = false,

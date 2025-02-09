@@ -1,7 +1,7 @@
 import { transactionCategoryColumns } from './columns';
 import { TransactionCategoryForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { TransactionCategory } from '@repo/types/primitives/TransactionCategory';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';

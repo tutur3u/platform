@@ -1,6 +1,6 @@
 import InvoiceCard from './invoice-card';
 import { availableConfigs } from '@/constants/configs/reports';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';

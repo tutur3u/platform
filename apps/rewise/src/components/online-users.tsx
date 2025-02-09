@@ -1,5 +1,5 @@
 import { getInitials } from '@/utils/name-helper';
-import { RealtimePresenceState } from '@repo/supabase/next/realtime';
+import { RealtimePresenceState } from '@tutur3u/supabase/next/realtime';
 import {
   Avatar,
   AvatarFallback,

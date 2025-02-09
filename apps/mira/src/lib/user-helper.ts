@@ -1,4 +1,4 @@
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { notFound, redirect } from 'next/navigation';
 

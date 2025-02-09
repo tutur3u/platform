@@ -1,5 +1,5 @@
 import { Filter } from '../../../users/filters';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { Invoice } from '@repo/types/primitives/Invoice';
 import type { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {

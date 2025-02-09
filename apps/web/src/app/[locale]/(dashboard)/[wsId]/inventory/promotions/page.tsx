@@ -3,7 +3,7 @@ import { PromotionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspaceUser } from '@/lib/workspace-helper';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { ProductPromotion } from '@repo/types/primitives/ProductPromotion';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';

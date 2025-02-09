@@ -1,4 +1,4 @@
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { NextRequest } from 'next/server';
 
 export async function POST(request: NextRequest) {

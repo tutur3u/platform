@@ -2,7 +2,7 @@
 
 import FlashcardForm from '../../../../../flashcards/form';
 import { cn } from '@/lib/utils';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   AlertDialog,
   AlertDialogAction,

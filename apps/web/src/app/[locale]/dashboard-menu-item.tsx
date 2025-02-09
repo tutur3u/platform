@@ -1,5 +1,5 @@
 import { DEV_MODE } from '@/constants/common';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { Workspace } from '@repo/types/primitives/Workspace';
 import {
   DropdownMenuGroup,

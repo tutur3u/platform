@@ -2,7 +2,7 @@ import { Filter } from '../../../filters';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
 import { cn } from '@/lib/utils';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceUserReport } from '@repo/types/db';
 import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';

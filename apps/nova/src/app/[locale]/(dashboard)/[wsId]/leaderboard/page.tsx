@@ -1,6 +1,6 @@
 import { Leaderboard } from '@/components/leaderboard/leaderboard';
 import { getLeaderboardData } from '@/lib/leaderboard';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import {
   Card,
   CardContent,

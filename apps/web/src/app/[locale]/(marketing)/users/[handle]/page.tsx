@@ -1,6 +1,6 @@
 import { getInitials } from '@/utils/name-helper';
-import type { SupabaseClient } from '@repo/supabase/next/client';
-import { createClient } from '@repo/supabase/next/server';
+import type { SupabaseClient } from '@tutur3u/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/server';
 import {
   Avatar,
   AvatarFallback,

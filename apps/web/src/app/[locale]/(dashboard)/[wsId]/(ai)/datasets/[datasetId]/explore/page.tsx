@@ -1,5 +1,5 @@
 import { DataExplorer } from './data-explorer';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { Card, CardContent } from '@repo/ui/components/ui/card';
 import { notFound } from 'next/navigation';
 

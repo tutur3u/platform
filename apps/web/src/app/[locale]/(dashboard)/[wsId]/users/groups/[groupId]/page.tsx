@@ -6,7 +6,7 @@ import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { cn } from '@/lib/utils';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';

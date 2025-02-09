@@ -1,7 +1,10 @@
 {
-  "name": "@repo/supabase",
-  "version": "1.0.0",
-  "private": true,
+  "name": "@tutur3u/supabase",
+  "license": "MIT",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",

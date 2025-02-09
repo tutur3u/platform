@@ -4,7 +4,7 @@ import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
-import { createDynamicClient } from '@repo/supabase/next/client';
+import { createDynamicClient } from '@tutur3u/supabase/next/client';
 import { AIChat } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {

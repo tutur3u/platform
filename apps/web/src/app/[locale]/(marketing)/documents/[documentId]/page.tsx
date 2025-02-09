@@ -1,5 +1,5 @@
 import DocumentPageContent from './document-content';
-import { createAdminClient } from '@repo/supabase/next/server';
+import { createAdminClient } from '@tutur3u/supabase/next/server';
 import { notFound } from 'next/navigation';
 
 interface Props {

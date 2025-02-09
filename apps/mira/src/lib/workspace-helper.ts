@@ -1,6 +1,6 @@
 import { permissions as rolePermissions } from './permissions';
 import { DEV_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { createAdminClient, createClient } from '@repo/supabase/next/server';
+import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
 import { PermissionId } from '@repo/types/db';
 import { Workspace } from '@repo/types/primitives/Workspace';
 import { WorkspaceSecret } from '@repo/types/primitives/WorkspaceSecret';

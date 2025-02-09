@@ -1,7 +1,7 @@
 'use client';
 
 import WorkspaceCourseModuleForm from './form';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { WorkspaceCourseModule } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';

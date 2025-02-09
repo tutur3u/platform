@@ -3,7 +3,7 @@
 import { joinPath } from '@/utils/path-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@repo/types/primitives/StorageObject';
 import { Button } from '@repo/ui/components/ui/button';
 import {

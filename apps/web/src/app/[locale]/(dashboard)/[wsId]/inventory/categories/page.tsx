@@ -1,7 +1,7 @@
 import { productCategoryColumns } from './columns';
 import { ProductCategoryForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { ProductCategory } from '@repo/types/primitives/ProductCategory';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';

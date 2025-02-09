@@ -1,5 +1,5 @@
 import { detectDuplicates } from '@/app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/utils';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export async function POST(

@@ -11,7 +11,7 @@ import { transactionColumns } from '../transactions/columns';
 import { Filter } from './filter';
 import { CustomDataTable } from '@/components/custom-data-table';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import type { Transaction } from '@repo/types/primitives/Transaction';
 import { Suspense } from 'react';
 

@@ -2,8 +2,8 @@
 import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm, ResponseMode } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
-import { createDynamicClient } from '@repo/supabase/next/client';
-import { RealtimePresenceState } from '@repo/supabase/next/realtime';
+import { createDynamicClient } from '@tutur3u/supabase/next/client';
+import { RealtimePresenceState } from '@tutur3u/supabase/next/realtime';
 import { AIChat } from '@repo/types/db';
 import {
   FileUploader,

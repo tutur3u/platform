@@ -2,7 +2,7 @@
 
 import useSearchParams from '@/hooks/useSearchParams';
 import { cn } from '@/lib/utils';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { format, parse } from 'date-fns';

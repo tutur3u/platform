@@ -22,7 +22,7 @@
     "@ai-sdk/openai": "^1.1.9",
     "@ai-sdk/react": "^1.1.11",
     "@google/generative-ai": "^0.21.0",
-    "@repo/supabase": "workspace:*",
+    "@tutur3u/supabase": "workspace:*",
     "ai": "^4.1.28",
     "eslint": "^9.20.0",
     "next": "^15.1.6",

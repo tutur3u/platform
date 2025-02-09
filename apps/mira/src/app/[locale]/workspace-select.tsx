@@ -2,7 +2,7 @@
 
 import { getInitials } from '@/utils/name-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { Workspace } from '@repo/types/primitives/Workspace';
 import {
   Avatar,

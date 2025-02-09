@@ -4,7 +4,7 @@ import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
 import { cn } from '@/lib/utils';
 import { isEmail } from '@/utils/email-helper';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import type { GroupPostCheck } from '@repo/types/db';
 import type { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';

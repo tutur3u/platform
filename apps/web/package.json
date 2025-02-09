@@ -47,7 +47,7 @@
     "@react-email/components": "^0.0.32",
     "@react-email/tailwind": "^1.0.4",
     "@tutur3u/ai": "workspace:*",
-    "@repo/supabase": "workspace:*",
+    "@tutur3u/supabase": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/ui": "workspace:*",
     "@tanstack/react-query": "^5.66.0",

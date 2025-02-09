@@ -7,7 +7,7 @@ import {
 } from '@/components/components/BlockEditor';
 import { cn } from '@/lib/utils';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { WorkspaceDocument } from '@repo/types/db';
 import {
   AlertDialog,

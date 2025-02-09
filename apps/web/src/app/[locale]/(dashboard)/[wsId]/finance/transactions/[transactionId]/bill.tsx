@@ -1,6 +1,6 @@
 'use client';
 
-import { createDynamicClient } from '@repo/supabase/next/client';
+import { createDynamicClient } from '@tutur3u/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   FileUploader,

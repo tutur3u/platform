@@ -1,4 +1,4 @@
-import { createAdminClient } from '@repo/supabase/next/server';
+import { createAdminClient } from '@tutur3u/supabase/next/server';
 import { MeetTogetherPlan } from '@repo/types/primitives/MeetTogetherPlan';
 import { notFound } from 'next/navigation';
 

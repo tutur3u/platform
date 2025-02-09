@@ -5,7 +5,7 @@ import { BoardHeader } from './board-header';
 import { CalendarView } from './calendar-view';
 import { ListView } from './list-view';
 import { getTasks } from '@/lib/task-helper';
-import { createClient } from '@repo/supabase/next/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 

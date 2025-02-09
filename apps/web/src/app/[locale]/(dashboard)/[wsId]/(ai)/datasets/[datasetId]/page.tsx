@@ -1,6 +1,6 @@
 import { DuplicateHandler } from './components/duplicate-handler';
 import { getDatasetMetrics } from './utils';
-import { createClient } from '@repo/supabase/next/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import type { WorkspaceDataset } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
