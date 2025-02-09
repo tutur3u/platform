@@ -1,0 +1,33 @@
+{
+  "name": "@tutur3u/external",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.0.5",
+    "@tutur3u/ai": "^0.0.8",
+    "@tutur3u/eslint-config": "^0.1.0",
+    "@tutur3u/supabase": "^0.0.3",
+    "@tutur3u/types": "^0.1.1",
+    "@tutur3u/typescript-config": "^0.1.0",
+    "next": "15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@types/node": "^22.13.1",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.20.0",
+    "eslint-config-next": "15.1.6",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^4.0.5",
+    "typescript": "^5.7.3"
+  }
+}

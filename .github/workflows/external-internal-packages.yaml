@@ -1,0 +1,61 @@
+name: Internal Packages in External App
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+
+jobs:
+  build:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22]
+
+    env:
+      # Use Vercel Remote Caching
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+      # Configure production Supabase client
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      # Configure infrastructure
+      PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
+      NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-external-internal-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-external-internal-
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Configure Tiptap Pro
+        run: |
+          pnpm config set "@tiptap-pro:registry" https://registry.tiptap.dev/
+          pnpm config set "//registry.tiptap.dev/:_authToken" ${{ secrets.TIPTAP_PRO_TOKEN }}
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build apps/external
+        run: pnpm build --filter @tutur3u/external
