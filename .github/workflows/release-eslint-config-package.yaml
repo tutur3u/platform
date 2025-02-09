@@ -1,4 +1,4 @@
-name: Release Supabase Package
+name: Release ESLint Config Package
 
 on:
   release:
