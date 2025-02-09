@@ -11,6 +11,21 @@ jobs:
     defaults:
       run:
         working-directory: packages/ai
+
+    env:
+      # Use Vercel Remote Caching
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+      # Configure production Supabase client
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+      # Configure infrastructure
+      PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
+      NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,6 +36,11 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+
+      - name: Configure Tiptap Pro
+        run: |
+          pnpm config set "@tiptap-pro:registry" https://registry.tiptap.dev/
+          pnpm config set "//registry.tiptap.dev/:_authToken" ${{ secrets.TIPTAP_PRO_TOKEN }}
 
       - name: Install dependencies
         run: pnpm install
@@ -48,6 +68,11 @@ jobs:
           node-version: 22
           cache: 'pnpm'
           registry-url: https://npm.pkg.github.com/
+
+      - name: Configure Tiptap Pro
+        run: |
+          pnpm config set "@tiptap-pro:registry" https://registry.tiptap.dev/
+          pnpm config set "//registry.tiptap.dev/:_authToken" ${{ secrets.TIPTAP_PRO_TOKEN }}
 
       - name: Install dependencies
         run: pnpm install
