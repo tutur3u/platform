@@ -22,6 +22,10 @@ jobs:
       PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
       NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
 
+      # Set GitHub token for CLI operations
+      GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      GH_TOKEN: ${{ secrets.GH_PAT }}
+
     runs-on: ubuntu-latest
 
     permissions:
@@ -33,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -70,6 +74,9 @@ jobs:
       - name: Check and bump versions
         if: steps.changed-packages.outputs.packages != ''
         run: |
+          # Ensure GitHub CLI is authenticated
+          gh auth setup-git
+
           for package in ${{ steps.changed-packages.outputs.packages }}; do
             if [ -f "packages/$package/package.json" ]; then
               cd "packages/$package"
@@ -107,17 +114,16 @@ jobs:
                 git push origin "$BRANCH_NAME"
                 
                 # Create PR using GitHub CLI
-                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 gh pr create \
                   --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
                   --body "Automated version bump due to package changes\n\nChecksum changed from:\n\`\`\`\n$OLD_CHECKSUM\n\`\`\`\nto:\n\`\`\`\n$NEW_CHECKSUM\n\`\`\`" \
                   --base ${{ github.event.pull_request.base.ref || 'main' }} \
-                  --head "$BRANCH_NAME" || true
+                  --head "$BRANCH_NAME" \
+                  --repo ${{ github.repository }} || {
+                    echo "Failed to create PR for $BRANCH_NAME. This may be because a PR already exists."
+                  }
               fi
               
               cd ../..
             fi
           done
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
