@@ -46,24 +46,8 @@ jobs:
         working-directory: packages/ai
         run: pnpm test
 
-  version-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check versions match
-        working-directory: packages/ai
-        run: |
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          JSR_VERSION=$(node -p "require('./jsr.json').version")
-          if [ "$PKG_VERSION" != "$JSR_VERSION" ]; then
-            echo "Version mismatch: package.json ($PKG_VERSION) != jsr.json ($JSR_VERSION)"
-            exit 1
-          fi
-          echo "Versions match: $PKG_VERSION"
-
   publish-gpr:
-    needs: [build, version-check]
+    needs: [build]
     runs-on: ubuntu-latest
 
     permissions:
@@ -95,19 +79,24 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-  publish-jsr:
-    needs: [build, version-check]
+  publish-npm:
+    needs: [build]
     runs-on: ubuntu-latest
 
     permissions:
       packages: write
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Configure Tiptap Pro
         run: |
@@ -119,4 +108,6 @@ jobs:
 
       - name: Publish package
         working-directory: packages/ai
-        run: pnpm dlx jsr publish
+        run: pnpm publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
