@@ -9,9 +9,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "build": "tsc",
-    "prepublishOnly": "pnpm build"
+    "test:watch": "vitest"
   },
   "packageManager": "pnpm@10.2.1",
   "dependencies": {
