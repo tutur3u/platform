@@ -529,7 +529,9 @@
     "readings": "Readings",
     "diet_and_nutrition": "Diet & Nutrition",
     "progress": "Progress",
-    "metrics": "Metrics"
+    "metrics": "Metrics",
+    "crawlers": "Crawlers",
+    "queues": "Queues"
   },
   "team-tabs": {
     "overview": "Overview",
@@ -2474,5 +2476,26 @@
     "description": "Whitelisted domains are used to allow specific domains to access AI features.",
     "create": "Create whitelisted domain",
     "create_description": "Create a whitelisted domain"
+  },
+  "ws-crawlers": {
+    "plural": "Crawlers",
+    "singular": "Crawler",
+    "description": "Crawlers are used to scrape data from websites.",
+    "create": "Create crawler",
+    "create_description": "Create a new crawler"
+  },
+  "ws-pipelines": {
+    "plural": "Pipelines",
+    "singular": "Pipeline",
+    "description": "Pipelines are used to run programmable workflows.",
+    "create": "Create pipeline",
+    "create_description": "Create a new pipeline"
+  },
+  "ws-queues": {
+    "plural": "Queues",
+    "singular": "Queue",
+    "description": "Queues are used to manage tasks and jobs.",
+    "create": "Create queue",
+    "create_description": "Create a new queue"
   }
 }

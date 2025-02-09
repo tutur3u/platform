@@ -1,5 +1,5 @@
-import { getColumns } from '../../../cron/jobs/columns';
-import { CronJobForm } from '../../../cron/jobs/form';
+import { getColumns } from '../../../../cron/jobs/columns';
+import { CronJobForm } from '../../../../cron/jobs/form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@repo/supabase/next/server';
 import type { WorkspaceCronJob } from '@repo/types/db';

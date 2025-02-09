@@ -529,7 +529,9 @@
     "readings": "Đọc sách",
     "diet_and_nutrition": "Ăn uống",
     "progress": "Tiến độ",
-    "metrics": "Chỉ số"
+    "metrics": "Chỉ số",
+    "crawlers": "Công cụ cào dữ liệu",
+    "queues": "Hàng chờ"
   },
   "team-tabs": {
     "overview": "Tổng quan",
@@ -2399,5 +2401,26 @@
     "description": "Các miền được liệt kê trắng được sử dụng để cho phép các miền cụ thể truy cập các tính năng AI.",
     "create": "Tạo tên miền danh sách trắng",
     "create_description": "Tạo một miền được liệt kê trong danh sách trắng"
+  },
+  "ws-crawlers": {
+    "plural": "Công cụ cào dữ liệu",
+    "singular": "Công cụ cào dữ liệu",
+    "description": "Công cụ cào dữ liệu được sử dụng để thu thập dữ liệu từ các trang web và nguồn dữ liệu khác.",
+    "create": "Tạo công cụ cào dữ liệu",
+    "create_description": "Tạo một công cụ cào dữ liệu mới"
+  },
+  "ws-pipelines": {
+    "plural": "Quy trình",
+    "singular": "Quy trình",
+    "description": "Quy trình được sử dụng để chạy các tác vụ có thể lập trình.",
+    "create": "Tạo quy trình",
+    "create_description": "Tạo một quy trình mới"
+  },
+  "ws-queues": {
+    "plural": "Hàng chờ",
+    "singular": "Hàng chờ",
+    "description": "Hàng chờ được sử dụng để quản lý các công việc và tác vụ.",
+    "create": "Tạo hàng chờ",
+    "create_description": "Tạo một hàng chờ mới"
   }
 }

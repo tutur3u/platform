@@ -28,9 +28,12 @@ import {
   FileText,
   GraduationCap,
   HardDrive,
+  Logs,
   Mail,
   MessageCircleIcon,
+  Play,
   Presentation,
+  ScanSearch,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -233,7 +236,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           name: 'ENABLE_AI',
           value: 'true',
         })) || withoutPermission('ai_lab'),
-      experimental: 'beta',
+      experimental: 'alpha',
     },
     {
       title: t('sidebar_tabs.datasets'),
@@ -246,23 +249,34 @@ export default async function Layout({ children, params }: LayoutProps) {
           name: 'ENABLE_AI',
           value: 'true',
         })) || withoutPermission('ai_lab'),
-      shortcut: 'A',
       experimental: 'beta',
     },
-    // {
-    //   title: t('sidebar_tabs.pipelines'),
-    //   href: `/${wsId}/pipelines`,
-    //   icon: <Play className="h-4 w-4" />,
-    //   disabled:
-    //     !(await verifySecret({
-    //       forceAdmin: true,
-    //       wsId,
-    //       name: 'ENABLE_AI',
-    //       value: 'true',
-    //     })) || withoutPermission('ai_lab'),
-    //   shortcut: 'A',
-    //   experimental: 'beta',
-    // },
+    {
+      title: t('sidebar_tabs.pipelines'),
+      href: `/${wsId}/pipelines`,
+      icon: <Play className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.crawlers'),
+      href: `/${wsId}/crawlers`,
+      icon: <ScanSearch className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'alpha',
+    },
     {
       title: t('sidebar_tabs.cron'),
       href: `/${wsId}/cron`,
@@ -274,8 +288,20 @@ export default async function Layout({ children, params }: LayoutProps) {
           name: 'ENABLE_AI',
           value: 'true',
         })) || withoutPermission('ai_lab'),
-      shortcut: 'A',
-      experimental: 'beta',
+      experimental: 'alpha',
+    },
+    {
+      title: t('sidebar_tabs.queues'),
+      href: `/${wsId}/queues`,
+      icon: <Logs className="h-4 w-4" />,
+      disabled:
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_AI',
+          value: 'true',
+        })) || withoutPermission('ai_lab'),
+      experimental: 'alpha',
     },
     null,
     {
