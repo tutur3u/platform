@@ -68,29 +68,35 @@ jobs:
               # Get current version
               CURRENT_VERSION=$(node -p "require('./package.json').version")
               
-              # Bump patch version
-              NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
-              
-              # Update package.json with new version
-              sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
-              
-              git config --local user.email "github-actions[bot]@users.noreply.github.com"
-              git config --local user.name "github-actions[bot]"
-              
-              # Create a new branch for version bump
-              BRANCH_NAME="bump-${package}-${NEW_VERSION}"
-              git checkout -b $BRANCH_NAME
-              
-              git add package.json
-              git commit -m "chore(${package}): bump version to ${NEW_VERSION}"
-              git push origin $BRANCH_NAME
-              
-              # Create PR
-              gh pr create \
-                --title "chore(${package}): bump version to ${NEW_VERSION}" \
-                --body "Automated version bump due to package changes" \
-                --base ${{ github.event.pull_request.base.ref || 'main' }} \
-                --head $BRANCH_NAME
+              # Bump patch version if checksum changed
+              OLD_CHECKSUM=$(git show HEAD:packages/$package/.checksum 2>/dev/null || echo "")
+              if [ "$NEW_CHECKSUM" != "$OLD_CHECKSUM" ]; then
+                NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+                
+                # Update package.json with new version
+                sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
+                
+                # Update checksum
+                echo "$NEW_CHECKSUM" > .checksum
+                
+                git config --local user.email "github-actions[bot]@users.noreply.github.com"
+                git config --local user.name "github-actions[bot]"
+                
+                # Create a new branch for version bump
+                BRANCH_NAME="bump-${package}-${NEW_VERSION}"
+                git checkout -b $BRANCH_NAME
+                
+                git add package.json .checksum
+                git commit -m "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}"
+                git push origin $BRANCH_NAME
+                
+                # Create PR
+                gh pr create \
+                  --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
+                  --body "Automated version bump due to package changes\n\nChecksum changed from:\n$OLD_CHECKSUM\nto:\n$NEW_CHECKSUM" \
+                  --base ${{ github.event.pull_request.base.ref || 'main' }} \
+                  --head $BRANCH_NAME
+              fi
               
               cd ../..
             fi
