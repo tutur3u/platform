@@ -3,7 +3,6 @@
   "license": "MIT",
   "version": "0.0.4",
   "publishConfig": {
-    "@tutur3u:registry": "https://npm.pkg.github.com",
     "access": "public"
   },
   "scripts": {
