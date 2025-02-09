@@ -108,6 +108,6 @@ jobs:
 
       - name: Publish package
         working-directory: packages/ai
-        run: npm publish
+        run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
