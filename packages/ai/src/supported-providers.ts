@@ -3,6 +3,4 @@ export const supportedProviders = [
   'google-vertex',
   'openai',
   'anthropic',
-];
-
-export type SupportedAIProviders = (typeof supportedProviders)[number];
+] as const;
