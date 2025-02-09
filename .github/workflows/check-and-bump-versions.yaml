@@ -22,6 +22,10 @@ jobs:
       PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
       NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
 
+      # Set GitHub token for CLI operations
+      GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      GH_TOKEN: ${{ secrets.GH_PAT }}
+
     runs-on: ubuntu-latest
 
     permissions:
@@ -70,6 +74,9 @@ jobs:
       - name: Check and bump versions
         if: steps.changed-packages.outputs.packages != ''
         run: |
+          # Ensure GitHub CLI is authenticated
+          gh auth setup-git
+
           for package in ${{ steps.changed-packages.outputs.packages }}; do
             if [ -f "packages/$package/package.json" ]; then
               cd "packages/$package"
@@ -106,8 +113,7 @@ jobs:
                 git commit -m "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}"
                 git push origin "$BRANCH_NAME"
                 
-                # Create PR using GitHub CLI with explicit token
-                echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
+                # Create PR using GitHub CLI
                 gh pr create \
                   --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
                   --body "Automated version bump due to package changes\n\nChecksum changed from:\n\`\`\`\n$OLD_CHECKSUM\n\`\`\`\nto:\n\`\`\`\n$NEW_CHECKSUM\n\`\`\`" \
@@ -121,6 +127,3 @@ jobs:
               cd ../..
             fi
           done
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
