@@ -8,9 +8,9 @@ import TestCaseComponent from './test-case-component';
 import React, { useEffect, useState } from 'react';
 
 interface Props {
-  params: {
+  params: Promise<{
     challengeId: string;
-  };
+  }>;
 }
 
 export default function Page({ params }: Props) {
@@ -53,7 +53,6 @@ export default function Page({ params }: Props) {
       />
 
       <div className="flex gap-4 p-6">
-        {/* Left side: Problem & Test Cases */}
         <div className="flex w-1/2 flex-col">
           {problems.length > 0 ? (
             <ProblemComponent problem={problems[currentProblemIndex]} />

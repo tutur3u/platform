@@ -5,7 +5,7 @@ import { Input } from '@repo/ui/components/ui/input';
 import React, { useEffect, useRef, useState } from 'react';
 
 export default function ChatBox() {
-  const [messages, setMessages] = useState<
+  const [messages, _setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
   const [input, setInput] = useState('');
