@@ -1,12 +1,25 @@
 name: Release Types Package
 
 on:
-  release:
-    types: [created]
+  pull_request:
+    types: [closed]
+    paths:
+      - 'packages/types/package.json'
   workflow_dispatch:
 
 jobs:
+  check-version-bump:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'bump-types-')
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - id: check
+        run: echo "should_release=true" >> $GITHUB_OUTPUT
+
   build:
+    needs: check-version-bump
+    if: needs.check-version-bump.outputs.should_release == 'true'
     runs-on: ubuntu-latest
 
     env:

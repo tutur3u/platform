@@ -1,0 +1,80 @@
+name: Check and Bump Package Versions
+
+on:
+  pull_request:
+    paths:
+      - 'packages/**'
+  workflow_dispatch:
+
+jobs:
+  check-and-bump:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Get changed packages
+        id: changed-packages
+        run: |
+          CHANGED_PACKAGES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "^packages/" | cut -d/ -f2 | sort -u)
+          echo "packages=${CHANGED_PACKAGES}" >> $GITHUB_OUTPUT
+
+      - name: Check and bump versions
+        if: steps.changed-packages.outputs.packages != ''
+        run: |
+          for package in ${{ steps.changed-packages.outputs.packages }}; do
+            if [ -f "packages/$package/package.json" ]; then
+              cd "packages/$package"
+              
+              # Calculate new checksum
+              NEW_CHECKSUM=$(find . -type f -not -path "./node_modules/*" -not -path "./dist/*" -exec sha256sum {} \; | sort | sha256sum | cut -d ' ' -f1)
+              
+              # Get current version
+              CURRENT_VERSION=$(node -p "require('./package.json').version")
+              
+              # Bump patch version
+              NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+              
+              # Update package.json with new version
+              sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
+              
+              git config --local user.email "github-actions[bot]@users.noreply.github.com"
+              git config --local user.name "github-actions[bot]"
+              
+              # Create a new branch for version bump
+              BRANCH_NAME="bump-${package}-${NEW_VERSION}"
+              git checkout -b $BRANCH_NAME
+              
+              git add package.json
+              git commit -m "chore(${package}): bump version to ${NEW_VERSION}"
+              git push origin $BRANCH_NAME
+              
+              # Create PR
+              gh pr create \
+                --title "chore(${package}): bump version to ${NEW_VERSION}" \
+                --body "Automated version bump due to package changes" \
+                --base ${{ github.event.pull_request.base.ref || 'main' }} \
+                --head $BRANCH_NAME
+              
+              cd ../..
+            fi
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
