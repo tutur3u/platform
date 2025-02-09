@@ -140,98 +140,6 @@ export const models: {
   },
 
   {
-    value: 'command-light-nightly',
-    label: 'command-light-nightly',
-    provider: 'Cohere',
-    description:
-      "A smaller and faster version of Cohere's command model with almost as much capability but improved speed.",
-    context: 4096,
-    disabled: true,
-  },
-  {
-    value: 'command-nightly',
-    label: 'command-nightly',
-    provider: 'Cohere',
-    description:
-      'An instruction-following conversational model by Cohere that performs language tasks with high quality and reliability while providing longer context compared to generative models.',
-    context: 4096,
-    disabled: true,
-  },
-
-  {
-    value: 'dbrx-instruct',
-    label: 'dbrx-instruct',
-    provider: 'Fireworks',
-    description:
-      'DBRX Instruct is a mixture-of-experts (MoE) large language model trained from scratch by Databricks. DBRX Instruct specializes in few-turn interactions. Dbrx is hosted as an experimental model.',
-    context: 32768,
-    disabled: true,
-  },
-  {
-    value: 'firefunction-v1',
-    label: 'firefunction-v1',
-    provider: 'Fireworks',
-    description:
-      'Fireworks’ GPT-4-level function calling model - 4x faster than GPT-4 and open weights.',
-    context: 32768,
-    disabled: true,
-  },
-
-  {
-    value: 'llama-2-7b-chat',
-    label: 'llama-2-7b-chat',
-    provider: 'Meta',
-    description:
-      '7 billion parameter open source model by Meta fine-tuned for chat purposes served by Fireworks. LLaMA v2 was trained on more data (~2 trillion tokens) compared to LLaMA v1 and supports context windows up to 4k tokens.',
-    context: 4096,
-    disabled: true,
-  },
-  {
-    value: 'llama-2-13b-chat',
-    label: 'llama-2-13b-chat',
-    provider: 'Meta',
-    description:
-      '13 billion parameter open source model by Meta fine-tuned for chat purposes served by Fireworks. LLaMA v2 was trained on more data (~2 trillion tokens) compared to LLaMA v1 and supports context windows up to 4k tokens.',
-    context: 4096,
-    disabled: true,
-  },
-  {
-    value: 'llama-2-70b-chat',
-    label: 'llama-2-70b-chat',
-    provider: 'Meta',
-    description:
-      '70 billion parameter open source model by Meta fine-tuned for chat purposes served by Fireworks. LLaMA v2 was trained on more data (~2 trillion tokens) compared to LLaMA v1 and supports context windows up to 4k tokens.',
-    context: 4096,
-    disabled: true,
-  },
-  {
-    value: 'llama-2-7b-chat-groq',
-    label: 'llama-2-7b-chat-groq',
-    provider: 'Meta',
-    description:
-      '70 billion parameter open source model by Meta fine-tuned for chat purposes served by Groq. Groq uses custom Language Processing Units (LPUs) hardware to provide fast and efficient inference.',
-    context: 4096,
-    disabled: true,
-  },
-  {
-    value: 'codellama-34b-instruct',
-    label: 'codellama-34b-instruct',
-    provider: 'Meta',
-    description:
-      'Code Llama is a 34 billion parameter open source model by Meta fine-tuned for instruction following purposes served by Perplexity.',
-    context: 16384,
-    disabled: true,
-  },
-  {
-    value: 'codellama-70b-instruct',
-    label: 'codellama-70b-instruct',
-    provider: 'Meta',
-    description:
-      'Code Llama is a 70 billion parameter open source model by Meta fine-tuned for instruction following purposes served by Perplexity.',
-    context: 16384,
-    disabled: true,
-  },
-  {
     value: 'llama-3-8b-instruct',
     label: 'llama-3-8b-instruct',
     provider: 'Meta',
@@ -249,97 +157,7 @@ export const models: {
     context: 8192,
     disabled: true,
   },
-  {
-    value: 'llama-3-8b-instruct-groq',
-    label: 'llama-3-8b-instruct-groq',
-    provider: 'Meta',
-    description:
-      'Llama is a 8 billion parameter open source model by Meta fine-tuned for instruction following purposes served by Groq on their LPU hardware.',
-    context: 8192,
-    disabled: true,
-  },
-  {
-    value: 'llama-3-70b-instruct-groq',
-    label: 'llama-3-70b-instruct-groq',
-    provider: 'Meta',
-    description:
-      'Llama is a 70 billion parameter open source model by Meta fine-tuned for instruction following purposes served by Groq on their LPU hardware.',
-    context: 8192,
-    disabled: true,
-  },
-  {
-    value: 'llama-3-sonar-small-32k-chat',
-    label: 'llama-3-sonar-small-32k-chat',
-    provider: 'Meta',
-    description:
-      "Llama 3 Sonar is a 7 Billion parameter model based on Meta's Llama 3 model. It is fine-tuned for chat completions and served by Perplexity.",
-    context: 32768,
-    disabled: true,
-  },
-  {
-    value: 'llama-3-sonar-large-32k-chat',
-    label: 'llama-3-sonar-large-32k-chat',
-    provider: 'Meta',
-    description:
-      "Llama 3 Sonar is an 8x7B parameter model based on Meta's Llama 3 model. It is fine-tuned for chat completions and served by Perplexity.",
-    context: 32768,
-    disabled: true,
-  },
-  {
-    value: 'llama-3-sonar-small-32k-online',
-    label: 'llama-3-sonar-small-32k-online',
-    provider: 'Meta',
-    description:
-      "Llama 3 Sonar Online is a 7 Billion parameter model based on Meta's Llama 3 model. It is fine-tuned for chat completions and served by Perplexity. The model has access to recent internet knowledge when forming responses.",
-    context: 28000,
-    disabled: true,
-  },
-  {
-    value: 'llama-3-sonar-large-32k-online',
-    label: 'llama-3-sonar-large-32k-online',
-    provider: 'Meta',
-    description:
-      "Llama 3 Sonar Online is an 8x7B parameter model based on Meta's Llama 3 model. It is fine-tuned for chat completions and served by Perplexity. The model has access to recent internet knowledge when forming responses.",
-    context: 28000,
-    disabled: true,
-  },
 
-  {
-    value: 'mistral-7b-instruct-4k',
-    label: 'mistral-7b-instruct-4k',
-    provider: 'Mistral',
-    description:
-      'The Mistral-7B-Instruct-v0.1 Large Language Model (LLM) is a instruct fine-tuned version of the Mistral-7B-v0.1 served by Fireworks.',
-    context: 4096,
-    disabled: true,
-  },
-  {
-    value: 'mixtral-8x7b',
-    label: 'mixtral-8x7b',
-    provider: 'Mistral',
-    description:
-      'Mistral MoE LLM model with 8 experts, each 7B. Warning: unofficial implementation + served by Fireworks.',
-    context: 4096,
-    disabled: true,
-  },
-  {
-    value: 'mixtral-8x7b-groq',
-    label: 'mixtral-8x7b-groq',
-    provider: 'Mistral',
-    description:
-      'Mistral MoE LLM model with 8 experts, each 7B. Warning: unofficial implementation + served by Groq. served by Groq. Groq uses custom Language Processing Units (LPUs) hardware to provide fast and efficient inference.',
-    context: 21845,
-    disabled: true,
-  },
-  {
-    value: 'mixtral-8x22b-instruct',
-    label: 'mixtral-8x22b-instruct',
-    provider: 'Mistral',
-    description:
-      '8x22b Instruct model. 8x22b is mixture-of-experts open source model by Mistral served by Fireworks.',
-    context: 2048,
-    disabled: true,
-  },
   {
     value: 'mistral-small',
     label: 'mistral-small',
@@ -377,14 +195,6 @@ export const models: {
     disabled: true,
   },
 
-  {
-    value: 'gpt-4-turbo',
-    label: 'gpt-4-turbo',
-    provider: 'OpenAI',
-    description:
-      'gpt-4-turbo from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately. It has a knowledge cutoff of April 2023 and a 128,000 token context window.',
-    context: 128000,
-  },
   {
     value: 'gpt-4o',
     label: 'gpt-4o',
