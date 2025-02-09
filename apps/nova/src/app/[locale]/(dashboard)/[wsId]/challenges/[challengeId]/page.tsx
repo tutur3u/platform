@@ -41,7 +41,7 @@ export default function Page({ params }: Props) {
   const prevProblem = () => {
     setCurrentProblemIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
-
+  // console.log(problems[currentProblemIndex].testcase), 'testcase ';
   return (
     <>
       {/* Header with navigation */}
@@ -60,7 +60,9 @@ export default function Page({ params }: Props) {
           ) : (
             <p>No problems available.</p>
           )}
-          <TestCaseComponent />
+          <TestCaseComponent
+            testcase={problems[currentProblemIndex]?.testcase}
+          />
         </div>
 
         {/* Right Side */}

@@ -13,6 +13,7 @@ export interface Problems {
   exampleInput: string;
   exampleOutput: string;
   constraints?: string[];
+  testcase?: string;
 }
 
 const challenges: Challenge[] = [
@@ -35,6 +36,7 @@ const challenges: Challenge[] = [
           '1 ≤ s.length ≤ 3 * 10⁵',
           's consists of printable ASCII characters.',
         ],
+        testcase: 'hehe this is the correct answer ',
       },
       {
         id: '1b',
@@ -45,6 +47,7 @@ const challenges: Challenge[] = [
           'In 2023, the global AI industry was valued at $150 billion, with an expected growth rate of 40% annually until 2030.',
         exampleOutput:
           'In 2023, AI was a $150B industry, projected to grow 40% yearly until 2030.',
+        testcase: 'hehe this is the correct answer ',
       },
     ],
   },
@@ -62,6 +65,7 @@ const challenges: Challenge[] = [
         exampleInput:
           'I love this phone! The battery lasts forever, and the camera is amazing.',
         exampleOutput: 'Positive',
+        testcase: 'hehe this is the correct answer ',
       },
       {
         id: '2b',
@@ -69,6 +73,7 @@ const challenges: Challenge[] = [
         description: 'Identify whether a sentence is **sarcastic or not**.',
         exampleInput: '"Oh great, another Monday! Just what I needed..."',
         exampleOutput: 'Sarcastic',
+        testcase: 'hehe this is the correct answer ',
       },
     ],
   },
@@ -90,6 +95,7 @@ for (let i = 0; i < 5; i++) {
         `,
         exampleOutput:
           'This loop runs five times, printing numbers from 0 to 4. It starts at `i = 0`, increases `i` by 1 each time, and stops at `i = 5`.',
+        testcase: 'hehe this is the correct answer ',
       },
       {
         id: '3b',
@@ -103,6 +109,7 @@ function factorial(n) {
         `,
         exampleOutput:
           'This function calculates the factorial of a number by calling itself repeatedly until it reaches the base case (`n === 1`).',
+        testcase: 'hehe this is the correct answer ',
       },
     ],
   },

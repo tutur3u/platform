@@ -1,4 +1,3 @@
-import Header from './customizedHeader';
 import React from 'react';
 
 
