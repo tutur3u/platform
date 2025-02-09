@@ -4,8 +4,6 @@ import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
-import { Model } from '@repo/ai/models';
-import { type Message, type UseChatHelpers } from '@repo/ai/types';
 import { createDynamicClient } from '@repo/supabase/next/client';
 import { AIChat } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
@@ -23,6 +21,8 @@ import {
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
+import { Model } from '@tutur3u/ai/models';
+import { type Message, type UseChatHelpers } from '@tutur3u/ai/types';
 import {
   ArrowDownToLine,
   Check,

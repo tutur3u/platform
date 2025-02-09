@@ -2,8 +2,6 @@
 import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm, ResponseMode } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
-import { Model } from '@repo/ai/models';
-import { type Message, type UseChatHelpers } from '@repo/ai/types';
 import { createDynamicClient } from '@repo/supabase/next/client';
 import { RealtimePresenceState } from '@repo/supabase/next/realtime';
 import { AIChat } from '@repo/types/db';
@@ -18,6 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
+import { Model } from '@tutur3u/ai/models';
+import { type Message, type UseChatHelpers } from '@tutur3u/ai/types';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 

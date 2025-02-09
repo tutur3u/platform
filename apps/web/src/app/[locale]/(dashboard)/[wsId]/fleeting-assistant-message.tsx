@@ -2,7 +2,7 @@
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { MemoizedReactMarkdown } from '@/components/markdown';
-import { type Message } from '@repo/ai/types';
+import { type Message } from '@tutur3u/ai/types';
 import {
   Avatar,
   AvatarFallback,

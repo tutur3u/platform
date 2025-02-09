@@ -1,7 +1,10 @@
 {
-  "name": "@repo/ai",
-  "version": "0.1.0",
+  "name": "@tutur3u/ai",
+  "version": "0.0.1",
   "private": true,
+  "publishConfig": {
+    "@tutur3u:registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",

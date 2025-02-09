@@ -5,7 +5,6 @@
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { MemoizedReactMarkdown } from '@/components/markdown';
 import { capitalize, cn } from '@/lib/utils';
-import { type Message } from '@repo/ai/types';
 import {
   Avatar,
   AvatarFallback,
@@ -14,6 +13,7 @@ import {
 import { CodeBlock } from '@repo/ui/components/ui/codeblock';
 import { IconUser } from '@repo/ui/components/ui/icons';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { type Message } from '@tutur3u/ai/types';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

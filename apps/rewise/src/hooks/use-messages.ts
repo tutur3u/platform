@@ -1,4 +1,4 @@
-import { type Message } from '@repo/ai/types';
+import { type Message } from '@tutur3u/ai/types';
 import { createClient } from '@repo/supabase/next/client';
 import { useCallback, useEffect, useState } from 'react';
 

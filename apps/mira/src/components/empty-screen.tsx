@@ -1,5 +1,5 @@
 import { capitalize, cn } from '@/lib/utils';
-import { type UseChatHelpers } from '@repo/ai/types';
+import { type UseChatHelpers } from '@tutur3u/ai/types';
 import { AIChat } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';

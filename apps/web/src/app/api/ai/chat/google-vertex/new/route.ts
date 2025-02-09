@@ -1,4 +1,4 @@
-import { POST } from '@repo/ai/chat/google-vertex/new/route';
+import { POST } from '@tutur3u/ai/chat/google-vertex/new/route';
 
 export const config = {
   maxDuration: 60,

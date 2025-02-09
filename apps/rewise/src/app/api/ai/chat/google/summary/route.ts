@@ -1,4 +1,4 @@
-import { PATCH } from '@repo/ai/chat/google/summary/route';
+import { PATCH } from '@tutur3u/ai/chat/google/summary/route';
 
 export const config = {
   maxDuration: 60,

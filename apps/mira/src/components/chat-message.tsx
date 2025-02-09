@@ -5,7 +5,7 @@
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { MemoizedReactMarkdown } from '@/components/markdown';
 import { capitalize, cn } from '@/lib/utils';
-import { type Message } from '@repo/ai/types';
+import { type Message } from '@tutur3u/ai/types';
 import {
   Avatar,
   AvatarFallback,

@@ -1,10 +1,10 @@
 'use client';
 
 import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
-import { type Message } from '@repo/ai/types';
 import { Button } from '@repo/ui/components/ui/button';
 import { IconCheck, IconCopy } from '@repo/ui/components/ui/icons';
 import { cn } from '@repo/ui/lib/utils';
+import { type Message } from '@tutur3u/ai/types';
 import React from 'react';
 
 interface ChatMessageActionsProps extends React.ComponentProps<'div'> {

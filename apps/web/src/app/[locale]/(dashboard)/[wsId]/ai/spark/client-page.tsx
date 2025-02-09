@@ -3,8 +3,8 @@
 import { GoalsInput } from './components/form/GoalsInput';
 import { PlanView } from './components/plan/PlanView';
 import { AdvancedSettings, YearPlan } from './types';
-import { useObject } from '@repo/ai/object/core';
-import { yearPlanSchema } from '@repo/ai/object/types';
+import { useObject } from '@tutur3u/ai/object/core';
+import { yearPlanSchema } from '@tutur3u/ai/object/types';
 
 export default function SparkClientPage({ wsId }: { wsId: string }) {
   const {

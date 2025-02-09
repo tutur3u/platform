@@ -1,5 +1,5 @@
 import { ChatMessage } from '@/components/chat-message';
-import { type Message } from '@repo/ai/types';
+import { type Message } from '@tutur3u/ai/types';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
 import { Box, Globe, Lock, Sparkle } from 'lucide-react';

@@ -46,7 +46,7 @@
     "@radix-ui/react-slot": "^1.1.2",
     "@react-email/components": "^0.0.32",
     "@react-email/tailwind": "^1.0.4",
-    "@repo/ai": "workspace:*",
+    "@tutur3u/ai": "workspace:*",
     "@repo/supabase": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/ui": "workspace:*",

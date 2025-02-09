@@ -1,4 +1,4 @@
-import { Model, models, providers } from '@repo/ai/models';
+import { Model, models, providers } from '@tutur3u/ai/models';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,

@@ -1,6 +1,6 @@
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import { type UseChatHelpers } from '@repo/ai/types';
+import { type UseChatHelpers } from '@tutur3u/ai/types';
 import type { AIChat } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import { StatedFile } from '@repo/ui/components/ui/custom/file-uploader';
