@@ -10,7 +10,11 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "bundleDependencies": true,
+  "bundleDependencies": [
+    "@supabase/ssr",
+    "@supabase/supabase-js",
+    "next"
+  ],
   "packageManager": "pnpm@10.2.1",
   "dependencies": {
     "@tutur3u/types": "workspace:*",
