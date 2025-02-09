@@ -9,7 +9,7 @@ on:
 
 jobs:
   check-version-bump:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'bump-eslint-config-')
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tutur3u/eslint-config)')
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}

@@ -9,7 +9,7 @@ on:
 
 jobs:
   check-version-bump:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'bump-types-')
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tutur3u/types)')
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
