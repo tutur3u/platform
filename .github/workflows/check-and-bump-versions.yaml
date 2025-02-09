@@ -81,11 +81,30 @@ jobs:
             if [ -f "packages/$package/package.json" ]; then
               cd "packages/$package"
               
-              # Calculate new checksum
-              NEW_CHECKSUM=$(find . -type f -not -path "./node_modules/*" -not -path "./dist/*" -exec sha256sum {} \; | sort | sha256sum | cut -d ' ' -f1)
-              
               # Get current version
               CURRENT_VERSION=$(node -p "require('./package.json').version")
+              
+              # Check if there's an existing PR for this package
+              EXISTING_PRS=$(gh pr list --search "in:title bump-${package}" --json number --jq length)
+              if [ "$EXISTING_PRS" -gt "0" ]; then
+                echo "Found existing PR for package ${package}, skipping..."
+                cd ../..
+                continue
+              fi
+
+              # Calculate new checksum excluding build artifacts, lock files, and .checksum
+              NEW_CHECKSUM=$(find . -type f \
+                -not -path "./node_modules/*" \
+                -not -path "./dist/*" \
+                -not -path "./.next/*" \
+                -not -path "./build/*" \
+                -not -path "./.turbo/*" \
+                -not -name "package-lock.json" \
+                -not -name "yarn.lock" \
+                -not -name "pnpm-lock.yaml" \
+                -not -name ".checksum" \
+                -not -name "*.log" \
+                -exec sha256sum {} \; | sort | sha256sum | cut -d ' ' -f1)
               
               # Try to get old checksum, continue if file doesn't exist
               OLD_CHECKSUM=$(git show HEAD:packages/$package/.checksum 2>/dev/null || echo "")
@@ -95,33 +114,41 @@ jobs:
               echo "Old checksum: $OLD_CHECKSUM"
               echo "New checksum: $NEW_CHECKSUM"
               
+              # Check if there are meaningful changes (not just build artifacts)
               if [ "$NEW_CHECKSUM" != "$OLD_CHECKSUM" ]; then
-                NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
-                echo "Bumping version to: $NEW_VERSION"
+                # Check if the changes are in source files
+                SOURCE_FILES_CHANGED=$(git diff --name-only HEAD~1 HEAD "packages/$package" | grep -E "\.(ts|tsx|js|jsx|json|css|scss|md)$" || true)
                 
-                # Update package.json with new version
-                sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
-                
-                # Update checksum
-                echo "$NEW_CHECKSUM" > .checksum
-                
-                # Create a new branch for version bump
-                BRANCH_NAME="bump-${package}-${NEW_VERSION}"
-                git checkout -b "$BRANCH_NAME"
-                
-                git add package.json .checksum
-                git commit -m "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}"
-                git push origin "$BRANCH_NAME"
-                
-                # Create PR using GitHub CLI
-                gh pr create \
-                  --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
-                  --body "Automated version bump due to package changes\n\nChecksum changed from:\n\`\`\`\n$OLD_CHECKSUM\n\`\`\`\nto:\n\`\`\`\n$NEW_CHECKSUM\n\`\`\`" \
-                  --base ${{ github.event.pull_request.base.ref || 'main' }} \
-                  --head "$BRANCH_NAME" \
-                  --repo ${{ github.repository }} || {
-                    echo "Failed to create PR for $BRANCH_NAME. This may be because a PR already exists."
-                  }
+                if [ -n "$SOURCE_FILES_CHANGED" ]; then
+                  NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+                  echo "Meaningful changes detected, bumping version to: $NEW_VERSION"
+                  
+                  # Update package.json with new version
+                  sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
+                  
+                  # Update checksum
+                  echo "$NEW_CHECKSUM" > .checksum
+                  
+                  # Create a new branch for version bump
+                  BRANCH_NAME="bump-${package}-${NEW_VERSION}"
+                  git checkout -b "$BRANCH_NAME"
+                  
+                  git add package.json .checksum
+                  git commit -m "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}"
+                  git push origin "$BRANCH_NAME"
+                  
+                  # Create PR using GitHub CLI
+                  gh pr create \
+                    --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
+                    --body "Automated version bump due to package changes\n\nChanged source files:\n\`\`\`\n$SOURCE_FILES_CHANGED\n\`\`\`\n\nChecksum changed from:\n\`\`\`\n$OLD_CHECKSUM\n\`\`\`\nto:\n\`\`\`\n$NEW_CHECKSUM\n\`\`\`" \
+                    --base ${{ github.event.pull_request.base.ref || 'main' }} \
+                    --head "$BRANCH_NAME" \
+                    --repo ${{ github.repository }} || {
+                      echo "Failed to create PR for $BRANCH_NAME. This may be because a PR already exists."
+                    }
+                else
+                  echo "No meaningful source file changes detected, skipping version bump"
+                fi
               fi
               
               cd ../..
