@@ -42,10 +42,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Navigate to packages/ai
-        run: cd packages/ai
-
       - name: Run tests
+        working-directory: packages/ai
         run: pnpm test
 
   publish-gpr:
@@ -75,10 +73,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Navigate to packages/ai
-        run: cd packages/ai
-
       - name: Publish package
+        working-directory: packages/ai
         run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -105,8 +101,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Navigate to packages/ai
-        run: cd packages/ai
-
       - name: Publish package
+        working-directory: packages/ai
         run: pnpm dlx jsr publish

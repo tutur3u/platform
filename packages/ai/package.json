@@ -1,5 +1,6 @@
 {
   "name": "@tutur3u/ai",
+  "license": "MIT",
   "version": "0.0.2",
   "publishConfig": {
     "@tutur3u:registry": "https://npm.pkg.github.com",
