@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
 
 // Replace this with your actual API key
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 
 // Initialize Google Generative AI Client
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -11,33 +11,43 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
+// Static Problem and Test Case
+const problem = "Write a prompt that instructs an AI to generate a short, creative story involving a dragon and a wizard.";
+const testCase = "The AI should generate a story where a dragon and a wizard interact in a creative way, no longer than 200 words.";
+
 export async function POST(req: Request) {
   const {
-    messages,
-    model = 'gemini-pro', // Use the appropriate model (e.g., 'gemini-pro', 'chat-bison-001')
+    answer,
+    model = 'gemini-pro',
   } = (await req.json()) as {
-    messages?: { role: string; content: string }[];
+    answer?: string;
     model?: string;
   };
 
   try {
-    if (!messages || messages.length === 0) {
+    if (!answer) {
       return NextResponse.json(
-        { message: 'No messages provided.' },
+        { message: 'No answer provided.' },
         { status: 400 }
       );
     }
 
-    // Prepare messages for Google API (as text)
-    const userMessage = messages
-      .map((msg) => `${msg.role}: ${msg.content}`)
-      .join('\n');
+    // System Instruction for Evaluation
+    const systemInstruction = `You are an examiner in a prompt engineering competition. 
+    You will be provided with the problem and its test case. The user will input an answer. 
+    Based on the input, evaluate the answer and give a score out of ten.
+    
+    Problem: ${problem}
+    Test Case: ${testCase}
+    User's Answer: ${answer}
+
+    Please provide a score from 1 to 10 and briefly explain why the answer received that score.`;
 
     // Get the model
     const aiModel = genAI.getGenerativeModel({ model });
 
-    // Send the prompt to the Google API
-    const result = await aiModel.generateContent(userMessage);
+    // Send the instruction to Google API
+    const result = await aiModel.generateContent(systemInstruction);
     const response = result.response;
 
     return NextResponse.json({ response: response.text() }, { status: 200 });
