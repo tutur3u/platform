@@ -1,9 +1,9 @@
 {
   "name": "@tutur3u/ai",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.0.2",
   "publishConfig": {
-    "@tutur3u:registry": "https://npm.pkg.github.com"
+    "@tutur3u:registry": "https://npm.pkg.github.com",
+    "access": "public"
   },
   "scripts": {
     "lint": "eslint .",
@@ -16,14 +16,14 @@
     "@ai-sdk/anthropic": "^1.1.6",
     "@ai-sdk/azure": "^1.1.9",
     "@ai-sdk/cohere": "^1.1.8",
-    "@ai-sdk/google": "^1.1.10",
-    "@ai-sdk/google-vertex": "^2.1.11",
+    "@ai-sdk/google": "^1.1.11",
+    "@ai-sdk/google-vertex": "^2.1.12",
     "@ai-sdk/mistral": "^1.1.7",
     "@ai-sdk/openai": "^1.1.9",
-    "@ai-sdk/react": "^1.1.10",
+    "@ai-sdk/react": "^1.1.11",
     "@google/generative-ai": "^0.21.0",
     "@repo/supabase": "workspace:*",
-    "ai": "^4.1.26",
+    "ai": "^4.1.28",
     "eslint": "^9.20.0",
     "next": "^15.1.6",
     "react": "^19.0.0",

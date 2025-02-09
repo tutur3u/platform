@@ -3,6 +3,7 @@ name: Release AI Package
 on:
   release:
     types: [created]
+  workflow_dispatch:
 
 jobs:
   build:

@@ -604,20 +604,20 @@
     },
     "packages/ai": {
       "name": "@tutur3u/ai",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "@ai-sdk/amazon-bedrock": "^1.1.6",
         "@ai-sdk/anthropic": "^1.1.6",
         "@ai-sdk/azure": "^1.1.9",
         "@ai-sdk/cohere": "^1.1.8",
-        "@ai-sdk/google": "^1.1.10",
-        "@ai-sdk/google-vertex": "^2.1.11",
+        "@ai-sdk/google": "^1.1.11",
+        "@ai-sdk/google-vertex": "^2.1.12",
         "@ai-sdk/mistral": "^1.1.7",
         "@ai-sdk/openai": "^1.1.9",
-        "@ai-sdk/react": "^1.1.10",
+        "@ai-sdk/react": "^1.1.11",
         "@google/generative-ai": "^0.21.0",
         "@repo/supabase": "workspace:*",
-        "ai": "^4.1.26",
+        "ai": "^4.1.28",
         "eslint": "^9.20.0",
         "next": "^15.1.6",
         "react": "^19.0.0",
@@ -803,9 +803,9 @@
 
     "@ai-sdk/cohere": ["@ai-sdk/cohere@1.1.8", "", { "dependencies": { "@ai-sdk/provider": "1.0.7", "@ai-sdk/provider-utils": "2.1.6" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-IUNmRrlYsGL2PICHYi5dh4xtflQP429FKRYtNgUfn3Pwpg5rf3kCYqnbEXGh6P1B0xUGtE31Xt4SnNyBXIw3YA=="],
 
-    "@ai-sdk/google": ["@ai-sdk/google@1.1.10", "", { "dependencies": { "@ai-sdk/provider": "1.0.7", "@ai-sdk/provider-utils": "2.1.6" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-g65cKrs2ZjpNMOD9OvE9J/Xt1SxPu00IsWn4npYe56nU4YqVydsPBG4PyUKgDr9KXdrnFEoXYmWxkJeTe/m4hA=="],
+    "@ai-sdk/google": ["@ai-sdk/google@1.1.11", "", { "dependencies": { "@ai-sdk/provider": "1.0.7", "@ai-sdk/provider-utils": "2.1.6" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-EcK20MTA3zNJKNOo3r52Y0N960lGL6UxUimt13HFk2RJ4dXPMWl7ZhWFgjwFXwW2QwdSPKqlMHYjne3xvKTBcQ=="],
 
-    "@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@2.1.11", "", { "dependencies": { "@ai-sdk/anthropic": "1.1.6", "@ai-sdk/google": "1.1.10", "@ai-sdk/provider": "1.0.7", "@ai-sdk/provider-utils": "2.1.6", "google-auth-library": "^9.15.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-sVNg/tm3pmuNKvm7fg2v6ao9scZf4mesaRw1E9tcL9N3TVNWoGBYzwngSE0s6s8wbPdkoY4at56Js6bS3zalAw=="],
+    "@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@2.1.12", "", { "dependencies": { "@ai-sdk/anthropic": "1.1.6", "@ai-sdk/google": "1.1.11", "@ai-sdk/provider": "1.0.7", "@ai-sdk/provider-utils": "2.1.6", "google-auth-library": "^9.15.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-zHCpgrPdUeBwy4VLN8Agl31O2gIfiqnXwc954MjMJx7Pp9Ypiwj13zHtGq0UPPbOi53pIWK3V7UPcYsvZN+8+Q=="],
 
     "@ai-sdk/mistral": ["@ai-sdk/mistral@1.1.7", "", { "dependencies": { "@ai-sdk/provider": "1.0.7", "@ai-sdk/provider-utils": "2.1.6" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-5YfNGD9zJ1/0bT2hEPLfKMFRZqP/cfaxJfyKILLuZYnduyfhmsxJroOPqOqmnJKxf1620Ja3hrhWO86DKeIZNw=="],
 
@@ -815,9 +815,9 @@
 
     "@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@2.1.6", "", { "dependencies": { "@ai-sdk/provider": "1.0.7", "eventsource-parser": "^3.0.0", "nanoid": "^3.3.8", "secure-json-parse": "^2.7.0" }, "peerDependencies": { "zod": "^3.0.0" }, "optionalPeers": ["zod"] }, "sha512-Pfyaj0QZS22qyVn5Iz7IXcJ8nKIKlu2MeSAdKJzTwkAks7zdLaKVB+396Rqcp1bfQnxl7vaduQVMQiXUrgK8Gw=="],
 
-    "@ai-sdk/react": ["@ai-sdk/react@1.1.10", "", { "dependencies": { "@ai-sdk/provider-utils": "2.1.6", "@ai-sdk/ui-utils": "1.1.10", "swr": "^2.2.5", "throttleit": "2.1.0" }, "peerDependencies": { "react": "^18 || ^19 || ^19.0.0-rc", "zod": "^3.0.0" }, "optionalPeers": ["react", "zod"] }, "sha512-RTkEVYKq7qO6Ct3XdVTgbaCTyjX+q1HLqb+t2YvZigimzMCQbHkpZCtt2H2Fgpt1UOTqnAAlXjEAgTW3X60Y9g=="],
+    "@ai-sdk/react": ["@ai-sdk/react@1.1.11", "", { "dependencies": { "@ai-sdk/provider-utils": "2.1.6", "@ai-sdk/ui-utils": "1.1.11", "swr": "^2.2.5", "throttleit": "2.1.0" }, "peerDependencies": { "react": "^18 || ^19 || ^19.0.0-rc", "zod": "^3.0.0" }, "optionalPeers": ["react", "zod"] }, "sha512-vfjZ7w2M+Me83HTMMrnnrmXotz39UDCMd27YQSrvt2f1YCLPloVpLhP+Y9TLZeFE/QiiRCrPYLDQm6aQJYJ9PQ=="],
 
-    "@ai-sdk/ui-utils": ["@ai-sdk/ui-utils@1.1.10", "", { "dependencies": { "@ai-sdk/provider": "1.0.7", "@ai-sdk/provider-utils": "2.1.6", "zod-to-json-schema": "^3.24.1" }, "peerDependencies": { "zod": "^3.0.0" }, "optionalPeers": ["zod"] }, "sha512-x+A1Nfy8RTSatdCe+7nRpHAZVzPFB6H+r+2JKoapSvrwsu9mw2pAbmFgV8Zaj94TsmUdTlO0/j97e63f+yYuWg=="],
+    "@ai-sdk/ui-utils": ["@ai-sdk/ui-utils@1.1.11", "", { "dependencies": { "@ai-sdk/provider": "1.0.7", "@ai-sdk/provider-utils": "2.1.6", "zod-to-json-schema": "^3.24.1" }, "peerDependencies": { "zod": "^3.0.0" }, "optionalPeers": ["zod"] }, "sha512-1SC9W4VZLcJtxHRv4Y0aX20EFeaEP6gUvVqoKLBBtMLOgtcZrv/F/HQRjGavGugiwlS3dsVza4X+E78fiwtlTA=="],
 
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 
@@ -3620,10 +3620,6 @@
     "@typescript-eslint/typescript-estree/minimatch": ["minimatch@9.0.5", "", { "dependencies": { "brace-expansion": "^2.0.1" } }, "sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow=="],
 
     "accepts/negotiator": ["negotiator@0.6.3", "", {}, "sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg=="],
-
-    "ai/@ai-sdk/react": ["@ai-sdk/react@1.1.11", "", { "dependencies": { "@ai-sdk/provider-utils": "2.1.6", "@ai-sdk/ui-utils": "1.1.11", "swr": "^2.2.5", "throttleit": "2.1.0" }, "peerDependencies": { "react": "^18 || ^19 || ^19.0.0-rc", "zod": "^3.0.0" }, "optionalPeers": ["react", "zod"] }, "sha512-vfjZ7w2M+Me83HTMMrnnrmXotz39UDCMd27YQSrvt2f1YCLPloVpLhP+Y9TLZeFE/QiiRCrPYLDQm6aQJYJ9PQ=="],
-
-    "ai/@ai-sdk/ui-utils": ["@ai-sdk/ui-utils@1.1.11", "", { "dependencies": { "@ai-sdk/provider": "1.0.7", "@ai-sdk/provider-utils": "2.1.6", "zod-to-json-schema": "^3.24.1" }, "peerDependencies": { "zod": "^3.0.0" }, "optionalPeers": ["zod"] }, "sha512-1SC9W4VZLcJtxHRv4Y0aX20EFeaEP6gUvVqoKLBBtMLOgtcZrv/F/HQRjGavGugiwlS3dsVza4X+E78fiwtlTA=="],
 
     "babel-plugin-react-compiler/@babel/types": ["@babel/types@7.26.5", "", { "dependencies": { "@babel/helper-string-parser": "^7.25.9", "@babel/helper-validator-identifier": "^7.25.9" } }, "sha512-L6mZmwFDK6Cjh1nRCLXpa6no13ZIioJDz7mdkzHv399pThrTa/k0nUlNaenOeh2kWu/iaOQYElEpKPUswUa9Vg=="],
 
