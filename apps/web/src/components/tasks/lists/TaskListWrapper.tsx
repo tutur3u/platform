@@ -1,11 +1,9 @@
-import TaskEditForm from '../../forms/TaskEditForm';
 import TaskWrapper from '../core/TaskWrapper';
 import TaskListAccordionControl from './TaskListAccordionControl';
 import { Task } from '@/types/primitives/Task';
 import { TaskList } from '@/types/primitives/TaskList';
 import { Workspace } from '@/types/primitives/Workspace';
 import { Accordion, Button, Loader } from '@mantine/core';
-import { openModal } from '@mantine/modals';
 import useSWR, { mutate } from 'swr';
 
 export interface TaskListWrapperProps {
@@ -31,12 +29,12 @@ const TaskListWrapper = ({ ws, boardId, list }: TaskListWrapperProps) => {
   const isLoading = !tasks && !tasksError;
 
   const showAddTaskModal = () => {
-    openModal({
-      title: 'Add task',
-      centered: true,
-      size: 'xl',
-      children: <TaskEditForm listId={list.id} onUpdated={resync} />,
-    });
+    // openModal({
+    //   title: 'Add task',
+    //   centered: true,
+    //   size: 'xl',
+    //   children: <TaskEditForm listId={list.id} onUpdated={resync} />,
+    // });
   };
 
   return (

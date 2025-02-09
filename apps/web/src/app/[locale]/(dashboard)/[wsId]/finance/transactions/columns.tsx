@@ -11,7 +11,7 @@ import { useLocale } from 'next-intl';
 
 export const transactionColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<Transaction>[] => {
   const locale = useLocale();
 

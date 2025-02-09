@@ -9,7 +9,8 @@
     }
   },
   "include": [
-    "src"
+    "src",
+    "../../apps/web/src/app/[locale]/ws-settings-dialog.tsx"
   ],
   "exclude": [
     "node_modules"

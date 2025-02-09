@@ -2,7 +2,7 @@
 
 import LogoTitle from '../../logo-title';
 import WorkspaceSelect from '../../workspace-select';
-import { Nav } from './_components/nav';
+import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,6 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@repo/ui/components/ui/breadcrumb';
 import { Button } from '@repo/ui/components/ui/button';
@@ -89,6 +88,17 @@ export function Structure({
     return link;
   });
 
+  const matchedLinks = filteredLinks
+    .sort((a, b) => b.href.length - a.href.length)
+    .filter(
+      (link) =>
+        pathname.startsWith(link.href) ||
+        link.aliases?.some((alias) => pathname.startsWith(alias))
+    )
+    .sort((a, b) => b.href.length - a.href.length);
+
+  const currentLink = matchedLinks?.[0];
+
   return (
     <>
       <nav
@@ -108,12 +118,11 @@ export function Structure({
             </Link>
           </div>
           <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
-          <div className="line-clamp-1 break-all text-lg font-semibold">
-            {
-              links
-                .filter((link) => pathname.startsWith(link.href))
-                .sort((a, b) => b.href.length - a.href.length)[0]?.title
-            }
+          <div className="flex items-center gap-2 break-all text-lg font-semibold">
+            {currentLink?.icon && (
+              <div className="flex-none">{currentLink.icon}</div>
+            )}
+            <span className="line-clamp-1">{currentLink?.title}</span>
           </div>
         </div>
         <div className="flex h-[52px] items-center gap-2">
@@ -279,24 +288,18 @@ export function Structure({
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="flex items-center gap-2">
-                      {
-                        filteredLinks
-                          .filter((link) => pathname.startsWith(link.href))
-                          .sort((a, b) => b.href.length - a.href.length)[0]
-                          ?.icon
+                    <BreadcrumbLink
+                      href={
+                        currentLink?.href === pathname ? '#' : currentLink?.href
                       }
-                      {
-                        filteredLinks
-                          .filter((link) => pathname.startsWith(link.href))
-                          .sort((a, b) => b.href.length - a.href.length)[0]
-                          ?.title
-                      }
-                    </BreadcrumbPage>
+                      className="flex items-center gap-2"
+                    >
+                      {currentLink?.icon}
+                      {currentLink?.title}
+                    </BreadcrumbLink>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-
               {children}
             </main>
           </ResizablePanel>

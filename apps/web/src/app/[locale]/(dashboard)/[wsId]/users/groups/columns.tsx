@@ -1,5 +1,6 @@
 'use client';
 
+import GroupAttendanceStats from './attendance-stats';
 import { UserGroupRowActions } from './row-actions';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
@@ -10,7 +11,7 @@ import Link from 'next/link';
 
 export const getUserGroupColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<UserGroup>[] => [
   // {
   //   id: 'select',
@@ -54,27 +55,31 @@ export const getUserGroupColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link href={row.original.href || '#'} className="min-w-[8rem]">
+      <Link
+        href={row.original.href || '#'}
+        className="min-w-[8rem] font-semibold hover:underline"
+      >
         {row.getValue('name') || '-'}
       </Link>
     ),
   },
-  // {
-  //   accessorKey: 'attendance_stats',
-  //   header: ({ column }) => (
-  //     <DataTableColumnHeader
-  //       t={t}
-  //       column={column}
-  //       title={t(`${namespace}.attendance_stats`)}
-  //     />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <GroupAttendanceStats
-  //       groupId={row.original.id}
-  //       count={row.original.amount || 0}
-  //     />
-  //   ),
-  // },
+  {
+    accessorKey: 'attendance_stats',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.attendance_stats`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <GroupAttendanceStats
+        wsId={row.original.ws_id}
+        groupId={row.original.id}
+        count={row.original.amount || 0}
+      />
+    ),
+  },
   {
     accessorKey: 'amount',
     header: ({ column }) => (

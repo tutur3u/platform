@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const userFieldColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<WorkspaceUserField>[] => [
   // {
   //   id: 'select',

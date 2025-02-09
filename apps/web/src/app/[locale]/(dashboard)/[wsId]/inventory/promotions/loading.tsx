@@ -1,10 +1,10 @@
+import { getPromotionColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { promotionColumns } from '@/data/columns/promotions';
 
 export default function Loading() {
   return (
     <CustomDataTable
-      columnGenerator={promotionColumns}
+      columnGenerator={getPromotionColumns}
       namespace="promotion-data-table"
       defaultVisibility={{
         id: false,

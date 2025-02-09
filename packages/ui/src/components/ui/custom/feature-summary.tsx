@@ -13,7 +13,7 @@ interface Props<T> {
   title?: ReactNode;
   pluralTitle?: string;
   singularTitle?: string;
-  description: ReactNode;
+  description?: ReactNode;
   action?: ReactNode;
   createTitle?: string;
   createDescription?: string;
@@ -52,7 +52,7 @@ export default function FeatureSummary<T>({
   secondaryTitle,
   secondaryDescription,
   primaryTrigger = form || href ? (
-    <Button className="w-full md:w-fit" disabled={!form && !href}>
+    <Button size="xs" className="w-full md:w-fit" disabled={!form && !href}>
       <Plus className={cn('h-5 w-5', primaryTriggerTitle ? 'mr-1' : '')} />
       {primaryTriggerTitle}
     </Button>
@@ -61,6 +61,7 @@ export default function FeatureSummary<T>({
   disableSecondaryTrigger,
   secondaryTrigger = (
     <Button
+      size="xs"
       variant="ghost"
       className="w-full md:w-fit"
       disabled={(!form && !href && !defaultData) || disableSecondaryTrigger}
@@ -78,40 +79,50 @@ export default function FeatureSummary<T>({
 }: Props<T>) {
   return (
     <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
-      <div>
-        {title || <h1 className="text-2xl font-bold">{pluralTitle}</h1>}
-        <p className="text-foreground/80 whitespace-pre-wrap">{description}</p>
-      </div>
-      <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-        {showDefaultFormAsSecondary ||
-        (showSecondaryTrigger && !showCustomSecondaryTrigger) ? (
-          <ModifiableDialogTrigger
-            data={defaultData}
-            trigger={secondaryTrigger}
-            form={form}
-            open={open}
-            setOpen={setOpen}
-            editDescription={secondaryDescription}
-            requireExpansion={requireExpansion}
-            title={secondaryTitle}
-            forceDefault
-          />
-        ) : (
-          showSecondaryTrigger && secondaryTrigger
-        )}
-        {action || (
-          <ModifiableDialogTrigger
-            data={data}
-            trigger={primaryTrigger}
-            form={form}
-            open={open}
-            setOpen={setOpen}
-            createDescription={createDescription}
-            requireExpansion={requireExpansion}
-            title={singularTitle}
-          />
+      <div className="w-full">
+        {title || <h1 className="w-full text-2xl font-bold">{pluralTitle}</h1>}
+        {description && (
+          <div className="text-foreground/80 whitespace-pre-wrap">
+            {description}
+          </div>
         )}
       </div>
+      {(form ||
+        action ||
+        showDefaultFormAsSecondary ||
+        (showSecondaryTrigger && !showCustomSecondaryTrigger) ||
+        (showSecondaryTrigger && secondaryTrigger)) && (
+        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+          {showDefaultFormAsSecondary ||
+          (showSecondaryTrigger && !showCustomSecondaryTrigger) ? (
+            <ModifiableDialogTrigger
+              data={defaultData}
+              trigger={secondaryTrigger}
+              form={form}
+              open={open}
+              setOpen={setOpen}
+              editDescription={secondaryDescription}
+              requireExpansion={requireExpansion}
+              title={secondaryTitle}
+              forceDefault
+            />
+          ) : (
+            showSecondaryTrigger && secondaryTrigger
+          )}
+          {action || (
+            <ModifiableDialogTrigger
+              data={data}
+              trigger={primaryTrigger}
+              form={form}
+              open={open}
+              setOpen={setOpen}
+              createDescription={createDescription}
+              requireExpansion={requireExpansion}
+              title={singularTitle}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

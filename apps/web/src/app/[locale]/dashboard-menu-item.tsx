@@ -1,18 +1,25 @@
 import { DEV_MODE } from '@/constants/common';
-import { getWorkspaces } from '@/lib/workspace-helper';
+import { Workspace } from '@/types/primitives/Workspace';
+import { createClient } from '@/utils/supabase/client';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@repo/ui/components/ui/dropdown-menu';
+import { useQuery } from '@tanstack/react-query';
 import { ActivitySquare, Database } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
-export default async function DashboardMenuItem() {
-  const t = await getTranslations('common');
+export default function DashboardMenuItem() {
+  const t = useTranslations('common');
 
-  const workspaces = await getWorkspaces(true);
+  const workspacesQuery = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: fetchWorkspaces,
+  });
+
+  const workspaces = workspacesQuery.data;
 
   return (
     <>
@@ -24,7 +31,6 @@ export default async function DashboardMenuItem() {
             <span>{t('dashboard')}</span>
           </DropdownMenuItem>
         </Link>
-
         {DEV_MODE && (
           <Link
             href="http://localhost:8003/project/default/editor"
@@ -39,4 +45,24 @@ export default async function DashboardMenuItem() {
       </DropdownMenuGroup>
     </>
   );
+}
+
+async function fetchWorkspaces() {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data: workspaces, error: error } = await supabase
+    .from('workspaces')
+    .select(
+      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+    )
+    .eq('workspace_members.user_id', user.id);
+
+  if (error) return;
+  return workspaces as Workspace[];
 }

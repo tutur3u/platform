@@ -44,11 +44,6 @@ const navItems = (t: any) => {
     { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/neo-chess', label: 'Neo Chess' },
     { href: '/calendar/meet-together', label: t('common.meet-together') },
-    // {
-    //   href: 'https://docs.tuturuuu.com',
-    //   label: t('common.docs'),
-    //   external: true,
-    // },
   ] as NavItem[];
 };
 
@@ -60,7 +55,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
     href: item.href,
     className: cn(
       'transition-opacity duration-200',
-      isActive ? 'opacity-100' : 'opacity-50 hover:opacity-100',
+      isActive ? 'opacity-100' : 'opacity-70 hover:opacity-100',
       className
     ),
     onClick: onClick,
@@ -81,9 +76,13 @@ const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
     return null;
 
   return (
-    <div className="hidden gap-8 font-semibold md:flex">
+    <div className="bg-primary-foreground hidden w-full items-center rounded-2xl border-[0.5px] border-gray-700/50 px-6 py-3 font-semibold md:flex md:gap-6 lg:gap-8">
       {navItems(t).map((item) => (
-        <NavLink key={item.href} item={item} />
+        <NavLink
+          key={item.href}
+          item={item}
+          className="md:text-sm lg:text-base"
+        />
       ))}
     </div>
   );
@@ -93,7 +92,7 @@ const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   <NavLink
     item={item}
     onClick={onClick}
-    className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition"
+    className="border-brand-lighzt-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition"
   />
 );
 

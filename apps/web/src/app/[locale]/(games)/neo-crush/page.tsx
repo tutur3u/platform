@@ -5,6 +5,7 @@ import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
 import Image from 'next/image';
@@ -13,7 +14,7 @@ export default function NeoCrushGamePage() {
   return (
     <div className="flex h-fit flex-col items-center justify-center gap-4 overflow-hidden p-4 pt-8 text-center md:pt-32">
       <Image
-        src="/club-day/neo-citrus-tech.jpg"
+        src="/club-day/sem-b.jpg"
         width={2000}
         height={2000}
         alt="Neo Citrus Tech"
@@ -37,6 +38,7 @@ export default function NeoCrushGamePage() {
         </div>
       </div>
       <Dialog>
+        <DialogTitle>Neo Crush</DialogTitle>
         <DialogTrigger asChild>
           <Button className="w-full max-w-sm">Start Game</Button>
         </DialogTrigger>

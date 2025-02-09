@@ -77,7 +77,7 @@ export default class Referee {
     return king ? { x: king.x, y: king.y } : null;
   }
 
-  private isKingInDanger(team: TeamType, boardState: Piece[]): boolean {
+  public isKingInDanger(team: TeamType, boardState: Piece[]): boolean {
     const kingPosition = this.findKingPosition(team, boardState);
     if (!kingPosition) return false;
 
@@ -99,6 +99,86 @@ export default class Referee {
       }
       return false;
     });
+  }
+
+  private getPossibleMovesForPiece(
+    piece: Piece,
+    boardState: Piece[]
+  ): Array<{ x: number; y: number }> {
+    const possibleMoves: Array<{ x: number; y: number }> = [];
+
+    for (let x = 0; x < 9; x++) {
+      for (let y = 0; y < 9; y++) {
+        const { isValid } = this.isValidMove(
+          piece.id,
+          x,
+          y,
+          piece.x,
+          piece.y,
+          piece.type,
+          piece.team,
+          piece.firstMove,
+          boardState
+        );
+
+        if (isValid) {
+          possibleMoves.push({ x, y });
+        }
+      }
+    }
+
+    return possibleMoves;
+  }
+
+  private simulateMove(
+    boardState: Piece[],
+    piece: Piece,
+    move: { x: number; y: number }
+  ): Piece[] {
+    // Create a copy of the board state
+    const newBoardState = boardState.map((p) => ({ ...p }));
+
+    // Move the piece
+    const pieceToMove = newBoardState.find((p) => p.id === piece.id);
+    if (pieceToMove) {
+      pieceToMove.x = move.x;
+      pieceToMove.y = move.y;
+      pieceToMove.firstMove = false;
+    }
+
+    return newBoardState;
+  }
+
+  private isCheckmate(team: TeamType, boardState: Piece[]): boolean {
+    // Check if the king is in check
+    if (!this.isKingInDanger(team, boardState)) {
+      return false;
+    }
+
+    // Generate all pieces for the current team
+    const playerPieces = boardState.filter((piece) => piece.team === team);
+
+    // Check each piece for possible legal moves
+    for (const piece of playerPieces) {
+      const possibleMoves = this.getPossibleMovesForPiece(piece, boardState);
+
+      for (const move of possibleMoves) {
+        const simulatedBoardState = this.simulateMove(boardState, piece, move);
+        if (!this.isKingInDanger(team, simulatedBoardState)) {
+          return false;
+        }
+      }
+    }
+
+    // If no legal moves found, it's checkmate
+    return true;
+  }
+
+  public checkForCheckmate(
+    team: TeamType,
+    boardState: Piece[]
+  ): TeamType | null {
+    return this.isCheckmate(team, boardState) ? team : null;
   }
 
   private castling(king: Piece, rook: Piece, boardState: Piece[]): boolean {
@@ -219,9 +299,7 @@ export default class Referee {
           isValid = true;
         }
       }
-    }
-    
-    else if (type === PieceType.KING) {
+    } else if (type === PieceType.KING) {
       if (
         Math.abs(verticalDistance) <= 1 &&
         Math.abs(horizontalDistance) <= 1
@@ -257,9 +335,7 @@ export default class Referee {
           isValid = true;
         }
       }
-    }
-    
-    else if (type === PieceType.BISHOP) {
+    } else if (type === PieceType.BISHOP) {
       if (
         isDiagonalMove &&
         this.isPathClear(
@@ -275,9 +351,7 @@ export default class Referee {
         boardState = this.capturePiece(column, row, boardState);
         isValid = true;
       }
-    }
-    
-    else if (type === PieceType.QUEEN) {
+    } else if (type === PieceType.QUEEN) {
       if (
         (isDiagonalMove || isStraightMove) &&
         this.isPathClear(
@@ -293,9 +367,7 @@ export default class Referee {
         boardState = this.capturePiece(column, row, boardState);
         isValid = true;
       }
-    }
-    
-    else if (type === PieceType.KNIGHT) {
+    } else if (type === PieceType.KNIGHT) {
       if (
         ((Math.abs(horizontalDistance) === 1 &&
           Math.abs(verticalDistance) === 2) ||
@@ -307,9 +379,7 @@ export default class Referee {
         boardState = this.capturePiece(column, row, boardState);
         isValid = true;
       }
-    }
-    
-    else if (type === PieceType.ROOK) {
+    } else if (type === PieceType.ROOK) {
       if (
         isStraightMove &&
         this.isPathClear(
@@ -338,5 +408,34 @@ export default class Referee {
     }
 
     return { isValid: false, updatedBoardState: boardState };
+  }
+
+  private isStalemate(team: TeamType, boardState: Piece[]): boolean {
+    // Check if the king is in check
+    if (this.isKingInDanger(team, boardState)) {
+      return false;
+    }
+
+    // Generate all pieces for the current team
+    const playerPieces = boardState.filter((piece) => piece.team === team);
+
+    // Check each piece for possible legal moves
+    for (const piece of playerPieces) {
+      const possibleMoves = this.getPossibleMovesForPiece(piece, boardState);
+
+      for (const move of possibleMoves) {
+        const simulatedBoardState = this.simulateMove(boardState, piece, move);
+        if (!this.isKingInDanger(team, simulatedBoardState)) {
+          return false;
+        }
+      }
+    }
+
+    // If no legal moves found, it's stalemate
+    return true;
+  }
+
+  public checkForStalemate(team: TeamType, boardState: Piece[]): boolean {
+    return this.isStalemate(team, boardState);
   }
 }

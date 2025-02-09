@@ -11,15 +11,14 @@ export default async function Layout({ children }: LayoutProps) {
   return (
     <>
       <Navbar hideMetadata />
-      <NavbarPadding>
-        <div
-          id="main-content"
-          className="h-screen max-h-screen min-h-screen overflow-y-auto"
-        >
-          {children}
-          <Footer />
-        </div>
-      </NavbarPadding>
+      <NavbarPadding />
+      <div
+        id="main-content"
+        className="relative flex h-screen max-h-screen min-h-screen flex-col overflow-y-auto"
+      >
+        <div className="flex-none">{children}</div>
+        <Footer />
+      </div>
     </>
   );
 }

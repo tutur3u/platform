@@ -9,7 +9,7 @@ import moment from 'moment';
 
 export const getEmailColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
   // extraData?: any
 ): ColumnDef<EmailHistoryEntry>[] => [
   {

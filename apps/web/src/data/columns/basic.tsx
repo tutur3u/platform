@@ -7,7 +7,7 @@ import moment from 'moment';
 
 export const basicColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<Entity>[] => [
   // {
   //   id: 'select',

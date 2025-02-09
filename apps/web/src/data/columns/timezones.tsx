@@ -9,7 +9,7 @@ import moment from 'moment';
 
 export const timezoneColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<Timezone>[] => [
   // {
   //   id: 'select',

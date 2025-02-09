@@ -1,8 +1,10 @@
 import { StaffToolbar } from './staff-toolbar';
+import { ProductionIndicator } from '@/components/production-indicator';
 import { Providers } from '@/components/providers';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
-import { locales } from '@/config';
 import { siteConfig } from '@/constants/configs';
+import { routing, supportedLocales } from '@/i18n/routing';
+import '@/style/prosemirror.css';
 import { Toaster } from '@repo/ui/components/ui/toaster';
 import '@repo/ui/globals.css';
 import { cn } from '@repo/ui/lib/utils';
@@ -10,9 +12,12 @@ import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, unstable_setRequestLocale } from 'next-intl/server';
+import { getMessages, setRequestLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
+import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
+
+const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
 
 interface Props {
   children: ReactNode;
@@ -94,30 +99,33 @@ export const viewport: Viewport = {
   colorScheme: 'dark light',
 };
 
-const inter = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
-
 export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }));
+  return supportedLocales.map((locale) => ({ locale }));
 }
 
 export default async function RootLayout({ children, params }: Props) {
+  // Ensure that the incoming `locale` is valid
+  if (!routing.locales.includes((await params).locale as any)) {
+    notFound();
+  }
+
   const { locale } = await params;
-  unstable_setRequestLocale(locale);
+  setRequestLocale(locale);
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'bg-background overflow-hidden font-sans antialiased',
-          inter.className
+          'bg-background overflow-hidden antialiased',
+          font.className
         )}
       >
         <VercelAnalytics />
         <VercelInsights />
         <Providers
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="dark"
           themes={[
             'system',
 
@@ -138,13 +146,14 @@ export default async function RootLayout({ children, params }: Props) {
             'dark-blue',
           ]}
           enableColorScheme={false}
-          enableSystem
+          enableSystem={false}
         >
           <NextIntlClientProvider messages={messages}>
             {children}
           </NextIntlClientProvider>
         </Providers>
         <TailwindIndicator />
+        <ProductionIndicator />
         <StaffToolbar />
         <Toaster />
       </body>

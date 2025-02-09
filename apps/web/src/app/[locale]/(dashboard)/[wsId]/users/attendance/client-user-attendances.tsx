@@ -5,6 +5,7 @@ import useSearchParams from '@/hooks/useSearchParams';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { DataTablePagination } from '@repo/ui/components/ui/custom/tables/data-table-pagination';
 import { useTranslations } from 'next-intl';
+import { FC } from 'react';
 
 interface SearchParams {
   q?: string;
@@ -19,17 +20,12 @@ interface SearchParams {
 const DEFAULT_PAGE = '1';
 const DEFAULT_PAGE_SIZE = '24';
 
-export default function ClientUserAttendances({
-  wsId,
-  searchParams: serverSearchParams,
-  data,
-  count,
-}: {
+const ClientUserAttendances: FC<{
   wsId: string;
   searchParams: SearchParams;
   data: WorkspaceUser[];
   count: number;
-}) {
+}> = ({ wsId, searchParams: serverSearchParams, data, count }) => {
   const t = useTranslations();
   const searchParams = useSearchParams();
 
@@ -116,4 +112,6 @@ export default function ClientUserAttendances({
       )}
     </>
   );
-}
+};
+
+export default ClientUserAttendances;

@@ -5,15 +5,20 @@ import SearchBar from '../search-bar';
 import { DataTableCreateButton } from './data-table-create-button';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from '@repo/ui/components/ui/dialog';
 import { Table } from '@tanstack/react-table';
-import { X } from 'lucide-react';
+import { Download, RotateCcw, Upload } from 'lucide-react';
 import { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
   hasData: boolean;
   newObjectTitle?: string;
   editContent?: ReactNode;
-  namespace: string;
+  namespace: string | undefined;
   table: Table<TData>;
   filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];
@@ -21,6 +26,8 @@ interface DataTableToolbarProps<TData> {
   disableSearch?: boolean;
   isEmpty: boolean;
   t?: any;
+  importContent?: ReactNode;
+  exportContent?: ReactNode;
   onRefresh: () => void;
   // eslint-disable-next-line no-unused-vars
   onSearch: (query: string) => void;
@@ -39,6 +46,8 @@ export function DataTableToolbar<TData>({
   isEmpty,
   t,
   namespace,
+  importContent,
+  exportContent,
   onRefresh,
   onSearch,
   resetParams,
@@ -49,7 +58,7 @@ export function DataTableToolbar<TData>({
     (defaultQuery?.length || 0) > 0;
 
   return (
-    <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
+    <div className="flex flex-col items-start justify-between gap-2 md:flex-row">
       <div className="grid w-full flex-1 flex-wrap items-center gap-2 md:flex">
         {disableSearch || (
           <SearchBar
@@ -70,10 +79,39 @@ export function DataTableToolbar<TData>({
             className="h-8 px-2 lg:px-3"
           >
             {t?.('common.reset')}
-            <X className="ml-2 h-4 w-4" />
+            <RotateCcw className="h-4 w-4" />
           </Button>
         )}
       </div>
+
+      {importContent && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 w-full md:w-fit">
+              <Upload className="h-4 w-4" />
+              {t?.('common.import')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm">{importContent}</DialogContent>
+        </Dialog>
+      )}
+
+      {exportContent && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto h-8 w-full md:w-fit"
+            >
+              <Download className="h-4 w-4" />
+              {t?.('common.export')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm">{exportContent}</DialogContent>
+        </Dialog>
+      )}
+
       <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-fit">
         {editContent && (
           <DataTableCreateButton

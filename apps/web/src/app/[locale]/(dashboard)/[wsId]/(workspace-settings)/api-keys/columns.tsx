@@ -8,7 +8,7 @@ import moment from 'moment';
 
 export const apiKeyColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
 ): ColumnDef<WorkspaceApiKey>[] => [
   // {
   //   id: 'select',

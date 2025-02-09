@@ -2,7 +2,6 @@
 
 import { WorkspaceDocument } from '@/types/db';
 import { Button, TextInput } from '@mantine/core';
-import { closeAllModals } from '@mantine/modals';
 import { useTranslations } from 'next-intl';
 import { ChangeEvent, useState } from 'react';
 
@@ -57,7 +56,7 @@ const DocumentEditForm = ({
           onClick={() => {
             const newDocument = { id: doc?.id || undefined, name };
             if (onSubmit) onSubmit(newDocument);
-            closeAllModals();
+            // closeAllModals();
           }}
           mt="md"
         >

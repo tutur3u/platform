@@ -41,10 +41,14 @@ export default function LoginForm() {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      email: '',
+      email: DEV_MODE ? 'local@tuturuuu.com' : '',
       otp: '',
     },
   });
+
+  useEffect(() => {
+    if (DEV_MODE) form.setFocus('email');
+  }, [DEV_MODE]);
 
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -57,7 +61,14 @@ export default function LoginForm() {
 
   // Update resend cooldown OTP is sent
   useEffect(() => {
-    if (otpSent) setResendCooldown(cooldown);
+    if (otpSent) {
+      setResendCooldown(cooldown);
+
+      // if on DEV_MODE, auto-open inbucket
+      if (DEV_MODE) {
+        window.open('http://localhost:8004/monitor', '_blank');
+      }
+    }
   }, [otpSent]);
 
   // Reduce cooldown by 1 every second

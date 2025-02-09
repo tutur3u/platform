@@ -1,9 +1,7 @@
 'use client';
 
-import { ProductForm } from './form';
 import { Product } from '@/types/primitives/Product';
 import { Button } from '@repo/ui/components/ui/button';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +15,6 @@ import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 interface ProductRowActionsProps {
   row: Row<Product>;
@@ -26,13 +23,15 @@ interface ProductRowActionsProps {
 
 export function ProductRowActions({ row, href }: ProductRowActionsProps) {
   const t = useTranslations();
-
   const router = useRouter();
+
   const data = row.original;
 
-  const deleteWallet = async () => {
+  if (!data.id || !data.ws_id) return null;
+
+  async function deleteProduct() {
     const res = await fetch(
-      `/api/workspaces/${data.ws_id}/products/${data.id}`,
+      `/api/v1/workspaces/${data.ws_id}/products/${data.id}`,
       {
         method: 'DELETE',
       }
@@ -43,15 +42,12 @@ export function ProductRowActions({ row, href }: ProductRowActionsProps) {
     } else {
       const data = await res.json();
       toast({
-        title: 'Failed to delete workspace wallet',
+        // TODO: i18n
+        title: 'Failed to delete workspace product',
         description: data.message,
       });
     }
-  };
-
-  const [showEditDialog, setShowEditDialog] = useState(false);
-
-  if (!data.id || !data.ws_id) return null;
+  }
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -75,24 +71,16 @@ export function ProductRowActions({ row, href }: ProductRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
+          <DropdownMenuItem asChild>
+            <Link href={`./products/${data.id}`}>{t('common.edit')}</Link>
           </DropdownMenuItem>
+
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteWallet}>
+          <DropdownMenuItem onClick={deleteProduct}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <ModifiableDialogTrigger
-        data={data}
-        open={showEditDialog}
-        title={t('ws-wallets.edit')}
-        editDescription={t('ws-wallets.edit_description')}
-        setOpen={setShowEditDialog}
-        form={<ProductForm wsId={data.ws_id} data={data} />}
-      />
     </div>
   );
 }

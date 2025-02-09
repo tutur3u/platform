@@ -11,7 +11,7 @@ import Link from 'next/link';
 
 export const getPostEmailColumns = (
   t: any,
-  namespace: string
+  namespace: string | undefined
   // extraData?: any
 ): ColumnDef<PostEmail>[] => [
   {

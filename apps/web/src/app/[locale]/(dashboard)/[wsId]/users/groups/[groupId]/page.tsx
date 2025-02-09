@@ -1,16 +1,28 @@
 import { getUserColumns } from '../../database/columns';
 import { UserDatabaseFilter } from '../../filters';
+import ExternalGroupMembers from './external-group-members';
 import GroupMemberForm from './form';
 import PostsClient from './posts-client';
+import GroupSchedule from './schedule';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { cn } from '@/lib/utils';
 import { UserGroup } from '@/types/primitives/UserGroup';
 import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
 import { createClient } from '@/utils/supabase/server';
+import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
-import { MinusCircle } from 'lucide-react';
+import {
+  Box,
+  Calendar,
+  ChartColumn,
+  FileUser,
+  MinusCircle,
+  UserCheck,
+} from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 interface SearchParams {
@@ -45,7 +57,9 @@ export default async function UserGroupDetailsPage({
   );
 
   const { data: extraFields } = await getUserFields(wsId);
-  const { data: posts } = await getGroupPosts(groupId);
+  const { data: posts, count: postsCount } = await getGroupPosts(groupId);
+  const { data: linkedProducts, count: lpCount } =
+    await getLinkedProducts(groupId);
 
   const { data: excludedUserGroups } = await getExcludedUserGroups(
     wsId,
@@ -60,21 +74,142 @@ export default async function UserGroupDetailsPage({
   return (
     <>
       <FeatureSummary
-        pluralTitle={group.name || t('ws-user-groups.plural')}
-        singularTitle={group.name || t('ws-user-groups.singular')}
-        description={t('ws-user-groups.description')}
+        title={
+          <>
+            <h1 className="w-full text-2xl font-bold">
+              {group.name || t('ws-user-groups.singular')}
+            </h1>
+            <Separator className="my-2" />
+          </>
+        }
+        description={
+          <>
+            <div className="grid flex-wrap gap-2 md:flex">
+              <Button
+                type="button"
+                variant="secondary"
+                className={cn(
+                  'border font-semibold max-sm:w-full',
+                  'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
+                )}
+                disabled
+              >
+                <Calendar className="h-5 w-5" />
+                {t('infrastructure-tabs.overview')}
+              </Button>
+              <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className={cn(
+                    'border font-semibold max-sm:w-full',
+                    'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                  )}
+                >
+                  <Calendar className="h-5 w-5" />
+                  {t('ws-user-group-details.schedule')}
+                </Button>
+              </Link>
+              <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className={cn(
+                    'border font-semibold max-sm:w-full',
+                    'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                  )}
+                >
+                  <UserCheck className="h-5 w-5" />
+                  {t('ws-user-group-details.attendance')}
+                </Button>
+              </Link>
+              <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className={cn(
+                    'border font-semibold max-sm:w-full',
+                    'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
+                  )}
+                >
+                  <FileUser className="h-5 w-5" />
+                  {t('ws-user-group-details.reports')}
+                </Button>
+              </Link>
+              <Link href={`/${wsId}/users/groups/${groupId}/indicators`}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className={cn(
+                    'border font-semibold max-sm:w-full',
+                    'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                  )}
+                >
+                  <ChartColumn className="h-5 w-5" />
+                  {t('ws-user-group-details.metrics')}
+                </Button>
+              </Link>
+            </div>
+          </>
+        }
         createTitle={t('ws-user-groups.add_user')}
         createDescription={t('ws-user-groups.add_user_description')}
         form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
       <Separator className="my-4" />
-      <div className="grid w-full grid-cols-1 gap-2 lg:grid-cols-2">
-        <div className="border-border bg-foreground/5 grid rounded-lg border p-4 pb-0">
-          <PostsClient wsId={wsId} groupId={groupId} posts={posts} />
+      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start"> */}
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="mb-2 text-xl font-semibold">
+            {t('ws-roles.members')}
+          </div>
+          <ExternalGroupMembers
+            wsId={wsId}
+            totalUsers={usersCount}
+            groups={excludedUserGroups}
+          />
         </div>
-        <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start">
-          {/* <div className="text-xl font-semibold">Attendance Calendar</div> */}
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="mb-2 text-xl font-semibold">
+            {t('ws-user-group-details.schedule')}
+          </div>
+          <GroupSchedule wsId={wsId} groupId={groupId} />
         </div>
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <PostsClient
+            wsId={wsId}
+            groupId={groupId}
+            posts={posts}
+            count={postsCount}
+          />
+        </div>
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="mb-2 text-xl font-semibold">
+            {t('user-data-table.linked_products')}
+            {!!lpCount && ` (${lpCount})`}
+          </div>
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+            {linkedProducts.map((product) => (
+              <div
+                key={product.id}
+                className="bg-background flex items-center rounded-lg border p-2 md:p-4"
+              >
+                <Box className="mr-2 h-8 w-8" />
+                <div>
+                  <div className="text-lg font-semibold">{product.name}</div>
+                  {product.description && (
+                    <div className="text-sm">{product.description}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="text-xl font-semibold">
+            {t('user-group-data-table.special_users')}
+          </div>
+        </div> */}
       </div>
       <Separator className="my-4" />
       <CustomDataTable
@@ -100,7 +235,6 @@ export default async function UserGroupDetailsPage({
         defaultVisibility={{
           id: false,
           gender: false,
-          avatar_url: false,
           display_name: false,
           ethnicity: false,
           guardian: false,
@@ -224,6 +358,23 @@ async function getGroupPosts(groupId: string) {
   return { data, count };
 }
 
+async function getLinkedProducts(groupId: string) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('user_group_linked_products')
+    .select('...workspace_products(id, name, description)', {
+      count: 'exact',
+    })
+    .eq('group_id', groupId)
+    .order('created_at', { ascending: false });
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count };
+}
+
 async function getExcludedUserGroups(wsId: string, groupId: string) {
   const supabase = await createClient();
 
@@ -239,6 +390,7 @@ async function getExcludedUserGroups(wsId: string, groupId: string) {
       }
     )
     .select('id, name, amount')
+    .order('amount', { ascending: false })
     .order('name');
 
   const { data, error, count } = await queryBuilder;
