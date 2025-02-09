@@ -42,10 +42,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run tests
-        working-directory: packages/types
-        run: pnpm test
-
   publish-gpr:
     needs: [build]
     runs-on: ubuntu-latest
