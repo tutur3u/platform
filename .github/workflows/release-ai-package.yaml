@@ -81,3 +81,30 @@ jobs:
         run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+  publish-jsr:
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/ai
+    permissions:
+      packages: write
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Configure Tiptap Pro
+        run: |
+          pnpm config set "@tiptap-pro:registry" https://registry.tiptap.dev/
+          pnpm config set "//registry.tiptap.dev/:_authToken" ${{ secrets.TIPTAP_PRO_TOKEN }}
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Publish package
+        run: pnpm dlx jsr publish
