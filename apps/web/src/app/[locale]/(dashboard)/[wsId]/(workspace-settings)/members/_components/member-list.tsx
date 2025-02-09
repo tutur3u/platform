@@ -2,14 +2,14 @@ import InviteMemberButton from './invite-member-button';
 import { MemberSettingsButton } from './member-settings-button';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getInitials } from '@/utils/name-helper';
-import { User } from '@repo/types/primitives/User';
-import { Workspace } from '@repo/types/primitives/Workspace';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from '@repo/ui/components/ui/avatar';
 import { cn } from '@repo/ui/lib/utils';
+import { User } from '@tutur3u/types/primitives/User';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import { User as UserIcon } from 'lucide-react';
 import moment from 'moment';
 import { getLocale, getTranslations } from 'next-intl/server';

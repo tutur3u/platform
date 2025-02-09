@@ -1,8 +1,8 @@
 'use client';
 
-import { Entity } from '@repo/types/primitives/Entity';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { Entity } from '@tutur3u/types/primitives/Entity';
 import moment from 'moment';
 
 export const basicColumns = (

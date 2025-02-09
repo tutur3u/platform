@@ -1,7 +1,6 @@
 'use client';
 
 import UserFieldEditDialog from './edit-dialog';
-import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,
@@ -12,6 +11,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

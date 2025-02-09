@@ -1,6 +1,5 @@
 import { isValidURL } from '@/utils/url-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';
 import { Button } from '@repo/ui/components/ui/button';
 import { AutosizeTextarea } from '@repo/ui/components/ui/custom/autosize-textarea';
 import {
@@ -11,6 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@repo/ui/components/ui/form';
+import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

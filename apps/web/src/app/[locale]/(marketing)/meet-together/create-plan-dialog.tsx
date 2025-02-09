@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Timezone } from '@repo/types/primitives/Timezone';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
@@ -23,6 +22,7 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { Timezone } from '@tutur3u/types/primitives/Timezone';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

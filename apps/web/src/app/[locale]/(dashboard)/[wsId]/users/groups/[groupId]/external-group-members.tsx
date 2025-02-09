@@ -1,8 +1,8 @@
 'use client';
 
-import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
 import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';

@@ -1,8 +1,6 @@
 import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
 import tsParser from "@typescript-eslint/parser";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 const compat = new FlatCompat({
     baseDirectory: import.meta.dirname,
@@ -22,7 +20,7 @@ export default [{
         "**/yarn.lock",
     ],
 }, ...compat.extends(
-    "@repo/eslint-config/next.js",
+    "@tutur3u/eslint-config/next.js",
     "plugin:@next/next/recommended",
     "plugin:@tanstack/eslint-plugin-query/recommended",
 ), {

@@ -1,7 +1,6 @@
 import WhitelistDomainClient from '../domains/domain-client-page';
 import { getAIWhitelistDomainColumns } from '../domains/domain-columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createAdminClient } from '@tutur3u/supabase/next/server';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
@@ -10,6 +9,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
+import { createAdminClient } from '@tutur3u/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

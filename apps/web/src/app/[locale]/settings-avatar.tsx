@@ -3,8 +3,6 @@
 import { getInitials } from '@/utils/name-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Avatar,
   AvatarFallback,
@@ -23,6 +21,8 @@ import {
 import { Form } from '@repo/ui/components/ui/form';
 import { Label } from '@repo/ui/components/ui/label';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { Loader2, Settings, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

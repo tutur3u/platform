@@ -1,10 +1,10 @@
 import { productCategoryColumns } from './columns';
 import { ProductCategoryForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { ProductCategory } from '@repo/types/primitives/ProductCategory';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { ProductCategory } from '@tutur3u/types/primitives/ProductCategory';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

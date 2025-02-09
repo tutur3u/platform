@@ -1,4 +1,3 @@
-import { LeaderboardEntry } from '@repo/types/primitives/leaderboard';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@repo/ui/components/ui/table';
+import { LeaderboardEntry } from '@tutur3u/types/primitives/leaderboard';
 
 interface UserRankingModalProps {
   user: LeaderboardEntry;

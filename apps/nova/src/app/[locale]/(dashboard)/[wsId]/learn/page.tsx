@@ -1,4 +1,3 @@
-import { createClient } from '@tutur3u/supabase/next/server';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Card,
@@ -7,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/ui/card';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

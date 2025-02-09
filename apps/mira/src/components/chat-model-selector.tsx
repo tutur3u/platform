@@ -1,4 +1,3 @@
-import { Model, models, providers } from '@tutur3u/ai/models';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,
@@ -15,6 +14,7 @@ import {
 } from '@repo/ui/components/ui/popover';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
+import { Model, models, providers } from '@tutur3u/ai/models';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 

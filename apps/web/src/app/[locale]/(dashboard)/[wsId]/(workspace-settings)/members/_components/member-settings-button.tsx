@@ -2,8 +2,6 @@
 
 import { getInitials } from '@/utils/name-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User } from '@repo/types/primitives/User';
-import { Workspace } from '@repo/types/primitives/Workspace';
 import {
   Avatar,
   AvatarFallback,
@@ -29,6 +27,8 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { User } from '@tutur3u/types/primitives/User';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import { Settings, User as UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

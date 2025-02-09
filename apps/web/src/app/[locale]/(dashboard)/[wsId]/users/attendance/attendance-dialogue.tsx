@@ -1,5 +1,3 @@
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
@@ -17,6 +15,8 @@ import {
 } from '@repo/ui/components/ui/select';
 import { useToast } from '@repo/ui/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { format } from 'date-fns';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

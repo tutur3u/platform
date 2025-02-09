@@ -1,12 +1,12 @@
 import { AiImage, AiWriter, StarterKit } from '@/extensions';
 import { Ai } from '@/extensions/Ai';
 import { ExtensionKit } from '@/extensions/extension-kit';
-import { createClient } from '@tutur3u/supabase/next/client';
 import type { AnyExtension } from '@tiptap/core';
 import { JSONContent } from '@tiptap/core';
 import Mention from '@tiptap/extension-mention';
 import { ReactRenderer, useEditor } from '@tiptap/react';
 import { SuggestionProps } from '@tiptap/suggestion';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef } from 'react';
 

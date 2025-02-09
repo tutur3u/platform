@@ -1,9 +1,9 @@
 'use client';
 
 import { RowActions } from './row-actions';
-import type { WorkspaceCronExecution } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceCronExecution } from '@tutur3u/types/db';
 import moment from 'moment';
 import Link from 'next/link';
 

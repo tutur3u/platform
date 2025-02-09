@@ -1,4 +1,3 @@
-import { createClient } from '@tutur3u/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,
@@ -8,6 +7,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   CalendarDays,
   LayoutGrid,

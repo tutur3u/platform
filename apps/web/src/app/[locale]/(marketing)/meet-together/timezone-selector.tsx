@@ -1,5 +1,4 @@
 import timezones from '../../../../data/timezones.json';
-import { Timezone } from '@repo/types/primitives/Timezone';
 import {
   Select,
   SelectContent,
@@ -7,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/ui/select';
+import { Timezone } from '@tutur3u/types/primitives/Timezone';
 import { useTranslations } from 'next-intl';
 
 interface Props {

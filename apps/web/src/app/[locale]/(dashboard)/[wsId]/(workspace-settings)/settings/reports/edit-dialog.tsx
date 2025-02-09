@@ -1,7 +1,6 @@
 'use client';
 
 import ConfigForm, { ConfigFormSchema } from './form';
-import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +9,7 @@ import {
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import * as z from 'zod';

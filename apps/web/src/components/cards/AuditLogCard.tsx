@@ -1,7 +1,7 @@
 import AuditDescription from '../audit/AuditDescription';
 import AuditLabel from '../audit/AuditLabel';
-import { User } from '@repo/types/primitives/User';
-import { AuditLog } from '@repo/types/primitives/audit-log';
+import { User } from '@tutur3u/types/primitives/User';
+import { AuditLog } from '@tutur3u/types/primitives/audit-log';
 import useSWR from 'swr';
 
 interface Props {

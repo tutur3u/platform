@@ -7,7 +7,6 @@ import {
   ROOT_WORKSPACE_ID,
 } from '@/constants/common';
 import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
@@ -15,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { DraftingCompass, FlaskConical } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

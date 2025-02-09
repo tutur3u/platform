@@ -1,6 +1,6 @@
 import { useInViewport } from '@mantine/hooks';
-import { createClient } from '@tutur3u/supabase/next/client';
 import { cn } from '@repo/ui/lib/utils';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { Check, CircleHelp, Send, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

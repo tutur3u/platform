@@ -1,9 +1,9 @@
 'use client';
 
 import { PromotionRowActions } from './row-actions';
-import { ProductPromotion } from '@repo/types/primitives/ProductPromotion';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { ProductPromotion } from '@tutur3u/types/primitives/ProductPromotion';
 import moment from 'moment';
 
 export const getPromotionColumns = (

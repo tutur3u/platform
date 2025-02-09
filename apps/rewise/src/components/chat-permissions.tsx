@@ -1,4 +1,3 @@
-import { createClient } from '@tutur3u/supabase/next/client';
 import {
   Avatar,
   AvatarFallback,
@@ -15,6 +14,7 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Label } from '@repo/ui/components/ui/label';
 import { Switch } from '@repo/ui/components/ui/switch';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { Copy, Link, QrCode, User, UserPlus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

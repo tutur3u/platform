@@ -1,5 +1,5 @@
-import { MeetTogetherPlan } from '@repo/types/primitives/MeetTogetherPlan';
 import { Button } from '@repo/ui/components/ui/button';
+import { MeetTogetherPlan } from '@tutur3u/types/primitives/MeetTogetherPlan';
 import { Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

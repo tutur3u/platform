@@ -1,5 +1,4 @@
 import { getChallenges } from './challenges';
-import { createClient } from '@tutur3u/supabase/next/server';
 import { Badge } from '@repo/ui/components/ui/badge';
 import { Button } from '@repo/ui/components/ui/button';
 import {
@@ -9,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/ui/card';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { ArrowRight, Star } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

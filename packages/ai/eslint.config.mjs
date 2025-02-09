@@ -9,7 +9,7 @@ const compat = new FlatCompat({
     allConfig: js.configs.all
 });
 
-export default [...compat.extends("@repo/eslint-config/react-internal.js"), {
+export default [...compat.extends("@tutur3u/eslint-config/react-internal.js"), {
     languageOptions: {
         parser: tsParser,
     },

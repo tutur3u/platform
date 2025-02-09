@@ -1,8 +1,6 @@
 'use client';
 
 import { UserRowActions } from './row-actions';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
@@ -11,6 +9,8 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import moment from 'moment';

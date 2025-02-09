@@ -14,15 +14,15 @@ importers:
       '@eslint/js':
         specifier: ^9.20.0
         version: 9.20.0
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:packages/eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:packages/typescript-config
       '@trivago/prettier-plugin-sort-imports':
         specifier: ^5.2.2
         version: 5.2.2(prettier@3.4.2)
+      '@tutur3u/eslint-config':
+        specifier: workspace:*
+        version: link:packages/eslint-config
+      '@tutur3u/typescript-config':
+        specifier: workspace:*
+        version: link:packages/typescript-config
       eslint:
         specifier: ^9.20.0
         version: 9.20.0(jiti@2.4.2)
@@ -104,9 +104,6 @@ importers:
       '@react-email/tailwind':
         specifier: ^1.0.4
         version: 1.0.4(react@19.0.0)
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -260,6 +257,9 @@ importers:
       '@tutur3u/supabase':
         specifier: workspace:*
         version: link:../../packages/supabase
+      '@tutur3u/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@upstash/qstash':
         specifier: ^2.7.20
         version: 2.7.20
@@ -444,12 +444,6 @@ importers:
       '@next/eslint-plugin-next':
         specifier: ^15.1.6
         version: 15.1.6
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       '@tanstack/eslint-plugin-query':
         specifier: ^5.66.0
         version: 5.66.0(eslint@9.20.0(jiti@2.4.2))(typescript@5.7.3)
@@ -459,6 +453,12 @@ importers:
       '@testing-library/react':
         specifier: ^16.2.0
         version: 16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@tutur3u/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@tutur3u/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
       '@types/eslint':
         specifier: ^9.6.1
         version: 9.6.1
@@ -570,9 +570,6 @@ importers:
       '@react-email/tailwind':
         specifier: ^1.0.4
         version: 1.0.4(react@19.0.0)
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -729,6 +726,9 @@ importers:
       '@tutur3u/supabase':
         specifier: workspace:*
         version: link:../../packages/supabase
+      '@tutur3u/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@upstash/qstash':
         specifier: ^2.7.20
         version: 2.7.20
@@ -910,12 +910,6 @@ importers:
       '@next/eslint-plugin-next':
         specifier: ^15.1.6
         version: 15.1.6
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       '@tanstack/eslint-plugin-query':
         specifier: ^5.66.0
         version: 5.66.0(eslint@9.20.0(jiti@2.4.2))(typescript@5.7.3)
@@ -925,6 +919,12 @@ importers:
       '@testing-library/react':
         specifier: ^16.2.0
         version: 16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@tutur3u/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@tutur3u/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
       '@types/eslint':
         specifier: ^9.6.1
         version: 9.6.1
@@ -1006,9 +1006,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.54.2(react@19.0.0))
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -1024,6 +1021,9 @@ importers:
       '@tutur3u/supabase':
         specifier: workspace:*
         version: link:../../packages/supabase
+      '@tutur3u/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@upstash/qstash':
         specifier: ^2.7.20
         version: 2.7.20
@@ -1139,12 +1139,6 @@ importers:
       '@next/eslint-plugin-next':
         specifier: ^15.1.6
         version: 15.1.6
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       '@tanstack/eslint-plugin-query':
         specifier: ^5.66.0
         version: 5.66.0(eslint@9.20.0(jiti@2.4.2))(typescript@5.7.3)
@@ -1154,6 +1148,12 @@ importers:
       '@testing-library/react':
         specifier: ^16.2.0
         version: 16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@tutur3u/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@tutur3u/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
       '@types/js-cookie':
         specifier: ^3.0.6
         version: 3.0.6
@@ -1259,9 +1259,6 @@ importers:
       '@react-email/tailwind':
         specifier: ^1.0.4
         version: 1.0.4(react@19.0.0)
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -1418,6 +1415,9 @@ importers:
       '@tutur3u/supabase':
         specifier: workspace:*
         version: link:../../packages/supabase
+      '@tutur3u/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@types/canvas-confetti':
         specifier: ^1.9.0
         version: 1.9.0
@@ -1626,12 +1626,6 @@ importers:
       '@next/eslint-plugin-next':
         specifier: ^15.1.6
         version: 15.1.6
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../../packages/eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       '@tanstack/eslint-plugin-query':
         specifier: ^5.66.0
         version: 5.66.0(eslint@9.20.0(jiti@2.4.2))(typescript@5.7.3)
@@ -1641,6 +1635,12 @@ importers:
       '@testing-library/react':
         specifier: ^16.2.0
         version: 16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@tutur3u/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@tutur3u/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
       '@types/eslint':
         specifier: ^9.6.1
         version: 9.6.1
@@ -1762,10 +1762,10 @@ importers:
       '@eslint/js':
         specifier: ^9.20.0
         version: 9.20.0
-      '@repo/eslint-config':
+      '@tutur3u/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@repo/typescript-config':
+      '@tutur3u/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -1801,15 +1801,15 @@ importers:
 
   packages/supabase:
     dependencies:
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../types
       '@supabase/ssr':
         specifier: ^0.5.2
         version: 0.5.2(@supabase/supabase-js@2.48.1)
       '@supabase/supabase-js':
         specifier: ^2.48.1
         version: 2.48.1
+      '@tutur3u/types':
+        specifier: workspace:*
+        version: link:../types
       eslint:
         specifier: ^9.20.0
         version: 9.20.0(jiti@2.4.2)
@@ -1832,10 +1832,10 @@ importers:
       '@eslint/js':
         specifier: ^9.20.0
         version: 9.20.0
-      '@repo/eslint-config':
+      '@tutur3u/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@repo/typescript-config':
+      '@tutur3u/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -1894,10 +1894,10 @@ importers:
       '@eslint/js':
         specifier: ^9.20.0
         version: 9.20.0
-      '@repo/eslint-config':
+      '@tutur3u/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
-      '@repo/typescript-config':
+      '@tutur3u/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       '@types/node':
@@ -2086,18 +2086,18 @@ importers:
       '@eslint/js':
         specifier: ^9.20.0
         version: 9.20.0
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       '@tailwindcss/postcss':
         specifier: ^4.0.5
         version: 4.0.5
       '@tailwindcss/typography':
         specifier: ^0.5.16
         version: 0.5.16(tailwindcss@4.0.5)
+      '@tutur3u/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@tutur3u/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       '@types/lodash':
         specifier: ^4.17.15
         version: 4.17.15

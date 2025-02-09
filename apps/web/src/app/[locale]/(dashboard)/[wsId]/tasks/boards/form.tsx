@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { TaskBoard } from '@repo/types/primitives/TaskBoard';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,
@@ -13,6 +12,7 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { TaskBoard } from '@tutur3u/types/primitives/TaskBoard';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';

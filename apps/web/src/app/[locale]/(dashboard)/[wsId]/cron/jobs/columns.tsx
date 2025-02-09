@@ -1,9 +1,9 @@
 'use client';
 
 import { RowActions } from './row-actions';
-import type { WorkspaceCronJob } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceCronJob } from '@tutur3u/types/db';
 import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import { CheckCircle, Clock, PowerOff, XCircle } from 'lucide-react';

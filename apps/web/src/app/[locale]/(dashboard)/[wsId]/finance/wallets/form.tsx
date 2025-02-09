@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Wallet } from '@repo/types/primitives/Wallet';
 import { Button } from '@repo/ui/components/ui/button';
 import { SelectField } from '@repo/ui/components/ui/custom/select-field';
 import {
@@ -14,6 +13,7 @@ import {
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { Wallet } from '@tutur3u/types/primitives/Wallet';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

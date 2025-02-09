@@ -1,9 +1,9 @@
 'use client';
 
 import { UserReportRowActions } from './row-actions';
-import { WorkspaceUserReport } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { WorkspaceUserReport } from '@tutur3u/types/db';
 import moment from 'moment';
 import Link from 'next/link';
 

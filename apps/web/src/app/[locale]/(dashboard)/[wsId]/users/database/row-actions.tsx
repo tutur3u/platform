@@ -4,8 +4,6 @@ import { DatePicker } from '../../../../../../components/row-actions/users/date-
 import { getInitials } from '@/utils/name-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Avatar,
   AvatarFallback,
@@ -40,6 +38,8 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import dayjs from 'dayjs';
 import { Ellipsis, Eye, Loader2, UserIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

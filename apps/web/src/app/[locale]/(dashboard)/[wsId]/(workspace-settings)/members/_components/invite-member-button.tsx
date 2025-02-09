@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User } from '@repo/types/primitives/User';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
@@ -23,6 +22,7 @@ import {
 import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { User } from '@tutur3u/types/primitives/User';
 import { UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

@@ -7,9 +7,9 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@/lib/workspace-helper';
-import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
-import { User } from '@repo/types/primitives/User';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
+import { User } from '@tutur3u/types/primitives/User';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

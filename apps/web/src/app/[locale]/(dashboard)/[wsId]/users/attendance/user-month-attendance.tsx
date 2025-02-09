@@ -3,11 +3,6 @@
 import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
 import { cn } from '@/lib/utils';
-import { createClient } from '@tutur3u/supabase/next/client';
-import {
-  WorkspaceUser,
-  WorkspaceUserAttendance,
-} from '@repo/types/primitives/WorkspaceUser';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Tooltip,
@@ -16,6 +11,11 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import {
+  WorkspaceUser,
+  WorkspaceUserAttendance,
+} from '@tutur3u/types/primitives/WorkspaceUser';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from 'next-intl';

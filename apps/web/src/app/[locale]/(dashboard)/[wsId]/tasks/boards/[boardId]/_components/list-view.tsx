@@ -1,7 +1,5 @@
 import { TaskActions } from '../task-actions';
 import { getTasks } from '@/lib/task-helper';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Task } from '@repo/types/primitives/TaskBoard';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,
@@ -19,6 +17,8 @@ import {
   TableRow,
 } from '@repo/ui/components/ui/table';
 import { cn } from '@repo/ui/lib/utils';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Task } from '@tutur3u/types/primitives/TaskBoard';
 import { format } from 'date-fns';
 import {
   ArrowDownUp,

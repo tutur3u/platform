@@ -1,11 +1,11 @@
 'use client';
 
 import { downloadPublicObject, uploadObject } from '@/lib/storage-helper';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Workspace } from '@repo/types/primitives/Workspace';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import { Check, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';

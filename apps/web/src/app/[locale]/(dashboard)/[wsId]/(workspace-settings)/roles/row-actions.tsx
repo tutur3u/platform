@@ -1,8 +1,6 @@
 'use client';
 
 import { RoleForm } from './form';
-import type { SupabaseUser } from '@tutur3u/supabase/next/user';
-import { WorkspaceRole } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
@@ -13,6 +11,8 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import type { SupabaseUser } from '@tutur3u/supabase/next/user';
+import { WorkspaceRole } from '@tutur3u/types/db';
 import { Ellipsis, Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

@@ -1,9 +1,9 @@
 'use client';
 
-import { Invoice, InvoiceProduct, InvoicePromotion } from '@repo/types/db';
-import { WorkspaceConfig } from '@repo/types/primitives/WorkspaceConfig';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { Invoice, InvoiceProduct, InvoicePromotion } from '@tutur3u/types/db';
+import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import { ImageIcon, PrinterIcon } from 'lucide-react';

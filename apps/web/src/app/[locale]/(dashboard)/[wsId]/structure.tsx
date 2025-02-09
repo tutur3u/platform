@@ -6,8 +6,6 @@ import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { cn } from '@/lib/utils';
-import { Workspace } from '@repo/types/primitives/Workspace';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -30,6 +28,8 @@ import {
 } from '@repo/ui/components/ui/resizable';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { debounce } from 'lodash';
 import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';

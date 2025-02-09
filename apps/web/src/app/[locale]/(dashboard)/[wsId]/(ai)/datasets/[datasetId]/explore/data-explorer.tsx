@@ -1,7 +1,6 @@
 'use client';
 
 import { DatasetCrawler } from './dataset-crawler';
-import type { WorkspaceDataset } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
@@ -34,6 +33,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { WorkspaceDataset } from '@tutur3u/types/db';
 import { Plus, RotateCw, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

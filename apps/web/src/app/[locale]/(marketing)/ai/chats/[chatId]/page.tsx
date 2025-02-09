@@ -1,7 +1,7 @@
 import Chat from '@/app/[locale]/(dashboard)/[wsId]/chat/chat';
 import { type Message } from '@tutur3u/ai/types';
 import { createAdminClient } from '@tutur3u/supabase/next/server';
-import { AIChat } from '@repo/types/db';
+import { AIChat } from '@tutur3u/types/db';
 import { notFound } from 'next/navigation';
 
 interface Props {

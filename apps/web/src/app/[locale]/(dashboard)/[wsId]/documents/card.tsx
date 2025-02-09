@@ -1,4 +1,4 @@
-import { WorkspaceDocument } from '@repo/types/db';
+import { WorkspaceDocument } from '@tutur3u/types/db';
 import { FilePlus } from 'lucide-react';
 import moment from 'moment';
 import 'moment/locale/vi';

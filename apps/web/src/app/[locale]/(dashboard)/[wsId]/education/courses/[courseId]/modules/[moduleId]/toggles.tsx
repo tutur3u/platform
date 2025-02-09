@@ -1,7 +1,7 @@
 'use client';
 
-import { createClient } from '@tutur3u/supabase/next/client';
 import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

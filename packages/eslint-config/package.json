@@ -1,7 +1,10 @@
 {
-  "name": "@repo/eslint-config",
-  "version": "1.1.0",
-  "private": true,
+  "name": "@tutur3u/eslint-config",
+  "license": "MIT",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "library.js",
     "next.js",

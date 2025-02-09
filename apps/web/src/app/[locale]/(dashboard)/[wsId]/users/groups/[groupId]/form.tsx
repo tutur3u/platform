@@ -3,8 +3,6 @@
 import { Filter } from '../../../users/filters';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Avatar,
   AvatarFallback,
@@ -14,6 +12,8 @@ import { Button } from '@repo/ui/components/ui/button';
 import SearchBar from '@repo/ui/components/ui/custom/search-bar';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

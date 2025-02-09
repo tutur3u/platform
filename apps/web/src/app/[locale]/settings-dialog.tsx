@@ -2,13 +2,13 @@ import UserAvatar from './settings-avatar';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
 import SettingItemTab from '@/components/settings/SettingItemTab';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/ui/dialog';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 

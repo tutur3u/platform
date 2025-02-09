@@ -1,7 +1,7 @@
 'use client';
 
-import { createClient } from '@tutur3u/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { Trash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';

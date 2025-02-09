@@ -1,9 +1,12 @@
 import LinkButton from '../../link-button';
 import ModuleToggles from './toggles';
-import { createClient, createDynamicClient } from '@tutur3u/supabase/next/server';
-import { WorkspaceCourseModule } from '@repo/types/db';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import {
+  createClient,
+  createDynamicClient,
+} from '@tutur3u/supabase/next/server';
+import { WorkspaceCourseModule } from '@tutur3u/types/db';
 import {
   BookText,
   Box,

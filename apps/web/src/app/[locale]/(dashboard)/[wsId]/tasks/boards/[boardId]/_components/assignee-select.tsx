@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tutur3u/supabase/next/client';
 import {
   Avatar,
   AvatarFallback,
@@ -22,6 +21,7 @@ import {
   PopoverTrigger,
 } from '@repo/ui/components/ui/popover';
 import { cn } from '@repo/ui/lib/utils';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { Check, ChevronsUpDown, Loader2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

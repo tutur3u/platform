@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Timezone } from '@repo/types/primitives/Timezone';
 import { Button } from '@repo/ui/components/ui/button';
 import { Checkbox } from '@repo/ui/components/ui/checkbox';
 import {
@@ -11,6 +10,7 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
+import { Timezone } from '@tutur3u/types/primitives/Timezone';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 

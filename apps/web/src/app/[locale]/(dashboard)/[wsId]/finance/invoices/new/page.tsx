@@ -1,7 +1,4 @@
 import { Filter } from '../../../users/filters';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { Invoice } from '@repo/types/primitives/Invoice';
-import type { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Card,
   CardContent,
@@ -17,6 +14,9 @@ import {
   TabsList,
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { Invoice } from '@tutur3u/types/primitives/Invoice';
+import type { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { Package, TicketPercent, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 

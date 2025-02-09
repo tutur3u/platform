@@ -1,7 +1,5 @@
 import { getColumns } from '../../executions/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import type { WorkspaceCronExecution, WorkspaceCronJob } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Card,
@@ -10,6 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/ui/card';
+import { createClient } from '@tutur3u/supabase/next/server';
+import type {
+  WorkspaceCronExecution,
+  WorkspaceCronJob,
+} from '@tutur3u/types/db';
 import { ArrowLeft, CheckCircle, Clock, PowerOff, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

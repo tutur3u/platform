@@ -3,8 +3,6 @@ import { TaskActions } from './task-actions';
 import { updateTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Task as TaskType } from '@repo/types/primitives/TaskBoard';
 import { Badge } from '@repo/ui/components/ui/badge';
 import { Button } from '@repo/ui/components/ui/button';
 import { Card } from '@repo/ui/components/ui/card';
@@ -16,6 +14,8 @@ import {
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Task as TaskType } from '@tutur3u/types/primitives/TaskBoard';
 import { formatDistanceToNow } from 'date-fns';
 import {
   AlertCircle,

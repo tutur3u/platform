@@ -3,8 +3,6 @@
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
 import { cn } from '@/lib/utils';
-import type { SupabaseUser } from '@tutur3u/supabase/next/user';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
@@ -17,6 +15,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@repo/ui/components/ui/sheet';
+import type { SupabaseUser } from '@tutur3u/supabase/next/user';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { WorkspaceApiKey } from '@repo/types/primitives/WorkspaceApiKey';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,
@@ -10,6 +9,7 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
+import { WorkspaceApiKey } from '@tutur3u/types/primitives/WorkspaceApiKey';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

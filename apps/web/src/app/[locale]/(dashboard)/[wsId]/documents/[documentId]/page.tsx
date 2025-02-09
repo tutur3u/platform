@@ -7,8 +7,6 @@ import {
 } from '@/components/components/BlockEditor';
 import { cn } from '@/lib/utils';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceDocument } from '@repo/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +26,8 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { JSONContent } from '@tiptap/core';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceDocument } from '@tutur3u/types/db';
 import debounce from 'lodash/debounce';
 import {
   AlertCircle,

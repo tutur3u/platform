@@ -1,9 +1,9 @@
 'use client';
 
 import { ProjectRowActions } from './row-action';
-import { TaskBoard } from '@repo/types/primitives/TaskBoard';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { TaskBoard } from '@tutur3u/types/primitives/TaskBoard';
 import moment from 'moment';
 
 export const projectColumns = (

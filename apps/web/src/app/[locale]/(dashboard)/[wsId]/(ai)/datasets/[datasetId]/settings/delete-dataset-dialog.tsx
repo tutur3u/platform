@@ -1,6 +1,5 @@
 'use client';
 
-import type { WorkspaceDataset } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
@@ -11,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
+import type { WorkspaceDataset } from '@tutur3u/types/db';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

@@ -1,4 +1,4 @@
-import { WorkspaceDocument } from '@repo/types/db';
+import { WorkspaceDocument } from '@tutur3u/types/db';
 import { ReactNode, createContext, useContext } from 'react';
 import { mutate } from 'swr';
 

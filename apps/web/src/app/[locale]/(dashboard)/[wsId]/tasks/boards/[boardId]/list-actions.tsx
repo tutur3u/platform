@@ -1,5 +1,4 @@
 import { deleteTaskList } from '@/lib/task-helper';
-import { createClient } from '@tutur3u/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
@@ -16,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { Input } from '@repo/ui/components/ui/input';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
 import { useState } from 'react';
 

@@ -1,7 +1,5 @@
 'use client';
 
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DialogClose,
@@ -20,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/ui/select';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';

@@ -2,9 +2,6 @@
 
 import { Filter } from '../filters';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { UserGroup } from '@repo/types/primitives/UserGroup';
-import { UserGroupTag } from '@repo/types/primitives/UserGroupTag';
 import { Button } from '@repo/ui/components/ui/button';
 import { ColorPicker } from '@repo/ui/components/ui/color-picker';
 import {
@@ -19,6 +16,9 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import { UserGroupTag } from '@tutur3u/types/primitives/UserGroupTag';
 import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

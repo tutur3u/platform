@@ -6,13 +6,13 @@ import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { cn } from '@/lib/utils';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { UserGroup } from '@repo/types/primitives/UserGroup';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import { Button } from '@repo/ui/components/ui/button';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
 import {
   Box,
   Calendar,

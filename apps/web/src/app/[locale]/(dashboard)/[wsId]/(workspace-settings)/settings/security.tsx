@@ -1,8 +1,8 @@
 'use client';
 
-import { Workspace } from '@repo/types/primitives/Workspace';
 import { Button } from '@repo/ui/components/ui/button';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

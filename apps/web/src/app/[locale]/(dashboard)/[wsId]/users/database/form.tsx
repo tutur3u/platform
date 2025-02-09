@@ -4,8 +4,6 @@ import { DatePicker } from '@/components/row-actions/users/date-picker';
 import { getInitials } from '@/utils/name-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Avatar,
   AvatarFallback,
@@ -26,6 +24,8 @@ import { Input } from '@repo/ui/components/ui/input';
 import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import dayjs from 'dayjs';
 import { Loader2, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

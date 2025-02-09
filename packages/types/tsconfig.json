@@ -1,9 +1,9 @@
 {
-  "extends": "@repo/typescript-config/react-library.json",
+  "extends": "@tutur3u/typescript-config/react-library.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@repo/types/*": ["./src/*"]
+      "@tutur3u/types/*": ["./src/*"]
     }
   },
   "include": ["src"],

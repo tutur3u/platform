@@ -1,7 +1,6 @@
 import { DatePicker } from '@/components/row-actions/users/date-picker';
 import { fetcher } from '@/utils/fetcher';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Command,
@@ -30,6 +29,7 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { cn } from '@repo/ui/lib/utils';
+import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
 import dayjs from 'dayjs';
 import { CheckIcon, ChevronsUpDown, PlusIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

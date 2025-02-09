@@ -2,9 +2,9 @@
 
 import { TransactionObjectRowActions } from './row-actions';
 import { joinPath } from '@/utils/path-helper';
-import { StorageObject } from '@repo/types/primitives/StorageObject';
 import { Button } from '@repo/ui/components/ui/button';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { StorageObject } from '@tutur3u/types/primitives/StorageObject';
 import { FileText, LayoutGrid, LayoutList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';

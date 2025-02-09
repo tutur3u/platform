@@ -1,7 +1,6 @@
 'use client';
 
 import { ProductCategoryForm } from './form';
-import { ProductCategory } from '@repo/types/primitives/ProductCategory';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
@@ -13,6 +12,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { ProductCategory } from '@tutur3u/types/primitives/ProductCategory';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

@@ -1,5 +1,4 @@
 import EnvironmentSetup from './environment-setup';
-import { createClient } from '@tutur3u/supabase/next/server';
 import {
   Card,
   CardContent,
@@ -14,6 +13,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { headers } from 'next/headers';
 
 interface Props {

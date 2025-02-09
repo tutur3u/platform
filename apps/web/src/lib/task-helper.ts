@@ -4,7 +4,7 @@ import {
   TaskAssignee,
   TaskBoard,
   TaskList,
-} from '@repo/types/primitives/TaskBoard';
+} from '@tutur3u/types/primitives/TaskBoard';
 
 export async function getTaskBoard(supabase: SupabaseClient, boardId: string) {
   const { data, error } = await supabase

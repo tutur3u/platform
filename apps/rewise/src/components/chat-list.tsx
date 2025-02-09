@@ -1,9 +1,9 @@
 import { ChatMessage } from '@/components/chat-message';
 import { OnlineUsers } from '@/components/online-users';
-import { RealtimePresenceState } from '@tutur3u/supabase/next/realtime';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
 import { type Message } from '@tutur3u/ai/types';
+import { RealtimePresenceState } from '@tutur3u/supabase/next/realtime';
 import { Box, Globe, Lock, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';

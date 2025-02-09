@@ -4,7 +4,6 @@ import LogoTitle from '../logo-title';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
@@ -19,6 +18,7 @@ import {
 } from '@repo/ui/components/ui/resizable';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
   ChevronDown,
   Crown,

@@ -1,9 +1,9 @@
 import { getColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import type { WorkspaceCronExecution } from '@repo/types/db';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import type { WorkspaceCronExecution } from '@tutur3u/types/db';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

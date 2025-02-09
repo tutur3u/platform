@@ -2,7 +2,6 @@
 
 import AIModelSelector from './model-selector';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AIPrompt } from '@repo/types/db';
 import {
   Accordion,
   AccordionContent,
@@ -22,6 +21,7 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { AIPrompt } from '@tutur3u/types/db';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { WorkspaceAIModel } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,
@@ -17,6 +16,7 @@ import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
+import type { WorkspaceAIModel } from '@tutur3u/types/db';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';

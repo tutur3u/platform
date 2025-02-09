@@ -1,10 +1,10 @@
 import UserCard from './card';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
-import { createClient } from '@tutur3u/supabase/next/server';
-import type { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import type { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { format } from 'date-fns';
 import { Check, CheckCheck, CircleHelp, Clock, Send, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';

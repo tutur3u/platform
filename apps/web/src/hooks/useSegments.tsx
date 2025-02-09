@@ -1,4 +1,4 @@
-import { Segment } from '@repo/types/primitives/Segment';
+import { Segment } from '@tutur3u/types/primitives/Segment';
 import React, { createContext, useCallback, useContext, useState } from 'react';
 
 const SegmentContext = createContext({

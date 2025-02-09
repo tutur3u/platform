@@ -1,6 +1,5 @@
 import { useTimeBlocking } from './time-blocking-provider';
 import { timetzToTime } from '@/utils/date-helper';
-import { Timeblock } from '@repo/types/primitives/Timeblock';
 import { Separator } from '@repo/ui/components/ui/separator';
 import {
   Tooltip,
@@ -8,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
+import { Timeblock } from '@tutur3u/types/primitives/Timeblock';
 import dayjs from 'dayjs';
 import { ShieldCheck, ShieldMinus } from 'lucide-react';
 import { useTheme } from 'next-themes';

@@ -3,9 +3,6 @@
 import AvailabilityPlanner from './availability-planner';
 import { useTimeBlocking } from './time-blocking-provider';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MeetTogetherPlan } from '@repo/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@repo/types/primitives/Timeblock';
-import { User } from '@repo/types/primitives/User';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
@@ -26,6 +23,9 @@ import {
   FormMessage,
 } from '@repo/ui/components/ui/form';
 import { Input } from '@repo/ui/components/ui/input';
+import { MeetTogetherPlan } from '@tutur3u/types/primitives/MeetTogetherPlan';
+import { Timeblock } from '@tutur3u/types/primitives/Timeblock';
+import { User } from '@tutur3u/types/primitives/User';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';

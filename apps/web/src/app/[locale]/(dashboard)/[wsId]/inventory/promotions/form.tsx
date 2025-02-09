@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ProductPromotion } from '@repo/types/primitives/ProductPromotion';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,
@@ -22,6 +21,7 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { ProductPromotion } from '@tutur3u/types/primitives/ProductPromotion';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

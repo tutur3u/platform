@@ -1,5 +1,5 @@
 import { createClient } from '@tutur3u/supabase/next/server';
-import { TransactionCategory } from '@repo/types/primitives/TransactionCategory';
+import { TransactionCategory } from '@tutur3u/types/primitives/TransactionCategory';
 import { NextResponse } from 'next/server';
 
 interface Params {

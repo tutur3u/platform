@@ -2,9 +2,9 @@
 
 import GroupAttendanceStats from './attendance-stats';
 import { UserGroupRowActions } from './row-actions';
-import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
 import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';

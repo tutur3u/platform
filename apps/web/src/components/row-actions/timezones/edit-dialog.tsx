@@ -1,7 +1,6 @@
 'use client';
 
 import TimezoneForm, { ApiConfigFormSchema } from './form';
-import { Timezone } from '@repo/types/primitives/Timezone';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +10,7 @@ import {
   DialogTrigger,
 } from '@repo/ui/components/ui/dialog';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { Timezone } from '@tutur3u/types/primitives/Timezone';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';

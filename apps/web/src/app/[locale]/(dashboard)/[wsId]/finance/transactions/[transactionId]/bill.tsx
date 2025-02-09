@@ -1,6 +1,5 @@
 'use client';
 
-import { createDynamicClient } from '@tutur3u/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   FileUploader,
@@ -12,6 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
+import { createDynamicClient } from '@tutur3u/supabase/next/client';
 import { File, FileText, ImageIcon, X } from 'lucide-react';
 import { useState } from 'react';
 

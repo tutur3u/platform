@@ -1,9 +1,9 @@
 'use client';
 
 import { WorkspaceQuizRowActions } from './row-actions';
-import { WorkspaceQuiz } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { WorkspaceQuiz } from '@tutur3u/types/db';
 import moment from 'moment';
 
 export const getWorkspaceQuizColumns = (

@@ -1,8 +1,8 @@
 'use client';
 
-import { ProductBatch } from '@repo/types/primitives/ProductBatch';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { ProductBatch } from '@tutur3u/types/primitives/ProductBatch';
 import moment from 'moment';
 
 export const batchColumns = (

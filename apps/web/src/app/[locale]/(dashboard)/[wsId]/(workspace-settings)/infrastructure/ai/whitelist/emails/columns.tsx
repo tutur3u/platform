@@ -1,7 +1,6 @@
 'use client';
 
 import { AIWhitelistEmailRowActions } from './row-actions';
-import { AIWhitelistEmail } from '@repo/types/db';
 import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { Switch } from '@repo/ui/components/ui/switch';
 import {
@@ -10,6 +9,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { AIWhitelistEmail } from '@tutur3u/types/db';
 import { Loader2 } from 'lucide-react';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';

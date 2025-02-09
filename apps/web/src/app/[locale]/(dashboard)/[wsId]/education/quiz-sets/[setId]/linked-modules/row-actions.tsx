@@ -1,8 +1,6 @@
 'use client';
 
 import WorkspaceCourseModuleForm from './form';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceCourseModule } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
@@ -14,6 +12,8 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceCourseModule } from '@tutur3u/types/db';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

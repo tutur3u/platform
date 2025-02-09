@@ -4,9 +4,6 @@ import { ProductCategoryForm } from '../../categories/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ProductCategory } from '@repo/types/primitives/ProductCategory';
-import { ProductUnit } from '@repo/types/primitives/ProductUnit';
-import { ProductWarehouse } from '@repo/types/primitives/ProductWarehouse';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Card,
@@ -48,6 +45,9 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
+import { ProductCategory } from '@tutur3u/types/primitives/ProductCategory';
+import { ProductUnit } from '@tutur3u/types/primitives/ProductUnit';
+import { ProductWarehouse } from '@tutur3u/types/primitives/ProductWarehouse';
 import { Check, ChevronsUpDown, Plus, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

@@ -1,12 +1,12 @@
 import { DEV_MODE } from '@/constants/common';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Workspace } from '@repo/types/primitives/Workspace';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@repo/ui/components/ui/dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import { ActivitySquare, Database } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

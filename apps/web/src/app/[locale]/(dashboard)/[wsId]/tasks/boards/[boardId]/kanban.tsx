@@ -21,9 +21,9 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { type Task as TaskType } from '@repo/types/primitives/TaskBoard';
 import { useQueryClient } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { type Task as TaskType } from '@tutur3u/types/primitives/TaskBoard';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {

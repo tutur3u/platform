@@ -5,7 +5,7 @@ import {
   HarmCategory,
 } from '@google/generative-ai';
 import { createClient } from '@tutur3u/supabase/next/server';
-import { AIPrompt } from '@repo/types/db';
+import { AIPrompt } from '@tutur3u/types/db';
 import { NextResponse } from 'next/server';
 
 interface Params {

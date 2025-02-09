@@ -12,7 +12,7 @@
   },
   "packageManager": "pnpm@10.2.1",
   "dependencies": {
-    "@repo/types": "workspace:*",
+    "@tutur3u/types": "workspace:*",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
     "eslint": "^9.20.0",
@@ -24,8 +24,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.20.0",
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@tutur3u/eslint-config": "workspace:*",
+    "@tutur3u/typescript-config": "workspace:*",
     "@types/node": "^22.13.1",
     "@types/react": "^19.0.8",
     "typescript": "^5.7.3",

@@ -1,8 +1,8 @@
 'use client';
 
 import { createClient } from '@tutur3u/supabase/next/client';
-import { Team } from '@repo/types/primitives/Team';
-import { Workspace } from '@repo/types/primitives/Workspace';
+import { Team } from '@tutur3u/types/primitives/Team';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import { useRouter } from 'next/router';
 import {
   ReactNode,

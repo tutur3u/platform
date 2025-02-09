@@ -1,6 +1,6 @@
 import { siteConfig } from '@/constants/configs';
 import { createAdminClient } from '@tutur3u/supabase/next/server';
-import { AIChat } from '@repo/types/db';
+import { AIChat } from '@tutur3u/types/db';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';

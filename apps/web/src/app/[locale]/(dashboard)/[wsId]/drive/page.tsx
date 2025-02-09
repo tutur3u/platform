@@ -3,13 +3,16 @@ import StorageObjectsTable from './table';
 import { getPermissions, verifyHasSecrets } from '@/lib/workspace-helper';
 import { formatBytes } from '@/utils/file-helper';
 import { joinPath } from '@/utils/path-helper';
-import { createClient, createDynamicClient } from '@tutur3u/supabase/next/server';
+import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Separator } from '@repo/ui/components/ui/separator';
+import {
+  createClient,
+  createDynamicClient,
+} from '@tutur3u/supabase/next/server';
 import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
   StorageObject,
-} from '@repo/types/primitives/StorageObject';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+} from '@tutur3u/types/primitives/StorageObject';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

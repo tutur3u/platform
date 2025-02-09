@@ -1,6 +1,5 @@
 import { AssigneeSelect } from './_components/assignee-select';
 import { deleteTask, updateTask } from '@/lib/task-helper';
-import { createClient } from '@tutur3u/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { Checkbox } from '@repo/ui/components/ui/checkbox';
@@ -41,6 +40,7 @@ import {
   TooltipTrigger,
 } from '@repo/ui/components/ui/tooltip';
 import { cn } from '@repo/ui/lib/utils';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import {
   AlertCircle,

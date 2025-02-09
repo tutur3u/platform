@@ -11,7 +11,6 @@ import type { CrawlMetrics, QueueItem, UrlWithProgress } from './types';
 import { calculateEstimatedTime } from './utils/time';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { WorkspaceDataset } from '@repo/types/db';
 import {
   Alert,
   AlertDescription,
@@ -55,6 +54,7 @@ import {
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
 import { useQueryClient } from '@tanstack/react-query';
+import type { WorkspaceDataset } from '@tutur3u/types/db';
 import {
   Bug,
   Check,

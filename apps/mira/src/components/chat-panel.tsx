@@ -4,8 +4,6 @@ import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
-import { createDynamicClient } from '@tutur3u/supabase/next/client';
-import { AIChat } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   FileUploader,
@@ -23,6 +21,8 @@ import { Separator } from '@repo/ui/components/ui/separator';
 import { cn } from '@repo/ui/lib/utils';
 import { Model } from '@tutur3u/ai/models';
 import { type Message, type UseChatHelpers } from '@tutur3u/ai/types';
+import { createDynamicClient } from '@tutur3u/supabase/next/client';
+import { AIChat } from '@tutur3u/types/db';
 import {
   ArrowDownToLine,
   Check,

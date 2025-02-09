@@ -1,10 +1,10 @@
 import Form from './form';
 import UserTime from './user-time';
 import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
 import type { SupabaseUser } from '@tutur3u/supabase/next/user';
-import { MeetTogetherPlan } from '@repo/types/primitives/MeetTogetherPlan';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { MeetTogetherPlan } from '@tutur3u/types/primitives/MeetTogetherPlan';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { getLocale, getTranslations } from 'next-intl/server';

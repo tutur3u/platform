@@ -1,8 +1,8 @@
 import WorkspaceCard from '../../../../../../../components/cards/WorkspaceCard';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
-import { createAdminClient } from '@tutur3u/supabase/next/server';
-import { Workspace } from '@repo/types/primitives/Workspace';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createAdminClient } from '@tutur3u/supabase/next/server';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import { notFound } from 'next/navigation';
 
 interface Props {

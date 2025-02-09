@@ -1,10 +1,10 @@
 import { secretColumns } from './columns';
 import SecretForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { WorkspaceSecret } from '@repo/types/primitives/WorkspaceSecret';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { WorkspaceSecret } from '@tutur3u/types/primitives/WorkspaceSecret';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { WorkspaceDataset } from '@repo/types/db';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Form,
@@ -24,6 +23,7 @@ import {
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Textarea } from '@repo/ui/components/ui/textarea';
 import { toast } from '@repo/ui/hooks/use-toast';
+import type { WorkspaceDataset } from '@tutur3u/types/db';
 import { Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

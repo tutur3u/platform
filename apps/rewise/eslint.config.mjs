@@ -21,7 +21,7 @@ export default [{
         "**/yarn.lock",
     ],
 }, ...compat.extends(
-    "@repo/eslint-config/next.js",
+    "@tutur3u/eslint-config/next.js",
     "plugin:@next/next/recommended",
     "plugin:@tanstack/eslint-plugin-query/recommended",
 ), {

@@ -1,7 +1,6 @@
 'use client';
 
 import { PromotionForm } from './form';
-import { ProductPromotion } from '@repo/types/primitives/ProductPromotion';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   Dialog,
@@ -18,6 +17,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { ProductPromotion } from '@tutur3u/types/primitives/ProductPromotion';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

@@ -5,11 +5,11 @@ import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@repo/types/primitives/WorkspaceUserField';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

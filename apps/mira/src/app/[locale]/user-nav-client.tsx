@@ -12,7 +12,6 @@ import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/utils/name-helper';
-import { WorkspaceUser } from '@repo/types/primitives/WorkspaceUser';
 import {
   Avatar,
   AvatarFallback,
@@ -32,6 +31,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@repo/ui/components/ui/dropdown-menu';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

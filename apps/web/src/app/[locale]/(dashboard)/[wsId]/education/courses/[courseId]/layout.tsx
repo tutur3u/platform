@@ -1,7 +1,7 @@
-import { createClient } from '@tutur3u/supabase/next/server';
-import { UserGroup } from '@repo/types/primitives/UserGroup';
 import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
 import { GraduationCap } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

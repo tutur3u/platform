@@ -1,6 +1,5 @@
 'use client';
 
-import { UserGroup } from '@repo/types/primitives/UserGroup';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DropdownMenu,
@@ -10,6 +9,7 @@ import {
 } from '@repo/ui/components/ui/dropdown-menu';
 import { toast } from '@repo/ui/hooks/use-toast';
 import { Row } from '@tanstack/react-table';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
 import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

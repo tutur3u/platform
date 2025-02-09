@@ -1,7 +1,6 @@
 'use client';
 
 import { generateUUID } from '@/utils/uuid-helper';
-import { createClient } from '@tutur3u/supabase/next/client';
 import { Button } from '@repo/ui/components/ui/button';
 import {
   DialogClose,
@@ -13,6 +12,7 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Label } from '@repo/ui/components/ui/label';
 import { Progress } from '@repo/ui/components/ui/progress';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
