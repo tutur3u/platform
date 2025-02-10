@@ -53,15 +53,12 @@ importers:
 
   apps/external:
     dependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4.0.5
-        version: 4.0.5
       '@tutur3u/ai':
-        specifier: ^0.0.8
-        version: 0.0.8(@opentelemetry/api@1.9.0)(jiti@2.4.2)
+        specifier: ^0.0.9
+        version: 0.0.9(@opentelemetry/api@1.9.0)(jiti@2.4.2)
       '@tutur3u/eslint-config':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.1.1
+        version: 0.1.1
       '@tutur3u/supabase':
         specifier: ^0.0.3
         version: 0.0.3(@opentelemetry/api@1.9.0)(jiti@2.4.2)
@@ -73,7 +70,7 @@ importers:
         version: 0.1.0
       '@tutur3u/ui':
         specifier: ^0.0.3
-        version: 0.0.3(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(jiti@2.4.2)(tailwindcss@4.0.5)
+        version: 0.0.3(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(jiti@2.4.2)
       next:
         specifier: 15.1.6
         version: 15.1.6(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-55955c9-20241229)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -105,9 +102,6 @@ importers:
       postcss:
         specifier: ^8.5.1
         version: 8.5.1
-      tailwindcss:
-        specifier: ^4.0.5
-        version: 4.0.5
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
@@ -459,9 +453,6 @@ importers:
       tailwind-merge:
         specifier: ^3.0.1
         version: 3.0.1
-      tailwindcss:
-        specifier: ^4.0.5
-        version: 4.0.5
       tippy.js:
         specifier: ^6.3.7
         version: 6.3.7
@@ -928,9 +919,6 @@ importers:
       tailwind-merge:
         specifier: ^3.0.1
         version: 3.0.1
-      tailwindcss:
-        specifier: ^4.0.5
-        version: 4.0.5
       tippy.js:
         specifier: ^6.3.7
         version: 6.3.7
@@ -1178,9 +1166,6 @@ importers:
       swr:
         specifier: ^2.3.2
         version: 2.3.2(react@19.0.0)
-      tailwindcss:
-        specifier: ^4.0.5
-        version: 4.0.5
       uuid:
         specifier: ^11.0.5
         version: 11.0.5
@@ -1641,9 +1626,6 @@ importers:
       tailwind-merge:
         specifier: ^3.0.1
         version: 3.0.1
-      tailwindcss:
-        specifier: ^4.0.5
-        version: 4.0.5
       tippy.js:
         specifier: ^6.3.7
         version: 6.3.7
@@ -4958,11 +4940,11 @@ packages:
       svelte:
         optional: true
 
-  '@tutur3u/ai@0.0.8':
-    resolution: {integrity: sha512-AmX+/SLseh6HLxO2x92H+5C8AZHfQtl9hQ3Aypg/RJlQyt/kpsVnUgemgwvLKeGdxLaQ7kGQxxv196KCO+3HDw==}
+  '@tutur3u/ai@0.0.9':
+    resolution: {integrity: sha512-IwdXN5ms1ZPsP0abKM2B5LvqC8YGn65H2cpelnwO4tsYRDM0Y+jLLs8559AiFUJ39qI2HVdwq8yra/qnpzo3HA==}
 
-  '@tutur3u/eslint-config@0.1.0':
-    resolution: {integrity: sha512-qaFvWeQdnp7tEZntoUkOX+hRLBPm/vrpusd86S5MOpn00sCBRSciitJSdG9B6lMyk/F/dIErIG/c1WHQ0Mpn5Q==}
+  '@tutur3u/eslint-config@0.1.1':
+    resolution: {integrity: sha512-h/cybM4W9LnXNkBD93gwvdw4Bp2cRHPMuldihZ9WM63y5kxxPLszEWdJzpEC7AnmnFce4zX4h9fWjlA72RbaBA==}
 
   '@tutur3u/supabase@0.0.3':
     resolution: {integrity: sha512-FucnY3k5rf8eA81W27P/wRq4Mpe7b0wcluwGuH2dDWw8C34MbxlcRhe4jF0gkEkHPcZvtcInOPk8acr57pclMA==}
@@ -12654,7 +12636,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@tutur3u/ai@0.0.8(@opentelemetry/api@1.9.0)(jiti@2.4.2)':
+  '@tutur3u/ai@0.0.9(@opentelemetry/api@1.9.0)(jiti@2.4.2)':
     dependencies:
       '@ai-sdk/amazon-bedrock': 1.1.6(zod@3.24.1)
       '@ai-sdk/anthropic': 1.1.6(zod@3.24.1)
@@ -12687,7 +12669,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@tutur3u/eslint-config@0.1.0': {}
+  '@tutur3u/eslint-config@0.1.1': {}
 
   '@tutur3u/supabase@0.0.3(@opentelemetry/api@1.9.0)(jiti@2.4.2)':
     dependencies:
@@ -12723,7 +12705,7 @@ snapshots:
 
   '@tutur3u/typescript-config@0.1.0': {}
 
-  '@tutur3u/ui@0.0.3(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(jiti@2.4.2)(tailwindcss@4.0.5)':
+  '@tutur3u/ui@0.0.3(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(jiti@2.4.2)':
     dependencies:
       '@hookform/resolvers': 3.10.0(react-hook-form@7.54.2(react@19.0.0))
       '@radix-ui/react-accordion': 1.2.3(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
