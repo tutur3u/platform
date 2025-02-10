@@ -10,7 +10,7 @@ const TimeIndicatorText = () => {
   if (displayable)
     return (
       <div
-        className="pointer-events-none absolute top-0 -left-9 text-xs font-semibold text-purple-500 dark:text-purple-200"
+        className="pointer-events-none absolute -left-9 top-0 text-xs font-semibold text-purple-500 dark:text-purple-200"
         style={{
           transform: `translateY(${totalHours * 80 - 8}px)`,
         }}

@@ -37,7 +37,7 @@ export default function Navbar({
 
             <Suspense
               fallback={
-                <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
+                <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
               }
             >
               <WorkspaceSelect />
@@ -55,7 +55,7 @@ export default function Navbar({
 
             <Suspense
               fallback={
-                <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+                <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
               }
             >
               <NavbarActions hideMetadata={hideMetadata} />

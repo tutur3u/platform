@@ -8,7 +8,7 @@ export default function LoadingIndicator({
   return (
     <div className="inline-flex items-center rounded-md border border-transparent text-base">
       <svg
-        className={cn('h-4 animate-spin text-foreground', className)}
+        className={cn('text-foreground h-4 animate-spin', className)}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
