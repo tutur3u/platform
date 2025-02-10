@@ -64,12 +64,12 @@ jobs:
         id: changed-packages
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            CHANGED_PACKAGES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "^packages/" | cut -d/ -f2 | grep -v -E "^(transactional|crawler)$" | sort -u || true)
+            CHANGED_PACKAGES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "^packages/" | cut -d/ -f2 | grep -v -E "^(transactional|crawler)$" | tr '\n' ' ' | xargs)
           else
-            CHANGED_PACKAGES=$(git diff --name-only HEAD~1 HEAD | grep "^packages/" | cut -d/ -f2 | grep -v -E "^(transactional|crawler)$" | sort -u || true)
+            CHANGED_PACKAGES=$(git diff --name-only HEAD~1 HEAD | grep "^packages/" | cut -d/ -f2 | grep -v -E "^(transactional|crawler)$" | tr '\n' ' ' | xargs)
           fi
           echo "Changed packages: $CHANGED_PACKAGES"
-          echo "packages=${CHANGED_PACKAGES}" >> $GITHUB_OUTPUT
+          echo "packages=$CHANGED_PACKAGES" >> $GITHUB_OUTPUT
 
       - name: Check and bump versions
         if: steps.changed-packages.outputs.packages != ''
