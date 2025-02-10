@@ -29,7 +29,7 @@ const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
           {title}
         </div>
         <div
-          className={`m-2 mt-0 line-clamp-1 rounded border border-border/30 bg-foreground/5 p-4 text-center text-2xl font-bold text-foreground ${
+          className={`border-border/30 bg-foreground/5 text-foreground m-2 mt-0 line-clamp-1 rounded border p-4 text-center text-2xl font-bold ${
             !!onClick || !!href
               ? 'transition-all duration-300 group-hover:rounded-lg'
               : ''
@@ -51,7 +51,7 @@ const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
         {title}
       </div>
       <div
-        className={`m-2 mt-0 line-clamp-1 rounded border border-border/30 bg-foreground/5 p-4 text-center text-2xl font-bold text-foreground ${
+        className={`border-border/30 bg-foreground/5 text-foreground m-2 mt-0 line-clamp-1 rounded border p-4 text-center text-2xl font-bold ${
           !!onClick || !!href
             ? 'transition-all duration-300 group-hover:rounded-lg'
             : ''

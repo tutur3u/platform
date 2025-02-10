@@ -7,7 +7,7 @@ export const DropdownCategoryTitle = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className="mb-1 px-1.5 text-[.65rem] font-semibold text-neutral-500 uppercase dark:text-neutral-400">
+    <div className="mb-1 px-1.5 text-[.65rem] font-semibold uppercase text-neutral-500 dark:text-neutral-400">
       {children}
     </div>
   );

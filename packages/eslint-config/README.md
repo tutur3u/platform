@@ -18,27 +18,27 @@ pnpm add -D @tutur3u/eslint-config
 
 ```js
 // eslint.config.mjs
-import nextConfig from '@tutur3u/eslint-config/next'
+import nextConfig from '@tutur3u/eslint-config/next';
 
-export default nextConfig
+export default nextConfig;
 ```
 
 ### React Library
 
 ```js
 // eslint.config.mjs
-import reactConfig from '@tutur3u/eslint-config/react-internal'
+import reactConfig from '@tutur3u/eslint-config/react-internal';
 
-export default reactConfig
+export default reactConfig;
 ```
 
 ### Generic Library
 
 ```js
 // eslint.config.mjs
-import libraryConfig from '@tutur3u/eslint-config/library'
+import libraryConfig from '@tutur3u/eslint-config/library';
 
-export default libraryConfig
+export default libraryConfig;
 ```
 
 ## License
