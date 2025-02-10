@@ -1,4 +1,4 @@
-export default async function Types() {
+export default async function Supabase() {
   // const supabase = await createClient();
 
   // const { data: aiChatInstance, error } = await supabase

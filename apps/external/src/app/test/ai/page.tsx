@@ -1,6 +1,6 @@
 import { models } from '@tutur3u/ai/models';
 
-export default function Types() {
+export default function AI() {
   return (
     <div>
       <h1>Models</h1>
