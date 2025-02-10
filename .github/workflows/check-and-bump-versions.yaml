@@ -85,11 +85,97 @@ jobs:
               CURRENT_VERSION=$(node -p "require('./package.json').version")
               
               # Check if there's an existing PR for this package
-              EXISTING_PRS=$(gh pr list --search "in:title bump-${package}" --json number --jq length)
-              if [ "$EXISTING_PRS" -gt "0" ]; then
-                echo "Found existing PR for package ${package}, skipping..."
-                cd ../..
-                continue
+              EXISTING_PRS=$(gh pr list --search "in:title bump-${package}" --json number,headRefName,body --jq .[])
+              if [ -n "$EXISTING_PRS" ]; then
+                echo "Found existing PR(s) for package ${package}, checking checksums..."
+                
+                # Get the most recent PR's checksum with better error handling
+                PR_NUMBER=$(echo "$EXISTING_PRS" | jq -r '.[0].number // empty')
+                PR_BRANCH=$(echo "$EXISTING_PRS" | jq -r '.[0].headRefName // empty')
+                PR_BODY=$(echo "$EXISTING_PRS" | jq -r '.[0].body // empty')
+                
+                if [ -z "$PR_NUMBER" ] || [ -z "$PR_BRANCH" ] || [ -z "$PR_BODY" ]; then
+                  echo "Error: Failed to extract PR details, skipping..."
+                  cd ../..
+                  continue
+                fi
+                
+                # Extract and clean checksum from PR body more reliably
+                PR_CHECKSUM=$(echo "$PR_BODY" | grep -A 1 "**New Checksum:**" | tail -n 1 | tr -d '[\`\r\n[:space:]]')
+                
+                if [ -z "$PR_CHECKSUM" ] || ! verify_checksum "$PR_CHECKSUM"; then
+                  echo "Warning: Invalid checksum in PR #${PR_NUMBER}, treating as different"
+                  PR_CHECKSUM=""
+                fi
+                
+                if [ "$PR_CHECKSUM" = "$NEW_CHECKSUM" ]; then
+                  echo "Checksums match with existing PR #${PR_NUMBER}, skipping..."
+                  cd ../..
+                  continue
+                else
+                  echo "Checksums differ from existing PR #${PR_NUMBER}, updating..."
+                  
+                  # Save current branch to return to it later
+                  CURRENT_BRANCH=$(git branch --show-current)
+                  
+                  # Fetch and switch to PR branch with error handling
+                  if ! git fetch origin "$PR_BRANCH"; then
+                    echo "Error: Failed to fetch branch $PR_BRANCH"
+                    cd ../..
+                    continue
+                  fi
+                  
+                  # Stash any uncommitted changes
+                  git stash push -m "temp_stash_for_pr_update" || true
+                  
+                  if ! git checkout "$PR_BRANCH"; then
+                    echo "Error: Failed to checkout branch $PR_BRANCH"
+                    git stash pop || true
+                    cd ../..
+                    continue
+                  fi
+                  
+                  # Update version and checksum
+                  NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+                  sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
+                  echo "$NEW_CHECKSUM" > .checksum
+                  
+                  # Stage and commit changes
+                  git add package.json .checksum
+                  git commit -m "chore(@tutur3u/${package}): update version and checksum"
+                  
+                  # Push changes with retry logic
+                  MAX_RETRIES=3
+                  RETRY_COUNT=0
+                  until git push origin "$PR_BRANCH" --force || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
+                    RETRY_COUNT=$((RETRY_COUNT+1))
+                    echo "Failed to push changes, attempt $RETRY_COUNT of $MAX_RETRIES"
+                    sleep 2
+                  done
+                  
+                  if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+                    echo "Error: Failed to push changes after $MAX_RETRIES attempts"
+                    git checkout "$CURRENT_BRANCH"
+                    git stash pop || true
+                    cd ../..
+                    continue
+                  fi
+                  
+                  # Update PR
+                  gh pr edit "$PR_NUMBER" \
+                    --body "$PR_BODY" || {
+                      echo "Failed to update PR #${PR_NUMBER}"
+                    }
+                  
+                  # Clean up: return to original branch and restore stashed changes if any
+                  git checkout "$CURRENT_BRANCH"
+                  if git stash list | grep -q "temp_stash_for_pr_update"; then
+                    git stash pop || echo "Warning: Failed to restore stashed changes"
+                  fi
+                  
+                  cd ../..
+                  continue
+                fi
               fi
 
               # Calculate new checksum excluding build artifacts and handling binary files
