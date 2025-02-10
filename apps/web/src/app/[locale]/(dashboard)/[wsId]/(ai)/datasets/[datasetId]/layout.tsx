@@ -32,10 +32,6 @@ export default async function DatasetDetailsLayout({
       href: `/${wsId}/datasets/${datasetId}/api-references`,
     },
     {
-      title: 'Cron Jobs',
-      href: `/${wsId}/datasets/${datasetId}/cron-jobs`,
-    },
-    {
       title: t('common.settings'),
       href: `/${wsId}/datasets/${datasetId}/settings`,
     },

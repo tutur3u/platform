@@ -3597,31 +3597,22 @@ export type Database = {
         Row: {
           created_at: string;
           description: string | null;
-          html_ids: string[] | null;
           id: string;
           name: string;
-          type: Database['public']['Enums']['dataset_type'];
-          url: string | null;
           ws_id: string;
         };
         Insert: {
           created_at?: string;
           description?: string | null;
-          html_ids?: string[] | null;
           id?: string;
           name: string;
-          type?: Database['public']['Enums']['dataset_type'];
-          url?: string | null;
           ws_id: string;
         };
         Update: {
           created_at?: string;
           description?: string | null;
-          html_ids?: string[] | null;
           id?: string;
           name?: string;
-          type?: Database['public']['Enums']['dataset_type'];
-          url?: string | null;
           ws_id?: string;
         };
         Relationships: [

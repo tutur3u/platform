@@ -85,41 +85,6 @@ export const getColumns = (
     ),
   },
   {
-    accessorKey: 'url',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        t={t}
-        column={column}
-        title={t(`${namespace}.url`)}
-      />
-    ),
-    cell: ({ row }) => (
-      <Link
-        href={row.getValue('url') || '#'}
-        target={row.getValue('url') ? '_blank' : '_self'}
-        className="min-w-[4rem]"
-        rel="noreferrer"
-      >
-        <span className="line-clamp-1 font-semibold hover:underline">
-          {row.getValue('url') || '-'}
-        </span>
-      </Link>
-    ),
-  },
-  {
-    accessorKey: 'type',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        t={t}
-        column={column}
-        title={t(`${namespace}.type`)}
-      />
-    ),
-    cell: ({ row }) => (
-      <div className="font-semibold uppercase">{row.getValue('type')}</div>
-    ),
-  },
-  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader
