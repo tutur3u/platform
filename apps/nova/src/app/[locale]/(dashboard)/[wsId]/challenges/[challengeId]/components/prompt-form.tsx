@@ -37,6 +37,9 @@ export default function ChatBox() {
             {msg.text}
           </div>
         ))}
+        <div className="flex h-screen justify-center pt-[250px]">
+          You only have 5 tries for each question. [0/5]
+        </div>
         <div ref={chatEndRef} />
       </div>
 
