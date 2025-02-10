@@ -83,7 +83,7 @@ export const MonthView: React.FC<{
           {days.map((day, idx) => (
             <div
               key={`day-${idx}`}
-              className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
+              className="bg-foreground/5 flex flex-none cursor-default justify-center rounded p-2 font-semibold transition duration-300 md:rounded-lg"
             >
               {day}
             </div>

@@ -22,7 +22,7 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   return (
     <div
       id={id}
-      className={`calendar-cell grid h-20 border-r border-border dark:border-zinc-800 ${
+      className={`calendar-cell border-border grid h-20 border-r dark:border-zinc-800 ${
         hour !== 0 && 'border-t'
       }`}
       onContextMenu={(e) => {
