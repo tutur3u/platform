@@ -1,7 +1,10 @@
 {
   "name": "@tutur3u/ui",
   "version": "1.0.0",
-  "private": true,
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "ui": "pnpm dlx shadcn-ui@latest",
     "lint": "eslint ."
@@ -88,6 +91,10 @@
     "react-is": "^19.0.0"
   },
   "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.ts"
+    },
     "./globals.css": "./src/globals.css",
     "./postcss.config": "./postcss.config.mjs",
     "./tailwind.config": "./tailwind.config.ts",
