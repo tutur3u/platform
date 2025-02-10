@@ -160,9 +160,30 @@ jobs:
                   git push origin "$BRANCH_NAME"
                   
                   # Create PR using GitHub CLI
+                  PR_BODY="Automated version bump due to package changes<br />"
+                  
+                  # Format the changed files list with proper newlines
+                  if [ -n "$SOURCE_FILES_CHANGED" ]; then
+                    FORMATTED_FILES=$(echo "$SOURCE_FILES_CHANGED" | sed 's/^/- `/' | sed 's/$/`<br \/>/' | tr '\n' ' ')
+                    PR_BODY="$PR_BODY<br />### Changed Files<br />$FORMATTED_FILES"
+                  fi
+                  
+                  PR_BODY="$PR_BODY<br />### Checksums<br />"
+                  PR_BODY="$PR_BODY**New:**<br />\`\`\`<br />$NEW_CHECKSUM<br />\`\`\`<br />"
+                  
+                  if [ -n "$OLD_CHECKSUM" ]; then
+                    PR_BODY="$PR_BODY**Previous:**<br />\`\`\`<br />$OLD_CHECKSUM<br />\`\`\`"
+                  else
+                    PR_BODY="$PR_BODY**Previous:** No previous checksum found (new package or first time tracking)<br />"
+                  fi
+                  
+                  # Add summary section at the top with enhanced formatting
+                  SUMMARY="### Summary<br />📦 Package: \`@tutur3u/${package}\`<br />📝 Version Changes:<br />  • From: \`${CURRENT_VERSION}\`<br />  • To: \`${NEW_VERSION}\`<br />"
+                  PR_BODY="$SUMMARY<br />$PR_BODY"
+                  
                   gh pr create \
                     --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
-                    --body "Automated version bump due to package changes\n\nChanged source files:\n\`\`\`\n$SOURCE_FILES_CHANGED\n\`\`\`\n\nChecksum changed from:\n\`\`\`\n$OLD_CHECKSUM\n\`\`\`\nto:\n\`\`\`\n$NEW_CHECKSUM\n\`\`\`" \
+                    --body "$PR_BODY" \
                     --base ${{ github.event.pull_request.base.ref || 'main' }} \
                     --head "$BRANCH_NAME" \
                     --repo ${{ github.repository }} || {
