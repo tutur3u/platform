@@ -267,18 +267,28 @@ jobs:
                   echo "New package detected, will create initial version"
                   SHOULD_BUMP=true
                 else
-                  SOURCE_FILES_CHANGED=$(git ls-files "packages/$package" | grep -E "\.(ts|tsx|js|jsx|json|css|scss|md)$" | while read -r file; do
-                    if [ -f "$file" ]; then
-                      echo "$file"
-                    fi
-                  done)
+                  # Improved source file detection
+                  if [ "${{ github.event_name }}" = "pull_request" ]; then
+                    SOURCE_FILES_CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep "^packages/$package/" | grep -E "\.(ts|tsx|js|jsx|json|css|scss|md)$" || true)
+                  else
+                    SOURCE_FILES_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep "^packages/$package/" | grep -E "\.(ts|tsx|js|jsx|json|css|scss|md)$" || true)
+                  fi
                   
                   if [ -n "$SOURCE_FILES_CHANGED" ]; then
-                    echo "Source files found:"
+                    echo "Source files changed:"
                     echo "$SOURCE_FILES_CHANGED"
                     SHOULD_BUMP=true
                   else
                     echo "No source files changed"
+                    # Update checksum even if we don't bump version, but only if not on default branch
+                    if [ "${{ github.event_name }}" = "pull_request" ]; then
+                      echo "$NEW_CHECKSUM" > .checksum
+                      if [ -n "$(git status --porcelain .checksum)" ]; then
+                        git add .checksum
+                        git commit -m "chore(@tutur3u/${package}): update checksum [skip ci]"
+                        git push origin HEAD
+                      fi
+                    fi
                     SHOULD_BUMP=false
                   fi
                 fi
