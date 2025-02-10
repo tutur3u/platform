@@ -38,6 +38,10 @@ export type WorkspaceDataset = Tables<'workspace_datasets'> & {
   href?: string;
 };
 
+export type WorkspaceCrawler = Tables<'workspace_crawlers'> & {
+  href?: string;
+};
+
 export type WorkspaceCronJob = Tables<'workspace_cron_jobs'> & {
   href?: string;
 };
