@@ -2,6 +2,7 @@ name: Check and Bump Package Versions
 
 on:
   pull_request:
+    types: [closed]
     paths:
       - 'packages/**'
   workflow_dispatch:
