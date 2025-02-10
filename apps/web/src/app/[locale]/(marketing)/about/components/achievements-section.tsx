@@ -12,25 +12,25 @@ interface ItemProps {
 
 const achievementItems: ItemProps[] = [
   {
-    icon: <Award className="h-8 w-8 text-primary" />,
+    icon: <Award className="text-primary h-8 w-8" />,
     title: 'Technical Excellence',
     description:
       'Setting new standards in software development with cutting-edge solutions.',
   },
   {
-    icon: <Users className="h-8 w-8 text-primary" />,
+    icon: <Users className="text-primary h-8 w-8" />,
     title: 'Growing Community',
     description:
       'Building a vibrant ecosystem of developers, creators, and innovators.',
   },
   {
-    icon: <Sparkles className="h-8 w-8 text-primary" />,
+    icon: <Sparkles className="text-primary h-8 w-8" />,
     title: 'Innovation Awards',
     description:
       'Recognized for groundbreaking contributions to technology and human advancement.',
   },
   {
-    icon: <Heart className="h-8 w-8 text-primary" />,
+    icon: <Heart className="text-primary h-8 w-8" />,
     title: 'Social Impact',
     description:
       'Making a real difference in communities worldwide through accessible technology.',
@@ -100,12 +100,12 @@ export function AchievementsSection() {
                 ease: 'easeInOut',
               },
             }}
-            className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+            className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
           >
-            <Award className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+            <Award className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
           <motion.h2
-            className="mb-4 text-4xl font-bold text-foreground"
+            className="text-foreground mb-4 text-4xl font-bold"
             whileHover={{
               scale: 1.02,
             }}
@@ -119,13 +119,13 @@ export function AchievementsSection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="relative bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
             >
               Our Achievements
             </motion.span>
           </motion.h2>
           <motion.p
-            className="mx-auto max-w-2xl text-lg text-foreground/60"
+            className="text-foreground/60 mx-auto max-w-2xl text-lg"
             whileHover={{
               scale: 1.01,
             }}
@@ -153,7 +153,7 @@ export function AchievementsSection() {
               }}
               className="group relative"
             >
-              <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
+              <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
@@ -169,7 +169,7 @@ export function AchievementsSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                 />
                 <div className="pointer-events-none relative p-8">
                   <motion.div
@@ -182,7 +182,7 @@ export function AchievementsSection() {
                     }}
                     className="relative mb-6"
                   >
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
+                    <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
                       <motion.div
                         animate={{
                           scale: [1, 1.1, 1],
@@ -198,7 +198,7 @@ export function AchievementsSection() {
                     </div>
                   </motion.div>
                   <motion.h3
-                    className="relative mb-4 text-xl font-bold text-foreground"
+                    className="text-foreground relative mb-4 text-xl font-bold"
                     whileHover={{
                       scale: 1.05,
                       color: 'hsl(var(--primary))',
@@ -207,7 +207,7 @@ export function AchievementsSection() {
                     {item.title}
                   </motion.h3>
                   <motion.p
-                    className="relative text-foreground/60"
+                    className="text-foreground/60 relative"
                     whileHover={{
                       scale: 1.02,
                     }}
@@ -219,7 +219,7 @@ export function AchievementsSection() {
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r from-primary/20 to-primary/5"
+                  className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
                 />
               </div>
             </motion.div>

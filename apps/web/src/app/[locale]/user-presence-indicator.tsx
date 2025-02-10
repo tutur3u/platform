@@ -13,7 +13,7 @@ export default function UserPresenceIndicator({
   return (
     <div
       className={cn(
-        'absolute right-0 bottom-0 z-20 h-2 w-2 rounded-full border border-background',
+        'border-background absolute bottom-0 right-0 z-20 h-2 w-2 rounded-full border',
         'bg-dynamic-green',
         className
       )}

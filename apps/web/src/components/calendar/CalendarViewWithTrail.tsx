@@ -21,7 +21,7 @@ const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
   return (
     <div
       id="calendar-view"
-      className="scrollbar-none flex h-full overflow-x-hidden overflow-y-scroll scroll-smooth rounded-b-lg border-b border-l border-border text-center dark:border-zinc-800"
+      className="scrollbar-none border-border flex h-full overflow-x-hidden overflow-y-scroll scroll-smooth rounded-b-lg border-b border-l text-center dark:border-zinc-800"
     >
       <TimeTrail />
       <CalendarView dates={dates} />

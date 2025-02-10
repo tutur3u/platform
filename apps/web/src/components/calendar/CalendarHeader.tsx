@@ -61,7 +61,7 @@ export default function CalendarHeader({
             onClick={isToday() ? undefined : selectToday}
             className={`px-4 py-1 font-semibold transition ${
               isToday()
-                ? 'cursor-not-allowed bg-zinc-500/20 text-foreground/80 opacity-50 dark:bg-zinc-300/10 dark:text-zinc-300'
+                ? 'text-foreground/80 cursor-not-allowed bg-zinc-500/20 opacity-50 dark:bg-zinc-300/10 dark:text-zinc-300'
                 : 'cursor-pointer bg-zinc-500/10 text-zinc-600 hover:bg-zinc-500/20 dark:bg-zinc-300/10 dark:text-zinc-300 dark:hover:bg-zinc-300/20'
             }`}
           >

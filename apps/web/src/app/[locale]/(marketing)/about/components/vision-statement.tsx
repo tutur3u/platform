@@ -57,14 +57,14 @@ export function VisionStatement() {
                 ease: 'easeInOut',
               },
             }}
-            className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+            className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
           >
-            <Quote className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+            <Quote className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
         </motion.div>
 
         <motion.div
-          className="group relative mx-auto max-w-4xl overflow-hidden rounded-2xl bg-foreground/5 p-8 backdrop-blur-sm md:p-12"
+          className="bg-foreground/5 group relative mx-auto max-w-4xl overflow-hidden rounded-2xl p-8 backdrop-blur-sm md:p-12"
           whileHover={{ scale: 1.02 }}
         >
           <motion.div
@@ -82,7 +82,7 @@ export function VisionStatement() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+            className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
           />
           <motion.div
             animate={{
@@ -98,15 +98,15 @@ export function VisionStatement() {
           />
 
           <blockquote className="pointer-events-none relative">
-            <div className="absolute -top-4 -left-4 text-primary/20">
+            <div className="text-primary/20 absolute -left-4 -top-4">
               <Quote className="h-8 w-8 rotate-180" />
             </div>
-            <div className="absolute -right-4 -bottom-4 text-primary/20">
+            <div className="text-primary/20 absolute -bottom-4 -right-4">
               <Quote className="h-8 w-8" />
             </div>
 
             <motion.p
-              className="relative text-2xl leading-relaxed font-medium text-foreground italic md:text-3xl"
+              className="text-foreground relative text-2xl font-medium italic leading-relaxed md:text-3xl"
               initial={{ y: 20, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
@@ -122,21 +122,21 @@ export function VisionStatement() {
             </motion.p>
 
             <motion.footer
-              className="mt-8 text-lg text-foreground/60"
+              className="text-foreground/60 mt-8 text-lg"
               initial={{ y: 20, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
             >
               <motion.span
-                className="bg-gradient-to-r from-primary via-blue-500 to-cyan-500 bg-clip-text font-semibold text-transparent"
+                className="from-primary bg-gradient-to-r via-blue-500 to-cyan-500 bg-clip-text font-semibold text-transparent"
                 whileHover={{ scale: 1.05 }}
               >
                 — Vo Hoang Phuc
               </motion.span>
               <br />
               <motion.span
-                className="text-sm text-foreground/40"
+                className="text-foreground/40 text-sm"
                 whileHover={{ scale: 1.05 }}
               >
                 Founder & CEO, Tuturuuu
@@ -148,7 +148,7 @@ export function VisionStatement() {
             initial={{ scaleX: 0 }}
             whileHover={{ scaleX: 1 }}
             transition={{ duration: 0.3 }}
-            className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r from-primary/20 to-primary/5"
+            className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
           />
         </motion.div>
       </div>
