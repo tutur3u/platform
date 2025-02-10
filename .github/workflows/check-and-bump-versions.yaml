@@ -256,7 +256,7 @@ jobs:
               # Log final checksum comparison
               echo "DEBUG: Final checksum comparison:"
               echo "• Old checksum (${#OLD_CHECKSUM} chars): ${OLD_CHECKSUM:-<empty>}"
-              echo "• New checksum (${#NEW_CHECKSUM} chars): ${NEW_CHECKSUM}"
+              echo "• New checksum (${#NEW_CHECKSUM} chars): $NEW_CHECKSUM"
               echo "• Match status: $([ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ] && echo "identical" || echo "different")"
 
               # Check if there are meaningful changes (not just build artifacts)
@@ -284,7 +284,7 @@ jobs:
                 fi
                 
                 if [ "$SHOULD_BUMP" = true ]; then
-                  NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+                  NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
                   echo "Meaningful changes detected, bumping version to: $NEW_VERSION"
                   
                   # Update package.json with new version
@@ -304,86 +304,63 @@ jobs:
                   # Create PR using GitHub CLI
                   PR_BODY="## 📦 Automated Version Bump<br /><br />"
                   
-                  # Add status badge based on checksum comparison
                   if [ -n "$OLD_CHECKSUM" ]; then
                     if [ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ]; then
-                      PR_BODY="$PR_BODY> ✅ **Status:** No changes in package content<br /><br />"
+                      PR_BODY="${PR_BODY}> ✅ **Status:** No changes in package content<br /><br />"
                     else
-                      PR_BODY="$PR_BODY> 🔄 **Status:** Package content modified<br /><br />"
+                      PR_BODY="${PR_BODY}> 🔄 **Status:** Package content modified<br /><br />"
                     fi
                   else
-                    PR_BODY="$PR_BODY> 🆕 **Status:** New package<br /><br />"
+                    PR_BODY="${PR_BODY}> 🆕 **Status:** New package<br /><br />"
                   fi
                   
                   # Enhanced summary at the top with visual hierarchy
                   SUMMARY="### 📊 Package Information<br />"
-                  SUMMARY="$SUMMARY<table><tr><th>Detail</th><th>Value</th></tr>"
-                  SUMMARY="$SUMMARY<tr><td>Package</td><td><code>@tutur3u/${package}</code></tr>"
-                  SUMMARY="$SUMMARY<tr><td>Current Version</td><td><code>${CURRENT_VERSION}</code></tr>"
-                  SUMMARY="$SUMMARY<tr><td>New Version</td><td><code>${NEW_VERSION}</code></tr>"
-                  SUMMARY="$SUMMARY</table><br />"
+                  SUMMARY="${SUMMARY}<table><tr><th>Detail</th><th>Value</th></tr>"
+                  SUMMARY="${SUMMARY}<tr><td>Package</td><td><code>@tutur3u/${package}</code></tr>"
+                  SUMMARY="${SUMMARY}<tr><td>Current Version</td><td><code>${CURRENT_VERSION}</code></tr>"
+                  SUMMARY="${SUMMARY}<tr><td>New Version</td><td><code>${NEW_VERSION}</code></tr>"
+                  SUMMARY="${SUMMARY}</table><br />"
                   
-                  PR_BODY="$PR_BODY$SUMMARY"
+                  PR_BODY="${PR_BODY}${SUMMARY}"
                   
-                  # Clean up file paths for display
-                  format_file_path() {
-                    local path="$1"
-                    echo "$path" | sed "s|packages/$package/||g"
-                  }
-
                   # Format changed files with better hierarchy
                   if [ -n "$SOURCE_FILES_CHANGED" ]; then
-                    PR_BODY="$PR_BODY### 📝 Changed Files<br />"
-                    PR_BODY="$PR_BODY<details open><summary>Modified files in this update</summary><br />"
-                    FORMATTED_FILES=$(echo "$SOURCE_FILES_CHANGED" | while read -r file; do
-                      cleaned_path=$(format_file_path("$file"))
-                      echo "• \`$cleaned_path\`<br />"
-                    done)
-                    PR_BODY="$PR_BODY$FORMATTED_FILES</details><br />"
+                    PR_BODY="${PR_BODY}### 📝 Changed Files<br />"
+                    PR_BODY="${PR_BODY}<details open><summary>Modified files in this update</summary><br />"
+                    while IFS= read -r file; do
+                      if [ -n "$file" ]; then
+                        cleaned_path=$(echo "$file" | sed "s|packages/$package/||g")
+                        PR_BODY="${PR_BODY}• \`$cleaned_path\`<br />"
+                      fi
+                    done <<< "$SOURCE_FILES_CHANGED"
+                    PR_BODY="${PR_BODY}</details><br />"
                   fi
                   
                   # Improved checksum display
-                  PR_BODY="$PR_BODY### 🔐 Package Integrity<br />"
-                  PR_BODY="$PR_BODY<details><summary>View checksums</summary><br />"
-                  PR_BODY="$PR_BODY**New Checksum:**<br />\`\`\`<br />$NEW_CHECKSUM<br />\`\`\`<br /><br />"
+                  PR_BODY="${PR_BODY}### 🔐 Package Integrity<br />"
+                  PR_BODY="${PR_BODY}<details><summary>View checksums</summary><br />"
+                  PR_BODY="${PR_BODY}**New Checksum:**<br />\`\`\`<br />$NEW_CHECKSUM<br />\`\`\`<br /><br />"
                   
                   if [ -n "$OLD_CHECKSUM" ]; then
-                    PR_BODY="$PR_BODY**Previous Checksum:**<br />\`\`\`<br />$OLD_CHECKSUM<br />\`\`\`<br />"
+                    PR_BODY="${PR_BODY}**Previous Checksum:**<br />\`\`\`<br />$OLD_CHECKSUM<br />\`\`\`<br />"
                     
-                    # Add visual checksum comparison
                     if [ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ]; then
-                      PR_BODY="$PR_BODY<br />✅ Checksums match exactly<br />"
+                      PR_BODY="${PR_BODY}<br />✅ Checksums match exactly<br />"
                     else
-                      PR_BODY="$PR_BODY<br />⚠️ Checksums differ<br />"
+                      PR_BODY="${PR_BODY}<br />⚠️ Checksums differ<br />"
                     fi
                   else
-                    PR_BODY="$PR_BODY> 📝 No previous checksum available - new package or first tracking<br />"
+                    PR_BODY="${PR_BODY}> 📝 No previous checksum available - new package or first tracking<br />"
                   fi
-                  PR_BODY="$PR_BODY</details>"
-
-                  # Add checksum comparison section
-                  PR_BODY="$PR_BODY### 🔍 Checksum Analysis<br />"
-                  
-                  if [ -n "$OLD_CHECKSUM" ] && [ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ]; then
-                    PR_BODY="$PR_BODY> 🟢 **No Changes Detected**: Package content remains identical<br />"
-                  elif [ -n "$OLD_CHECKSUM" ]; then
-                    PR_BODY="$PR_BODY> 🔄 **Changes Detected**: Package content has been modified<br />"
-                  else
-                    PR_BODY="$PR_BODY> 🆕 **Initial Checksum**: First time tracking this package<br />"
-                  fi
-                  
-                  PR_BODY="$PR_BODY<br />**Verification Status:**<br />"
-                  PR_BODY="$PR_BODY\`\`\`diff<br />"
-                  [ -n "$OLD_CHECKSUM" ] && PR_BODY="$PR_BODY- Previous: ${OLD_CHECKSUM}<br />"
-                  PR_BODY="$PR_BODY+ Current:  ${NEW_CHECKSUM}<br />"
-                  PR_BODY="$PR_BODY\`\`\`<br />"
+                  PR_BODY="${PR_BODY}</details>"
                   
                   gh pr create \
                     --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
                     --body "$PR_BODY" \
-                    --base ${{ github.event.pull_request.base.ref || 'main' }} \
+                    --base "${GITHUB_BASE_REF:-main}" \
                     --head "$BRANCH_NAME" \
-                    --repo ${{ github.repository }} || {
+                    --repo "$GITHUB_REPOSITORY" || {
                       echo "Failed to create PR for $BRANCH_NAME. This may be because a PR already exists."
                     }
                 else
