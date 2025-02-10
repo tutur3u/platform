@@ -125,7 +125,8 @@ jobs:
                 local filepath="$2"
                 
                 # Try to get checksum from the specified git ref
-                local checksum=$(git show "${ref}:${filepath}" 2>/dev/null || echo "")
+                local checksum
+                checksum=$(git show "${ref}:${filepath}" 2>/dev/null || echo "")
                 
                 # If failed, try to get it from the current branch
                 if [ -z "$checksum" ] && [ -f "$filepath" ]; then
@@ -159,9 +160,9 @@ jobs:
                 echo "$checksum" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]'
               }
 
-              NEW_CHECKSUM=$(normalize_checksum("$NEW_CHECKSUM"))
+              NEW_CHECKSUM=$(normalize_checksum "$NEW_CHECKSUM")
               if [ -n "$OLD_CHECKSUM" ]; then
-                OLD_CHECKSUM=$(normalize_checksum("$OLD_CHECKSUM"))
+                OLD_CHECKSUM=$(normalize_checksum "$OLD_CHECKSUM")
               fi
               
               echo "📦 Package details:"
@@ -177,13 +178,13 @@ jobs:
               }
 
               if [ -n "$OLD_CHECKSUM" ]; then
-                if ! verify_checksum("$OLD_CHECKSUM"); then
+                if ! verify_checksum "$OLD_CHECKSUM"; then
                   echo "Warning: Old checksum format is invalid, treating as empty"
                   OLD_CHECKSUM=""
                 fi
               fi
 
-              if ! verify_checksum("$NEW_CHECKSUM"); then
+              if ! verify_checksum "$NEW_CHECKSUM"; then
                 echo "Error: New checksum calculation failed"
                 exit 1
               fi
@@ -213,7 +214,7 @@ jobs:
                 fi
               }
 
-              CHECKSUM_STATUS=$(compare_checksums("$OLD_CHECKSUM", "$NEW_CHECKSUM"))
+              CHECKSUM_STATUS=$(compare_checksums "$OLD_CHECKSUM" "$NEW_CHECKSUM")
 
               # Utility functions for checksum handling
               log_checksum_status() {
@@ -259,14 +260,13 @@ jobs:
               echo "• New checksum (${#NEW_CHECKSUM} chars): $NEW_CHECKSUM"
               echo "• Match status: $([ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ] && echo "identical" || echo "different")"
 
-              # Check if there are meaningful changes (not just build artifacts)
+              # Compare checksums and create PR if needed
               if [ "$NEW_CHECKSUM" != "$OLD_CHECKSUM" ]; then
-                # First, check if this is a new package (no old checksum)
+                # Check for new package or source changes
                 if [ -z "$OLD_CHECKSUM" ]; then
                   echo "New package detected, will create initial version"
                   SHOULD_BUMP=true
                 else
-                  # For existing packages, check if source files changed
                   SOURCE_FILES_CHANGED=$(git ls-files "packages/$package" | grep -E "\.(ts|tsx|js|jsx|json|css|scss|md)$" | while read -r file; do
                     if [ -f "$file" ]; then
                       echo "$file"
@@ -282,18 +282,16 @@ jobs:
                     SHOULD_BUMP=false
                   fi
                 fi
-                
+
+                # If changes detected, bump version and create PR
                 if [ "$SHOULD_BUMP" = true ]; then
+                  # Version bump logic and PR creation
                   NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
                   echo "Meaningful changes detected, bumping version to: $NEW_VERSION"
                   
-                  # Update package.json with new version
                   sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
-                  
-                  # Update checksum
                   echo "$NEW_CHECKSUM" > .checksum
                   
-                  # Create a new branch for version bump
                   BRANCH_NAME="bump-${package}-${NEW_VERSION}"
                   git checkout -b "$BRANCH_NAME"
                   
@@ -301,7 +299,7 @@ jobs:
                   git commit -m "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}"
                   git push origin "$BRANCH_NAME"
                   
-                  # Create PR using GitHub CLI
+                  # Create PR with enhanced description
                   PR_BODY="## 📦 Automated Version Bump<br /><br />"
                   
                   if [ -n "$OLD_CHECKSUM" ]; then
@@ -314,7 +312,7 @@ jobs:
                     PR_BODY="${PR_BODY}> 🆕 **Status:** New package<br /><br />"
                   fi
                   
-                  # Enhanced summary at the top with visual hierarchy
+                  # Add package information summary
                   SUMMARY="### 📊 Package Information<br />"
                   SUMMARY="${SUMMARY}<table><tr><th>Detail</th><th>Value</th></tr>"
                   SUMMARY="${SUMMARY}<tr><td>Package</td><td><code>@tutur3u/${package}</code></tr>"
@@ -324,7 +322,7 @@ jobs:
                   
                   PR_BODY="${PR_BODY}${SUMMARY}"
                   
-                  # Format changed files with better hierarchy
+                  # Add changed files section
                   if [ -n "$SOURCE_FILES_CHANGED" ]; then
                     PR_BODY="${PR_BODY}### 📝 Changed Files<br />"
                     PR_BODY="${PR_BODY}<details open><summary>Modified files in this update</summary><br />"
@@ -337,14 +335,13 @@ jobs:
                     PR_BODY="${PR_BODY}</details><br />"
                   fi
                   
-                  # Improved checksum display
+                  # Add checksum information
                   PR_BODY="${PR_BODY}### 🔐 Package Integrity<br />"
                   PR_BODY="${PR_BODY}<details><summary>View checksums</summary><br />"
                   PR_BODY="${PR_BODY}**New Checksum:**<br />\`\`\`<br />$NEW_CHECKSUM<br />\`\`\`<br /><br />"
                   
                   if [ -n "$OLD_CHECKSUM" ]; then
                     PR_BODY="${PR_BODY}**Previous Checksum:**<br />\`\`\`<br />$OLD_CHECKSUM<br />\`\`\`<br />"
-                    
                     if [ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ]; then
                       PR_BODY="${PR_BODY}<br />✅ Checksums match exactly<br />"
                     else
@@ -355,6 +352,7 @@ jobs:
                   fi
                   PR_BODY="${PR_BODY}</details>"
                   
+                  # Create PR
                   gh pr create \
                     --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
                     --body "$PR_BODY" \
