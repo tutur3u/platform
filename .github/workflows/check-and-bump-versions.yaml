@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
           token: ${{ secrets.GH_PAT }}
 
       - name: Setup pnpm
@@ -60,13 +60,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Get changed packages
+      - name: Check changed packages
         id: changed-packages
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            CHANGED_PACKAGES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "^packages/" | cut -d/ -f2 | grep -v -E "^(transactional|crawler)$" | tr '\n' ' ' | xargs)
+            CHANGED_PACKAGES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep "^packages/" | cut -d/ -f2 | grep -v -E "^(transactional|crawler)$" | sort -u | tr '\n' ' ' | xargs)
           else
-            CHANGED_PACKAGES=$(git diff --name-only HEAD~1 HEAD | grep "^packages/" | cut -d/ -f2 | grep -v -E "^(transactional|crawler)$" | tr '\n' ' ' | xargs)
+            CHANGED_PACKAGES=$(git diff --name-only HEAD~1 HEAD | grep "^packages/" | cut -d/ -f2 | grep -v -E "^(transactional|crawler)$" | sort -u | tr '\n' ' ' | xargs)
           fi
           echo "Changed packages: $CHANGED_PACKAGES"
           echo "packages=$CHANGED_PACKAGES" >> $GITHUB_OUTPUT
