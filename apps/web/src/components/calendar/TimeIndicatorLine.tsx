@@ -13,8 +13,8 @@ const TimeIndicatorLine = () => {
         transform: `translateY(${totalHours * 80}px)`,
       }}
     >
-      <div className="absolute -top-1 -left-1 h-2 w-2 rounded-full bg-purple-500 dark:bg-purple-200" />
-      <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-purple-500 dark:bg-purple-200" />
+      <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-purple-500 dark:bg-purple-200" />
+      <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-purple-500 dark:bg-purple-200" />
     </div>
   );
 };
