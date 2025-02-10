@@ -1,12 +1,12 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { buttonVariants } from '@repo/ui/components/ui/button';
+import { buttonVariants } from '@tutur3u/ui/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
+} from '@tutur3u/ui/components/ui/tooltip';
 import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 
@@ -47,7 +47,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
               <TooltipContent side="right" className="flex items-center gap-4">
                 {link.title}
                 {link.label && (
-                  <span className="ml-auto text-muted-foreground">
+                  <span className="text-muted-foreground ml-auto">
                     {link.label}
                   </span>
                 )}
@@ -60,7 +60,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
               className={cn(
                 buttonVariants({ variant: link.variant, size: 'sm' }),
                 link.variant === 'default' &&
-                  'dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white',
+                  'dark:bg-muted dark:hover:bg-muted dark:text-white dark:hover:text-white',
                 'justify-start'
               )}
             >

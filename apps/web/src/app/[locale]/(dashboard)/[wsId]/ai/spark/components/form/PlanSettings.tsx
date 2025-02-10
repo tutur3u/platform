@@ -6,14 +6,14 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
+} from '@tutur3u/ui/components/ui/select';
 import { Settings2 } from 'lucide-react';
 
 interface PlanSettingsProps {
@@ -42,7 +42,7 @@ export function PlanSettings({
           <div className="space-y-2">
             <label
               htmlFor="duration"
-              className="text-sm font-medium text-muted-foreground"
+              className="text-muted-foreground text-sm font-medium"
             >
               Plan Duration
             </label>

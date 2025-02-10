@@ -2,10 +2,10 @@
 
 import ClientFlashcards from './client-flashcards';
 import { GenerateDialog } from '@/components/generate-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { toast } from '@repo/ui/hooks/use-toast';
 import { useObject } from '@tutur3u/ai/object/core';
 import { flashcardSchema } from '@tutur3u/ai/object/types';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -71,7 +71,7 @@ export function AIFlashcards({
       borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
+      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
         {fc?.front || '...'}
       </div>
     ),
@@ -81,7 +81,7 @@ export function AIFlashcards({
       borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
+      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
         {fc?.back || '...'}
       </div>
     ),

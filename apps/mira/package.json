@@ -1,5 +1,5 @@
 {
-  "name": "@repo/mira",
+  "name": "@tutur3u/mira",
   "version": "0.14.0",
   "private": true,
   "scripts": {
@@ -47,7 +47,7 @@
     "@tutur3u/ai": "workspace:*",
     "@tutur3u/supabase": "workspace:*",
     "@tutur3u/types": "workspace:*",
-    "@repo/ui": "workspace:*",
+    "@tutur3u/ui": "workspace:*",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-table": "^8.20.6",
     "@tippyjs/react": "^4.2.6",

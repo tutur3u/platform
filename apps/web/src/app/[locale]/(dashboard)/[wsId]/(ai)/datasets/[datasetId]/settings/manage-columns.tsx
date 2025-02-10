@@ -1,17 +1,17 @@
 'use client';
 
 import { EditColumnDialog } from './edit-column-dialog';
-import { Button } from '@repo/ui/components/ui/button';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { cn } from '@repo/ui/lib/utils';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+} from '@tutur3u/ui/components/ui/dialog';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { Loader2, Pencil, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -167,15 +167,15 @@ export function ManageColumns({ wsId, datasetId }: Props) {
         {isLoading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-2">
             <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading columns...</p>
+            <p className="text-muted-foreground text-sm">Loading columns...</p>
           </div>
         ) : columns.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
-              <Plus className="h-8 w-8 text-muted-foreground" />
+            <div className="bg-muted/50 flex h-16 w-16 items-center justify-center rounded-full">
+              <Plus className="text-muted-foreground h-8 w-8" />
             </div>
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No columns found in this dataset
               </p>
               <Button
@@ -244,14 +244,14 @@ export function ManageColumns({ wsId, datasetId }: Props) {
                   variant="outline"
                   className={cn(
                     'group flex h-auto flex-col items-center justify-center gap-2 p-8',
-                    'border-dashed hover:border-foreground/20'
+                    'hover:border-foreground/20 border-dashed'
                   )}
                   onClick={() => setIsAddingColumn(true)}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 transition-colors group-hover:bg-muted">
-                    <Plus className="h-5 w-5 text-muted-foreground" />
+                  <div className="bg-muted/50 group-hover:bg-muted flex h-10 w-10 items-center justify-center rounded-full transition-colors">
+                    <Plus className="text-muted-foreground h-5 w-5" />
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Add Column
                   </span>
                 </Button>

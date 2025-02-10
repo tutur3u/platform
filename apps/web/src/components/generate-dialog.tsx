@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -9,15 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tutur3u/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
+} from '@tutur3u/ui/components/ui/form';
+import { Input } from '@tutur3u/ui/components/ui/input';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -89,7 +89,7 @@ export function GenerateDialog({
               <Checkbox id="include-content" disabled />
               <label
                 htmlFor="include-content"
-                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_module_content')}
               </label>
@@ -99,7 +99,7 @@ export function GenerateDialog({
               <Checkbox id="include-resources" disabled />
               <label
                 htmlFor="include-resources"
-                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_resources')}
               </label>
@@ -109,7 +109,7 @@ export function GenerateDialog({
               <Checkbox id="include-youtube-links" disabled />
               <label
                 htmlFor="include-youtube-links"
-                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_youtube_links')}
               </label>

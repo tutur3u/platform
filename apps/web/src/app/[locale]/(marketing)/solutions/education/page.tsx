@@ -6,10 +6,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@repo/ui/components/ui/accordion';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/components/ui/accordion';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Card } from '@tutur3u/ui/components/ui/card';
 import { motion } from 'framer-motion';
 import {
   BarChart3,
@@ -145,12 +145,12 @@ export default function EducationPage() {
         <Badge variant="secondary" className="mb-4">
           Education Management Solutions
         </Badge>
-        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-balance text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
           <GradientHeadline>
             Transform Your Educational Institution
           </GradientHeadline>
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
           Empower educators and students with our comprehensive education
           management platform.
         </p>
@@ -189,7 +189,7 @@ export default function EducationPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <GraduationCap className="h-12 w-12 text-primary" />
+            <GraduationCap className="text-primary h-12 w-12" />
             <h2 className="text-2xl font-bold">
               Trusted by Leading Educational Institutions
             </h2>
@@ -214,7 +214,7 @@ export default function EducationPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Card className="h-full p-6 transition-colors hover:border-primary">
+              <Card className="hover:border-primary h-full p-6 transition-colors">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
                   <h3 className="text-xl font-semibold">{feature.title}</h3>
@@ -232,7 +232,7 @@ export default function EducationPage() {
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
-              <Users className="mb-4 h-8 w-8 text-primary" />
+              <Users className="text-primary mb-4 h-8 w-8" />
               <h3 className="mb-2 text-xl font-bold">
                 Enhanced Learning Experience
               </h3>
@@ -240,11 +240,11 @@ export default function EducationPage() {
                 Improve student engagement and outcomes with interactive
                 learning tools and personalized instruction.
               </p>
-              <div className="mt-4 flex-grow rounded-lg bg-background/50 p-4">
+              <div className="bg-background/50 mt-4 flex-grow rounded-lg p-4">
                 <div className="space-y-2">
-                  <div className="h-2 w-3/4 rounded bg-primary/20" />
-                  <div className="h-2 w-1/2 rounded bg-primary/20" />
-                  <div className="h-2 w-2/3 rounded bg-primary/20" />
+                  <div className="bg-primary/20 h-2 w-3/4 rounded" />
+                  <div className="bg-primary/20 h-2 w-1/2 rounded" />
+                  <div className="bg-primary/20 h-2 w-2/3 rounded" />
                 </div>
               </div>
             </div>
@@ -258,10 +258,10 @@ export default function EducationPage() {
               >
                 {benefit.icon}
                 <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {benefit.description}
                 </p>
-                <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
+                <div className="bg-primary/10 mt-4 h-1 w-0 transition-all group-hover:w-full" />
               </motion.div>
             </Card>
           ))}
@@ -273,23 +273,23 @@ export default function EducationPage() {
         <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
-            <Video className="mx-auto mb-4 h-8 w-8 text-primary" />
+            <Video className="text-primary mx-auto mb-4 h-8 w-8" />
             <h3 className="mb-2 font-bold">Video Learning</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Interactive video lessons
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <LineChart className="mx-auto mb-4 h-8 w-8 text-primary" />
+            <LineChart className="text-primary mx-auto mb-4 h-8 w-8" />
             <h3 className="mb-2 font-bold">Performance Analytics</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Detailed progress tracking
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Calendar className="mx-auto mb-4 h-8 w-8 text-primary" />
+            <Calendar className="text-primary mx-auto mb-4 h-8 w-8" />
             <h3 className="mb-2 font-bold">Schedule Management</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Automated timetabling
             </p>
           </Card>
@@ -301,41 +301,41 @@ export default function EducationPage() {
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="p-8">
-              <Star className="mb-4 h-8 w-8 text-primary" />
+              <Star className="text-primary mb-4 h-8 w-8" />
               <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
-              <p className="mb-4 text-muted-foreground">
+              <p className="text-muted-foreground mb-4">
                 "This platform has revolutionized how we deliver education.
                 We've seen remarkable improvements in student engagement,
                 performance, and overall learning outcomes."
               </p>
               <p className="font-semibold">- Dr. Michael Chen</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Dean of Academic Affairs, International University
               </p>
             </div>
-            <div className="flex items-center justify-center bg-primary/5 p-8">
+            <div className="bg-primary/5 flex items-center justify-center p-8">
               <div className="grid gap-4 text-center">
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="text-primary mb-2 text-3xl font-bold">
                     40%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Improved Engagement
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="text-primary mb-2 text-3xl font-bold">
                     50%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Time Saved
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="text-primary mb-2 text-3xl font-bold">
                     95%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Student Satisfaction
                   </div>
                 </div>
@@ -383,7 +383,7 @@ export default function EducationPage() {
           <h2 className="mb-4 text-3xl font-bold">
             Ready to Transform Your Educational Institution?
           </h2>
-          <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">
+          <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
             Join leading educational institutions using our platform to enhance
             learning and drive student success.
           </p>

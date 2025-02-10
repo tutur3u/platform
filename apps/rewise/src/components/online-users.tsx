@@ -1,16 +1,16 @@
 import { getInitials } from '@/utils/name-helper';
+import { RealtimePresenceState } from '@tutur3u/supabase/next/realtime';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '@repo/ui/components/ui/avatar';
+} from '@tutur3u/ui/components/ui/avatar';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { RealtimePresenceState } from '@tutur3u/supabase/next/realtime';
+} from '@tutur3u/ui/components/ui/tooltip';
 import { User } from 'lucide-react';
 
 interface PresenceUser {
@@ -68,7 +68,7 @@ export function OnlineUsers({
               <Tooltip key={userId}>
                 <TooltipTrigger asChild>
                   <div className="relative inline-block transition-transform hover:z-10 hover:scale-110">
-                    <Avatar className="relative h-8 w-8 border-2 border-background shadow-sm">
+                    <Avatar className="border-background relative h-8 w-8 border-2 shadow-sm">
                       <AvatarImage
                         src={user.avatar_url ?? undefined}
                         className="object-cover"
@@ -82,7 +82,7 @@ export function OnlineUsers({
                       </AvatarFallback>
                     </Avatar>
                     {instances.length > 1 && (
-                      <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-medium text-white ring-2 ring-white">
+                      <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-medium text-white ring-2 ring-white">
                         {instances.length}
                       </span>
                     )}
@@ -106,7 +106,7 @@ export function OnlineUsers({
             );
           })}
         </div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-muted-foreground text-xs">
           {Object.keys(userInstances).length}{' '}
           {Object.keys(userInstances).length === 1
             ? 'user online'

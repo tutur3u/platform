@@ -1,12 +1,12 @@
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { createClient } from '@tutur3u/supabase/next/server';
+} from '@tutur3u/ui/components/ui/card';
 import { ArrowRight, BookOpen, Code, Trophy, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -32,7 +32,7 @@ export default async function HomePage({ params }: Props) {
         <h1 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
           Welcome to the Prompt Engineering Playground
         </h1>
-        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
           Master the art of crafting effective prompts for AI models
         </p>
       </div>

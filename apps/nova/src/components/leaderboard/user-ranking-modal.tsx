@@ -1,11 +1,12 @@
+import { LeaderboardEntry } from '@tutur3u/types/primitives/leaderboard';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+} from '@tutur3u/ui/components/ui/dialog';
+import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -13,8 +14,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@repo/ui/components/ui/table';
-import { LeaderboardEntry } from '@tutur3u/types/primitives/leaderboard';
+} from '@tutur3u/ui/components/ui/table';
 
 interface UserRankingModalProps {
   user: LeaderboardEntry;

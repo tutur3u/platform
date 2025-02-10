@@ -162,9 +162,6 @@ importers:
       '@react-email/tailwind':
         specifier: ^1.0.4
         version: 1.0.4(react@19.0.0)
-      '@repo/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.66.0
         version: 5.66.0(react@19.0.0)
@@ -318,6 +315,9 @@ importers:
       '@tutur3u/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@tutur3u/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@upstash/qstash':
         specifier: ^2.7.20
         version: 2.7.20
@@ -628,9 +628,6 @@ importers:
       '@react-email/tailwind':
         specifier: ^1.0.4
         version: 1.0.4(react@19.0.0)
-      '@repo/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@shadcn/ui':
         specifier: ^0.0.4
         version: 0.0.4
@@ -787,6 +784,9 @@ importers:
       '@tutur3u/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@tutur3u/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@upstash/qstash':
         specifier: ^2.7.20
         version: 2.7.20
@@ -1064,9 +1064,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.54.2(react@19.0.0))
-      '@repo/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.66.0
         version: 5.66.0(react@19.0.0)
@@ -1082,6 +1079,9 @@ importers:
       '@tutur3u/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@tutur3u/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@upstash/qstash':
         specifier: ^2.7.20
         version: 2.7.20
@@ -1317,9 +1317,6 @@ importers:
       '@react-email/tailwind':
         specifier: ^1.0.4
         version: 1.0.4(react@19.0.0)
-      '@repo/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.66.0
         version: 5.66.0(react@19.0.0)
@@ -1476,6 +1473,9 @@ importers:
       '@tutur3u/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@tutur3u/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@types/canvas-confetti':
         specifier: ^1.9.0
         version: 1.9.0

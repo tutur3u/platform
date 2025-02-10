@@ -5,14 +5,14 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/components/ui/card';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@repo/ui/components/ui/chart';
-import { cn } from '@repo/ui/lib/utils';
+} from '@tutur3u/ui/components/ui/chart';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 

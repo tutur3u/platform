@@ -4,7 +4,7 @@
 import type {
   ToastActionElement,
   ToastProps,
-} from '@repo/ui/components/ui/toast';
+} from '@tutur3u/ui/components/ui/toast';
 import * as React from 'react';
 
 const TOAST_LIMIT = 1;

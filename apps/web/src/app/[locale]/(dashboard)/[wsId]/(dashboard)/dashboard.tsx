@@ -5,14 +5,14 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
+} from '@tutur3u/ui/components/ui/select';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -131,7 +131,7 @@ const Dashboard = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">${currentPrice}</div>
-              <p className="text-xs text-muted-foreground">{t.currentPrice}</p>
+              <p className="text-muted-foreground text-xs">{t.currentPrice}</p>
             </CardContent>
           </Card>
           <Card>
@@ -144,7 +144,7 @@ const Dashboard = () => {
                 )}
                 {change24h.toFixed(2)} ({change24hPercentage.toFixed(2)}%)
               </div>
-              <p className="text-xs text-muted-foreground">{t.change24h}</p>
+              <p className="text-muted-foreground text-xs">{t.change24h}</p>
             </CardContent>
           </Card>
           <Card>
@@ -157,7 +157,7 @@ const Dashboard = () => {
                 )}
                 {weeklyChange.toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground">{t.weeklyTrend}</p>
+              <p className="text-muted-foreground text-xs">{t.weeklyTrend}</p>
             </CardContent>
           </Card>
           <Card>
@@ -170,7 +170,7 @@ const Dashboard = () => {
                 )}
                 {monthlyChange.toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground">{t.monthlyTrend}</p>
+              <p className="text-muted-foreground text-xs">{t.monthlyTrend}</p>
             </CardContent>
           </Card>
         </div>

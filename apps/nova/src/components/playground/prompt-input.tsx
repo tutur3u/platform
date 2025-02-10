@@ -1,11 +1,11 @@
 import { PromptTemplates } from './prompt-templates';
-import { Button } from '@repo/ui/components/ui//button';
+import { Button } from '@tutur3u/ui/components/ui//button';
 import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { Textarea } from '@repo/ui/components/ui/textarea';
+} from '@tutur3u/ui/components/ui/card';
+import { Textarea } from '@tutur3u/ui/components/ui/textarea';
 import { RotateCcw, Send, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 

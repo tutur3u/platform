@@ -7,7 +7,7 @@
 @import './partials/table.css';
 @import './partials/typography.css';
 
-@reference "@repo/ui/globals.css";
+@reference "@tutur3u/ui/globals.css";
 
 /* Then, continue with the other CSS rules */
 .ProseMirror {

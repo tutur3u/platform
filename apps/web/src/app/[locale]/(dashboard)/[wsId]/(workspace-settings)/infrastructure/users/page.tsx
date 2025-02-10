@@ -1,8 +1,8 @@
 import UserCard from '../../../../../../../components/cards/UserCard';
 import { enforceRootWorkspaceAdmin } from '@/lib/workspace-helper';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { createAdminClient } from '@tutur3u/supabase/next/server';
 import { User } from '@tutur3u/types/primitives/User';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { notFound } from 'next/navigation';
 
 interface Props {

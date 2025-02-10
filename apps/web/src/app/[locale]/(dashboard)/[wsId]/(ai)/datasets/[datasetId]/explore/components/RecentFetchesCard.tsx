@@ -1,8 +1,8 @@
 import type { UrlWithProgress } from '../types';
 import { cn } from '@/lib/utils';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Card, CardContent } from '@repo/ui/components/ui/card';
-import { Progress } from '@repo/ui/components/ui/progress';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Card, CardContent } from '@tutur3u/ui/components/ui/card';
+import { Progress } from '@tutur3u/ui/components/ui/progress';
 import { Check, X } from 'lucide-react';
 
 interface Props {
@@ -35,7 +35,7 @@ export function RecentFetchesCard({ recentFetches }: Props) {
                     {item.status === 'failed' && (
                       <X className="h-4 w-4 flex-none text-red-500" />
                     )}
-                    <code className="flex-1 truncate text-xs text-muted-foreground">
+                    <code className="text-muted-foreground flex-1 truncate text-xs">
                       <span className="line-clamp-1">{item.url}</span>
                     </code>
                   </div>

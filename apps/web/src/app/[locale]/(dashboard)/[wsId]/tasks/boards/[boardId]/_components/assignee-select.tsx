@@ -1,11 +1,12 @@
 'use client';
 
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/components/ui/avatar';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -14,14 +15,13 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@repo/ui/components/ui/command';
+} from '@tutur3u/ui/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
-import { cn } from '@repo/ui/lib/utils';
-import { createClient } from '@tutur3u/supabase/next/client';
+} from '@tutur3u/ui/components/ui/popover';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { Check, ChevronsUpDown, Loader2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -117,7 +117,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
           role="combobox"
           aria-expanded={open}
           disabled={isLoading}
-          className="group h-auto justify-between px-2 py-1 text-xs hover:bg-muted/50"
+          className="hover:bg-muted/50 group h-auto justify-between px-2 py-1 text-xs"
         >
           {assignees.length > 0 ? (
             <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                 {assignees.slice(0, 3).map((assignee) => (
                   <Avatar
                     key={assignee.id}
-                    className="h-4 w-4 border-2 border-background ring-1 ring-background"
+                    className="border-background ring-background h-4 w-4 border-2 ring-1"
                   >
                     <AvatarImage src={assignee.avatar_url} />
                     <AvatarFallback className="text-[8px]">
@@ -138,13 +138,13 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                 ))}
               </div>
               {assignees.length > 3 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   +{assignees.length - 3}
                 </span>
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2">
               <Users className="h-3 w-3" />
               <span>Unassigned</span>
             </div>

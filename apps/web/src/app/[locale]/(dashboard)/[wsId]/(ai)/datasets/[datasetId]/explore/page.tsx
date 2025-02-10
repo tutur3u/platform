@@ -1,6 +1,6 @@
 import { DataExplorer } from './data-explorer';
-import { Card, CardContent } from '@repo/ui/components/ui/card';
 import { createClient } from '@tutur3u/supabase/next/server';
+import { Card, CardContent } from '@tutur3u/ui/components/ui/card';
 import { notFound } from 'next/navigation';
 
 interface Props {

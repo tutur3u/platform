@@ -3,9 +3,9 @@
 import { StorageObjectRowActions } from './row-actions';
 import { formatBytes } from '@/utils/file-helper';
 import { joinPath, popPath } from '@/utils/path-helper';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { StorageObject } from '@tutur3u/types/primitives/StorageObject';
+import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
 import { ChevronLeft, FileText, Folder } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';

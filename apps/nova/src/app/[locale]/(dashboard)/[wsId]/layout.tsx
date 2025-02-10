@@ -1,6 +1,6 @@
 import { Sidebar } from '@/components/layout/sidebar';
 import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@repo/ui/components/ui/toaster';
+import { Toaster } from '@tutur3u/ui/components/ui/toaster';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 

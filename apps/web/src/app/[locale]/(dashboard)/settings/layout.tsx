@@ -1,6 +1,6 @@
 import Navbar from '../../navbar';
 import NavbarPadding from '../../navbar-padding';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import React from 'react';
 
 interface LayoutProps {

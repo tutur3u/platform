@@ -6,6 +6,8 @@ import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { cn } from '@/lib/utils';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -13,23 +15,21 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from '@repo/ui/components/ui/breadcrumb';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/components/ui/breadcrumb';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/components/ui/dropdown-menu';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@repo/ui/components/ui/resizable';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
-import { Workspace } from '@tutur3u/types/primitives/Workspace';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+} from '@tutur3u/ui/components/ui/resizable';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { TooltipProvider } from '@tutur3u/ui/components/ui/tooltip';
 import { debounce } from 'lodash';
 import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -141,7 +141,7 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-4 py-2 backdrop-blur-lg md:hidden"
+        className="bg-background/70 fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
       >
         <div className="flex h-[52px] items-center gap-2">
           <div className="flex flex-none items-center gap-2">
@@ -155,8 +155,8 @@ export function Structure({
               />
             </Link>
           </div>
-          <div className="mx-2 h-4 w-[1px] flex-none rotate-[30deg] bg-foreground/20" />
-          <div className="flex items-center gap-2 text-lg font-semibold break-all">
+          <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
+          <div className="flex items-center gap-2 break-all text-lg font-semibold">
             {currentLink?.icon && (
               <div className="flex-none">{currentLink.icon}</div>
             )}
@@ -207,7 +207,7 @@ export function Structure({
             className={cn(
               isCollapsed
                 ? 'hidden min-w-[50px] md:flex'
-                : 'absolute inset-0 z-40 flex bg-background/70 md:static md:bg-transparent',
+                : 'bg-background/70 absolute inset-0 z-40 flex md:static md:bg-transparent',
               'flex-col justify-between overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
@@ -243,7 +243,7 @@ export function Structure({
 
                     <Suspense
                       fallback={
-                        <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
+                        <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
                       }
                     >
                       <WorkspaceSelect hideLeading={isCollapsed} />
@@ -270,7 +270,7 @@ export function Structure({
                 onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
               />
             </div>
-            <div className="flex-none border-t border-foreground/10 p-2">
+            <div className="border-foreground/10 flex-none border-t p-2">
               {isCollapsed ? userPopover : actions}
             </div>
           </ResizablePanel>

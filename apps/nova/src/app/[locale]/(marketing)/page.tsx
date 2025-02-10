@@ -3,8 +3,8 @@
 import GetStartedButton from '../get-started-button';
 import GradientHeadline from '../gradient-headline';
 import { getFeatures } from './features';
-import { Card } from '@repo/ui/components/ui/card';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Card } from '@tutur3u/ui/components/ui/card';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { motion } from 'framer-motion';
 import { Rocket, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -32,7 +32,7 @@ function MarketingPage() {
   }));
 
   return (
-    <div className="relative flex h-full w-full flex-col items-center bg-gradient-to-b from-deep-blue via-midnight-blue to-dark-purple">
+    <div className="from-deep-blue via-midnight-blue to-dark-purple relative flex h-full w-full flex-col items-center bg-gradient-to-b">
       {/* Raining Effect */}
       <div className="absolute inset-0 h-screen overflow-hidden">
         {rainingElements.map((element) => (
@@ -83,8 +83,8 @@ function MarketingPage() {
 
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <div className="relative">
-            <input className="ease placeholder:text-white-400 hover:border-white-300 peer rounded-xl border border-slate-200 bg-white px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 focus:border-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-hidden sm:w-80" />
-            <label className="absolute top-2.5 left-2.5 origin-left transform cursor-text px-1 text-sm text-white transition-all peer-focus:-top-2 peer-focus:left-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-white">
+            <input className="ease placeholder:text-white-400 hover:border-white-300 focus:outline-hidden peer rounded-xl border border-slate-200 bg-white px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 focus:border-slate-400 focus:ring-2 focus:ring-blue-500 sm:w-80" />
+            <label className="absolute left-2.5 top-2.5 origin-left transform cursor-text px-1 text-sm text-white transition-all peer-focus:-top-2 peer-focus:left-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-white">
               Prompt here..
             </label>
           </div>
@@ -107,14 +107,14 @@ function MarketingPage() {
           </motion.div>
         </div>
       </motion.div> */}
-      <Separator className="mb-8 bg-foreground/5" />
+      <Separator className="bg-foreground/5 mb-8" />
       <motion.section
         id="features"
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
         variants={containerVariants}
-        className="w-full bg-gradient-to-b from-midnight-blue via-midnight-blue to-dark-purple py-24 pt-16"
+        className="from-midnight-blue via-midnight-blue to-dark-purple w-full bg-gradient-to-b py-24 pt-16"
       >
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="mb-12 text-center text-4xl font-bold text-white">

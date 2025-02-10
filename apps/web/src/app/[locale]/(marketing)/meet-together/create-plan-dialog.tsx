@@ -2,7 +2,8 @@
 
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { Timezone } from '@tutur3u/types/primitives/Timezone';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tutur3u/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -19,10 +20,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Timezone } from '@tutur3u/types/primitives/Timezone';
+} from '@tutur3u/ui/components/ui/form';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -159,13 +159,13 @@ export default function CreatePlanDialog({ plan }: Props) {
         >
           <div
             className={cn(
-              'animate-tilt absolute -inset-px rounded-lg bg-gradient-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
+              'animate-tilt from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 absolute -inset-px rounded-lg bg-gradient-to-r opacity-70 blur-lg transition-all',
               missingFields ||
                 creating ||
                 'group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'
             )}
           />
-          <div className="relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-dynamic-light-red/60 via-dynamic-light-pink/60 to-dynamic-light-blue/60 px-8 py-2 font-bold text-white transition-all md:text-lg">
+          <div className="from-dynamic-light-red/60 via-dynamic-light-pink/60 to-dynamic-light-blue/60 relative inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r px-8 py-2 font-bold text-white transition-all md:text-lg">
             {t('create_plan')}
           </div>
         </button>

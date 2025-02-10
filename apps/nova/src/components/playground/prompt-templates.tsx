@@ -1,4 +1,4 @@
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,7 +6,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 
 const templates = [

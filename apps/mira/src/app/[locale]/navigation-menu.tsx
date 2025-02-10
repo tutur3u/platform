@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Badge } from '@repo/ui/components/ui/badge';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -10,7 +10,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
-} from '@repo/ui/components/ui/navigation-menu';
+} from '@tutur3u/ui/components/ui/navigation-menu';
 import {
   Archive,
   Banknote,
@@ -286,7 +286,7 @@ const ListItem = React.forwardRef<
         <a
           ref={ref}
           className={cn(
-            'block h-full space-y-1 rounded-md p-3 leading-none no-underline outline-hidden transition-colors select-none',
+            'outline-hidden block h-full select-none space-y-1 rounded-md p-3 leading-none no-underline transition-colors',
             'opacity-80 hover:opacity-100',
             'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
             disabled && 'cursor-not-allowed opacity-50',
@@ -296,14 +296,14 @@ const ListItem = React.forwardRef<
         >
           <div className="flex items-center gap-2">
             {icon}
-            <div className="text-sm leading-none font-semibold">{title}</div>
+            <div className="text-sm font-semibold leading-none">{title}</div>
             {badge && (
               <Badge variant="secondary" className="ml-auto flex-none text-xs">
                 {badge}
               </Badge>
             )}
           </div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground opacity-80">
+          <p className="text-muted-foreground line-clamp-2 text-sm leading-snug opacity-80">
             {children}
           </p>
         </a>

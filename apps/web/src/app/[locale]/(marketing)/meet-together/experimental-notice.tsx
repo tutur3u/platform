@@ -1,6 +1,6 @@
 'use client';
 
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { FlaskConical } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -17,7 +17,7 @@ export default function ExperimentalNotice() {
         isDark
           ? 'border-orange-300/20 bg-orange-300/10 text-orange-300'
           : 'border-amber-600/20 bg-amber-600/10 text-amber-600 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-300'
-      } mx-4 mt-8 max-w-xl rounded-lg border p-4 text-foreground md:p-8`}
+      } text-foreground mx-4 mt-8 max-w-xl rounded-lg border p-4 md:p-8`}
     >
       <FlaskConical className="mx-auto h-16 w-16" />
       <Separator

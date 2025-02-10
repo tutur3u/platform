@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,10 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { Progress } from '@repo/ui/components/ui/progress';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { useToast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/components/ui/dialog';
+import { Progress } from '@tutur3u/ui/components/ui/progress';
+import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
+import { useToast } from '@tutur3u/ui/hooks/use-toast';
 import {
   AlertCircle,
   CheckCircle,
@@ -196,7 +196,7 @@ export function DuplicateHandler({ wsId, datasetId }: Props) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Progress</span>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   {progress}%
                 </span>
               </div>
@@ -222,13 +222,13 @@ export function DuplicateHandler({ wsId, datasetId }: Props) {
                   >
                     {log.message}
                   </span>
-                  <span className="ml-auto text-xs text-muted-foreground">
+                  <span className="text-muted-foreground ml-auto text-xs">
                     {log.timestamp.toLocaleTimeString()}
                   </span>
                 </div>
               ))}
               {logs.length === 0 && (
-                <div className="text-center text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-center text-sm">
                   No logs yet. Start by detecting duplicates.
                 </div>
               )}

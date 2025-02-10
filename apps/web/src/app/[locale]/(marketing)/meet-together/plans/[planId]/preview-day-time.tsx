@@ -1,13 +1,13 @@
 import { useTimeBlocking } from './time-blocking-provider';
 import { timetzToTime } from '@/utils/date-helper';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Timeblock } from '@tutur3u/types/primitives/Timeblock';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { Timeblock } from '@tutur3u/types/primitives/Timeblock';
+} from '@tutur3u/ui/components/ui/tooltip';
 import dayjs from 'dayjs';
 import { ShieldCheck, ShieldMinus } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -76,7 +76,7 @@ export default function PreviewDayTime({
   };
 
   return (
-    <div className="relative w-14 border border-b-0 border-foreground/50">
+    <div className="border-foreground/50 relative w-14 border border-b-0">
       {hourBlocks
         .map((i) => (i + start) * hourSplits)
         // duplicate each item `hourSplits` times
@@ -142,9 +142,9 @@ export default function PreviewDayTime({
                       hideBorder
                         ? ''
                         : (i + 1) % hourSplits === 0
-                          ? 'border-b border-foreground/50'
+                          ? 'border-foreground/50 border-b'
                           : (i + 1) % (hourSplits / 2) === 0
-                            ? 'border-b border-dashed border-foreground/50'
+                            ? 'border-foreground/50 border-b border-dashed'
                             : ''
                     }`}
                   />

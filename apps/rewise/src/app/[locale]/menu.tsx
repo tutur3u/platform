@@ -4,14 +4,14 @@ import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
 import { PUBLIC_PATHS } from '@/constants/common';
 import { cn } from '@/lib/utils';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { type SupabaseUser } from '@tutur3u/supabase/next/user';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
-} from '@repo/ui/components/ui/sheet';
-import { type SupabaseUser } from '@tutur3u/supabase/next/user';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+} from '@tutur3u/ui/components/ui/sheet';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

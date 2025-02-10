@@ -1,18 +1,18 @@
 import { getColumns } from '../../executions/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/server';
+import type {
+  WorkspaceCronExecution,
+  WorkspaceCronJob,
+} from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { createClient } from '@tutur3u/supabase/next/server';
-import type {
-  WorkspaceCronExecution,
-  WorkspaceCronJob,
-} from '@tutur3u/types/db';
+} from '@tutur3u/ui/components/ui/card';
 import { ArrowLeft, CheckCircle, Clock, PowerOff, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -53,7 +53,7 @@ export default async function DatasetCronJobDetailsPage({
     switch (status) {
       case 'active':
         return (
-          <div className="flex items-center gap-1 text-dynamic-green">
+          <div className="text-dynamic-green flex items-center gap-1">
             <CheckCircle className="h-5 w-5" />
             <span>Active</span>
           </div>
@@ -61,7 +61,7 @@ export default async function DatasetCronJobDetailsPage({
 
       case 'inactive':
         return (
-          <div className="flex items-center gap-1 text-dynamic-red">
+          <div className="text-dynamic-red flex items-center gap-1">
             <PowerOff className="h-5 w-5" />
             <span>Inactive</span>
           </div>
@@ -69,7 +69,7 @@ export default async function DatasetCronJobDetailsPage({
 
       case 'running':
         return (
-          <div className="flex items-center gap-1 text-dynamic-blue">
+          <div className="text-dynamic-blue flex items-center gap-1">
             <Clock className="h-5 w-5" />
             <span>Running</span>
           </div>
@@ -77,7 +77,7 @@ export default async function DatasetCronJobDetailsPage({
 
       case 'failed':
         return (
-          <div className="flex items-center gap-1 text-dynamic-red">
+          <div className="text-dynamic-red flex items-center gap-1">
             <XCircle className="h-5 w-5" />
             <span>Failed</span>
           </div>
@@ -99,7 +99,7 @@ export default async function DatasetCronJobDetailsPage({
           </Link>
           <div>
             <h1 className="text-2xl font-bold">{job.name}</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {job.schedule} • {job.active ? 'Active' : 'Inactive'}
             </p>
           </div>

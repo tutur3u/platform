@@ -3,19 +3,19 @@ import { TaskActions } from './task-actions';
 import { updateTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { useQueryClient } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Task as TaskType } from '@tutur3u/types/primitives/TaskBoard';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Card } from '@tutur3u/ui/components/ui/card';
+import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { cn } from '@repo/ui/lib/utils';
-import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Task as TaskType } from '@tutur3u/types/primitives/TaskBoard';
+} from '@tutur3u/ui/components/ui/tooltip';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import {
   AlertCircle,
@@ -166,7 +166,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
         'group relative flex flex-col gap-3 rounded-lg border p-3 text-left text-sm transition-all',
         'hover:border-primary/20 hover:shadow-md',
         'touch-none select-none',
-        isDragging && 'z-50 scale-[1.02] bg-background opacity-90 shadow-lg',
+        isDragging && 'bg-background z-50 scale-[1.02] opacity-90 shadow-lg',
         isOverlay && 'shadow-lg',
         task.archived && 'bg-muted/50',
         isOverdue && !task.archived && 'border-destructive/50'
@@ -177,7 +177,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
           {...attributes}
           {...listeners}
           className={cn(
-            'mt-0.5 h-4 w-4 shrink-0 cursor-grab text-muted-foreground opacity-50 transition-all',
+            'text-muted-foreground mt-0.5 h-4 w-4 shrink-0 cursor-grab opacity-50 transition-all',
             'group-hover:opacity-100',
             isDragging && 'opacity-100',
             isOverlay && 'cursor-grabbing'
@@ -198,7 +198,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
               <div className="flex items-start justify-between gap-2">
                 <p
                   className={cn(
-                    'line-clamp-2 flex-1 leading-tight font-medium',
+                    'line-clamp-2 flex-1 font-medium leading-tight',
                     task.archived && 'text-muted-foreground line-through'
                   )}
                 >
@@ -259,7 +259,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
                 )}
               </div>
               {task.description && (
-                <p className="line-clamp-2 text-xs leading-normal text-muted-foreground">
+                <p className="text-muted-foreground line-clamp-2 text-xs leading-normal">
                   {task.description}
                 </p>
               )}
@@ -276,7 +276,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
               </Badge>
             )}
             {startDate && (
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 Starts {formatDistanceToNow(startDate, { addSuffix: true })}
               </div>
@@ -286,7 +286,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
                 className={cn(
                   'flex items-center gap-1',
                   isOverdue && !task.archived
-                    ? 'font-medium text-destructive'
+                    ? 'text-destructive font-medium'
                     : 'text-muted-foreground'
                 )}
               >
@@ -295,7 +295,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
               </div>
             )}
             {isOverdue && !task.archived && (
-              <div className="flex items-center gap-1 font-medium text-destructive">
+              <div className="text-destructive flex items-center gap-1 font-medium">
                 <AlertCircle className="h-3 w-3" />
                 Overdue
               </div>
@@ -325,7 +325,7 @@ export function TaskCard({ task, boardId, isOverlay, onUpdate }: Props) {
         />
       )}
 
-      <div className="text-[10px] text-muted-foreground/50">
+      <div className="text-muted-foreground/50 text-[10px]">
         Created {formatDistanceToNow(createdAt, { addSuffix: true })}
       </div>
     </Card>

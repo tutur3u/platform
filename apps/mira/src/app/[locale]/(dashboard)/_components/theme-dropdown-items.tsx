@@ -3,7 +3,7 @@
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@repo/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/components/ui/dropdown-menu';
 import {
   Carrot,
   Check,

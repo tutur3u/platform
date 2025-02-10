@@ -1,5 +1,5 @@
 import LoginForm from './form';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -26,12 +26,12 @@ export default async function Login() {
           <LoginForm />
         </Suspense>
         <Separator className="mt-2" />
-        <div className="text-center text-sm font-semibold text-foreground/50">
+        <div className="text-foreground/50 text-center text-sm font-semibold">
           {t('auth.notice-p1')}{' '}
           <Link
             href="/terms"
             target="_blank"
-            className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
+            className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
             {t('auth.tos')}
           </Link>{' '}
@@ -39,7 +39,7 @@ export default async function Login() {
           <Link
             href="/privacy"
             target="_blank"
-            className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
+            className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
           >
             {t('auth.privacy')}
           </Link>{' '}

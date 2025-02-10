@@ -1,5 +1,5 @@
-import { Button } from '@repo/ui/components/ui/button';
-import { Input } from '@repo/ui/components/ui/input';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Input } from '@tutur3u/ui/components/ui/input';
 import { Pause, Play, StopCircle } from 'lucide-react';
 
 interface Props {
@@ -72,7 +72,7 @@ export function CrawlControls({
             value={maxPages || ''}
             onChange={(e) => onMaxPagesChange(e.target.value)}
           />
-          <span className="text-sm text-muted-foreground">Max Pages</span>
+          <span className="text-muted-foreground text-sm">Max Pages</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -82,7 +82,7 @@ export function CrawlControls({
             value={maxArticles || ''}
             onChange={(e) => onMaxArticlesChange(e.target.value)}
           />
-          <span className="text-sm text-muted-foreground">Max Articles</span>
+          <span className="text-muted-foreground text-sm">Max Articles</span>
         </div>
       </form>
     </div>

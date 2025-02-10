@@ -1,9 +1,9 @@
 'use client';
 
 // import { UserRowActions } from './row-actions';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { EmailHistoryEntry } from '@tutur3u/types/db';
+import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 

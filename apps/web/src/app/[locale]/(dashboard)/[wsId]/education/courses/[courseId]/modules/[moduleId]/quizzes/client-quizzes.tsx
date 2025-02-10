@@ -2,6 +2,7 @@
 
 import QuizForm from '../../../../../quizzes/form';
 import { cn } from '@/lib/utils';
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,10 +13,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/ui/alert-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { createClient } from '@tutur3u/supabase/next/client';
+} from '@tutur3u/ui/components/ui/alert-dialog';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { Pencil, Trash, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

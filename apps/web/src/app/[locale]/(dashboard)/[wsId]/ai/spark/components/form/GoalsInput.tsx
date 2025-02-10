@@ -1,33 +1,33 @@
 'use client';
 
 import { PlanRequest, SkillLevel, TimeOfDay } from '../../types';
-import { Alert, AlertDescription } from '@repo/ui/components/ui/alert';
-import { Button } from '@repo/ui/components/ui/button';
+import { Alert, AlertDescription } from '@tutur3u/ui/components/ui/alert';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
+} from '@tutur3u/ui/components/ui/card';
+import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { Label } from '@tutur3u/ui/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { Separator } from '@repo/ui/components/ui/separator';
+} from '@tutur3u/ui/components/ui/select';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@repo/ui/components/ui/tabs';
-import { TagInput } from '@repo/ui/components/ui/tag-input';
+} from '@tutur3u/ui/components/ui/tabs';
+import { TagInput } from '@tutur3u/ui/components/ui/tag-input';
 import {
   Brain,
   Clock,
@@ -186,7 +186,7 @@ export function GoalsInput({
     <Card className="border-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
+          <Sparkles className="text-primary h-5 w-5" />
           Plan Configuration
         </CardTitle>
         <CardDescription>
@@ -252,7 +252,7 @@ export function GoalsInput({
             <div className="grid gap-6">
               <div className="mb-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5 text-primary" />
+                  <GraduationCap className="text-primary h-5 w-5" />
                   <h3 className="font-medium">Learning Profile</h3>
                 </div>
                 <Separator />
@@ -279,7 +279,7 @@ export function GoalsInput({
                           <SelectItem key={level.value} value={level.value}>
                             <div className="flex flex-col items-start justify-start gap-1">
                               <span>{level.label}</span>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-muted-foreground text-xs">
                                 {level.description}
                               </span>
                             </div>
@@ -313,7 +313,7 @@ export function GoalsInput({
                           <SelectItem key={style.value} value={style.value}>
                             <div className="flex flex-col items-start justify-start gap-1">
                               <span>{style.label}</span>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-muted-foreground text-xs">
                                 {style.description}
                               </span>
                             </div>
@@ -327,7 +327,7 @@ export function GoalsInput({
 
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" />
+                  <Clock className="text-primary h-5 w-5" />
                   <h3 className="font-medium">Time Commitment</h3>
                 </div>
                 <Separator />
@@ -422,7 +422,7 @@ export function GoalsInput({
                       />
                       <label
                         htmlFor="weekdays"
-                        className="text-sm leading-none font-medium"
+                        className="text-sm font-medium leading-none"
                       >
                         Weekdays
                       </label>
@@ -450,7 +450,7 @@ export function GoalsInput({
                       />
                       <label
                         htmlFor="weekends"
-                        className="text-sm leading-none font-medium"
+                        className="text-sm font-medium leading-none"
                       >
                         Weekends
                       </label>
@@ -492,7 +492,7 @@ export function GoalsInput({
 
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-primary" />
+                  <Brain className="text-primary h-5 w-5" />
                   <h3 className="font-medium">Skills & Focus Areas</h3>
                 </div>
                 <Separator />
@@ -512,7 +512,7 @@ export function GoalsInput({
                       }
                       maxTags={5}
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Add up to 5 specific areas you want to focus on
                     </p>
                   </div>
@@ -532,7 +532,7 @@ export function GoalsInput({
                       }
                       maxTags={10}
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       List skills you already have that are relevant to your
                       goals
                     </p>
@@ -553,7 +553,7 @@ export function GoalsInput({
                       }
                       maxTags={5}
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       Add any prerequisites or dependencies for your goals
                     </p>
                   </div>
@@ -571,7 +571,7 @@ export function GoalsInput({
 
         <Button
           type="button"
-          className="mt-6 w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+          className="from-primary to-primary/90 hover:from-primary/90 hover:to-primary mt-6 w-full bg-gradient-to-r"
           onClick={handleSubmit}
           disabled={isLoading}
         >

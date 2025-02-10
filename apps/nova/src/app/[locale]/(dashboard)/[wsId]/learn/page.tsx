@@ -1,12 +1,12 @@
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { createClient } from '@tutur3u/supabase/next/server';
+} from '@tutur3u/ui/components/ui/card';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -68,7 +68,7 @@ export default async function LearnPage({ params }: Props) {
             </CardHeader>
             <CardContent className="flex flex-grow flex-col justify-between">
               <div className="mt-4 flex items-center justify-between">
-                <span className="flex items-center text-muted-foreground">
+                <span className="text-muted-foreground flex items-center">
                   <BookOpen className="mr-2 h-4 w-4" />
                   {lesson.duration}
                 </span>

@@ -1,9 +1,9 @@
 'use client';
 
 import { ApiKeyRowActions } from './row-actions';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { WorkspaceApiKey } from '@tutur3u/types/primitives/WorkspaceApiKey';
+import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const apiKeyColumns = (

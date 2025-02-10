@@ -1,7 +1,7 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -38,7 +38,7 @@ export default function FinanceToggle() {
       />
       <label
         htmlFor="showFinanceStats"
-        className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
       >
         {t('finance-overview.show-finance-stats')}
       </label>

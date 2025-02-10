@@ -7,6 +7,9 @@ import {
 } from '@/components/components/BlockEditor';
 import { cn } from '@/lib/utils';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
+import { JSONContent } from '@tiptap/core';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceDocument } from '@tutur3u/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,17 +20,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/ui/alert-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { Input } from '@repo/ui/components/ui/input';
+} from '@tutur3u/ui/components/ui/alert-dialog';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Input } from '@tutur3u/ui/components/ui/input';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { JSONContent } from '@tiptap/core';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceDocument } from '@tutur3u/types/db';
+} from '@tutur3u/ui/components/ui/tooltip';
 import debounce from 'lodash/debounce';
 import {
   AlertCircle,
@@ -283,8 +283,8 @@ export default function DocumentDetailsPage({ params }: Props) {
   if (!document) return null;
 
   return (
-    <div className="relative flex h-screen flex-col bg-background">
-      <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="bg-background relative flex h-screen flex-col">
+      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-4">
             <Button
@@ -310,7 +310,7 @@ export default function DocumentDetailsPage({ params }: Props) {
                   <div
                     className={cn(
                       'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                      'cursor-default select-none hover:bg-muted/50',
+                      'hover:bg-muted/50 cursor-default select-none',
                       syncStatus.type === 'saving' &&
                         'bg-muted/30 text-muted-foreground',
                       syncStatus.type === 'saved' && 'text-emerald-500',
@@ -368,14 +368,14 @@ export default function DocumentDetailsPage({ params }: Props) {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground gap-1.5"
               onClick={() => setIsShareDialogOpen(true)}
             >
               <Share2 className="h-4 w-4" />
               {t('common.share')}
             </Button>
 
-            <div className="mx-2 h-5 w-px bg-border" />
+            <div className="bg-border mx-2 h-5 w-px" />
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -391,7 +391,7 @@ export default function DocumentDetailsPage({ params }: Props) {
                   {document.is_public ? (
                     <Globe2 className="h-4 w-4 text-emerald-500" />
                   ) : (
-                    <Lock className="h-4 w-4 text-muted-foreground" />
+                    <Lock className="text-muted-foreground h-4 w-4" />
                   )}
                 </Button>
               </TooltipTrigger>

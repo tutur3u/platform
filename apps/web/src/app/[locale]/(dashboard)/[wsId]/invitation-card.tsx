@@ -1,12 +1,13 @@
 'use client';
 
 import LoadingIndicator from '@/components/common/LoadingIndicator';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/components/ui/avatar';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Card,
   CardContent,
@@ -14,9 +15,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Workspace } from '@tutur3u/types/primitives/Workspace';
+} from '@tutur3u/ui/components/ui/card';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -121,7 +121,7 @@ export default function InvitationCard({
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {t('invite.you-been-invited-to-join-the')}{' '}
           <span className="text-foreground underline">{workspace.name}</span>
           {t('invite.accept-to-start-collaborating')}
@@ -131,7 +131,7 @@ export default function InvitationCard({
         <Button
           variant="outline"
           onClick={() => declineInvite(workspace)}
-          className="transition-colors hover:bg-destructive hover:text-destructive-foreground"
+          className="hover:bg-destructive hover:text-destructive-foreground transition-colors"
           disabled={!!loading}
         >
           {loading === 'decline' ? (

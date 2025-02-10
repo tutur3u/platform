@@ -1,6 +1,6 @@
 import { useCalendar } from '@/hooks/useCalendar';
 import { getCardColor } from '@/utils/color-helper';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { Play, StopCircle } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';

@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@repo/ui/lib/utils';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import {

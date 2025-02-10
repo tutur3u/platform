@@ -1,9 +1,9 @@
 'use client';
 
 import { TimezoneRowActions } from '@/components/row-actions/timezones';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { Timezone, TimezoneStatus } from '@tutur3u/types/primitives/Timezone';
+import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
 import { Check, Clock, RefreshCw, RefreshCwOff, X } from 'lucide-react';
 import moment from 'moment';
 

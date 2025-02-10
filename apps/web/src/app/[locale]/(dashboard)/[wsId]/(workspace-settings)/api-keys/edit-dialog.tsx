@@ -2,6 +2,7 @@
 
 import ApiKeyForm, { ApiConfigFormSchema } from './form';
 import { generateRandomUUID } from '@/utils/uuid-helper';
+import { WorkspaceApiKey } from '@tutur3u/types/primitives/WorkspaceApiKey';
 import {
   Dialog,
   DialogContent,
@@ -9,9 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { WorkspaceApiKey } from '@tutur3u/types/primitives/WorkspaceApiKey';
+} from '@tutur3u/ui/components/ui/dialog';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';

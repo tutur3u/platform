@@ -1,18 +1,18 @@
 'use client';
 
 import { generateUUID } from '@/utils/uuid-helper';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   DialogClose,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Progress } from '@repo/ui/components/ui/progress';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { createClient } from '@tutur3u/supabase/next/client';
+} from '@tutur3u/ui/components/ui/dialog';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { Label } from '@tutur3u/ui/components/ui/label';
+import { Progress } from '@tutur3u/ui/components/ui/progress';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
@@ -229,7 +229,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
               {paginatedData.map((row, index) => (
                 <div
                   key={index}
-                  className="rounded border border-foreground/5 bg-foreground/5 p-2"
+                  className="border-foreground/5 bg-foreground/5 rounded border p-2"
                 >
                   <div className="line-clamp-1 font-semibold">
                     {row.fullName}

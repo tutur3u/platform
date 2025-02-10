@@ -4,13 +4,13 @@ import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
 import { cn } from '@/lib/utils';
 import { isEmail } from '@/utils/email-helper';
-import { Avatar, AvatarFallback } from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
-import { Textarea } from '@repo/ui/components/ui/textarea';
 import { createClient } from '@tutur3u/supabase/next/client';
 import type { GroupPostCheck } from '@tutur3u/types/db';
 import type { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback } from '@tutur3u/ui/components/ui/avatar';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Card } from '@tutur3u/ui/components/ui/card';
+import { Textarea } from '@tutur3u/ui/components/ui/textarea';
 import {
   Check,
   CircleSlash,
@@ -207,11 +207,11 @@ function UserCard({
           </Avatar>
         )}
         <div className="ml-4 w-full">
-          <h3 className="text-lg font-semibold text-foreground">
+          <h3 className="text-foreground text-lg font-semibold">
             {user.full_name}
           </h3>
           {(user.email || user.phone) && (
-            <p className="text-sm text-foreground">
+            <p className="text-foreground text-sm">
               {user.email || user.phone}
             </p>
           )}

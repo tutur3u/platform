@@ -1,17 +1,17 @@
 'use client';
 
-import { Button } from '@repo/ui/components/ui/button';
+import { createDynamicClient } from '@tutur3u/supabase/next/client';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   FileUploader,
   StatedFile,
-} from '@repo/ui/components/ui/custom/file-uploader';
+} from '@tutur3u/ui/components/ui/custom/file-uploader';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { createDynamicClient } from '@tutur3u/supabase/next/client';
+} from '@tutur3u/ui/components/ui/tooltip';
 import { File, FileText, ImageIcon, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -70,7 +70,7 @@ export function Bill({ wsId, transactionId }: Props) {
             {pdfs.length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
+                  <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
                     <FileText className="h-4 w-4" />
                     {pdfs.length} PDFs
                   </div>
@@ -109,7 +109,7 @@ export function Bill({ wsId, transactionId }: Props) {
             {images.length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
+                  <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
                     <ImageIcon className="h-4 w-4" />
                     {images.length} Images
                   </div>
@@ -154,7 +154,7 @@ export function Bill({ wsId, transactionId }: Props) {
             {others.length > 0 && (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
+                  <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
                     <File className="h-4 w-4" />
                     {others.length} Files
                   </div>

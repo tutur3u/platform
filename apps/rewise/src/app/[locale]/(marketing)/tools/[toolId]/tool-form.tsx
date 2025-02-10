@@ -2,12 +2,12 @@
 
 import { Tool } from '../data';
 import { TTR_URL } from '@/constants/common';
-import { Button } from '@repo/ui/components/ui/button';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
 import type { AIChat } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { Label } from '@tutur3u/ui/components/ui/label';
+import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Album, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

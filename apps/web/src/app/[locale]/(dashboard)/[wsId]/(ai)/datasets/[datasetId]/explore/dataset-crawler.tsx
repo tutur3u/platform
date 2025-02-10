@@ -11,14 +11,16 @@ import type { CrawlMetrics, QueueItem, UrlWithProgress } from './types';
 import { calculateEstimatedTime } from './utils/time';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
+import type { WorkspaceDataset } from '@tutur3u/types/db';
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '@repo/ui/components/ui/alert';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card, CardContent } from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/components/ui/alert';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Card, CardContent } from '@tutur3u/ui/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tutur3u/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -35,8 +37,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
+} from '@tutur3u/ui/components/ui/form';
+import { Input } from '@tutur3u/ui/components/ui/input';
 import {
   Pagination,
   PaginationContent,
@@ -45,16 +47,14 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@repo/ui/components/ui/pagination';
-import { Progress } from '@repo/ui/components/ui/progress';
+} from '@tutur3u/ui/components/ui/pagination';
+import { Progress } from '@tutur3u/ui/components/ui/progress';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@repo/ui/components/ui/tabs';
-import { useQueryClient } from '@tanstack/react-query';
-import type { WorkspaceDataset } from '@tutur3u/types/db';
+} from '@tutur3u/ui/components/ui/tabs';
 import {
   Bug,
   Check,
@@ -509,7 +509,7 @@ export function DatasetCrawler({
                           Processing...
                         </Badge>
                       </div>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground text-sm">
                         {syncProgress}% Complete
                       </span>
                     </div>
@@ -519,7 +519,7 @@ export function DatasetCrawler({
                     {activeUrl && (
                       <div className="flex items-center gap-2 rounded-md border p-2">
                         <RefreshCw className="h-4 w-4 flex-none animate-spin" />
-                        <code className="line-clamp-1 w-full text-xs text-muted-foreground">
+                        <code className="text-muted-foreground line-clamp-1 w-full text-xs">
                           {activeUrl}
                         </code>
                       </div>
@@ -555,10 +555,10 @@ export function DatasetCrawler({
                             ) : (
                               <X className="h-4 w-4 text-red-500" />
                             )}
-                            <code className="flex-1 truncate text-xs text-muted-foreground">
+                            <code className="text-muted-foreground flex-1 truncate text-xs">
                               {log.url}
                             </code>
-                            <time className="shrink-0 text-xs text-muted-foreground">
+                            <time className="text-muted-foreground shrink-0 text-xs">
                               {new Date(log.timestamp).toLocaleTimeString()}
                             </time>
                           </div>
@@ -600,7 +600,7 @@ export function DatasetCrawler({
                             : 'Single Element'}
                         </Badge>
                       </div>
-                      <div className="space-y-1 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground space-y-1 text-sm">
                         <div className="flex items-center gap-2">
                           Selector:{' '}
                           <code className="text-xs">{preview.selector}</code>
@@ -627,7 +627,7 @@ export function DatasetCrawler({
                             {preview.sampleData.map((sample, i) => (
                               <div
                                 key={i}
-                                className="rounded-md bg-muted/50 p-2 text-sm text-muted-foreground"
+                                className="bg-muted/50 text-muted-foreground rounded-md p-2 text-sm"
                               >
                                 {sample}
                               </div>
@@ -695,7 +695,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                   </Button>
                 </div>
                 <div className="max-h-[500px] overflow-auto rounded-md border">
-                  <code className="w-full p-4 whitespace-pre-wrap">
+                  <code className="w-full whitespace-pre-wrap p-4">
                     {rawHtml || 'No HTML content loaded'}
                   </code>
                 </div>
@@ -767,7 +767,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
               </table>
             </div>
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Showing {startIdx + 1} to {Math.min(endIdx, previewRows.length)}{' '}
                 of {previewRows.length} rows
               </div>
@@ -863,7 +863,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
               onMaxPagesChange={setMaxPages}
               onMaxArticlesChange={setMaxArticles}
             />
-            <div className="text-sm text-muted-foreground">{syncStatus}</div>
+            <div className="text-muted-foreground text-sm">{syncStatus}</div>
           </div>
         )}
 
@@ -1009,7 +1009,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
           )}
 
           <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               {processedData.length > 0 &&
                 `Showing ${Math.min(10, processedData.length - 1)} of ${
                   sheetInfo.rows
@@ -1033,7 +1033,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
 
     return (
       <div className="absolute inset-x-0 -bottom-1">
-        <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div className="bg-muted relative h-1 w-full overflow-hidden rounded-full">
           <div
             className={cn(
               'h-full transition-all duration-300',
@@ -1108,11 +1108,11 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                           Failed
                         </Badge>
                       )}
-                      <code className="overflow-hidden text-xs text-ellipsis whitespace-nowrap text-muted-foreground">
+                      <code className="text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap text-xs">
                         {log.url}
                       </code>
                     </div>
-                    <time className="shrink-0 text-xs text-muted-foreground">
+                    <time className="text-muted-foreground shrink-0 text-xs">
                       {new Date(log.timestamp).toLocaleTimeString()}
                     </time>
                   </div>
@@ -1120,7 +1120,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
               </div>
             ) : (
               <div className="flex h-32 items-center justify-center">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   No URLs fetched yet
                 </span>
               </div>
@@ -1130,7 +1130,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
           {loading && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   {syncStatus}
                 </span>
                 <span className="text-sm font-medium">{syncProgress}%</span>
@@ -1231,7 +1231,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     {item.status === 'pending' && (
-                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <Clock className="text-muted-foreground h-4 w-4" />
                     )}
                     {item.status === 'processing' && (
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -1242,18 +1242,18 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
                     {item.status === 'failed' && (
                       <X className="h-4 w-4 text-red-500" />
                     )}
-                    <code className="flex-1 truncate text-xs text-muted-foreground">
+                    <code className="text-muted-foreground flex-1 truncate text-xs">
                       {item.url}
                     </code>
                   </div>
-                  <time className="shrink-0 text-xs text-muted-foreground">
+                  <time className="text-muted-foreground shrink-0 text-xs">
                     {new Date(item.timestamp).toLocaleTimeString()}
                   </time>
                 </div>
                 {(item.status === 'processing' || item.progress > 0) && (
                   <div className="space-y-1">
                     {item.subStatus && (
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         {item.subStatus}
                       </div>
                     )}

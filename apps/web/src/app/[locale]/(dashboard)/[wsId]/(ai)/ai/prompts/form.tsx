@@ -2,13 +2,14 @@
 
 import AIModelSelector from './model-selector';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AIPrompt } from '@tutur3u/types/db';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@repo/ui/components/ui/accordion';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/components/ui/accordion';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Form,
   FormControl,
@@ -16,12 +17,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { AIPrompt } from '@tutur3u/types/db';
+} from '@tutur3u/ui/components/ui/form';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -189,7 +189,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
       <AccordionItem value="output">
         <AccordionTrigger>Output</AccordionTrigger>
         <AccordionContent>
-          <div className="rounded-lg border bg-foreground/5 p-2">
+          <div className="bg-foreground/5 rounded-lg border p-2">
             {output || 'No output generated yet.'}
           </div>
         </AccordionContent>

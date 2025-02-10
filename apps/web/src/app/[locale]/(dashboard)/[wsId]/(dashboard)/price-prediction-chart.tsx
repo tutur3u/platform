@@ -5,14 +5,14 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
+} from '@tutur3u/ui/components/ui/select';
 import { addDays } from 'date-fns';
 import { useState } from 'react';
 import {

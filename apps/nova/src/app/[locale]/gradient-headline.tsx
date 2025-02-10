@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@repo/ui/lib/utils';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { ReactNode } from 'react';
 
 export default function GradientHeadline({
@@ -15,7 +15,7 @@ export default function GradientHeadline({
   return (
     <span
       className={cn(
-        'bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
+        'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 text-transparent',
         className
       )}
     >

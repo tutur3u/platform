@@ -1,6 +1,6 @@
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { Bot } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

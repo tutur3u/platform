@@ -7,10 +7,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@repo/ui/components/ui/accordion';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+} from '@tutur3u/ui/components/ui/accordion';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Card } from '@tutur3u/ui/components/ui/card';
+import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -18,13 +18,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@repo/ui/components/ui/table';
+} from '@tutur3u/ui/components/ui/table';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
+} from '@tutur3u/ui/components/ui/tooltip';
 import { motion } from 'framer-motion';
 import {
   Archive,
@@ -507,12 +507,12 @@ const PlanCard = ({
       <Card
         className={cn(
           'relative flex flex-col overflow-hidden transition-all duration-300',
-          'bg-gradient-to-b from-background to-muted/20',
+          'from-background to-muted/20 bg-gradient-to-b',
           isHovered && 'scale-[1.02] shadow-lg',
           plan.popular && 'border-primary shadow-lg',
           plan.name === 'Business' && 'col-span-full lg:col-span-1',
           plan.name === 'Enterprise' &&
-            'col-span-full border-2 border-foreground/50 bg-gradient-to-br from-dynamic-light-red/30 via-dynamic-light-pink/40 to-dynamic-light-blue/60 text-background'
+            'border-foreground/50 from-dynamic-light-red/30 via-dynamic-light-pink/40 to-dynamic-light-blue/60 text-background col-span-full border-2 bg-gradient-to-br'
         )}
       >
         {plan.popular && (
@@ -520,7 +520,7 @@ const PlanCard = ({
             initial={{ width: 0 }}
             animate={{ width: '100%' }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="absolute inset-x-0 top-0 h-1 bg-primary opacity-80"
+            className="bg-primary absolute inset-x-0 top-0 h-1 opacity-80"
           />
         )}
 
@@ -540,7 +540,7 @@ const PlanCard = ({
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.3 }}
-                  className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+                  className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium"
                 >
                   Most Popular
                 </motion.span>
@@ -548,7 +548,7 @@ const PlanCard = ({
             </div>
             <p
               className={cn(
-                'mt-2 text-sm text-muted-foreground',
+                'text-muted-foreground mt-2 text-sm',
                 plan.name === 'Enterprise' && 'text-foreground'
               )}
             >
@@ -562,7 +562,7 @@ const PlanCard = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.2 }}
               className={cn(
-                'mb-6 rounded-lg border bg-background/50 p-4 text-center',
+                'bg-background/50 mb-6 rounded-lg border p-4 text-center',
                 plan.name === 'Enterprise' &&
                   'border-foreground/30 bg-background/20 text-foreground'
               )}
@@ -577,7 +577,7 @@ const PlanCard = ({
                   {plan.price}
                 </span>
                 {plan.priceDetails && (
-                  <span className="mb-1 text-sm text-muted-foreground">
+                  <span className="text-muted-foreground mb-1 text-sm">
                     {plan.priceDetails}
                   </span>
                 )}
@@ -597,7 +597,7 @@ const PlanCard = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 * index }}
                     className={cn(
-                      'group space-y-2 rounded-lg border bg-background/50 p-3 transition-colors duration-200',
+                      'bg-background/50 group space-y-2 rounded-lg border p-3 transition-colors duration-200',
                       isHovered && 'bg-background/70',
                       plan.name === 'Enterprise' &&
                         'border-foreground/30 bg-background/20 text-foreground'
@@ -605,7 +605,7 @@ const PlanCard = ({
                   >
                     <div
                       className={cn(
-                        'flex items-center gap-2 text-xs font-medium text-muted-foreground',
+                        'text-muted-foreground flex items-center gap-2 text-xs font-medium',
                         plan.name === 'Enterprise' && 'text-foreground'
                       )}
                     >
@@ -639,7 +639,7 @@ const PlanCard = ({
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className={cn(
-                  'grid gap-2 text-sm text-muted-foreground',
+                  'text-muted-foreground grid gap-2 text-sm',
                   plan.name === 'Business' && 'md:grid-cols-2 lg:grid-cols-1',
                   plan.name === 'Enterprise' &&
                     'text-foreground md:grid-cols-2 lg:grid-cols-3'
@@ -653,7 +653,7 @@ const PlanCard = ({
                     transition={{ duration: 0.3, delay: 0.1 * index }}
                     className="flex items-center gap-2"
                   >
-                    <Check className="h-4 w-4 shrink-0 text-primary" />
+                    <Check className="text-primary h-4 w-4 shrink-0" />
                     <span>{feature}</span>
                   </motion.li>
                 ))}
@@ -685,13 +685,13 @@ export default function PricingPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   return (
-    <div className="relative container mx-auto mt-8 flex max-w-7xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
+    <div className="container relative mx-auto mt-8 flex max-w-7xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Background decoration */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="absolute top-0 right-0 left-0 -z-10 h-[400px] rounded-t-lg bg-gradient-to-b from-primary/5 via-primary/2 to-transparent"
+        className="from-primary/5 via-primary/2 absolute left-0 right-0 top-0 -z-10 h-[400px] rounded-t-lg bg-gradient-to-b to-transparent"
       />
 
       <motion.div
@@ -705,7 +705,7 @@ export default function PricingPage() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary"
+            className="bg-primary/10 text-primary mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium"
           >
             <Sparkles className="h-4 w-4" />
             {t('common.pricing_hook')}
@@ -720,7 +720,7 @@ export default function PricingPage() {
         >
           <GradientHeadline>{t('common.usage_based_pricing')}</GradientHeadline>
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-balance text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-balance text-lg">
           {t('common.usage_based_pricing_description')}
         </p>
       </motion.div>
@@ -747,7 +747,7 @@ export default function PricingPage() {
       >
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold">Compare Plans</h2>
-          <p className="mt-2 text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Detailed feature comparison across all plans
           </p>
         </div>
@@ -772,7 +772,7 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <Card className="relative overflow-hidden bg-background shadow-sm">
+        <Card className="bg-background relative overflow-hidden shadow-sm">
           <ScrollArea className="h-[600px] w-full">
             <div className="overflow-x-auto">
               <Table>
@@ -782,13 +782,13 @@ export default function PricingPage() {
                     <TableHead>
                       <div className="text-center">
                         <div className="font-bold">{t('common.free')}</div>
-                        <div className="text-sm text-muted-foreground">$0</div>
+                        <div className="text-muted-foreground text-sm">$0</div>
                       </div>
                     </TableHead>
                     <TableHead>
                       <div className="text-center">
                         <div className="font-bold">Pro</div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           $25/workspace
                         </div>
                       </div>
@@ -796,7 +796,7 @@ export default function PricingPage() {
                     <TableHead>
                       <div className="text-center">
                         <div className="font-bold">Business</div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           $199/workspace
                         </div>
                       </div>
@@ -804,7 +804,7 @@ export default function PricingPage() {
                     <TableHead>
                       <div className="text-center">
                         <div className="font-bold">Enterprise</div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           Custom pricing
                         </div>
                       </div>
@@ -834,7 +834,7 @@ export default function PricingPage() {
                         {Object.entries(features).map(([feature, values]) => (
                           <TableRow
                             key={feature}
-                            className="transition-colors duration-200 hover:bg-muted/20"
+                            className="hover:bg-muted/20 transition-colors duration-200"
                           >
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-2">
@@ -842,7 +842,7 @@ export default function PricingPage() {
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger>
-                                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                                      <HelpCircle className="text-muted-foreground h-4 w-4" />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p className="max-w-xs">
@@ -859,9 +859,9 @@ export default function PricingPage() {
                               <TableCell key={plan} className="text-center">
                                 {typeof values[plan] === 'boolean' ? (
                                   values[plan] ? (
-                                    <Check className="mx-auto h-4 w-4 text-primary" />
+                                    <Check className="text-primary mx-auto h-4 w-4" />
                                   ) : (
-                                    <Minus className="mx-auto h-4 w-4 text-muted-foreground" />
+                                    <Minus className="text-muted-foreground mx-auto h-4 w-4" />
                                   )
                                 ) : (
                                   <span className="text-sm">
@@ -887,7 +887,7 @@ export default function PricingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="mt-32 rounded-2xl bg-muted/50 px-6 py-12 lg:px-8 lg:py-16"
+        className="bg-muted/50 mt-32 rounded-2xl px-6 py-12 lg:px-8 lg:py-16"
       >
         <h2 className="mb-12 text-center text-3xl font-bold">
           Frequently Asked Questions
@@ -907,7 +907,7 @@ export default function PricingPage() {
             >
               <AccordionItem
                 value={`item-${index}`}
-                className="rounded-lg bg-background px-4 transition-colors duration-200 data-[state=open]:bg-muted/50"
+                className="bg-background data-[state=open]:bg-muted/50 rounded-lg px-4 transition-colors duration-200"
               >
                 <AccordionTrigger className="hover:no-underline">
                   {faq.question}
@@ -929,29 +929,29 @@ export default function PricingPage() {
         transition={{ duration: 0.6 }}
         className="mt-24"
       >
-        <Card className="overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 p-8">
+        <Card className="from-primary/20 to-primary/5 overflow-hidden bg-gradient-to-br p-8">
           <div className="grid gap-8 md:grid-cols-2">
             <div>
               <h2 className="mb-4 text-3xl font-bold">Enterprise Solutions</h2>
-              <p className="mb-6 text-muted-foreground">
+              <p className="text-muted-foreground mb-6">
                 Need a custom solution? Let's build something together that
                 perfectly fits your enterprise needs.
               </p>
               <ul className="mb-8 space-y-4">
                 <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
+                  <Check className="text-primary h-5 w-5" />
                   <span>Custom deployment options</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
+                  <Check className="text-primary h-5 w-5" />
                   <span>Dedicated support team</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
+                  <Check className="text-primary h-5 w-5" />
                   <span>Custom integrations</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
+                  <Check className="text-primary h-5 w-5" />
                   <span>Advanced security features</span>
                 </li>
               </ul>
@@ -964,7 +964,7 @@ export default function PricingPage() {
             </div>
             <div className="flex items-center justify-center">
               <div className="text-center">
-                <Building2 className="mx-auto mb-4 h-16 w-16 text-primary" />
+                <Building2 className="text-primary mx-auto mb-4 h-16 w-16" />
                 <h3 className="mb-2 text-xl font-bold">
                   Custom Enterprise Quote
                 </h3>

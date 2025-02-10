@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@repo/ui'],
+  transpilePackages: ['@tutur3u/ui'],
   images: {
     remotePatterns: [
       {

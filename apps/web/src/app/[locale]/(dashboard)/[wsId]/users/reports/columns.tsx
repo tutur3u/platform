@@ -1,9 +1,9 @@
 'use client';
 
 import { UserReportRowActions } from './row-actions';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import { WorkspaceUserReport } from '@tutur3u/types/db';
+import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -66,7 +66,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 max-w-[24rem] min-w-[8rem]">
+      <div className="line-clamp-2 min-w-[8rem] max-w-[24rem]">
         {row.getValue('user_name') || '-'}
       </div>
     ),
@@ -83,7 +83,7 @@ export const getUserReportColumns = (
     cell: ({ row }) => (
       <Link
         href={row.original.href || '#'}
-        className="line-clamp-2 max-w-[24rem] min-w-[8rem] hover:underline"
+        className="line-clamp-2 min-w-[8rem] max-w-[24rem] hover:underline"
       >
         {row.getValue('title') || '-'}
       </Link>

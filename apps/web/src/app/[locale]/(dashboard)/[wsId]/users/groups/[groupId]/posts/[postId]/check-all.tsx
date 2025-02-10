@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@repo/ui/components/ui/button';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import { CheckCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

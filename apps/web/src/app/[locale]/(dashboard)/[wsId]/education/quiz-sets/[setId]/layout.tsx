@@ -1,8 +1,8 @@
 import LinkButton from '../../courses/[courseId]/link-button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { type WorkspaceQuizSet } from '@tutur3u/types/db';
+import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { Box, Eye, Paperclip } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -35,7 +35,7 @@ export default async function QuizSetDetailsLayout({
         title={
           <>
             <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-lg text-dynamic-purple max-md:hidden">
+              <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
                 <Box className="h-6 w-6" />
                 {t('ws-quiz-sets.singular')}
               </div>

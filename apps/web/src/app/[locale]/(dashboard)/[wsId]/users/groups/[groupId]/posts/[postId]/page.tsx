@@ -1,10 +1,10 @@
 import UserCard from './card';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { createClient } from '@tutur3u/supabase/next/server';
 import type { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { format } from 'date-fns';
 import { Check, CheckCheck, CircleHelp, Clock, Send, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
@@ -70,7 +70,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         }
         description={
           <div className="flex flex-col gap-2">
-            <h2 className="w-fit rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 text-xl font-semibold text-dynamic-blue uppercase">
+            <h2 className="border-dynamic-blue/15 bg-dynamic-blue/15 text-dynamic-blue w-fit rounded border px-2 text-xl font-semibold uppercase">
               {post?.title?.trim() || t('common.unknown')}
             </h2>
             <p className="text-sm opacity-70">
@@ -108,45 +108,45 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       />
       <Separator className="my-4" />
       <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 p-4 text-dynamic-purple">
+        <div className="border-dynamic-purple/15 bg-dynamic-purple/15 text-dynamic-purple flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <Send />
             {t('ws-post-emails.sent_emails')}
           </div>
-          <Separator className="my-1 bg-dynamic-purple/15" />
+          <Separator className="bg-dynamic-purple/15 my-1" />
           <div className="text-xl font-semibold md:text-3xl">
             {status.sent?.length}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
-        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-green/15 bg-dynamic-green/15 p-4 text-dynamic-green">
+        <div className="border-dynamic-green/15 bg-dynamic-green/15 text-dynamic-green flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <Check />
             {t('common.completed')}
           </div>
-          <Separator className="my-1 bg-dynamic-green/15" />
+          <Separator className="bg-dynamic-green/15 my-1" />
           <div className="text-3xl font-semibold">
             {status.checked}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
-        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-4 text-dynamic-red">
+        <div className="border-dynamic-red/15 bg-dynamic-red/15 text-dynamic-red flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <X />
             {t('common.incomplete')}
           </div>
-          <Separator className="my-1 bg-dynamic-red/15" />
+          <Separator className="bg-dynamic-red/15 my-1" />
           <div className="text-3xl font-semibold">
             {status.failed}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
-        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 p-4 text-dynamic-blue">
+        <div className="border-dynamic-blue/15 bg-dynamic-blue/15 text-dynamic-blue flex w-full flex-col items-center gap-1 rounded border p-4">
           <div className="flex items-center gap-2 text-xl font-bold">
             <CircleHelp />
             {t('common.unknown')}
           </div>
-          <Separator className="my-1 bg-dynamic-blue/15" />
+          <Separator className="bg-dynamic-blue/15 my-1" />
           <div className="text-3xl font-semibold">
             {status.tenative}
             <span className="opacity-50">/{status.count}</span>

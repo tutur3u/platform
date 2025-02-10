@@ -3,20 +3,20 @@
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
 import { cn } from '@/lib/utils';
+import type { SupabaseUser } from '@tutur3u/supabase/next/user';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@repo/ui/components/ui/accordion';
+} from '@tutur3u/ui/components/ui/accordion';
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetTrigger,
-} from '@repo/ui/components/ui/sheet';
-import type { SupabaseUser } from '@tutur3u/supabase/next/user';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+} from '@tutur3u/ui/components/ui/sheet';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -162,7 +162,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
       <span className="flex items-center gap-2">
         {item.label}
         {item.badge && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+          <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
             {item.badge}
           </span>
         )}
@@ -202,7 +202,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="rounded-lg p-2 transition-all hover:bg-accent active:bg-accent/80">
+      <SheetTrigger className="hover:bg-accent active:bg-accent/80 rounded-lg p-2 transition-all">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
 
@@ -232,7 +232,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                       key={item.href}
                       item={item}
                       onClick={closeMenu}
-                      className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                      className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                     />
                   ))}
                 </div>
@@ -241,17 +241,17 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
               <Accordion type="multiple" className="space-y-3">
                 {/* Products Section */}
                 <AccordionItem value="products" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">Products</span>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
+                  <AccordionContent className="pb-2 pt-3">
                     <div className="grid gap-2 px-2">
                       {products.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                         />
                       ))}
                     </div>
@@ -260,17 +260,17 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
                 {/* Solutions Section */}
                 <AccordionItem value="solutions" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">Solutions</span>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
+                  <AccordionContent className="pb-2 pt-3">
                     <div className="grid gap-2 px-2">
                       {solutions.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                         />
                       ))}
                     </div>
@@ -279,17 +279,17 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
                 {/* Resources Section */}
                 <AccordionItem value="resources" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">Resources</span>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
+                  <AccordionContent className="pb-2 pt-3">
                     <div className="grid gap-2 px-2">
                       {resources.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                         />
                       ))}
                     </div>
@@ -298,17 +298,17 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
                 {/* Company Section */}
                 <AccordionItem value="company" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
+                  <AccordionTrigger className="hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50 rounded-lg px-4 py-3 transition-all">
                     <span className="text-sm font-semibold">Company</span>
                   </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
+                  <AccordionContent className="pb-2 pt-3">
                     <div className="grid gap-2 px-2">
                       {company.map((item) => (
                         <MobileNavLink
                           key={item.href}
                           item={item}
                           onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
+                          className="hover:bg-accent active:bg-accent/80 rounded-lg px-4 py-2.5 transition-all"
                         />
                       ))}
                     </div>

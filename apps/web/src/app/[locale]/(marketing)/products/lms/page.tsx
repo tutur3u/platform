@@ -1,8 +1,8 @@
 'use client';
 
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Card } from '@tutur3u/ui/components/ui/card';
 import {
   Award,
   BookOpen,
@@ -97,7 +97,7 @@ export default function LMSProductPage() {
           Coming Soon
         </Badge>
         <h1 className="mb-4 text-4xl font-bold">Learning Management System</h1>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
           Transform your educational and training programs with our
           comprehensive learning management system. Deliver engaging content,
           track progress, and enhance learning outcomes.
@@ -116,7 +116,7 @@ export default function LMSProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="h-12 w-12 text-primary" />
+            <ShieldCheck className="text-primary h-12 w-12" />
             <h2 className="text-2xl font-bold">Certified Learning Platform</h2>
             <p className="text-muted-foreground">
               Our LMS is designed to meet educational standards and compliance
@@ -151,12 +151,12 @@ export default function LMSProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <GraduationCap className="mb-4 h-8 w-8 text-primary" />
+              <GraduationCap className="text-primary mb-4 h-8 w-8" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="text-muted-foreground space-y-2">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
                     {item}
                   </li>
                 ))}
@@ -170,8 +170,8 @@ export default function LMSProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
-              <LayoutDashboard className="h-8 w-8 text-primary" />
+            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-b-0 md:border-r">
+              <LayoutDashboard className="text-primary h-8 w-8" />
               <h3 className="text-2xl font-bold">Learning Analytics</h3>
               <p className="text-muted-foreground">
                 Gain valuable insights into learning patterns, engagement
@@ -180,7 +180,7 @@ export default function LMSProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <Users className="h-8 w-8 text-primary" />
+              <Users className="text-primary h-8 w-8" />
               <h3 className="text-2xl font-bold">User Management</h3>
               <p className="text-muted-foreground">
                 Easily manage learners, instructors, and administrators with
@@ -198,7 +198,7 @@ export default function LMSProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <Award className="mb-4 h-8 w-8 text-primary" />
+            <Award className="text-primary mb-4 h-8 w-8" />
             <h3 className="mb-2 text-xl font-bold">Certifications</h3>
             <p className="text-muted-foreground">
               Issue digital certificates and badges to recognize course
@@ -206,7 +206,7 @@ export default function LMSProductPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <Medal className="mb-4 h-8 w-8 text-primary" />
+            <Medal className="text-primary mb-4 h-8 w-8" />
             <h3 className="mb-2 text-xl font-bold">Gamification</h3>
             <p className="text-muted-foreground">
               Motivate learners with points, leaderboards, and rewards for

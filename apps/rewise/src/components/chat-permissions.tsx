@@ -1,20 +1,20 @@
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/components/ui/avatar';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Switch } from '@repo/ui/components/ui/switch';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { createClient } from '@tutur3u/supabase/next/client';
+} from '@tutur3u/ui/components/ui/dialog';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { Label } from '@tutur3u/ui/components/ui/label';
+import { Switch } from '@tutur3u/ui/components/ui/switch';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Copy, Link, QrCode, User, UserPlus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -210,9 +210,9 @@ export function ChatPermissions({
       <div className="space-y-2">
         <Label className="font-medium">{t('members')}</Label>
         {loading ? (
-          <div className="text-sm text-muted-foreground">{t('loading')}</div>
+          <div className="text-muted-foreground text-sm">{t('loading')}</div>
         ) : members.length === 0 ? (
-          <div className="text-sm text-muted-foreground">{t('no_members')}</div>
+          <div className="text-muted-foreground text-sm">{t('no_members')}</div>
         ) : (
           <div className="space-y-2">
             {members.map((member) => (
@@ -233,7 +233,7 @@ export function ChatPermissions({
                     <div className="font-medium">
                       {member.display_name || t('unnamed_user')}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-muted-foreground text-xs">
                       {member.email}
                     </div>
                   </div>

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@repo/ui/*": ["./src/*"]
+      "@tutur3u/ui/*": ["./src/*"]
     }
   },
   "include": ["src"],

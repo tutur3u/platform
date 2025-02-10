@@ -1,14 +1,14 @@
 'use client';
 
-import { Button } from '@repo/ui/components/ui/button';
+import { Row } from '@tanstack/react-table';
+import { WorkspaceUserReport } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { Row } from '@tanstack/react-table';
-import { WorkspaceUserReport } from '@tutur3u/types/db';
+} from '@tutur3u/ui/components/ui/dropdown-menu';
 import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -61,7 +61,7 @@ export function UserReportRowActions({ row }: UserReportRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

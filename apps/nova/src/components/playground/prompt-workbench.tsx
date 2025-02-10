@@ -1,18 +1,18 @@
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { Textarea } from '@repo/ui/components/ui/textarea';
+} from '@tutur3u/ui/components/ui/select';
+import { Textarea } from '@tutur3u/ui/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 
 interface PromptWorkbenchProps {

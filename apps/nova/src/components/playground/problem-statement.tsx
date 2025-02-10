@@ -1,10 +1,10 @@
-import { Badge } from '@repo/ui/components/ui/badge';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/components/ui/card';
 
 export interface Challenge {
   id?: number | null;
@@ -31,13 +31,13 @@ export function ProblemStatement({ challenge }: ProblemStatementProps) {
         <p>{challenge.description}</p>
         <div className="space-y-2">
           <h3 className="font-semibold">Example Input:</h3>
-          <p className="rounded-md bg-muted p-3 text-sm whitespace-pre-wrap">
+          <p className="bg-muted whitespace-pre-wrap rounded-md p-3 text-sm">
             {challenge.exampleInput}
           </p>
         </div>
         <div className="space-y-2">
           <h3 className="font-semibold">Example Output:</h3>
-          <p className="rounded-md bg-muted p-3 text-sm whitespace-pre-wrap">
+          <p className="bg-muted whitespace-pre-wrap rounded-md p-3 text-sm">
             {challenge.exampleOutput}
           </p>
         </div>

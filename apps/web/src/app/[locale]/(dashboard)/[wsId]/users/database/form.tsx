@@ -4,13 +4,15 @@ import { DatePicker } from '@/components/row-actions/users/date-picker';
 import { getInitials } from '@/utils/name-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
-import { SelectField } from '@repo/ui/components/ui/custom/select-field';
+} from '@tutur3u/ui/components/ui/avatar';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { SelectField } from '@tutur3u/ui/components/ui/custom/select-field';
 import {
   Form,
   FormControl,
@@ -19,13 +21,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+} from '@tutur3u/ui/components/ui/form';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import dayjs from 'dayjs';
 import { Loader2, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

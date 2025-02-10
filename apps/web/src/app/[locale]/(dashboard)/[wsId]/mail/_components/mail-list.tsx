@@ -1,7 +1,7 @@
 import { Mail } from '../data';
 import { useMail } from '../use-mail';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
 
 interface MailListProps {
@@ -18,7 +18,7 @@ export function MailList({ items }: MailListProps) {
           <button
             key={item.id}
             className={cn(
-              'flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent',
+              'hover:bg-accent flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all',
               mail.selected === item.id && 'bg-muted'
             )}
             onClick={() =>
@@ -51,7 +51,7 @@ export function MailList({ items }: MailListProps) {
               </div>
               <div className="text-xs font-medium">{item.subject}</div>
             </div>
-            <div className="line-clamp-2 text-xs text-muted-foreground">
+            <div className="text-muted-foreground line-clamp-2 text-xs">
               {item.text.substring(0, 300)}
             </div>
             {/*{item.labels.length ? (*/}

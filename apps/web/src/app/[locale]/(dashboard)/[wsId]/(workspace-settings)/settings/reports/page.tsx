@@ -2,10 +2,10 @@ import { configColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { availableConfigs } from '@/constants/configs/reports';
 import { getPermissions } from '@/lib/workspace-helper';
-import ReportPreview from '@repo/ui/components/ui/custom/report-preview';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
+import ReportPreview from '@tutur3u/ui/components/ui/custom/report-preview';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -60,7 +60,7 @@ export default async function WorkspaceReportsSettingsPage({
         return (
           <span
             key={key + index}
-            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
+            className="bg-foreground text-background rounded px-1 py-0.5 font-semibold"
           >
             {key}
           </span>
@@ -74,7 +74,7 @@ export default async function WorkspaceReportsSettingsPage({
 
   return (
     <>
-      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
+      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">{t('ws-reports.reports')}</h1>
           <p className="text-foreground/80">{t('ws-reports.description')}</p>

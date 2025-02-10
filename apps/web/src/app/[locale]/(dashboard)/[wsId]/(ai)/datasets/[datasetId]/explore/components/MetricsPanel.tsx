@@ -1,8 +1,8 @@
 import type { CrawlMetrics } from '../types';
 import { formatDuration, formatTime } from '../utils/time';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Card, CardContent } from '@repo/ui/components/ui/card';
-import { Progress } from '@repo/ui/components/ui/progress';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Card, CardContent } from '@tutur3u/ui/components/ui/card';
+import { Progress } from '@tutur3u/ui/components/ui/progress';
 
 interface Props {
   metrics: CrawlMetrics;
@@ -54,7 +54,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
                   {metrics.processedArticles} processed
                 </Badge>
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 {(
                   (metrics.processedArticles /
                     Math.max(metrics.totalArticles, 1)) *
@@ -77,7 +77,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
                   {metrics.failedRequests} failed
                 </Badge>
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 {metrics.averageRequestTime.toFixed(0)}ms average
               </div>
             </div>
@@ -93,7 +93,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
                   {metrics.estimatedTimeLeft} left
                 </Badge>
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Started {formatTime(metrics.startTime)}
               </div>
             </div>

@@ -26,8 +26,8 @@ import {
   getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -71,7 +71,7 @@ export default async function WorkspaceHomePage({
         description={
           <>
             {t('ws-home.description_p1')}{' '}
-            <span className="font-semibold text-foreground underline">
+            <span className="text-foreground font-semibold underline">
               {workspace.name || t('common.untitled')}
             </span>{' '}
             {t('ws-home.description_p2')}

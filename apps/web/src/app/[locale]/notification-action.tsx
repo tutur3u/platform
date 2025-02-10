@@ -1,8 +1,8 @@
 'use client';
 
 import { NotificationAction as Action } from './notification-action-list';
-import { Button } from '@repo/ui/components/ui/button';
 import { useQueryClient } from '@tanstack/react-query';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import { useRouter } from 'next/navigation';
 
 interface Props {

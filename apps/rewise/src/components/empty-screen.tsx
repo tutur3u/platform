@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
-import { Button } from '@repo/ui/components/ui/button';
 import { type UseChatHelpers } from '@tutur3u/ai/types';
 import { AIChat } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -71,16 +71,16 @@ export function EmptyScreen({
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-4xl xl:max-w-6xl">
-      <div className="rounded-lg border bg-background p-4 md:p-8">
+      <div className="bg-background rounded-lg border p-4 md:p-8">
         <div className="flex flex-col items-center justify-center text-center">
           <h1 className="mb-2 text-lg font-semibold">
             {t('welcome_to')}{' '}
-            <span className="overflow-hidden bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text font-bold text-transparent">
+            <span className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent">
               Rewise
             </span>
             .
           </h1>
-          <p className="text-sm leading-normal text-foreground/90 md:text-base">
+          <p className="text-foreground/90 text-sm leading-normal md:text-base">
             {t('welcome_msg')}
           </p>
 
@@ -96,7 +96,7 @@ export function EmptyScreen({
                 onClick={() => setInput(message.message)}
               >
                 {message.icon}
-                <div className="line-clamp-1 break-all whitespace-normal">
+                <div className="line-clamp-1 whitespace-normal break-all">
                   {message.heading}
                 </div>
               </Button>

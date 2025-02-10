@@ -3,9 +3,9 @@ import { Task, TaskCard } from './task';
 import { TaskForm } from './task-form';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Card } from '@repo/ui/components/ui/card';
-import { cn } from '@repo/ui/lib/utils';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Card } from '@tutur3u/ui/components/ui/card';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { GripVertical } from 'lucide-react';
 
 export interface Column {
@@ -69,7 +69,7 @@ export function BoardColumn({
       className={cn(
         'group flex h-full w-[350px] flex-col rounded-lg transition-colors',
         'touch-none select-none',
-        isDragging && 'scale-[1.02] rotate-[2deg] opacity-90 shadow-lg',
+        isDragging && 'rotate-[2deg] scale-[1.02] opacity-90 shadow-lg',
         isOverlay && 'shadow-lg'
       )}
     >

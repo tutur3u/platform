@@ -5,9 +5,9 @@ import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { siteConfig } from '@/constants/configs';
 import { routing, supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
-import { Toaster } from '@repo/ui/components/ui/toaster';
-import '@repo/ui/globals.css';
-import { cn } from '@repo/ui/lib/utils';
+import { Toaster } from '@tutur3u/ui/components/ui/toaster';
+import '@tutur3u/ui/globals.css';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
@@ -116,7 +116,7 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'overflow-y-scroll bg-background antialiased',
+          'bg-background overflow-y-scroll antialiased',
           font.className
         )}
       >

@@ -3,8 +3,8 @@
 import UserGroupPosts, {
   UserGroupPost,
 } from '../../users/groups/[groupId]/posts';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { createClient } from '@tutur3u/supabase/next/client';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -34,7 +34,7 @@ export default function MailPosts({
 
   return (
     <>
-      <div className="grid rounded-lg border border-border bg-foreground/5 p-4 pb-0">
+      <div className="border-border bg-foreground/5 grid rounded-lg border p-4 pb-0">
         <UserGroupPosts
           wsId={wsId}
           selectedPostId={selectedPostId || undefined}
@@ -58,7 +58,7 @@ export default function MailPosts({
       {selectedPost?.id && (
         <>
           <Separator className="my-4" />
-          <div className="mb-4 grid rounded-lg border border-border bg-foreground/5 p-4">
+          <div className="border-border bg-foreground/5 mb-4 grid rounded-lg border p-4">
             <div>
               <div className="text-xl font-semibold">Selected Post</div>
               <div>

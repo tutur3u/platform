@@ -1,4 +1,4 @@
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import { Check, X } from 'lucide-react';
 
 interface Props {

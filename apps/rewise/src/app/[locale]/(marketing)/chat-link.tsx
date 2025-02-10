@@ -1,8 +1,8 @@
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { NavLink } from '@/components/navigation';
 import { cn } from '@/lib/utils';
-import { Button, buttonVariants } from '@repo/ui/components/ui/button';
 import { createClient } from '@tutur3u/supabase/next/client';
+import { Button, buttonVariants } from '@tutur3u/ui/components/ui/button';
 import { Star, StarOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -66,11 +66,11 @@ export default function ChatLink({
             size: isCollapsed ? 'icon' : 'sm',
           }),
           isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
-          'font-semibold whitespace-normal',
+          'whitespace-normal font-semibold',
           isActive
-            ? 'bg-gradient-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
+            ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-gradient-to-br text-white hover:text-white'
             : urlToLoad === link.href
-              ? 'animate-pulse bg-gradient-to-br from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground'
+              ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
               : 'bg-foreground/5 hover:bg-foreground/10',
           link.disabled &&
             link.showDisabled &&

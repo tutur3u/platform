@@ -1,14 +1,14 @@
 import { getChallenges } from './challenges';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { createClient } from '@tutur3u/supabase/next/server';
+} from '@tutur3u/ui/components/ui/card';
 import { ArrowRight, Star } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -37,7 +37,7 @@ export default async function ChallengesPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-              <p className="mb-4 text-muted-foreground">
+              <p className="text-muted-foreground mb-4">
                 {challenge.description}
               </p>
               <div className="flex items-center text-yellow-500">
@@ -46,7 +46,7 @@ export default async function ChallengesPage() {
                 <Star className="mr-1 h-4 w-4 fill-current" />
                 <Star className="mr-1 h-4 w-4 stroke-current" />
                 <Star className="mr-1 h-4 w-4 stroke-current" />
-                <span className="ml-2 text-sm text-muted-foreground">
+                <span className="text-muted-foreground ml-2 text-sm">
                   Difficulty
                 </span>
               </div>

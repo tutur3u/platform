@@ -1,9 +1,9 @@
 import { Bill } from './bill';
 import { DetailObjects } from './objects';
 import { joinPath } from '@/utils/path-helper';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
 import { createClient } from '@tutur3u/supabase/next/server';
+import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import 'dayjs/locale/vi';
 import { CalendarIcon, DollarSign, Wallet } from 'lucide-react';
 import moment from 'moment';

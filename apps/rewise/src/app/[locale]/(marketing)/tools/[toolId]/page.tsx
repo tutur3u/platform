@@ -1,15 +1,15 @@
 import { tools } from '../data';
 import { ToolForm } from './tool-form';
 import { supportedLocales } from '@/i18n/routing';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { Separator } from '@repo/ui/components/ui/separator';
+} from '@tutur3u/ui/components/ui/card';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { ChevronLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -52,7 +52,7 @@ export default function ToolDetailsPage({
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl">{tool.name}</CardTitle>
-          <p className="mt-2 text-muted-foreground">{tool.description}</p>
+          <p className="text-muted-foreground mt-2">{tool.description}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {tool.tags.map((tag) => (
               <Badge key={tag} variant="secondary">

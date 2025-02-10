@@ -1,9 +1,9 @@
 'use client';
 
 import { RowActions } from './row-actions';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCronJob } from '@tutur3u/types/db';
+import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
 import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import { CheckCircle, Clock, PowerOff, XCircle } from 'lucide-react';
@@ -41,7 +41,7 @@ function renderStatus(
   switch (status) {
     case 'active':
       return (
-        <div className="flex items-center gap-1 text-dynamic-green">
+        <div className="text-dynamic-green flex items-center gap-1">
           <CheckCircle className="h-5 w-5" />
           <span>{t('cron-job-data-table.active')}</span>
         </div>
@@ -49,7 +49,7 @@ function renderStatus(
 
     case 'inactive':
       return (
-        <div className="flex items-center gap-1 text-dynamic-red">
+        <div className="text-dynamic-red flex items-center gap-1">
           <PowerOff className="h-5 w-5" />
           <span>{t('cron-job-data-table.inactive')}</span>
         </div>
@@ -57,7 +57,7 @@ function renderStatus(
 
     case 'running':
       return (
-        <div className="flex items-center gap-1 text-dynamic-blue">
+        <div className="text-dynamic-blue flex items-center gap-1">
           <Clock className="h-5 w-5" />
           <span>{t('cron-job-data-table.running')}</span>
         </div>
@@ -65,7 +65,7 @@ function renderStatus(
 
     case 'failed':
       return (
-        <div className="flex items-center gap-1 text-dynamic-red">
+        <div className="text-dynamic-red flex items-center gap-1">
           <XCircle className="h-5 w-5" />
           <span>{t('cron-job-data-table.failed')}</span>
         </div>
@@ -127,7 +127,7 @@ export const getColumns = (
         <div className="flex min-w-[8rem] flex-col">
           <span>{schedule || '-'}</span>
           {schedule && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {cronstrue.toString(schedule)}
             </span>
           )}

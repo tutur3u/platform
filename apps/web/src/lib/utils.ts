@@ -1,4 +1,4 @@
-import { cn } from '@repo/ui/lib/utils';
+import { cn } from '@tutur3u/ui/lib/utils';
 
 const capitalize = (s?: string | null) => {
   if (!s) return '';

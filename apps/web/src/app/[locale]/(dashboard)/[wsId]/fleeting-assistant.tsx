@@ -1,19 +1,19 @@
 import AssistantGradientName from './assistant-gradient-name';
 import { FleetingAssistantMessage } from './fleeting-assistant-message';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { useChat } from '@tutur3u/ai/react';
+import { type Message } from '@tutur3u/ai/types';
+import { AIChat } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { useChat } from '@tutur3u/ai/react';
-import { type Message } from '@tutur3u/ai/types';
-import { AIChat } from '@tutur3u/types/db';
+} from '@tutur3u/ui/components/ui/form';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { ArrowDownToLine, Expand, RotateCcw, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -147,7 +147,7 @@ export default function FleetingAssistant({
     <div className="flex h-full flex-col">
       <div className="flex h-[28.25rem] flex-col p-2">
         <div className="mb-2 flex items-center justify-between gap-2 transition">
-          <div className="w-fit rounded border bg-foreground px-2 py-0.5 font-mono text-xs font-bold text-background">
+          <div className="bg-foreground text-background w-fit rounded border px-2 py-0.5 font-mono text-xs font-bold">
             ALPHA
           </div>
 

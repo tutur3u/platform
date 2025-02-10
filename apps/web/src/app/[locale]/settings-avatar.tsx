@@ -3,12 +3,14 @@
 import { getInitials } from '@/utils/name-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/components/ui/avatar';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -17,12 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { Form } from '@repo/ui/components/ui/form';
-import { Label } from '@repo/ui/components/ui/label';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+} from '@tutur3u/ui/components/ui/dialog';
+import { Form } from '@tutur3u/ui/components/ui/form';
+import { Label } from '@tutur3u/ui/components/ui/label';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Loader2, Settings, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -218,7 +218,7 @@ export default function UserAvatar({ user }: AvatarProps) {
         <DialogTrigger asChild>
           <div className="flex items-center justify-center">
             <div className="relative flex w-fit flex-col items-center justify-center gap-4">
-              <Avatar className="h-32 w-32 cursor-pointer overflow-visible border border-foreground text-3xl font-semibold">
+              <Avatar className="border-foreground h-32 w-32 cursor-pointer overflow-visible border text-3xl font-semibold">
                 <AvatarImage
                   src={previewSrc || undefined}
                   alt="Avatar"
@@ -232,7 +232,7 @@ export default function UserAvatar({ user }: AvatarProps) {
               </Avatar>
               <Button
                 size="icon"
-                className="absolute right-0 bottom-0 rounded-full backdrop-blur-lg"
+                className="absolute bottom-0 right-0 rounded-full backdrop-blur-lg"
               >
                 <Settings className="h-5 w-5" />
               </Button>

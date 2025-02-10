@@ -10,9 +10,9 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@/lib/workspace-helper';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { UserPlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -102,11 +102,11 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
           <>
             <Separator className="col-span-full" />
 
-            <div className="col-span-full flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
+            <div className="border-border bg-foreground/5 col-span-full flex flex-col rounded-lg border p-4">
               <div className="mb-1 text-2xl font-bold">
                 {t('ws-settings.features')}
               </div>
-              <div className="mb-4 font-semibold text-foreground/80">
+              <div className="text-foreground/80 mb-4 font-semibold">
                 {t('ws-settings.features_description')}
               </div>
 

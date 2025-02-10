@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -19,7 +19,7 @@ export default function GetStartedButton() {
       <Button
         className={cn(
           hidden &&
-            'pointer-events-none text-foreground/50 opacity-50 select-none'
+            'text-foreground/50 pointer-events-none select-none opacity-50'
         )}
       >
         {t('common.get-started')}

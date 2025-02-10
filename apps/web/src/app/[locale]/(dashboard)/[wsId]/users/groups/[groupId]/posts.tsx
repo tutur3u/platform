@@ -9,9 +9,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/ui/alert-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+} from '@tutur3u/ui/components/ui/alert-dialog';
+import { Button } from '@tutur3u/ui/components/ui/button';
+import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -19,13 +19,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { cn } from '@repo/ui/lib/utils';
+} from '@tutur3u/ui/components/ui/dialog';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { Label } from '@tutur3u/ui/components/ui/label';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { format } from 'date-fns';
 import { BookPlus, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -159,7 +159,7 @@ export default function UserGroupPosts({
             />
             <label
               htmlFor="show-post-content"
-              className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               {t('ws-user-groups.show_post_content')}
             </label>
@@ -177,7 +177,7 @@ export default function UserGroupPosts({
             />
             <label
               htmlFor="show-post-status"
-              className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               {t('ws-user-groups.show_post_status')}
             </label>
@@ -260,7 +260,7 @@ export default function UserGroupPosts({
             <div
               key={post.id}
               className={cn(
-                'flex flex-col gap-2 rounded border p-2 transition duration-300 hover:border-foreground hover:bg-foreground/5',
+                'hover:border-foreground hover:bg-foreground/5 flex flex-col gap-2 rounded border p-2 transition duration-300',
                 selectedPostId === post.id &&
                   'border-foreground bg-foreground/5',
                 groupId || 'cursor-pointer'
@@ -272,7 +272,7 @@ export default function UserGroupPosts({
                   <div className="text-sm font-semibold">{post.title}</div>
                   <div className="flex flex-wrap items-center gap-2 font-semibold">
                     {post?.group_name && (
-                      <div className="flex w-fit items-center gap-0.5 rounded bg-foreground px-2 py-1 text-xs text-background">
+                      <div className="bg-foreground text-background flex w-fit items-center gap-0.5 rounded px-2 py-1 text-xs">
                         {post?.group_name}
                       </div>
                     )}
@@ -335,7 +335,7 @@ export default function UserGroupPosts({
                 )}
               </div>
               {configs.showContent && post.content && (
-                <div className="text-sm whitespace-pre-line opacity-70">
+                <div className="whitespace-pre-line text-sm opacity-70">
                   {post.content}
                 </div>
               )}

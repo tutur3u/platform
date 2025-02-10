@@ -1,4 +1,5 @@
-import { Button } from '@repo/ui/components/ui/button';
+import { Model, models, providers } from '@tutur3u/ai/models';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -6,15 +7,14 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@repo/ui/components/ui/command';
+} from '@tutur3u/ui/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { cn } from '@repo/ui/lib/utils';
-import { Model, models, providers } from '@tutur3u/ai/models';
+} from '@tutur3u/ui/components/ui/popover';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { cn } from '@tutur3u/ui/lib/utils';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 
@@ -64,7 +64,7 @@ export function ChatModelSelector({
         sideOffset={8}
         onInteractOutside={() => setOpen(false)}
       >
-        <Command className="rounded-b-none border-b md:rounded-r-none md:border-r md:border-b-0">
+        <Command className="rounded-b-none border-b md:rounded-r-none md:border-b-0 md:border-r">
           <CommandInput placeholder="Search model..." />
           <CommandEmpty>No model found.</CommandEmpty>
           <CommandList>
@@ -94,7 +94,7 @@ export function ChatModelSelector({
                           model?.value === m.value ? 'opacity-100' : 'opacity-0'
                         )}
                       />
-                      <div className="rounded-full bg-foreground px-2 py-0.5 text-background">
+                      <div className="bg-foreground text-background rounded-full px-2 py-0.5">
                         {m.label}
                       </div>
                     </CommandItem>
@@ -105,11 +105,11 @@ export function ChatModelSelector({
         </Command>
 
         <div>
-          <div className="flex items-center px-2 pt-3 pb-1">
+          <div className="flex items-center px-2 pb-1 pt-3">
             <div className="text-sm font-semibold opacity-80">
               {previewModel?.provider}{' '}
             </div>
-            <div className="mx-2 h-4 w-[1px] rotate-[30deg] bg-foreground/20" />
+            <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
             <div className="line-clamp-1 font-mono text-xs">
               {previewModel?.label}
             </div>
@@ -120,7 +120,7 @@ export function ChatModelSelector({
             {previewModel?.context != undefined && (
               <>
                 <Separator className="my-2" />
-                <div className="rounded bg-foreground px-2 py-0.5 text-center text-sm font-semibold text-background">
+                <div className="bg-foreground text-background rounded px-2 py-0.5 text-center text-sm font-semibold">
                   {Intl.NumberFormat('en-US', {
                     style: 'decimal',
                   }).format(previewModel.context)}{' '}

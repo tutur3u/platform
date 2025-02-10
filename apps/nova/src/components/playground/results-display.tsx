@@ -2,8 +2,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+} from '@tutur3u/ui/components/ui/card';
+import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 
 interface ResultsDisplayProps {
@@ -24,13 +24,13 @@ export function ResultsDisplay({ results, isLoading }: ResultsDisplayProps) {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : results.length === 0 ? (
-            <p className="flex h-full items-center justify-center text-center text-muted-foreground">
+            <p className="text-muted-foreground flex h-full items-center justify-center text-center">
               Submit a prompt to see results here.
             </p>
           ) : (
             <ul className="space-y-4">
               {results.map((result, index) => (
-                <li key={index} className="rounded-md bg-muted p-4">
+                <li key={index} className="bg-muted rounded-md p-4">
                   <p className="whitespace-pre-wrap">{result}</p>
                 </li>
               ))}

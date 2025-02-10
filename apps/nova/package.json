@@ -1,5 +1,5 @@
 {
-  "name": "@repo/nova",
+  "name": "@tutur3u/nova",
   "version": "0.14.0",
   "private": true,
   "scripts": {
@@ -46,7 +46,7 @@
     "@tutur3u/ai": "workspace:*",
     "@tutur3u/supabase": "workspace:*",
     "@tutur3u/types": "workspace:*",
-    "@repo/ui": "workspace:*",
+    "@tutur3u/ui": "workspace:*",
     "@shadcn/ui": "^0.0.4",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-table": "^8.20.6",

@@ -1,5 +1,6 @@
 import { deleteTaskList } from '@/lib/task-helper';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,15 +8,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
+} from '@tutur3u/ui/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { Input } from '@repo/ui/components/ui/input';
-import { createClient } from '@tutur3u/supabase/next/client';
+} from '@tutur3u/ui/components/ui/dropdown-menu';
+import { Input } from '@tutur3u/ui/components/ui/input';
 import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
 import { useState } from 'react';
 
@@ -57,7 +57,7 @@ export function ListActions({ listId, listName, onUpdate }: Props) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground">
+          <Button variant="ghost" className="text-muted-foreground h-8 w-8 p-0">
             <span className="sr-only">Open menu</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -72,7 +72,7 @@ export function ListActions({ listId, listName, onUpdate }: Props) {
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => setIsDeleteDialogOpen(true)}
-            className="gap-2 text-destructive"
+            className="text-destructive gap-2"
           >
             <Trash className="h-4 w-4" />
             Delete

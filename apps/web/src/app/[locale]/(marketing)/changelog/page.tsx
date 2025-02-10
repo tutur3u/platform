@@ -1,7 +1,7 @@
 'use client';
 
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Card } from '@repo/ui/components/ui/card';
+import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Card } from '@tutur3u/ui/components/ui/card';
 import { motion } from 'framer-motion';
 import { ArrowRight, Bug, FileText, Rocket, Wrench, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -191,7 +191,7 @@ export default function ChangelogPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, ease: 'easeInOut' }}
-      className="relative container py-16 md:py-24"
+      className="container relative py-16 md:py-24"
     >
       {/* Hero Section */}
       <motion.section
@@ -206,10 +206,10 @@ export default function ChangelogPage() {
         >
           {t('common.product-updates')}
         </Badge>
-        <h1 className="mb-6 text-4xl font-bold text-balance text-foreground md:text-5xl lg:text-6xl">
+        <h1 className="text-foreground mb-6 text-balance text-4xl font-bold md:text-5xl lg:text-6xl">
           {t('common.product-updates-title')}
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-foreground/80 md:text-xl">
+        <p className="text-foreground/80 mx-auto max-w-2xl text-lg md:text-xl">
           {t('common.product-updates-description')}
         </p>
       </motion.section>
@@ -228,7 +228,7 @@ export default function ChangelogPage() {
               onClick={() => toggleTag(tag)}
               className={`${getTagColor(tag)} group relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 hover:scale-105 ${
                 selectedTags.includes(tag)
-                  ? 'ring-2 ring-offset-2 ring-offset-background'
+                  ? 'ring-offset-background ring-2 ring-offset-2'
                   : 'opacity-70 hover:opacity-100'
               }`}
             >
@@ -241,7 +241,7 @@ export default function ChangelogPage() {
           {selectedTags.length > 0 && (
             <button
               onClick={clearFilters}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-foreground/60 transition-all hover:gap-2 hover:text-foreground"
+              className="text-foreground/60 hover:text-foreground inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:gap-2"
             >
               Clear filters
               <X className="h-3 w-3" />
@@ -288,10 +288,10 @@ export default function ChangelogPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="pointer-events-none fixed top-1/2 left-8 hidden -translate-y-1/2 lg:block"
+          className="pointer-events-none fixed left-8 top-1/2 hidden -translate-y-1/2 lg:block"
         >
           <div className="relative flex flex-col items-start gap-6">
-            <div className="absolute top-0 left-[5px] h-full w-[2px] bg-gradient-to-b from-foreground/5 via-foreground/10 to-foreground/5" />
+            <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute left-[5px] top-0 h-full w-[2px] bg-gradient-to-b" />
 
             {filteredUpdates.map((monthlyUpdate) => (
               <Link
@@ -300,10 +300,10 @@ export default function ChangelogPage() {
                 className="group pointer-events-auto relative flex items-center gap-4"
               >
                 <div className="relative h-3 w-3">
-                  <div className="absolute inset-0 rounded-full bg-foreground/20 transition-colors group-hover:bg-foreground/40" />
-                  <div className="absolute inset-[3px] rounded-full bg-background transition-transform group-hover:scale-0" />
+                  <div className="bg-foreground/20 group-hover:bg-foreground/40 absolute inset-0 rounded-full transition-colors" />
+                  <div className="bg-background absolute inset-[3px] rounded-full transition-transform group-hover:scale-0" />
                 </div>
-                <span className="text-sm font-medium text-foreground/60 transition-colors group-hover:text-foreground">
+                <span className="text-foreground/60 group-hover:text-foreground text-sm font-medium transition-colors">
                   {monthlyUpdate.month}
                 </span>
               </Link>
@@ -317,12 +317,12 @@ export default function ChangelogPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center text-foreground/60"
+              className="text-foreground/60 text-center"
             >
               <p className="text-lg">No updates match your selected filters.</p>
               <button
                 onClick={clearFilters}
-                className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-foreground/60 transition-all hover:gap-3 hover:text-foreground"
+                className="text-foreground/60 hover:text-foreground mt-4 inline-flex items-center gap-2 text-sm font-medium transition-all hover:gap-3"
               >
                 Clear filters
                 <X className="h-4 w-4" />
@@ -350,7 +350,7 @@ export default function ChangelogPage() {
                 </motion.h2>
 
                 <div className="relative space-y-8">
-                  <div className="absolute top-0 left-8 hidden h-full w-[2px] bg-gradient-to-b from-foreground/5 via-foreground/10 to-foreground/5 lg:block" />
+                  <div className="from-foreground/5 via-foreground/10 to-foreground/5 absolute left-8 top-0 hidden h-full w-[2px] bg-gradient-to-b lg:block" />
 
                   {monthlyUpdate.updates.map((update, updateIndex) => (
                     <motion.div
@@ -365,9 +365,9 @@ export default function ChangelogPage() {
                       }}
                       className="group relative pl-0 lg:pl-24"
                     >
-                      <div className="absolute top-8 left-[29px] hidden h-3 w-3 lg:block">
-                        <div className="absolute inset-0 rounded-full bg-foreground/20 transition-colors group-hover:bg-foreground/40" />
-                        <div className="absolute inset-[3px] rounded-full bg-background transition-transform group-hover:scale-0" />
+                      <div className="absolute left-[29px] top-8 hidden h-3 w-3 lg:block">
+                        <div className="bg-foreground/20 group-hover:bg-foreground/40 absolute inset-0 rounded-full transition-colors" />
+                        <div className="bg-background absolute inset-[3px] rounded-full transition-transform group-hover:scale-0" />
                       </div>
 
                       <Card className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
@@ -385,7 +385,7 @@ export default function ChangelogPage() {
                                 <div
                                   className={`${getUpdateColor(
                                     update.type
-                                  )} flex h-12 w-12 items-center justify-center rounded-xl bg-current/10 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 group-hover:rounded-2xl`}
+                                  )} bg-current/10 flex h-12 w-12 items-center justify-center rounded-xl backdrop-blur-sm transition-transform duration-300 group-hover:scale-110 group-hover:rounded-2xl`}
                                 >
                                   {getUpdateIcon(update.type)}
                                 </div>
@@ -400,7 +400,7 @@ export default function ChangelogPage() {
                                         onClick={() => toggleTag(tag)}
                                         className={`${getTagColor(tag)} inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-transform duration-300 hover:scale-105 ${
                                           selectedTags.includes(tag)
-                                            ? 'ring-2 ring-offset-2 ring-offset-background'
+                                            ? 'ring-offset-background ring-2 ring-offset-2'
                                             : 'opacity-70 hover:opacity-100'
                                         }`}
                                       >
@@ -411,12 +411,12 @@ export default function ChangelogPage() {
                                 </div>
                               </div>
                             </div>
-                            <time className="text-sm font-medium text-foreground/60">
+                            <time className="text-foreground/60 text-sm font-medium">
                               {update.date}
                             </time>
                           </div>
                           <div className="space-y-4">
-                            <p className="text-base leading-relaxed text-foreground/80 md:text-lg">
+                            <p className="text-foreground/80 text-base leading-relaxed md:text-lg">
                               {update.description}
                             </p>
                             {update.version && (
@@ -453,7 +453,7 @@ export default function ChangelogPage() {
           href="https://docs.tuturuuu.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm font-medium text-foreground/60 transition-all hover:gap-3 hover:text-foreground"
+          className="text-foreground/60 hover:text-foreground inline-flex items-center gap-2 text-sm font-medium transition-all hover:gap-3"
         >
           <FileText className="h-4 w-4" />
           <span>{t('common.view-full-documentation')}</span>

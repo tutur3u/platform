@@ -1,6 +1,6 @@
 'use client';
 
-import { DropdownMenuItem } from '@repo/ui/components/ui/dropdown-menu';
+import { DropdownMenuItem } from '@tutur3u/ui/components/ui/dropdown-menu';
 import { LogOut } from 'lucide-react';
 // import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

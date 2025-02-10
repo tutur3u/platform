@@ -1,6 +1,7 @@
 'use client';
 
-import { Button } from '@repo/ui/components/ui/button';
+import { useQueryClient } from '@tanstack/react-query';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { useQueryClient } from '@tanstack/react-query';
+} from '@tutur3u/ui/components/ui/dialog';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

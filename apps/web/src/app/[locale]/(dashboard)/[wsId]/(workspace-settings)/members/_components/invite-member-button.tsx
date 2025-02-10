@@ -1,7 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { User } from '@tutur3u/types/primitives/User';
+import { Button } from '@tutur3u/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tutur3u/ui/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -18,11 +19,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { User } from '@tutur3u/types/primitives/User';
+} from '@tutur3u/ui/components/ui/form';
+import { Input } from '@tutur3u/ui/components/ui/input';
+import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -206,7 +206,7 @@ export default function InviteMemberButton({
           </>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
-            <p className="text-center text-muted-foreground">
+            <p className="text-muted-foreground text-center">
               You must be an admin or higher to invite members.
             </p>
           </div>
