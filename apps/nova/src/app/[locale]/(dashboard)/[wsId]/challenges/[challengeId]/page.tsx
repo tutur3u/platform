@@ -5,6 +5,9 @@ import CustomizedHeader from './customizedHeader';
 import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+// use useRouter for client-side redirection
 import React, { useEffect, useState } from 'react';
 
 interface Props {
@@ -15,6 +18,22 @@ interface Props {
 
 export default function Page({ params }: Props) {
   const [challenge, setChallenge] = useState<any | null>(null);
+  const database = createClient();
+  const router = useRouter();
+
+  useEffect(() => {
+    const authCheck = async () => {
+      const {
+        data: { user },
+      } = await database.auth.getUser();
+
+      if (!user?.id) {
+        router.push('/login');
+      }
+    };
+
+    authCheck();
+  }, []);
 
   useEffect(() => {
     // Wait for params to resolve
@@ -31,7 +50,6 @@ export default function Page({ params }: Props) {
 
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
 
-  // Handle "Next" and "Previous" navigation
   const nextProblem = () => {
     setCurrentProblemIndex((prev) =>
       prev < problems.length - 1 ? prev + 1 : prev
@@ -41,7 +59,7 @@ export default function Page({ params }: Props) {
   const prevProblem = () => {
     setCurrentProblemIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
-  // console.log(problems[currentProblemIndex].testcase), 'testcase ';
+
   return (
     <>
       {/* Header with navigation */}
@@ -64,8 +82,7 @@ export default function Page({ params }: Props) {
           />
         </div>
 
-        {/* Right Side */}
-        <PromptComponent />
+        <PromptComponent problem={problems[currentProblemIndex]} />
       </div>
     </>
   );

@@ -1768,6 +1768,101 @@ export type Database = {
           },
         ];
       };
+      nova_leaderboard: {
+        Row: {
+          created_at: string;
+          id: string;
+          problemId: string | null;
+          score: number | null;
+          userId: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          problemId?: string | null;
+          score?: number | null;
+          userId?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          problemId?: string | null;
+          score?: number | null;
+          userId?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_leaderboard_userId_fkey';
+            columns: ['userId'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_leaderboard_userId_fkey';
+            columns: ['userId'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_leaderboard_userId_fkey';
+            columns: ['userId'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_users_problem_history: {
+        Row: {
+          created_at: string;
+          feedback: string | null;
+          id: number;
+          problemId: string | null;
+          score: number | null;
+          userId: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          feedback?: string | null;
+          id?: number;
+          problemId?: string | null;
+          score?: number | null;
+          userId?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          feedback?: string | null;
+          id?: number;
+          problemId?: string | null;
+          score?: number | null;
+          userId?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_users_problem_history_userId_fkey';
+            columns: ['userId'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_users_problem_history_userId_fkey';
+            columns: ['userId'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_users_problem_history_userId_fkey';
+            columns: ['userId'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       personal_notes: {
         Row: {
           content: string | null;

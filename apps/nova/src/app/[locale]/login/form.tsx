@@ -68,7 +68,7 @@ export default function LoginForm() {
       // if on DEV_MODE, auto-open inbucket
       if (DEV_MODE) {
         window.open(
-          window.location.origin.replace('7803', '8004') + '/monitor',
+          window.location.origin.replace('7805', '8004') + '/monitor',
           '_blank'
         );
       }

@@ -1,10 +1,11 @@
 'use client';
 
+import { Problems } from '../../challenges';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
 import React, { useEffect, useRef, useState } from 'react';
 
-export default function ChatBox() {
+export default function ChatBox({ problem }: { problem: Problems }) {
   const [messages, _setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
@@ -20,7 +21,7 @@ export default function ChatBox() {
     <div className="flex h-full flex-col p-4">
       <h2 className="text-lg font-bold">Chat Box</h2>
       <p className="mb-2 text-gray-500">
-        Try to figure out the best prompt here...
+        You only have 5 tries for each question. [0/5]
       </p>
 
       {/* Chat Messages - Grows to take up available space */}
@@ -37,9 +38,6 @@ export default function ChatBox() {
             {msg.text}
           </div>
         ))}
-        <div className="flex h-screen justify-center pt-[250px]">
-          You only have 5 tries for each question. [0/5]
-        </div>
         <div ref={chatEndRef} />
       </div>
 
