@@ -13,7 +13,7 @@ export async function InventoryCategoryStatistics({ wsId }: { wsId: string }) {
   if (!enabled || !permissions.includes('manage_inventory')) return null;
 
   return (
-    <div className="mb-2 mt-4 text-2xl font-semibold">
+    <div className="mt-4 mb-2 text-2xl font-semibold">
       {t('sidebar_tabs.inventory')}
     </div>
   );

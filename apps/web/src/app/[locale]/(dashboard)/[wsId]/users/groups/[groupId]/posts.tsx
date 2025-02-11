@@ -159,7 +159,7 @@ export default function UserGroupPosts({
             />
             <label
               htmlFor="show-post-content"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               {t('ws-user-groups.show_post_content')}
             </label>
@@ -177,7 +177,7 @@ export default function UserGroupPosts({
             />
             <label
               htmlFor="show-post-status"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               {t('ws-user-groups.show_post_status')}
             </label>
@@ -260,7 +260,7 @@ export default function UserGroupPosts({
             <div
               key={post.id}
               className={cn(
-                'hover:border-foreground hover:bg-foreground/5 flex flex-col gap-2 rounded border p-2 transition duration-300',
+                'flex flex-col gap-2 rounded border p-2 transition duration-300 hover:border-foreground hover:bg-foreground/5',
                 selectedPostId === post.id &&
                   'border-foreground bg-foreground/5',
                 groupId || 'cursor-pointer'
@@ -272,7 +272,7 @@ export default function UserGroupPosts({
                   <div className="text-sm font-semibold">{post.title}</div>
                   <div className="flex flex-wrap items-center gap-2 font-semibold">
                     {post?.group_name && (
-                      <div className="bg-foreground text-background flex w-fit items-center gap-0.5 rounded px-2 py-1 text-xs">
+                      <div className="flex w-fit items-center gap-0.5 rounded bg-foreground px-2 py-1 text-xs text-background">
                         {post?.group_name}
                       </div>
                     )}
@@ -335,7 +335,7 @@ export default function UserGroupPosts({
                 )}
               </div>
               {configs.showContent && post.content && (
-                <div className="whitespace-pre-line text-sm opacity-70">
+                <div className="text-sm whitespace-pre-line opacity-70">
                   {post.content}
                 </div>
               )}

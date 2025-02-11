@@ -10,7 +10,7 @@ export default function DayTitle({ view, date, weekday }: DayTitleProps) {
 
   return (
     <div
-      className={`border-border border-b border-l text-center font-semibold dark:border-zinc-800 ${
+      className={`border-b border-l border-border text-center font-semibold dark:border-zinc-800 ${
         view !== 'day' ? 'p-1' : 'md:p-1'
       }`}
     >

@@ -51,7 +51,7 @@ const taskStatusColors = {
 } as const;
 
 const taskPriorityIcons: Record<string, React.ReactNode> = {
-  high: <AlertCircle className="text-destructive h-4 w-4" />,
+  high: <AlertCircle className="h-4 w-4 text-destructive" />,
   medium: <Clock className="h-4 w-4 text-yellow-500" />,
   low: <Target className="h-4 w-4 text-green-500" />,
 };
@@ -216,7 +216,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
           <CardContent>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">
+                <span className="text-sm text-muted-foreground">
                   Skill Level
                 </span>
                 <Badge variant="secondary">
@@ -224,7 +224,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">
+                <span className="text-sm text-muted-foreground">
                   Weekly Hours
                 </span>
                 <Badge variant="secondary">
@@ -232,7 +232,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">
+                <span className="text-sm text-muted-foreground">
                   Total Hours
                 </span>
                 <Badge variant="secondary">
@@ -302,7 +302,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
     return (
       <div
         key={uniqueKey}
-        className="bg-card/50 flex items-start justify-between gap-4 rounded-md border p-4"
+        className="flex items-start justify-between gap-4 rounded-md border bg-card/50 p-4"
       >
         <div className="space-y-2">
           <div className="flex items-start gap-3">
@@ -333,11 +333,11 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 )}
               </div>
               {task.description && (
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {task.description}
                 </p>
               )}
-              <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-4 text-xs">
+              <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 {task.estimatedHours && (
                   <div className="flex items-center gap-1">
                     <Timer className="h-3 w-3" />
@@ -389,10 +389,10 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Target className="text-primary h-4 w-4" />
+              <Target className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">{stats.totalTasks}</span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   Total Tasks
                 </span>
               </div>
@@ -403,12 +403,12 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Calendar className="text-primary h-4 w-4" />
+              <Calendar className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">
                   {stats.tasksThisMonth}
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   Tasks This Month
                 </span>
               </div>
@@ -419,12 +419,12 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Timer className="text-primary h-4 w-4" />
+              <Timer className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">
                   {stats.estimatedHours}h
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   Total Hours
                 </span>
               </div>
@@ -437,7 +437,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <BarChart className="text-primary h-4 w-4" />
+                  <BarChart className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">Completion</span>
                 </div>
                 <span className="text-sm font-medium">{stats.completion}%</span>
@@ -462,7 +462,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="text-primary h-5 w-5" />
+                  <CalendarDays className="h-5 w-5 text-primary" />
                   Month Selection
                 </CardTitle>
                 <CardDescription>
@@ -502,8 +502,8 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
     return (
       <div className="relative space-y-8">
         {isLoading && (
-          <div className="absolute right-4 top-4">
-            <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+          <div className="absolute top-4 right-4">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         )}
 
@@ -513,15 +513,15 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
 
         {/* Overview Section */}
         {yearPlan?.overview ? (
-          <div className="bg-card rounded-lg border p-6">
+          <div className="rounded-lg border bg-card p-6">
             <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold">
-              <Target className="text-primary h-5 w-5" />
+              <Target className="h-5 w-5 text-primary" />
               Overview
             </h3>
             <p className="text-muted-foreground">{yearPlan.overview}</p>
           </div>
         ) : isLoading ? (
-          <div className="bg-muted h-20 animate-pulse rounded-lg" />
+          <div className="h-20 animate-pulse rounded-lg bg-muted" />
         ) : null}
 
         {/* Quarters Section */}
@@ -533,9 +533,9 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
 
           return (
             <div key={`quarter-${quarterIdx}`} className="space-y-6">
-              <div className="bg-card rounded-lg border p-6">
+              <div className="rounded-lg border bg-card p-6">
                 <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                  <CheckCircle2 className="text-primary h-5 w-5" />Q
+                  <CheckCircle2 className="h-5 w-5 text-primary" />Q
                   {quarter.quarter}: {quarter.focus}
                   {isCurrentQuarter && (
                     <Badge variant="secondary" className="ml-2">
@@ -598,18 +598,18 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
 
         {/* Recommendations Section */}
         {yearPlan?.recommendations && yearPlan.recommendations.length > 0 && (
-          <div className="bg-card rounded-lg border p-6">
+          <div className="rounded-lg border bg-card p-6">
             <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-              <Target className="text-primary h-5 w-5" />
+              <Target className="h-5 w-5 text-primary" />
               Key Recommendations
             </h3>
             <ul className="grid gap-3 sm:grid-cols-2">
               {yearPlan.recommendations.map((recommendation, idx) => (
                 <li
                   key={`recommendation-${idx}`}
-                  className="bg-card/50 text-muted-foreground flex items-start gap-2 rounded-md border p-3 text-sm"
+                  className="flex items-start gap-2 rounded-md border bg-card/50 p-3 text-sm text-muted-foreground"
                 >
-                  <span className="text-primary mt-1 text-sm">•</span>
+                  <span className="mt-1 text-sm text-primary">•</span>
                   {recommendation}
                 </li>
               ))}
@@ -623,7 +623,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             {Array.from({ length: 3 }).map((_, idx) => (
               <div
                 key={`loading-${idx}`}
-                className="bg-muted h-32 animate-pulse rounded-lg"
+                className="h-32 animate-pulse rounded-lg bg-muted"
               />
             ))}
           </div>
@@ -636,12 +636,12 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
     return (
       <div className="relative space-y-4">
         {isLoading && (
-          <div className="absolute right-4 top-4">
-            <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+          <div className="absolute top-4 right-4">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         )}
 
-        <pre className="bg-muted/50 whitespace-pre-wrap rounded-lg p-4 text-sm">
+        <pre className="rounded-lg bg-muted/50 p-4 text-sm whitespace-pre-wrap">
           {JSON.stringify(yearPlan, null, 2)}
         </pre>
       </div>

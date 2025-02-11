@@ -99,7 +99,7 @@ export default function MailProductPage() {
           Coming Soon
         </Badge>
         <h1 className="mb-4 text-4xl font-bold">Smart Email Management</h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Transform your email experience with AI-powered organization,
           intelligent filtering, and seamless integration with your workflow.
         </p>
@@ -117,7 +117,7 @@ export default function MailProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="text-primary h-12 w-12" />
+            <ShieldCheck className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your emails and data are protected with advanced encryption, spam
@@ -151,12 +151,12 @@ export default function MailProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <Mail className="text-primary mb-4 h-8 w-8" />
+              <Mail className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="text-muted-foreground space-y-2">
+              <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     {item}
                   </li>
                 ))}
@@ -170,8 +170,8 @@ export default function MailProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-b-0 md:border-r">
-              <Filter className="text-primary h-8 w-8" />
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+              <Filter className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Smart Filtering</h3>
               <p className="text-muted-foreground">
                 Automatically organize your inbox with intelligent filters and
@@ -179,7 +179,7 @@ export default function MailProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <Archive className="text-primary h-8 w-8" />
+              <Archive className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Email Archive</h3>
               <p className="text-muted-foreground">
                 Keep your inbox clean with smart archiving and easy retrieval of
@@ -197,7 +197,7 @@ export default function MailProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <Send className="text-primary mb-4 h-8 w-8" />
+            <Send className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Smart Compose</h3>
             <p className="text-muted-foreground">
               Write emails faster with AI-powered suggestions and smart
@@ -205,7 +205,7 @@ export default function MailProductPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <Clock className="text-primary mb-4 h-8 w-8" />
+            <Clock className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Scheduled Sending</h3>
             <p className="text-muted-foreground">
               Schedule emails to be sent at the perfect time for maximum impact
@@ -219,8 +219,8 @@ export default function MailProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-b-0 md:border-r">
-              <LayoutDashboard className="text-primary h-8 w-8" />
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+              <LayoutDashboard className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Email Analytics</h3>
               <p className="text-muted-foreground">
                 Gain insights into your email patterns and communication
@@ -228,7 +228,7 @@ export default function MailProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <MessagesSquare className="text-primary h-8 w-8" />
+              <MessagesSquare className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Team Collaboration</h3>
               <p className="text-muted-foreground">
                 Work together efficiently with shared inboxes, delegated access,

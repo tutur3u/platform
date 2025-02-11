@@ -20,14 +20,14 @@ function QRColorPicker({
         text={t('common.foreground')}
         value={color}
         onChange={setColor}
-        className="line-clamp-1 w-full grow-0 text-ellipsis whitespace-nowrap break-all"
+        className="line-clamp-1 w-full grow-0 break-all text-ellipsis whitespace-nowrap"
       />
 
       <ColorPicker
         text={t('common.background')}
         value={bgColor}
         onChange={setBgColor}
-        className="line-clamp-1 w-full grow-0 text-ellipsis whitespace-nowrap break-all"
+        className="line-clamp-1 w-full grow-0 break-all text-ellipsis whitespace-nowrap"
       />
     </div>
   );

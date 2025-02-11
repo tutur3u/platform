@@ -66,11 +66,11 @@ export default function ChatLink({
             size: isCollapsed ? 'icon' : 'sm',
           }),
           isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
-          'whitespace-normal font-semibold',
+          'font-semibold whitespace-normal',
           isActive
-            ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-gradient-to-br text-white hover:text-white'
+            ? 'bg-gradient-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
             : urlToLoad === link.href
-              ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
+              ? 'animate-pulse bg-gradient-to-br from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground'
               : 'bg-foreground/5 hover:bg-foreground/10',
           link.disabled &&
             link.showDisabled &&

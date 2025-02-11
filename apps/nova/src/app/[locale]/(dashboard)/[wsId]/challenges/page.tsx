@@ -37,7 +37,7 @@ export default async function ChallengesPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-grow">
-              <p className="text-muted-foreground mb-4">
+              <p className="mb-4 text-muted-foreground">
                 {challenge.description}
               </p>
               <div className="flex items-center text-yellow-500">
@@ -46,7 +46,7 @@ export default async function ChallengesPage() {
                 <Star className="mr-1 h-4 w-4 fill-current" />
                 <Star className="mr-1 h-4 w-4 stroke-current" />
                 <Star className="mr-1 h-4 w-4 stroke-current" />
-                <span className="text-muted-foreground ml-2 text-sm">
+                <span className="ml-2 text-sm text-muted-foreground">
                   Difficulty
                 </span>
               </div>

@@ -21,7 +21,7 @@ export const TableOfContents = memo(
 
     return (
       <>
-        <div className="mb-2 text-xs font-semibold uppercase text-neutral-500 dark:text-neutral-400">
+        <div className="mb-2 text-xs font-semibold text-neutral-500 uppercase dark:text-neutral-400">
           Table of contents
         </div>
         {content.length > 0 ? (

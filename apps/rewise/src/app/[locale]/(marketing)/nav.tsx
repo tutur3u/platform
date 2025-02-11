@@ -160,7 +160,7 @@ export function Nav({
                 : t('ai_chat.anonymous')}
             </div>
             {link.createdAt && (
-              <span className="text-muted-foreground text-sm">
+              <span className="text-sm text-muted-foreground">
                 {new Date(link.createdAt).toLocaleString(locale, {
                   day: 'numeric',
                   month: 'long',
@@ -277,7 +277,7 @@ export function Nav({
                   />
                   <label
                     htmlFor="show-chat-name"
-                    className="line-clamp-1 break-all text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="line-clamp-1 text-sm leading-none font-medium break-all peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     {t('ai_chat.show_chat_name')}
                   </label>
@@ -295,7 +295,7 @@ export function Nav({
                   />
                   <label
                     htmlFor="show-favorites"
-                    className="line-clamp-1 break-all text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="line-clamp-1 text-sm leading-none font-medium break-all peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     {t('ai_chat.show_favorites')}
                   </label>
@@ -312,7 +312,7 @@ export function Nav({
                     <>
                       <div key={dateTag}>
                         {!isCollapsed && (
-                          <div className="text-muted-foreground mb-2 text-sm font-semibold">
+                          <div className="mb-2 text-sm font-semibold text-muted-foreground">
                             {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
                           </div>
                         )}
@@ -335,7 +335,7 @@ export function Nav({
                   return (
                     <div key={dateTag}>
                       {!isCollapsed && (
-                        <div className="text-muted-foreground mb-2 text-sm font-semibold">
+                        <div className="mb-2 text-sm font-semibold text-muted-foreground">
                           {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
                         </div>
                       )}

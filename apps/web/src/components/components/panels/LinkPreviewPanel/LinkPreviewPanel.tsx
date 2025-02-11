@@ -20,7 +20,7 @@ export const LinkPreviewPanel = ({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="break-all text-sm underline"
+        className="text-sm break-all underline"
       >
         {url}
       </a>

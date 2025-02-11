@@ -12,7 +12,7 @@ export default async function Login() {
     <div className="relative flex h-full w-full flex-col items-center justify-center p-8">
       <Link
         href="/"
-        className="bg-btn-background hover:bg-btn-background-hover text-foreground group absolute left-8 top-8 flex items-center rounded-md px-4 py-2 text-sm no-underline"
+        className="bg-btn-background hover:bg-btn-background-hover group absolute top-8 left-8 flex items-center rounded-md px-4 py-2 text-sm text-foreground no-underline"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -48,12 +48,12 @@ export default async function Login() {
         </Suspense>
 
         <Separator className="mt-2" />
-        <div className="text-foreground/50 text-center text-sm font-semibold">
+        <div className="text-center text-sm font-semibold text-foreground/50">
           {t('auth.notice-p1')}{' '}
           <Link
             href="/terms"
             target="_blank"
-            className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
+            className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
           >
             {t('auth.tos')}
           </Link>{' '}
@@ -61,7 +61,7 @@ export default async function Login() {
           <Link
             href="/privacy"
             target="_blank"
-            className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
+            className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
           >
             {t('auth.privacy')}
           </Link>{' '}

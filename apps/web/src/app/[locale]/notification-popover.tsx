@@ -32,12 +32,12 @@ export default async function NotificationPopover() {
     title: `${t('workspace-invite')}`,
     description: (
       <div>
-        <span className="text-foreground/80 font-semibold">
+        <span className="font-semibold text-foreground/80">
           {dayjs(invite.created_at).fromNow()}
         </span>
         {' • '}
         {t('invited-to')}{' '}
-        <span className="text-primary/80 font-semibold underline">
+        <span className="font-semibold text-primary/80 underline">
           {invite.name}
         </span>
         .
@@ -70,7 +70,7 @@ export default async function NotificationPopover() {
         >
           <Bell className="h-6 w-6" />
           {notifications.length > 0 && (
-            <div className="bg-foreground text-foreground group-hover:text-background absolute right-2 top-1 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full p-1 text-center text-xs font-semibold transition-all group-hover:-right-1 group-hover:-top-2 group-hover:h-4 group-hover:w-auto">
+            <div className="absolute top-1 right-2 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full bg-foreground p-1 text-center text-xs font-semibold text-foreground transition-all group-hover:-top-2 group-hover:-right-1 group-hover:h-4 group-hover:w-auto group-hover:text-background">
               <div className="relative opacity-0 group-hover:opacity-100">
                 {notifications.length}
               </div>
@@ -97,12 +97,12 @@ export default async function NotificationPopover() {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className="bg-foreground/5 mb-2 rounded-lg border p-2 pb-2 last:mb-0"
+                className="mb-2 rounded-lg border bg-foreground/5 p-2 pb-2 last:mb-0"
               >
-                <div className="text-sm font-medium leading-none">
+                <div className="text-sm leading-none font-medium">
                   {notification.title}
                 </div>
-                <div className="text-foreground/80 mb-2 mt-1 text-sm">
+                <div className="mt-1 mb-2 text-sm text-foreground/80">
                   {notification.description}
                 </div>
 
@@ -111,7 +111,7 @@ export default async function NotificationPopover() {
             ))
           ) : (
             <div className="flex min-h-[4rem] flex-col items-center justify-center">
-              <div className="text-foreground/80 text-xs">
+              <div className="text-xs text-foreground/80">
                 {noNotifications}
               </div>
             </div>

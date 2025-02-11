@@ -24,13 +24,13 @@ export function ResultsDisplay({ results, isLoading }: ResultsDisplayProps) {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : results.length === 0 ? (
-            <p className="text-muted-foreground flex h-full items-center justify-center text-center">
+            <p className="flex h-full items-center justify-center text-center text-muted-foreground">
               Submit a prompt to see results here.
             </p>
           ) : (
             <ul className="space-y-4">
               {results.map((result, index) => (
-                <li key={index} className="bg-muted rounded-md p-4">
+                <li key={index} className="rounded-md bg-muted p-4">
                   <p className="whitespace-pre-wrap">{result}</p>
                 </li>
               ))}

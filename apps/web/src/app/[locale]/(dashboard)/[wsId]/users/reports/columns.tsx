@@ -66,7 +66,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-[8rem] max-w-[24rem]">
+      <div className="line-clamp-2 max-w-[24rem] min-w-[8rem]">
         {row.getValue('user_name') || '-'}
       </div>
     ),
@@ -83,7 +83,7 @@ export const getUserReportColumns = (
     cell: ({ row }) => (
       <Link
         href={row.original.href || '#'}
-        className="line-clamp-2 min-w-[8rem] max-w-[24rem] hover:underline"
+        className="line-clamp-2 max-w-[24rem] min-w-[8rem] hover:underline"
       >
         {row.getValue('title') || '-'}
       </Link>
