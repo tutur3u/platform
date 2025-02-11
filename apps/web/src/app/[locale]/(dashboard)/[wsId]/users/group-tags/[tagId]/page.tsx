@@ -4,8 +4,8 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
 import { UserGroupTag } from '@tutur3u/types/primitives/UserGroupTag';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 

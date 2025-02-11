@@ -3,14 +3,14 @@
 import ApiKeyEditDialog from './edit-dialog';
 import { Row } from '@tanstack/react-table';
 import { WorkspaceApiKey } from '@tutur3u/types/primitives/WorkspaceApiKey';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/dropdown-menu';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';

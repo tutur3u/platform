@@ -1,22 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/components/ui/dialog';
+} from '@tutur3u/ui/dialog';
+import { useToast } from '@tutur3u/ui/hooks/use-toast';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/components/ui/select';
-import { useToast } from '@tutur3u/ui/hooks/use-toast';
+} from '@tutur3u/ui/select';
 import { format } from 'date-fns';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

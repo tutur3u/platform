@@ -2,17 +2,17 @@
 
 import { generateUUID } from '@/utils/uuid-helper';
 import { createClient } from '@tutur3u/supabase/next/client';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   DialogClose,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/components/ui/dialog';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { Label } from '@tutur3u/ui/components/ui/label';
-import { Progress } from '@tutur3u/ui/components/ui/progress';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+} from '@tutur3u/ui/dialog';
+import { Input } from '@tutur3u/ui/input';
+import { Label } from '@tutur3u/ui/label';
+import { Progress } from '@tutur3u/ui/progress';
+import { Separator } from '@tutur3u/ui/separator';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,

@@ -1,15 +1,15 @@
 'use client';
 
 import { Task, YearPlan } from '../../types';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Badge } from '@tutur3u/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
-import { Progress } from '@tutur3u/ui/components/ui/progress';
+} from '@tutur3u/ui/card';
+import { Progress } from '@tutur3u/ui/progress';
 import {
   endOfMonth,
   format,

@@ -5,12 +5,8 @@ import { ThemeToggle } from './theme-toggle';
 import { cn } from '@/lib/utils';
 import { SupabaseUser } from '@tutur3u/supabase/next/user';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@tutur3u/ui/components/ui/sheet';
+import { Separator } from '@tutur3u/ui/separator';
+import { Sheet, SheetContent, SheetTrigger } from '@tutur3u/ui/sheet';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

@@ -7,13 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductCategory } from '@tutur3u/types/primitives/ProductCategory';
 import { ProductUnit } from '@tutur3u/types/primitives/ProductUnit';
 import { ProductWarehouse } from '@tutur3u/types/primitives/ProductWarehouse';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@tutur3u/ui/components/ui/card';
+import { Button } from '@tutur3u/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import {
   Command,
   CommandEmpty,
@@ -22,8 +17,8 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@tutur3u/ui/components/ui/command';
-import ModifiableDialogTrigger from '@tutur3u/ui/components/ui/custom/modifiable-dialog-trigger';
+} from '@tutur3u/ui/command';
+import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
 import {
   Form,
   FormControl,
@@ -31,23 +26,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tutur3u/ui/components/ui/popover';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/components/ui/select';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
+} from '@tutur3u/ui/select';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { Check, ChevronsUpDown, Plus, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

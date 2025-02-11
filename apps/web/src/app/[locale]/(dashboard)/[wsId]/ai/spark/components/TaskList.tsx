@@ -6,15 +6,15 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/components/ui/accordion';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
+} from '@tutur3u/ui/accordion';
+import { Badge } from '@tutur3u/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
+} from '@tutur3u/ui/card';
 import { CalendarDays } from 'lucide-react';
 
 interface Task {

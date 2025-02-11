@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { WorkspaceDataset } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Form,
   FormControl,
@@ -11,20 +11,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tutur3u/ui/components/ui/select';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+} from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { Input } from '@tutur3u/ui/input';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -33,10 +25,7 @@ import * as z from 'zod';
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string(),
-  url: z.string().optional(),
   description: z.string().optional(),
-  type: z.enum(['excel', 'csv', 'html']).default('excel'),
-  html_ids: z.array(z.string()).optional(),
 });
 
 interface Props {
@@ -56,10 +45,7 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
     values: {
       id: data?.id,
       name: data?.name || '',
-      url: data?.url || '',
       description: data?.description || '',
-      type: (data?.type as 'excel' | 'csv' | 'html') || 'excel',
-      html_ids: data?.html_ids || [],
     },
   });
 
@@ -72,13 +58,7 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
           : `/api/v1/workspaces/${wsId}/datasets`,
         {
           method: formData.id ? 'PUT' : 'POST',
-          body: JSON.stringify({
-            ...formData,
-            html_ids:
-              formData.type === 'html'
-                ? formData.html_ids?.filter((id) => id && id.trim() !== '')
-                : null,
-          }),
+          body: JSON.stringify(formData),
         }
       );
 
@@ -148,20 +128,6 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
 
               <FormField
                 control={form.control}
-                name="url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
@@ -173,93 +139,8 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="excel">Excel</SelectItem>
-                        <SelectItem value="csv">CSV</SelectItem>
-                        <SelectItem value="html">HTML</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {form.watch('type') === 'html' && (
-                <FormField
-                  control={form.control}
-                  name="html_ids"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>HTML IDs</FormLabel>
-                      <div className="space-y-2">
-                        {field.value?.map((id, index) => (
-                          <div key={index} className="flex gap-2">
-                            <FormControl>
-                              <Input
-                                value={id}
-                                onChange={(e) => {
-                                  const newIds = [...(field.value || [])];
-                                  newIds[index] = e.target.value;
-                                  field.onChange(newIds);
-                                }}
-                                placeholder="Enter HTML ID"
-                              />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={() => {
-                                const newIds = field.value?.filter(
-                                  (_, i) => i !== index
-                                );
-                                field.onChange(newIds);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => {
-                            const newIds = [...(field.value || []), ''];
-                            field.onChange(newIds);
-                          }}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add HTML ID
-                        </Button>
-                      </div>
-                      <FormDescription>
-                        Add HTML IDs that will be used to extract data from the
-                        HTML page.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
             </div>
           </ScrollArea>
-
-          <Separator className="my-2" />
 
           <div className="flex justify-center gap-2">
             <Button type="submit" className="w-full" disabled={saving}>

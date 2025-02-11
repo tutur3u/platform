@@ -1,7 +1,7 @@
 'use client';
 
 import { Workspace } from '@tutur3u/types/primitives/Workspace';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

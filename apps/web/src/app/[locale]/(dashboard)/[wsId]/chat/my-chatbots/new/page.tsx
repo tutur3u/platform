@@ -1,8 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
+import { Button } from '@tutur3u/ui/button';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
 import {
   Form,
   FormControl,
@@ -11,9 +11,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+} from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { use } from 'react';
 import { useForm } from 'react-hook-form';

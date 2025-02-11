@@ -3387,6 +3387,48 @@ export type Database = {
           },
         ];
       };
+      workspace_crawlers: {
+        Row: {
+          created_at: string;
+          dataset_id: string | null;
+          html_ids: string[];
+          id: string;
+          url: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          dataset_id?: string | null;
+          html_ids: string[];
+          id?: string;
+          url: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          dataset_id?: string | null;
+          html_ids?: string[];
+          id?: string;
+          url?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_crawlers_dataset_id_fkey';
+            columns: ['dataset_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_datasets';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_crawlers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_cron_executions: {
         Row: {
           created_at: string;
@@ -3597,31 +3639,22 @@ export type Database = {
         Row: {
           created_at: string;
           description: string | null;
-          html_ids: string[] | null;
           id: string;
           name: string;
-          type: Database['public']['Enums']['dataset_type'];
-          url: string | null;
           ws_id: string;
         };
         Insert: {
           created_at?: string;
           description?: string | null;
-          html_ids?: string[] | null;
           id?: string;
           name: string;
-          type?: Database['public']['Enums']['dataset_type'];
-          url?: string | null;
           ws_id: string;
         };
         Update: {
           created_at?: string;
           description?: string | null;
-          html_ids?: string[] | null;
           id?: string;
           name?: string;
-          type?: Database['public']['Enums']['dataset_type'];
-          url?: string | null;
           ws_id?: string;
         };
         Relationships: [

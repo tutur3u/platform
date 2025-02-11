@@ -4,14 +4,14 @@ import { RoleForm } from './form';
 import { Row } from '@tanstack/react-table';
 import type { SupabaseUser } from '@tutur3u/supabase/next/user';
 import { WorkspaceRole } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import ModifiableDialogTrigger from '@tutur3u/ui/components/ui/custom/modifiable-dialog-trigger';
+import { Button } from '@tutur3u/ui/button';
+import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/dropdown-menu';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Ellipsis, Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';

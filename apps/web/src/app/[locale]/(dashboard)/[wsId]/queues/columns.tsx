@@ -2,8 +2,8 @@
 
 import { RowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import type { WorkspaceDataset } from '@tutur3u/types/db';
-import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
+import type { WorkspaceCrawler } from '@tutur3u/types/db';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -12,7 +12,7 @@ export const getColumns = (
   namespace: string | undefined,
   _?: any,
   extraData?: any
-): ColumnDef<WorkspaceDataset>[] => [
+): ColumnDef<WorkspaceCrawler>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (

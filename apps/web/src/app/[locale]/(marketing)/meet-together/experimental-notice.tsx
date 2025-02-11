@@ -1,6 +1,6 @@
 'use client';
 
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import { FlaskConical } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';

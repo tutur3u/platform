@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import { Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

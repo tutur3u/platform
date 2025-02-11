@@ -7,7 +7,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@tutur3u/ui/components/ui/table';
+} from '@tutur3u/ui/table';
 import { CheckCircle, Clock, XCircle } from 'lucide-react';
 import { useState } from 'react';
 

@@ -3,8 +3,8 @@
 import { useWorkspaceDatasets } from '@/hooks/useWorkspaceDatasets';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { WorkspaceCronJob } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
+import { Button } from '@tutur3u/ui/button';
+import { Checkbox } from '@tutur3u/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -13,18 +13,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/components/ui/select';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
+} from '@tutur3u/ui/select';
+import { Separator } from '@tutur3u/ui/separator';
 import cronstrue from 'cronstrue';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';

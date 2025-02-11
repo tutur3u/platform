@@ -12,16 +12,11 @@ import { createClient } from '@tutur3u/supabase/next/client';
 import { SupabaseUser } from '@tutur3u/supabase/next/user';
 import { PermissionId, WorkspaceRole } from '@tutur3u/types/db';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Form } from '@tutur3u/ui/components/ui/form';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@tutur3u/ui/components/ui/tabs';
+import { Button } from '@tutur3u/ui/button';
+import { Form } from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
 import { Monitor, PencilRuler, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

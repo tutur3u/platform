@@ -1,7 +1,7 @@
 import { createTaskList } from '@/lib/task-helper';
 import { createClient } from '@tutur3u/supabase/next/client';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Input } from '@tutur3u/ui/components/ui/input';
+import { Button } from '@tutur3u/ui/button';
+import { Input } from '@tutur3u/ui/input';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 

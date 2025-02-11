@@ -2,8 +2,8 @@ import DeleteResourceButton from './delete-resource';
 import FileDisplay from './file-display';
 import { StorageObjectForm } from '@/app/[locale]/(dashboard)/[wsId]/drive/form';
 import { createDynamicClient } from '@tutur3u/supabase/next/server';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { Paperclip } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 

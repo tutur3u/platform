@@ -7,8 +7,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/components/ui/accordion';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
+} from '@tutur3u/ui/accordion';
+import { Badge } from '@tutur3u/ui/badge';
 
 interface PriorityGroupProps {
   priority: Priority;

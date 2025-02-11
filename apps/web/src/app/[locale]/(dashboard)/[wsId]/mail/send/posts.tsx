@@ -4,7 +4,7 @@ import UserGroupPosts, {
   UserGroupPost,
 } from '../../users/groups/[groupId]/posts';
 import { createClient } from '@tutur3u/supabase/next/client';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

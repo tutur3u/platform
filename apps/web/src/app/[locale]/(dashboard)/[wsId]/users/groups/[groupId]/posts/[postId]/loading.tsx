@@ -1,5 +1,5 @@
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { Check, CircleHelp, Send, X } from 'lucide-react';
 
 export default function Loading() {

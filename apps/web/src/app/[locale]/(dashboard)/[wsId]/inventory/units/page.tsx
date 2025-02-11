@@ -3,8 +3,8 @@ import { ProductUnitForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { ProductUnit } from '@tutur3u/types/primitives/ProductUnit';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

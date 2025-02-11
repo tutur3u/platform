@@ -8,8 +8,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/components/ui/accordion';
-import { Button } from '@tutur3u/ui/components/ui/button';
+} from '@tutur3u/ui/accordion';
+import { Button } from '@tutur3u/ui/button';
 import {
   Form,
   FormControl,
@@ -17,11 +17,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+} from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

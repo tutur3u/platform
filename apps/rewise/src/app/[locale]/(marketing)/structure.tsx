@@ -10,15 +10,15 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/components/ui/accordion';
-import { Button } from '@tutur3u/ui/components/ui/button';
+} from '@tutur3u/ui/accordion';
+import { Button } from '@tutur3u/ui/button';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@tutur3u/ui/components/ui/resizable';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { TooltipProvider } from '@tutur3u/ui/components/ui/tooltip';
+} from '@tutur3u/ui/resizable';
+import { Separator } from '@tutur3u/ui/separator';
+import { TooltipProvider } from '@tutur3u/ui/tooltip';
 import {
   ChevronDown,
   Crown,

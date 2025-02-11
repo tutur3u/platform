@@ -1,8 +1,8 @@
 import type { CrawlMetrics } from '../types';
 import { formatDuration, formatTime } from '../utils/time';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
-import { Card, CardContent } from '@tutur3u/ui/components/ui/card';
-import { Progress } from '@tutur3u/ui/components/ui/progress';
+import { Badge } from '@tutur3u/ui/badge';
+import { Card, CardContent } from '@tutur3u/ui/card';
+import { Progress } from '@tutur3u/ui/progress';
 
 interface Props {
   metrics: CrawlMetrics;

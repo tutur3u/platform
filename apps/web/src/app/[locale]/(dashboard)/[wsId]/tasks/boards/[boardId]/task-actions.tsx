@@ -1,9 +1,9 @@
 import { AssigneeSelect } from './_components/assignee-select';
 import { deleteTask, updateTask } from '@/lib/task-helper';
 import { createClient } from '@tutur3u/supabase/next/client';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Calendar } from '@tutur3u/ui/components/ui/calendar';
-import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
+import { Button } from '@tutur3u/ui/button';
+import { Calendar } from '@tutur3u/ui/calendar';
+import { Checkbox } from '@tutur3u/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -11,36 +11,28 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/components/ui/dialog';
+} from '@tutur3u/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { Label } from '@tutur3u/ui/components/ui/label';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tutur3u/ui/components/ui/popover';
+} from '@tutur3u/ui/dropdown-menu';
+import { Input } from '@tutur3u/ui/input';
+import { Label } from '@tutur3u/ui/label';
+import { cn } from '@tutur3u/ui/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/components/ui/select';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@tutur3u/ui/components/ui/tooltip';
-import { cn } from '@tutur3u/ui/lib/utils';
+} from '@tutur3u/ui/select';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import {
   AlertCircle,

@@ -6,7 +6,7 @@ import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
 import timezones from '@/data/timezones.json';
 import { Timezone } from '@tutur3u/types/primitives/Timezone';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 

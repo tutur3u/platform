@@ -4,7 +4,7 @@ import ClientQuizzes from './client-quizzes';
 import { GenerateDialog } from '@/components/generate-dialog';
 import { useObject } from '@tutur3u/ai/object/core';
 import { quizSchema } from '@tutur3u/ai/object/types';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

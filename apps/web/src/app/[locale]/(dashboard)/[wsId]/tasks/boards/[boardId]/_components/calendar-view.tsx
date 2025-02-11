@@ -2,12 +2,12 @@ import { TaskActions } from '../task-actions';
 import { getTasks } from '@/lib/task-helper';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { Task } from '@tutur3u/types/primitives/TaskBoard';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from '@tutur3u/ui/components/ui/hover-card';
+} from '@tutur3u/ui/hover-card';
 import { cn } from '@tutur3u/ui/lib/utils';
 import {
   addDays,

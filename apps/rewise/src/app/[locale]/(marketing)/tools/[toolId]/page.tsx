@@ -1,15 +1,10 @@
 import { tools } from '../data';
 import { ToolForm } from './tool-form';
 import { supportedLocales } from '@/i18n/routing';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@tutur3u/ui/components/ui/card';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Badge } from '@tutur3u/ui/badge';
+import { Button } from '@tutur3u/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { Separator } from '@tutur3u/ui/separator';
 import { ChevronLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

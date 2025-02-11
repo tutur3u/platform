@@ -2,8 +2,8 @@
 
 import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
 import { type Message } from '@tutur3u/ai/types';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { IconCheck, IconCopy } from '@tutur3u/ui/components/ui/icons';
+import { Button } from '@tutur3u/ui/button';
+import { IconCheck, IconCopy } from '@tutur3u/ui/icons';
 import { cn } from '@tutur3u/ui/lib/utils';
 import React from 'react';
 

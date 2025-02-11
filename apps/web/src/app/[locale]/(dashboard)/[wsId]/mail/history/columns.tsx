@@ -3,7 +3,7 @@
 // import { UserRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { EmailHistoryEntry } from '@tutur3u/types/db';
-import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 

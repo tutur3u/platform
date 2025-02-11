@@ -5,8 +5,8 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tutur3u/supabase/next/server';
 import type { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

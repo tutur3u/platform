@@ -6,14 +6,10 @@ import { getInitials } from '@/utils/name-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@tutur3u/ui/components/ui/avatar';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import SearchBar from '@tutur3u/ui/components/ui/custom/search-bar';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
+import SearchBar from '@tutur3u/ui/custom/search-bar';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

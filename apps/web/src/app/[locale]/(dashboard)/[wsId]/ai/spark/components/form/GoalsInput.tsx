@@ -1,33 +1,28 @@
 'use client';
 
 import { PlanRequest, SkillLevel, TimeOfDay } from '../../types';
-import { Alert, AlertDescription } from '@tutur3u/ui/components/ui/alert';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Alert, AlertDescription } from '@tutur3u/ui/alert';
+import { Button } from '@tutur3u/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
-import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { Label } from '@tutur3u/ui/components/ui/label';
+} from '@tutur3u/ui/card';
+import { Checkbox } from '@tutur3u/ui/checkbox';
+import { Input } from '@tutur3u/ui/input';
+import { Label } from '@tutur3u/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/components/ui/select';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@tutur3u/ui/components/ui/tabs';
-import { TagInput } from '@tutur3u/ui/components/ui/tag-input';
+} from '@tutur3u/ui/select';
+import { Separator } from '@tutur3u/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
+import { TagInput } from '@tutur3u/ui/tag-input';
 import {
   Brain,
   Clock,

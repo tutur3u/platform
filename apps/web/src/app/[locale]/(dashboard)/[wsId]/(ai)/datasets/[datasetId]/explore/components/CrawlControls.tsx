@@ -1,5 +1,5 @@
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Input } from '@tutur3u/ui/components/ui/input';
+import { Button } from '@tutur3u/ui/button';
+import { Input } from '@tutur3u/ui/input';
 import { Pause, Play, StopCircle } from 'lucide-react';
 
 interface Props {

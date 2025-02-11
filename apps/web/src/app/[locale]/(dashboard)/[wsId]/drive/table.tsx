@@ -3,7 +3,7 @@
 import { storageObjectsColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { StorageObject } from '@tutur3u/types/primitives/StorageObject';
-import { Dialog } from '@tutur3u/ui/components/ui/dialog';
+import { Dialog } from '@tutur3u/ui/dialog';
 import { useState } from 'react';
 
 interface Props {

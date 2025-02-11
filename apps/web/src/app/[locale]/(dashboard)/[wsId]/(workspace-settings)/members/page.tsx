@@ -9,7 +9,7 @@ import {
 } from '@/lib/workspace-helper';
 import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
 import { User } from '@tutur3u/types/primitives/User';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

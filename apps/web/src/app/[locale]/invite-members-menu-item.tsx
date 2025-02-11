@@ -4,7 +4,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/dropdown-menu';
 import { UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

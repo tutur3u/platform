@@ -4,23 +4,18 @@ import { Task, YearPlan } from '../../types';
 import { MonthPicker } from '../MonthPicker';
 import { MonthlyOverview } from '../overview/MonthlyOverview';
 import { TaskList } from '../tasks/TaskList';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Badge } from '@tutur3u/ui/badge';
+import { Button } from '@tutur3u/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
-import { Progress } from '@tutur3u/ui/components/ui/progress';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@tutur3u/ui/components/ui/tabs';
+} from '@tutur3u/ui/card';
+import { Progress } from '@tutur3u/ui/progress';
+import { Separator } from '@tutur3u/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
 import { format, isValid, isWithinInterval, parseISO } from 'date-fns';
 import {
   AlertCircle,

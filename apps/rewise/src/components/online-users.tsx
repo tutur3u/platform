@@ -1,16 +1,12 @@
 import { getInitials } from '@/utils/name-helper';
 import { RealtimePresenceState } from '@tutur3u/supabase/next/realtime';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@tutur3u/ui/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tutur3u/ui/components/ui/tooltip';
+} from '@tutur3u/ui/tooltip';
 import { User } from 'lucide-react';
 
 interface PresenceUser {

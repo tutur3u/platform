@@ -1,10 +1,5 @@
-import { Badge } from '@tutur3u/ui/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@tutur3u/ui/components/ui/card';
+import { Badge } from '@tutur3u/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 
 export interface Challenge {
   id?: number | null;

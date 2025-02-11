@@ -3,8 +3,8 @@
 import { getTasks } from '@/lib/task-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tutur3u/supabase/next/client';
-import { Progress } from '@tutur3u/ui/components/ui/progress';
 import { cn } from '@tutur3u/ui/lib/utils';
+import { Progress } from '@tutur3u/ui/progress';
 import { format } from 'date-fns';
 import {
   AlertCircle,

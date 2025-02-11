@@ -1,5 +1,5 @@
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
 
 interface LessonSection {
   title: string;

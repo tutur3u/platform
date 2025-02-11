@@ -7,27 +7,23 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Row } from '@tanstack/react-table';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@tutur3u/ui/components/ui/avatar';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { SelectField } from '@tutur3u/ui/components/ui/custom/select-field';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
+import { SelectField } from '@tutur3u/ui/custom/select-field';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/components/ui/dialog';
+} from '@tutur3u/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -36,10 +32,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+} from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Separator } from '@tutur3u/ui/separator';
 import dayjs from 'dayjs';
 import { Ellipsis, Eye, Loader2, UserIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

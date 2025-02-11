@@ -4,7 +4,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/components/ui/select';
+} from '@tutur3u/ui/select';
 
 export interface Challenge {
   id: number;

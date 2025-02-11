@@ -5,14 +5,14 @@ import type {
   WorkspaceCronExecution,
   WorkspaceCronJob,
 } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
+} from '@tutur3u/ui/card';
 import { ArrowLeft, CheckCircle, Clock, PowerOff, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

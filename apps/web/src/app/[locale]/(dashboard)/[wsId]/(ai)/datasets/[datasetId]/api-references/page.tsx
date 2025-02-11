@@ -6,14 +6,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
-import { CodeBlock } from '@tutur3u/ui/components/ui/codeblock';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@tutur3u/ui/components/ui/tabs';
+} from '@tutur3u/ui/card';
+import { CodeBlock } from '@tutur3u/ui/codeblock';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
 import { headers } from 'next/headers';
 
 interface Props {

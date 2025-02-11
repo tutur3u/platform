@@ -1,9 +1,5 @@
 import { cn } from '../../../lib/utils';
-import {
-  Card,
-  CardDescription,
-  CardTitle,
-} from '@tutur3u/ui/components/ui/card';
+import { Card, CardDescription, CardTitle } from '@tutur3u/ui/card';
 import { Image } from 'lucide-react';
 import React from 'react';
 

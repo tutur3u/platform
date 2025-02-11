@@ -1,11 +1,11 @@
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/components/ui/select';
+} from '@tutur3u/ui/select';
 
 interface VersionControlProps {
   version: number;

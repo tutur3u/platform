@@ -2,12 +2,8 @@
 
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { Workspace } from '@tutur3u/types/primitives/Workspace';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@tutur3u/ui/components/ui/avatar';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
 import {
   Card,
   CardContent,
@@ -15,7 +11,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
+} from '@tutur3u/ui/card';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

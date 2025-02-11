@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Timezone } from '@tutur3u/types/primitives/Timezone';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
+import { Button } from '@tutur3u/ui/button';
+import { Checkbox } from '@tutur3u/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -9,8 +9,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
+} from '@tutur3u/ui/form';
+import { Input } from '@tutur3u/ui/input';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 

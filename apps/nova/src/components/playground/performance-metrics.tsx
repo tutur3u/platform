@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@tutur3u/ui/components/ui/card';
+import { Card, CardContent } from '@tutur3u/ui/card';
 
 interface PerformanceMetricsProps {
   metrics: {

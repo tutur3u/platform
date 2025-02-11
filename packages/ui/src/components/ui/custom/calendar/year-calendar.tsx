@@ -2,7 +2,7 @@
 
 import { Calendar } from './core';
 import { WorkspaceUserAttendance } from './utils';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 

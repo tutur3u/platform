@@ -2,15 +2,15 @@ import { ClearDataDialog } from './clear-data-dialog';
 import { DeleteDatasetDialog } from './delete-dataset-dialog';
 import { ManageColumns } from './manage-columns';
 import { createClient } from '@tutur3u/supabase/next/server';
-import { Alert, AlertTitle } from '@tutur3u/ui/components/ui/alert';
+import { Alert, AlertTitle } from '@tutur3u/ui/alert';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+} from '@tutur3u/ui/card';
+import { Separator } from '@tutur3u/ui/separator';
 import { AlertCircle } from 'lucide-react';
 import { notFound } from 'next/navigation';
 

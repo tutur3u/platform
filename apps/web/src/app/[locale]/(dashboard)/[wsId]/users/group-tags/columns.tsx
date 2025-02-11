@@ -3,8 +3,8 @@
 import { GroupTagRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { UserGroupTag } from '@tutur3u/types/primitives/UserGroupTag';
-import { ColorPicker } from '@tutur3u/ui/components/ui/color-picker';
-import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
+import { ColorPicker } from '@tutur3u/ui/color-picker';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 

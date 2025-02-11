@@ -2,8 +2,8 @@ import InvoiceCard from './invoice-card';
 import { availableConfigs } from '@/constants/configs/reports';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import 'dayjs/locale/vi';
 import {
   Box,

@@ -6,16 +6,12 @@ import { CSS } from '@dnd-kit/utilities';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { Task as TaskType } from '@tutur3u/types/primitives/TaskBoard';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Card } from '@tutur3u/ui/components/ui/card';
-import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@tutur3u/ui/components/ui/tooltip';
+import { Badge } from '@tutur3u/ui/badge';
+import { Button } from '@tutur3u/ui/button';
+import { Card } from '@tutur3u/ui/card';
+import { Checkbox } from '@tutur3u/ui/checkbox';
 import { cn } from '@tutur3u/ui/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import {
   AlertCircle,

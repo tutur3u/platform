@@ -1,8 +1,8 @@
 'use client';
 
-import { Badge } from '@tutur3u/ui/components/ui/badge';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Card } from '@tutur3u/ui/components/ui/card';
+import { Badge } from '@tutur3u/ui/badge';
+import { Button } from '@tutur3u/ui/button';
+import { Card } from '@tutur3u/ui/card';
 import {
   Bot,
   FileSearch,

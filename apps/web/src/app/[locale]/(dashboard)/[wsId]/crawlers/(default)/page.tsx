@@ -2,9 +2,9 @@ import { getColumns } from '../columns';
 import ModelForm from '../form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tutur3u/supabase/next/server';
-import type { WorkspaceDataset } from '@tutur3u/types/db';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import type { WorkspaceCrawler } from '@tutur3u/types/db';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -33,8 +33,8 @@ export default async function WorkspaceCrawlersPage({
 
   const crawlers = data.map((m) => ({
     ...m,
-    href: `/${wsId}/datasets/${m.id}`,
-  }));
+    href: `/${wsId}/crawlers/${m.id}`,
+  })) as WorkspaceCrawler[];
 
   return (
     <>
@@ -55,8 +55,6 @@ export default async function WorkspaceCrawlersPage({
         count={count}
         defaultVisibility={{
           id: false,
-          description: false,
-          url: false,
           created_at: false,
         }}
       />
@@ -77,11 +75,9 @@ async function getData(
     const supabase = await createClient();
 
     const queryBuilder = supabase
-      .from('workspace_datasets')
-      .select(
-        '*, workspace_dataset_columns(id.count()), workspace_dataset_rows(id.count())'
-      )
-      .order('name', { ascending: true, nullsFirst: false })
+      .from('workspace_crawlers')
+      .select('*')
+      .order('created_at', { ascending: true })
       .eq('ws_id', wsId);
 
     if (page && pageSize) {
@@ -95,34 +91,17 @@ async function getData(
     const { data, error, count } = await queryBuilder;
 
     if (error) {
-      console.error('Error fetching datasets:', error);
+      console.error('Error fetching crawlers:', error);
       if (!retry) throw error;
       return getData(wsId, { q, pageSize, retry: false });
     }
 
-    // Add input validation
-    if (!data || !Array.isArray(data)) {
-      throw new Error('Invalid data format received');
-    }
-
     return {
-      data: data.map(
-        ({ workspace_dataset_columns, workspace_dataset_rows, ...rest }) => ({
-          ...rest,
-          columns: workspace_dataset_columns?.[0]?.count ?? 0,
-          rows: workspace_dataset_rows?.[0]?.count ?? 0,
-        })
-      ),
+      data,
       count: count ?? 0,
-    } as unknown as {
-      data: (WorkspaceDataset & {
-        columns: number;
-        rows: number;
-      })[];
-      count: number;
     };
   } catch (error) {
-    console.error('Failed to fetch datasets:', error);
+    console.error('Failed to fetch crawlers:', error);
     throw error;
   }
 }
