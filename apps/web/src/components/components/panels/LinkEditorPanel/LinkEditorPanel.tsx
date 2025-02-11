@@ -65,7 +65,7 @@ export const LinkEditorPanel = ({
           <Icon name="Link" className="flex-none text-black dark:text-white" />
           <input
             type="url"
-            className="outline-hidden min-w-[12rem] flex-1 bg-transparent text-sm text-black dark:text-white"
+            className="min-w-[12rem] flex-1 bg-transparent text-sm text-black outline-hidden dark:text-white"
             placeholder="Enter URL"
             value={state.url}
             onChange={state.onChange}
@@ -81,7 +81,7 @@ export const LinkEditorPanel = ({
         </Button>
       </form>
       <div className="mt-3">
-        <label className="flex cursor-pointer select-none items-center justify-start gap-2 text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+        <label className="flex cursor-pointer items-center justify-start gap-2 text-sm font-semibold text-neutral-500 select-none dark:text-neutral-400">
           Open in new tab
           <Toggle
             active={state.openInNewTab}

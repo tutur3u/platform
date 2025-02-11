@@ -19,7 +19,7 @@ export default function GetStartedButton() {
       <Button
         className={cn(
           hidden &&
-            'text-foreground/50 pointer-events-none select-none opacity-50'
+            'pointer-events-none text-foreground/50 opacity-50 select-none'
         )}
       >
         {t('common.get-started')}

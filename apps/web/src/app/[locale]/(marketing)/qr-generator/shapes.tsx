@@ -13,11 +13,11 @@ function QRShapes({
 
   return (
     <>
-      <div className="mb-2 mt-4 font-semibold">{t('common.shapes')}</div>
+      <div className="mt-4 mb-2 font-semibold">{t('common.shapes')}</div>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
         <button
           className={cn(
-            'hover:border-foreground flex items-center justify-center rounded-lg border-2 p-4 text-center transition',
+            'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             shape === 'squares' && 'border-foreground bg-foreground/5'
           )}
           onClick={() => setShape('squares')}
@@ -30,7 +30,7 @@ function QRShapes({
         </button>
         <button
           className={cn(
-            'hover:border-foreground flex items-center justify-center rounded-lg border-2 p-4 text-center transition',
+            'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             shape === 'dots' && 'border-foreground bg-foreground/5'
           )}
           onClick={() => setShape('dots')}
@@ -43,7 +43,7 @@ function QRShapes({
         </button>
         <button
           className={cn(
-            'hover:border-foreground flex items-center justify-center rounded-lg border-2 p-4 text-center transition',
+            'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             shape === 'fluid' && 'border-foreground bg-foreground/5'
           )}
           onClick={() => setShape('fluid')}

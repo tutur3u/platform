@@ -161,7 +161,7 @@ export function ListView({
     <div className="flex h-full flex-col gap-4 p-4">
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search tasks..."
             value={searchQuery}
@@ -173,7 +173,7 @@ export function ListView({
 
       <div className="relative flex-1 overflow-auto rounded-lg border">
         <Table>
-          <TableHeader className="bg-background sticky top-0">
+          <TableHeader className="sticky top-0 bg-background">
             <TableRow>
               <TableHead className="w-[40px]">Status</TableHead>
               <TableHead>
@@ -260,7 +260,7 @@ export function ListView({
                 <TableCell>
                   <div className="flex justify-center">
                     {task.archived && (
-                      <Check className="text-primary h-4 w-4" />
+                      <Check className="h-4 w-4 text-primary" />
                     )}
                   </div>
                 </TableCell>
@@ -274,7 +274,7 @@ export function ListView({
                       {task.name}
                     </span>
                     {task.description && (
-                      <span className="text-muted-foreground line-clamp-1 text-xs">
+                      <span className="line-clamp-1 text-xs text-muted-foreground">
                         {task.description}
                       </span>
                     )}
@@ -299,7 +299,7 @@ export function ListView({
                 </TableCell>
                 <TableCell>
                   {task.start_date && (
-                    <div className="text-muted-foreground flex items-center gap-1">
+                    <div className="flex items-center gap-1 text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       {format(new Date(task.start_date), 'PP')}
                     </div>
@@ -312,7 +312,7 @@ export function ListView({
                         'text-muted-foreground':
                           !task.archived &&
                           new Date(task.end_date) > new Date(),
-                        'text-destructive font-medium':
+                        'font-medium text-destructive':
                           !task.archived &&
                           new Date(task.end_date) < new Date(),
                       })}
@@ -324,7 +324,7 @@ export function ListView({
                 </TableCell>
                 <TableCell>
                   {task.assignees && task.assignees.length > 0 && (
-                    <div className="text-muted-foreground flex items-center gap-1">
+                    <div className="flex items-center gap-1 text-muted-foreground">
                       <Users className="h-3 w-3" />
                       {task.assignees.length}
                     </div>

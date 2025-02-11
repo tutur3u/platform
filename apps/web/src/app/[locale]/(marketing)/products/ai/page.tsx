@@ -93,7 +93,7 @@ export default function AIProductPage() {
           Coming Soon
         </Badge>
         <h1 className="mb-4 text-4xl font-bold">AI-Powered Solutions</h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Transform your business operations with intelligent automation and
           data-driven insights powered by cutting-edge artificial intelligence.
         </p>
@@ -111,7 +111,7 @@ export default function AIProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <Fingerprint className="text-primary h-12 w-12" />
+            <Fingerprint className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Our AI solutions are built with security and privacy in mind. All
@@ -146,12 +146,12 @@ export default function AIProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <Brain className="text-primary mb-4 h-8 w-8" />
+              <Brain className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="text-muted-foreground space-y-2">
+              <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     {item}
                   </li>
                 ))}

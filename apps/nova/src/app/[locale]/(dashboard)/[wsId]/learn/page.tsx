@@ -68,7 +68,7 @@ export default async function LearnPage({ params }: Props) {
             </CardHeader>
             <CardContent className="flex flex-grow flex-col justify-between">
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-muted-foreground flex items-center">
+                <span className="flex items-center text-muted-foreground">
                   <BookOpen className="mr-2 h-4 w-4" />
                   {lesson.duration}
                 </span>

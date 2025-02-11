@@ -57,7 +57,7 @@ export function ListActions({ listId, listName, onUpdate }: Props) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="text-muted-foreground h-8 w-8 p-0">
+          <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground">
             <span className="sr-only">Open menu</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
@@ -72,7 +72,7 @@ export function ListActions({ listId, listName, onUpdate }: Props) {
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => setIsDeleteDialogOpen(true)}
-            className="text-destructive gap-2"
+            className="gap-2 text-destructive"
           >
             <Trash className="h-4 w-4" />
             Delete

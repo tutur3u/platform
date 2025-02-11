@@ -97,7 +97,7 @@ export default function CalendarProductPage() {
           Coming Soon
         </Badge>
         <h1 className="mb-4 text-4xl font-bold">Smart Calendar Management</h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Streamline your scheduling and time management with our intelligent
           calendar system. Coordinate meetings, manage events, and boost
           productivity across teams.
@@ -116,7 +116,7 @@ export default function CalendarProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="text-primary h-12 w-12" />
+            <ShieldCheck className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Enterprise-Ready Calendar</h2>
             <p className="text-muted-foreground">
               Built with security and scalability in mind, our calendar system
@@ -151,12 +151,12 @@ export default function CalendarProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <Calendar className="text-primary mb-4 h-8 w-8" />
+              <Calendar className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="text-muted-foreground space-y-2">
+              <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     {item}
                   </li>
                 ))}
@@ -170,8 +170,8 @@ export default function CalendarProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-b-0 md:border-r">
-              <Globe className="text-primary h-8 w-8" />
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+              <Globe className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Global Accessibility</h3>
               <p className="text-muted-foreground">
                 Access your calendar from anywhere, with automatic time zone
@@ -179,7 +179,7 @@ export default function CalendarProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <Share2 className="text-primary h-8 w-8" />
+              <Share2 className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Seamless Integration</h3>
               <p className="text-muted-foreground">
                 Connect with your favorite tools and services for a unified
@@ -197,7 +197,7 @@ export default function CalendarProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <MessageSquare className="text-primary mb-4 h-8 w-8" />
+            <MessageSquare className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Meeting Chat</h3>
             <p className="text-muted-foreground">
               Built-in chat functionality for quick discussions and meeting
@@ -205,7 +205,7 @@ export default function CalendarProductPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <Zap className="text-primary mb-4 h-8 w-8" />
+            <Zap className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Quick Actions</h3>
             <p className="text-muted-foreground">
               Streamlined workflows with one-click actions for common calendar
