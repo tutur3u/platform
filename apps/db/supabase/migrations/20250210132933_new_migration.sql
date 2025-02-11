@@ -125,3 +125,152 @@ create policy "Allow workspace members to have full permissions" on "public"."wo
         )
     )
 );
+
+create table "public"."crawled_url_next_urls" (
+    "origin_id" uuid not null default gen_random_uuid(),
+    "url" text not null,
+    "skipped" boolean not null,
+    "created_at" timestamp with time zone not null default now()
+);
+
+create table "public"."crawled_urls" (
+    "id" uuid not null default gen_random_uuid(),
+    "url" text not null,
+    "html" text,
+    "markdown" text,
+    "created_at" timestamp with time zone not null default now()
+);
+
+CREATE UNIQUE INDEX crawled_url_next_urls_pkey ON public.crawled_url_next_urls USING btree (origin_id, url);
+
+CREATE UNIQUE INDEX crawled_urls_pkey ON public.crawled_urls USING btree (id);
+
+alter table
+    "public"."crawled_url_next_urls"
+add
+    constraint "crawled_url_next_urls_pkey" PRIMARY KEY using index "crawled_url_next_urls_pkey";
+
+alter table
+    "public"."crawled_urls"
+add
+    constraint "crawled_urls_pkey" PRIMARY KEY using index "crawled_urls_pkey";
+
+grant delete on table "public"."crawled_url_next_urls" to "anon";
+
+grant
+insert
+    on table "public"."crawled_url_next_urls" to "anon";
+
+grant references on table "public"."crawled_url_next_urls" to "anon";
+
+grant
+select
+    on table "public"."crawled_url_next_urls" to "anon";
+
+grant trigger on table "public"."crawled_url_next_urls" to "anon";
+
+grant truncate on table "public"."crawled_url_next_urls" to "anon";
+
+grant
+update
+    on table "public"."crawled_url_next_urls" to "anon";
+
+grant delete on table "public"."crawled_url_next_urls" to "authenticated";
+
+grant
+insert
+    on table "public"."crawled_url_next_urls" to "authenticated";
+
+grant references on table "public"."crawled_url_next_urls" to "authenticated";
+
+grant
+select
+    on table "public"."crawled_url_next_urls" to "authenticated";
+
+grant trigger on table "public"."crawled_url_next_urls" to "authenticated";
+
+grant truncate on table "public"."crawled_url_next_urls" to "authenticated";
+
+grant
+update
+    on table "public"."crawled_url_next_urls" to "authenticated";
+
+grant delete on table "public"."crawled_url_next_urls" to "service_role";
+
+grant
+insert
+    on table "public"."crawled_url_next_urls" to "service_role";
+
+grant references on table "public"."crawled_url_next_urls" to "service_role";
+
+grant
+select
+    on table "public"."crawled_url_next_urls" to "service_role";
+
+grant trigger on table "public"."crawled_url_next_urls" to "service_role";
+
+grant truncate on table "public"."crawled_url_next_urls" to "service_role";
+
+grant
+update
+    on table "public"."crawled_url_next_urls" to "service_role";
+
+grant delete on table "public"."crawled_urls" to "anon";
+
+grant
+insert
+    on table "public"."crawled_urls" to "anon";
+
+grant references on table "public"."crawled_urls" to "anon";
+
+grant
+select
+    on table "public"."crawled_urls" to "anon";
+
+grant trigger on table "public"."crawled_urls" to "anon";
+
+grant truncate on table "public"."crawled_urls" to "anon";
+
+grant
+update
+    on table "public"."crawled_urls" to "anon";
+
+grant delete on table "public"."crawled_urls" to "authenticated";
+
+grant
+insert
+    on table "public"."crawled_urls" to "authenticated";
+
+grant references on table "public"."crawled_urls" to "authenticated";
+
+grant
+select
+    on table "public"."crawled_urls" to "authenticated";
+
+grant trigger on table "public"."crawled_urls" to "authenticated";
+
+grant truncate on table "public"."crawled_urls" to "authenticated";
+
+grant
+update
+    on table "public"."crawled_urls" to "authenticated";
+
+grant delete on table "public"."crawled_urls" to "service_role";
+
+grant
+insert
+    on table "public"."crawled_urls" to "service_role";
+
+grant references on table "public"."crawled_urls" to "service_role";
+
+grant
+select
+    on table "public"."crawled_urls" to "service_role";
+
+grant trigger on table "public"."crawled_urls" to "service_role";
+
+grant truncate on table "public"."crawled_urls" to "service_role";
+
+grant
+update
+    on table "public"."crawled_urls" to "service_role";

@@ -1,5 +1,5 @@
+import { CrawlerContent } from './crawler-content';
 import { createClient } from '@tutur3u/supabase/next/server';
-import { Card, CardDescription, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import { notFound } from 'next/navigation';
 
 interface Props {
@@ -11,33 +11,45 @@ interface Props {
 }
 
 export default async function DatasetDetailsPage({ params }: Props) {
-  const { crawlerId } = await params;
-
+  const { wsId, crawlerId } = await params;
   const supabase = await createClient();
-  const { data } = await supabase
+
+  const { data: crawler } = await supabase
     .from('workspace_crawlers')
     .select('*')
     .eq('id', crawlerId)
     .single();
 
-  if (!data) notFound();
+  if (!crawler) notFound();
+
+  const { data: crawledUrl } = await supabase
+    .from('crawled_urls')
+    .select('*')
+    .eq('url', crawler.url)
+    .maybeSingle();
+
+  const { data: relatedUrls } = !crawledUrl
+    ? { data: [] }
+    : await supabase
+        .from('crawled_url_next_urls')
+        .select('*')
+        .eq('origin_id', crawledUrl.id)
+        .order('created_at', { ascending: false });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{data.url}</h1>
+          <h1 className="text-2xl font-bold">{crawler.url}</h1>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>HTML Elements</CardTitle>
-          <CardDescription>
-            {data.html_ids?.length || 0} elements configured
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <CrawlerContent
+        initialCrawledUrl={crawledUrl}
+        initialRelatedUrls={relatedUrls || []}
+        wsId={wsId}
+        url={crawler.url}
+      />
     </div>
   );
 }
