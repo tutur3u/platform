@@ -11,23 +11,23 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-// Static Problem and Test Case
-const problem = "Write a prompt that instructs an AI to generate a short, creative story involving a dragon and a wizard.";
-const testCase = "The AI should generate a story where a dragon and a wizard interact in a creative way, no longer than 200 words.";
-
 export async function POST(req: Request) {
   const {
     answer,
+    problemDescription,
+    testCase,
     model = 'gemini-pro',
   } = (await req.json()) as {
     answer?: string;
+    problemDescription?: string;
+    testCase?: string;
     model?: string;
   };
 
   try {
-    if (!answer) {
+    if (!answer || !problemDescription || !testCase) {
       return NextResponse.json(
-        { message: 'No answer provided.' },
+        { message: 'Incomplete data provided.' },
         { status: 400 }
       );
     }
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     You will be provided with the problem and its test case. The user will input an answer. 
     Based on the input, evaluate the answer and give a score out of ten.
     
-    Problem: ${problem}
+    Problem: ${problemDescription}
     Test Case: ${testCase}
     User's Answer: ${answer}
 
@@ -46,22 +46,20 @@ export async function POST(req: Request) {
       "score": [number from 1 to 10],
       "feedback": "[brief explanation of the score]"
     }
-    
+    If the input is irrelevant, you can give the score to be 0.
     Do not include anything other than the JSON object in your response.`;
 
-
+    // Get the model
     const aiModel = genAI.getGenerativeModel({ model });
 
-
+    // Send the instruction to Google API
     const result = await aiModel.generateContent(systemInstruction);
     const response = result.response.text();
-
 
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(response);
     } catch (parseError) {
-
       return NextResponse.json(
         {
           message: 'AI response was not in valid JSON format.',
