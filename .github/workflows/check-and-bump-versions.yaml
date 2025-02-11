@@ -261,6 +261,24 @@ jobs:
               echo "• New checksum (${#NEW_CHECKSUM} chars): $NEW_CHECKSUM"
               echo "• Match status: $([ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ] && echo "identical" || echo "different")"
 
+              # Add function to check if only version changed in package.json
+              check_package_json_changes() {
+                if [ "${{ github.event_name }}" = "pull_request" ]; then
+                  DIFF=$(git diff "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- package.json)
+                else
+                  DIFF=$(git diff HEAD~1 HEAD -- package.json)
+                fi
+                
+                # Count number of changed lines that aren't the version field
+                NON_VERSION_CHANGES=$(echo "$DIFF" | grep -v '"version":' | grep '^[+-]' | wc -l)
+                
+                # If there are no non-version changes, return true (1)
+                if [ "$NON_VERSION_CHANGES" -eq 0; then
+                  return 0
+                fi
+                return 1
+              }
+
               # Compare checksums and create PR if needed
               if [ "$NEW_CHECKSUM" != "$OLD_CHECKSUM" ]; then
                 # Check for new package or source changes
@@ -276,9 +294,20 @@ jobs:
                   fi
                   
                   if [ -n "$SOURCE_FILES_CHANGED" ]; then
-                    echo "Source files changed:"
-                    echo "$SOURCE_FILES_CHANGED"
-                    SHOULD_BUMP=true
+                    # If only package.json changed, check if it's only version changes
+                    if [ "$(echo "$SOURCE_FILES_CHANGED" | wc -l)" -eq 1 ] && [ "$(echo "$SOURCE_FILES_CHANGED" | grep "package.json$")" ]; then
+                      if check_package_json_changes; then
+                        echo "Only version field changed in package.json, skipping version bump"
+                        SHOULD_BUMP=false
+                      else
+                        echo "Package.json has meaningful changes"
+                        SHOULD_BUMP=true
+                      fi
+                    else
+                      echo "Source files changed:"
+                      echo "$SOURCE_FILES_CHANGED"
+                      SHOULD_BUMP=true
+                    fi
                   else
                     echo "No source files changed"
                     # Update checksum even if we don't bump version, but only if not on default branch
