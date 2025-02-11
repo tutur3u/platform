@@ -24,6 +24,7 @@
     "CF_API_TOKEN",
     "NEXT_PUBLIC_PROXY_API_KEY",
     "PROXY_API_KEY",
+    "SCRAPER_URL",
     "BASE_URL",
     "API_URL",
     "ANALYZE",

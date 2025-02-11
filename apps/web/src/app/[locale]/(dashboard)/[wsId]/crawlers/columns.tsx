@@ -37,7 +37,7 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <Link
-        href={row.getValue('href') || '#'}
+        href={`/${extraData.wsId}/crawlers/${row.getValue('id')}`}
         className="min-w-[4rem]"
         rel="noreferrer"
       >

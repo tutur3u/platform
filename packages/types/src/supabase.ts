@@ -511,6 +511,51 @@ export type Database = {
           },
         ];
       };
+      crawled_url_next_urls: {
+        Row: {
+          created_at: string;
+          origin_id: string;
+          skipped: boolean;
+          url: string;
+        };
+        Insert: {
+          created_at?: string;
+          origin_id?: string;
+          skipped: boolean;
+          url: string;
+        };
+        Update: {
+          created_at?: string;
+          origin_id?: string;
+          skipped?: boolean;
+          url?: string;
+        };
+        Relationships: [];
+      };
+      crawled_urls: {
+        Row: {
+          created_at: string;
+          html: string | null;
+          id: string;
+          markdown: string | null;
+          url: string;
+        };
+        Insert: {
+          created_at?: string;
+          html?: string | null;
+          id?: string;
+          markdown?: string | null;
+          url: string;
+        };
+        Update: {
+          created_at?: string;
+          html?: string | null;
+          id?: string;
+          markdown?: string | null;
+          url?: string;
+        };
+        Relationships: [];
+      };
       credit_wallets: {
         Row: {
           limit: number;
