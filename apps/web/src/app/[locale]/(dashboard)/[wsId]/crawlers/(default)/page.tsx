@@ -2,7 +2,6 @@ import { getColumns } from '../columns';
 import ModelForm from '../form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tutur3u/supabase/next/server';
-import type { WorkspaceCrawler } from '@tutur3u/types/db';
 import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
 import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -31,11 +30,6 @@ export default async function WorkspaceCrawlersPage({
   const { locale, wsId } = await params;
   const { data, count } = await getData(wsId, await searchParams);
 
-  const crawlers = data.map((m) => ({
-    ...m,
-    href: `/${wsId}/crawlers/${m.id}`,
-  })) as WorkspaceCrawler[];
-
   return (
     <>
       <FeatureSummary
@@ -48,7 +42,7 @@ export default async function WorkspaceCrawlersPage({
       />
       <Separator className="my-4" />
       <CustomDataTable
-        data={crawlers}
+        data={data}
         namespace="user-data-table"
         columnGenerator={getColumns}
         extraData={{ locale, wsId }}
