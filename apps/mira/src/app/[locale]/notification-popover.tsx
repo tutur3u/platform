@@ -2,14 +2,10 @@ import NotificationActionList, {
   NotificationAction,
 } from './notification-action-list';
 import { getWorkspaceInvites } from '@/lib/workspace-helper';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tutur3u/ui/components/ui/popover';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Button } from '@tutur3u/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

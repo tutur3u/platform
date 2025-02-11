@@ -2,7 +2,7 @@ import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { NavLink } from '@/components/navigation';
 import { cn } from '@/lib/utils';
 import { createClient } from '@tutur3u/supabase/next/client';
-import { Button, buttonVariants } from '@tutur3u/ui/components/ui/button';
+import { Button, buttonVariants } from '@tutur3u/ui/button';
 import { Star, StarOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

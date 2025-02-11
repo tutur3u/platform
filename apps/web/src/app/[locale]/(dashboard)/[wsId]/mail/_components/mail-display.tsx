@@ -1,25 +1,17 @@
 import { Mail } from '../data';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@tutur3u/ui/components/ui/avatar';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
-import { Label } from '@tutur3u/ui/components/ui/label';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { Switch } from '@tutur3u/ui/components/ui/switch';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@tutur3u/ui/components/ui/tooltip';
+} from '@tutur3u/ui/dropdown-menu';
+import { Label } from '@tutur3u/ui/label';
+import { Separator } from '@tutur3u/ui/separator';
+import { Switch } from '@tutur3u/ui/switch';
+import { Textarea } from '@tutur3u/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
 import { format } from 'date-fns';
 import {
   Archive,

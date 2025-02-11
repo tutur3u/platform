@@ -1,10 +1,6 @@
-import { Button } from '@tutur3u/ui/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tutur3u/ui/components/ui/popover';
+import { Button } from '@tutur3u/ui/button';
 import { cn } from '@tutur3u/ui/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import {
   add,
   eachMonthOfInterval,

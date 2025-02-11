@@ -3,7 +3,7 @@
 import { ConfigRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
-import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const configColumns = (

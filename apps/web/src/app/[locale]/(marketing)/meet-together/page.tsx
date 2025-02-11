@@ -4,7 +4,7 @@ import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
 import type { SupabaseUser } from '@tutur3u/supabase/next/user';
 import { MeetTogetherPlan } from '@tutur3u/types/primitives/MeetTogetherPlan';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { getLocale, getTranslations } from 'next-intl/server';

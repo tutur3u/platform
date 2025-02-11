@@ -1,7 +1,7 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import MonthPicker from '@tutur3u/ui/components/ui/custom/month-picker';
+import MonthPicker from '@tutur3u/ui/custom/month-picker';
 
 export const CustomMonthPicker = ({ ...props }: any) => {
   const searchParams = useSearchParams();

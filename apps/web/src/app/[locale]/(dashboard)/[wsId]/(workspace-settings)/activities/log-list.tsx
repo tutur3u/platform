@@ -2,7 +2,7 @@
 
 import AuditLogCard from '@/components/cards/AuditLogCard';
 import { AuditLog } from '@tutur3u/types/primitives/audit-log';
-import { Accordion } from '@tutur3u/ui/components/ui/accordion';
+import { Accordion } from '@tutur3u/ui/accordion';
 import { useState } from 'react';
 
 interface Props {

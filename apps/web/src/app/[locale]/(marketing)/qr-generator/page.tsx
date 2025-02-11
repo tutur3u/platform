@@ -1,5 +1,5 @@
 import QR from './qr';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 export default async function QRGeneratorPage() {

@@ -8,21 +8,18 @@ import { Model } from '@tutur3u/ai/models';
 import { type Message, type UseChatHelpers } from '@tutur3u/ai/types';
 import { createDynamicClient } from '@tutur3u/supabase/next/client';
 import { AIChat } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import {
-  FileUploader,
-  StatedFile,
-} from '@tutur3u/ui/components/ui/custom/file-uploader';
+import { Button } from '@tutur3u/ui/button';
+import { FileUploader, StatedFile } from '@tutur3u/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/components/ui/dialog';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+} from '@tutur3u/ui/dialog';
 import { cn } from '@tutur3u/ui/lib/utils';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
 import {
   ArrowDownToLine,
   Check,

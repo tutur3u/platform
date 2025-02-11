@@ -2,14 +2,15 @@ import { TaskActions } from '../task-actions';
 import { getTasks } from '@/lib/task-helper';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { Task } from '@tutur3u/types/primitives/TaskBoard';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
-import { Input } from '@tutur3u/ui/components/ui/input';
+} from '@tutur3u/ui/dropdown-menu';
+import { Input } from '@tutur3u/ui/input';
+import { cn } from '@tutur3u/ui/lib/utils';
 import {
   Table,
   TableBody,
@@ -17,8 +18,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@tutur3u/ui/components/ui/table';
-import { cn } from '@tutur3u/ui/lib/utils';
+} from '@tutur3u/ui/table';
 import { format } from 'date-fns';
 import {
   ArrowDownUp,

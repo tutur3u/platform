@@ -20,14 +20,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@tutur3u/ui/components/ui/alert-dialog';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@tutur3u/ui/components/ui/tooltip';
+} from '@tutur3u/ui/alert-dialog';
+import { Button } from '@tutur3u/ui/button';
+import { Input } from '@tutur3u/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
 import debounce from 'lodash/debounce';
 import {
   AlertCircle,

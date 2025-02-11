@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
+import { Button } from '@tutur3u/ui/button';
+import { Checkbox } from '@tutur3u/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -9,15 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tutur3u/ui/components/ui/dialog';
+} from '@tutur3u/ui/dialog';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
+} from '@tutur3u/ui/form';
+import { Input } from '@tutur3u/ui/input';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

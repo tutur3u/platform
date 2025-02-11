@@ -5,8 +5,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/components/ui/dialog';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
+} from '@tutur3u/ui/dialog';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -14,7 +14,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@tutur3u/ui/components/ui/table';
+} from '@tutur3u/ui/table';
 
 interface UserRankingModalProps {
   user: LeaderboardEntry;

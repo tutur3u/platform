@@ -1,10 +1,5 @@
 import { createClient } from '@tutur3u/supabase/next/server';
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tutur3u/ui/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import { notFound } from 'next/navigation';
 
 interface Props {

@@ -2,18 +2,18 @@
 
 import { LogoutDropdownItem } from '../logout-dropdown-item';
 import { cn } from '@/lib/utils';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@tutur3u/ui/components/ui/collapsible';
+} from '@tutur3u/ui/collapsible';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
+} from '@tutur3u/ui/dropdown-menu';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import {
   BookOpen,
   ChevronDown,

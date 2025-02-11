@@ -6,14 +6,10 @@ import { ChatMessageActions } from '@/components/chat-message-actions';
 import { MemoizedReactMarkdown } from '@/components/markdown';
 import { capitalize, cn } from '@/lib/utils';
 import { type Message } from '@tutur3u/ai/types';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@tutur3u/ui/components/ui/avatar';
-import { CodeBlock } from '@tutur3u/ui/components/ui/codeblock';
-import { IconUser } from '@tutur3u/ui/components/ui/icons';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { CodeBlock } from '@tutur3u/ui/codeblock';
+import { IconUser } from '@tutur3u/ui/icons';
+import { Separator } from '@tutur3u/ui/separator';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

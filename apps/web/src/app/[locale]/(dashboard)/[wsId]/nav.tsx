@@ -8,13 +8,9 @@ import {
 } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { buttonVariants } from '@tutur3u/ui/components/ui/button';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@tutur3u/ui/components/ui/tooltip';
+import { buttonVariants } from '@tutur3u/ui/button';
+import { Separator } from '@tutur3u/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
 import { DraftingCompass, FlaskConical } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

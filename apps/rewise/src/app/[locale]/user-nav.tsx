@@ -6,11 +6,7 @@ import { TTR_URL } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/utils/name-helper';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@tutur3u/ui/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +19,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/dropdown-menu';
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

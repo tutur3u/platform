@@ -2,8 +2,8 @@
 
 import { Invoice, InvoiceProduct, InvoicePromotion } from '@tutur3u/types/db';
 import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Button } from '@tutur3u/ui/button';
+import { Separator } from '@tutur3u/ui/separator';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import { ImageIcon, PrinterIcon } from 'lucide-react';

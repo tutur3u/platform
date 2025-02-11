@@ -3,8 +3,8 @@ import { Task, TaskCard } from './task';
 import { TaskForm } from './task-form';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
-import { Card } from '@tutur3u/ui/components/ui/card';
+import { Badge } from '@tutur3u/ui/badge';
+import { Card } from '@tutur3u/ui/card';
 import { cn } from '@tutur3u/ui/lib/utils';
 import { GripVertical } from 'lucide-react';
 

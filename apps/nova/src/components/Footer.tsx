@@ -1,6 +1,6 @@
 'use client';
 
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';

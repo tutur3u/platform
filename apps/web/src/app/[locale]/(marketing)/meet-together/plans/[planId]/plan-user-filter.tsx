@@ -1,7 +1,7 @@
 'use client';
 
 import { useTimeBlocking } from './time-blocking-provider';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import { ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 

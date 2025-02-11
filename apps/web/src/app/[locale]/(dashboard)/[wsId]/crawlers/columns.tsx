@@ -3,7 +3,7 @@
 import { RowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCrawler } from '@tutur3u/types/db';
-import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -37,8 +37,7 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <Link
-        href={row.getValue('url') || '#'}
-        target={row.getValue('url') ? '_blank' : '_self'}
+        href={row.getValue('href') || '#'}
         className="min-w-[4rem]"
         rel="noreferrer"
       >

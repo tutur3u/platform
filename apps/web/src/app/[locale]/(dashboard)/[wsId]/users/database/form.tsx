@@ -6,13 +6,9 @@ import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@tutur3u/ui/components/ui/avatar';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { SelectField } from '@tutur3u/ui/components/ui/custom/select-field';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
+import { SelectField } from '@tutur3u/ui/custom/select-field';
 import {
   Form,
   FormControl,
@@ -21,11 +17,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+} from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
 import dayjs from 'dayjs';
 import { Loader2, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

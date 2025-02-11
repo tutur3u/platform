@@ -3,7 +3,7 @@
 import RowActions from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { PostEmail } from '@tutur3u/types/primitives/post-email';
-import { DataTableColumnHeader } from '@tutur3u/ui/components/ui/custom/tables/data-table-column-header';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import 'dayjs/locale/vi';
 import { Check, X } from 'lucide-react';
 import moment from 'moment';

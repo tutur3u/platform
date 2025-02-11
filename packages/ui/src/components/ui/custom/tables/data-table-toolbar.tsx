@@ -6,11 +6,7 @@ import { DataTableCreateButton } from './data-table-create-button';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
 import { Table } from '@tanstack/react-table';
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from '@tutur3u/ui/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger } from '@tutur3u/ui/dialog';
 import { Download, RotateCcw, Upload } from 'lucide-react';
 import { ReactNode } from 'react';
 

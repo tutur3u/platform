@@ -5,8 +5,8 @@ import {
   createDynamicClient,
 } from '@tutur3u/supabase/next/server';
 import { WorkspaceCourseModule } from '@tutur3u/types/db';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import {
   BookText,
   Box,

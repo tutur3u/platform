@@ -1,5 +1,5 @@
 import { fetcher } from '@/utils/fetcher';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -7,14 +7,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@tutur3u/ui/components/ui/command';
-import { FormControl, FormLabel } from '@tutur3u/ui/components/ui/form';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tutur3u/ui/components/ui/popover';
+} from '@tutur3u/ui/command';
+import { FormControl, FormLabel } from '@tutur3u/ui/form';
 import { cn } from '@tutur3u/ui/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import useSWR from 'swr';
 

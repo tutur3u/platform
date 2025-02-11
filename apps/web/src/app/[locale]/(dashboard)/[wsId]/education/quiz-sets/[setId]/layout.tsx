@@ -1,8 +1,8 @@
 import LinkButton from '../../courses/[courseId]/link-button';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { type WorkspaceQuizSet } from '@tutur3u/types/db';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { Box, Eye, Paperclip } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';

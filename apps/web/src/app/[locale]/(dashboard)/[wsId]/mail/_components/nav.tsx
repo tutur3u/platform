@@ -1,12 +1,8 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { buttonVariants } from '@tutur3u/ui/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@tutur3u/ui/components/ui/tooltip';
+import { buttonVariants } from '@tutur3u/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
 import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 

@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { type UseChatHelpers } from '@tutur3u/ai/types';
 import { AIChat } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

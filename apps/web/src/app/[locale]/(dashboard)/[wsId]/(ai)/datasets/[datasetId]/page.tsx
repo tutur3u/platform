@@ -2,14 +2,14 @@ import { DuplicateHandler } from './components/duplicate-handler';
 import { getDatasetMetrics } from './utils';
 import { createClient } from '@tutur3u/supabase/next/server';
 import type { WorkspaceDataset } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
+} from '@tutur3u/ui/card';
 import { BarChart, FileText, RefreshCw } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';

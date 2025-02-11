@@ -13,8 +13,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@tutur3u/ui/components/ui/alert-dialog';
-import { Button } from '@tutur3u/ui/components/ui/button';
+} from '@tutur3u/ui/alert-dialog';
+import { Button } from '@tutur3u/ui/button';
 import { Pencil, Trash, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

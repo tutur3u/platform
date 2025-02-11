@@ -10,13 +10,13 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/components/ui/accordion';
+} from '@tutur3u/ui/accordion';
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetTrigger,
-} from '@tutur3u/ui/components/ui/sheet';
+} from '@tutur3u/ui/sheet';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

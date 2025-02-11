@@ -9,9 +9,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@tutur3u/ui/components/ui/alert-dialog';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
+} from '@tutur3u/ui/alert-dialog';
+import { Button } from '@tutur3u/ui/button';
+import { Checkbox } from '@tutur3u/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -19,13 +19,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/components/ui/dialog';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { Label } from '@tutur3u/ui/components/ui/label';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+} from '@tutur3u/ui/dialog';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Label } from '@tutur3u/ui/label';
 import { cn } from '@tutur3u/ui/lib/utils';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { format } from 'date-fns';
 import { BookPlus, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';

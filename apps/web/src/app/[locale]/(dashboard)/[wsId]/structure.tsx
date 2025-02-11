@@ -15,21 +15,21 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from '@tutur3u/ui/components/ui/breadcrumb';
-import { Button } from '@tutur3u/ui/components/ui/button';
+} from '@tutur3u/ui/breadcrumb';
+import { Button } from '@tutur3u/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/dropdown-menu';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@tutur3u/ui/components/ui/resizable';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { TooltipProvider } from '@tutur3u/ui/components/ui/tooltip';
+} from '@tutur3u/ui/resizable';
+import { Separator } from '@tutur3u/ui/separator';
+import { TooltipProvider } from '@tutur3u/ui/tooltip';
 import { debounce } from 'lodash';
 import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';

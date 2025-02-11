@@ -1,7 +1,7 @@
 'use client';
 
 import LogoTab from './logo-tab';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Badge } from '@tutur3u/ui/badge';
 import { motion } from 'framer-motion';
 
 const BrandingPage = () => {

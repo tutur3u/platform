@@ -3,8 +3,8 @@
 import { TransactionObjectRowActions } from './row-actions';
 import { joinPath } from '@/utils/path-helper';
 import { StorageObject } from '@tutur3u/types/primitives/StorageObject';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Button } from '@tutur3u/ui/button';
+import { Separator } from '@tutur3u/ui/separator';
 import { FileText, LayoutGrid, LayoutList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';

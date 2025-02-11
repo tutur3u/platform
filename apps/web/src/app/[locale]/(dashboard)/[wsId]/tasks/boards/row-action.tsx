@@ -3,15 +3,15 @@
 import { TaskBoardForm } from './form';
 import { Row } from '@tanstack/react-table';
 import { TaskBoard } from '@tutur3u/types/primitives/TaskBoard';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import ModifiableDialogTrigger from '@tutur3u/ui/components/ui/custom/modifiable-dialog-trigger';
+import { Button } from '@tutur3u/ui/button';
+import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/dropdown-menu';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';

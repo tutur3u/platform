@@ -7,7 +7,7 @@ import { TimeBlockingProvider } from './time-blocking-provider';
 import UtilityButtons from './utility-buttons';
 import { getCurrentUser } from '@/lib/user-helper';
 import { createAdminClient } from '@tutur3u/supabase/next/server';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import 'dayjs/locale/vi';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';

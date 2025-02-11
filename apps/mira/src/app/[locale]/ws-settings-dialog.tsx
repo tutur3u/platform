@@ -7,15 +7,15 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@tutur3u/ui/components/ui/breadcrumb';
-import { Button } from '@tutur3u/ui/components/ui/button';
+} from '@tutur3u/ui/breadcrumb';
+import { Button } from '@tutur3u/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '@tutur3u/ui/components/ui/dialog';
+} from '@tutur3u/ui/dialog';
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +25,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-} from '@tutur3u/ui/components/ui/sidebar';
+} from '@tutur3u/ui/sidebar';
 import {
   Bell,
   Check,

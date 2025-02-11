@@ -13,14 +13,10 @@ import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import type { WorkspaceCrawler } from '@tutur3u/types/db';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@tutur3u/ui/components/ui/alert';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Card, CardContent } from '@tutur3u/ui/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@tutur3u/ui/alert';
+import { Badge } from '@tutur3u/ui/badge';
+import { Button } from '@tutur3u/ui/button';
+import { Card, CardContent } from '@tutur3u/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tutur3u/ui/components/ui/dialog';
+} from '@tutur3u/ui/dialog';
 import {
   Form,
   FormControl,
@@ -37,8 +33,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
+} from '@tutur3u/ui/form';
+import { Input } from '@tutur3u/ui/input';
 import {
   Pagination,
   PaginationContent,
@@ -47,14 +43,9 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@tutur3u/ui/components/ui/pagination';
-import { Progress } from '@tutur3u/ui/components/ui/progress';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@tutur3u/ui/components/ui/tabs';
+} from '@tutur3u/ui/pagination';
+import { Progress } from '@tutur3u/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
 import {
   Bug,
   Check,

@@ -1,12 +1,12 @@
 import { createClient } from '@tutur3u/supabase/next/server';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/components/ui/card';
+} from '@tutur3u/ui/card';
 import { ArrowRight, BookOpen, Code, Trophy, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

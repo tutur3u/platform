@@ -1,4 +1,4 @@
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import { ArrowUp } from 'lucide-react';
 
 interface Props {

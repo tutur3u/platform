@@ -1,5 +1,5 @@
 import UserMonthAttendanceSkeleton from './user-month-attendance-skeleton';
-import { DataTablePagination } from '@tutur3u/ui/components/ui/custom/tables/data-table-pagination';
+import { DataTablePagination } from '@tutur3u/ui/custom/tables/data-table-pagination';
 
 interface SearchParams {
   q?: string;

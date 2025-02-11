@@ -1,13 +1,13 @@
 'use client';
 
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/components/ui/select';
+} from '@tutur3u/ui/select';
 import { Key } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

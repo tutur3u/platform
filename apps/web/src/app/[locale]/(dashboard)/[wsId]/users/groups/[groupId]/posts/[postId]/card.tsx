@@ -7,10 +7,10 @@ import { isEmail } from '@/utils/email-helper';
 import { createClient } from '@tutur3u/supabase/next/client';
 import type { GroupPostCheck } from '@tutur3u/types/db';
 import type { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback } from '@tutur3u/ui/components/ui/avatar';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Card } from '@tutur3u/ui/components/ui/card';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+import { Avatar, AvatarFallback } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
+import { Card } from '@tutur3u/ui/card';
+import { Textarea } from '@tutur3u/ui/textarea';
 import {
   Check,
   CircleSlash,

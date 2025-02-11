@@ -7,10 +7,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/components/ui/accordion';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Card } from '@tutur3u/ui/components/ui/card';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
+} from '@tutur3u/ui/accordion';
+import { Button } from '@tutur3u/ui/button';
+import { Card } from '@tutur3u/ui/card';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -18,13 +18,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@tutur3u/ui/components/ui/table';
+} from '@tutur3u/ui/table';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tutur3u/ui/components/ui/tooltip';
+} from '@tutur3u/ui/tooltip';
 import { motion } from 'framer-motion';
 import {
   Archive,

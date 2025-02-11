@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Badge } from '@tutur3u/ui/badge';
 
 export function Hero() {
   return (

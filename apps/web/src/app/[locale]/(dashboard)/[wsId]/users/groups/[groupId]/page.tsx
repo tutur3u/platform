@@ -10,9 +10,9 @@ import { createClient } from '@tutur3u/supabase/next/server';
 import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Button } from '@tutur3u/ui/button';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import {
   Box,
   Calendar,

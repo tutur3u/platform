@@ -1,8 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { InputField } from '@tutur3u/ui/components/ui/custom/input-field';
+import { Button } from '@tutur3u/ui/button';
+import { InputField } from '@tutur3u/ui/custom/input-field';
 import {
   Form,
   FormControl,
@@ -10,7 +10,7 @@ import {
   FormField,
   FormItem,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
+} from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';

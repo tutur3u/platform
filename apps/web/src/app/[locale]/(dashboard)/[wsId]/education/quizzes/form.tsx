@@ -2,9 +2,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { WorkspaceQuiz } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Checkbox } from '@tutur3u/ui/components/ui/checkbox';
-import { AutosizeTextarea } from '@tutur3u/ui/components/ui/custom/autosize-textarea';
+import { Button } from '@tutur3u/ui/button';
+import { Checkbox } from '@tutur3u/ui/checkbox';
+import { AutosizeTextarea } from '@tutur3u/ui/custom/autosize-textarea';
 import {
   Form,
   FormControl,
@@ -12,11 +12,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+} from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
 import { Loader, Pencil, Plus, PlusCircle, Wand } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

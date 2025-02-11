@@ -4,7 +4,7 @@ import { aiPromptsColumns } from './columns';
 import { AIPromptForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { AIPrompt } from '@tutur3u/types/db';
-import { Dialog } from '@tutur3u/ui/components/ui/dialog';
+import { Dialog } from '@tutur3u/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '@tutur3u/ui/components/ui/badge';
+import { Badge } from '@tutur3u/ui/badge';
 import { motion } from 'framer-motion';
 import { Brain, Globe, Heart } from 'lucide-react';
 import { ReactNode } from 'react';

@@ -1,10 +1,10 @@
 'use client';
 
 import { MemoizedReactMarkdown } from '@/components/markdown';
-import { Badge } from '@tutur3u/ui/components/ui/badge';
-import { Card } from '@tutur3u/ui/components/ui/card';
-import { ScrollArea } from '@tutur3u/ui/components/ui/scroll-area';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
+import { Badge } from '@tutur3u/ui/badge';
+import { Card } from '@tutur3u/ui/card';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
 import {
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@tutur3u/ui/components/ui/table';
+} from '@tutur3u/ui/table';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,

@@ -7,10 +7,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Transaction } from '@tutur3u/types/primitives/Transaction';
 import { TransactionCategory } from '@tutur3u/types/primitives/TransactionCategory';
 import { Wallet } from '@tutur3u/types/primitives/Wallet';
-import { Button } from '@tutur3u/ui/components/ui/button';
-import { Calendar } from '@tutur3u/ui/components/ui/calendar';
-import { Combobox } from '@tutur3u/ui/components/ui/custom/combobox';
-import { Dialog, DialogContent } from '@tutur3u/ui/components/ui/dialog';
+import { Button } from '@tutur3u/ui/button';
+import { Calendar } from '@tutur3u/ui/calendar';
+import { Combobox } from '@tutur3u/ui/custom/combobox';
+import { Dialog, DialogContent } from '@tutur3u/ui/dialog';
 import {
   Form,
   FormControl,
@@ -18,17 +18,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/components/ui/form';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tutur3u/ui/components/ui/popover';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+} from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
 import { cn } from '@tutur3u/ui/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';

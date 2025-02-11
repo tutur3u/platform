@@ -1,4 +1,4 @@
-import { Switch } from '@tutur3u/ui/components/ui/switch';
+import { Switch } from '@tutur3u/ui/switch';
 import { ReactNode } from 'react';
 
 export default function RolePermission({

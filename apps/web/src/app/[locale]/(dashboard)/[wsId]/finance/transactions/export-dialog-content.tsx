@@ -2,24 +2,24 @@
 
 import { createClient } from '@tutur3u/supabase/next/client';
 import { Transaction } from '@tutur3u/types/primitives/Transaction';
-import { Button } from '@tutur3u/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   DialogClose,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/components/ui/dialog';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { Label } from '@tutur3u/ui/components/ui/label';
-import { Progress } from '@tutur3u/ui/components/ui/progress';
+} from '@tutur3u/ui/dialog';
+import { Input } from '@tutur3u/ui/input';
+import { Label } from '@tutur3u/ui/label';
+import { Progress } from '@tutur3u/ui/progress';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/components/ui/select';
+} from '@tutur3u/ui/select';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';

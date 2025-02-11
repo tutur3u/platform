@@ -1,7 +1,7 @@
 import { FileUploader } from './file-uploader';
-import { Input } from '@tutur3u/ui/components/ui/input';
-import { Label } from '@tutur3u/ui/components/ui/label';
-import { Textarea } from '@tutur3u/ui/components/ui/textarea';
+import { Input } from '@tutur3u/ui/input';
+import { Label } from '@tutur3u/ui/label';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { useState } from 'react';
 
 interface TopicPanelProps {

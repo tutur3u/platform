@@ -1,6 +1,6 @@
 'use client';
 
-import { Card } from '@tutur3u/ui/components/ui/card';
+import { Card } from '@tutur3u/ui/card';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
