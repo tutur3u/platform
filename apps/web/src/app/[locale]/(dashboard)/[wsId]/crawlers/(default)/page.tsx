@@ -2,7 +2,6 @@ import { getColumns } from '../columns';
 import ModelForm from '../form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tutur3u/supabase/next/server';
-import type { WorkspaceDataset } from '@tutur3u/types/db';
 import FeatureSummary from '@tutur3u/ui/components/ui/custom/feature-summary';
 import { Separator } from '@tutur3u/ui/components/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -99,12 +98,6 @@ async function getData(
     return {
       data,
       count: count ?? 0,
-    } as unknown as {
-      data: (WorkspaceDataset & {
-        columns: number;
-        rows: number;
-      })[];
-      count: number;
     };
   } catch (error) {
     console.error('Failed to fetch crawlers:', error);

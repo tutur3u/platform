@@ -12,7 +12,7 @@ import { calculateEstimatedTime } from './utils/time';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import type { WorkspaceDataset } from '@tutur3u/types/db';
+import type { WorkspaceCrawler } from '@tutur3u/types/db';
 import {
   Alert,
   AlertDescription,
@@ -116,7 +116,7 @@ export function DatasetCrawler({
   dataset,
 }: {
   wsId: string;
-  dataset: WorkspaceDataset;
+  dataset: WorkspaceCrawler;
 }) {
   const queryClient = useQueryClient();
 
@@ -235,7 +235,11 @@ export function DatasetCrawler({
       setLoading(true);
       setSyncStatus('Starting sync with server...');
 
-      if ((dataset.type === 'excel' || dataset.type === 'csv') && dataset.url) {
+      if (
+        dataset.url.endsWith('.xlsx') ||
+        dataset.url.endsWith('.xls') ||
+        dataset.url.toLowerCase().endsWith('.csv')
+      ) {
         const crawler = dataset.url.toLowerCase().endsWith('.csv')
           ? new CsvCrawler()
           : new ExcelCrawler();
@@ -843,14 +847,20 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
         <DialogHeader>
           <DialogTitle>Dataset Synchronization</DialogTitle>
           <DialogDescription>
-            {dataset.type === 'html'
-              ? 'HTML Crawler Status'
-              : 'Excel Import Status'}
+            {dataset.url.endsWith('.csv')
+              ? 'CSV Dataset Status'
+              : dataset.url.endsWith('.xlsx') || dataset.url.endsWith('.xls')
+                ? 'Excel Dataset Status'
+                : 'HTML Dataset Status'}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Show controls for HTML datasets */}
-        {dataset.type === 'html' && (
+        {/* Show controls for datasets based on file type */}
+        {!(
+          dataset.url.endsWith('.csv') ||
+          dataset.url.endsWith('.xlsx') ||
+          dataset.url.endsWith('.xls')
+        ) && (
           <div className="flex items-center justify-between border-b pb-4">
             <CrawlControls
               crawlState={crawlState}
@@ -868,15 +878,26 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
         )}
 
         {/* Show metrics panel when crawling */}
-        {crawlState !== 'idle' && dataset.type === 'html' && (
-          <>
-            <MetricsPanel metrics={metrics} crawlState={crawlState} />
-            {renderMetricsAndQueues()}
-          </>
-        )}
+        {crawlState !== 'idle' &&
+          !(
+            dataset.url.endsWith('.csv') ||
+            dataset.url.endsWith('.xlsx') ||
+            dataset.url.endsWith('.xls')
+          ) && (
+            <>
+              <MetricsPanel metrics={metrics} crawlState={crawlState} />
+              {renderMetricsAndQueues()}
+            </>
+          )}
 
         {/* Existing content */}
-        {dataset.type === 'html' ? renderHtmlPreview() : renderExcelPreview()}
+        {!(
+          dataset.url.endsWith('.csv') ||
+          dataset.url.endsWith('.xlsx') ||
+          dataset.url.endsWith('.xls')
+        )
+          ? renderHtmlPreview()
+          : renderExcelPreview()}
       </>
     );
   };
@@ -1357,22 +1378,20 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
         throw new Error('No dataset ID provided');
       }
 
-      if (
-        !dataset?.type ||
-        !['html', 'excel', 'csv'].includes(dataset.type as string)
-      ) {
-        throw new Error('Invalid dataset type');
-      }
-
       // At this point, we know dataset exists and has required properties
       const validatedDataset = dataset as {
         id: string;
         url: string;
-        type: 'html' | 'excel' | 'csv';
         html_ids?: string[];
       };
 
-      if (validatedDataset.type === 'html') {
+      if (
+        !(
+          validatedDataset.url.endsWith('.csv') ||
+          validatedDataset.url.endsWith('.xlsx') ||
+          validatedDataset.url.endsWith('.xls')
+        )
+      ) {
         if (
           !validatedDataset.html_ids ||
           !Array.isArray(validatedDataset.html_ids) ||
@@ -1486,8 +1505,9 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
           ],
         });
       } else if (
-        validatedDataset.type === 'excel' ||
-        validatedDataset.type === 'csv'
+        validatedDataset.url.endsWith('.xlsx') ||
+        validatedDataset.url.endsWith('.xls') ||
+        validatedDataset.url.endsWith('.csv')
       ) {
         const crawler = validatedDataset.url.toLowerCase().endsWith('.csv')
           ? new CsvCrawler()
@@ -1529,7 +1549,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
 
         setCrawlState('completed');
         setSyncStatus(
-          validatedDataset.type === 'csv'
+          validatedDataset.url.endsWith('.csv')
             ? 'CSV data synced successfully!'
             : 'Excel data synced successfully!'
         );
@@ -1760,7 +1780,7 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
       <DialogTrigger asChild>
         <Button onClick={() => setIsOpen(true)} disabled={!dataset.url}>
           <RefreshCw className="mr-2 h-4 w-4" />
-          {dataset.type === 'html' ? 'Start Crawler' : 'Sync Dataset'}
+          Sync Dataset
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-auto sm:max-w-[90vw]">

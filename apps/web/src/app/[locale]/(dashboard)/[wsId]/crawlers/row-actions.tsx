@@ -2,7 +2,7 @@
 
 import DatasetForm from './form';
 import { Row } from '@tanstack/react-table';
-import type { WorkspaceDataset } from '@tutur3u/types/db';
+import type { WorkspaceCrawler } from '@tutur3u/types/db';
 import { Button } from '@tutur3u/ui/components/ui/button';
 import ModifiableDialogTrigger from '@tutur3u/ui/components/ui/custom/modifiable-dialog-trigger';
 import {
@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface RowActionsProps {
-  row: Row<WorkspaceDataset>;
+  row: Row<WorkspaceCrawler>;
   href?: string;
   extraData?: any;
 }

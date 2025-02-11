@@ -10,8 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tutur3u/ui/components/ui/card';
-import { Separator } from '@tutur3u/ui/components/ui/separator';
-import { BarChart, ExternalLink, FileText, RefreshCw } from 'lucide-react';
+import { BarChart, FileText, RefreshCw } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -131,36 +130,6 @@ export default async function DatasetDetailsPage({ params }: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <div className="text-sm font-medium">HTML Elements</div>
-              <div className="text-sm text-muted-foreground">
-                {typedDataset.html_ids?.length || 0} elements configured
-              </div>
-            </div>
-
-            <div>
-              <div className="text-sm font-medium">Source URL</div>
-              {typedDataset.url ? (
-                <a
-                  href={typedDataset.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-sm text-muted-foreground hover:underline"
-                >
-                  {typedDataset.url}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  No URL configured
-                </div>
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
           <div className="space-y-2">
             <div className="text-sm font-medium">Actions</div>
             <div className="flex items-center gap-2">

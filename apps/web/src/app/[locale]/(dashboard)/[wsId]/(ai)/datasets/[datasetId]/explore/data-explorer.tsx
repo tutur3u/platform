@@ -1,6 +1,5 @@
 'use client';
 
-import { DatasetCrawler } from './dataset-crawler';
 import {
   keepPreviousData,
   useQuery,
@@ -385,7 +384,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
               </Button>
             </DialogContent>
           </Dialog>
-          <DatasetCrawler wsId={wsId} dataset={dataset} />
+          {/* <DatasetCrawler wsId={wsId} dataset={dataset} /> */}
         </div>
       </div>
 
