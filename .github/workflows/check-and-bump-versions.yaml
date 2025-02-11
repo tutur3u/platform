@@ -273,7 +273,7 @@ jobs:
                 NON_VERSION_CHANGES=$(echo "$DIFF" | grep -v '"version":' | grep '^[+-]' | wc -l)
                 
                 # If there are no non-version changes, return true (1)
-                if [ "$NON_VERSION_CHANGES" -eq 0; then
+                if [ "$NON_VERSION_CHANGES" -eq 0 ]; then
                   return 0
                 fi
                 return 1
