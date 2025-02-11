@@ -78,7 +78,7 @@ export default function Page({ params }: Props) {
             <p>No problems available.</p>
           )}
           <TestCaseComponent
-            testcase={problems[currentProblemIndex]?.testcase}
+            testcase={problems[currentProblemIndex]?.testcase[0]}
           />
         </div>
 

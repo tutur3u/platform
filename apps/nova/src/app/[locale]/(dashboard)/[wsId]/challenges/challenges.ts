@@ -13,7 +13,7 @@ export interface Problems {
   exampleInput: string;
   exampleOutput: string;
   constraints?: string[];
-  testcase?: string;
+  testcase?: string[];
 }
 
 const challenges: Challenge[] = [
@@ -36,7 +36,10 @@ const challenges: Challenge[] = [
           '1 ≤ s.length ≤ 3 * 10⁵',
           's consists of printable ASCII characters.',
         ],
-        testcase: 'hehe this is the correct answer ',
+        testcase: [
+          'The Eiffel Tower is one of the most recognizable landmarks in the world, located in Paris, France, and completed in 1889.',
+          'The Eiffel Tower is a famous Paris landmark, completed in 1889.',
+        ],
       },
       {
         id: '1b',
@@ -47,7 +50,10 @@ const challenges: Challenge[] = [
           'In 2023, the global AI industry was valued at $150 billion, with an expected growth rate of 40% annually until 2030.',
         exampleOutput:
           'In 2023, AI was a $150B industry, projected to grow 40% yearly until 2030.',
-        testcase: 'hehe this is the correct answer ',
+        testcase: [
+          'In 1990, the world population was 5.32 billion, and it reached 7.9 billion by 2020.',
+          'In 1990, the world population was 5.32B, growing to 7.9B by 2020.',
+        ],
       },
     ],
   },
@@ -65,7 +71,12 @@ const challenges: Challenge[] = [
         exampleInput:
           'I love this phone! The battery lasts forever, and the camera is amazing.',
         exampleOutput: 'Positive',
-        testcase: 'hehe this is the correct answer ',
+        testcase: [
+          'I absolutely hate the new software update; it’s so frustrating!',
+          'Negative',
+          'This is the best concert I’ve ever attended!',
+          'Positive',
+        ],
       },
       {
         id: '2b',
@@ -73,7 +84,12 @@ const challenges: Challenge[] = [
         description: 'Identify whether a sentence is **sarcastic or not**.',
         exampleInput: '"Oh great, another Monday! Just what I needed..."',
         exampleOutput: 'Sarcastic',
-        testcase: 'hehe this is the correct answer ',
+        testcase: [
+          'I love getting stuck in traffic for hours. What a fun way to spend my day!',
+          'Sarcastic',
+          'I’m thrilled that my package arrived on time.',
+          'Not Sarcastic',
+        ],
       },
     ],
   },
@@ -95,7 +111,14 @@ for (let i = 0; i < 5; i++) {
         `,
         exampleOutput:
           'This loop runs five times, printing numbers from 0 to 4. It starts at `i = 0`, increases `i` by 1 each time, and stops at `i = 5`.',
-        testcase: 'hehe this is the correct answer ',
+        testcase: [
+          `
+for (let i = 1; i <= 3; i++) {
+  console.log(i);
+}
+          `,
+          'This loop runs three times, printing numbers from 1 to 3. It starts at `i = 1` and stops when `i` exceeds 3.',
+        ],
       },
       {
         id: '3b',
@@ -109,7 +132,15 @@ function factorial(n) {
         `,
         exampleOutput:
           'This function calculates the factorial of a number by calling itself repeatedly until it reaches the base case (`n === 1`).',
-        testcase: 'hehe this is the correct answer ',
+        testcase: [
+          `
+function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+          `,
+          'This function calculates the nth Fibonacci number by calling itself twice for each value of n until it reaches the base case where n <= 1.',
+        ],
       },
     ],
   },
