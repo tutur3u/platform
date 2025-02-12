@@ -37,6 +37,8 @@ export default function ChatBox({ problem }: { problem: Problems }) {
           problemDescription: problem.description,
           testCase: problem.testcase,
           answer: input,
+          exampleOutput: problem.exampleOutput,
+          exampleInput:problem.exampleInput
         }),
       });
 
