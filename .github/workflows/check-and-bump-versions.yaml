@@ -269,12 +269,19 @@ jobs:
                   DIFF=$(git diff HEAD~1 HEAD -- package.json)
                 fi
                 
-                # Count number of changed lines that aren't the version field
-                NON_VERSION_CHANGES=$(echo "$DIFF" | grep -v '"version":' | grep '^[+-]' | wc -l)
+                # Extract the changes, excluding whitespace-only changes
+                CHANGES=$(echo "$DIFF" | grep '^[+-]' | grep -v '^[+-]$' | grep -v '^[+-]\s*$')
                 
-                # If there are no non-version changes, return true (1)
+                # Count lines that aren't the version field or the final newline
+                NON_VERSION_CHANGES=$(echo "$CHANGES" | grep -v '"version":' | grep -v '^[+-]$' | wc -l | tr -d ' ')
+                
+                # If there are no non-version changes, return success (0)
                 if [ "$NON_VERSION_CHANGES" -eq 0 ]; then
-                  return 0
+                  # Double check that version field is the only thing that changed
+                  VERSION_CHANGES=$(echo "$CHANGES" | grep '"version":' | wc -l | tr -d ' ')
+                  if [ "$VERSION_CHANGES" -eq 2 ]; then  # One line removed, one line added
+                    return 0
+                  fi
                 fi
                 return 1
               }
@@ -299,8 +306,15 @@ jobs:
                       if check_package_json_changes; then
                         echo "Only version field changed in package.json, skipping version bump"
                         SHOULD_BUMP=false
+                        # Update checksum without bumping version
+                        echo "$NEW_CHECKSUM" > .checksum
+                        if [ -n "$(git status --porcelain .checksum)" ]; then
+                          git add .checksum
+                          git commit -m "chore(@tutur3u/${package}): update checksum [skip ci]"
+                          git push origin HEAD
+                        fi
                       else
-                        echo "Package.json has meaningful changes"
+                        echo "Package.json has meaningful changes beyond version"
                         SHOULD_BUMP=true
                       fi
                     else
