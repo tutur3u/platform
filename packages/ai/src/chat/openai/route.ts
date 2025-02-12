@@ -8,18 +8,10 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
-
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
 
-  const {
-    id,
-    model = DEFAULT_MODEL_NAME,
-    messages,
-    previewToken,
-    mode,
-  } = (await req.json()) as {
+  const { id, model, messages, previewToken, mode } = (await req.json()) as {
     id?: string;
     model?: string;
     messages?: CoreMessage[];
