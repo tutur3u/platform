@@ -1,17 +1,20 @@
 'use client';
 
+import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { Button } from '@tutur3u/ui/button';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function CrawlButton({
+  id,
   wsId,
   url,
-  onSuccess,
 }: {
+  id?: string;
   wsId: string;
   url: string;
-  onSuccess?: () => void;
 }) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   return (
@@ -24,7 +27,7 @@ export default function CrawlButton({
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ url }),
+            body: JSON.stringify({ id, url }),
           });
 
           if (!res.ok) {
@@ -33,16 +36,16 @@ export default function CrawlButton({
           }
 
           await res.json();
-          onSuccess?.();
+          router.refresh();
         } catch (error) {
           console.error('Error during crawl:', error);
-        } finally {
           setIsLoading(false);
         }
       }}
+      variant={isLoading ? 'secondary' : undefined}
       disabled={isLoading}
     >
-      {isLoading ? 'Crawling...' : 'Crawl'}
+      {isLoading ? <LoadingIndicator /> : 'Crawl'}
     </Button>
   );
 }

@@ -38,7 +38,7 @@ export type WorkspaceDataset = Tables<'workspace_datasets'> & {
   href?: string;
 };
 
-export type WorkspaceCrawler = Tables<'workspace_crawlers'> & {
+export type CrawledUrl = Tables<'crawled_urls'> & {
   href?: string;
 };
 

@@ -530,11 +530,20 @@ export type Database = {
           skipped?: boolean;
           url?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'crawled_url_next_urls_origin_id_fkey';
+            columns: ['origin_id'];
+            isOneToOne: false;
+            referencedRelation: 'crawled_urls';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       crawled_urls: {
         Row: {
           created_at: string;
+          creator_id: string;
           html: string | null;
           id: string;
           markdown: string | null;
@@ -542,6 +551,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          creator_id: string;
           html?: string | null;
           id?: string;
           markdown?: string | null;
@@ -549,12 +559,21 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          creator_id?: string;
           html?: string | null;
           id?: string;
           markdown?: string | null;
           url?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'crawled_urls_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       credit_wallets: {
         Row: {
@@ -3425,48 +3444,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'workspace_courses_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      workspace_crawlers: {
-        Row: {
-          created_at: string;
-          dataset_id: string | null;
-          html_ids: string[];
-          id: string;
-          url: string;
-          ws_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          dataset_id?: string | null;
-          html_ids: string[];
-          id?: string;
-          url: string;
-          ws_id: string;
-        };
-        Update: {
-          created_at?: string;
-          dataset_id?: string | null;
-          html_ids?: string[];
-          id?: string;
-          url?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_crawlers_dataset_id_fkey';
-            columns: ['dataset_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_datasets';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_crawlers_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';

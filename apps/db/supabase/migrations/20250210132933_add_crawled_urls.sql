@@ -274,3 +274,151 @@ grant truncate on table "public"."crawled_urls" to "service_role";
 grant
 update
     on table "public"."crawled_urls" to "service_role";
+
+drop policy "Allow workspace members to have full permissions" on "public"."workspace_crawlers";
+
+revoke delete on table "public"."workspace_crawlers"
+from
+    "anon";
+
+revoke
+insert
+    on table "public"."workspace_crawlers"
+from
+    "anon";
+
+revoke references on table "public"."workspace_crawlers"
+from
+    "anon";
+
+revoke
+select
+    on table "public"."workspace_crawlers"
+from
+    "anon";
+
+revoke trigger on table "public"."workspace_crawlers"
+from
+    "anon";
+
+revoke truncate on table "public"."workspace_crawlers"
+from
+    "anon";
+
+revoke
+update
+    on table "public"."workspace_crawlers"
+from
+    "anon";
+
+revoke delete on table "public"."workspace_crawlers"
+from
+    "authenticated";
+
+revoke
+insert
+    on table "public"."workspace_crawlers"
+from
+    "authenticated";
+
+revoke references on table "public"."workspace_crawlers"
+from
+    "authenticated";
+
+revoke
+select
+    on table "public"."workspace_crawlers"
+from
+    "authenticated";
+
+revoke trigger on table "public"."workspace_crawlers"
+from
+    "authenticated";
+
+revoke truncate on table "public"."workspace_crawlers"
+from
+    "authenticated";
+
+revoke
+update
+    on table "public"."workspace_crawlers"
+from
+    "authenticated";
+
+revoke delete on table "public"."workspace_crawlers"
+from
+    "service_role";
+
+revoke
+insert
+    on table "public"."workspace_crawlers"
+from
+    "service_role";
+
+revoke references on table "public"."workspace_crawlers"
+from
+    "service_role";
+
+revoke
+select
+    on table "public"."workspace_crawlers"
+from
+    "service_role";
+
+revoke trigger on table "public"."workspace_crawlers"
+from
+    "service_role";
+
+revoke truncate on table "public"."workspace_crawlers"
+from
+    "service_role";
+
+revoke
+update
+    on table "public"."workspace_crawlers"
+from
+    "service_role";
+
+alter table
+    "public"."workspace_crawlers" drop constraint "workspace_crawlers_dataset_id_fkey";
+
+alter table
+    "public"."workspace_crawlers" drop constraint "workspace_crawlers_ws_id_fkey";
+
+alter table
+    "public"."workspace_crawlers" drop constraint "workspace_crawlers_pkey";
+
+drop index if exists "public"."workspace_crawlers_pkey";
+
+drop table "public"."workspace_crawlers";
+
+alter table
+    "public"."crawled_url_next_urls" enable row level security;
+
+alter table
+    "public"."crawled_urls"
+add
+    column "creator_id" uuid not null;
+
+alter table
+    "public"."crawled_urls" enable row level security;
+
+alter table
+    "public"."crawled_url_next_urls"
+add
+    constraint "crawled_url_next_urls_origin_id_fkey" FOREIGN KEY (origin_id) REFERENCES crawled_urls(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
+alter table
+    "public"."crawled_url_next_urls" validate constraint "crawled_url_next_urls_origin_id_fkey";
+
+alter table
+    "public"."crawled_urls"
+add
+    constraint "crawled_urls_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON UPDATE CASCADE not valid;
+
+alter table
+    "public"."crawled_urls" validate constraint "crawled_urls_creator_id_fkey";
+
+create policy "Denies all requests" on "public"."crawled_url_next_urls" as permissive for all to authenticated using (false) with check (false);
+
+create policy "Denies all requests" on "public"."crawled_urls" as permissive for all to authenticated using (false) with check (false);

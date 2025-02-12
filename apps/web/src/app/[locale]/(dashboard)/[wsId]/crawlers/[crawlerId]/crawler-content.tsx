@@ -12,7 +12,7 @@ import {
 } from '@tutur3u/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
 import { formatDistance } from 'date-fns';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 interface CrawledUrl {
   created_at: string;
@@ -30,42 +30,22 @@ interface RelatedUrl {
 }
 
 export function CrawlerContent({
-  initialCrawledUrl,
-  initialRelatedUrls,
+  crawledUrl,
+  relatedUrls,
+  crawledRelatedUrls,
   wsId,
   url,
 }: {
-  initialCrawledUrl: CrawledUrl | null;
-  initialRelatedUrls: RelatedUrl[];
+  crawledUrl: CrawledUrl | null;
+  relatedUrls: RelatedUrl[];
+  crawledRelatedUrls: CrawledUrl[];
   wsId: string;
   url: string;
 }) {
-  const [crawledUrl, setCrawledUrl] = useState(initialCrawledUrl);
-  const [relatedUrls, setRelatedUrls] = useState(initialRelatedUrls);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const refreshData = async () => {
-    try {
-      setIsRefreshing(true);
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/crawlers/status?url=${encodeURIComponent(url)}`
-      );
-      if (!res.ok) return;
-
-      const data = await res.json();
-      setCrawledUrl(data.crawledUrl);
-      setRelatedUrls(data.relatedUrls || []);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    if (crawledUrl) {
-      const interval = setInterval(refreshData, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [crawledUrl]);
+  // Create a map of crawled URLs for quick lookup
+  const crawledUrlsMap = new Map(
+    crawledRelatedUrls.map((url) => [url.url, url])
+  );
 
   return (
     <>
@@ -75,19 +55,17 @@ export function CrawlerContent({
             <div>
               <CardTitle>Crawl Status</CardTitle>
               <CardDescription>
-                {crawledUrl
+                {crawledUrl?.html && crawledUrl?.markdown
                   ? `Last crawled ${formatDistance(new Date(crawledUrl.created_at), new Date(), { addSuffix: true })}`
                   : 'Not yet crawled'}
               </CardDescription>
             </div>
-            {isRefreshing && (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            )}
           </div>
         </CardHeader>
-        {!crawledUrl && (
+
+        {!(crawledUrl?.html && crawledUrl?.markdown) && (
           <CardContent>
-            <CrawlButton wsId={wsId} url={url} onSuccess={refreshData} />
+            <CrawlButton id={crawledUrl?.id} wsId={wsId} url={url} />
           </CardContent>
         )}
       </Card>
@@ -141,39 +119,71 @@ export function CrawlerContent({
                 <div className="rounded-md border">
                   {relatedUrls.length > 0 ? (
                     <div className="divide-y">
-                      {relatedUrls.map((relatedUrl) => (
-                        <div key={relatedUrl.url} className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={
-                                  relatedUrl.skipped
-                                    ? 'text-muted-foreground'
-                                    : ''
-                                }
-                              >
-                                {relatedUrl.url}
-                              </span>
-                              <span
-                                className={`text-xs ${
-                                  relatedUrl.skipped
-                                    ? 'text-yellow-500'
-                                    : 'text-green-500'
-                                }`}
-                              >
-                                {relatedUrl.skipped ? 'Skipped' : 'Kept'}
-                              </span>
+                      {relatedUrls.map((relatedUrl) => {
+                        const isCrawled = crawledUrlsMap.has(relatedUrl.url);
+                        const crawledData = crawledUrlsMap.get(relatedUrl.url);
+
+                        return (
+                          <div key={relatedUrl.url} className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                {crawledData?.id ? (
+                                  <Link
+                                    href={`/${wsId}/crawlers/${crawledData.id}`}
+                                    className="hover:underline"
+                                  >
+                                    <span
+                                      className={
+                                        relatedUrl.skipped
+                                          ? 'text-muted-foreground'
+                                          : ''
+                                      }
+                                    >
+                                      {relatedUrl.skipped
+                                        ? relatedUrl.url.replace(/\/$/, '')
+                                        : relatedUrl.url}
+                                    </span>
+                                  </Link>
+                                ) : (
+                                  <span
+                                    className={
+                                      relatedUrl.skipped
+                                        ? 'text-muted-foreground/50'
+                                        : 'text-muted-foreground'
+                                    }
+                                  >
+                                    {relatedUrl.skipped
+                                      ? relatedUrl.url.replace(/\/$/, '')
+                                      : relatedUrl.url}
+                                  </span>
+                                )}
+                                <span
+                                  className={`text-xs ${
+                                    relatedUrl.skipped
+                                      ? 'text-yellow-500'
+                                      : 'text-green-500'
+                                  }`}
+                                >
+                                  {relatedUrl.skipped ? 'Skipped' : 'Kept'}
+                                </span>
+                                {isCrawled && (
+                                  <span className="text-xs text-blue-500">
+                                    Crawled{' '}
+                                    {formatDistance(
+                                      new Date(crawledData!.created_at),
+                                      new Date(),
+                                      { addSuffix: true }
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                              {!relatedUrl.skipped && !isCrawled && (
+                                <CrawlButton wsId={wsId} url={relatedUrl.url} />
+                              )}
                             </div>
-                            {!relatedUrl.skipped && (
-                              <CrawlButton
-                                wsId={wsId}
-                                url={relatedUrl.url}
-                                onSuccess={refreshData}
-                              />
-                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="p-4">

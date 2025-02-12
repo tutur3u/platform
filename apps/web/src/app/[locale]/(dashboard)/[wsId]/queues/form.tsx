@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { WorkspaceCrawler } from '@tutur3u/types/db';
+import type { CrawledUrl } from '@tutur3u/types/db';
 import { Button } from '@tutur3u/ui/button';
 import {
   Form,
@@ -16,7 +16,6 @@ import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Input } from '@tutur3u/ui/input';
 import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import { Separator } from '@tutur3u/ui/separator';
-import { Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -25,12 +24,11 @@ import * as z from 'zod';
 const FormSchema = z.object({
   id: z.string().optional(),
   url: z.string().optional(),
-  html_ids: z.array(z.string()).optional(),
 });
 
 interface Props {
   wsId: string;
-  data?: WorkspaceCrawler;
+  data?: CrawledUrl;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
@@ -45,7 +43,6 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
     values: {
       id: data?.id,
       url: data?.url || '',
-      html_ids: data?.html_ids || [],
     },
   });
 
@@ -58,10 +55,7 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
           : `/api/v1/workspaces/${wsId}/crawlers`,
         {
           method: formData.id ? 'PUT' : 'POST',
-          body: JSON.stringify({
-            ...formData,
-            html_ids: formData.html_ids?.filter((id) => id && id.trim() !== ''),
-          }),
+          body: JSON.stringify(formData),
         }
       );
 
@@ -128,67 +122,8 @@ export default function DatasetForm({ wsId, data, onFinish }: Props) {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="html_ids"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>HTML IDs</FormLabel>
-                    <div className="space-y-2">
-                      {field.value?.map((id, index) => (
-                        <div key={index} className="flex gap-2">
-                          <FormControl>
-                            <Input
-                              value={id}
-                              onChange={(e) => {
-                                const newIds = [...(field.value || [])];
-                                newIds[index] = e.target.value;
-                                field.onChange(newIds);
-                              }}
-                              placeholder="Enter HTML ID"
-                            />
-                          </FormControl>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                              const newIds = field.value?.filter(
-                                (_, i) => i !== index
-                              );
-                              field.onChange(newIds);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          const newIds = [...(field.value || []), ''];
-                          field.onChange(newIds);
-                        }}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add HTML ID
-                      </Button>
-                    </div>
-                    <FormDescription>
-                      Add HTML IDs that will be used to extract data from the
-                      HTML page.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
           </ScrollArea>
-
-          <Separator className="my-2" />
 
           <div className="flex justify-center gap-2">
             <Button type="submit" className="w-full" disabled={saving}>

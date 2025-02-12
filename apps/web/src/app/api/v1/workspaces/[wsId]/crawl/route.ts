@@ -1,3 +1,4 @@
+import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
@@ -11,29 +12,44 @@ interface Params {
 export async function POST(req: NextRequest, { params }: Params) {
   const { wsId } = await params;
 
-  const body = (await req.json()) as { url?: string | null };
-  const { url } = body;
+  const body = (await req.json()) as {
+    id?: string | null;
+    url?: string | null;
+  };
+  const { id, url: rawUrl } = body;
 
-  if (!url) {
+  if (!rawUrl) {
     return NextResponse.json(
       { message: 'Missing required parameter: url' },
       { status: 400 }
     );
   }
 
+  if (wsId !== ROOT_WORKSPACE_ID) {
+    return NextResponse.json(
+      { message: 'Crawling is only allowed for the root workspace' },
+      { status: 403 }
+    );
+  }
+
+  // if not ends with /, add it
+  const url = rawUrl.endsWith('/') ? rawUrl.trim() : `${rawUrl.trim()}/`;
   const apiKey = (await headers()).get('API_KEY');
+
   return apiKey
-    ? getDataWithApiKey(req, { url, wsId, apiKey })
-    : getDataFromSession(req, { url, wsId });
+    ? getDataWithApiKey(req, { id, url, wsId, apiKey })
+    : getDataFromSession(req, { id, url, wsId });
 }
 
 async function getDataWithApiKey(
   _: NextRequest,
   {
+    id,
     url,
     wsId,
     apiKey,
   }: {
+    id?: string | null;
     url: string;
     wsId: string;
     apiKey: string;
@@ -67,7 +83,11 @@ async function getDataWithApiKey(
 
   const { error: workspaceError } = apiCheck;
   const { count: secretCount, error: secretError } = secretCheck;
-  const { count: crawledCount, error: crawledUrlError } = crawledUrlCheck;
+  const {
+    data: crawledUrlData,
+    error: crawledUrlError,
+    count: crawledCount,
+  } = crawledUrlCheck;
 
   if (secretCount === 0) {
     return NextResponse.json(
@@ -76,7 +96,11 @@ async function getDataWithApiKey(
     );
   }
 
-  if (crawledCount !== 0) {
+  if (
+    crawledCount !== 0 &&
+    (crawledUrlData?.html || crawledUrlData?.markdown)
+  ) {
+    console.log('URL already crawled', crawledUrlData);
     return NextResponse.json(
       { message: 'URL already crawled' },
       { status: 400 }
@@ -93,7 +117,7 @@ async function getDataWithApiKey(
 
   // make POST request to SCRAPER_URL with ?url=${url}
   const res = await fetch(
-    `${process.env.SCRAPER_URL}?url=${encodeURIComponent(url)}`,
+    `${process.env.SCRAPER_URL}?url=${encodeURIComponent(url.replace(/\/$/, ''))}`,
     {
       headers: {
         'Content-Type': 'application/json',
@@ -112,11 +136,14 @@ async function getDataWithApiKey(
 
   const { data: crawledUrl, error: crawledError } = await sbAdmin
     .from('crawled_urls')
-    .insert({
+    .upsert({
+      id: id ?? undefined,
       url,
       html: data.html,
       markdown: data.markdown,
+      creator_id: 'UNKNOWN',
     })
+    .eq('url', url)
     .select('id')
     .single();
 
@@ -156,9 +183,26 @@ async function getDataWithApiKey(
 
 async function getDataFromSession(
   _: NextRequest,
-  { url, wsId }: { url: string; wsId: string }
+  {
+    id,
+    url,
+    wsId,
+  }: {
+    id?: string | null;
+    url: string;
+    wsId: string;
+  }
 ) {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user || !user.email?.endsWith('@tuturuuu.com')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
+
   const sbAdmin = await createAdminClient();
 
   const workspaceCheckQuery = supabase
@@ -173,6 +217,7 @@ async function getDataFromSession(
     .eq('name', 'ALLOW_CRAWLERS')
     .eq('value', 'true')
     .maybeSingle();
+
   const crawledUrlQuery = sbAdmin
     .from('crawled_urls')
     .select('*', { count: 'exact' })
@@ -187,7 +232,11 @@ async function getDataFromSession(
 
   const { error: workspaceError } = workspaceCheck;
   const { count: secretCount, error: secretError } = secretCheck;
-  const { count: crawledCount, error: crawledUrlError } = crawledUrlCheck;
+  const {
+    data: crawledUrlData,
+    error: crawledUrlError,
+    count: crawledCount,
+  } = crawledUrlCheck;
 
   if (secretCount === 0) {
     return NextResponse.json(
@@ -196,7 +245,11 @@ async function getDataFromSession(
     );
   }
 
-  if (crawledCount !== 0) {
+  if (
+    crawledCount !== 0 &&
+    (crawledUrlData?.html || crawledUrlData?.markdown)
+  ) {
+    console.log('URL already crawled', crawledUrlData);
     return NextResponse.json(
       { message: 'URL already crawled' },
       { status: 400 }
@@ -213,7 +266,7 @@ async function getDataFromSession(
 
   // make POST request to SCRAPER_URL with ?url=${url}
   const res = await fetch(
-    `${process.env.SCRAPER_URL}?url=${encodeURIComponent(url)}`,
+    `${process.env.SCRAPER_URL}?url=${encodeURIComponent(url.replace(/\/$/, ''))}`,
     {
       headers: {
         'Content-Type': 'application/json',
@@ -232,11 +285,14 @@ async function getDataFromSession(
 
   const { data: crawledUrl, error: crawledError } = await sbAdmin
     .from('crawled_urls')
-    .insert({
+    .upsert({
+      id: id ?? undefined,
       url,
       html: data.html,
       markdown: data.markdown,
+      creator_id: user.id,
     })
+    .eq('url', url)
     .select('id')
     .single();
 

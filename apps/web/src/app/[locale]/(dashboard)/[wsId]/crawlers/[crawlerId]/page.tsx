@@ -1,6 +1,5 @@
 import { CrawlerContent } from './crawler-content';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { notFound } from 'next/navigation';
+import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
 
 interface Props {
   params: Promise<{
@@ -14,41 +13,60 @@ export default async function DatasetDetailsPage({ params }: Props) {
   const { wsId, crawlerId } = await params;
   const supabase = await createClient();
 
-  const { data: crawler } = await supabase
-    .from('workspace_crawlers')
-    .select('*')
-    .eq('id', crawlerId)
-    .single();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!crawler) notFound();
+  if (!user || !user.email?.endsWith('@tuturuuu.com')) {
+    throw new Error('Unauthorized');
+  }
 
-  const { data: crawledUrl } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { data: crawledUrl } = await sbAdmin
     .from('crawled_urls')
     .select('*')
-    .eq('url', crawler.url)
+    .eq('id', crawlerId)
     .maybeSingle();
 
   const { data: relatedUrls } = !crawledUrl
     ? { data: [] }
-    : await supabase
+    : await sbAdmin
         .from('crawled_url_next_urls')
         .select('*')
         .eq('origin_id', crawledUrl.id)
         .order('created_at', { ascending: false });
 
+  const { data: crawledRelatedUrls } = await sbAdmin
+    .from('crawled_urls')
+    .select('*')
+    .in(
+      'url',
+      relatedUrls?.map((r) =>
+        r.url.trim().endsWith('/') ? r.url.trim() : r.url.trim() + '/'
+      ) || []
+    );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{crawler.url}</h1>
+          <h1 className="text-2xl font-bold">{crawledUrl?.url}</h1>
         </div>
       </div>
 
       <CrawlerContent
-        initialCrawledUrl={crawledUrl}
-        initialRelatedUrls={relatedUrls || []}
+        crawledUrl={crawledUrl}
+        relatedUrls={(relatedUrls || []).map((r) => ({
+          ...r,
+          url: r.url.trim().endsWith('/') ? r.url.trim() : r.url.trim() + '/',
+        }))}
+        crawledRelatedUrls={(crawledRelatedUrls || []).map((r) => ({
+          ...r,
+          url: r.url.trim().endsWith('/') ? r.url.trim() : r.url.trim() + '/',
+        }))}
         wsId={wsId}
-        url={crawler.url}
+        url={crawledUrl?.url || ''}
       />
     </div>
   );
