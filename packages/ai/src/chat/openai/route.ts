@@ -25,6 +25,7 @@ export async function POST(req: Request) {
 
   try {
     // if (!id) return new Response('Missing chat ID', { status: 400 });
+    if (!model) return new Response('Missing model', { status: 400 });
     if (!messages) return new Response('Missing messages', { status: 400 });
 
     // eslint-disable-next-line no-undef
