@@ -1,3 +1,4 @@
+import { TTR_URL } from '@/constants/common';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
 import { Button } from '@tutur3u/ui/button';
@@ -27,6 +28,7 @@ interface ChatPermissionsProps {
   isPublic: boolean;
   creatorId: string;
   currentUserId?: string;
+  // eslint-disable-next-line no-unused-vars
   onUpdateVisibility: (isPublic: boolean) => void;
 }
 
@@ -45,7 +47,7 @@ export function ChatPermissions({
   const [showQR, setShowQR] = useState(false);
 
   const isOwner = currentUserId === creatorId;
-  const chatUrl = `${window.location.origin}/c/${chatId}`;
+  const chatUrl = `${TTR_URL}/ai/chats/${chatId}`;
 
   // Fetch members
   useEffect(() => {
