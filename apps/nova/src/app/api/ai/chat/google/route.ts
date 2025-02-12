@@ -40,7 +40,10 @@ export async function POST(req: Request) {
     Problem: ${problemDescription}
     Test Case: ${testCase}
     User's Answer: ${answer}
-
+    Provide a score out of 10 based on these criteria.
+- If the answer is completely irrelevant to the problem, assign a score of 0.
+- If the answer partially meets the criteria, adjust the score accordingly.
+- Perfect answers should receive a score of 10.
     Please provide the evaluation in the following JSON format:
     {
       "score": [number from 1 to 10],
