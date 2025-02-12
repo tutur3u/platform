@@ -261,28 +261,44 @@ jobs:
               echo "• New checksum (${#NEW_CHECKSUM} chars): $NEW_CHECKSUM"
               echo "• Match status: $([ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ] && echo "identical" || echo "different")"
 
-              # Add function to check if only version changed in package.json
+              # Enhanced function to check if only version changed in package.json
               check_package_json_changes() {
                 if [ "${{ github.event_name }}" = "pull_request" ]; then
                   DIFF=$(git diff "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- package.json)
                 else
                   DIFF=$(git diff HEAD~1 HEAD -- package.json)
                 fi
+
+                # If no diff found, return false (changes exist)
+                if [ -z "$DIFF" ]; then
+                  return 1
+                fi
                 
-                # Extract the changes, excluding whitespace-only changes
-                CHANGES=$(echo "$DIFF" | grep '^[+-]' | grep -v '^[+-]$' | grep -v '^[+-]\s*$')
+                # First, capture all non-whitespace changes
+                CHANGES=$(echo "$DIFF" | grep '^[+-]' | grep -v '^[+-]\s*$' | grep -v '^[+-]\s*{*}*$')
                 
-                # Count lines that aren't the version field or the final newline
-                NON_VERSION_CHANGES=$(echo "$CHANGES" | grep -v '"version":' | grep -v '^[+-]$' | wc -l | tr -d ' ')
+                # Remove any line with just braces, commas, or whitespace
+                CHANGES=$(echo "$CHANGES" | grep -v '^[+-]\s*[{},]*\s*$')
                 
-                # If there are no non-version changes, return success (0)
-                if [ "$NON_VERSION_CHANGES" -eq 0 ]; then
-                  # Double check that version field is the only thing that changed
-                  VERSION_CHANGES=$(echo "$CHANGES" | grep '"version":' | wc -l | tr -d ' ')
-                  if [ "$VERSION_CHANGES" -eq 2 ]; then  # One line removed, one line added
-                    return 0
+                # Get all lines except version changes
+                NON_VERSION_LINES=$(echo "$CHANGES" | grep -v '"version":\s*"[0-9][0-9.]*"' || true)
+                
+                # If we have no non-version changes
+                if [ -z "$NON_VERSION_LINES" ]; then
+                  # Verify we have exactly one version removal and one addition
+                  VERSION_LINES=$(echo "$CHANGES" | grep '"version":\s*"[0-9][0-9.]*"' || true)
+                  if [ -n "$VERSION_LINES" ]; then
+                    VERSION_REMOVED=$(echo "$VERSION_LINES" | grep '^-' | wc -l | tr -d ' ')
+                    VERSION_ADDED=$(echo "$VERSION_LINES" | grep '^+' | wc -l | tr -d ' ')
+                    
+                    if [ "$VERSION_REMOVED" -eq 1 ] && [ "$VERSION_ADDED" -eq 1 ]; then
+                      echo "✓ Verified: Only version field was changed"
+                      return 0
+                    fi
                   fi
                 fi
+                
+                echo "✗ Other changes detected besides version"
                 return 1
               }
 
@@ -293,7 +309,7 @@ jobs:
                   echo "New package detected, will create initial version"
                   SHOULD_BUMP=true
                 else
-                  # Improved source file detection
+                  # Enhanced source file detection with better filtering
                   if [ "${{ github.event_name }}" = "pull_request" ]; then
                     SOURCE_FILES_CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep "^packages/$package/" | grep -E "\.(ts|tsx|js|jsx|json|css|scss|md)$" || true)
                   else
@@ -303,9 +319,12 @@ jobs:
                   if [ -n "$SOURCE_FILES_CHANGED" ]; then
                     # If only package.json changed, check if it's only version changes
                     if [ "$(echo "$SOURCE_FILES_CHANGED" | wc -l)" -eq 1 ] && [ "$(echo "$SOURCE_FILES_CHANGED" | grep "package.json$")" ]; then
+                      echo "Only package.json changed. Checking if changes are version-only..."
                       if check_package_json_changes; then
-                        echo "Only version field changed in package.json, skipping version bump"
+                        echo "✅ Confirmed: Only version field changed in package.json"
+                        echo "⏭️ Skipping version bump, updating checksum only"
                         SHOULD_BUMP=false
+                        
                         # Update checksum without bumping version
                         echo "$NEW_CHECKSUM" > .checksum
                         if [ -n "$(git status --porcelain .checksum)" ]; then
@@ -314,17 +333,18 @@ jobs:
                           git push origin HEAD
                         fi
                       else
-                        echo "Package.json has meaningful changes beyond version"
+                        echo "⚠️ Package.json contains meaningful changes beyond version"
                         SHOULD_BUMP=true
                       fi
                     else
-                      echo "Source files changed:"
+                      echo "Multiple source files changed:"
                       echo "$SOURCE_FILES_CHANGED"
                       SHOULD_BUMP=true
                     fi
                   else
-                    echo "No source files changed"
-                    # Update checksum even if we don't bump version, but only if not on default branch
+                    echo "No relevant source files changed"
+                    SHOULD_BUMP=false
+                    # Update checksum without version bump for PRs
                     if [ "${{ github.event_name }}" = "pull_request" ]; then
                       echo "$NEW_CHECKSUM" > .checksum
                       if [ -n "$(git status --porcelain .checksum)" ]; then
@@ -333,90 +353,121 @@ jobs:
                         git push origin HEAD
                       fi
                     fi
-                    SHOULD_BUMP=false
                   fi
                 fi
 
                 # If changes detected, bump version and create PR
                 if [ "$SHOULD_BUMP" = true ]; then
-                  # Version bump logic and PR creation
-                  NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
-                  echo "Meaningful changes detected, bumping version to: $NEW_VERSION"
+                  # Enhanced version bump logic with validation
+                  if [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                    NEW_VERSION=$(echo "$CURRENT_VERSION" | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+                    echo "📈 Bumping version: $CURRENT_VERSION → $NEW_VERSION"
+                  else
+                    echo "⚠️ Invalid version format: $CURRENT_VERSION"
+                    echo "Using default increment..."
+                    NEW_VERSION="0.0.1"
+                  fi
                   
-                  sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
+                  # Safely update package.json
+                  if ! sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json; then
+                    echo "❌ Failed to update version in package.json"
+                    exit 1
+                  fi
+                  
+                  # Update checksum with verification
                   echo "$NEW_CHECKSUM" > .checksum
+                  if [ "$(cat .checksum)" != "$NEW_CHECKSUM" ]; then
+                    echo "❌ Checksum verification failed"
+                    exit 1
+                  fi
                   
+                  # Create branch with retry mechanism
                   BRANCH_NAME="bump-${package}-${NEW_VERSION}"
-                  git checkout -b "$BRANCH_NAME"
+                  MAX_RETRIES=3
+                  RETRY_COUNT=0
                   
+                  while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                    if git checkout -b "$BRANCH_NAME" 2>/dev/null; then
+                      break
+                    fi
+                    RETRY_COUNT=$((RETRY_COUNT + 1))
+                    if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                      echo "⚠️ Branch creation failed, attempt $RETRY_COUNT of $MAX_RETRIES"
+                      sleep 2
+                    else
+                      echo "❌ Failed to create branch after $MAX_RETRIES attempts"
+                      exit 1
+                    fi
+                  done
+                  
+                  # Stage and commit changes
                   git add package.json .checksum
                   git commit -m "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}"
-                  git push origin "$BRANCH_NAME"
                   
-                  # Create PR with enhanced description
-                  PR_BODY="## 📦 Automated Version Bump<br /><br />"
+                  # Push with error handling
+                  if ! git push origin "$BRANCH_NAME"; then
+                    echo "❌ Failed to push branch"
+                    exit 1
+                  fi
                   
-                  if [ -n "$OLD_CHECKSUM" ]; then
-                    if [ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ]; then
-                      PR_BODY="${PR_BODY}> ✅ **Status:** No changes in package content<br /><br />"
-                    else
-                      PR_BODY="${PR_BODY}> 🔄 **Status:** Package content modified<br /><br />"
+                  # Enhanced PR description
+                  PR_BODY="## 📦 Automated Version Bump
+                  
+                  ### Overview
+                  - 📝 Package: \`@tutur3u/${package}\`
+                  - 🔄 Version: \`${CURRENT_VERSION}\` → \`${NEW_VERSION}\`
+                  - 🕒 Updated: $(date -u +"%Y-%m-%d %H:%M UTC")
+                  
+                  ### Changes
+                  <details open>
+                  <summary>Modified Files</summary>
+                  
+                  \`\`\`diff"
+                  
+                  while IFS= read -r file; do
+                    if [ -n "$file" ]; then
+                      PR_BODY="${PR_BODY}
+                      + ${file}"
                     fi
-                  else
-                    PR_BODY="${PR_BODY}> 🆕 **Status:** New package<br /><br />"
-                  fi
+                  done <<< "$SOURCE_FILES_CHANGED"
                   
-                  # Add package information summary
-                  SUMMARY="### 📊 Package Information<br />"
-                  SUMMARY="${SUMMARY}<table><tr><th>Detail</th><th>Value</th></tr>"
-                  SUMMARY="${SUMMARY}<tr><td>Package</td><td><code>@tutur3u/${package}</code></tr>"
-                  SUMMARY="${SUMMARY}<tr><td>Current Version</td><td><code>${CURRENT_VERSION}</code></tr>"
-                  SUMMARY="${SUMMARY}<tr><td>New Version</td><td><code>${NEW_VERSION}</code></tr>"
-                  SUMMARY="${SUMMARY}</table><br />"
+                  PR_BODY="${PR_BODY}
+                  \`\`\`
+                  </details>
                   
-                  PR_BODY="${PR_BODY}${SUMMARY}"
+                  ### Integrity Check
+                  <details>
+                  <summary>Checksums</summary>
                   
-                  # Add changed files section
-                  if [ -n "$SOURCE_FILES_CHANGED" ]; then
-                    PR_BODY="${PR_BODY}### 📝 Changed Files<br />"
-                    PR_BODY="${PR_BODY}<details open><summary>Modified files in this update</summary><br />"
-                    while IFS= read -r file; do
-                      if [ -n "$file" ]; then
-                        cleaned_path=$(echo "$file" | sed "s|packages/$package/||g")
-                        PR_BODY="${PR_BODY}• \`$cleaned_path\`<br />"
-                      fi
-                    done <<< "$SOURCE_FILES_CHANGED"
-                    PR_BODY="${PR_BODY}</details><br />"
-                  fi
+                  \`\`\`
+                  Previous: ${OLD_CHECKSUM:-N/A}
+                  Current:  ${NEW_CHECKSUM}
+                  \`\`\`
+                  </details>
                   
-                  # Add checksum information
-                  PR_BODY="${PR_BODY}### 🔐 Package Integrity<br />"
-                  PR_BODY="${PR_BODY}<details><summary>View checksums</summary><br />"
-                  PR_BODY="${PR_BODY}**New Checksum:**<br />\`\`\`<br />$NEW_CHECKSUM<br />\`\`\`<br /><br />"
+                  ___
+                  > 🤖 This PR was automatically generated by the version bump workflow.
+                  > Please review the changes before merging."
                   
-                  if [ -n "$OLD_CHECKSUM" ]; then
-                    PR_BODY="${PR_BODY}**Previous Checksum:**<br />\`\`\`<br />$OLD_CHECKSUM<br />\`\`\`<br />"
-                    if [ "$OLD_CHECKSUM" = "$NEW_CHECKSUM" ]; then
-                      PR_BODY="${PR_BODY}<br />✅ Checksums match exactly<br />"
-                    else
-                      PR_BODY="${PR_BODY}<br />⚠️ Checksums differ<br />"
-                    fi
-                  else
-                    PR_BODY="${PR_BODY}> 📝 No previous checksum available - new package or first tracking<br />"
-                  fi
-                  PR_BODY="${PR_BODY}</details>"
-                  
-                  # Create PR
-                  gh pr create \
+                  # Create PR with enhanced error handling
+                  if ! gh pr create \
                     --title "chore(@tutur3u/${package}): bump version to ${NEW_VERSION}" \
                     --body "$PR_BODY" \
                     --base "${GITHUB_BASE_REF:-main}" \
                     --head "$BRANCH_NAME" \
-                    --repo "$GITHUB_REPOSITORY" || {
-                      echo "Failed to create PR for $BRANCH_NAME. This may be because a PR already exists."
-                    }
+                    --repo "$GITHUB_REPOSITORY" 2>/dev/null; then
+                    
+                    # Check if PR already exists
+                    EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number')
+                    if [ -n "$EXISTING_PR" ]; then
+                      echo "ℹ️ PR already exists (#$EXISTING_PR)"
+                    else
+                      echo "❌ Failed to create PR"
+                      exit 1
+                    fi
+                  fi
                 else
-                  echo "No meaningful source file changes detected, skipping version bump"
+                  echo "ℹ️ No version bump needed"
                 fi
               fi
               
