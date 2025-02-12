@@ -901,6 +901,13 @@
     "finished_at": "Kết thúc lúc",
     "created_at": "Tạo lúc"
   },
+  "crawled-url-data-table": {
+    "id": "Mã số",
+    "url": "URL",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "created_at": "Tạo lúc"
+  },
   "ws-home": {
     "home": "Trang chủ",
     "description_p1": "Tổng quan về không gian làm việc",

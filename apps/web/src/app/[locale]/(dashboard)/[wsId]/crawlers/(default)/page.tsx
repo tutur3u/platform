@@ -1,7 +1,7 @@
 import { getColumns } from '../columns';
 import ModelForm from '../form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
+import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
 import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
 import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -22,13 +22,12 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceCrawlersPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function CrawledUrlsPage({ params, searchParams }: Props) {
   const t = await getTranslations();
   const { locale, wsId } = await params;
   const { data, count } = await getData(wsId, await searchParams);
+
+  const pageSize = parseInt((await searchParams)?.pageSize || '50') || 50;
 
   return (
     <>
@@ -43,13 +42,13 @@ export default async function WorkspaceCrawlersPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
-        namespace="user-data-table"
+        namespace="crawled-url-data-table"
         columnGenerator={getColumns}
         extraData={{ locale, wsId }}
         count={count}
+        pageSize={pageSize}
         defaultVisibility={{
           id: false,
-          created_at: false,
         }}
       />
     </>
@@ -61,18 +60,29 @@ async function getData(
   {
     q,
     page = '1',
-    pageSize = '10',
+    pageSize = '50',
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
   try {
     const supabase = await createClient();
 
-    const queryBuilder = supabase
-      .from('workspace_crawlers')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .eq('ws_id', wsId);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || !user.email?.endsWith('@tuturuuu.com')) {
+      throw new Error('Unauthorized');
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    const queryBuilder = sbAdmin
+      .from('crawled_urls')
+      .select('*', {
+        count: 'exact',
+      })
+      .order('created_at');
 
     if (page && pageSize) {
       const parsedPage = parseInt(page);

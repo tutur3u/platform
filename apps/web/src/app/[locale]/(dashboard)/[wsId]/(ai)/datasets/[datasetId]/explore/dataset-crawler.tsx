@@ -12,7 +12,7 @@ import { calculateEstimatedTime } from './utils/time';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import type { WorkspaceCrawler } from '@tutur3u/types/db';
+import type { CrawledUrl } from '@tutur3u/types/db';
 import { Alert, AlertDescription, AlertTitle } from '@tutur3u/ui/alert';
 import { Badge } from '@tutur3u/ui/badge';
 import { Button } from '@tutur3u/ui/button';
@@ -107,7 +107,7 @@ export function DatasetCrawler({
   dataset,
 }: {
   wsId: string;
-  dataset: WorkspaceCrawler;
+  dataset: CrawledUrl;
 }) {
   const queryClient = useQueryClient();
 
@@ -354,7 +354,12 @@ export function DatasetCrawler({
   };
 
   const fetchHtmlPreview = async () => {
-    if (!dataset.url || !dataset.html_ids?.length) return;
+    if (
+      !dataset.url
+
+      // || !dataset.html_ids?.length
+    )
+      return;
 
     setPreviewLoading(true);
     setUrlLogs([]);
@@ -365,7 +370,8 @@ export function DatasetCrawler({
       const crawler = new HtmlCrawler();
       const { mainPage, articlePreviews } = await crawler.getPreview({
         url: dataset.url,
-        htmlIds: dataset.html_ids,
+        // htmlIds: dataset.html_ids,
+        htmlIds: [],
         onProgress: (progress, status) => {
           setSyncProgress(progress);
           setSyncStatus(status);
@@ -454,7 +460,10 @@ export function DatasetCrawler({
   );
 
   const renderHtmlPreview = () => {
-    if (!dataset.url || !dataset.html_ids?.length) {
+    if (
+      !dataset.url
+      // || !dataset.html_ids?.length
+    ) {
       return (
         <Alert>
           <AlertTitle>No HTML selectors configured</AlertTitle>
@@ -727,14 +736,14 @@ Full path: ${preview.selector}${preview.subSelector ? ` → ${preview.subSelecto
               <table className="w-full border-collapse border">
                 <thead>
                   <tr className="bg-muted">
-                    {dataset.html_ids?.map((id) => {
+                    {/* {dataset.html_ids?.map((id) => {
                       const match = id.match(/{{(.+?)}}/);
                       return match ? (
                         <th key={match[1]} className="border p-2 text-left">
                           {match[1]}
                         </th>
                       ) : null;
-                    })}
+                    })} */}
                   </tr>
                 </thead>
                 <tbody>

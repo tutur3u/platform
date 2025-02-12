@@ -2,8 +2,9 @@
 
 import { RowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import type { WorkspaceCrawler } from '@tutur3u/types/db';
+import type { CrawledUrl } from '@tutur3u/types/db';
 import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -12,7 +13,7 @@ export const getColumns = (
   namespace: string | undefined,
   _?: any,
   extraData?: any
-): ColumnDef<WorkspaceCrawler>[] => [
+): ColumnDef<CrawledUrl>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
@@ -48,6 +49,28 @@ export const getColumns = (
     ),
   },
   {
+    accessorKey: 'html',
+    header: ({ column }) => (
+      <DataTableColumnHeader t={t} column={column} title="HTML" />
+    ),
+    cell: ({ row }) => (
+      <span className="line-clamp-1 font-semibold hover:underline">
+        {row.getValue('html') ? <Check /> : <X />}
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'markdown',
+    header: ({ column }) => (
+      <DataTableColumnHeader t={t} column={column} title="Markdown" />
+    ),
+    cell: ({ row }) => (
+      <span className="line-clamp-1 font-semibold hover:underline">
+        {row.getValue('markdown') ? <Check /> : <X />}
+      </span>
+    ),
+  },
+  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader
@@ -58,7 +81,7 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <div className="min-w-[8rem]">
-        {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
+        {moment(row.getValue('created_at')).fromNow()}
       </div>
     ),
   },

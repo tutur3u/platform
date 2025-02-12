@@ -901,6 +901,13 @@
     "finished_at": "Finished at",
     "created_at": "Created at"
   },
+  "crawled-url-data-table": {
+    "id": "ID",
+    "url": "URL",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "created_at": "Created at"
+  },
   "ws-home": {
     "home": "Home",
     "description_p1": "A quick summary of the",
