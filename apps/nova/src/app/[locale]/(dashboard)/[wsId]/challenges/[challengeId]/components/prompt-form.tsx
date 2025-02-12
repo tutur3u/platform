@@ -1,10 +1,13 @@
 'use client';
 
 import { Problems } from '../../challenges';
+import Mosaic from '@/components/common/LoadingIndicator';
 import { Button } from '@repo/ui/components/ui/button';
 import { Input } from '@repo/ui/components/ui/input';
+import { History } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
+// import { Dialog } from '@repo/ui/components/ui/dialog';
 export default function ChatBox({ problem }: { problem: Problems }) {
   const [messages, setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
@@ -38,7 +41,7 @@ export default function ChatBox({ problem }: { problem: Problems }) {
           testCase: problem.testcase,
           answer: input,
           exampleOutput: problem.exampleOutput,
-          exampleInput:problem.exampleInput
+          exampleInput: problem.exampleInput,
         }),
       });
 
@@ -70,13 +73,16 @@ export default function ChatBox({ problem }: { problem: Problems }) {
   return (
     <div className="flex h-full flex-col p-4">
       <h2 className="text-lg font-bold">Chat Box</h2>
-      <p className="mb-2 text-gray-500">
-        You only have 5 tries for each question. [{attempts}/5]
-      </p>
+      <div className="mb-2 flex items-center text-gray-500">
+        <p className="mr-2">
+          You only have 5 tries for each question. [{attempts}/5]
+        </p>
+        <History size={16} />
+      </div>
 
       {/* Chat Messages */}
       <div className="flex-1 space-y-2 overflow-y-auto rounded-md border p-2">
-        {messages.map((msg, index) => (
+        {/* {messages.map((msg, index) => (
           <div
             key={index}
             className={`max-w-[80%] rounded-lg p-2 ${
@@ -87,12 +93,18 @@ export default function ChatBox({ problem }: { problem: Problems }) {
           >
             {msg.text}
           </div>
-        ))}
+        ))} */}
 
         {/* Loading Indicator */}
-        {loading && (
+        {/* {loading && (
           <div className="max-w-[80%] self-start rounded-lg bg-gray-300 p-2 text-black">
             Typing...
+          </div>
+        )} */}
+        {loading && (
+          <div className="flex h-screen items-center justify-center">
+            <Mosaic className="h-6" />
+            <p>We are processing your prompt please wait...</p>
           </div>
         )}
 
