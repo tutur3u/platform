@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.2.1",
+  "packageManager": "pnpm@10.3.0",
   "dependencies": {
     "eslint": "^9.20.1",
     "react": "^19.0.0",
@@ -20,7 +20,7 @@
     "@eslint/js": "^9.20.0",
     "@tutur3u/eslint-config": "workspace:*",
     "@tutur3u/typescript-config": "workspace:*",
-    "@types/node": "^22.13.1",
+    "@types/node": "^22.13.2",
     "@types/react": "^19.0.8",
     "@typescript-eslint/eslint-plugin": "^8.24.0",
     "@typescript-eslint/parser": "^8.24.0",
