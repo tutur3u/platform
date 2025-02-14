@@ -7,7 +7,6 @@ import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-// use useRouter for client-side redirection
 import React, { useEffect, useState } from 'react';
 
 interface Props {
@@ -20,6 +19,21 @@ export default function Page({ params }: Props) {
   const [challenge, setChallenge] = useState<any | null>(null);
   const database = createClient();
   const router = useRouter();
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      const confirmationMessage =
+        'You have unsaved changes, are you sure you want to leave?';
+      event.returnValue = confirmationMessage;
+      return confirmationMessage;
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   useEffect(() => {
     const authCheck = async () => {
@@ -36,7 +50,6 @@ export default function Page({ params }: Props) {
   }, []);
 
   useEffect(() => {
-    // Wait for params to resolve
     const fetchData = async () => {
       const { challengeId } = await params;
       const challengeData = getChallenge(parseInt(challengeId));
@@ -50,19 +63,20 @@ export default function Page({ params }: Props) {
 
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
 
+  // Navigate to next problem
   const nextProblem = () => {
     setCurrentProblemIndex((prev) =>
       prev < problems.length - 1 ? prev + 1 : prev
     );
   };
 
+  // Navigate to previous problem
   const prevProblem = () => {
     setCurrentProblemIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
 
   return (
     <>
-      {/* Header with navigation */}
       <CustomizedHeader
         proNum={problems.length}
         currentProblem={currentProblemIndex + 1}
