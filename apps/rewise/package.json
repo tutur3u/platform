@@ -25,7 +25,7 @@
     "sb:typegen": "cd ../db && pnpm supabase gen types typescript --local --schema public > src/types/supabase.ts && prettier --write src/types/supabase.ts"
   },
   "dependencies": {
-    "@deepgram/sdk": "^3.11.0",
+    "@deepgram/sdk": "^3.11.1",
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.0",
@@ -51,7 +51,7 @@
     "next": "^15.1.7",
     "next-intl": "^3.26.3",
     "next-themes": "^0.4.4",
-    "openai": "^4.84.1",
+    "openai": "^4.85.1",
     "pptxgenjs": "^3.12.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -84,7 +84,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.15",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.13.2",
+    "@types/node": "^22.13.4",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@types/uuid": "^10.0.0",

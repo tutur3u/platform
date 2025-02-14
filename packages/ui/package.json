@@ -75,7 +75,7 @@
     "@tutur3u/eslint-config": "workspace:*",
     "@tutur3u/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.15",
-    "@types/node": "^22.13.2",
+    "@types/node": "^22.13.4",
     "@types/react": "^19.0.8",
     "@types/react-resizable": "^3.0.8",
     "@types/react-syntax-highlighter": "^15.5.13",
