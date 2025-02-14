@@ -3,19 +3,44 @@
 import { Problems } from '../../challenges';
 import Mosaic from '@/components/common/LoadingIndicator';
 import { Button } from '@repo/ui/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@repo/ui/components/ui/dialog';
 import { Input } from '@repo/ui/components/ui/input';
+import { Separator } from '@repo/ui/components/ui/separator';
 import { History } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
-// import { Dialog } from '@repo/ui/components/ui/dialog';
 export default function ChatBox({ problem }: { problem: Problems }) {
-  const [messages, setMessages] = useState<
+  const [_messages, setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false); // Loading state
-  const [attempts, setAttempts] = useState(0); // Attempts counter
+  const [loading, setLoading] = useState(false);
+  const [_history, setHistory] = useState<any[]>([]);
+  const [attempts, setAttempts] = useState(0);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (problem?.id) {
+        const fetchedHistory = await fetchProblemHistoryFromAPI(problem.id);
+        if (fetchedHistory) {
+          setHistory(fetchedHistory);
+          setAttempts(fetchedHistory.length);
+        }
+      }
+    };
+
+    fetchHistory();
+  }, [problem?.id]);
 
   const updateProblemHistory = async (
     problemId: string,
@@ -43,11 +68,6 @@ export default function ChatBox({ problem }: { problem: Problems }) {
       console.error('Error:', error);
     }
   };
-
-  // Auto-scroll to the latest message
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim() || loading || attempts >= 5) return;
@@ -82,15 +102,17 @@ export default function ChatBox({ problem }: { problem: Problems }) {
       const newAIMessage = { text: aiResponseText, sender: 'ai' as const };
       setMessages((prev) => [...prev, newAIMessage]);
 
-      // Call updateProblemHistory after receiving AI response
       if (data.response?.score !== undefined && data.response?.feedback) {
         await updateProblemHistory(
-          problem.id, // Problem ID from the prop
-          data.response.feedback, // Feedback from AI
-          data.response.score, // Score from AI
-          input // User's input (the prompt)
+          problem.id,
+          data.response.feedback,
+          data.response.score,
+          input
         );
       }
+      const fetchedHistory = await fetchProblemHistoryFromAPI(problem.id);
+      setHistory(fetchedHistory);
+      router.refresh();
     } catch (error) {
       const errorMsg = {
         text: 'An error occurred. Please try again.',
@@ -115,32 +137,49 @@ export default function ChatBox({ problem }: { problem: Problems }) {
         <p className="mr-2">
           You only have 5 tries for each question. [{attempts}/5]
         </p>
-        <div>
-          <History size={16} />
-        </div>
+
+        <Dialog>
+          <DialogTrigger>
+            <History size={16} />
+          </DialogTrigger>
+
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Problem History</DialogTitle>
+              <DialogDescription>
+                Below is the history of your attempts for this problem.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="max-h-[400px] overflow-y-auto">
+              {_history && _history.length > 0 ? (
+                <ul>
+                  {_history.map((entry, index) => (
+                    <li key={index}>
+                      <div className="flex justify-between pt-5">
+                        <span>Attempt {index + 1}:</span>
+                        <span className="rounded-lg bg-gray-300 px-4 py-2 text-sm font-semibold">
+                          Score: {entry.score}/10
+                        </span>
+                      </div>
+                      <p>{entry.feedback}</p>
+                      <Separator></Separator>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Nothing to show yet!</p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline">Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Chat Messages */}
       <div className="flex-1 space-y-2 overflow-y-auto rounded-md border p-2">
-        {/* {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`max-w-[80%] rounded-lg p-2 ${
-              msg.sender === 'user'
-                ? 'self-end bg-blue-500 text-white'
-                : 'self-start bg-gray-300 text-black'
-            }`}
-          >
-            {msg.text}
-          </div>
-        ))} */}
-
-        {/* Loading Indicator */}
-        {/* {loading && (
-          <div className="max-w-[80%] self-start rounded-lg bg-gray-300 p-2 text-black">
-            Typing...
-          </div>
-        )} */}
         {loading && (
           <div className="flex h-screen items-center justify-center">
             <Mosaic className="h-6" />
@@ -171,4 +210,16 @@ export default function ChatBox({ problem }: { problem: Problems }) {
       </div>
     </div>
   );
+}
+
+async function fetchProblemHistoryFromAPI(problemId: string) {
+  const response = await fetch(`/api/auth/workspace/${problemId}/nova/prompt`);
+  const data = await response.json();
+
+  if (response.ok) {
+    return data;
+  } else {
+    console.log('Error fetching data');
+    return null;
+  }
 }

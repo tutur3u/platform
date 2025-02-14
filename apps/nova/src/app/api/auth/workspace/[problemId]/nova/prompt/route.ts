@@ -10,12 +10,18 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { problemId: id } = await params;
-
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    console.log('Unauthorized');
+    return;
+  }
   const { data, error } = await supabase
     .from('nova_users_problem_history')
-    .select('*')
-    .eq('id', id);
-
+    .select('score,feedback')
+    .eq('problemId', id)
+    .eq('userId', user.id);
   if (error) {
     console.log(error);
     return NextResponse.json(
@@ -34,11 +40,12 @@ export async function POST(req: Request, { params }: Params) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-
-  console.log(user)
- 
+  if (!user) {
+    console.log('Unauthorized');
+    return;
+  }
   if (authError) {
-    console.log(authError); 
+    console.log(authError);
   }
 
   const { problemId: id } = await params;
