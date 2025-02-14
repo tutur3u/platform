@@ -19,7 +19,7 @@ export async function GET(_: Request, { params }: Params) {
   }
   const { data, error } = await supabase
     .from('nova_users_problem_history')
-    .select('score,feedback')
+    .select('score,feedback,user_prompt')
     .eq('problemId', id)
     .eq('userId', user.id);
   if (error) {

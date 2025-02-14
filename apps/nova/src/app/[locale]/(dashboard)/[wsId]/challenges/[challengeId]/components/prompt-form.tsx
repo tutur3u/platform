@@ -16,17 +16,22 @@ import { Input } from '@repo/ui/components/ui/input';
 import { Separator } from '@repo/ui/components/ui/separator';
 import { History } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
+type HistoryEntry = {
+  score: number;
+  feedback: string;
+  user_prompt: string;
+};
 export default function ChatBox({ problem }: { problem: Problems }) {
   const [_messages, setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [_history, setHistory] = useState<any[]>([]);
+  const [_history, setHistory] = useState<HistoryEntry[]>([]);
   const [attempts, setAttempts] = useState(0);
-  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
   const router = useRouter();
   useEffect(() => {
     const fetchHistory = async () => {
@@ -148,6 +153,7 @@ export default function ChatBox({ problem }: { problem: Problems }) {
               <DialogTitle>Problem History</DialogTitle>
               <DialogDescription>
                 Below is the history of your attempts for this problem.
+                Feedbacks will be provided after you finish the test.
               </DialogDescription>
             </DialogHeader>
 
@@ -162,7 +168,7 @@ export default function ChatBox({ problem }: { problem: Problems }) {
                           Score: {entry.score}/10
                         </span>
                       </div>
-                      <p>{entry.feedback}</p>
+                      <p>{entry.user_prompt}</p>
                       <Separator></Separator>
                     </li>
                   ))}
@@ -179,7 +185,7 @@ export default function ChatBox({ problem }: { problem: Problems }) {
         </Dialog>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto rounded-md border p-2">
+      <div className="flex-1 space-y-2 rounded-md border p-2">
         {loading && (
           <div className="flex h-screen items-center justify-center">
             <Mosaic className="h-6" />
@@ -187,7 +193,37 @@ export default function ChatBox({ problem }: { problem: Problems }) {
           </div>
         )}
 
-        <div ref={chatEndRef} />
+
+
+        {!loading && _history.length > 0 && (
+          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 shadow-md">
+            <h3 className="text-2xl font-semibold text-gray-800">
+              Your Last Attempt
+            </h3>
+            <div className="w-full rounded-lg border border-gray-200 bg-white p-4 shadow-md">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    <strong className="font-medium text-gray-900">
+                      Prompt:{' '}
+                    </strong>
+                    {_history[_history?.length - 1]?.user_prompt}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">
+                    <strong className="font-medium text-gray-900">
+                      Score:{' '}
+                    </strong>
+                    {_history[_history?.length - 1]?.score}/10
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div />
       </div>
 
       {/* Chat Input */}
