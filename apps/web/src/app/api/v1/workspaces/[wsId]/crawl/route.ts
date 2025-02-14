@@ -89,7 +89,7 @@ async function getDataWithApiKey(
     count: crawledCount,
   } = crawledUrlCheck;
 
-  if (secretCount === 0) {
+  if (secretCount === 0 && wsId !== ROOT_WORKSPACE_ID) {
     return NextResponse.json(
       { message: 'Crawling is disabled for this workspace' },
       { status: 403 }
@@ -238,7 +238,7 @@ async function getDataFromSession(
     count: crawledCount,
   } = crawledUrlCheck;
 
-  if (secretCount === 0) {
+  if (secretCount === 0 && wsId !== ROOT_WORKSPACE_ID) {
     return NextResponse.json(
       { message: 'Crawling is disabled for this workspace' },
       { status: 403 }
