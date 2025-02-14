@@ -1821,6 +1821,7 @@ export type Database = {
           id: number;
           problemId: string | null;
           score: number | null;
+          user_prompt: string | null;
           userId: string | null;
         };
         Insert: {
@@ -1829,6 +1830,7 @@ export type Database = {
           id?: number;
           problemId?: string | null;
           score?: number | null;
+          user_prompt?: string | null;
           userId?: string | null;
         };
         Update: {
@@ -1837,6 +1839,7 @@ export type Database = {
           id?: number;
           problemId?: string | null;
           score?: number | null;
+          user_prompt?: string | null;
           userId?: string | null;
         };
         Relationships: [

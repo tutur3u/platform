@@ -17,12 +17,38 @@ export default function ChatBox({ problem }: { problem: Problems }) {
   const [attempts, setAttempts] = useState(0); // Attempts counter
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
+  const updateProblemHistory = async (
+    problemId: string,
+    feedback: string,
+    score: number,
+    user_prompt: string
+  ) => {
+    try {
+      const response = await fetch(
+        `/api/auth/workspace/${problemId}/nova/prompt`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feedback, score, user_prompt }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update problem history');
+      }
+
+      const data = await response.json();
+      console.log('Update Response:', data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   // Auto-scroll to the latest message
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle sending user message
   const handleSend = async () => {
     if (!input.trim() || loading || attempts >= 5) return;
 
@@ -47,12 +73,24 @@ export default function ChatBox({ problem }: { problem: Problems }) {
 
       const data = await response.json();
       console.log(data);
-      const aiResponse =
-        'Score: ' + data.response?.score + '-10 ' + data.response?.feedback ||
-        "I couldn't process that. Try again!";
 
-      const newAIMessage = { text: aiResponse, sender: 'ai' as const };
+      const aiResponseText =
+        data.response?.score !== undefined && data.response?.feedback
+          ? `Score: ${data.response.score}/10 - ${data.response.feedback}`
+          : "I couldn't process that. Try again!";
+
+      const newAIMessage = { text: aiResponseText, sender: 'ai' as const };
       setMessages((prev) => [...prev, newAIMessage]);
+
+      // Call updateProblemHistory after receiving AI response
+      if (data.response?.score !== undefined && data.response?.feedback) {
+        await updateProblemHistory(
+          problem.id, // Problem ID from the prop
+          data.response.feedback, // Feedback from AI
+          data.response.score, // Score from AI
+          input // User's input (the prompt)
+        );
+      }
     } catch (error) {
       const errorMsg = {
         text: 'An error occurred. Please try again.',
@@ -77,7 +115,9 @@ export default function ChatBox({ problem }: { problem: Problems }) {
         <p className="mr-2">
           You only have 5 tries for each question. [{attempts}/5]
         </p>
-        <History size={16} />
+        <div>
+          <History size={16} />
+        </div>
       </div>
 
       {/* Chat Messages */}
