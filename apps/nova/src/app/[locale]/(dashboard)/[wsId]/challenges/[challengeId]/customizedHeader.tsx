@@ -5,8 +5,8 @@ import { Button } from '@repo/ui/components/ui/button';
 import { cn } from '@repo/ui/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react';
-import { Suspense } from 'react';
+import React, { Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   proNum: number;
@@ -14,17 +14,24 @@ interface Props {
   onNext: () => void;
   onPrev: () => void;
 }
+
 export default function CustomizedHeader({
   proNum,
   currentProblem,
   onNext,
   onPrev,
 }: Props) {
+  const router = useRouter();
+
+  const handleEndTest = () => {
+    const confirmEnd = window.confirm('Are you sure you want to end the test?');
+    if (confirmEnd) {
+      router.push('/');
+    }
+  };
+
   return (
-    <nav
-      id="navbar"
-      className={cn('fixed inset-x-0 top-0 z-50 bg-white shadow-sm')}
-    >
+    <nav id="navbar" className={cn('fixed inset-x-0 top-0 z-50 bg-white shadow-sm')}>
       <div className="container mx-auto px-4 py-2 font-semibold">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -50,12 +57,10 @@ export default function CustomizedHeader({
           </div>
 
           <div className="flex items-center gap-4">
-            <Suspense
-              fallback={
-                <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
-              }
-            >
-              <Button variant="outline">Home</Button>
+            <Suspense fallback={<div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />}>
+              <Button className="bg-red-500 hover:bg-red-700" onClick={handleEndTest}>
+                End Test
+              </Button>
             </Suspense>
           </div>
         </div>

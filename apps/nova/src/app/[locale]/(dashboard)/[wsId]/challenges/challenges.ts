@@ -4,6 +4,7 @@ export interface Challenge {
   topic: string;
   description: string;
   problems: Problems[];
+  duration: number;
 }
 
 export interface Problems {
@@ -56,6 +57,7 @@ const challenges: Challenge[] = [
         ],
       },
     ],
+    duration: 60,
   },
   {
     id: 2,
@@ -92,6 +94,7 @@ const challenges: Challenge[] = [
         ],
       },
     ],
+    duration: 45, // Added duration (in minutes)
   },
   {
     id: 3,
@@ -143,6 +146,7 @@ function fibonacci(n) {
         ],
       },
     ],
+    duration: 75, // Added duration (in minutes)
   },
 ];
 

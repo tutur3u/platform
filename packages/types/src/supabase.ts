@@ -1814,6 +1814,41 @@ export type Database = {
           },
         ];
       };
+      nova_test_timer_record: {
+        Row: {
+          created_at: string;
+          duration: number | null;
+          id: string;
+          problemId: string | null;
+          test_status: string | null;
+          userId: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          duration?: number | null;
+          id?: string;
+          problemId?: string | null;
+          test_status?: string | null;
+          userId?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          duration?: number | null;
+          id?: string;
+          problemId?: string | null;
+          test_status?: string | null;
+          userId?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_test_timer_record_userId_fkey';
+            columns: ['userId'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_users_problem_history: {
         Row: {
           created_at: string;
@@ -1847,21 +1882,7 @@ export type Database = {
             foreignKeyName: 'nova_users_problem_history_userId_fkey';
             columns: ['userId'];
             isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_users_problem_history_userId_fkey';
-            columns: ['userId'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_users_problem_history_userId_fkey';
-            columns: ['userId'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
