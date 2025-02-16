@@ -8,26 +8,83 @@ export const runtime = 'nodejs';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 export async function GET(request: Request) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, x-proxy-api-key',
+    'Access-Control-Max-Age': '86400',
+  };
+
+  // Handle preflight requests
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, { headers: corsHeaders });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const url = searchParams.get('url');
     const apiKey =
       searchParams.get('apiKey') || request.headers.get('x-proxy-api-key');
 
+    if (!url) {
+      return NextResponse.json(
+        {
+          error: 'Missing URL',
+          message: 'Please provide a URL to fetch',
+          code: 'URL_REQUIRED',
+        },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // Validate URL
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+        return NextResponse.json(
+          {
+            error: 'Invalid Protocol',
+            message: 'Only HTTP and HTTPS protocols are supported',
+            code: 'INVALID_PROTOCOL',
+            url,
+          },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+      // eslint-disable-next-line no-unused-vars
+    } catch (e) {
+      return NextResponse.json(
+        {
+          error: 'Invalid URL',
+          message: 'The provided URL is not valid',
+          code: 'INVALID_URL',
+          url,
+        },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
     // First check API key if provided
     if (process.env.PROXY_API_KEY) {
       if (!apiKey) {
-        console.error('API key required');
         return NextResponse.json(
-          { message: 'API key required' },
-          { status: 401 }
+          {
+            error: 'Missing API Key',
+            message: 'An API key is required to use this service',
+            code: 'API_KEY_REQUIRED',
+          },
+          { status: 401, headers: corsHeaders }
         );
       }
       if (apiKey !== process.env.PROXY_API_KEY) {
-        console.error('Invalid API key');
         return NextResponse.json(
-          { message: 'Invalid API key' },
-          { status: 403 }
+          {
+            error: 'Invalid API Key',
+            message: 'The provided API key is not valid',
+            code: 'INVALID_API_KEY',
+          },
+          { status: 403, headers: corsHeaders }
         );
       }
     }
@@ -37,30 +94,63 @@ export async function GET(request: Request) {
       const supabase = await createClient();
       const {
         data: { user },
+        error: authError,
       } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('Unauthorized');
-        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+
+      if (authError || !user) {
+        return NextResponse.json(
+          {
+            error: 'Authentication Required',
+            message: 'Please log in to use this service',
+            code: 'AUTH_REQUIRED',
+          },
+          { status: 401, headers: corsHeaders }
+        );
       }
     }
 
-    if (!url) {
-      return new NextResponse('URL is required', { status: 400 });
-    }
-
-    const response = await fetch(url);
+    console.log('Fetching URL:', url);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        Accept: '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+      // Add timeout
+      signal: AbortSignal.timeout(30000), // 30 second timeout
+    });
 
     if (!response.ok) {
-      return new NextResponse('Failed to fetch content', {
-        status: response.status,
-      });
+      return NextResponse.json(
+        {
+          error: 'Fetch Failed',
+          message: `Failed to fetch content: ${response.statusText}`,
+          code: 'FETCH_FAILED',
+          status: response.status,
+          url,
+        },
+        { status: response.status, headers: corsHeaders }
+      );
     }
 
+    const contentType = response.headers.get('content-type');
+    console.log('Content type:', contentType);
+
     // Handle Excel files
-    if (url.match(/\.(xlsx|xls)$/i)) {
+    if (
+      url.match(/\.(xlsx|xls)$/i) ||
+      contentType?.includes(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ) ||
+      contentType?.includes('application/vnd.ms-excel')
+    ) {
       const arrayBuffer = await response.arrayBuffer();
       return new NextResponse(arrayBuffer, {
         headers: {
+          ...corsHeaders,
           'Content-Type':
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': 'attachment; filename=dataset.xlsx',
@@ -69,7 +159,7 @@ export async function GET(request: Request) {
     }
 
     // Handle CSV files
-    if (url.match(/\.csv$/i)) {
+    if (url.match(/\.csv$/i) || contentType?.includes('text/csv')) {
       const buffer = await response.arrayBuffer();
       // Try to detect BOM for UTF-16/UTF-8
       const firstBytes = new Uint8Array(buffer.slice(0, 4));
@@ -86,7 +176,6 @@ export async function GET(request: Request) {
       ) {
         decoder = new TextDecoder('utf-8');
       } else {
-        // Try windows-1258 for Vietnamese or fallback to utf-8
         try {
           decoder = new TextDecoder('windows-1258');
         } catch {
@@ -97,6 +186,7 @@ export async function GET(request: Request) {
       const text = decoder.decode(buffer);
       return new NextResponse(text, {
         headers: {
+          ...corsHeaders,
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': 'attachment; filename=dataset.csv',
         },
@@ -110,11 +200,22 @@ export async function GET(request: Request) {
 
     return new NextResponse(text, {
       headers: {
+        ...corsHeaders,
         'Content-Type': 'text/html; charset=utf-8',
       },
     });
   } catch (error) {
     console.error('Proxy error:', error);
-    return new NextResponse(`Proxy error: ${error}`, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Proxy Error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+        code: 'PROXY_ERROR',
+      },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }

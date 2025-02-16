@@ -106,5 +106,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@10.3.0"
+  "packageManager": "pnpm@10.4.0"
 }
