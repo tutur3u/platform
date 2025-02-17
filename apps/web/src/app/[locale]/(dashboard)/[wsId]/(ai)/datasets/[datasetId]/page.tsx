@@ -1,7 +1,7 @@
 import { DuplicateHandler } from './components/duplicate-handler';
+import { DatasetCrawler } from './explore/dataset-crawler';
 import { getDatasetMetrics } from './utils';
 import { createClient } from '@tutur3u/supabase/next/server';
-import type { WorkspaceDataset } from '@tutur3u/types/db';
 import { Button } from '@tutur3u/ui/button';
 import {
   Card,
@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tutur3u/ui/card';
-import { BarChart, FileText, RefreshCw } from 'lucide-react';
+import { BarChart, FileText, RefreshCw, Upload } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -39,19 +39,23 @@ export default async function DatasetDetailsPage({ params }: Props) {
   const { totalColumns, totalRows, lastUpdated } =
     await getDatasetMetrics(datasetId);
 
-  const typedDataset = dataset as WorkspaceDataset;
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{typedDataset.name}</h1>
+          <h1 className="text-2xl font-bold">{dataset.name}</h1>
           <p className="text-sm text-muted-foreground">
-            {typedDataset.description || 'No description provided'}
+            {dataset.description || 'No description provided'}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          <DatasetCrawler wsId={wsId} dataset={dataset}>
+            <Button variant="outline">
+              <Upload className="mr-2 h-4 w-4" />
+              Import Data
+            </Button>
+          </DatasetCrawler>
           <Link href={`/${wsId}/datasets/${datasetId}/explore`}>
             <Button variant="outline">
               <FileText className="mr-2 h-4 w-4" />

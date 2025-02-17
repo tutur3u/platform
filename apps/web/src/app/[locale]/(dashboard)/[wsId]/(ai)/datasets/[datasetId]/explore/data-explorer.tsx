@@ -1,5 +1,6 @@
 'use client';
 
+import { DatasetCrawler } from './dataset-crawler';
 import {
   keepPreviousData,
   useQuery,
@@ -33,7 +34,7 @@ import {
   SelectValue,
 } from '@tutur3u/ui/select';
 import { Skeleton } from '@tutur3u/ui/skeleton';
-import { Plus, RotateCw, Trash } from 'lucide-react';
+import { Plus, RotateCw, Trash, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -384,7 +385,12 @@ export function DataExplorer({ wsId, dataset }: Props) {
               </Button>
             </DialogContent>
           </Dialog>
-          {/* <DatasetCrawler wsId={wsId} dataset={dataset} /> */}
+          <DatasetCrawler wsId={wsId} dataset={dataset}>
+            <Button variant="outline">
+              <Upload className="mr-2 h-4 w-4" />
+              Import Data
+            </Button>
+          </DatasetCrawler>
         </div>
       </div>
 

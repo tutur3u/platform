@@ -3663,6 +3663,7 @@ export type Database = {
           description: string | null;
           id: string;
           name: string;
+          url: string | null;
           ws_id: string;
         };
         Insert: {
@@ -3670,6 +3671,7 @@ export type Database = {
           description?: string | null;
           id?: string;
           name: string;
+          url?: string | null;
           ws_id: string;
         };
         Update: {
@@ -3677,6 +3679,7 @@ export type Database = {
           description?: string | null;
           id?: string;
           name?: string;
+          url?: string | null;
           ws_id?: string;
         };
         Relationships: [
