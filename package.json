@@ -11,6 +11,7 @@
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "stop": "cd apps/db && pnpm stop",
+    "diff": "cd apps/db && pnpm sb:diff",
     "typegen": "cd apps/db && pnpm sb:typegen",
     "sb:status": "cd apps/db && pnpm sb:status",
     "sb:start": "cd apps/db && pnpm sb:start",

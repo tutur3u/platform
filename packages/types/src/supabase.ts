@@ -249,6 +249,197 @@ export type Database = {
         };
         Relationships: [];
       };
+      aurora_ml_forecast: {
+        Row: {
+          catboost: number;
+          created_at: string;
+          date: string;
+          elasticnet: number;
+          id: string;
+          lightgbm: number;
+          ws_id: string;
+          xgboost: number;
+        };
+        Insert: {
+          catboost: number;
+          created_at?: string;
+          date: string;
+          elasticnet: number;
+          id?: string;
+          lightgbm: number;
+          ws_id: string;
+          xgboost: number;
+        };
+        Update: {
+          catboost?: number;
+          created_at?: string;
+          date?: string;
+          elasticnet?: number;
+          id?: string;
+          lightgbm?: number;
+          ws_id?: string;
+          xgboost?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'aurora_ml_forecast_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      aurora_ml_metrics: {
+        Row: {
+          created_at: string;
+          directional_accuracy: number;
+          id: string;
+          model: string;
+          rmse: number;
+          turning_point_accuracy: number;
+          weighted_score: number;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          directional_accuracy: number;
+          id?: string;
+          model: string;
+          rmse: number;
+          turning_point_accuracy: number;
+          weighted_score: number;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          directional_accuracy?: number;
+          id?: string;
+          model?: string;
+          rmse?: number;
+          turning_point_accuracy?: number;
+          weighted_score?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'aurora_ml_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      aurora_statistical_forecast: {
+        Row: {
+          auto_arima: number;
+          auto_arima_hi_90: number;
+          auto_arima_lo_90: number;
+          auto_ets: number;
+          auto_ets_hi_90: number;
+          auto_ets_lo_90: number;
+          auto_theta: number;
+          auto_theta_hi_90: number;
+          auto_theta_lo_90: number;
+          ces: number;
+          ces_hi_90: number;
+          ces_lo_90: number;
+          created_at: string;
+          date: string;
+          id: string;
+          ws_id: string;
+        };
+        Insert: {
+          auto_arima: number;
+          auto_arima_hi_90: number;
+          auto_arima_lo_90: number;
+          auto_ets: number;
+          auto_ets_hi_90: number;
+          auto_ets_lo_90: number;
+          auto_theta: number;
+          auto_theta_hi_90: number;
+          auto_theta_lo_90: number;
+          ces: number;
+          ces_hi_90: number;
+          ces_lo_90: number;
+          created_at?: string;
+          date: string;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          auto_arima?: number;
+          auto_arima_hi_90?: number;
+          auto_arima_lo_90?: number;
+          auto_ets?: number;
+          auto_ets_hi_90?: number;
+          auto_ets_lo_90?: number;
+          auto_theta?: number;
+          auto_theta_hi_90?: number;
+          auto_theta_lo_90?: number;
+          ces?: number;
+          ces_hi_90?: number;
+          ces_lo_90?: number;
+          created_at?: string;
+          date?: string;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'aurora_statistical_forecast_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      aurora_statistical_metrics: {
+        Row: {
+          created_at: string;
+          directional_accuracy: number;
+          id: string;
+          model: string;
+          no_scaling: boolean;
+          rmse: number;
+          turning_point_accuracy: number;
+          weighted_score: number;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          directional_accuracy: number;
+          id?: string;
+          model: string;
+          no_scaling: boolean;
+          rmse: number;
+          turning_point_accuracy: number;
+          weighted_score: number;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          directional_accuracy?: number;
+          id?: string;
+          model?: string;
+          no_scaling?: boolean;
+          rmse?: number;
+          turning_point_accuracy?: number;
+          weighted_score?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'aurora_statistical_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_event_colors: {
         Row: {
           value: string;
