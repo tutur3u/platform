@@ -1,6 +1,5 @@
 'use client';
 
-// Add this at the top to mark this as a client component
 import { Challenge } from './challenges';
 import { Badge } from '@repo/ui/components/ui/badge';
 import { Button } from '@repo/ui/components/ui/button';
@@ -21,6 +20,8 @@ interface ChallengeCardProps {
 
 const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
   const [isTestStarted, setIsTestStarted] = useState(false);
+
+  // Check if the test has started or not
   useEffect(() => {
     const checkTestStarted = async () => {
       const response = await fetch(
@@ -28,13 +29,16 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
       );
       const data = await response.json();
 
-      if (data?.duration) {
-        setIsTestStarted(true);
+      if (data?.test_status === 'START') {
+        setIsTestStarted(true); // Set to true if test is started
+      } else {
+        setIsTestStarted(false); // Set to false if test isn't started
       }
     };
 
     checkTestStarted();
   }, [challenge.id, wsId]);
+
   const handleButton = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
 
@@ -59,6 +63,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
         if (!response.ok) {
           throw new Error('Failed to update problem history');
         }
+
         window.location.href = `/${wsId}/challenges/${challenge.id}`;
       } catch (error) {
         console.error('Error: ', error);
@@ -69,6 +74,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
   const handleResumeTest = () => {
     window.location.href = `/${wsId}/challenges/${challenge.id}`;
   };
+
   return (
     <Card key={challenge.id} className="flex flex-col">
       <CardHeader>

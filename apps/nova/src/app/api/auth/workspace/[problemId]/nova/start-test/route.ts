@@ -25,7 +25,7 @@ export async function GET(_: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .from('nova_test_timer_record')
-    .select('duration, created_at')
+    .select('duration, created_at,test_status')
     .eq('problemId', problemId)
     .eq('userId', userId)
     .single();
