@@ -1,5 +1,6 @@
 import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
 import AdvancedAnalytics from './advanced-analytics';
+import AuroraActions from './aurora-actions';
 import { InventoryCategoryStatistics } from './categories/inventory';
 import { UsersCategoryStatistics } from './categories/users';
 import CommodityComparison from './commodity-comparison';
@@ -21,6 +22,7 @@ import {
   WarehousesStatistics,
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
+import { getCurrentSupabaseUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getWorkspace,
@@ -45,6 +47,8 @@ export default async function WorkspaceHomePage({
 }: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
+
+  const user = await getCurrentSupabaseUser();
   const workspace = await getWorkspace(wsId);
 
   const { containsPermission } = await getPermissions({
@@ -89,6 +93,7 @@ export default async function WorkspaceHomePage({
           <>
             <Separator className="my-4" />
             <div className="grid grid-cols-1 gap-4">
+              {user?.email?.endsWith('@tuturuuu.com') && <AuroraActions />}
               <DashboardChart />
               <PricePredictionChart />
               <CommodityComparison />

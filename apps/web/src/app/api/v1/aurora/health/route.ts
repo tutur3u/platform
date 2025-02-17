@@ -12,7 +12,7 @@ export async function POST() {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
-  if (!user.email?.endsWith('@tuturuu.com')) {
+  if (!user.email?.endsWith('@tuturuuu.com')) {
     return NextResponse.json(
       { message: 'Unauthorized email domain' },
       { status: 403 }
