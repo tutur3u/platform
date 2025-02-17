@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@repo/ui/components/ui/card';
 import { ArrowRight, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -19,6 +20,21 @@ interface ChallengeCardProps {
 }
 
 const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
+  const [isTestStarted, setIsTestStarted] = useState(false);
+  useEffect(() => {
+    const checkTestStarted = async () => {
+      const response = await fetch(
+        `/api/auth/workspace/${challenge.id}/nova/start-test`
+      );
+      const data = await response.json();
+
+      if (data?.duration) {
+        setIsTestStarted(true);
+      }
+    };
+
+    checkTestStarted();
+  }, [challenge.id, wsId]);
   const handleButton = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
 
@@ -50,6 +66,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
     }
   };
 
+  const handleResumeTest = () => {
+    window.location.href = `/${wsId}/challenges/${challenge.id}`;
+  };
   return (
     <Card key={challenge.id} className="flex flex-col">
       <CardHeader>
@@ -70,8 +89,12 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleButton} className="w-full gap-2">
-          Start Challenge <ArrowRight className="h-4 w-4" />
+        <Button
+          onClick={isTestStarted ? handleResumeTest : handleButton}
+          className="w-full gap-2"
+        >
+          {isTestStarted ? 'Resume test' : 'Start Challenge'}{' '}
+          <ArrowRight className="h-4 w-4" />
         </Button>
       </CardFooter>
     </Card>
