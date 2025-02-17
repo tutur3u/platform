@@ -14,9 +14,7 @@ export default async function ExploreDatasetPage({ params }: Props) {
   const { wsId, datasetId } = await params;
   const dataset = await getDataset(datasetId);
 
-  if (!dataset) {
-    notFound();
-  }
+  if (!dataset) notFound();
 
   return (
     <div className="space-y-6">
@@ -30,32 +28,12 @@ export default async function ExploreDatasetPage({ params }: Props) {
 }
 
 async function getDataset(id: string) {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('workspace_datasets')
-      .select('*')
-      .eq('id', id)
-      .single();
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('workspace_datasets')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching dataset:', error);
-      throw error;
-    }
-
-    if (!data) {
-      console.error('Dataset not found:', id);
-      notFound();
-    }
-
-    // Validate required fields
-    if (!data.name || !data.id) {
-      throw new Error('Invalid dataset format');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Failed to fetch dataset:', error);
-    throw error;
-  }
+  return data;
 }
