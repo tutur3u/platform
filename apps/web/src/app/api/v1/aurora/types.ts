@@ -1,4 +1,4 @@
-export type AuroraStatisticalForecast = {
+export type AuroraExternalStatisticalForecast = {
   statistical_forecast: [
     {
       date: string;
@@ -27,7 +27,7 @@ export type AuroraStatisticalForecast = {
   ];
 };
 
-export type AuroraStatisticalMetrics = {
+export type AuroraExternalStatisticalMetrics = {
   no_scaling: [
     {
       Model: string;
@@ -48,7 +48,7 @@ export type AuroraStatisticalMetrics = {
   ];
 };
 
-export type AuroraMLMetrics = {
+export type AuroraExternalMLMetrics = {
   elasticnet: {
     RMSE: number;
     Directional_Accuracy: number;

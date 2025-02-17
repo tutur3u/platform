@@ -1,4 +1,4 @@
-import type { AuroraMLMetrics } from '../types';
+import type { AuroraExternalMLMetrics } from '../types';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { NextResponse } from 'next/server';
 
@@ -9,10 +9,24 @@ export async function GET() {
     .from('aurora_ml_metrics')
     .select('*');
 
-  return NextResponse.json({ ml_metrics });
+  return NextResponse.json(ml_metrics);
 }
 
 export async function POST() {
+  if (!process.env.AURORA_EXTERNAL_URL) {
+    return NextResponse.json(
+      { message: 'Aurora API URL not configured' },
+      { status: 500 }
+    );
+  }
+
+  if (!process.env.AURORA_EXTERNAL_WSID) {
+    return NextResponse.json(
+      { message: 'Aurora workspace ID not configured' },
+      { status: 500 }
+    );
+  }
+
   const supabase = await createClient();
 
   const {
@@ -39,7 +53,7 @@ export async function POST() {
     );
   }
 
-  const data = (await res.json()) as AuroraMLMetrics;
+  const data = (await res.json()) as AuroraExternalMLMetrics;
 
   const { error } = await supabase.from('aurora_ml_metrics').insert(
     Object.entries(data).map(([model, prediction]) => ({

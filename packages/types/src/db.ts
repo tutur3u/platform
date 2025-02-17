@@ -66,3 +66,14 @@ export type WorkspaceRole = Tables<'workspace_roles'> & {
 export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
   href?: string;
 };
+
+export type AuroraStatisticalForecast = Tables<'aurora_statistical_forecast'>;
+export type AuroraStatisticalMetrics = Tables<'aurora_statistical_metrics'>;
+
+export type AuroraMLForecast = Tables<'aurora_ml_forecast'>;
+export type AuroraMLMetrics = Tables<'aurora_ml_metrics'>;
+
+export type AuroraForecast = {
+  statistical_forecast: AuroraStatisticalForecast[];
+  ml_forecast: AuroraMLForecast[];
+};
