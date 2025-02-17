@@ -89,14 +89,10 @@ export default async function WorkspaceHomePage({
           <>
             <Separator className="my-4" />
             <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-4">
-                <DashboardChart />
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <PricePredictionChart />
-                  <CommodityComparison />
-                </div>
-                <AdvancedAnalytics />
-              </div>
+              <DashboardChart />
+              <PricePredictionChart />
+              <CommodityComparison />
+              <AdvancedAnalytics />
             </div>
           </>
         )}
