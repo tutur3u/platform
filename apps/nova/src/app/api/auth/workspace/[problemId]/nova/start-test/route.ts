@@ -24,15 +24,16 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   const { data, error } = await supabase
-    .from('nova_users_problem_history')
-    .select('score,feedback,user_prompt')
+    .from('nova_test_timer_record')
+    .select('duration, created_at')
     .eq('problemId', problemId)
-    .eq('userId', userId);
+    .eq('userId', userId)
+    .single();
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error fetching timer' },
+      { message: 'Error fetching timer in route' },
       { status: 500 }
     );
   }

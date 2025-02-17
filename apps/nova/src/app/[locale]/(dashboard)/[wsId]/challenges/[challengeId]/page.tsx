@@ -15,11 +15,21 @@ interface Props {
   }>;
 }
 
+interface Timer {
+  duration: number;
+  createdAt: string;
+}
+
 export default function Page({ params }: Props) {
   const [challenge, setChallenge] = useState<any | null>(null);
+  const [fetchedTimer, setFetchedTimer] = useState<Timer | null | undefined>(
+    null
+  );
+  const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
+
   const database = createClient();
   const router = useRouter();
-
+  // console.log(fetchedTimer?.duration, 'duration');
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       const confirmationMessage =
@@ -54,14 +64,15 @@ export default function Page({ params }: Props) {
       const { challengeId } = await params;
       const challengeData = getChallenge(parseInt(challengeId));
       setChallenge(challengeData);
+
+      const timerData = await fetchTimer(String(challengeData?.id));
+      setFetchedTimer(timerData);
     };
 
     fetchData();
   }, [params]);
 
   const problems = challenge?.problems || [];
-
-  const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
 
   // Navigate to next problem
   const nextProblem = () => {
@@ -80,6 +91,8 @@ export default function Page({ params }: Props) {
       <CustomizedHeader
         proNum={problems.length}
         currentProblem={currentProblemIndex + 1}
+        duraion={fetchedTimer?.duration || 0}
+        createdAt={fetchedTimer?.created_at || ''}
         onNext={nextProblem}
         onPrev={prevProblem}
       />
@@ -100,4 +113,22 @@ export default function Page({ params }: Props) {
       </div>
     </>
   );
+}
+
+async function fetchTimer(problemId: string): Promise<Timer | null> {
+  try {
+    console.log(problemId, 'id ');
+    const response = await fetch(
+      `/api/auth/workspace/${problemId}/nova/start-test`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch timer');
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.log('Timer record error: ', error);
+    return null;
+  }
 }

@@ -1,5 +1,5 @@
 export interface Challenge {
-  id: number;
+  id?: number;
   title: string;
   topic: string;
   description: string;
