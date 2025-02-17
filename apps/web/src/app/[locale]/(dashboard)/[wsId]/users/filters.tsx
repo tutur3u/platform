@@ -12,10 +12,10 @@ import {
   CommandList,
   CommandSeparator,
 } from '@tutur3u/ui/command';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import { Check, CheckCheck, Trash, Undo } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

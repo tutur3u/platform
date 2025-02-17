@@ -1,7 +1,7 @@
 'use client';
 
 import QuizForm from '../../../../../quizzes/form';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { createClient } from '@tutur3u/supabase/next/client';
 import {
   AlertDialog,

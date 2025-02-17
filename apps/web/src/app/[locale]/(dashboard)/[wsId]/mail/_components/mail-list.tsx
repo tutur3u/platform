@@ -1,6 +1,6 @@
 import { Mail } from '../data';
 import { useMail } from '../use-mail';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
 

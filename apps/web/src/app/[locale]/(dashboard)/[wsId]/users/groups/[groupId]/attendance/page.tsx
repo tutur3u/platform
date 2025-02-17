@@ -2,7 +2,7 @@ import UserAttendances from '../../../attendance/user-attendances';
 import UserAttendancesSkeleton from '../../../attendance/user-attendances-skeleton';
 import { Filter } from '../../../filters';
 import { CustomMonthPicker } from '@/components/custom-month-picker';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
 import { Button } from '@tutur3u/ui/button';

@@ -7,7 +7,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@tutur3u/ui/chart';
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 

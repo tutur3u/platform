@@ -3,7 +3,7 @@
 import { DateRangePicker } from './date-range-picker';
 import { MonthRangePicker } from './month-range-picker';
 import { YearRangePicker } from './year-range-picker';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Button } from '@tutur3u/ui/button';
 import {
   Select,

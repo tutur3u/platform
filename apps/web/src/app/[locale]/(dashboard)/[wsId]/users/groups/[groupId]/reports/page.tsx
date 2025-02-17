@@ -1,7 +1,7 @@
 import { Filter } from '../../../filters';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceUserReport } from '@tutur3u/types/db';
 import { UserGroup } from '@tutur3u/types/primitives/UserGroup';

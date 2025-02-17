@@ -6,7 +6,7 @@ import {
   PROD_MODE,
   ROOT_WORKSPACE_ID,
 } from '@/constants/common';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@tutur3u/ui/button';
 import { Separator } from '@tutur3u/ui/separator';

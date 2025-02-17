@@ -5,7 +5,7 @@ import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { permissionGroups, totalPermissions } from '@/lib/permissions';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tutur3u/supabase/next/client';

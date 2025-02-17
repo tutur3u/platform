@@ -8,7 +8,7 @@ import { ColumnsMenu } from '@/extensions/MultiColumn/menus';
 import { TableColumnMenu, TableRowMenu } from '@/extensions/Table/menus';
 import { useBlockEditor } from '@/hooks/useBlockEditor';
 import { useSidebar } from '@/hooks/useSidebar';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import '@/style/index.css';
 import { Editor } from '@tiptap/core';
 import { EditorContent, JSONContent } from '@tiptap/react';

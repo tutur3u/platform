@@ -2,7 +2,7 @@
 
 import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tutur3u/supabase/next/client';
 import {

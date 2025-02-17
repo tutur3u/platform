@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Badge } from '@tutur3u/ui/badge';
 import {
   NavigationMenu,

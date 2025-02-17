@@ -2,7 +2,7 @@
 
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { isEmail } from '@/utils/email-helper';
 import { createClient } from '@tutur3u/supabase/next/client';
 import type { GroupPostCheck } from '@tutur3u/types/db';

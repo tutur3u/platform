@@ -1,4 +1,4 @@
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import * as React from 'react';
 
 function Card({ className, ...props }: React.ComponentProps<'div'>) {

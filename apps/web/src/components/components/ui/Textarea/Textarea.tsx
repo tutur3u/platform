@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { forwardRef } from 'react';
 
 export const Textarea = forwardRef<

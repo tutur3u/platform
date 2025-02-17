@@ -1,6 +1,6 @@
-import { cn } from '../../../lib/utils';
 import { Button } from '../button';
 import ModifiableDialogTrigger from './modifiable-dialog-trigger';
+import { cn } from '@tutur3u/utils/format';
 import { Cog, Plus } from 'lucide-react';
 import { type ReactElement, ReactNode } from 'react';
 

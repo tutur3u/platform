@@ -10,7 +10,7 @@ import MeetTogetherMenuItem from './meet-together-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { getInitials } from '@/utils/name-helper';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';

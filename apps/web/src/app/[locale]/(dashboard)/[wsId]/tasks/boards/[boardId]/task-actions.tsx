@@ -21,7 +21,6 @@ import {
 } from '@tutur3u/ui/dropdown-menu';
 import { Input } from '@tutur3u/ui/input';
 import { Label } from '@tutur3u/ui/label';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import {
   Select,
@@ -33,6 +32,7 @@ import {
 import { Separator } from '@tutur3u/ui/separator';
 import { Textarea } from '@tutur3u/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import {
   AlertCircle,

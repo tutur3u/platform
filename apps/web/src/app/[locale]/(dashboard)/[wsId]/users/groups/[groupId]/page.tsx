@@ -5,7 +5,7 @@ import GroupMemberForm from './form';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';

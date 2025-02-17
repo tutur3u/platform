@@ -3,7 +3,7 @@
 import LogoTitle from '../logo-title';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
   Accordion,

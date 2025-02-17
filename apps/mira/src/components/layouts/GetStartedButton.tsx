@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Button } from '@tutur3u/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

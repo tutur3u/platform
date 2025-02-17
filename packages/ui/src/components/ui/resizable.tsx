@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { GripVerticalIcon } from 'lucide-react';
 import * as React from 'react';
 import * as ResizablePrimitive from 'react-resizable-panels';

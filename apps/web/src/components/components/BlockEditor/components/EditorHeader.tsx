@@ -1,5 +1,5 @@
 import { EditorInfo } from './EditorInfo';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Editor } from '@tiptap/core';
 import { useEditorState } from '@tiptap/react';
 import {

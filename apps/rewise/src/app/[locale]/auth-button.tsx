@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { type SupabaseUser } from '@tutur3u/supabase/next/user';
 import { Button } from '@tutur3u/ui/button';

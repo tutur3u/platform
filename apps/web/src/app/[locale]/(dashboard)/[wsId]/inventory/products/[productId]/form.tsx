@@ -2,7 +2,7 @@
 
 import { ProductCategoryForm } from '../../categories/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductCategory } from '@tutur3u/types/primitives/ProductCategory';
 import { ProductUnit } from '@tutur3u/types/primitives/ProductUnit';

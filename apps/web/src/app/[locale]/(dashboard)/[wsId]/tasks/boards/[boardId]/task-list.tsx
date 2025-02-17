@@ -5,7 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Badge } from '@tutur3u/ui/badge';
 import { Card } from '@tutur3u/ui/card';
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { GripVertical } from 'lucide-react';
 
 export interface Column {

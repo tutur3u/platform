@@ -6,13 +6,13 @@ import { Button } from '@tutur3u/ui/button';
 import { StatedFile } from '@tutur3u/ui/custom/file-uploader';
 import { Dialog } from '@tutur3u/ui/dialog';
 import { IconArrowElbow } from '@tutur3u/ui/icons';
-import { cn } from '@tutur3u/ui/lib/utils';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import {
   ArrowDownWideNarrow,
   Bolt,

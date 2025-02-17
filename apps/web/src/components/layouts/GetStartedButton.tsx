@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '../components/ui/Button';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

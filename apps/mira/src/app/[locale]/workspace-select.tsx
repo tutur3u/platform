@@ -35,7 +35,6 @@ import {
 } from '@tutur3u/ui/form';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Input } from '@tutur3u/ui/input';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import {
   Select,
@@ -44,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tutur3u/ui/select';
+import { cn } from '@tutur3u/utils/format';
 import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';

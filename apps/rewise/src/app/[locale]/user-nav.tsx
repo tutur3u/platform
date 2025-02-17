@@ -4,7 +4,7 @@ import { SystemLanguageWrapper } from './(dashboard)/_components/system-language
 import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
 import { TTR_URL } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { getInitials } from '@/utils/name-helper';
 import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
 import {

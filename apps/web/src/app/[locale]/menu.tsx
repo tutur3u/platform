@@ -2,7 +2,7 @@
 
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import type { SupabaseUser } from '@tutur3u/supabase/next/user';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {

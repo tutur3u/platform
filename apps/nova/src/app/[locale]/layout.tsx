@@ -1,8 +1,8 @@
 import { siteConfig } from '@/constants/configs';
 import { routing, supportedLocales } from '@/i18n/routing';
 import '@tutur3u/ui/globals.css';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Toaster } from '@tutur3u/ui/toaster';
+import { cn } from '@tutur3u/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';

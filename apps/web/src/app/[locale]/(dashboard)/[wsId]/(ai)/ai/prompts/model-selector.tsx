@@ -9,8 +9,8 @@ import {
   CommandList,
 } from '@tutur3u/ui/command';
 import { FormControl, FormLabel } from '@tutur3u/ui/form';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+import { cn } from '@tutur3u/utils/format';
 import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import useSWR from 'swr';
 

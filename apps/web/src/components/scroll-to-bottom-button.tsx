@@ -3,7 +3,7 @@
 import { useAtBottom } from '@/lib/hooks/use-at-bottom';
 import { Button, type ButtonProps } from '@tutur3u/ui/button';
 import { IconArrowDown } from '@tutur3u/ui/icons';
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { useEffect, useState } from 'react';
 
 export function ScrollToBottomButton({ className, ...props }: ButtonProps) {

@@ -3,7 +3,7 @@
 import ChatLink from './chat-link';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE } from '@/constants/common';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { Button } from '@tutur3u/ui/button';
 import { Checkbox } from '@tutur3u/ui/checkbox';

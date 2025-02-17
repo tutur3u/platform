@@ -10,7 +10,6 @@ import MeetTogetherMenuItem from './meet-together-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
-import { cn } from '@/lib/utils';
 import { getInitials } from '@/utils/name-helper';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
@@ -28,6 +27,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tutur3u/ui/dropdown-menu';
+import { cn } from '@tutur3u/utils/format';
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

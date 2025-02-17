@@ -1,7 +1,7 @@
 'use client';
 
 import GradientHeadline from '../gradient-headline';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import {
   Accordion,
   AccordionContent,

@@ -5,7 +5,7 @@ import { getInitials } from '@/utils/name-helper';
 import { User } from '@tutur3u/types/primitives/User';
 import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { User as UserIcon } from 'lucide-react';
 import moment from 'moment';
 import { getLocale, getTranslations } from 'next-intl/server';

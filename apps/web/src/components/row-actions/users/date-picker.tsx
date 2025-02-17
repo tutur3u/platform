@@ -2,8 +2,8 @@
 
 import { Button } from '@tutur3u/ui/button';
 import { Calendar } from '@tutur3u/ui/calendar';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+import { cn } from '@tutur3u/utils/format';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';

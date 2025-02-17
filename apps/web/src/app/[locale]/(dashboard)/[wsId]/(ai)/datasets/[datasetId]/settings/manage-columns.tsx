@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@tutur3u/ui/dialog';
 import { Input } from '@tutur3u/ui/input';
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Loader2, Pencil, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

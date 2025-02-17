@@ -1,5 +1,5 @@
-import { cn } from '../../../lib/utils';
 import { Card, CardDescription, CardTitle } from '@tutur3u/ui/card';
+import { cn } from '@tutur3u/utils/format';
 import { Image } from 'lucide-react';
 import React from 'react';
 

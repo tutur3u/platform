@@ -1,7 +1,7 @@
 'use client';
 
 import { LogoutDropdownItem } from '../logout-dropdown-item';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Button } from '@tutur3u/ui/button';
 import {
   Collapsible,

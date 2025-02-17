@@ -17,9 +17,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tutur3u/ui/dialog';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import {
   ArrowDownToLine,
   Check,

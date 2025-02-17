@@ -6,7 +6,7 @@ import { type Message } from '@tutur3u/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
 import { CodeBlock } from '@tutur3u/ui/codeblock';
 import { IconUser } from '@tutur3u/ui/icons';
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

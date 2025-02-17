@@ -1,6 +1,6 @@
 import { Surface } from './Surface';
 import { Toolbar } from './Toolbar';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import * as Popover from '@radix-ui/react-popover';
 import { Editor } from '@tiptap/core';
 import { icons } from 'lucide-react';

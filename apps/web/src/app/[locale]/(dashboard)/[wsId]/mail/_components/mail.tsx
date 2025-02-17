@@ -5,7 +5,7 @@ import { useMail } from '../use-mail';
 import { MailDisplay } from './mail-display';
 import { MailList } from './mail-list';
 import { Nav } from './nav';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Input } from '@tutur3u/ui/input';
 import {
   ResizableHandle,

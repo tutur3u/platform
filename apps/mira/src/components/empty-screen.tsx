@@ -1,4 +1,4 @@
-import { capitalize, cn } from '@/lib/utils';
+import { capitalize, cn } from '@tutur3u/utils/format';
 import { type UseChatHelpers } from '@tutur3u/ai/types';
 import { AIChat } from '@tutur3u/types/db';
 import { Button } from '@tutur3u/ui/button';

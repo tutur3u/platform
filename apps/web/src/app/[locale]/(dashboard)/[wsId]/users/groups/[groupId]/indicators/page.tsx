@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';

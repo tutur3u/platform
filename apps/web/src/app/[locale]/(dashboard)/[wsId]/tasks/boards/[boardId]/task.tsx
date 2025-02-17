@@ -10,8 +10,8 @@ import { Badge } from '@tutur3u/ui/badge';
 import { Button } from '@tutur3u/ui/button';
 import { Card } from '@tutur3u/ui/card';
 import { Checkbox } from '@tutur3u/ui/checkbox';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { formatDistanceToNow } from 'date-fns';
 import {
   AlertCircle,

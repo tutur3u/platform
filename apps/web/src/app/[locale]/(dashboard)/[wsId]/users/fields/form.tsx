@@ -21,11 +21,11 @@ import {
   FormMessage,
 } from '@tutur3u/ui/form';
 import { Input } from '@tutur3u/ui/input';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import { Separator } from '@tutur3u/ui/separator';
 import { Textarea } from '@tutur3u/ui/textarea';
+import { cn } from '@tutur3u/utils/format';
 import dayjs from 'dayjs';
 import { CheckIcon, ChevronsUpDown, PlusIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

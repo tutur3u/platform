@@ -5,7 +5,7 @@ import WorkspaceSelect from '../../workspace-select';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Workspace } from '@tutur3u/types/primitives/Workspace';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {

@@ -5,7 +5,7 @@ import {
   BlockEditor,
   BlockEditorRef,
 } from '@/components/components/BlockEditor';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
 import { JSONContent } from '@tiptap/core';
 import { createClient } from '@tutur3u/supabase/next/client';

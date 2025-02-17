@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import * as React from 'react';
 
 function Table({ className, ...props }: React.ComponentProps<'table'>) {

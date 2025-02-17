@@ -23,9 +23,9 @@ import {
 import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Input } from '@tutur3u/ui/input';
 import { Label } from '@tutur3u/ui/label';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Separator } from '@tutur3u/ui/separator';
 import { Textarea } from '@tutur3u/ui/textarea';
+import { cn } from '@tutur3u/utils/format';
 import { format } from 'date-fns';
 import { BookPlus, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';

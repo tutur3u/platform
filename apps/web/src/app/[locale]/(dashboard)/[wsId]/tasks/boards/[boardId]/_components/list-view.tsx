@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@tutur3u/ui/dropdown-menu';
 import { Input } from '@tutur3u/ui/input';
-import { cn } from '@tutur3u/ui/lib/utils';
 import {
   Table,
   TableBody,
@@ -19,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@tutur3u/ui/table';
+import { cn } from '@tutur3u/utils/format';
 import { format } from 'date-fns';
 import {
   ArrowDownUp,

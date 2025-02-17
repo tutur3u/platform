@@ -11,7 +11,7 @@ import { type Message } from '@tutur3u/ai/types';
 import { createClient } from '@tutur3u/supabase/next/client';
 import { AIChat } from '@tutur3u/types/db';
 import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';

@@ -2,7 +2,7 @@
 
 import { Priority, Task } from '../../types';
 import { TaskCard } from './TaskCard';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import {
   AccordionContent,
   AccordionItem,

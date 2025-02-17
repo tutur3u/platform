@@ -12,8 +12,8 @@ import {
   CommandList,
   CommandSeparator,
 } from '@tutur3u/ui/command';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+import { cn } from '@tutur3u/utils/format';
 import { Check, ChevronsUpDown, Loader2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

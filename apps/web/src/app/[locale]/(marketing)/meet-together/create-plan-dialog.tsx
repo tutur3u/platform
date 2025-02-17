@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Timezone } from '@tutur3u/types/primitives/Timezone';
 import { Button } from '@tutur3u/ui/button';

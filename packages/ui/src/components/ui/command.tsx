@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from './dialog';
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Command as CommandPrimitive } from 'cmdk';
 import { SearchIcon } from 'lucide-react';
 import * as React from 'react';

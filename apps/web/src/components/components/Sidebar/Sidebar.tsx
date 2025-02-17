@@ -1,5 +1,5 @@
 // import { TableOfContents } from '../TableOfContents';
-// import { cn } from '@/lib/utils';
+// import { cn } from '@tutur3u/utils/format';
 // import { Editor } from '@tiptap/react';
 // import { memo, useCallback } from 'react';
 

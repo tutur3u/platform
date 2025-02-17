@@ -1,6 +1,11 @@
-import { cn } from '@tutur3u/ui/lib/utils';
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-const capitalize = (s?: string | null) => {
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export const capitalize = (s?: string | null) => {
   if (!s) return '';
   if (s.length === 0) return s;
   if (s.length === 1) return s.toUpperCase();
@@ -26,5 +31,3 @@ export function formatBytes(
       : (sizes[i] ?? 'Bytes')
   }`;
 }
-
-export { capitalize, cn };

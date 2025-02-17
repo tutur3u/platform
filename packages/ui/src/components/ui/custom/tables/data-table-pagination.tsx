@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '../../../../lib/utils';
 import { Button } from '../../button';
 import {
   Select,
@@ -11,6 +10,7 @@ import {
 } from '../../select';
 import { Separator } from '../../separator';
 import { Table } from '@tanstack/react-table';
+import { cn } from '@tutur3u/utils/format';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,

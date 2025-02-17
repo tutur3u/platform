@@ -4,7 +4,7 @@ import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
 import { type Message } from '@tutur3u/ai/types';
 import { Button } from '@tutur3u/ui/button';
 import { IconCheck, IconCopy } from '@tutur3u/ui/icons';
-import { cn } from '@tutur3u/ui/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import React from 'react';
 
 interface ChatMessageActionsProps extends React.ComponentProps<'div'> {

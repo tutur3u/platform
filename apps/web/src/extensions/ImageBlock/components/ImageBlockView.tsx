@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Node } from '@tiptap/pm/model';
 import { Editor, NodeViewWrapper } from '@tiptap/react';
 import { useCallback, useRef } from 'react';

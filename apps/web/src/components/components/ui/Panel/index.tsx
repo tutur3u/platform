@@ -1,5 +1,5 @@
 import { Surface } from '../Surface';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Slot } from '@radix-ui/react-slot';
 import { forwardRef } from 'react';
 

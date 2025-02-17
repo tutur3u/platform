@@ -1,7 +1,7 @@
 'use client';
 
 import { Filter } from '../../../users/filters';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { getInitials } from '@/utils/name-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tutur3u/supabase/next/client';

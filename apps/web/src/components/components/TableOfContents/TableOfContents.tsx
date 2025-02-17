@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { TableOfContentsStorage } from '@tiptap-pro/extension-table-of-contents';
 import { Editor as CoreEditor } from '@tiptap/core';
 import { useEditorState } from '@tiptap/react';

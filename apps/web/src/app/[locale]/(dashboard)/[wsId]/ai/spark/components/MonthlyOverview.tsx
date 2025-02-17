@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { Badge } from '@tutur3u/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import { Progress } from '@tutur3u/ui/progress';

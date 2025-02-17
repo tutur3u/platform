@@ -6,8 +6,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tutur3u/ui/dropdown-menu';
-import { cn } from '@tutur3u/ui/lib/utils';
 import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import {
   CalendarDays,
   LayoutGrid,
