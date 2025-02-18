@@ -48,7 +48,7 @@ export default async function Login() {
         </Suspense>
 
         <Separator className="mt-2" />
-        <div className="text-center text-sm font-semibold text-foreground/50">
+        <div className="text-center text-sm font-semibold text-balance text-foreground/50">
           {t('auth.notice-p1')}{' '}
           <Link
             href="/terms"

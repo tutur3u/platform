@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import { useToast } from '@tutur3u/ui/hooks/use-toast';
 import { Skeleton } from '@tutur3u/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
-import { AlertCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import {
@@ -35,7 +35,6 @@ const COLORS = {
     info: '#0891b2', // Cyan 600
     grid: '#e5e7eb', // Gray 200
     axis: '#4b5563', // Gray 600
-    text: '#1f2937', // Gray 800
     confidence: 'rgba(37, 99, 235, 0.15)', // Blue 600 with opacity
     tooltip: {
       bg: '#ffffff',
@@ -54,7 +53,6 @@ const COLORS = {
     info: '#06b6d4', // Cyan 500
     grid: '#374151', // Gray 700
     axis: '#9ca3af', // Gray 400
-    text: '#f3f4f6', // Gray 100
     confidence: 'rgba(59, 130, 246, 0.15)', // Blue 500 with opacity
     tooltip: {
       bg: '#1f2937',
@@ -76,119 +74,15 @@ const formatPercentage = (value: number) => {
   }).format(value / 100);
 };
 
-type Translations = {
-  advancedAnalytics: string;
-  statisticalMetrics: string;
-  mlMetrics: string;
-  noScaling: string;
-  withScaling: string;
-  rmse: string;
-  directionalAccuracy: string;
-  turningPointAccuracy: string;
-  weightedScore: string;
-  error: string;
-  tryAgain: string;
-  loading: string;
-  modelPerformance: string;
-  modelAccuracy: string;
-  modelComparison: string;
-  bestPerforming: string;
-  worstPerforming: string;
-  averagePerformance: string;
-  performanceMetrics: string;
-  modelInsights: string;
-  accuracyScore: string;
-  consistencyScore: string;
-  overallScore: string;
-  statisticalModels: string;
-  mlModels: string;
-  performanceTrend: string;
-  improving: string;
-  stable: string;
-  declining: string;
-  modelStrengths: string;
-  modelWeaknesses: string;
-  comparisonInsights: string;
-  highAccuracy: string;
-  goodConsistency: string;
-  lowError: string;
-  needsImprovement: string;
-  recommendations: string;
-  scaledModel: string;
-  scalingExplanation: string;
-  metricExplanations: {
-    rmse: string;
-    directionalAccuracy: string;
-    turningPointAccuracy: string;
-    weightedScore: string;
-  };
-  performanceComparison: string;
-  scalingImpact: string;
-  improvement: string;
-  degradation: string;
-};
+const AdvancedAnalytics = ({
+  mlMetrics,
+  statisticalMetrics,
+}: {
+  mlMetrics: AuroraMLMetrics[];
+  statisticalMetrics: AuroraStatisticalMetrics[];
+}) => {
+  const t = useTranslations();
 
-const translations: { en: Translations; vi: Partial<Translations> } = {
-  en: {
-    advancedAnalytics: 'Model Performance Analytics',
-    statisticalMetrics: 'Statistical Models',
-    mlMetrics: 'Machine Learning Models',
-    noScaling: 'Without Scaling',
-    withScaling: 'With Scaling',
-    rmse: 'RMSE',
-    directionalAccuracy: 'Directional Accuracy',
-    turningPointAccuracy: 'Turning Point Accuracy',
-    weightedScore: 'Weighted Score',
-    error: 'Error',
-    tryAgain: 'Try Again',
-    loading: 'Loading analytics data...',
-    modelPerformance: 'Model Performance',
-    modelAccuracy: 'Model Accuracy',
-    modelComparison: 'Model Performance Comparison',
-    bestPerforming: 'Best Performing Model',
-    worstPerforming: 'Worst Performing Model',
-    averagePerformance: 'Average Performance',
-    performanceMetrics: 'Performance Metrics',
-    modelInsights: 'Model Insights',
-    accuracyScore: 'Accuracy Score',
-    consistencyScore: 'Consistency Score',
-    overallScore: 'Overall Score',
-    statisticalModels: 'Statistical Models',
-    mlModels: 'ML Models',
-    performanceTrend: 'Performance Trend',
-    improving: 'Improving',
-    stable: 'Stable',
-    declining: 'Declining',
-    modelStrengths: 'Model Strengths',
-    modelWeaknesses: 'Model Weaknesses',
-    comparisonInsights: 'Comparison Insights',
-    highAccuracy: 'High Accuracy',
-    goodConsistency: 'Good Consistency',
-    lowError: 'Low Error Rate',
-    needsImprovement: 'Needs Improvement',
-    recommendations: 'Recommendations',
-    scaledModel: '(Scaled)',
-    scalingExplanation:
-      'Scaling helps normalize data for better model comparison',
-    metricExplanations: {
-      rmse: 'Root Mean Square Error - Lower is better',
-      directionalAccuracy:
-        'Ability to predict price direction - Higher is better',
-      turningPointAccuracy:
-        'Ability to predict trend changes - Higher is better',
-      weightedScore: 'Overall weighted performance - Higher is better',
-    },
-    performanceComparison: 'Performance Comparison',
-    scalingImpact: 'Impact of Scaling',
-    improvement: 'Improvement',
-    degradation: 'Degradation',
-  },
-  vi: {
-    // ... existing translations
-  },
-};
-
-const AdvancedAnalytics = () => {
   const { resolvedTheme } = useTheme();
   const colors = resolvedTheme === 'dark' ? COLORS.dark : COLORS.light;
   const [statisticalMetrics, setStatisticalMetrics] = useState<
@@ -198,38 +92,6 @@ const AdvancedAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const [statistical, ml] = await Promise.all([
-          fetchAuroraStatisticalMetrics(),
-          fetchAuroraMLMetrics(),
-        ]);
-        setStatisticalMetrics(statistical);
-        setMLMetrics(ml);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : 'Failed to fetch metrics data';
-        setError(message);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: message,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [toast]);
-
-  const t = translations['en'];
 
   const calculateModelScores = (metrics: any[]) => {
     if (!metrics.length) return null;
@@ -370,48 +232,52 @@ const AdvancedAnalytics = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t.modelPerformance}</CardTitle>
+        <CardTitle>{t('aurora.model_performance')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="statistical">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="statistical">{t.statisticalModels}</TabsTrigger>
-            <TabsTrigger value="ml">{t.mlModels}</TabsTrigger>
+            <TabsTrigger value="statistical">
+              {t('aurora.statistical_models')}
+            </TabsTrigger>
+            <TabsTrigger value="ml">{t('aurora.ml_models')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="statistical" className="space-y-4">
             {statisticalScores && (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <ModelScoreCard
-                  title={t.bestPerforming}
+                  title={t('aurora.best_performing')}
                   model={statisticalScores.bestModel}
                   color={colors.success}
                   previousScore={statisticalScores.scores[0]?.overallScore}
-                  translations={t}
+                  t={t}
                 />
                 <ModelScoreCard
-                  title={t.averagePerformance}
+                  title={t('aurora.average_performance')}
                   score={statisticalScores.averageScore}
                   color={colors.primary}
                   previousScore={statisticalScores.scores[0]?.overallScore}
-                  translations={t}
+                  t={t}
                 />
                 <ModelScoreCard
-                  title={t.worstPerforming}
+                  title={t('aurora.worst_performing')}
                   model={statisticalScores.worstModel}
                   color={colors.warning}
                   previousScore={statisticalScores.scores[0]?.overallScore}
-                  translations={t}
+                  t={t}
                 />
               </div>
             )}
 
             <MetricsChart
+              t={t}
+              tag="statistical"
               data={[
                 ...statisticalData,
                 ...statisticalScaledData.map((d) => ({
                   ...d,
-                  model: `${d.model} ${t.scaledModel}`,
+                  model: `${d.model} ${t('aurora.scaled_model')}`,
                 })),
               ]}
               scores={statisticalScores?.scores}
@@ -429,32 +295,34 @@ const AdvancedAnalytics = () => {
             {mlScores && (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <ModelScoreCard
-                  title={t.bestPerforming}
+                  title={t('aurora.best_performing')}
                   model={mlScores.bestModel}
                   color={colors.success}
                   previousScore={mlScores.scores[0]?.overallScore}
-                  translations={t}
+                  t={t}
                 />
                 <ModelScoreCard
-                  title={t.averagePerformance}
+                  title={t('aurora.average_performance')}
                   score={mlScores.averageScore}
                   color={colors.primary}
                   previousScore={mlScores.scores[0]?.overallScore}
-                  translations={t}
+                  t={t}
                 />
                 <ModelScoreCard
-                  title={t.worstPerforming}
+                  title={t('aurora.worst_performing')}
                   model={mlScores.worstModel}
                   color={colors.warning}
                   previousScore={mlScores.scores[0]?.overallScore}
-                  translations={t}
+                  t={t}
                 />
               </div>
             )}
-            <MetricsChart data={mlData} scores={mlScores?.scores} />
-            {mlScores && (
-              <ModelInsightsSection scores={mlScores.scores} translations={t} />
-            )}
+            <MetricsChart
+              t={t}
+              tag="ml"
+              data={mlData}
+              scores={mlScores?.scores}
+            />
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -468,7 +336,7 @@ const ModelScoreCard = ({
   score,
   color,
   previousScore,
-  translations,
+  t,
 }: {
   title: string;
   model?: {
@@ -480,7 +348,7 @@ const ModelScoreCard = ({
   score?: number;
   color: string;
   previousScore?: number;
-  translations: Translations;
+  t: any;
 }) => {
   const { resolvedTheme } = useTheme();
   const colors = resolvedTheme === 'dark' ? COLORS.dark : COLORS.light;
@@ -491,11 +359,11 @@ const ModelScoreCard = ({
     const threshold = 1; // 1% threshold for significant change
 
     if (Math.abs(diff) < threshold) {
-      return { icon: '→', label: translations.stable, color: colors.text };
+      return { icon: '→', label: t('aurora.stable') };
     }
     return diff > 0
-      ? { icon: '↗', label: translations.improving, color: colors.success }
-      : { icon: '↘', label: translations.declining, color: colors.warning };
+      ? { icon: '↗', label: t('aurora.improving'), color: colors.success }
+      : { icon: '↘', label: t('aurora.declining'), color: colors.warning };
   };
 
   const trend = model
@@ -522,10 +390,10 @@ const ModelScoreCard = ({
               {model.model}
             </div>
             <div className="space-y-3">
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    Accuracy
+                    {t('aurora.accuracy')}
                   </span>
                   <span className="font-medium">
                     {formatPercentage(model.accuracyScore)}
@@ -540,12 +408,12 @@ const ModelScoreCard = ({
                     }}
                   />
                 </div>
-              </div>
+              </div> */}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    Consistency
+                    {t('aurora.consistency')}
                   </span>
                   <span className="font-medium">
                     {formatPercentage(model.consistencyScore)}
@@ -564,7 +432,9 @@ const ModelScoreCard = ({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Overall</span>
+                  <span className="text-sm text-muted-foreground">
+                    {t('aurora.overall')}
+                  </span>
                   <span className="font-medium">
                     {formatPercentage(model.overallScore)}
                   </span>
@@ -719,9 +589,13 @@ const ModelInsightsSection = ({
 };
 
 const MetricsChart = ({
+  t,
+  tag,
   data,
   scores,
 }: {
+  t: any;
+  tag: string;
   data: any[];
   scores?: {
     model: string;
@@ -763,11 +637,11 @@ const MetricsChart = ({
                 value.toFixed(3),
                 name === 'rmse'
                   ? 'RMSE'
-                  : name === 'directional_accuracy'
-                    ? 'Directional Accuracy'
-                    : name === 'turning_point_accuracy'
-                      ? 'Turning Point Accuracy'
-                      : 'Weighted Score',
+                  : name === 'directionalAccuracy'
+                    ? t('aurora.directional_accuracy')
+                    : name === 'turningPointAccuracy'
+                      ? t('aurora.turning_point_accuracy')
+                      : t('aurora.weighted_score'),
               ]}
               labelStyle={{
                 color: colors.tooltip.text,
@@ -780,42 +654,42 @@ const MetricsChart = ({
                 paddingTop: '20px',
               }}
               formatter={(value) => (
-                <span style={{ color: colors.text, fontSize: '14px' }}>
+                <span style={{ fontSize: '14px' }}>
                   {value === 'rmse'
                     ? 'RMSE'
-                    : value === 'directional_accuracy'
-                      ? 'Directional Accuracy'
-                      : value === 'turning_point_accuracy'
-                        ? 'Turning Point Accuracy'
-                        : 'Weighted Score'}
+                    : value === 'directionalAccuracy'
+                      ? t('aurora.directional_accuracy')
+                      : value === 'turningPointAccuracy'
+                        ? t('aurora.turning_point_accuracy')
+                        : t('aurora.weighted_score')}
                 </span>
               )}
             />
             <Bar
               dataKey="rmse"
               fill={colors.primary}
-              name="RMSE"
+              name="rmse"
               animationDuration={300}
               radius={[4, 4, 0, 0]}
             />
             <Bar
-              dataKey="directional_accuracy"
+              dataKey="directionalAccuracy"
               fill={colors.success}
-              name="Directional Accuracy"
+              name="directionalAccuracy"
               animationDuration={300}
               radius={[4, 4, 0, 0]}
             />
             <Bar
-              dataKey="turning_point_accuracy"
+              dataKey="turningPointAccuracy"
               fill={colors.warning}
-              name="Turning Point Accuracy"
+              name="turningPointAccuracy"
               animationDuration={300}
               radius={[4, 4, 0, 0]}
             />
             <Bar
-              dataKey="weighted_score"
+              dataKey="weightedScore"
               fill={colors.info}
-              name="Weighted Score"
+              name="weightedScore"
               animationDuration={300}
               radius={[4, 4, 0, 0]}
             />
@@ -823,44 +697,40 @@ const MetricsChart = ({
         </ResponsiveContainer>
       </div>
 
+      {/* Rest of the component remains the same */}
       {scores && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {scores.map((score) => (
-            <Card
-              key={score.model}
-              className="transition-all duration-200 hover:shadow-md"
-            >
-              <CardContent className="pt-6">
-                <h3 className="text-base font-medium">{score.model}</h3>
-                <div className="mt-4 space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Accuracy
-                      </span>
-                      <span className="font-medium">
-                        {formatPercentage(score.accuracyScore)}
-                      </span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-muted/20">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{
-                          width: `${score.accuracyScore}%`,
-                          background: `linear-gradient(90deg, ${colors.gradient.from}, ${colors.gradient.to})`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Consistency
-                      </span>
-                      <span className="font-medium">
-                        {formatPercentage(score.consistencyScore)}
-                      </span>
+          {scores
+            .filter(
+              (score, index, self) =>
+                self.findIndex((s) => s.model === score.model) === index
+            )
+            .map((score) => (
+              <Card
+                key={`${tag}-${score.model}`}
+                className="transition-all duration-200 hover:shadow-md"
+              >
+                <CardContent className="pt-6">
+                  <h3 className="text-base font-medium">{score.model}</h3>
+                  <div className="mt-4 space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          {t('aurora.consistency')}
+                        </span>
+                        <span className="font-medium">
+                          {formatPercentage(score.consistencyScore)}
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-muted/20">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${score.consistencyScore}%`,
+                            background: `linear-gradient(90deg, ${colors.gradient.from}, ${colors.gradient.to})`,
+                          }}
+                        />
+                      </div>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-muted/20">
                       <div
@@ -873,14 +743,24 @@ const MetricsChart = ({
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Overall
-                      </span>
-                      <span className="font-medium">
-                        {formatPercentage(score.overallScore)}
-                      </span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          {t('aurora.overall')}
+                        </span>
+                        <span className="font-medium">
+                          {formatPercentage(score.overallScore)}
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-muted/20">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${score.overallScore}%`,
+                            background: `linear-gradient(90deg, ${colors.gradient.from}, ${colors.gradient.to})`,
+                          }}
+                        />
+                      </div>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-muted/20">
                       <div
