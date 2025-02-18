@@ -2,7 +2,6 @@
 
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
-import { cn } from '@tutur3u/utils/format';
 import type { SupabaseUser } from '@tutur3u/supabase/next/user';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
@@ -17,6 +16,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@tutur3u/ui/sheet';
+import { cn } from '@tutur3u/utils/format';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

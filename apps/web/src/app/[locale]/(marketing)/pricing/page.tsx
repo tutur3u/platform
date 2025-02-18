@@ -1,7 +1,6 @@
 'use client';
 
 import GradientHeadline from '../gradient-headline';
-import { cn } from '@tutur3u/utils/format';
 import {
   Accordion,
   AccordionContent,
@@ -25,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { motion } from 'framer-motion';
 import {
   Archive,

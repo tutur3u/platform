@@ -1,5 +1,4 @@
 import { EditorInfo } from './EditorInfo';
-import { cn } from '@tutur3u/utils/format';
 import { Editor } from '@tiptap/core';
 import { useEditorState } from '@tiptap/react';
 import {
@@ -15,6 +14,7 @@ import {
 } from '@tutur3u/ui/alert-dialog';
 import { Button } from '@tutur3u/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import {
   AlignCenter,
   AlignJustify,

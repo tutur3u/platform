@@ -1,7 +1,6 @@
 'use client';
 
 import FlashcardForm from '../../../../../flashcards/form';
-import { cn } from '@tutur3u/utils/format';
 import { createClient } from '@tutur3u/supabase/next/client';
 import {
   AlertDialog,
@@ -15,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@tutur3u/ui/alert-dialog';
 import { Button } from '@tutur3u/ui/button';
+import { cn } from '@tutur3u/utils/format';
 import { Pencil, Trash, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

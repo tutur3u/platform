@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '@tutur3u/utils/format';
 import {
   Accordion,
   AccordionContent,
@@ -15,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tutur3u/ui/card';
+import { cn } from '@tutur3u/utils/format';
 import { CalendarDays } from 'lucide-react';
 
 interface Task {

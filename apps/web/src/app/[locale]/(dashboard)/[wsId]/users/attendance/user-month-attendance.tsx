@@ -2,7 +2,6 @@
 
 import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
-import { cn } from '@tutur3u/utils/format';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tutur3u/supabase/next/client';
 import {
@@ -16,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from 'next-intl';

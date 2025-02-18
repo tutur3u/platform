@@ -3,7 +3,6 @@
 import LogoTitle from '../logo-title';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
-import { cn } from '@tutur3u/utils/format';
 import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
   Accordion,
@@ -19,6 +18,7 @@ import {
 } from '@tutur3u/ui/resizable';
 import { Separator } from '@tutur3u/ui/separator';
 import { TooltipProvider } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import {
   ChevronDown,
   Crown,

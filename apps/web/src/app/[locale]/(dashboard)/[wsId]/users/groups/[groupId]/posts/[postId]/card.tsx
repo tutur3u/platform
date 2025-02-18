@@ -2,7 +2,6 @@
 
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
-import { cn } from '@tutur3u/utils/format';
 import { isEmail } from '@/utils/email-helper';
 import { createClient } from '@tutur3u/supabase/next/client';
 import type { GroupPostCheck } from '@tutur3u/types/db';
@@ -11,6 +10,7 @@ import { Avatar, AvatarFallback } from '@tutur3u/ui/avatar';
 import { Button } from '@tutur3u/ui/button';
 import { Card } from '@tutur3u/ui/card';
 import { Textarea } from '@tutur3u/ui/textarea';
+import { cn } from '@tutur3u/utils/format';
 import {
   Check,
   CircleSlash,

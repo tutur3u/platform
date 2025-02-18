@@ -1,6 +1,6 @@
 import { Surface } from '../Surface';
-import { cn } from '@tutur3u/utils/format';
 import { Slot } from '@radix-ui/react-slot';
+import { cn } from '@tutur3u/utils/format';
 import { forwardRef } from 'react';
 
 export type PanelProps = {

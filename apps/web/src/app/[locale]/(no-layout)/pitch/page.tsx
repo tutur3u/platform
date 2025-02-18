@@ -2,8 +2,8 @@
 
 import GradientHeadline from '../../(marketing)/gradient-headline';
 import { ThemeToggle } from '../../theme-toggle';
-import { cn } from '@tutur3u/utils/format';
 import { Button } from '@tutur3u/ui/button';
+import { cn } from '@tutur3u/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Activity,

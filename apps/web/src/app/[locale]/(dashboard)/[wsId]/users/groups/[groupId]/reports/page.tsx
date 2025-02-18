@@ -1,7 +1,6 @@
 import { Filter } from '../../../filters';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
-import { cn } from '@tutur3u/utils/format';
 import { createClient } from '@tutur3u/supabase/next/server';
 import { WorkspaceUserReport } from '@tutur3u/types/db';
 import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
@@ -10,6 +9,7 @@ import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { Button } from '@tutur3u/ui/button';
 import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
 import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import { Calendar, ChartColumn, FileUser, User, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

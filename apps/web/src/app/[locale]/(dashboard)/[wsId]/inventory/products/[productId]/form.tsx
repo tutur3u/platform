@@ -2,7 +2,6 @@
 
 import { ProductCategoryForm } from '../../categories/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
-import { cn } from '@tutur3u/utils/format';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductCategory } from '@tutur3u/types/primitives/ProductCategory';
 import { ProductUnit } from '@tutur3u/types/primitives/ProductUnit';
@@ -39,6 +38,7 @@ import {
 } from '@tutur3u/ui/select';
 import { Separator } from '@tutur3u/ui/separator';
 import { Textarea } from '@tutur3u/ui/textarea';
+import { cn } from '@tutur3u/utils/format';
 import { Check, ChevronsUpDown, Plus, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

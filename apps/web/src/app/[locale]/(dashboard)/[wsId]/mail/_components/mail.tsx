@@ -5,7 +5,6 @@ import { useMail } from '../use-mail';
 import { MailDisplay } from './mail-display';
 import { MailList } from './mail-list';
 import { Nav } from './nav';
-import { cn } from '@tutur3u/utils/format';
 import { Input } from '@tutur3u/ui/input';
 import {
   ResizableHandle,
@@ -15,6 +14,7 @@ import {
 import { Separator } from '@tutur3u/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
 import { TooltipProvider } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { Archive, Inbox, Search, Send } from 'lucide-react';
 import * as React from 'react';
 

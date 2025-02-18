@@ -4,12 +4,12 @@
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import { MemoizedReactMarkdown } from '@/components/markdown';
-import { capitalize, cn } from '@tutur3u/utils/format';
 import { type Message } from '@tutur3u/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
 import { CodeBlock } from '@tutur3u/ui/codeblock';
 import { IconUser } from '@tutur3u/ui/icons';
 import { Separator } from '@tutur3u/ui/separator';
+import { capitalize, cn } from '@tutur3u/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

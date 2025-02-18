@@ -1,7 +1,6 @@
 'use client';
 
 import { Filter } from '../../../users/filters';
-import { cn } from '@tutur3u/utils/format';
 import { getInitials } from '@/utils/name-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tutur3u/supabase/next/client';
@@ -10,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
 import { Button } from '@tutur3u/ui/button';
 import SearchBar from '@tutur3u/ui/custom/search-bar';
 import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { cn } from '@tutur3u/utils/format';
 import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

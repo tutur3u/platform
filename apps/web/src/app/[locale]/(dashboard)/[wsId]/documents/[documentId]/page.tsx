@@ -5,7 +5,6 @@ import {
   BlockEditor,
   BlockEditorRef,
 } from '@/components/components/BlockEditor';
-import { cn } from '@tutur3u/utils/format';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
 import { JSONContent } from '@tiptap/core';
 import { createClient } from '@tutur3u/supabase/next/client';
@@ -24,6 +23,7 @@ import {
 import { Button } from '@tutur3u/ui/button';
 import { Input } from '@tutur3u/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import debounce from 'lodash/debounce';
 import {
   AlertCircle,
