@@ -4,7 +4,7 @@ import AuroraActions from './aurora-actions';
 import { InventoryCategoryStatistics } from './categories/inventory';
 import { UsersCategoryStatistics } from './categories/users';
 import CommodityComparison from './commodity-comparison';
-import DashboardChart from './dashboard';
+import Dashboard from './dashboard';
 import FinanceStatistics from './finance';
 import PricePredictionChart from './price-prediction-chart';
 import {
@@ -28,6 +28,8 @@ import {
   getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
+import { createClient } from '@tutur3u/supabase/next/server';
+import type { AuroraForecast } from '@tutur3u/types/db';
 import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
 import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -55,7 +57,15 @@ export default async function WorkspaceHomePage({
     wsId,
   });
 
+  const forecast = await getForecast();
+  const mlMetrics = await getMLMetrics();
+  const statsMetrics = await getStatsMetrics();
+
   if (!workspace) notFound();
+
+  if (!forecast || !mlMetrics || !statsMetrics) {
+    return <LoadingStatisticCard />;
+  }
 
   // const { data: dailyData } = await getDailyData(wsId);
   // const { data: monthlyData } = await getMonthlyData(wsId);
@@ -93,11 +103,17 @@ export default async function WorkspaceHomePage({
           <>
             <Separator className="my-4" />
             <div className="grid grid-cols-1 gap-4">
-              {user?.email?.endsWith('@tuturuuu.com') && <AuroraActions />}
-              <DashboardChart />
-              <PricePredictionChart />
-              <CommodityComparison />
-              <AdvancedAnalytics />
+              {user?.email?.endsWith('@tuturuuu.com') &&
+                containsPermission('manage_workspace_roles') && (
+                  <AuroraActions />
+                )}
+              <Dashboard data={forecast} />
+              <PricePredictionChart data={forecast} />
+              <CommodityComparison data={forecast} />
+              <AdvancedAnalytics
+                mlMetrics={mlMetrics}
+                statisticalMetrics={statsMetrics}
+              />
             </div>
           </>
         )}
@@ -179,6 +195,53 @@ export default async function WorkspaceHomePage({
         )} */}
     </>
   );
+}
+
+async function getForecast() {
+  const supabase = await createClient();
+
+  const { data: statistical_forecast, error: statError } = await supabase
+    .from('aurora_statistical_forecast')
+    .select('*')
+    .order('date', { ascending: true });
+
+  if (statError) throw new Error('Error fetching statistical forecast');
+
+  const { data: ml_forecast, error: mlError } = await supabase
+    .from('aurora_ml_forecast')
+    .select('*')
+    .order('date', { ascending: true });
+
+  if (mlError) throw new Error('Error fetching ML forecast');
+
+  return {
+    statistical_forecast: statistical_forecast?.map((item) => ({
+      ...item,
+      date: new Date(item.date).toISOString().split('T')[0],
+    })),
+    ml_forecast: ml_forecast?.map((item) => ({
+      ...item,
+      date: new Date(item.date).toISOString().split('T')[0],
+    })),
+  } as AuroraForecast;
+}
+
+async function getMLMetrics() {
+  const supabase = await createClient();
+
+  const { data } = await supabase.from('aurora_ml_metrics').select('*');
+
+  return data;
+}
+
+async function getStatsMetrics() {
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from('aurora_statistical_metrics')
+    .select('*');
+
+  return data;
 }
 
 // async function getHourlyData(wsId: string) {

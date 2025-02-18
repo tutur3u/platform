@@ -1,6 +1,5 @@
 'use client';
 
-import { fetchAuroraForecast } from '@/lib/aurora';
 import type { AuroraForecast } from '@tutur3u/types/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import {
@@ -12,7 +11,7 @@ import {
 } from '@tutur3u/ui/select';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Area,
   CartesianGrid,
@@ -146,21 +145,6 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
   const insights = chartData.length
     ? getModelInsights(chartData, selectedModel)
     : null;
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.pricePrediction}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex h-[400px] items-center justify-center">
-            Loading...
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>

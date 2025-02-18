@@ -1,7 +1,7 @@
 'use client';
 
-import { fetchAuroraForecast } from '@/lib/aurora';
-import { Alert, AlertDescription, AlertTitle } from '@tutur3u/ui/alert';
+import type { AuroraForecast } from '@tutur3u/types/db';
+import { Alert, AlertTitle } from '@tutur3u/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import { useToast } from '@tutur3u/ui/hooks/use-toast';
 import {
@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tutur3u/ui/select';
-import { Skeleton } from '@tutur3u/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -91,10 +90,7 @@ const CommodityComparison = ({
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        const response = await fetchAuroraForecast();
-        const transformedData = response.statistical_forecast.map(
+        const transformedData = initialData.statistical_forecast.map(
           (item: any) => ({
             date: item.date,
             displayDate: formatDate(locale, item.date),
@@ -114,14 +110,11 @@ const CommodityComparison = ({
           error instanceof Error
             ? error.message
             : 'Failed to fetch forecast data';
-        setError(message);
         toast({
           variant: 'destructive',
           title: 'Error',
           description: message,
         });
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -244,54 +237,6 @@ const CommodityComparison = ({
         ),
       }
     : null;
-
-  if (loading) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Skeleton className="h-6 w-[200px]" />
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-[60px] w-full" />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-[100px] w-full" />
-              ))}
-            </div>
-            <Skeleton className="h-[400px] w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{t.modelComparison}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>{t.error}</AlertTitle>
-            <AlertDescription className="flex flex-col gap-2">
-              {error}
-              <button
-                onClick={() => window.location.reload()}
-                className="w-fit rounded-md bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/20"
-              >
-                {t.tryAgain}
-              </button>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full">

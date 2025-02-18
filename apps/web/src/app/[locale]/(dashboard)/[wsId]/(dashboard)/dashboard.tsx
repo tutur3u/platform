@@ -1,10 +1,7 @@
 'use client';
 
-import { fetchAuroraForecast } from '@/lib/aurora';
 import type { AuroraForecast } from '@tutur3u/types/db';
-import { Alert, AlertDescription, AlertTitle } from '@tutur3u/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
-import { useToast } from '@tutur3u/ui/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -12,13 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tutur3u/ui/select';
-import { Skeleton } from '@tutur3u/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
 import { cn } from '@tutur3u/utils/format';
 import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   CartesianGrid,
   Legend,
