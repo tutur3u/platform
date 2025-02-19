@@ -446,6 +446,15 @@ const MetricsChart = ({
               tickMargin={10}
               tickFormatter={(value) => value.toFixed(3)}
             />
+            {/* Added secondary YAxis for percentage metrics */}
+            <YAxis
+              yAxisId="percent"
+              orientation="right"
+              stroke={colors.axis}
+              tick={{ fill: colors.axis, fontSize: 12 }}
+              tickMargin={10}
+              tickFormatter={(value) => (value * 100).toFixed(0) + '%'}
+            />
             <Tooltip
               contentStyle={{
                 backgroundColor: colors.tooltip.bg,
@@ -455,7 +464,10 @@ const MetricsChart = ({
                 padding: '12px 16px',
               }}
               formatter={(value: number, name: string) => [
-                value.toFixed(3),
+                name === 'directionalAccuracy' ||
+                name === 'turningPointAccuracy'
+                  ? (value * 100).toFixed(3)
+                  : value.toFixed(3),
                 name === 'rmse'
                   ? 'RMSE'
                   : name === 'directionalAccuracy'
@@ -499,6 +511,7 @@ const MetricsChart = ({
               name="directionalAccuracy"
               animationDuration={300}
               radius={[4, 4, 0, 0]}
+              yAxisId="percent"
             />
             <Bar
               dataKey="turningPointAccuracy"
@@ -506,6 +519,7 @@ const MetricsChart = ({
               name="turningPointAccuracy"
               animationDuration={300}
               radius={[4, 4, 0, 0]}
+              yAxisId="percent"
             />
             <Bar
               dataKey="weightedScore"
