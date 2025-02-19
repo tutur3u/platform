@@ -456,6 +456,7 @@ const MetricsChart = ({
               tickFormatter={(value) => (value * 100).toFixed(0) + '%'}
             />
             <Tooltip
+              cursor={{ fill: colors.confidence }}
               contentStyle={{
                 backgroundColor: colors.tooltip.bg,
                 border: `1px solid ${colors.tooltip.border}`,

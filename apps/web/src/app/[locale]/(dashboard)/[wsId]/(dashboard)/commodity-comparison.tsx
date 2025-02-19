@@ -398,6 +398,7 @@ const CommodityComparison = ({
                         tickFormatter={(value) => formatCurrency(value)}
                       />
                       <Tooltip
+                        cursor={false}
                         contentStyle={{
                           backgroundColor: colors.tooltip.bg,
                           border: `1px solid ${colors.tooltip.border}`,
