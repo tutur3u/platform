@@ -1854,6 +1854,7 @@ export type Database = {
           created_at: string;
           feedback: string | null;
           id: number;
+          problem_set_id: string | null;
           problemId: string | null;
           score: number | null;
           user_prompt: string | null;
@@ -1863,6 +1864,7 @@ export type Database = {
           created_at?: string;
           feedback?: string | null;
           id?: number;
+          problem_set_id?: string | null;
           problemId?: string | null;
           score?: number | null;
           user_prompt?: string | null;
@@ -1872,6 +1874,7 @@ export type Database = {
           created_at?: string;
           feedback?: string | null;
           id?: number;
+          problem_set_id?: string | null;
           problemId?: string | null;
           score?: number | null;
           user_prompt?: string | null;

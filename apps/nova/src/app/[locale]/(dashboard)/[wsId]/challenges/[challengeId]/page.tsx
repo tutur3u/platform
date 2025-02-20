@@ -111,7 +111,7 @@ export default function Page({ params }: Props) {
           />
         </div>
 
-        <PromptComponent problem={problems[currentProblemIndex]} />
+        <PromptComponent challengeId={} problem={problems[currentProblemIndex]} />
       </div>
     </>
   );

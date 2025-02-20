@@ -3,10 +3,16 @@ import ChatBox from './components/prompt-form';
 import { Card } from '@repo/ui/components/ui/card';
 import React from 'react';
 
-export default function PromptComponent({ problem }: { problem: Problems }) {
+export default function PromptComponent({
+  problem,
+  challengeId,
+}: {
+  problem: Problems;
+  challengeId: string;
+}) {
   return (
     <Card className="h-[813px] w-1/2 overflow-y-auto p-4 pt-10">
-      <ChatBox problem={problem}></ChatBox>
+      <ChatBox challengeId={challengeId} problem={problem}></ChatBox>
     </Card>
   );
 }

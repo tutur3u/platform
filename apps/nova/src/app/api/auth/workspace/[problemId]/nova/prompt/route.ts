@@ -23,7 +23,6 @@ export async function GET(_: Request, { params }: Params) {
     .eq('problemId', id)
     .eq('userId', user.id);
   if (error) {
-    // console.log(error); 
     return NextResponse.json(
       { message: 'Error fetching problem history' },
       { status: 500 }
@@ -50,7 +49,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const { problemId: id } = await params;
 
-  const { feedback, score, user_prompt } = await req.json();
+  const { feedback, score, user_prompt, challengeId } = await req.json();
 
   const upsertData = {
     userId: user?.id,
@@ -58,6 +57,7 @@ export async function POST(req: Request, { params }: Params) {
     feedback: feedback || '',
     score: score || 0,
     user_prompt: user_prompt,
+    problem_set_id: challengeId || '',
   };
 
   const { error } = await supabase

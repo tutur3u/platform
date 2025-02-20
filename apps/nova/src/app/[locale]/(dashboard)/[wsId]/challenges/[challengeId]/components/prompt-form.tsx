@@ -23,7 +23,13 @@ type HistoryEntry = {
   feedback: string;
   user_prompt: string;
 };
-export default function ChatBox({ problem }: { problem: Problems }) {
+export default function ChatBox({
+  problem,
+  challengeId,
+}: {
+  problem: Problems;
+  challengeId: string;
+}) {
   const [_messages, setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
@@ -59,7 +65,7 @@ export default function ChatBox({ problem }: { problem: Problems }) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ feedback, score, user_prompt }),
+          body: JSON.stringify({ feedback, score, user_prompt, challengeId }),
         }
       );
 
@@ -192,8 +198,6 @@ export default function ChatBox({ problem }: { problem: Problems }) {
             <p>We are processing your prompt please wait...</p>
           </div>
         )}
-
-
 
         {!loading && _history.length > 0 && (
           <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 shadow-md">

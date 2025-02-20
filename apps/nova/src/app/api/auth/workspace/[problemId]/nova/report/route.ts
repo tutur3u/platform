@@ -24,9 +24,9 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   const { data, error } = await supabase
-    .from('nova_test_timer_record')
-    .select('*')
-    .eq('problemId', problemId);
+    .from('nova_users_problem_history')
+    .select('user_prompt,score,problemId,feedback')
+    .eq('problem_set_id', problemId);
 
   if (error) {
     console.log(error);
