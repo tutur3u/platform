@@ -155,7 +155,7 @@ export function Nav({
                 <TooltipContent
                   side="right"
                   className={cn(
-                    'flex items-center gap-4',
+                    'flex items-center gap-4 border bg-background text-foreground',
                     ((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                       link.experimental) &&
                       'flex-col items-start gap-1'
