@@ -47,6 +47,11 @@ export function CrawlerContent({
     crawledRelatedUrls.map((url) => [url.url, url])
   );
 
+  // Count uncrawled URLs that weren't skipped
+  const uncrawledCount = relatedUrls.filter(
+    (url) => !url.skipped && !crawledUrlsMap.has(url.url)
+  ).length;
+
   return (
     <>
       <Card>
@@ -84,7 +89,11 @@ export function CrawlerContent({
                 <TabsTrigger value="markdown">Markdown</TabsTrigger>
                 <TabsTrigger value="html">HTML</TabsTrigger>
                 <TabsTrigger value="urls">
-                  URLs ({relatedUrls.length})
+                  URLs ({relatedUrls.length}) {uncrawledCount > 0 && (
+                    <span className="ml-1 text-xs text-blue-500">
+                      • {uncrawledCount} uncrawled
+                    </span>
+                  )}
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="markdown" className="mt-4">
@@ -124,7 +133,10 @@ export function CrawlerContent({
                         const crawledData = crawledUrlsMap.get(relatedUrl.url);
 
                         return (
-                          <div key={relatedUrl.url} className="p-4">
+                          <div 
+                            key={relatedUrl.url} 
+                            className={`p-4 ${!relatedUrl.skipped && !isCrawled ? 'bg-blue-500/5' : ''}`}
+                          >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 {crawledData?.id ? (
@@ -149,6 +161,8 @@ export function CrawlerContent({
                                     className={
                                       relatedUrl.skipped
                                         ? 'text-muted-foreground/50'
+                                        : !isCrawled
+                                        ? '' // Not muted if uncrawled
                                         : 'text-muted-foreground'
                                     }
                                   >
@@ -166,7 +180,7 @@ export function CrawlerContent({
                                 >
                                   {relatedUrl.skipped ? 'Skipped' : 'Kept'}
                                 </span>
-                                {isCrawled && (
+                                {isCrawled ? (
                                   <span className="text-xs text-blue-500">
                                     Crawled{' '}
                                     {formatDistance(
@@ -174,6 +188,10 @@ export function CrawlerContent({
                                       new Date(),
                                       { addSuffix: true }
                                     )}
+                                  </span>
+                                ) : !relatedUrl.skipped && (
+                                  <span className="text-xs text-blue-500">
+                                    Not yet crawled
                                   </span>
                                 )}
                               </div>
