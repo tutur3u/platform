@@ -73,3 +73,44 @@ export async function POST(req: Request, { params }: Params) {
   }
   return NextResponse.json({ message: 'Problem history updated successfully' });
 }
+
+export async function PUT(req: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { problemId } = await params;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.log('Unauthorized');
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const userId = user?.id;
+  const { test_status } = await req.json();
+
+  if (!test_status) {
+    return NextResponse.json(
+      { message: 'Missing test_status' },
+      { status: 400 }
+    );
+  }
+
+  // Update the test status
+  const { error } = await supabase
+    .from('nova_test_timer_record')
+    .update({ test_status })
+    .eq('problemId', problemId)
+    .eq('userId', userId);
+
+  if (error) {
+    console.log(error);
+    return NextResponse.json(
+      { message: 'Error updating test status' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ message: 'Test status updated successfully' });
+}

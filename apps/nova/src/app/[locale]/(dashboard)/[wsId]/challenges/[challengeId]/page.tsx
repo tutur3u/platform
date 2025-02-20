@@ -11,13 +11,14 @@ import React, { useEffect, useState } from 'react';
 
 interface Props {
   params: Promise<{
+    wsId: string;
     challengeId: string;
   }>;
 }
 
 interface Timer {
   duration: number;
-  createdAt: string;
+  created_at: string;
 }
 
 export default function Page({ params }: Props) {
@@ -26,10 +27,10 @@ export default function Page({ params }: Props) {
     null
   );
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
-
+  const [wsId, setWsId] = useState('');
   const database = createClient();
   const router = useRouter();
-  // console.log(fetchedTimer?.duration, 'duration');
+
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       const confirmationMessage =
@@ -61,10 +62,10 @@ export default function Page({ params }: Props) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { challengeId } = await params;
+      const { wsId, challengeId } = await params;
       const challengeData = getChallenge(parseInt(challengeId));
       setChallenge(challengeData);
-
+      setWsId(wsId);
       const timerData = await fetchTimer(String(challengeData?.id));
       setFetchedTimer(timerData);
     };
@@ -92,6 +93,7 @@ export default function Page({ params }: Props) {
         proNum={problems.length}
         currentProblem={currentProblemIndex + 1}
         duraion={fetchedTimer?.duration || 0}
+        wsId={wsId}
         createdAt={fetchedTimer?.created_at || ''}
         onNext={nextProblem}
         onPrev={prevProblem}

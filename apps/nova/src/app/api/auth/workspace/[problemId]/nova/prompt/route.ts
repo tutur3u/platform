@@ -23,7 +23,7 @@ export async function GET(_: Request, { params }: Params) {
     .eq('problemId', id)
     .eq('userId', user.id);
   if (error) {
-    console.log(error);
+    // console.log(error); 
     return NextResponse.json(
       { message: 'Error fetching problem history' },
       { status: 500 }

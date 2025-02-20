@@ -21,7 +21,7 @@ interface ChallengeCardProps {
 const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
   const [isTestStarted, setIsTestStarted] = useState(false);
 
-  // Check if the test has started or not
+
   useEffect(() => {
     const checkTestStarted = async () => {
       const response = await fetch(
@@ -30,9 +30,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
       const data = await response.json();
 
       if (data?.test_status === 'START') {
-        setIsTestStarted(true); // Set to true if test is started
+        setIsTestStarted(true); 
       } else {
-        setIsTestStarted(false); // Set to false if test isn't started
+        setIsTestStarted(false); 
       }
     };
 

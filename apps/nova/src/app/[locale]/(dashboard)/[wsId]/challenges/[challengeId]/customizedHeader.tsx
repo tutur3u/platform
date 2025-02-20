@@ -14,6 +14,7 @@ interface Props {
   currentProblem: number;
   createdAt: string;
   duraion: number;
+  wsId: string;
   onNext: () => void;
   onPrev: () => void;
 }
@@ -23,6 +24,7 @@ export default function CustomizedHeader({
   currentProblem,
   onNext,
   onPrev,
+  wsId,
   createdAt,
   duraion,
 }: Props) {
@@ -34,8 +36,7 @@ export default function CustomizedHeader({
       router.push('/');
     }
   };
-  console.log(duraion, ' durantion in header');
-  console.log(createdAt, ' created at in hjeader');
+
   return (
     <nav
       id="navbar"
@@ -71,7 +72,12 @@ export default function CustomizedHeader({
                 <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
               }
             >
-              <CountdownTimer createdAt={createdAt} duration={duraion} />
+              <CountdownTimer
+                problemId={currentProblem}
+                createdAt={createdAt}
+                wsId={wsId}
+                duration={duraion}
+              />
               <Button
                 className="bg-red-500 hover:bg-red-700"
                 onClick={handleEndTest}

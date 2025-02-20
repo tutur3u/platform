@@ -6,12 +6,16 @@ import { useEffect, useState } from 'react';
 interface CountdownTimerProps {
   createdAt: string;
   duration: number;
+  problemId: number;
+  wsId: string;
   // onUpdateDuration: (remainingTime: number) => void;
 }
 
 export default function CountdownTimer({
   createdAt,
   duration,
+  problemId,
+  wsId,
   // onUpdateDuration,
 }: CountdownTimerProps) {
   const router = useRouter();
@@ -30,7 +34,7 @@ export default function CountdownTimer({
 
       if (remaining === 0) {
         // onUpdateDuration(0);
-        router.push('/test-ended');
+        router.push(`/${wsId}/challenges/${problemId}/test-ended`);
       }
     };
 
