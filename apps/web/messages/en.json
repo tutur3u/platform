@@ -1696,7 +1696,8 @@
     "pipeline": "Pipeline",
     "executions": "Executions",
     "jobs": "Jobs",
-    "cron_jobs": "Jobs"
+    "cron_jobs": "Jobs",
+    "uncrawled": "Uncrawled"
   },
   "workspace-settings-layout": {
     "workspace": "Workspace",
@@ -2489,7 +2490,11 @@
     "singular": "Crawler",
     "description": "Crawlers are used to scrape data from websites.",
     "create": "Create crawler",
-    "create_description": "Create a new crawler"
+    "create_description": "Create a new crawler",
+    "uncrawled": "Uncrawled",
+    "domains": "Domains",
+    "connections": "Connections",
+    "crawled": "Crawled"
   },
   "ws-pipelines": {
     "plural": "Pipelines",
