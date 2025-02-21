@@ -12,6 +12,7 @@ const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
+
   const {
     id,
     model = DEFAULT_MODEL_NAME,
