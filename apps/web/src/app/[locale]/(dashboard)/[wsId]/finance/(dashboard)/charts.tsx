@@ -1,18 +1,13 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@repo/ui/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@repo/ui/components/ui/chart';
-import { cn } from '@repo/ui/lib/utils';
+} from '@tutur3u/ui/chart';
+import { cn } from '@tutur3u/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 

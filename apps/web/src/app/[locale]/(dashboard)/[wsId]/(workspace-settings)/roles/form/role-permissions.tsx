@@ -6,9 +6,9 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@repo/ui/components/ui/accordion';
-import { FormField, FormItem } from '@repo/ui/components/ui/form';
-import { Separator } from '@repo/ui/components/ui/separator';
+} from '@tutur3u/ui/accordion';
+import { FormField, FormItem } from '@tutur3u/ui/form';
+import { Separator } from '@tutur3u/ui/separator';
 import { ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
@@ -24,7 +24,7 @@ export default function RoleFormPermissionsSection({
 
   return (
     <>
-      <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
+      <div className="mb-2 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 p-2 text-center font-bold text-dynamic-blue">
         {form.watch('name') || '-'}
       </div>
 

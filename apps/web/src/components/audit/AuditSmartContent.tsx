@@ -1,5 +1,5 @@
-import { User } from '@/types/primitives/User';
-import { AuditLog } from '@/types/primitives/audit-log';
+import { User } from '@tutur3u/types/primitives/User';
+import { AuditLog } from '@tutur3u/types/primitives/audit-log';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';
 
@@ -30,7 +30,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
     data.table_name === 'workspace_user_groups'
   )
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
@@ -76,7 +76,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
   if (data.table_name === 'transaction_categories')
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
@@ -145,7 +145,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
   if (data.table_name === 'healthcare_vitals')
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
@@ -214,7 +214,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
   if (data.table_name === 'workspace_products')
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name && (
             <div>
@@ -334,7 +334,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
     data.table_name === 'healthcare_vital_groups'
   )
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name && (
             <div>
@@ -427,7 +427,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
   if (data.table_name === 'workspace_users')
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
@@ -712,7 +712,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
   if (data.table_name === 'workspace_wallets')
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         {data.op === 'INSERT' && (
           <>
             {data?.record?.name != null && (
@@ -843,7 +843,7 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
   if (data.table_name === 'workspaces')
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         <div className="text-foreground/80">
           {data.op === 'INSERT' && data?.record?.name != null && (
             <div>
@@ -882,14 +882,14 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
 
   if (isLoading)
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         {/* <Loader className="self-center" color="gray" /> */}
       </div>
     );
 
   if (userId)
     return (
-      <div className="border-border flex flex-col rounded border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
+      <div className="flex flex-col rounded border border-border bg-zinc-500/5 p-4 dark:border-zinc-300/10 dark:bg-zinc-800">
         <div className="text-foreground/80">
           {user != null && (
             <>

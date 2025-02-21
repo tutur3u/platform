@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -12,7 +12,7 @@ export default function Slogan() {
         <h2 className="mb-4 text-xl font-bold md:text-3xl">
           {t('slogan.title')}
         </h2>
-        <p className="text-muted-foreground mb-8 text-balance">
+        <p className="mb-8 text-balance text-muted-foreground">
           {t('slogan.description')}
         </p>
         <Link href="/contact">

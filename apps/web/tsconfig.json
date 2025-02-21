@@ -1,5 +1,5 @@
 {
-  "extends": "@repo/typescript-config/nextjs.json",
+  "extends": "@tutur3u/typescript-config/nextjs.json",
   "compilerOptions": {
     "baseUrl": "./src",
     "module": "ESNext",

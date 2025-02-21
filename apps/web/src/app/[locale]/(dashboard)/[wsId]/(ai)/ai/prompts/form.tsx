@@ -1,15 +1,15 @@
 'use client';
 
 import AIModelSelector from './model-selector';
-import { AIPrompt } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AIPrompt } from '@tutur3u/types/db';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@repo/ui/components/ui/accordion';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/accordion';
+import { Button } from '@tutur3u/ui/button';
 import {
   Form,
   FormControl,
@@ -17,11 +17,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -146,7 +146,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
                         // if "GOOGLE_GEMINI_PRO" is in the data, set it as the default model
                         const defaultModel = data.find(
                           (model: { id: string }) =>
-                            model.id === 'gemini-2.0-flash-exp'
+                            model.id === 'gemini-2.0-flash-001'
                         );
 
                         if (defaultModel) field.onChange(defaultModel.id);
@@ -189,7 +189,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
       <AccordionItem value="output">
         <AccordionTrigger>Output</AccordionTrigger>
         <AccordionContent>
-          <div className="bg-foreground/5 rounded-lg border p-2">
+          <div className="rounded-lg border bg-foreground/5 p-2">
             {output || 'No output generated yet.'}
           </div>
         </AccordionContent>

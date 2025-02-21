@@ -1,7 +1,7 @@
 'use client';
 
 import LogoTab from './logo-tab';
-import { Badge } from '@repo/ui/components/ui/badge';
+import { Badge } from '@tutur3u/ui/badge';
 import { motion } from 'framer-motion';
 
 const BrandingPage = () => {
@@ -35,7 +35,7 @@ const BrandingPage = () => {
   };
 
   return (
-    <main className="container relative space-y-24 py-24">
+    <main className="relative container space-y-24 py-24">
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -46,10 +46,10 @@ const BrandingPage = () => {
         <Badge variant="secondary" className="mb-6">
           Brand Guidelines
         </Badge>
-        <h1 className="text-foreground mb-6 text-balance text-5xl font-bold">
+        <h1 className="mb-6 text-5xl font-bold text-balance text-foreground">
           Our Brand Identity
         </h1>
-        <p className="text-foreground/80 mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-foreground/80">
           These guidelines ensure our brand remains consistent, recognizable,
           and impactful across all platforms and touchpoints.
         </p>
@@ -137,7 +137,7 @@ const BrandingPage = () => {
                   </div>
                   <div className="space-y-1 p-4">
                     <h4 className="font-medium">{value.title}</h4>
-                    <p className="text-foreground/60 text-sm">
+                    <p className="text-sm text-foreground/60">
                       {value.description}
                     </p>
                   </div>
@@ -215,7 +215,7 @@ const BrandingPage = () => {
               {typography.weights.map((weight, index) => (
                 <div
                   key={index}
-                  className="bg-foreground/5 flex items-center justify-between rounded-lg p-4"
+                  className="flex items-center justify-between rounded-lg bg-foreground/5 p-4"
                 >
                   <span
                     className="text-lg"
@@ -223,7 +223,7 @@ const BrandingPage = () => {
                   >
                     The quick brown fox jumps over the lazy dog
                   </span>
-                  <span className="text-foreground/60 text-sm">{weight}</span>
+                  <span className="text-sm text-foreground/60">{weight}</span>
                 </div>
               ))}
             </div>
@@ -249,7 +249,7 @@ const BrandingPage = () => {
         <div className="grid gap-6 md:grid-cols-3">
           <div className="rounded-lg border p-6">
             <h3 className="mb-4 text-xl font-medium">Logo Usage</h3>
-            <ul className="text-foreground/80 list-inside list-disc space-y-2">
+            <ul className="list-inside list-disc space-y-2 text-foreground/80">
               <li>Maintain clear space around logos</li>
               <li>Never alter the logo colors</li>
               <li>Use appropriate logo versions for different backgrounds</li>
@@ -259,7 +259,7 @@ const BrandingPage = () => {
 
           <div className="rounded-lg border p-6">
             <h3 className="mb-4 text-xl font-medium">Color Application</h3>
-            <ul className="text-foreground/80 list-inside list-disc space-y-2">
+            <ul className="list-inside list-disc space-y-2 text-foreground/80">
               <li>Use primary colors for key elements</li>
               <li>Maintain proper contrast ratios</li>
               <li>Follow accessibility guidelines</li>
@@ -269,7 +269,7 @@ const BrandingPage = () => {
 
           <div className="rounded-lg border p-6">
             <h3 className="mb-4 text-xl font-medium">Typography Rules</h3>
-            <ul className="text-foreground/80 list-inside list-disc space-y-2">
+            <ul className="list-inside list-disc space-y-2 text-foreground/80">
               <li>Maintain hierarchy in text elements</li>
               <li>Use appropriate font weights</li>
               <li>Ensure readability at all sizes</li>

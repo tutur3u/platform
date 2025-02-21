@@ -1,19 +1,19 @@
 'use client';
 
 import { LogoutDropdownItem } from '../logout-dropdown-item';
-import { cn } from '@/lib/utils';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@repo/ui/components/ui/collapsible';
+} from '@tutur3u/ui/collapsible';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+} from '@tutur3u/ui/dropdown-menu';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { cn } from '@tutur3u/utils/format';
 import {
   BookOpen,
   ChevronDown,
@@ -48,7 +48,7 @@ export function Sidebar() {
   const wsId = pathname.split('/')[1];
 
   return (
-    <div className="bg-card text-card-foreground flex w-64 flex-col border-r">
+    <div className="flex w-64 flex-col border-r bg-card text-card-foreground">
       <div className="p-4">
         <h1 className="text-xl font-bold">Prompt Engineering</h1>
       </div>

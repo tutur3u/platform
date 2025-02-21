@@ -1,8 +1,8 @@
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
 import { isValidURL } from '@/utils/url-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { AutosizeTextarea } from '@repo/ui/components/ui/custom/autosize-textarea';
+import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
+import { Button } from '@tutur3u/ui/button';
+import { AutosizeTextarea } from '@tutur3u/ui/custom/autosize-textarea';
 import {
   Form,
   FormControl,
@@ -10,7 +10,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
+} from '@tutur3u/ui/form';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

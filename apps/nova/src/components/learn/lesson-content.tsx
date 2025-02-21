@@ -1,5 +1,5 @@
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
 
 interface LessonSection {
   title: string;
@@ -21,7 +21,7 @@ export function LessonContent({ lesson }: LessonProps) {
         {lesson.sections.map((section, index) => (
           <div key={index} className="space-y-2">
             <h2 className="text-xl font-semibold">{section.title}</h2>
-            <p className="text-muted-foreground whitespace-pre-line">
+            <p className="whitespace-pre-line text-muted-foreground">
               {section.content}
             </p>
             {index < lesson.sections.length - 1 && (

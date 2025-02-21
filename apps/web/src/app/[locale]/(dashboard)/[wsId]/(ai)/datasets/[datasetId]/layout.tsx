@@ -1,5 +1,7 @@
 import { NavLink, Navigation } from '@/components/navigation';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import React from 'react';
 
 interface LayoutProps {
@@ -17,6 +19,16 @@ export default async function DatasetDetailsLayout({
   const { wsId, datasetId } = await params;
   const t = await getTranslations();
 
+  const supabase = await createClient();
+
+  const { data: dataset } = await supabase
+    .from('workspace_datasets')
+    .select('*')
+    .eq('id', datasetId)
+    .maybeSingle();
+
+  if (!dataset) notFound();
+
   const navLinks: NavLink[] = [
     {
       title: t('common.general'),
@@ -30,10 +42,6 @@ export default async function DatasetDetailsLayout({
     {
       title: 'API References',
       href: `/${wsId}/datasets/${datasetId}/api-references`,
-    },
-    {
-      title: 'Cron Jobs',
-      href: `/${wsId}/datasets/${datasetId}/cron-jobs`,
     },
     {
       title: t('common.settings'),

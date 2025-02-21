@@ -1,15 +1,15 @@
 'use client';
 
 import { InvoiceRowActions } from './row-actions';
-import { Invoice } from '@/types/primitives/Invoice';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { ColumnDef } from '@tanstack/react-table';
+import { Invoice } from '@tutur3u/types/primitives/Invoice';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { ColumnDef } from '@tanstack/react-table';
+} from '@tutur3u/ui/tooltip';
 import moment from 'moment';
 
 export const invoiceColumns = (

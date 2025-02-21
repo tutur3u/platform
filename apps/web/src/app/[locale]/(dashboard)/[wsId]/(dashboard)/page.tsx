@@ -1,9 +1,10 @@
 import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
 import AdvancedAnalytics from './advanced-analytics';
+import AuroraActions from './aurora-actions';
 import { InventoryCategoryStatistics } from './categories/inventory';
 import { UsersCategoryStatistics } from './categories/users';
 import CommodityComparison from './commodity-comparison';
-import DashboardChart from './dashboard';
+import Dashboard from './dashboard';
 import FinanceStatistics from './finance';
 import PricePredictionChart from './price-prediction-chart';
 import {
@@ -21,13 +22,16 @@ import {
   WarehousesStatistics,
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
+import { getCurrentSupabaseUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import type { AuroraForecast } from '@tutur3u/types/db';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -45,13 +49,23 @@ export default async function WorkspaceHomePage({
 }: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
+
+  const user = await getCurrentSupabaseUser();
   const workspace = await getWorkspace(wsId);
 
   const { containsPermission } = await getPermissions({
     wsId,
   });
 
+  const forecast = await getForecast();
+  const mlMetrics = await getMLMetrics();
+  const statsMetrics = await getStatsMetrics();
+
   if (!workspace) notFound();
+
+  if (!forecast || !mlMetrics || !statsMetrics) {
+    return <LoadingStatisticCard />;
+  }
 
   // const { data: dailyData } = await getDailyData(wsId);
   // const { data: monthlyData } = await getMonthlyData(wsId);
@@ -71,7 +85,7 @@ export default async function WorkspaceHomePage({
         description={
           <>
             {t('ws-home.description_p1')}{' '}
-            <span className="text-foreground font-semibold underline">
+            <span className="font-semibold text-foreground underline">
               {workspace.name || t('common.untitled')}
             </span>{' '}
             {t('ws-home.description_p2')}
@@ -89,14 +103,17 @@ export default async function WorkspaceHomePage({
           <>
             <Separator className="my-4" />
             <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-4">
-                <DashboardChart />
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <PricePredictionChart />
-                  <CommodityComparison />
-                </div>
-                <AdvancedAnalytics />
-              </div>
+              {user?.email?.endsWith('@tuturuuu.com') &&
+                containsPermission('manage_workspace_roles') && (
+                  <AuroraActions />
+                )}
+              <Dashboard data={forecast} />
+              <PricePredictionChart data={forecast} />
+              <CommodityComparison data={forecast} />
+              <AdvancedAnalytics
+                mlMetrics={mlMetrics}
+                statisticalMetrics={statsMetrics}
+              />
             </div>
           </>
         )}
@@ -178,6 +195,53 @@ export default async function WorkspaceHomePage({
         )} */}
     </>
   );
+}
+
+async function getForecast() {
+  const supabase = await createClient();
+
+  const { data: statistical_forecast, error: statError } = await supabase
+    .from('aurora_statistical_forecast')
+    .select('*')
+    .order('date', { ascending: true });
+
+  if (statError) throw new Error('Error fetching statistical forecast');
+
+  const { data: ml_forecast, error: mlError } = await supabase
+    .from('aurora_ml_forecast')
+    .select('*')
+    .order('date', { ascending: true });
+
+  if (mlError) throw new Error('Error fetching ML forecast');
+
+  return {
+    statistical_forecast: statistical_forecast?.map((item) => ({
+      ...item,
+      date: new Date(item.date).toISOString().split('T')[0],
+    })),
+    ml_forecast: ml_forecast?.map((item) => ({
+      ...item,
+      date: new Date(item.date).toISOString().split('T')[0],
+    })),
+  } as AuroraForecast;
+}
+
+async function getMLMetrics() {
+  const supabase = await createClient();
+
+  const { data } = await supabase.from('aurora_ml_metrics').select('*');
+
+  return data;
+}
+
+async function getStatsMetrics() {
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from('aurora_statistical_metrics')
+    .select('*');
+
+  return data;
 }
 
 // async function getHourlyData(wsId: string) {

@@ -1,18 +1,18 @@
 'use client';
 
 import { TransactionForm } from './form';
-import { Transaction } from '@/types/primitives/Transaction';
-import { Button } from '@repo/ui/components/ui/button';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
+import { Row } from '@tanstack/react-table';
+import { Transaction } from '@tutur3u/types/primitives/Transaction';
+import { Button } from '@tutur3u/ui/button';
+import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Row } from '@tanstack/react-table';
+} from '@tutur3u/ui/dropdown-menu';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -68,7 +68,7 @@ export function TransactionRowActions(props: Props) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

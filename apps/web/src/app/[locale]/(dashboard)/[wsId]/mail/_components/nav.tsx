@@ -1,12 +1,8 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { buttonVariants } from '@repo/ui/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
+import { buttonVariants } from '@tutur3u/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 
@@ -37,7 +33,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
                     buttonVariants({ variant: link.variant, size: 'icon' }),
                     'h-9 w-9',
                     link.variant === 'default' &&
-                      'dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-white'
+                      'bg-muted text-muted-foreground'
                   )}
                 >
                   <link.icon className="h-4 w-4" />
@@ -47,7 +43,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
               <TooltipContent side="right" className="flex items-center gap-4">
                 {link.title}
                 {link.label && (
-                  <span className="text-muted-foreground ml-auto">
+                  <span className="ml-auto text-muted-foreground">
                     {link.label}
                   </span>
                 )}
@@ -59,8 +55,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
               href="#"
               className={cn(
                 buttonVariants({ variant: link.variant, size: 'sm' }),
-                link.variant === 'default' &&
-                  'dark:bg-muted dark:hover:bg-muted dark:text-white dark:hover:text-white',
+                link.variant === 'default' && 'bg-muted text-muted-foreground',
                 'justify-start'
               )}
             >
@@ -70,8 +65,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
                 <span
                   className={cn(
                     'ml-auto',
-                    link.variant === 'default' &&
-                      'text-background dark:text-white'
+                    link.variant === 'default' && 'text-background'
                   )}
                 >
                   {link.label}

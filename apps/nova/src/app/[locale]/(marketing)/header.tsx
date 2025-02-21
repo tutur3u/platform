@@ -1,7 +1,7 @@
 import LogoTitle from './logo-title';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import Image from 'next/image';
 // import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -30,7 +30,7 @@ export default function Header() {
 
             <Suspense
               fallback={
-                <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+                <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
               }
             >
               <NavbarActions />

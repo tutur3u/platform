@@ -1,16 +1,16 @@
 import { ClearDataDialog } from './clear-data-dialog';
 import { DeleteDatasetDialog } from './delete-dataset-dialog';
 import { ManageColumns } from './manage-columns';
-import { createClient } from '@/utils/supabase/server';
-import { Alert, AlertTitle } from '@repo/ui/components/ui/alert';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { Alert, AlertTitle } from '@tutur3u/ui/alert';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { Separator } from '@repo/ui/components/ui/separator';
+} from '@tutur3u/ui/card';
+import { Separator } from '@tutur3u/ui/separator';
 import { AlertCircle } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
@@ -50,7 +50,7 @@ export default async function DatasetSettingsPage({ params }: Props) {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold">Clear Data</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Remove all data while keeping the dataset structure
                 </p>
               </div>
@@ -62,7 +62,7 @@ export default async function DatasetSettingsPage({ params }: Props) {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold">Delete Dataset</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Permanently remove this dataset and all its data
                 </p>
               </div>

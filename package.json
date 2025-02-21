@@ -11,6 +11,8 @@
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "stop": "cd apps/db && pnpm stop",
+    "diff": "cd apps/db && pnpm sb:diff",
+    "typegen": "cd apps/db && pnpm sb:typegen",
     "sb:status": "cd apps/db && pnpm sb:status",
     "sb:start": "cd apps/db && pnpm sb:start",
     "sb:stop": "cd apps/db && pnpm sb:stop",
@@ -26,21 +28,22 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.18.0",
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
-    "@trivago/prettier-plugin-sort-imports": "^5.2.1",
-    "eslint": "^9.18.0",
-    "prettier": "^3.4.2",
-    "prettier-plugin-tailwindcss": "^0.6.10",
-    "turbo": "^2.3.3",
+    "@eslint/js": "^9.20.0",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@tutur3u/eslint-config": "workspace:*",
+    "@tutur3u/typescript-config": "workspace:*",
+    "eslint": "^9.20.1",
+    "prettier": "^3.5.1",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "turbo": "^2.4.2",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8"
+    "vite": "^6.1.1",
+    "vitest": "^3.0.6"
   },
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@10.4.1",
   "workspaces": {
     "packages": [
       "apps/*",
@@ -49,8 +52,18 @@
   },
   "trustedDependencies": [
     "@vercel/speed-insights",
+    "canvas",
     "esbuild",
     "sharp",
     "supabase"
-  ]
+  ],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@vercel/speed-insights",
+      "canvas",
+      "esbuild",
+      "sharp",
+      "supabase"
+    ]
+  }
 }

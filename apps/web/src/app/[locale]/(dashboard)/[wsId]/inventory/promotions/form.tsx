@@ -1,8 +1,8 @@
 'use client';
 
-import { ProductPromotion } from '@/types/primitives/ProductPromotion';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { ProductPromotion } from '@tutur3u/types/primitives/ProductPromotion';
+import { Button } from '@tutur3u/ui/button';
 import {
   Form,
   FormControl,
@@ -10,18 +10,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/select';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

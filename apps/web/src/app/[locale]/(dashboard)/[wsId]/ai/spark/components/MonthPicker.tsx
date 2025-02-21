@@ -1,11 +1,11 @@
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
+} from '@tutur3u/ui/select';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 

@@ -1,5 +1,4 @@
-import { Card } from '@repo/ui/components/ui/card';
-import React from 'react';
+import { Card } from '@tutur3u/ui/card';
 
 interface Problem {
   id: string;
@@ -17,7 +16,7 @@ export default function ProblemComponent({ problem }: { problem: Problem }) {
         <h2 className="text-xl font-bold">{problem.title}</h2>
         <p className="mt-2">{problem.description}</p>
         <h3 className="mt-3 font-semibold">Example:</h3>
-        <pre className="overflow-y-auto whitespace-pre-wrap rounded-md bg-gray-200 p-2">
+        <pre className="overflow-y-auto rounded-md bg-gray-200 p-2 whitespace-pre-wrap">
           {`Input: s = "${problem.exampleInput}"\n\nOutput: "${problem.exampleOutput}"`}
         </pre>
 

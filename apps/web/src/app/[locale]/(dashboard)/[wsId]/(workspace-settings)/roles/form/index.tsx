@@ -5,23 +5,18 @@ import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
 import { permissionGroups, totalPermissions } from '@/lib/permissions';
-import { cn } from '@/lib/utils';
-import { PermissionId, WorkspaceRole } from '@/types/db';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Form } from '@repo/ui/components/ui/form';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@repo/ui/components/ui/tabs';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { User } from '@supabase/supabase-js';
 import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { SupabaseUser } from '@tutur3u/supabase/next/user';
+import { PermissionId, WorkspaceRole } from '@tutur3u/types/db';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { Button } from '@tutur3u/ui/button';
+import { Form } from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
+import { cn } from '@tutur3u/utils/format';
 import { Monitor, PencilRuler, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -59,15 +54,16 @@ type FormType = z.infer<typeof FormSchema>;
 
 interface Props {
   wsId: string;
-  user: User | null;
+  user: SupabaseUser | null;
   data?: WorkspaceRole;
   forceDefault?: boolean;
+  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: FormType) => void;
 }
 
 export interface SectionProps {
   wsId: string;
-  user: User | null;
+  user: SupabaseUser | null;
   roleId?: string;
   form: ReturnType<typeof useForm<FormType>>;
   enabledPermissionsCount: { id: string; count: number }[];

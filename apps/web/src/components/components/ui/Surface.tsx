@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { HTMLProps, forwardRef } from 'react';
 
 export type SurfaceProps = HTMLProps<HTMLDivElement> & {
@@ -13,7 +13,7 @@ export const Surface = forwardRef<HTMLDivElement, SurfaceProps>(
   ) => {
     const surfaceClass = cn(
       className,
-      'bg-white rounded-lg dark:bg-black',
+      'rounded-lg bg-white dark:bg-black',
       withShadow ? 'shadow-sm' : '',
       withBorder ? 'border border-neutral-200 dark:border-neutral-800' : ''
     );

@@ -11,10 +11,10 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@repo/ui/components",
-    "ui": "@repo/ui/components/ui",
-    "utils": "@repo/ui/lib/utils",
-    "lib": "@repo/ui/lib",
-    "hooks": "@repo/ui/hooks"
+    "components": "@tutur3u/ui/components",
+    "ui": "@tutur3u/ui/components/ui",
+    "utils": "@tutur3u/ui/lib/utils",
+    "lib": "@tutur3u/ui/lib",
+    "hooks": "@tutur3u/ui/hooks"
   }
 }

@@ -7,9 +7,9 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@/lib/workspace-helper';
-import { User } from '@/types/primitives/User';
-import { createAdminClient, createClient } from '@/utils/supabase/server';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
+import { User } from '@tutur3u/types/primitives/User';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -45,7 +45,7 @@ export default async function WorkspaceMembersPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">
             {t('workspace-settings-layout.members')}

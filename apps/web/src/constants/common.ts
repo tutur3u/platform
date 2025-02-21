@@ -1,17 +1,17 @@
-import { supportedLocales } from '@/i18n/routing';
+import { APP_PUBLIC_PATHS } from './public_paths';
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';
 
+export const PUBLIC_PATHS = APP_PUBLIC_PATHS;
+
 export const BASE_URL =
-  process.env.BASE_URL || PROD_MODE
-    ? 'https://tuturuuu.com'
-    : 'http://localhost:7803';
+  process.env.BASE_URL ||
+  (PROD_MODE ? 'https://tuturuuu.com' : 'http://localhost:7803');
 
 export const API_URL =
-  process.env.API_URL || PROD_MODE
-    ? 'https://tuturuuu.com/api'
-    : 'http://localhost:7803/api';
+  process.env.API_URL ||
+  (PROD_MODE ? 'https://tuturuuu.com/api' : 'http://localhost:7803/api');
 
 export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -33,33 +33,3 @@ export const HIDE_TAILWIND_INDICATOR =
 
 export const IS_PRODUCTION_DB =
   process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
-
-export const PUBLIC_PATHS = [
-  '/login',
-  '/pricing',
-  '/about',
-  '/contact',
-  '/features',
-  '/products',
-  '/solutions',
-  '/changelog',
-  '/pitch',
-  '/blog',
-  '/faq',
-  '/terms',
-  '/privacy',
-  '/branding',
-  '/ai/chats',
-  '/qr-generator',
-  '/documents',
-  '/meet-together',
-].reduce((acc: string[], path) => {
-  // Add the original path
-  acc.push(path);
-
-  // Add localized paths
-  const localizedPaths = supportedLocales.map((locale) => `/${locale}${path}`);
-  acc.push(...localizedPaths);
-
-  return acc;
-}, []);

@@ -1,19 +1,14 @@
 import EnvironmentSetup from './environment-setup';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { CodeBlock } from '@repo/ui/components/ui/codeblock';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@repo/ui/components/ui/tabs';
+} from '@tutur3u/ui/card';
+import { CodeBlock } from '@tutur3u/ui/codeblock';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
 import { headers } from 'next/headers';
 
 interface Props {
@@ -148,7 +143,7 @@ const processedData = flattenedData.map(row =>
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold">API References</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="mt-2 text-muted-foreground">
           Access and process your dataset programmatically using our REST API.
         </p>
       </div>
@@ -171,19 +166,19 @@ const processedData = flattenedData.map(row =>
         </CardContent>
       </Card>
 
-      <div className="bg-card rounded-lg border">
+      <div className="rounded-lg border bg-card">
         <Tabs defaultValue="python" className="w-full">
           <div className="border-b px-4">
             <TabsList className="w-full justify-start gap-6 border-b-0 bg-transparent p-0">
               <TabsTrigger
                 value="python"
-                className="text-muted-foreground data-[state=active]:bg-foreground/10 data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-11 rounded-none border-x-2 border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-2 font-semibold"
+                className="relative h-11 rounded-none border-x-2 border-b-2 border-b-transparent bg-transparent px-4 pt-2 pb-3 font-semibold text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground"
               >
                 Python
               </TabsTrigger>
               <TabsTrigger
                 value="javascript"
-                className="text-muted-foreground data-[state=active]:bg-foreground/10 data-[state=active]:border-b-primary data-[state=active]:text-foreground relative h-11 rounded-none border-x-2 border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-2 font-semibold"
+                className="relative h-11 rounded-none border-x-2 border-b-2 border-b-transparent bg-transparent px-4 pt-2 pb-3 font-semibold text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground"
               >
                 JavaScript
               </TabsTrigger>

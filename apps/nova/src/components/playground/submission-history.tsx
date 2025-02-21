@@ -1,9 +1,5 @@
-import { Badge } from '@repo/ui/components/ui/badge';
-import {
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@repo/ui/components/ui/card';
+import { Badge } from '@tutur3u/ui/badge';
+import { CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 
 interface SubmissionHistoryProps {
   submissions: {
@@ -20,7 +16,7 @@ export function SubmissionHistory({ submissions }: SubmissionHistoryProps) {
       </CardHeader>
       <CardContent>
         {submissions.length === 0 ? (
-          <p className="text-muted-foreground text-center">
+          <p className="text-center text-muted-foreground">
             No submissions yet.
           </p>
         ) : (
@@ -28,11 +24,11 @@ export function SubmissionHistory({ submissions }: SubmissionHistoryProps) {
             {submissions.map((submission) => (
               <li
                 key={submission.id}
-                className="bg-muted flex items-center justify-between rounded-md p-2"
+                className="flex items-center justify-between rounded-md bg-muted p-2"
               >
                 <span>Submission {submission.id}</span>
                 <div className="flex items-center space-x-2">
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     {submission.timestamp.toLocaleString()}
                   </span>
                   <Badge

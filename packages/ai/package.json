@@ -1,28 +1,56 @@
 {
-  "name": "@repo/ai",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "lint": "eslint ."
+  "name": "@tutur3u/ai",
+  "license": "MIT",
+  "version": "0.0.10",
+  "publishConfig": {
+    "access": "public"
   },
-  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "packageManager": "pnpm@10.4.1",
   "dependencies": {
-    "eslint": "^9.18.0",
+    "@ai-sdk/amazon-bedrock": "^2.0.2",
+    "@ai-sdk/anthropic": "^1.1.9",
+    "@ai-sdk/azure": "^1.1.13",
+    "@ai-sdk/cerebras": "^0.1.11",
+    "@ai-sdk/cohere": "^1.1.11",
+    "@ai-sdk/deepinfra": "^0.1.12",
+    "@ai-sdk/deepseek": "^0.1.11",
+    "@ai-sdk/fal": "^0.0.5",
+    "@ai-sdk/fireworks": "^0.1.11",
+    "@ai-sdk/google": "^1.1.16",
+    "@ai-sdk/google-vertex": "^2.1.17",
+    "@ai-sdk/groq": "^1.1.10",
+    "@ai-sdk/luma": "^0.0.7",
+    "@ai-sdk/mistral": "^1.1.12",
+    "@ai-sdk/openai": "^1.1.13",
+    "@ai-sdk/perplexity": "^1.0.1",
+    "@ai-sdk/react": "^1.1.17",
+    "@ai-sdk/togetherai": "^0.1.12",
+    "@ai-sdk/xai": "^1.1.11",
+    "@google/generative-ai": "^0.21.0",
+    "@tutur3u/supabase": "workspace:*",
+    "ai": "^4.1.44",
+    "eslint": "^9.20.1",
+    "next": "^15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "zod": "^3.24.1"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.18.0",
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
-    "@types/node": "^22.10.7",
-    "@types/react": "^19.0.7",
-    "typescript": "^5.7.3"
-  },
-  "overrides": {
-    "react-is": "^19.0.0"
+    "@eslint/js": "^9.20.0",
+    "@tutur3u/eslint-config": "workspace:*",
+    "@tutur3u/typescript-config": "workspace:*",
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.10",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.6"
   },
   "exports": {
     "./*": "./src/*.ts"

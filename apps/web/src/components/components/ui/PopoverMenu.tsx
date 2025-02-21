@@ -1,8 +1,8 @@
 import { Surface } from './Surface';
 import { Toolbar } from './Toolbar';
-import { cn } from '@/lib/utils';
 import * as Popover from '@radix-ui/react-popover';
 import { Editor } from '@tiptap/core';
+import { cn } from '@tutur3u/utils/format';
 import { icons } from 'lucide-react';
 import { forwardRef } from 'react';
 
@@ -87,13 +87,13 @@ export const Item = ({
   isActive?: boolean;
 }) => {
   const className = cn(
-    'flex items-center gap-2 p-1.5 text-sm font-medium text-neutral-500 text-left bg-transparent w-full rounded',
+    'flex w-full items-center gap-2 rounded bg-transparent p-1.5 text-left text-sm font-medium text-neutral-500',
     !isActive && !disabled,
     'hover:bg-neutral-100 hover:text-neutral-800 dark:hover:bg-neutral-900 dark:hover:text-neutral-200',
     isActive &&
       !disabled &&
       'bg-neutral-100 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200',
-    disabled && 'text-neutral-400 cursor-not-allowed dark:text-neutral-600'
+    disabled && 'cursor-not-allowed text-neutral-400 dark:text-neutral-600'
   );
 
   const IconComponent = icon ? icons[icon] : null;
@@ -116,7 +116,7 @@ export type CategoryTitle = {
 
 export const CategoryTitle = ({ children }: CategoryTitle) => {
   return (
-    <div className="mb-1.5 mt-4 select-none px-1 text-[0.625rem] font-medium uppercase text-neutral-400 first:mt-1.5 dark:text-neutral-600">
+    <div className="mt-4 mb-1.5 px-1 text-[0.625rem] font-medium text-neutral-400 uppercase select-none first:mt-1.5 dark:text-neutral-600">
       {children}
     </div>
   );

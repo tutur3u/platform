@@ -6,15 +6,11 @@ import {
   PROD_MODE,
   ROOT_WORKSPACE_ID,
 } from '@/constants/common';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { buttonVariants } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { buttonVariants } from '@tutur3u/ui/button';
+import { Separator } from '@tutur3u/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { DraftingCompass, FlaskConical } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -144,7 +140,7 @@ export function Nav({
                       }),
                       'h-9 w-9 max-sm:hover:bg-transparent',
                       urlToLoad === link.href &&
-                        'bg-accent text-accent-foreground animate-pulse'
+                        'animate-pulse bg-accent text-accent-foreground'
                     )}
                     onClick={() => {
                       if (!link.newTab && link.href.split('?')[0] !== pathname)
@@ -159,7 +155,7 @@ export function Nav({
                 <TooltipContent
                   side="right"
                   className={cn(
-                    'flex items-center gap-4',
+                    'flex items-center gap-4 border bg-background text-foreground',
                     ((ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                       link.experimental) &&
                       'flex-col items-start gap-1'
@@ -174,7 +170,7 @@ export function Nav({
                         'text-muted-foreground',
                         (ENABLE_KEYBOARD_SHORTCUTS && link.shortcut) ||
                           link.experimental
-                          ? 'bg-foreground/5 rounded-lg border px-2 py-0.5'
+                          ? 'rounded-lg border bg-foreground/5 px-2 py-0.5'
                           : 'ml-auto'
                       )}
                     >
@@ -193,7 +189,7 @@ export function Nav({
                               ) : (
                                 <FlaskConical className="h-2 w-2 flex-none" />
                               )}
-                              <span className="line-clamp-1 break-all text-xs font-semibold">
+                              <span className="line-clamp-1 text-xs font-semibold break-all">
                                 {t(`common.${link.experimental}`)}
                               </span>
                             </div>
@@ -212,7 +208,7 @@ export function Nav({
                     size: 'sm',
                   }),
                   urlToLoad === link.href &&
-                    'bg-accent text-accent-foreground animate-pulse',
+                    'animate-pulse bg-accent text-accent-foreground',
                   'justify-between gap-2 max-sm:hover:bg-transparent'
                 )}
                 onClick={() => {
@@ -238,7 +234,7 @@ export function Nav({
                       'text-muted-foreground',
                       isActive && 'bg-background text-foreground',
                       ENABLE_KEYBOARD_SHORTCUTS && link.shortcut
-                        ? 'bg-foreground/5 hidden rounded-lg border px-2 py-0.5 md:block'
+                        ? 'hidden rounded-lg border bg-foreground/5 px-2 py-0.5 md:block'
                         : 'ml-auto',
                       link.experimental && 'bg-transparent'
                     )}
@@ -258,7 +254,7 @@ export function Nav({
                             ) : (
                               <FlaskConical className="h-2 w-2 flex-none" />
                             )}
-                            <span className="line-clamp-1 break-all text-xs font-semibold">
+                            <span className="line-clamp-1 text-xs font-semibold break-all">
                               {t(`common.${link.experimental}`)}
                             </span>
                           </div>

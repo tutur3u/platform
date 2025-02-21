@@ -1,8 +1,8 @@
 'use client';
 
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
+import { Badge } from '@tutur3u/ui/badge';
+import { Button } from '@tutur3u/ui/button';
+import { Card } from '@tutur3u/ui/card';
 import {
   BarChart3,
   Calculator,
@@ -93,7 +93,7 @@ export default function FinanceProductPage() {
           Coming Soon
         </Badge>
         <h1 className="mb-4 text-4xl font-bold">Smart Financial Management</h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Take control of your finances with our intelligent management system.
           Track expenses, manage budgets, and make informed financial decisions
           with powerful analytics.
@@ -112,7 +112,7 @@ export default function FinanceProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="text-primary h-12 w-12" />
+            <ShieldCheck className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Bank-Grade Security</h2>
             <p className="text-muted-foreground">
               Your financial data is protected with state-of-the-art encryption
@@ -147,12 +147,12 @@ export default function FinanceProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <Wallet2 className="text-primary mb-4 h-8 w-8" />
+              <Wallet2 className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="text-muted-foreground space-y-2">
+              <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     {item}
                   </li>
                 ))}
@@ -166,8 +166,8 @@ export default function FinanceProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-b-0 md:border-r">
-              <BarChart3 className="text-primary h-8 w-8" />
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+              <BarChart3 className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Financial Analytics</h3>
               <p className="text-muted-foreground">
                 Gain deep insights into your financial health with comprehensive
@@ -175,7 +175,7 @@ export default function FinanceProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <PieChart className="text-primary h-8 w-8" />
+              <PieChart className="h-8 w-8 text-primary" />
               <h3 className="text-2xl font-bold">Expense Insights</h3>
               <p className="text-muted-foreground">
                 Visualize spending patterns and identify opportunities for
@@ -193,7 +193,7 @@ export default function FinanceProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <LockKeyhole className="text-primary mb-4 h-8 w-8" />
+            <LockKeyhole className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Secure Transactions</h3>
             <p className="text-muted-foreground">
               Process payments and manage transactions with enterprise-grade
@@ -201,7 +201,7 @@ export default function FinanceProductPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <DollarSign className="text-primary mb-4 h-8 w-8" />
+            <DollarSign className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 text-xl font-bold">Smart Budgeting</h3>
             <p className="text-muted-foreground">
               Create and manage budgets with AI-powered recommendations and

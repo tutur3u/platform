@@ -1,8 +1,8 @@
 'use client';
 
-import { WorkspaceCourse } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
+import { WorkspaceCourse } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/button';
 import {
   Form,
   FormControl,
@@ -10,9 +10,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';

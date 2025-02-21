@@ -1,15 +1,11 @@
 import InviteMemberButton from './invite-member-button';
 import { MemberSettingsButton } from './member-settings-button';
 import { getCurrentUser } from '@/lib/user-helper';
-import { User } from '@/types/primitives/User';
-import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { cn } from '@repo/ui/lib/utils';
+import { User } from '@tutur3u/types/primitives/User';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { cn } from '@tutur3u/utils/format';
 import { User as UserIcon } from 'lucide-react';
 import moment from 'moment';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -33,8 +29,8 @@ export default async function MemberList({
 
   if (!members || members.length === 0) {
     return (
-      <div className="border-border bg-primary-foreground/20 col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
-        <p className="text-foreground/80 text-center">
+      <div className="col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-primary-foreground/20 p-8">
+        <p className="text-center text-foreground/80">
           {invited ? t('no_invited_members_found') : t('no_members_match')}.
         </p>
 
@@ -56,7 +52,7 @@ export default async function MemberList({
   return members.map((member) => (
     <div
       key={member.id}
-      className={`border-border relative rounded-lg border p-4 ${
+      className={`relative rounded-lg border border-border p-4 ${
         member?.pending
           ? 'border-dashed bg-transparent'
           : 'bg-primary-foreground/20'
@@ -99,7 +95,7 @@ export default async function MemberList({
       </div>
 
       {workspace && (
-        <div className="absolute right-4 top-4 flex gap-2">
+        <div className="absolute top-4 right-4 flex gap-2">
           <MemberSettingsButton
             workspace={workspace}
             user={member}
@@ -108,7 +104,7 @@ export default async function MemberList({
         </div>
       )}
 
-      <div className="border-border mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-sm md:text-base lg:gap-4">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2 text-sm md:text-base lg:gap-4">
         {loading || member?.created_at ? (
           <div
             className={`line-clamp-1 ${

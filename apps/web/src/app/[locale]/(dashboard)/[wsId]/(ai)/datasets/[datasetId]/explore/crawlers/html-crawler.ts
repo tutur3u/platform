@@ -1,5 +1,7 @@
 'use client';
 
+import { BaseCrawler } from './base-crawler';
+
 const activeFetchesRef: {
   current: Array<{ controller: AbortController; url: string }>;
 } = {
@@ -59,7 +61,14 @@ interface HtmlPreviewData {
   sampleData?: string[];
 }
 
-export class HtmlCrawler {
+export class HtmlCrawler extends BaseCrawler {
+  constructor(
+    options: { useProductionProxy: boolean } = { useProductionProxy: true }
+  ) {
+    super({ useProductionProxy: options.useProductionProxy });
+    this.useProductionProxy = options.useProductionProxy;
+  }
+
   private baseUrl: string = '';
   private currentCallback?: HtmlCrawlerProps;
   private urlCache: Map<string, Document> = new Map();
@@ -78,6 +87,12 @@ export class HtmlCrawler {
     initialDelay: 1000,
     maxDelay: 10000,
     backoffFactor: 2,
+  };
+
+  // Add timeout configuration
+  private timeoutConfig = {
+    fetchTimeout: 30000, // 30 seconds
+    parseTimeout: 10000, // 10 seconds
   };
 
   // Add retry method with exponential backoff
@@ -135,14 +150,22 @@ export class HtmlCrawler {
 
   private async fetchWithRateLimit(url: string): Promise<Response> {
     return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(
+          new Error(
+            `Request timed out after ${this.timeoutConfig.fetchTimeout}ms`
+          )
+        );
+      }, this.timeoutConfig.fetchTimeout);
+
       this.rateLimiter.queue.push(async () => {
         try {
-          // Wrap the fetch operation with retry logic and pass URL for better logging
           const response = await this.retryWithBackoff(
             async () => {
-              const res = await fetch(
-                `/api/proxy?url=${encodeURIComponent(url)}`
-              );
+              const controller = new AbortController();
+              const signal = controller.signal;
+
+              const res = await this.fetchWithProxy(url, { signal });
               if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);
               }
@@ -152,21 +175,14 @@ export class HtmlCrawler {
             url
           );
 
-          // Log successful retry if it wasn't first attempt
-          if (response.headers.get('x-retry-attempt')) {
-            console.log(`✅ Successfully retrieved ${url} after retries`);
-            this.currentCallback?.onUrlProgress?.(
-              url,
-              50,
-              'Succeeded after retries'
-            );
-          }
-
+          clearTimeout(timeout);
           resolve(response);
         } catch (error) {
+          clearTimeout(timeout);
           reject(error);
         }
       });
+
       this.processFetchQueue();
     });
   }
@@ -202,66 +218,65 @@ export class HtmlCrawler {
     const controller = new AbortController();
     activeFetchesRef.current.push({ controller, url });
 
-    // Check cache first
-    const cachedDoc = this.urlCache.get(url);
-    if (cachedDoc) {
-      console.log('📦 Cache hit:', url);
-      this.currentCallback?.onUrlProgress?.(url, 100, 'Loaded from cache');
-      return cachedDoc;
-    }
-
-    // Check if there's already a fetch in progress for this URL
-    const inProgressFetch = this.inProgressFetches.get(url);
-    if (inProgressFetch) {
-      console.log('⏳ Reusing in-progress fetch:', url);
-      return inProgressFetch;
-    }
-
     try {
-      // Create a new fetch promise with retry logic
+      // Check cache first
+      const cachedDoc = this.urlCache.get(url);
+      if (cachedDoc) {
+        return cachedDoc;
+      }
+
+      // Check if there's already a fetch in progress for this URL
+      const inProgressFetch = this.inProgressFetches.get(url);
+      if (inProgressFetch) {
+        return inProgressFetch;
+      }
+
       const fetchPromise = (async () => {
-        this.currentCallback?.onUrlFetch?.(url, true);
-        this.currentCallback?.onUrlProgress?.(url, 10, 'Starting fetch');
-        console.log('📥 Fetching:', url);
+        try {
+          const response = await this.fetchWithRateLimit(url);
+          const html = await response.text();
 
-        const response = await this.fetchWithRateLimit(url);
-        this.currentCallback?.onUrlProgress?.(url, 50, 'Downloaded');
+          // Parse HTML with timeout
+          const parsePromise = new Promise<Document>((resolve, reject) => {
+            const parseTimeout = setTimeout(() => {
+              reject(new Error('HTML parsing timed out'));
+            }, this.timeoutConfig.parseTimeout);
 
-        const html = await response.text();
-        this.currentCallback?.onUrlProgress?.(url, 75, 'Parsing HTML');
+            try {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(html, 'text/html');
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
+              if (!doc.querySelector('body')) {
+                throw new Error('Invalid HTML document received');
+              }
 
-        if (!doc.querySelector('body')) {
-          throw new Error('Invalid HTML document received');
+              clearTimeout(parseTimeout);
+              resolve(doc);
+            } catch (error) {
+              clearTimeout(parseTimeout);
+              reject(error);
+            }
+          });
+
+          const doc = await parsePromise;
+          this.urlCache.set(url, doc);
+          return doc;
+        } catch (error) {
+          console.error('Error fetching page:', url, error);
+          throw error;
+        } finally {
+          this.inProgressFetches.delete(url);
+          activeFetchesRef.current = activeFetchesRef.current.filter(
+            (fetch) => fetch.url !== url
+          );
         }
-
-        // Cache the parsed document
-        this.urlCache.set(url, doc);
-        this.currentCallback?.onUrlProgress?.(url, 100, 'Complete');
-
-        // Remove from in-progress fetches
-        this.inProgressFetches.delete(url);
-
-        return doc;
       })();
 
-      // Store the promise in the in-progress map
       this.inProgressFetches.set(url, fetchPromise);
       return fetchPromise;
-    } catch (e) {
-      if (e instanceof Error && e.name === 'AbortError') {
-        console.log('Fetch aborted:', url);
-      } else {
-        console.error('Error fetching page:', url, e);
-        this.currentCallback?.onUrlFetch?.(url, false);
-      }
+    } catch (error) {
+      console.error('Error in fetchAndParse:', error);
       return null;
-    } finally {
-      activeFetchesRef.current = activeFetchesRef.current.filter(
-        (fetch) => fetch.url !== url
-      );
     }
   }
 
@@ -313,7 +328,7 @@ export class HtmlCrawler {
 
   private generatePaginationUrls(baseUrl: string, maxPage: number): string[] {
     const urls: string[] = [];
-    const baseDir = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+    const baseDir = new URL('.', baseUrl).toString(); // Fix base directory URL
 
     for (let i = 1; i <= maxPage; i++) {
       const pageUrl =
@@ -430,10 +445,10 @@ export class HtmlCrawler {
             // Other main page selectors
             newsItems.forEach((item) => {
               const elements = parsed.isMultiple
-                ? item.querySelectorAll(parsed.selector)
-                : [item.querySelector(parsed.selector)];
+                ? item?.querySelectorAll(parsed.selector)
+                : [item?.querySelector(parsed.selector)];
 
-              elements.forEach((el) => {
+              elements?.forEach((el) => {
                 if (!el) return;
                 const content = this.extractContent(el, parsed);
                 if (content) previewData.sampleData?.push(content);
@@ -536,6 +551,8 @@ export class HtmlCrawler {
 
       // First pass: Count total articles across all pages
       let totalArticlesAcrossPages = 0;
+      let totalArticlesNeeded = maxArticles || Infinity;
+
       for (let pageIndex = 0; pageIndex < paginatedUrls.length; pageIndex++) {
         const pageUrl = paginatedUrls[pageIndex];
         const pageNumber = pageIndex + 1;
@@ -555,14 +572,13 @@ export class HtmlCrawler {
         if (!newsContainer) continue;
 
         const newsItems = Array.from(newsContainer.querySelectorAll('a.item'));
+        const pageArticleCount = Math.min(
+          newsItems.length,
+          totalArticlesNeeded - totalArticlesAcrossPages
+        );
+        totalArticlesAcrossPages += pageArticleCount;
 
-        // Apply article limit if specified
-        const articleLimit = maxArticles
-          ? Math.min(maxArticles - totalArticlesAcrossPages, newsItems.length)
-          : newsItems.length;
-        totalArticlesAcrossPages += articleLimit;
-
-        if (maxArticles && totalArticlesAcrossPages >= maxArticles) {
+        if (totalArticlesAcrossPages >= totalArticlesNeeded) {
           console.log(`Reached article limit of ${maxArticles}`);
           // Adjust paginated URLs to only include necessary pages
           paginatedUrls = paginatedUrls.slice(0, pageIndex + 1);
@@ -574,7 +590,7 @@ export class HtmlCrawler {
           pageNumber,
           progress: 20,
           status: 'processing',
-          articleCount: articleLimit,
+          articleCount: pageArticleCount,
           fetchedArticles: 0,
         });
       }
@@ -582,7 +598,10 @@ export class HtmlCrawler {
       console.log(`Total articles found: ${totalArticlesAcrossPages}`);
       let processedArticlesTotal = 0;
 
-      // Second pass: Process articles page by page
+      // Batch size for article processing
+      const BATCH_SIZE = 5;
+
+      // Modify article processing loop
       for (let pageIndex = 0; pageIndex < paginatedUrls.length; pageIndex++) {
         const pageUrl = paginatedUrls[pageIndex];
         const pageNumber = pageIndex + 1;
@@ -621,76 +640,78 @@ export class HtmlCrawler {
           fetchedArticles: 0,
         });
 
-        // Fetch articles one by one for better progress tracking
-        for (let i = 0; i < pageArticleUrls.length; i++) {
-          const articleUrl = pageArticleUrls[i];
-          const rowData: Record<string, string> = {};
+        // Process articles in batches
+        for (let i = 0; i < pageArticleUrls.length; i += BATCH_SIZE) {
+          const batch = pageArticleUrls.slice(i, i + BATCH_SIZE);
 
-          if (!articleUrl) continue;
+          // Process batch in parallel but maintain order
+          const batchResults = await Promise.all(
+            batch.map(async (articleUrl, batchIndex) => {
+              const rowData: Record<string, string> = {};
+              const articleIndex = i + batchIndex; // Calculate the correct article index
 
-          if (needsPageContent) {
-            await this.fetchAndParse(articleUrl);
-          }
+              if (needsPageContent) {
+                await this.fetchAndParse(articleUrl);
+              }
 
-          // Process article data
-          for (const parsed of parsedIds) {
-            if (!parsed.pageId) {
-              // Handle main page content
-              if (parsed.attribute === 'href' && parsed.subSelector === 'a') {
-                rowData[parsed.columnName] = articleUrl;
-              } else {
-                for (const item of newsItems) {
-                  const elements = parsed.isMultiple
-                    ? item?.querySelectorAll(parsed.selector)
-                    : [item?.querySelector(parsed.selector)];
+              // Process article data using the correct index
+              for (const parsed of parsedIds) {
+                if (!parsed.pageId) {
+                  if (
+                    parsed.attribute === 'href' &&
+                    parsed.subSelector === 'a'
+                  ) {
+                    rowData[parsed.columnName] = articleUrl;
+                  } else {
+                    const item = newsItems[articleIndex]; // Use the correct index
+                    if (!item) continue;
 
-                  elements?.forEach((el) => {
-                    if (!el) return;
-                    const content = this.extractContent(el, parsed);
-                    if (content) rowData[parsed.columnName] = content;
-                  });
+                    const elements = parsed.isMultiple
+                      ? item.querySelectorAll(parsed.selector)
+                      : [item.querySelector(parsed.selector)];
+
+                    elements?.forEach((el) => {
+                      if (!el) return;
+                      const content = this.extractContent(el, parsed);
+                      if (content) rowData[parsed.columnName] = content;
+                    });
+                  }
                 }
               }
-            }
-          }
 
-          // Process article-specific content using cached data
-          if (needsPageContent) {
-            const articleDoc = this.urlCache.get(articleUrl);
-            if (!articleDoc) continue;
+              // Process article-specific content
+              if (needsPageContent) {
+                const articleDoc = this.urlCache.get(articleUrl);
+                if (!articleDoc) return {};
 
-            for (const parsed of parsedIds) {
-              if (parsed.pageId) {
-                const element = articleDoc.getElementById(parsed.pageId);
-                if (element) {
-                  rowData[parsed.columnName] =
-                    element.textContent?.trim() || '';
+                for (const parsed of parsedIds) {
+                  if (parsed.pageId) {
+                    const element = articleDoc?.getElementById(parsed.pageId);
+                    if (element) {
+                      rowData[parsed.columnName] =
+                        element.textContent?.trim() || '';
+                    }
+                  }
                 }
               }
-            }
-          }
 
-          processedArticlesTotal++;
+              return rowData;
+            })
+          );
 
-          // Update both page and overall progress
-          onPageProgress?.({
-            pageNumber,
-            progress: 40 + Math.round(((i + 1) / pageArticleUrls.length) * 60),
-            status: 'processing',
-            articleCount: pageArticleUrls.length,
-            fetchedArticles: i + 1,
-          });
+          // Add batch results to main results
+          results.push(
+            ...batchResults.filter((row) => Object.keys(row).length > 0)
+          );
 
+          // Update progress
+          processedArticlesTotal += batch.length;
           onProgress(
             Math.round(
               (processedArticlesTotal / totalArticlesAcrossPages) * 100
             ),
             `Processing article ${processedArticlesTotal} of ${totalArticlesAcrossPages}`
           );
-
-          if (Object.keys(rowData).length > 0) {
-            results.push(rowData);
-          }
         }
 
         // Mark page as complete
@@ -702,7 +723,6 @@ export class HtmlCrawler {
           fetchedArticles: pageArticleUrls.length,
         });
       }
-
       onProgress(100, `Successfully processed ${results.length} items`);
       return results;
     } catch (error) {

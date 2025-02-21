@@ -1,15 +1,12 @@
 'use client';
 
-import { Workspace } from '@/types/primitives/Workspace';
 import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -18,7 +15,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@repo/ui/components/ui/command';
+} from '@tutur3u/ui/command';
 import {
   Dialog,
   DialogContent,
@@ -27,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tutur3u/ui/dialog';
 import {
   Form,
   FormControl,
@@ -35,23 +32,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { cn } from '@repo/ui/lib/utils';
-import { useQuery } from '@tanstack/react-query';
+} from '@tutur3u/ui/select';
+import { cn } from '@tutur3u/utils/format';
 import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
@@ -187,7 +179,7 @@ export default function WorkspaceSelect({
   return (
     <>
       {hideLeading || (
-        <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
+        <div className="mx-2 h-4 w-[1px] flex-none rotate-[30deg] bg-foreground/20" />
       )}
       <Dialog
         open={showNewWorkspaceDialog}
@@ -208,7 +200,7 @@ export default function WorkspaceSelect({
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full whitespace-normal text-start'
+                'w-full text-start whitespace-normal'
               )}
               disabled={!workspaces || workspaces.length === 0}
             >

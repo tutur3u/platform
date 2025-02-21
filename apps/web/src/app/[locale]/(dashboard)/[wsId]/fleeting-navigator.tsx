@@ -2,10 +2,10 @@
 
 import FleetingAssistant from './fleeting-assistant';
 import FleetingNavigatorMenu from './fleeting-navigator-menu';
-import { AIChat } from '@/types/db';
-import { useChat } from '@ai-sdk/react';
 import { useClickOutside } from '@mantine/hooks';
-import { toast } from '@repo/ui/hooks/use-toast';
+import { useChat } from '@tutur3u/ai/react';
+import { AIChat } from '@tutur3u/types/db';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -28,7 +28,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
   >();
 
   const defaultProvider = 'google';
-  const defaultModel = 'gemini-2.0-flash-exp';
+  const defaultModel = 'gemini-2.0-flash-001';
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>();
 
@@ -98,7 +98,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 hidden items-center justify-center md:flex">
         <div
           ref={ref}
-          className={`bg-secondary/10 pointer-events-auto backdrop-blur-lg md:m-4 ${
+          className={`pointer-events-auto bg-secondary/10 backdrop-blur-lg md:m-4 ${
             currentView
               ? 'h-[32rem] w-[32rem] rounded-t-lg border-t md:rounded-lg md:border'
               : 'mb-4 h-14 rounded-lg border p-2'

@@ -1,9 +1,9 @@
 import Filters from '../posts/filters';
 import { getEmailColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

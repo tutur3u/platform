@@ -12,7 +12,9 @@ const config = {
     "plugins": [
         "@trivago/prettier-plugin-sort-imports",
         "prettier-plugin-tailwindcss"
-    ]
+    ],
+    "tailwindStylesheet": "./packages/ui/src/globals.css",
+    "tailwindFunctions": ["clsx", "twMerge", "cn", "tw"]
 };
 
 export default config;

@@ -1,4 +1,3 @@
-import { cn } from '../../../../lib/utils';
 import { Badge } from '../../badge';
 import { Button } from '../../button';
 import {
@@ -13,6 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { Separator } from '../../separator';
 import { Column } from '@tanstack/react-table';
+import { cn } from '@tutur3u/utils/format';
 import { Check, PlusCircle } from 'lucide-react';
 import * as React from 'react';
 
@@ -100,7 +100,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                   >
                     <div
                       className={cn(
-                        'border-primary mr-2 flex h-4 w-4 items-center justify-center rounded-sm border',
+                        'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
                         isSelected
                           ? 'bg-primary text-primary-foreground'
                           : 'opacity-50 [&_svg]:invisible'
@@ -109,7 +109,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                       <Check className={cn('h-4 w-4')} />
                     </div>
                     {option.icon && (
-                      <option.icon className="text-muted-foreground mr-2 h-4 w-4" />
+                      <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                     )}
                     <span>{option.label}</span>
                     {facets?.get(option.value) && (

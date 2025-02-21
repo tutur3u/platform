@@ -1,5 +1,5 @@
 import { maxTimetz, minTimetz } from './date-helper';
-import { Timeblock } from '@/types/primitives/Timeblock';
+import { Timeblock } from '@tutur3u/types/primitives/Timeblock';
 import dayjs, { Dayjs } from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';

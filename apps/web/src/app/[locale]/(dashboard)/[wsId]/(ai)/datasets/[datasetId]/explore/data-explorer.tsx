@@ -1,16 +1,21 @@
 'use client';
 
 import { DatasetCrawler } from './dataset-crawler';
-import type { WorkspaceDataset } from '@/types/db';
-import { Button } from '@repo/ui/components/ui/button';
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import type { WorkspaceDataset } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
+} from '@tutur3u/ui/dialog';
+import { Input } from '@tutur3u/ui/input';
 import {
   Pagination,
   PaginationContent,
@@ -19,22 +24,17 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@repo/ui/components/ui/pagination';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+} from '@tutur3u/ui/pagination';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { Skeleton } from '@repo/ui/components/ui/skeleton';
-import {
-  keepPreviousData,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { Plus, RotateCw, Trash } from 'lucide-react';
+} from '@tutur3u/ui/select';
+import { Skeleton } from '@tutur3u/ui/skeleton';
+import { Plus, RotateCw, Trash, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -226,7 +226,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
     if (!headers.length) {
       return (
         <div className="flex h-64 flex-col items-center justify-center">
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {t('ws-datasets.no_data')}
           </p>
           <Button variant="outline" onClick={handleRefresh} className="mt-4">
@@ -241,7 +241,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-muted/50 border-b">
+              <tr className="border-b bg-muted/50">
                 {headers.map((header: any, index: number) => (
                   <th key={index} className="p-2 text-left text-sm">
                     <div className="line-clamp-1">{header}</div>
@@ -273,7 +273,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
                       {headers.map((header: any, colIndex: number) => (
                         <td
                           key={colIndex}
-                          className="min-w-32 whitespace-pre-line p-2 text-sm"
+                          className="min-w-32 p-2 text-sm whitespace-pre-line"
                         >
                           <span className="line-clamp-3">
                             {row.cells[header]}
@@ -319,7 +319,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-sm">
+          <span className="text-sm text-muted-foreground">
             {t('common.rows-per-page')}:
           </span>
           <Select value={pageSize} onValueChange={handlePageSizeChange}>
@@ -385,13 +385,18 @@ export function DataExplorer({ wsId, dataset }: Props) {
               </Button>
             </DialogContent>
           </Dialog>
-          <DatasetCrawler wsId={wsId} dataset={dataset} />
+          <DatasetCrawler wsId={wsId} dataset={dataset}>
+            <Button variant="outline">
+              <Upload className="mr-2 h-4 w-4" />
+              Import Data
+            </Button>
+          </DatasetCrawler>
         </div>
       </div>
 
       {rowsQuery.isFetching && !data?.length ? (
         <div className="flex h-64 items-center justify-center">
-          <span className="text-muted-foreground text-sm">
+          <span className="text-sm text-muted-foreground">
             {t('common.loading')}...
           </span>
         </div>
@@ -409,7 +414,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
             </>
           ) : (
             <>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 Showing {(currentPage - 1) * parseInt(pageSize) + 1} to{' '}
                 {Math.min(currentPage * parseInt(pageSize), totalRows)} of{' '}
                 {totalRows} rows

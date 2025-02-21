@@ -1,11 +1,11 @@
 import { Filter } from '../../filters';
 import EditableReportPreview from './editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
-import { WorkspaceUserReport } from '@/types/db';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { WorkspaceUserReport } from '@tutur3u/types/db';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { PlusCircle, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
@@ -280,7 +280,9 @@ async function getConfigs(wsId: string) {
 
   queryBuilder.in(
     'id',
-    availableConfigs.map(({ id }) => id)
+    availableConfigs
+      .map(({ id }) => id)
+      .filter((id): id is string => id !== undefined)
   );
 
   const { data: rawData, error } = await queryBuilder;

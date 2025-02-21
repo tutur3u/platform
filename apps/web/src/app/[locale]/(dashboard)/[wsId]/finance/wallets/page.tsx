@@ -1,10 +1,10 @@
 import { walletColumns } from './columns';
 import { WalletForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { Wallet } from '@/types/primitives/Wallet';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { Wallet } from '@tutur3u/types/primitives/Wallet';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

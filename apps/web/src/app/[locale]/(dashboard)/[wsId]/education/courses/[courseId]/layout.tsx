@@ -1,7 +1,7 @@
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { GraduationCap } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -27,7 +27,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
       <FeatureSummary
         title={
           <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-            <div className="bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
+            <div className="flex items-center gap-2 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/10 px-2 text-lg text-dynamic-blue max-md:hidden">
               <GraduationCap className="h-6 w-6" />
               {t('ws-courses.singular')}
             </div>

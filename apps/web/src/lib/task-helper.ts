@@ -1,10 +1,10 @@
+import type { SupabaseClient } from '@tutur3u/supabase/next/client';
 import {
   Task,
   TaskAssignee,
   TaskBoard,
   TaskList,
-} from '@/types/primitives/TaskBoard';
-import { SupabaseClient } from '@supabase/supabase-js';
+} from '@tutur3u/types/primitives/TaskBoard';
 
 export async function getTaskBoard(supabase: SupabaseClient, boardId: string) {
   const { data, error } = await supabase

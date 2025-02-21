@@ -1,16 +1,16 @@
 'use client';
 
 import { UserRowActions } from './row-actions';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
+import { ColumnDef } from '@tanstack/react-table';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { ColumnDef } from '@tanstack/react-table';
+} from '@tutur3u/ui/tooltip';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import moment from 'moment';
@@ -250,7 +250,7 @@ export const getUserColumns = (
               : '-'}
           </div>
           {!!row.getValue('birthday') && (
-            <div className="bg-foreground/5 w-fit rounded border px-2 py-0.5 text-sm font-semibold">
+            <div className="w-fit rounded border bg-foreground/5 px-2 py-0.5 text-sm font-semibold">
               {row.getValue('birthday')
                 ? `${age} ${age > 1 ? t('common.years_old') : t('common.year_old')}`
                 : '-'}

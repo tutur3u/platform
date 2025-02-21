@@ -1,9 +1,9 @@
 import FlashcardForm from '../../../../../flashcards/form';
 import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { SwatchBook } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
@@ -31,7 +31,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
       borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
         {fc?.front || '...'}
       </div>
     ),
@@ -41,7 +41,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
       borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
         {fc?.back || '...'}
       </div>
     ),

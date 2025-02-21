@@ -1,17 +1,17 @@
 'use client';
 
-import { StorageObject } from '@/types/primitives/StorageObject';
 import { joinPath } from '@/utils/path-helper';
-import { createDynamicClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
+import { createDynamicClient } from '@tutur3u/supabase/next/client';
+import { StorageObject } from '@tutur3u/types/primitives/StorageObject';
+import { Button } from '@tutur3u/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/dropdown-menu';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -136,7 +136,7 @@ export function TransactionObjectRowActions({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-6 w-6 p-0"
+            className="flex h-6 w-6 p-0 data-[state=open]:bg-muted"
             size="xs"
           >
             <Ellipsis className="h-4 w-4" />

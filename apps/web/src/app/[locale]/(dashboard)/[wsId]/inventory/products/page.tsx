@@ -1,10 +1,10 @@
 import { productColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { Product } from '@/types/primitives/Product';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { Product } from '@tutur3u/types/primitives/Product';
+import { Button } from '@tutur3u/ui/button';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

@@ -30,7 +30,21 @@ Check out why we recommend using pnpm instead of npm or yarn by checking out the
 
 </Info>
 
-Step 2. After installing pnpm, you can install all dependencies by running the following command:
+Step 2. **Configure Tiptap Pro Registry:**
+
+<Warning>
+Before installing dependencies, you need to configure Tiptap Pro registry access. Visit [cloud.tiptap.dev/pro-extensions](https://cloud.tiptap.dev/pro-extensions) and login, then find your auth token in the "Global setup (for CI/CD)" section. Run these commands:
+
+```bash
+npm config set "@tiptap-pro:registry" https://registry.tiptap.dev
+npm config set "//registry.tiptap.dev/:_authToken" [AUTH_TOKEN]
+```
+
+Replace [AUTH_TOKEN] with your actual token from the Tiptap dashboard.
+
+</Warning>
+
+Step 3. After configuring Tiptap Pro registry, you can install all dependencies by running the following command:
 
 <CodeGroup>
 

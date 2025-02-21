@@ -1,19 +1,14 @@
 import AssistantGradientName from './assistant-gradient-name';
 import { FleetingAssistantMessage } from './fleeting-assistant-message';
-import { AIChat } from '@/types/db';
-import { useChat } from '@ai-sdk/react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { Message } from 'ai';
+import { useChat } from '@tutur3u/ai/react';
+import { type Message } from '@tutur3u/ai/types';
+import { AIChat } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/button';
+import { Form, FormControl, FormField, FormItem } from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Separator } from '@tutur3u/ui/separator';
 import { ArrowDownToLine, Expand, RotateCcw, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -147,7 +142,7 @@ export default function FleetingAssistant({
     <div className="flex h-full flex-col">
       <div className="flex h-[28.25rem] flex-col p-2">
         <div className="mb-2 flex items-center justify-between gap-2 transition">
-          <div className="bg-foreground text-background w-fit rounded border px-2 py-0.5 font-mono text-xs font-bold">
+          <div className="w-fit rounded border bg-foreground px-2 py-0.5 font-mono text-xs font-bold text-background">
             ALPHA
           </div>
 
@@ -203,13 +198,13 @@ export default function FleetingAssistant({
           )}
         </div>
       </div>
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Separator />
         <div className="flex items-center gap-1 p-2">
           <Button
             variant="ghost"
             size="icon"
-            className="flex-shrink-0"
+            className="shrink-0"
             onClick={onBack}
           >
             <ArrowDownToLine className="h-5 w-5" />
@@ -242,7 +237,7 @@ export default function FleetingAssistant({
                 type="submit"
                 variant="ghost"
                 size="icon"
-                className="flex-shrink-0"
+                className="shrink-0"
                 disabled={
                   !form.formState.isValid ||
                   (!!chat?.id && isLoading) ||
@@ -257,7 +252,7 @@ export default function FleetingAssistant({
           {/* <Button
           variant="ghost"
           size="icon"
-          className="flex-shrink-0"
+          className="shrink-0"
           onClick={onBack}
         >
           <EllipsisHorizontalIcon className="h-5 w-5" />

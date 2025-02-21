@@ -1,16 +1,15 @@
 import { useTimeBlocking } from './time-blocking-provider';
-import { Timeblock } from '@/types/primitives/Timeblock';
 import { timetzToTime } from '@/utils/date-helper';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Timeblock } from '@tutur3u/types/primitives/Timeblock';
+import { Separator } from '@tutur3u/ui/separator';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
+} from '@tutur3u/ui/tooltip';
 import dayjs from 'dayjs';
 import { ShieldCheck, ShieldMinus } from 'lucide-react';
-import { useTheme } from 'next-themes';
 
 export default function PreviewDayTime({
   timeblocks: serverTimeblocks,
@@ -25,9 +24,6 @@ export default function PreviewDayTime({
   end: number;
   disabled: boolean;
 }) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme?.includes('dark');
-
   const {
     filteredUserIds,
     previewDate,
@@ -76,7 +72,7 @@ export default function PreviewDayTime({
   };
 
   return (
-    <div className="border-foreground/50 relative w-14 border border-b-0">
+    <div className="relative w-14 border border-b-0 border-foreground/50">
       {hourBlocks
         .map((i) => (i + start) * hourSplits)
         // duplicate each item `hourSplits` times
@@ -142,24 +138,22 @@ export default function PreviewDayTime({
                       hideBorder
                         ? ''
                         : (i + 1) % hourSplits === 0
-                          ? 'border-foreground/50 border-b'
+                          ? 'border-b border-foreground/50'
                           : (i + 1) % (hourSplits / 2) === 0
-                            ? 'border-foreground/50 border-b border-dashed'
+                            ? 'border-b border-dashed border-foreground/50'
                             : ''
                     }`}
                   />
                 </TooltipTrigger>
                 {isSelectable && previewDate && (
-                  <TooltipContent className="pointer-events-none">
+                  <TooltipContent className="pointer-events-none border bg-background text-foreground">
                     <div className="font-bold">
                       {dayjs(previewDate).format('HH:mm')} -{' '}
                       {dayjs(previewDate).add(15, 'minutes').format('HH:mm')} (
                       {dayjs(previewDate).format('DD/MM/YYYY')})
                     </div>
                     <Separator className="my-1" />
-                    <div
-                      className={`font-semibold ${isDark ? 'text-green-300' : 'text-green-700 dark:text-green-300'}`}
-                    >
+                    <div className={`font-semibold text-dynamic-green`}>
                       {getPreviewUsers(timeblocks).available.map((user) => (
                         <div
                           key={user.id}
@@ -174,9 +168,7 @@ export default function PreviewDayTime({
                         </div>
                       ))}
                     </div>
-                    <div
-                      className={`font-semibold ${isDark ? 'text-red-300' : 'text-red-700 dark:text-red-300'}`}
-                    >
+                    <div className={`font-semibold text-dynamic-red`}>
                       {getPreviewUsers(timeblocks).unavailable.map((user) => (
                         <div
                           key={user.id}

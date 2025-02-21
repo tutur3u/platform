@@ -2,7 +2,7 @@
 
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { Locale } from '@/i18n/routing';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

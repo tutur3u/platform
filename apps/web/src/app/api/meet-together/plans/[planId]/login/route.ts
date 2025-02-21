@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@tutur3u/supabase/next/server';
 import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 

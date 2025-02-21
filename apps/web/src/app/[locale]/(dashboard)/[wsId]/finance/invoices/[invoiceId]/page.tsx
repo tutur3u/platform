@@ -1,9 +1,9 @@
 import InvoiceCard from './invoice-card';
 import { availableConfigs } from '@/constants/configs/reports';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import 'dayjs/locale/vi';
 import {
   Box,
@@ -233,7 +233,9 @@ async function getConfigs(wsId: string) {
 
   queryBuilder.in(
     'id',
-    availableConfigs.map(({ id }) => id)
+    availableConfigs
+      .map(({ id }) => id)
+      .filter((id): id is string => id !== undefined)
   );
 
   const { data: rawData, error } = await queryBuilder;

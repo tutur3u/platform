@@ -1,14 +1,9 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { Badge } from '@repo/ui/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@repo/ui/components/ui/card';
-import { Progress } from '@repo/ui/components/ui/progress';
+import { Badge } from '@tutur3u/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { Progress } from '@tutur3u/ui/progress';
+import { cn } from '@tutur3u/utils/format';
 import { InfoIcon } from 'lucide-react';
 
 interface Task {
@@ -71,7 +66,7 @@ export function MonthlyOverview({
               return (
                 <div
                   key={priority}
-                  className="bg-muted/50 hover:bg-muted/80 group relative rounded-lg border p-2 text-center transition-colors"
+                  className="group relative rounded-lg border bg-muted/50 p-2 text-center transition-colors hover:bg-muted/80"
                 >
                   <div
                     className={cn(
@@ -86,7 +81,7 @@ export function MonthlyOverview({
                     {priority.toUpperCase()}
                   </div>
                   <div className="text-2xl font-bold">{count}</div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-xs text-muted-foreground">
                     {percentage}%
                   </div>
                 </div>
@@ -119,7 +114,7 @@ export function MonthlyOverview({
                     <span>
                       Q{quarter.quarter}: {quarter.focus}
                     </span>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-xs text-muted-foreground">
                       {completedTasks}/{totalTasks} tasks
                     </span>
                   </div>

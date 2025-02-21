@@ -5,9 +5,8 @@ import WorkspaceSelect from '../../workspace-select';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { cn } from '@/lib/utils';
-import { Workspace } from '@/types/primitives/Workspace';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { Workspace } from '@tutur3u/types/primitives/Workspace';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -15,27 +14,29 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from '@repo/ui/components/ui/breadcrumb';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/breadcrumb';
+import { Button } from '@tutur3u/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/dropdown-menu';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@repo/ui/components/ui/resizable';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
+} from '@tutur3u/ui/resizable';
+import { Separator } from '@tutur3u/ui/separator';
+import { TooltipProvider } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
+import { debounce } from 'lodash';
 import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, Suspense, useState } from 'react';
+import { ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
 
 interface MailProps {
   wsId: string;
@@ -65,6 +66,42 @@ export function Structure({
   const t = useTranslations();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  // Add debounced function for saving sidebar sizes
+  const debouncedSaveSizes = useCallback(
+    debounce(async (sizes: { sidebar: number; main: number }) => {
+      await fetch('/api/v1/infrastructure/sidebar/sizes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sizes),
+      });
+    }, 500),
+    []
+  );
+
+  // Add debounced function for saving sidebar collapsed state
+  const debouncedSaveCollapsed = useCallback(
+    debounce(async (collapsed: boolean) => {
+      await fetch('/api/v1/infrastructure/sidebar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ collapsed }),
+      });
+    }, 500),
+    []
+  );
+
+  // Cleanup debounced functions on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSaveSizes.cancel();
+      debouncedSaveCollapsed.cancel();
+    };
+  }, [debouncedSaveSizes, debouncedSaveCollapsed]);
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
@@ -104,7 +141,7 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="bg-background/70 fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
+        className="fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-4 py-2 backdrop-blur-lg md:hidden"
       >
         <div className="flex h-[52px] items-center gap-2">
           <div className="flex flex-none items-center gap-2">
@@ -118,8 +155,8 @@ export function Structure({
               />
             </Link>
           </div>
-          <div className="bg-foreground/20 mx-2 h-4 w-[1px] flex-none rotate-[30deg]" />
-          <div className="flex items-center gap-2 break-all text-lg font-semibold">
+          <div className="mx-2 h-4 w-[1px] flex-none rotate-[30deg] bg-foreground/20" />
+          <div className="flex items-center gap-2 text-lg font-semibold break-all">
             {currentLink?.icon && (
               <div className="flex-none">{currentLink.icon}</div>
             )}
@@ -142,14 +179,11 @@ export function Structure({
       <TooltipProvider delayDuration={0}>
         <ResizablePanelGroup
           direction="horizontal"
-          onLayout={async (sizes: number[]) => {
-            await fetch('/api/v1/infrastructure/sidebar/sizes', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ sidebar: sizes[0], main: sizes[1] }),
-            });
+          onLayout={(sizes: number[]) => {
+            const [sidebar, main] = sizes;
+            if (typeof sidebar === 'number' && typeof main === 'number') {
+              debouncedSaveSizes({ sidebar, main });
+            }
           }}
           className={cn(
             'fixed h-screen max-h-screen items-stretch',
@@ -162,30 +196,18 @@ export function Structure({
             collapsible={true}
             minSize={15}
             maxSize={40}
-            onCollapse={async () => {
+            onCollapse={() => {
               setIsCollapsed(true);
-              await fetch('/api/v1/infrastructure/sidebar', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ collapsed: true }),
-              });
+              debouncedSaveCollapsed(true);
             }}
-            onResize={async () => {
+            onResize={() => {
               setIsCollapsed(false);
-              await fetch('/api/v1/infrastructure/sidebar', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ collapsed: false }),
-              });
+              debouncedSaveCollapsed(false);
             }}
             className={cn(
               isCollapsed
                 ? 'hidden min-w-[50px] md:flex'
-                : 'bg-background/70 absolute inset-0 z-40 flex md:static md:bg-transparent',
+                : 'absolute inset-0 z-40 flex bg-background/70 md:static md:bg-transparent',
               'flex-col justify-between overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
@@ -221,7 +243,7 @@ export function Structure({
 
                     <Suspense
                       fallback={
-                        <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
+                        <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
                       }
                     >
                       <WorkspaceSelect hideLeading={isCollapsed} />
@@ -248,7 +270,7 @@ export function Structure({
                 onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
               />
             </div>
-            <div className="border-foreground/10 flex-none border-t p-2">
+            <div className="flex-none border-t border-foreground/10 p-2">
               {isCollapsed ? userPopover : actions}
             </div>
           </ResizablePanel>

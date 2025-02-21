@@ -1,10 +1,10 @@
 'use client';
 
-import { WorkspaceQuiz } from '@/types/db';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
-import { AutosizeTextarea } from '@repo/ui/components/ui/custom/autosize-textarea';
+import { WorkspaceQuiz } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/button';
+import { Checkbox } from '@tutur3u/ui/checkbox';
+import { AutosizeTextarea } from '@tutur3u/ui/custom/autosize-textarea';
 import {
   Form,
   FormControl,
@@ -12,11 +12,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
 import { Loader, Pencil, Plus, PlusCircle, Wand } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -164,7 +164,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                   placeholder={t('common.question')}
                   autoComplete="off"
                   {...field}
-                  className="border-foreground/20 rounded-md shadow-sm"
+                  className="rounded-md border-foreground/20 shadow-sm"
                 />
               </FormControl>
               <FormMessage />
@@ -188,7 +188,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                           control={form.control}
                           name={`quiz_options.${index}.is_correct`}
                           render={({ field }) => (
-                            <FormItem className="flex items-center space-x-1 space-y-0">
+                            <FormItem className="flex items-center space-y-0 space-x-1">
                               <Checkbox
                                 id={`quiz_options.${index}.is_correct`}
                                 checked={field.value}
@@ -204,7 +204,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                             placeholder={`${t('common.option')} ${index + 1}`}
                             autoComplete="off"
                             {...field}
-                            className="border-foreground/20 rounded-md shadow-sm"
+                            className="rounded-md border-foreground/20 shadow-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -252,7 +252,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                           placeholder={t('common.explanation')}
                           autoComplete="off"
                           {...field}
-                          className="border-foreground/20 rounded-md shadow-sm"
+                          className="rounded-md border-foreground/20 shadow-sm"
                         />
                       </FormControl>
                       <FormMessage />

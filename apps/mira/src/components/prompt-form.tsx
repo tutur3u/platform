@@ -1,18 +1,18 @@
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import type { AIChat } from '@/types/db';
-import { Button } from '@repo/ui/components/ui/button';
-import { StatedFile } from '@repo/ui/components/ui/custom/file-uploader';
-import { Dialog } from '@repo/ui/components/ui/dialog';
-import { IconArrowElbow } from '@repo/ui/components/ui/icons';
+import { type UseChatHelpers } from '@tutur3u/ai/types';
+import type { AIChat } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/button';
+import { StatedFile } from '@tutur3u/ui/custom/file-uploader';
+import { Dialog } from '@tutur3u/ui/dialog';
+import { IconArrowElbow } from '@tutur3u/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { cn } from '@repo/ui/lib/utils';
-import type { UseChatHelpers } from 'ai/react';
+} from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import {
   ArrowDownWideNarrow,
   Bolt,
@@ -43,6 +43,7 @@ export interface PromptProps
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  // eslint-disable-next-line no-unused-vars
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
   showExtraOptions: boolean;
@@ -546,7 +547,7 @@ export function PromptForm({
               {pdfs.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                    <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                       <FileText className="h-4 w-4" />
                       {pdfs.length} PDFs
                     </div>
@@ -585,7 +586,7 @@ export function PromptForm({
               {images.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                    <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                       <ImageIcon className="h-4 w-4" />
                       {images.length} Images
                     </div>
@@ -598,6 +599,7 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}
@@ -630,7 +632,7 @@ export function PromptForm({
               {others.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                    <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                       <File className="h-4 w-4" />
                       {others.length} Files
                     </div>
@@ -682,7 +684,7 @@ export function PromptForm({
             placeholder={`${t('ai_chat.send_message')}.`}
             spellCheck={false}
             maxRows={7}
-            className="placeholder-foreground/50 scrollbar-none w-full resize-none bg-transparent py-2 focus-within:outline-none sm:text-sm"
+            className="scrollbar-none w-full resize-none bg-transparent py-2 placeholder-foreground/50 focus-within:outline-hidden sm:text-sm"
           />
         </div>
       </form>

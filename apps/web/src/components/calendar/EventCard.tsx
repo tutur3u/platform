@@ -1,6 +1,6 @@
 import { useCalendar } from '@/hooks/useCalendar';
-import { CalendarEvent } from '@/types/primitives/calendar-event';
 import { useDebouncedState } from '@mantine/hooks';
+import { CalendarEvent } from '@tutur3u/types/primitives/calendar-event';
 import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
 
@@ -476,9 +476,9 @@ export default function EventCard({ dates, wsId, event }: EventCardProps) {
   //       id={`event-${id}`}
   //       className={`pointer-events-auto absolute max-w-2xl overflow-hidden rounded border-l-4 ${
   //         isPast() && !isOpened
-  //           ? 'border-zinc-400 border-opacity-30 bg-[#e3e3e4] text-zinc-400 dark:border-zinc-600 dark:bg-[#1c1c1e]'
+  //           ? 'border-zinc-400 bg-[#e3e3e4] text-zinc-400 dark:border-zinc-600 dark:bg-[#1c1c1e]'
   //           : generateColor()
-  //       } ${isNotFocused && 'border-transparent text-opacity-10'} ${
+  //       } ${isNotFocused && 'border-transparent'} ${
   //         level && 'border'
   //       }`}
   //       style={cardStyle}

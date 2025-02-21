@@ -4,26 +4,22 @@ import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
-import { Model } from '@/data/models';
-import { AIChat } from '@/types/db';
-import { createDynamicClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  FileUploader,
-  StatedFile,
-} from '@repo/ui/components/ui/custom/file-uploader';
+import { Model } from '@tutur3u/ai/models';
+import { type Message, type UseChatHelpers } from '@tutur3u/ai/types';
+import { createDynamicClient } from '@tutur3u/supabase/next/client';
+import { AIChat } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/button';
+import { FileUploader, StatedFile } from '@tutur3u/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { cn } from '@repo/ui/lib/utils';
-import { Message } from 'ai';
-import { type UseChatHelpers } from 'ai/react';
+} from '@tutur3u/ui/dialog';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import {
   ArrowDownToLine,
   Check,
@@ -58,12 +54,16 @@ export interface ChatPanelProps
   defaultRoute: string;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   model?: Model;
+  // eslint-disable-next-line no-unused-vars
   setModel: (model: Model) => void;
+  // eslint-disable-next-line no-unused-vars
   createChat: (input: string) => Promise<void>;
+  // eslint-disable-next-line no-unused-vars
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;
   initialMessages?: Message[];
   collapsed: boolean;
+  // eslint-disable-next-line no-unused-vars
   setCollapsed: (collapsed: boolean) => void;
 }
 
@@ -160,7 +160,7 @@ export function ChatPanel({
               <Button
                 size="icon"
                 variant="outline"
-                className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
+                className="pointer-events-auto flex-none bg-background/20 backdrop-blur-lg"
                 onClick={() => setCollapsed(!collapsed)}
               >
                 {collapsed ? (
@@ -193,7 +193,7 @@ export function ChatPanel({
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-foreground font-semibold">
+                    <div className="font-semibold text-foreground">
                       {t('chats')}
                       {count ? (
                         <span className="opacity-50"> ({count})</span>
@@ -236,7 +236,7 @@ export function ChatPanel({
                             )
                           )
                         ) : (
-                          <div className="text-foreground/60 mt-8 p-8">
+                          <div className="mt-8 p-8 text-foreground/60">
                             {t('no_chats')}
                           </div>
                         )}
@@ -287,7 +287,7 @@ export function ChatPanel({
             </div>
 
             <div
-              className={`bg-background/70 flex flex-col items-start justify-start rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
+              className={`flex flex-col items-start justify-start rounded-xl border bg-background/70 p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
             >
               <ChatModelSelector
                 open={showExtraOptions}

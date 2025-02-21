@@ -2,23 +2,19 @@
 import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm, ResponseMode } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
-import { Model } from '@/data/models';
-import { AIChat } from '@/types/db';
-import { createDynamicClient } from '@/utils/supabase/client';
-import {
-  FileUploader,
-  StatedFile,
-} from '@repo/ui/components/ui/custom/file-uploader';
+import { Model } from '@tutur3u/ai/models';
+import { type Message, type UseChatHelpers } from '@tutur3u/ai/types';
+import { createDynamicClient } from '@tutur3u/supabase/next/client';
+import { RealtimePresenceState } from '@tutur3u/supabase/next/realtime';
+import { AIChat } from '@tutur3u/types/db';
+import { FileUploader, StatedFile } from '@tutur3u/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { RealtimePresenceState } from '@supabase/supabase-js';
-import { Message } from 'ai';
-import { type UseChatHelpers } from 'ai/react';
+} from '@tutur3u/ui/dialog';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 
@@ -126,9 +122,9 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="from-muted/30 to-muted/30 dark:from-background/10 dark:to-background/80 fixed inset-x-0 bottom-0 bg-gradient-to-b from-0% to-50% dark:from-10%">
-        <div className="mx-auto sm:max-w-2xl sm:px-4">
-          <div className="bg-background space-y-4 border-t px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 bg-gradient-to-b from-muted/30 from-0% to-muted/30 to-50% dark:from-background/0 dark:from-10% dark:to-background/80">
+        <div className="pointer-events-auto mx-auto sm:max-w-2xl sm:px-4">
+          <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
             {showExtraOptions && (
               <ChatModelSelector
                 open={showExtraOptions}

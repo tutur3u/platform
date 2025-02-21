@@ -1,5 +1,5 @@
 {
-  "name": "@repo/db",
+  "name": "@tutur3u/db",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -16,11 +16,11 @@
     "sb:typegen": "pnpm supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts"
   },
   "devDependencies": {
-    "supabase": "^2.6.8"
+    "supabase": "^2.12.1"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@10.4.1"
 }

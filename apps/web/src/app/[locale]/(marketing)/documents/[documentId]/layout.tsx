@@ -1,6 +1,6 @@
 import { siteConfig } from '@/constants/configs';
-import { WorkspaceDocument } from '@/types/db';
-import { createAdminClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@tutur3u/supabase/next/server';
+import { WorkspaceDocument } from '@tutur3u/types/db';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';

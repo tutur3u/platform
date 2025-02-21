@@ -2,12 +2,12 @@ import CountdownTimer from './components/challengeButton';
 import ProblemChanger from './problem-changer';
 import LogoTitle from '@/app/[locale]/(marketing)/logo-title';
 import NavbarSeparator from '@/app/[locale]/(marketing)/navbar-separator';
-import { Button } from '@repo/ui/components/ui/button';
-import { cn } from '@repo/ui/lib/utils';
+import { Button } from '@tutur3u/ui/button';
+import { cn } from '@tutur3u/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 
 interface Props {
   proNum: number;
@@ -69,7 +69,7 @@ export default function CustomizedHeader({
           <div className="flex items-center gap-4">
             <Suspense
               fallback={
-                <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+                <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
               }
             >
               <CountdownTimer

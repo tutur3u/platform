@@ -1,8 +1,8 @@
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { NavLink } from '@/components/navigation';
-import { cn } from '@/lib/utils';
-import { createClient } from '@/utils/supabase/client';
-import { Button, buttonVariants } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Button, buttonVariants } from '@tutur3u/ui/button';
+import { cn } from '@tutur3u/utils/format';
 import { Star, StarOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -66,11 +66,11 @@ export default function ChatLink({
             size: isCollapsed ? 'icon' : 'sm',
           }),
           isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
-          'whitespace-normal font-semibold',
+          'font-semibold whitespace-normal',
           isActive
-            ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-gradient-to-br text-white hover:text-white'
+            ? 'bg-gradient-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
             : urlToLoad === link.href
-              ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
+              ? 'animate-pulse bg-gradient-to-br from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground'
               : 'bg-foreground/5 hover:bg-foreground/10',
           link.disabled &&
             link.showDisabled &&

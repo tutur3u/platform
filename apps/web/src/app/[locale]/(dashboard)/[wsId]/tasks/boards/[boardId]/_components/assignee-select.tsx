@@ -1,12 +1,8 @@
 'use client';
 
-import { createClient } from '@/utils/supabase/client';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -15,13 +11,9 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@repo/ui/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
-import { cn } from '@repo/ui/lib/utils';
+} from '@tutur3u/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+import { cn } from '@tutur3u/utils/format';
 import { Check, ChevronsUpDown, Loader2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -117,7 +109,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
           role="combobox"
           aria-expanded={open}
           disabled={isLoading}
-          className="hover:bg-muted/50 group h-auto justify-between px-2 py-1 text-xs"
+          className="group h-auto justify-between px-2 py-1 text-xs hover:bg-muted/50"
         >
           {assignees.length > 0 ? (
             <div className="flex items-center gap-2">
@@ -125,7 +117,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                 {assignees.slice(0, 3).map((assignee) => (
                   <Avatar
                     key={assignee.id}
-                    className="border-background ring-background h-4 w-4 border-2 ring-1"
+                    className="h-4 w-4 border-2 border-background ring-1 ring-background"
                   >
                     <AvatarImage src={assignee.avatar_url} />
                     <AvatarFallback className="text-[8px]">
@@ -138,13 +130,13 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                 ))}
               </div>
               {assignees.length > 3 && (
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   +{assignees.length - 3}
                 </span>
               )}
             </div>
           ) : (
-            <div className="text-muted-foreground flex items-center gap-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Users className="h-3 w-3" />
               <span>Unassigned</span>
             </div>

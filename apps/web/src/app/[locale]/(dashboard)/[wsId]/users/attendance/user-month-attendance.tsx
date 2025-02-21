@@ -2,20 +2,20 @@
 
 import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
-import { cn } from '@/lib/utils';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   WorkspaceUser,
   WorkspaceUserAttendance,
-} from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/types/primitives/WorkspaceUser';
+import { Button } from '@tutur3u/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+} from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from 'next-intl';
@@ -236,7 +236,7 @@ export default function UserMonthAttendance({
               {differentGroups?.map((group, idx) => (
                 <div
                   key={group.id + idx}
-                  className="bg-foreground/5 dark:bg-foreground/10 flex-none whitespace-nowrap rounded border px-2 py-0.5 text-xs font-semibold"
+                  className="flex-none rounded border bg-foreground/5 px-2 py-0.5 text-xs font-semibold whitespace-nowrap dark:bg-foreground/10"
                 >
                   {group.name}
                 </div>
@@ -255,7 +255,7 @@ export default function UserMonthAttendance({
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
-                <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
+                <div className="mx-2 h-4 w-[1px] rotate-[30deg] bg-foreground/20" />
                 <span className="text-lg font-semibold md:text-xl">
                   {thisMonth}
                 </span>
@@ -263,7 +263,7 @@ export default function UserMonthAttendance({
               <div className="flex items-center gap-1">
                 {data.attendance && (
                   <div
-                    className={`bg-foreground/5 rounded border px-2 py-0.5 text-xs ${
+                    className={`rounded border bg-foreground/5 px-2 py-0.5 text-xs ${
                       data.attendance.length === 0 || isPending || isError
                         ? 'opacity-50'
                         : ''
@@ -314,7 +314,7 @@ export default function UserMonthAttendance({
                 {days.map((day, idx) => (
                   <div
                     key={`day-${idx}`}
-                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded p-2 font-semibold transition duration-300 md:rounded-lg"
+                    className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
                   >
                     {day}
                   </div>
@@ -328,7 +328,7 @@ export default function UserMonthAttendance({
                       return (
                         <div
                           key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
-                          className="text-foreground/20 flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold transition duration-300 md:rounded-lg"
+                          className="flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold text-foreground/20 transition duration-300 md:rounded-lg"
                         >
                           {day.getDate()}
                         </div>
@@ -340,7 +340,7 @@ export default function UserMonthAttendance({
                           onClick={() => handleDateClick(day)}
                           key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
                           className={cn(
-                            'bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg',
+                            'flex flex-none cursor-default justify-center rounded border bg-foreground/5 p-2 font-semibold text-foreground/40 transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
                             isAfter(day, today) &&
                               'cursor-not-allowed opacity-50 hover:cursor-not-allowed'
                           )}

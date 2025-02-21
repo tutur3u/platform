@@ -1,10 +1,10 @@
-import { cn } from '@/lib/utils';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import { YearCalendar } from '@repo/ui/components/ui/custom/calendar/year-calendar';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import { Button } from '@tutur3u/ui/button';
+import { YearCalendar } from '@tutur3u/ui/custom/calendar/year-calendar';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { CalendarIcon, ChartColumn, FileUser, UserCheck } from 'lucide-react';

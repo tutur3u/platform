@@ -5,15 +5,13 @@ import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import { ResponseMode } from '@/components/prompt-form';
-import { Model, defaultModel, models } from '@/data/models';
-import { useMessages } from '@/hooks/use-messages';
-import { usePresence } from '@/hooks/use-presence';
-import { AIChat } from '@/types/db';
-import { createClient } from '@/utils/supabase/client';
-import { useChat } from '@ai-sdk/react';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { cn } from '@repo/ui/lib/utils';
-import { Message } from 'ai';
+import { Model, defaultModel, models } from '@tutur3u/ai/models';
+import { useChat } from '@tutur3u/ai/react';
+import { type Message } from '@tutur3u/ai/types';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { AIChat } from '@tutur3u/types/db';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { cn } from '@tutur3u/utils/format';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
@@ -51,50 +49,39 @@ const Chat = ({
   const [mode, setMode] = useState<ResponseMode>('medium');
   const [currentUserId, setCurrentUserId] = useState<string>();
 
-  const { presenceState } = usePresence(chat?.id);
-
-  const {
-    messages,
-    append,
-    reload,
-    stop,
-    isLoading,
-    input,
-    setInput,
-    setMessages,
-  } = useChat({
-    id: chat?.id,
-    initialMessages,
-    api:
-      chat?.model || model?.value
-        ? `/api/ai/chat/${(chat?.model
-            ? models
-                .find((m) => m.value === chat.model)
-                ?.provider.toLowerCase() || model?.provider.toLowerCase()
-            : model?.provider.toLowerCase()
-          )?.replace(' ', '-')}`
-        : undefined,
-    body: {
+  const { messages, append, reload, stop, isLoading, input, setInput } =
+    useChat({
       id: chat?.id,
-      model: chat?.model || model?.value,
-      mode,
-    },
-    onResponse(response) {
-      if (!response.ok)
+      initialMessages,
+      credentials: 'include',
+      api:
+        chat?.model || model?.value
+          ? `/api/ai/chat/${(chat?.model
+              ? models
+                  .find((m) => m.value === chat.model)
+                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
+              : model?.provider.toLowerCase()
+            )?.replace(' ', '-')}`
+          : undefined,
+      body: {
+        id: chat?.id,
+        model: chat?.model || model?.value,
+        mode,
+      },
+      onResponse(response) {
+        if (!response.ok)
+          toast({
+            title: t('ai_chat.something_went_wrong'),
+            description: t('ai_chat.try_again_later'),
+          });
+      },
+      onError() {
         toast({
           title: t('ai_chat.something_went_wrong'),
           description: t('ai_chat.try_again_later'),
         });
-    },
-    onError() {
-      toast({
-        title: t('ai_chat.something_went_wrong'),
-        description: t('ai_chat.try_again_later'),
-      });
-    },
-  });
-
-  useMessages(chat?.id || '', messages, setMessages);
+      },
+    });
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -140,6 +127,7 @@ const Chat = ({
       const res = await fetch(
         `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/summary`,
         {
+          credentials: 'include',
           method: 'PATCH',
           body: JSON.stringify({
             id: chat.id,
@@ -240,6 +228,7 @@ const Chat = ({
     const res = await fetch(
       `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/new`,
       {
+        credentials: 'include',
         method: 'POST',
         body: JSON.stringify({
           model: model.value,
@@ -378,7 +367,6 @@ const Chat = ({
         mode={mode}
         setMode={setMode}
         disabled={disabled}
-        presenceState={presenceState}
         currentUserId={currentUserId}
       />
     </div>

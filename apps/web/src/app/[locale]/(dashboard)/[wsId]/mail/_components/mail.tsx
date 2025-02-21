@@ -5,21 +5,16 @@ import { useMail } from '../use-mail';
 import { MailDisplay } from './mail-display';
 import { MailList } from './mail-list';
 import { Nav } from './nav';
-import { cn } from '@/lib/utils';
-import { Input } from '@repo/ui/components/ui/input';
+import { Input } from '@tutur3u/ui/input';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@repo/ui/components/ui/resizable';
-import { Separator } from '@repo/ui/components/ui/separator';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@repo/ui/components/ui/tabs';
-import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
+} from '@tutur3u/ui/resizable';
+import { Separator } from '@tutur3u/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
+import { TooltipProvider } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { Archive, Inbox, Search, Send } from 'lucide-react';
 import * as React from 'react';
 
@@ -180,10 +175,10 @@ export function Mail({
               </TabsList>
             </div>
             <Separator />
-            <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 p-4 backdrop-blur">
+            <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <form>
                 <div className="relative">
-                  <Search className="text-muted-foreground absolute left-2 top-2.5 h-4 w-4" />
+                  <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Search" className="pl-8" />
                 </div>
               </form>

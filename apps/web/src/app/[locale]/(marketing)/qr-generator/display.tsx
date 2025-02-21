@@ -1,5 +1,5 @@
 import LogoTitle from '../../logo-title';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { useTranslations } from 'next-intl';
 import { QRCode } from 'react-qrcode-logo';
 
@@ -23,7 +23,7 @@ function QRDisplay({
   return (
     <div
       className={cn(
-        'rounded-lg border p-2 text-center text-2xl font-bold uppercase text-white',
+        'rounded-lg border p-2 text-center text-2xl font-bold text-white uppercase',
         style === 'brand' || style === 'scan-me' ? 'bg-black' : ''
       )}
     >

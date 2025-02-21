@@ -4,7 +4,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
+} from '@tutur3u/ui/select';
 
 interface ModelSelectionProps {
   selectedModel: string;

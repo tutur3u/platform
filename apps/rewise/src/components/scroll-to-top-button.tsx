@@ -1,9 +1,9 @@
 'use client';
 
 import { useAtTop } from '@/lib/hooks/use-at-bottom';
-import { Button, type ButtonProps } from '@repo/ui/components/ui/button';
-import { IconArrowDown } from '@repo/ui/components/ui/icons';
-import { cn } from '@repo/ui/lib/utils';
+import { Button, type ButtonProps } from '@tutur3u/ui/button';
+import { IconArrowDown } from '@tutur3u/ui/icons';
+import { cn } from '@tutur3u/utils/format';
 import { useEffect, useState } from 'react';
 
 export function ScrollToTopButton({ className, ...props }: ButtonProps) {
@@ -22,7 +22,7 @@ export function ScrollToTopButton({ className, ...props }: ButtonProps) {
   return (
     <Button
       className={cn(
-        'bg-background/20 flex-none backdrop-blur-lg transition-opacity duration-300',
+        'flex-none bg-background/20 backdrop-blur-lg transition-opacity duration-300',
         className
       )}
       onClick={() => {

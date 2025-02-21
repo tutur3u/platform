@@ -1,25 +1,17 @@
 import { Mail } from '../data';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { Label } from '@repo/ui/components/ui/label';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Switch } from '@repo/ui/components/ui/switch';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
+} from '@tutur3u/ui/dropdown-menu';
+import { Label } from '@tutur3u/ui/label';
+import { Separator } from '@tutur3u/ui/separator';
+import { Switch } from '@tutur3u/ui/switch';
+import { Textarea } from '@tutur3u/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
 import { format } from 'date-fns';
 import {
   Archive,
@@ -195,13 +187,13 @@ export function MailDisplay({ mail }: MailDisplayProps) {
               </div>
             </div>
             {mail.date && (
-              <div className="text-muted-foreground ml-auto text-xs">
+              <div className="ml-auto text-xs text-muted-foreground">
                 {format(new Date(mail.date), 'PPpp')}
               </div>
             )}
           </div>
           <Separator />
-          <div className="flex-1 whitespace-pre-wrap p-4 text-sm">
+          <div className="flex-1 p-4 text-sm whitespace-pre-wrap">
             {mail.text}
           </div>
           <Separator className="mt-auto" />
@@ -216,7 +208,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 <div className="flex items-center">
                   <Label
                     htmlFor="mute"
-                    className="text-muted-foreground flex items-center gap-2 text-xs font-normal"
+                    className="flex items-center gap-2 text-xs font-normal text-muted-foreground"
                   >
                     <Switch id="mute" aria-label="Mute thread" disabled /> Mute
                     this thread
@@ -235,7 +227,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
           </div>
         </div>
       ) : (
-        <div className="text-muted-foreground p-8 text-center">
+        <div className="p-8 text-center text-muted-foreground">
           No message selected
         </div>
       )}

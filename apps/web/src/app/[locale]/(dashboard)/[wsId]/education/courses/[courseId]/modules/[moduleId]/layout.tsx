@@ -1,9 +1,12 @@
 import LinkButton from '../../link-button';
 import ModuleToggles from './toggles';
-import { WorkspaceCourseModule } from '@/types/db';
-import { createClient, createDynamicClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import {
+  createClient,
+  createDynamicClient,
+} from '@tutur3u/supabase/next/server';
+import { WorkspaceCourseModule } from '@tutur3u/types/db';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import {
   BookText,
   Box,
@@ -49,7 +52,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
         title={
           <>
             <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="bg-dynamic-purple/10 border-dynamic-purple/20 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
+              <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-lg text-dynamic-purple max-md:hidden">
                 <Box className="h-6 w-6" />
                 {t('ws-course-modules.singular')}
               </div>

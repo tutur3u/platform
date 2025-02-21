@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 
 // import { useParams } from 'next/navigation';
 
@@ -10,7 +10,7 @@ export default function LogoTitle({}: {}) {
   return (
     <div
       className={cn(
-        'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 text-transparent',
+        'bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
         'text-4xl font-bold md:text-3xl lg:text-4xl'
       )}
     >

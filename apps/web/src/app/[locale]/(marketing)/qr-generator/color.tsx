@@ -1,4 +1,4 @@
-import { ColorPicker } from '@repo/ui/components/ui/color-picker';
+import { ColorPicker } from '@tutur3u/ui/color-picker';
 import { useTranslations } from 'next-intl';
 
 function QRColorPicker({
@@ -20,14 +20,14 @@ function QRColorPicker({
         text={t('common.foreground')}
         value={color}
         onChange={setColor}
-        className="line-clamp-1 w-full flex-grow-0 overflow-ellipsis whitespace-nowrap break-all"
+        className="line-clamp-1 w-full grow-0 break-all text-ellipsis whitespace-nowrap"
       />
 
       <ColorPicker
         text={t('common.background')}
         value={bgColor}
         onChange={setBgColor}
-        className="line-clamp-1 w-full flex-grow-0 overflow-ellipsis whitespace-nowrap break-all"
+        className="line-clamp-1 w-full grow-0 break-all text-ellipsis whitespace-nowrap"
       />
     </div>
   );

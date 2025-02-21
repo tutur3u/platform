@@ -1,5 +1,5 @@
-import { Button } from '@repo/ui/components/ui/button';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { Button } from '@tutur3u/ui/button';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
@@ -52,7 +52,7 @@ export function Timeline({
                   challenge.id === currentChallenge ? 'default' : 'outline'
                 }
                 onClick={() => onSelectChallenge(challenge.id)}
-                className="flex-shrink-0"
+                className="shrink-0"
               >
                 {challenge.title}
               </Button>

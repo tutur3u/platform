@@ -1,6 +1,6 @@
 import { useCalendar } from '@/hooks/useCalendar';
 import { getCardColor } from '@/utils/color-helper';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import { Play, StopCircle } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
@@ -167,7 +167,7 @@ const DynamicIsland = () => {
       }`}
     >
       <div
-        className={`flex max-w-4xl items-center gap-4 rounded-lg border border-opacity-30 px-8 py-2 shadow-xl backdrop-blur-xl ${getCardColor(
+        className={`flex max-w-4xl items-center gap-4 rounded-lg border px-8 py-2 shadow-xl backdrop-blur-xl ${getCardColor(
           color
         )} ${hidden ? 'opacity-0' : 'opacity-100'} ${
           isUpcoming
@@ -206,7 +206,7 @@ const DynamicIsland = () => {
               {!isRunning && (
                 <Separator
                   orientation="vertical"
-                  className={`border-opacity-30 ${getCardColor(color)}`}
+                  className={` ${getCardColor(color)}`}
                 />
               )}
 
@@ -234,9 +234,9 @@ const DynamicIsland = () => {
         {pomodoroCycles > 0 && (
           <button
             onClick={startTimer}
-            className={`aspect-square h-fit justify-self-end rounded-lg border border-opacity-10 p-1 ${getCardColor(
+            className={`aspect-square h-fit justify-self-end rounded-lg border p-1 ${getCardColor(
               color
-            )} transition hover:border-opacity-30`}
+            )} transition`}
           >
             {startAt ? (
               <StopCircle className="h-6 w-6" />

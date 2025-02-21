@@ -58,7 +58,7 @@
     "download": "Tải xuống",
     "rename": "Đổi tên",
     "processing": "Đang xử lý...",
-    "saving": "Đang lưu",
+    "saving": "Đang lưu thay đổi...",
     "loading": "Đang tải",
     "success": "Thành công",
     "complete": "Hoàn tất",
@@ -141,7 +141,7 @@
     "share": "Chia sẻ",
     "confirm_delete_title": "Xác nhận xoá",
     "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này? Hành động xoá này là vĩnh viễn và không thể thay đổi được.",
-    "saved": "Đã lưu",
+    "saved": "Đã lưu tất cả thay đổi",
     "unsaved": "Chưa lưu",
     "previous": "Trước đó",
     "next": "Tiếp theo",
@@ -223,6 +223,8 @@
     "explore": "Khám phá",
     "actions": "hành động",
     "clear_all": "Xóa tất cả",
+    "clear_all_title": "Xóa tất cả nội dung",
+    "clear_all_description": "Bạn có chắc chắn muốn xóa tất cả nội dung? Hành động này không thể hoàn tác.",
     "clearing": "Đang xoá",
     "retail": "Bán lẻ",
     "manufacturing": "Chế tạo",
@@ -230,6 +232,8 @@
     "construction": "Thi công",
     "changelog": "Nhật ký thay đổi",
     "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
+    "security": "Bảo mật",
+    "security-description": "Tìm hiểu về cách chúng tôi bảo vệ dữ liệu và thông tin của bạn.",
     "pitch-description": "Kế hoạch kinh doanh của Tuturuuu.",
     "product-updates": "Cập nhật sản phẩm",
     "product-updates-title": "Cập nhật sản phẩm",
@@ -247,7 +251,26 @@
     "careers": "Việc làm",
     "not_whitelisted": "Không có trong danh sách trắng",
     "email_added": "Đã thêm email",
-    "error_adding_email": "Lỗi khi thêm email"
+    "error_adding_email": "Lỗi khi thêm email",
+    "history": "Lịch sử",
+    "public_document": "Tài liệu công khai",
+    "private_document": "Tài liệu riêng tư",
+    "last_saved": "Lần lưu cuối: {time}",
+    "unsaved_changes": "Bạn có thay đổi chưa được lưu",
+    "error_saving": "Lỗi khi lưu thay đổi",
+    "save_failed": "Không thể lưu thay đổi",
+    "retry_save": "Thử lưu lại",
+    "auto_save_enabled": "Tự động lưu đã bật",
+    "save_status": "Trạng thái lưu",
+    "document_status": "Trạng thái tài liệu",
+    "updating": "Đang cập nhật...",
+    "name_updated": "Đã cập nhật tên thành công",
+    "error_updating_name": "Lỗi khi cập nhật tên",
+    "visibility_updated": "Đã cập nhật quyền truy cập thành công",
+    "error_updating_visibility": "Lỗi khi cập nhật quyền truy cập",
+    "error_deleting": "Lỗi khi xoá tài liệu",
+    "domain_added": "Tên miền được thêm vào",
+    "error_adding_domain": "Không thể thêm miền"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -506,7 +529,9 @@
     "readings": "Đọc sách",
     "diet_and_nutrition": "Ăn uống",
     "progress": "Tiến độ",
-    "metrics": "Chỉ số"
+    "metrics": "Chỉ số",
+    "crawlers": "Công cụ cào dữ liệu",
+    "queues": "Hàng chờ"
   },
   "team-tabs": {
     "overview": "Tổng quan",
@@ -874,6 +899,13 @@
     "status": "Trạng thái",
     "started_at": "Bắt đầu lúc",
     "finished_at": "Kết thúc lúc",
+    "created_at": "Tạo lúc"
+  },
+  "crawled-url-data-table": {
+    "id": "Mã số",
+    "url": "URL",
+    "html": "HTML",
+    "markdown": "Markdown",
     "created_at": "Tạo lúc"
   },
   "ws-home": {
@@ -2367,6 +2399,75 @@
     }
   },
   "ai-whitelist": {
-    "add_email": "Thêm email"
-  }
+    "add_email": "Thêm email",
+    "add_domain": "Thêm tên miền"
+  },
+  "ws-ai-whitelist-domains": {
+    "plural": "Tên miền thuộc danh sách trắng",
+    "singular": "Tên miền thuộc danh sách trắng",
+    "description": "Các miền được liệt kê trắng được sử dụng để cho phép các miền cụ thể truy cập các tính năng AI.",
+    "create": "Tạo tên miền danh sách trắng",
+    "create_description": "Tạo một miền được liệt kê trong danh sách trắng"
+  },
+  "ws-crawlers": {
+    "plural": "Công cụ cào dữ liệu",
+    "singular": "Công cụ cào dữ liệu",
+    "description": "Công cụ cào dữ liệu được sử dụng để thu thập dữ liệu từ các trang web và nguồn dữ liệu khác.",
+    "create": "Tạo công cụ cào dữ liệu",
+    "create_description": "Tạo một công cụ cào dữ liệu mới"
+  },
+  "ws-pipelines": {
+    "plural": "Quy trình",
+    "singular": "Quy trình",
+    "description": "Quy trình được sử dụng để chạy các tác vụ có thể lập trình.",
+    "create": "Tạo quy trình",
+    "create_description": "Tạo một quy trình mới"
+  },
+  "ws-queues": {
+    "plural": "Hàng chờ",
+    "singular": "Hàng chờ",
+    "description": "Hàng chờ được sử dụng để quản lý các công việc và tác vụ.",
+    "create": "Tạo hàng chờ",
+    "create_description": "Tạo một hàng chờ mới"
+  },
+  "aurora": {
+    "statistical_models": "Mô hình thống kê",
+    "ml_models": "Mô hình học máy",
+    "last_updated": "Cập nhật lần cuối",
+    "current_price": "Giá hiện tại",
+    "forecast_range": "Phạm vi dự báo",
+    "high": "Cao",
+    "low": "Thấp",
+    "average": "Trung bình",
+    "trend": "Xu hướng",
+    "volatility": "Biến động giá",
+    "90_confidence_high": "Tự tin 90% (cao)",
+    "90_confidence_lo": "Tự tin 90% (thấp)",
+    "ml_price_prediction": "Dự đoán giá mô hình học máy",
+    "slope": "độ dốc",
+    "prediction_insights": "Những insights từ dự đoán",
+    "relative": "liên quan",
+    "strong": "Mạnh",
+    "moderate": "Vừa phải",
+    "weak": "Yếu đuối",
+    "model_comparison": "So sánh mô hình",
+    "select_date": "Chọn ngày",
+    "model_correlation": "Tương quan mô hình",
+    "no_data": "Không có dữ liệu.",
+    "model_performance": "Hiệu suất mô hình",
+    "stable": "Ổn định",
+    "improving": "Cải thiện",
+    "declining": "Suy giảm",
+    "best_performing": "Hiệu năng tốt nhất",
+    "average_performance": "Hiệu năng trung bình",
+    "worst_performing": "Hiệu năng tệ nhất",
+    "scaled_model": "(Scaled)",
+    "weighted_score": "Trọng số",
+    "turning_point_accuracy": "Độ chính xác điểm",
+    "directional_accuracy": "Độ chính xác định hướng",
+    "accuracy": "Độ chính xác",
+    "consistency": "Tính nhất quán",
+    "overall": "Tổng thể"
+  },
+  "aurora_select_model": "Chọn mô hình"
 }

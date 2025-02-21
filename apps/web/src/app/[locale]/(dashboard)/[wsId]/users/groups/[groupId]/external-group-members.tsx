@@ -1,8 +1,8 @@
 'use client';
 
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import { Button } from '@tutur3u/ui/button';
+import { Separator } from '@tutur3u/ui/separator';
 import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -61,12 +61,12 @@ export default function ExternalGroupMembers({
           currentGroups.map((group) => (
             <div
               key={group.id}
-              className="bg-background flex items-center rounded-lg border p-2"
+              className="flex items-center rounded-lg border bg-background p-2"
             >
               <div className="w-full">
                 <Link
                   href={`/${wsId}/users/groups/${group.id}`}
-                  className="hover:bg-foreground/10 hover:border-foreground/10 line-clamp-1 break-all rounded border border-transparent text-center font-semibold"
+                  className="line-clamp-1 rounded border border-transparent text-center font-semibold break-all hover:border-foreground/10 hover:bg-foreground/10"
                 >
                   {group.name}
                 </Link>

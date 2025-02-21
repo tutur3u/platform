@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '../../../lib/utils';
 import { Button } from '../button';
 import {
   Command,
@@ -12,6 +11,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
+import { cn } from '@tutur3u/utils/format';
 import { CommandList } from 'cmdk';
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
 import * as React from 'react';
@@ -118,7 +118,7 @@ export function Combobox({
               onValueChange={(value: string) => setQuery(value)}
             />
             <CommandEmpty className="flex flex-col items-center justify-center p-1">
-              <div className="text-muted-foreground p-8 text-sm">
+              <div className="p-8 text-sm text-muted-foreground">
                 {t('common.empty')}
               </div>
               {query && (

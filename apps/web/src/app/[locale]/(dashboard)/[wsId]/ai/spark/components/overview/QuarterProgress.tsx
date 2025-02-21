@@ -1,7 +1,7 @@
 'use client';
 
 import { Quarter } from '../../types';
-import { Progress } from '@repo/ui/components/ui/progress';
+import { Progress } from '@tutur3u/ui/progress';
 
 interface QuarterProgressProps {
   quarter: Quarter;
@@ -31,7 +31,7 @@ export function QuarterProgress({
         <span>
           Q{quarter.quarter}: {quarter.focus}
         </span>
-        <span className="text-muted-foreground text-xs">
+        <span className="text-xs text-muted-foreground">
           {completedTasks}/{totalTasks} tasks
         </span>
       </div>

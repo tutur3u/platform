@@ -1,4 +1,4 @@
-import { LeaderboardEntry } from '@/types/leaderboard';
+import { LeaderboardEntry } from '@tutur3u/types/primitives/leaderboard';
 
 export async function getLeaderboardData(): Promise<LeaderboardEntry[]> {
   // This is a mock function. In a real application, you would fetch this data from an API or database.

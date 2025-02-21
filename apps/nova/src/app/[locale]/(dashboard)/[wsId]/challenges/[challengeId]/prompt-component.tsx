@@ -1,7 +1,6 @@
 import { Problems } from '../challenges';
 import ChatBox from './components/prompt-form';
-import { Card } from '@repo/ui/components/ui/card';
-import React from 'react';
+import { Card } from '@tutur3u/ui/card';
 
 export default function PromptComponent({
   problem,

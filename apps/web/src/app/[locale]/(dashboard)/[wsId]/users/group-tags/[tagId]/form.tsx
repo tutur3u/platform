@@ -1,12 +1,12 @@
 'use client';
 
 import { Filter } from '../../../users/filters';
-import { cn } from '@/lib/utils';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import SearchBar from '@repo/ui/components/ui/custom/search-bar';
 import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import { Button } from '@tutur3u/ui/button';
+import SearchBar from '@tutur3u/ui/custom/search-bar';
+import { cn } from '@tutur3u/utils/format';
 import { Users, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -117,7 +117,7 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
           ))}
         </div>
       ) : (
-        <div className="text-foreground/50 mt-4 rounded border border-dashed p-4 text-center font-semibold md:p-8">
+        <div className="mt-4 rounded border border-dashed p-4 text-center font-semibold text-foreground/50 md:p-8">
           This tag has no user groups yet.
         </div>
       )}

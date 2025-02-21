@@ -1,10 +1,6 @@
-import { Badge } from '@repo/ui/components/ui/badge';
-import {
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@repo/ui/components/ui/card';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
+import { Badge } from '@tutur3u/ui/badge';
+import { CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
 
 export interface Challenge {
   id?: number | null;
@@ -35,13 +31,13 @@ export function ProblemDescription({ challenge }: ProblemDescriptionProps) {
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold">Example Input:</h3>
-              <pre className="bg-muted overflow-x-auto rounded-md p-2">
+              <pre className="overflow-x-auto rounded-md bg-muted p-2">
                 <code>{challenge.exampleInput}</code>
               </pre>
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold">Example Output:</h3>
-              <pre className="bg-muted overflow-x-auto rounded-md p-2">
+              <pre className="overflow-x-auto rounded-md bg-muted p-2">
                 <code>{challenge.exampleOutput}</code>
               </pre>
             </div>

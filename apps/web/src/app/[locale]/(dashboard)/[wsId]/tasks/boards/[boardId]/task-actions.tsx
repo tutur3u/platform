@@ -1,9 +1,9 @@
 import { AssigneeSelect } from './_components/assignee-select';
 import { deleteTask, updateTask } from '@/lib/task-helper';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import { Calendar } from '@repo/ui/components/ui/calendar';
-import { Checkbox } from '@repo/ui/components/ui/checkbox';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Button } from '@tutur3u/ui/button';
+import { Calendar } from '@tutur3u/ui/calendar';
+import { Checkbox } from '@tutur3u/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -11,36 +11,28 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
+} from '@tutur3u/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
+} from '@tutur3u/ui/dropdown-menu';
+import { Input } from '@tutur3u/ui/input';
+import { Label } from '@tutur3u/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@repo/ui/components/ui/tooltip';
-import { cn } from '@repo/ui/lib/utils';
+} from '@tutur3u/ui/select';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import {
   AlertCircle,
@@ -215,7 +207,7 @@ export function TaskActions({
             type="button"
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:bg-muted/50 absolute right-2 top-2 h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+            className="absolute top-2 right-2 h-6 w-6 p-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted/50"
           >
             <MoreHorizontal className="h-4 w-4" />
             <span className="sr-only">Open task menu</span>
@@ -304,7 +296,7 @@ export function TaskActions({
                 })}
               />
               {!newName.trim() && (
-                <p className="text-destructive text-xs">
+                <p className="text-xs text-destructive">
                   Task name is required
                 </p>
               )}
@@ -359,7 +351,7 @@ export function TaskActions({
                   <SelectItem value="0">No priority</SelectItem>
                   <SelectItem value="1">
                     <div className="flex items-center gap-2">
-                      <Flag className="fill-destructive stroke-destructive h-3 w-3" />
+                      <Flag className="h-3 w-3 fill-destructive stroke-destructive" />
                       P1 - High
                     </div>
                   </SelectItem>
@@ -434,7 +426,7 @@ export function TaskActions({
                 </PopoverContent>
               </Popover>
               {isStartDateAfterEndDate && (
-                <p className="text-destructive text-xs">
+                <p className="text-xs text-destructive">
                   Start date cannot be after end date
                 </p>
               )}
@@ -496,13 +488,13 @@ export function TaskActions({
                 </PopoverContent>
               </Popover>
               {isOverdue && (
-                <div className="text-destructive flex items-center gap-1 text-xs">
+                <div className="flex items-center gap-1 text-xs text-destructive">
                   <AlertCircle className="h-3 w-3" />
                   Due date is in the past
                 </div>
               )}
               {isStartDateAfterEndDate && (
-                <p className="text-destructive text-xs">
+                <p className="text-xs text-destructive">
                   Due date cannot be before start date
                 </p>
               )}
@@ -537,7 +529,7 @@ export function TaskActions({
                 </Tooltip>
               )}
               {newStartDate && (
-                <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
                   {isToday(newStartDate)
                     ? 'Starts today'

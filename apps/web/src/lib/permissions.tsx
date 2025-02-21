@@ -1,6 +1,6 @@
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { PermissionId } from '@/types/db';
-import { User } from '@supabase/supabase-js';
+import type { SupabaseUser } from '@tutur3u/supabase/next/user';
+import { PermissionId } from '@tutur3u/types/db';
 import {
   Archive,
   Banknote,
@@ -56,7 +56,7 @@ export const permissionGroups = ({
 }: {
   t?: any;
   wsId: string;
-  user: User | null;
+  user: SupabaseUser | null;
 }) => {
   return (
     [
@@ -339,7 +339,7 @@ export const permissionGroups = ({
 export const permissions = (args: {
   t?: any;
   wsId: string;
-  user: User | null;
+  user: SupabaseUser | null;
 }) => {
   return permissionGroups(args).reduce(
     (acc, group) => acc.concat(group?.permissions || []),
@@ -352,5 +352,5 @@ export const totalPermissions = ({
   user,
 }: {
   wsId: string;
-  user: User | null;
+  user: SupabaseUser | null;
 }) => permissions({ wsId, user }).length;

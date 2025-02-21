@@ -1,7 +1,7 @@
 import { createTaskList } from '@/lib/task-helper';
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
-import { Input } from '@repo/ui/components/ui/input';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Button } from '@tutur3u/ui/button';
+import { Input } from '@tutur3u/ui/input';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -42,7 +42,7 @@ export function TaskListForm({ boardId, onListCreated }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-card text-card-foreground flex h-min w-[350px] flex-col gap-2 rounded-lg border p-3"
+      className="flex h-min w-[350px] flex-col gap-2 rounded-lg border bg-card p-3 text-card-foreground"
     >
       <Input
         placeholder="List name"

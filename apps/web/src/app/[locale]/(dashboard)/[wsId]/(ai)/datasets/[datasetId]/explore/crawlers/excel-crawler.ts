@@ -1,3 +1,4 @@
+import { BaseCrawler } from './base-crawler';
 import * as XLSX from 'xlsx';
 
 interface ExcelCrawlerProps {
@@ -14,9 +15,16 @@ interface SheetInfo {
   columns: number;
 }
 
-export class ExcelCrawler {
+export class ExcelCrawler extends BaseCrawler {
+  constructor(
+    options: { useProductionProxy: boolean } = { useProductionProxy: true }
+  ) {
+    super({ useProductionProxy: options.useProductionProxy });
+    this.useProductionProxy = options.useProductionProxy;
+  }
+
   private async fetchExcelFile(url: string): Promise<ArrayBuffer> {
-    const response = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+    const response = await this.fetchWithProxy(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch Excel file: ${response.statusText}`);
     }
@@ -86,29 +94,44 @@ export class ExcelCrawler {
     sheetInfo: SheetInfo;
   }> {
     const arrayBuffer = await this.fetchExcelFile(url);
-    const workbook = XLSX.read(arrayBuffer);
+    let workbook: XLSX.WorkBook;
+    try {
+      workbook = XLSX.read(arrayBuffer);
+      // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      throw new Error('Unsupported Excel file');
+    }
     const sheetName = this.findRelevantSheet(workbook);
 
-    if (!sheetName || !workbook.Sheets[sheetName]) {
-      throw new Error('No valid worksheet found');
+    if (!sheetName) {
+      throw new Error('No valid sheet found');
     }
 
     const worksheet = workbook.Sheets[sheetName];
-    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
 
-    // Get all data as array of arrays
-    const data = XLSX.utils.sheet_to_json(worksheet, {
+    if (!worksheet) {
+      throw new Error('No valid worksheet found');
+    }
+
+    const rawData = XLSX.utils.sheet_to_json(worksheet, {
       header: 1,
       raw: false,
       defval: '',
     }) as any[][];
 
+    // Clean up the data
+    const cleanData = this.cleanupData(rawData);
+
+    if (cleanData.length === 0) {
+      throw new Error('No valid data found after cleanup');
+    }
+
     return {
-      data,
+      data: cleanData,
       sheetInfo: {
         name: sheetName,
-        rows: range.e.r + 1,
-        columns: range.e.c + 1,
+        rows: cleanData.length,
+        columns: cleanData[0]?.length || 0,
       },
     };
   }
@@ -211,7 +234,13 @@ export class ExcelCrawler {
       const arrayBuffer = await this.fetchExcelFile(url);
 
       onProgress(30, 'Parsing Excel data...');
-      const workbook = XLSX.read(arrayBuffer);
+      let workbook: XLSX.WorkBook;
+      try {
+        workbook = XLSX.read(arrayBuffer);
+        // eslint-disable-next-line no-unused-vars
+      } catch (error) {
+        throw new Error('Unsupported Excel file');
+      }
       const sheetName = this.findRelevantSheet(workbook);
 
       if (!sheetName) {
@@ -272,13 +301,32 @@ export class ExcelCrawler {
     }
   }
 
-  async getPreview(props: ExcelCrawlerProps): Promise<{
+  public async getPreview(props: ExcelCrawlerProps): Promise<{
     headers: string[];
     sampleData: any[][];
     sheetInfo: SheetInfo;
   }> {
-    const { headers, data, sheetInfo } = await this.crawl(props);
-    const sampleData = data.slice(0, 5); // Get first 5 rows for preview
-    return { headers, sampleData, sheetInfo };
+    try {
+      const { url, headerRow = 1, dataStartRow } = props;
+      const { data, sheetInfo } = await this.preloadFile(url);
+
+      const { headers, preview } = this.getPreviewFromWorkbook(
+        data,
+        sheetInfo.name,
+        headerRow,
+        dataStartRow
+      );
+
+      return {
+        headers,
+        sampleData: preview,
+        sheetInfo,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to get preview');
+    }
   }
 }

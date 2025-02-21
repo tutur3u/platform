@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/card';
 import {
   Bar,
   BarChart,

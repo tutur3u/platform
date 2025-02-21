@@ -11,8 +11,8 @@ import { transactionColumns } from '../transactions/columns';
 import { Filter } from './filter';
 import { CustomDataTable } from '@/components/custom-data-table';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import type { Transaction } from '@/types/primitives/Transaction';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tutur3u/supabase/next/server';
+import type { Transaction } from '@tutur3u/types/primitives/Transaction';
 import { Suspense } from 'react';
 
 export interface FinanceDashboardSearchParams {

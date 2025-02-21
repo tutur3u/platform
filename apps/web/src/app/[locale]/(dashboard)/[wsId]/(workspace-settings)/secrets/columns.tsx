@@ -1,15 +1,15 @@
 'use client';
 
 import { SecretRowActions } from './row-actions';
-import { WorkspaceSecret } from '@/types/primitives/WorkspaceSecret';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
-import { Switch } from '@repo/ui/components/ui/switch';
 import {
   useIsFetching,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { WorkspaceSecret } from '@tutur3u/types/primitives/WorkspaceSecret';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { Switch } from '@tutur3u/ui/switch';
 import { Loader2 } from 'lucide-react';
 import moment from 'moment';
 import { useParams, useRouter } from 'next/navigation';
@@ -123,7 +123,7 @@ export const secretColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="line-clamp-1 break-all font-semibold">
+        <div className="line-clamp-1 font-semibold break-all">
           {row.getValue('name') || '-'}
         </div>
       ),

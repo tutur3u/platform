@@ -1,6 +1,6 @@
 'use client';
 
-import { DropdownMenuItem } from '@repo/ui/components/ui/dropdown-menu';
+import { DropdownMenuItem } from '@tutur3u/ui/dropdown-menu';
 import { Check, Hexagon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

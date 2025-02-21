@@ -7,15 +7,15 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@repo/ui/components/ui/breadcrumb';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/breadcrumb';
+import { Button } from '@tutur3u/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
+} from '@tutur3u/ui/dialog';
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +25,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-} from '@repo/ui/components/ui/sidebar';
+} from '@tutur3u/ui/sidebar';
 import {
   Bell,
   Check,
@@ -116,7 +116,7 @@ export function WSSettingsDialog() {
               {Array.from({ length: 10 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-muted/50 aspect-video max-w-3xl rounded-xl"
+                  className="aspect-video max-w-3xl rounded-xl bg-muted/50"
                 />
               ))}
             </div>

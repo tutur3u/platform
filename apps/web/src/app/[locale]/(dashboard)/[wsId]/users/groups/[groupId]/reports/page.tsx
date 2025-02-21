@@ -1,15 +1,15 @@
 import { Filter } from '../../../filters';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
-import { cn } from '@/lib/utils';
-import { WorkspaceUserReport } from '@/types/db';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { WorkspaceConfig } from '@/types/primitives/WorkspaceConfig';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { WorkspaceUserReport } from '@tutur3u/types/db';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { Button } from '@tutur3u/ui/button';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import { Calendar, ChartColumn, FileUser, User, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -343,7 +343,9 @@ async function getConfigs(wsId: string) {
 
   queryBuilder.in(
     'id',
-    availableConfigs.map(({ id }) => id)
+    availableConfigs
+      .map(({ id }) => id)
+      .filter((id): id is string => id !== undefined)
   );
 
   const { data: rawData, error } = await queryBuilder;

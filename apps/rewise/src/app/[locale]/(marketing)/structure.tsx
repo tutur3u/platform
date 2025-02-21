@@ -3,22 +3,22 @@
 import LogoTitle from '../logo-title';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@repo/ui/components/ui/accordion';
-import { Button } from '@repo/ui/components/ui/button';
+} from '@tutur3u/ui/accordion';
+import { Button } from '@tutur3u/ui/button';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@repo/ui/components/ui/resizable';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { TooltipProvider } from '@repo/ui/components/ui/tooltip';
+} from '@tutur3u/ui/resizable';
+import { Separator } from '@tutur3u/ui/separator';
+import { TooltipProvider } from '@tutur3u/ui/tooltip';
+import { cn } from '@tutur3u/utils/format';
 import {
   ChevronDown,
   Crown,
@@ -85,7 +85,7 @@ export function Structure({
       title: t('common.current_plan'),
       icon: <Crown className="h-5 w-5 flex-none" />,
       trailing: (
-        <span className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 font-semibold text-transparent">
+        <span className="bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 font-semibold text-transparent">
           {t('common.premium')}
         </span>
       ),
@@ -98,7 +98,7 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="bg-background/70 fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
+        className="fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-4 py-2 backdrop-blur-lg md:hidden"
       >
         <div className="flex h-[52px] items-center gap-2">
           <div className="flex flex-none items-center gap-2">
@@ -161,12 +161,12 @@ export function Structure({
             className={cn(
               isCollapsed
                 ? 'hidden min-w-[50px] md:flex'
-                : 'bg-foreground/5 absolute inset-0 z-40 flex md:static md:bg-transparent',
+                : 'absolute inset-0 z-40 flex bg-foreground/5 md:static md:bg-transparent',
               'flex-col justify-between backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
             {/* <div className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue absolute -z-20 h-full w-full bg-gradient-to-r" /> */}
-            <div className="bg-background/90 absolute -z-10 h-full w-full" />
+            <div className="absolute -z-10 h-full w-full bg-background/90" />
             <div className="flex h-full flex-1 flex-col">
               <div className="flex-none py-2 md:p-0">
                 <div
@@ -241,7 +241,7 @@ export function Structure({
                   <AccordionItem value="item-1" className="border-none p-0">
                     <AccordionTrigger
                       showChevron={false}
-                      className="hover:bg-foreground/10 bg-foreground/5 mx-2 mb-0 rounded-md px-3 py-2"
+                      className="mx-2 mb-0 rounded-md bg-foreground/5 px-3 py-2 hover:bg-foreground/10"
                     >
                       <div className="flex items-center gap-2">
                         <MessagesSquare className="h-5 w-5 flex-none" />
@@ -268,7 +268,7 @@ export function Structure({
                   </AccordionItem>
                 </Accordion>
               </div>
-              <div className="border-foreground/10 flex-none border-t p-2">
+              <div className="flex-none border-t border-foreground/10 p-2">
                 {isCollapsed ? userPopover : actions}
               </div>
             </div>

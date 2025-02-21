@@ -1,5 +1,5 @@
-import { VitalGroup } from '@/types/primitives/VitalGroup';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { VitalGroup } from '@tutur3u/types/primitives/VitalGroup';
 import { NextResponse } from 'next/server';
 
 interface Params {

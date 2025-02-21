@@ -1,12 +1,12 @@
 import timezones from '../../../../data/timezones.json';
-import { Timezone } from '@/types/primitives/Timezone';
+import { Timezone } from '@tutur3u/types/primitives/Timezone';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
+} from '@tutur3u/ui/select';
 import { useTranslations } from 'next-intl';
 
 interface Props {

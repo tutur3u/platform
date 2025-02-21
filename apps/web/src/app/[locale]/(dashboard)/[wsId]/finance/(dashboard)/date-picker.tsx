@@ -1,11 +1,7 @@
-import { Button } from '@repo/ui/components/ui/button';
-import { Calendar } from '@repo/ui/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
-import { cn } from '@repo/ui/lib/utils';
+import { Button } from '@tutur3u/ui/button';
+import { Calendar } from '@tutur3u/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+import { cn } from '@tutur3u/utils/format';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { useState } from 'react';

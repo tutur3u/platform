@@ -1,4 +1,3 @@
-import { cn } from '../../../lib/utils';
 import { Label } from '../label';
 import {
   Select,
@@ -8,6 +7,7 @@ import {
   SelectValue,
 } from '../select';
 import { Root } from '@radix-ui/react-select';
+import { cn } from '@tutur3u/utils/format';
 import React, { forwardRef } from 'react';
 
 type SelectOption = {

@@ -5,6 +5,7 @@ export interface Command {
 }
 
 export interface EmojiListProps {
+  // eslint-disable-next-line no-unused-vars
   command: (command: Command) => void;
   items: EmojiItem[];
 }

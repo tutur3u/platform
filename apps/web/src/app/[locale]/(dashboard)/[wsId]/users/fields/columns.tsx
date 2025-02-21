@@ -1,9 +1,9 @@
 'use client';
 
 import { UserFieldRowActions } from './row-actions';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const userFieldColumns = (
@@ -109,7 +109,7 @@ export const userFieldColumns = (
             {(row.getValue('possible_values') as string[]).map((value) => (
               <div
                 key={value}
-                className="border-foreground/10 bg-foreground/5 line-clamp-1 max-w-[8rem] break-all rounded-lg border p-1"
+                className="line-clamp-1 max-w-[8rem] rounded-lg border border-foreground/10 bg-foreground/5 p-1 break-all"
               >
                 {value}
               </div>

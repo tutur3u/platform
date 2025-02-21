@@ -1,10 +1,10 @@
 'use client';
 
 import { TransactionObjectRowActions } from './row-actions';
-import { StorageObject } from '@/types/primitives/StorageObject';
 import { joinPath } from '@/utils/path-helper';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { StorageObject } from '@tutur3u/types/primitives/StorageObject';
+import { Button } from '@tutur3u/ui/button';
+import { Separator } from '@tutur3u/ui/separator';
 import { FileText, LayoutGrid, LayoutList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -39,7 +39,7 @@ export function DetailObjects({
             <Button
               variant={displayMode === 'list' ? 'default' : 'secondary'}
               size="xs"
-              className="rounded-br-none rounded-tr-none"
+              className="rounded-tr-none rounded-br-none"
               onClick={() => setDisplayMode('list')}
             >
               <LayoutList />
@@ -47,7 +47,7 @@ export function DetailObjects({
             <Button
               variant={displayMode === 'grid' ? 'default' : 'secondary'}
               size="xs"
-              className="rounded-bl-none rounded-tl-none"
+              className="rounded-tl-none rounded-bl-none"
               onClick={() => setDisplayMode('grid')}
             >
               <LayoutGrid />
@@ -94,11 +94,11 @@ function DetailObjectList({
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <FileText className="h-4 w-4 flex-shrink-0" />
+      <FileText className="h-4 w-4 shrink-0" />
 
       <span className="flex-1 truncate">{object.name}</span>
 
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <TransactionObjectRowActions
           wsId={wsId}
           transactionId={transactionId}
@@ -119,11 +119,11 @@ function DetailObjectGrid({
   object: StorageObject;
 }) {
   return (
-    <div className="bg-foreground/5 space-y-4 rounded-lg p-4">
+    <div className="space-y-4 rounded-lg bg-foreground/5 p-4">
       <div className="flex items-center justify-between gap-2">
-        <FileText className="h-4 w-4 flex-shrink-0" />
+        <FileText className="h-4 w-4 shrink-0" />
         <span className="flex-1 truncate">{object.name}</span>
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <TransactionObjectRowActions
             wsId={wsId}
             transactionId={transactionId}
@@ -141,7 +141,7 @@ function DetailObjectGrid({
             fill
           />
         ) : (
-          <div className="bg-background h-full w-full rounded" />
+          <div className="h-full w-full rounded bg-background" />
         )}
       </div>
     </div>

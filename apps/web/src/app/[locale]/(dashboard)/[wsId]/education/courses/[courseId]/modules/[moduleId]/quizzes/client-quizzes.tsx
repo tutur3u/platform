@@ -1,8 +1,7 @@
 'use client';
 
 import QuizForm from '../../../../../quizzes/form';
-import { cn } from '@/lib/utils';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,9 +12,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/ui/alert-dialog';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
+} from '@tutur3u/ui/alert-dialog';
+import { Button } from '@tutur3u/ui/button';
+import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import { Pencil, Trash, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -115,8 +115,8 @@ export default function ClientQuizzes({
                       className={cn(
                         'rounded-md border p-2',
                         option?.is_correct
-                          ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green'
-                          : 'bg-foreground/5 border-foreground/5'
+                          ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+                          : 'border-foreground/5 bg-foreground/5'
                       )}
                     >
                       <span className="font-semibold">{option?.value}</span>

@@ -1,17 +1,16 @@
 import { DuplicateHandler } from './components/duplicate-handler';
+import { DatasetCrawler } from './explore/dataset-crawler';
 import { getDatasetMetrics } from './utils';
-import type { WorkspaceDataset } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { Button } from '@tutur3u/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@repo/ui/components/ui/card';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { BarChart, ExternalLink, FileText, RefreshCw } from 'lucide-react';
+} from '@tutur3u/ui/card';
+import { BarChart, FileText, RefreshCw, Upload } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -40,19 +39,23 @@ export default async function DatasetDetailsPage({ params }: Props) {
   const { totalColumns, totalRows, lastUpdated } =
     await getDatasetMetrics(datasetId);
 
-  const typedDataset = dataset as WorkspaceDataset;
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{typedDataset.name}</h1>
-          <p className="text-muted-foreground text-sm">
-            {typedDataset.description || 'No description provided'}
+          <h1 className="text-2xl font-bold">{dataset.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {dataset.description || 'No description provided'}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          <DatasetCrawler wsId={wsId} dataset={dataset}>
+            <Button variant="outline">
+              <Upload className="mr-2 h-4 w-4" />
+              Import Data
+            </Button>
+          </DatasetCrawler>
           <Link href={`/${wsId}/datasets/${datasetId}/explore`}>
             <Button variant="outline">
               <FileText className="mr-2 h-4 w-4" />
@@ -69,11 +72,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Columns</CardTitle>
-            <FileText className="text-muted-foreground h-4 w-4" />
+            <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalColumns}</div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Number of columns in the dataset
             </p>
           </CardContent>
@@ -82,11 +85,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Rows</CardTitle>
-            <BarChart className="text-muted-foreground h-4 w-4" />
+            <BarChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalRows}</div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Number of rows in the dataset
             </p>
           </CardContent>
@@ -95,7 +98,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Last Updated</CardTitle>
-            <RefreshCw className="text-muted-foreground h-4 w-4" />
+            <RefreshCw className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -103,7 +106,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
                 ? moment(lastUpdated).format('DD/MM/YYYY HH:mm')
                 : '-'}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Time since last data update
             </p>
           </CardContent>
@@ -112,11 +115,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <RefreshCw className="text-muted-foreground h-4 w-4" />
+            <RefreshCw className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold capitalize">Active</div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Current dataset status
             </p>
           </CardContent>
@@ -131,36 +134,6 @@ export default async function DatasetDetailsPage({ params }: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <div className="text-sm font-medium">HTML Elements</div>
-              <div className="text-muted-foreground text-sm">
-                {typedDataset.html_ids?.length || 0} elements configured
-              </div>
-            </div>
-
-            <div>
-              <div className="text-sm font-medium">Source URL</div>
-              {typedDataset.url ? (
-                <a
-                  href={typedDataset.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground flex items-center gap-1 text-sm hover:underline"
-                >
-                  {typedDataset.url}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              ) : (
-                <div className="text-muted-foreground text-sm">
-                  No URL configured
-                </div>
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
           <div className="space-y-2">
             <div className="text-sm font-medium">Actions</div>
             <div className="flex items-center gap-2">

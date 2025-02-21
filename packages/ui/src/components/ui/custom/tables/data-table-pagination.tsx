@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '../../../../lib/utils';
 import { Button } from '../../button';
 import {
   Select,
@@ -11,6 +10,7 @@ import {
 } from '../../select';
 import { Separator } from '../../separator';
 import { Table } from '@tanstack/react-table';
+import { cn } from '@tutur3u/utils/format';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
@@ -72,14 +72,14 @@ export function DataTablePagination<TData>({
       )}
     >
       {count != undefined && count > 0 ? (
-        <div className="text-muted-foreground flex-none text-sm">
+        <div className="flex-none text-sm text-muted-foreground">
           {/* {locale === 'vi' || locale === 'vi-VN' ? t('common.selected') : null}{' '} */}
           {/* <span className="text-primary font-semibold">
             {table ? table.getFilteredSelectedRowModel().rows.length : 0}
           </span>{' '}
           {t('common.of')}{' '} */}
           {/* {table.getFilteredRowModel().rows.length} row(s) selected. */}
-          <span className="text-primary font-semibold">{count}</span>{' '}
+          <span className="font-semibold text-primary">{count}</span>{' '}
           {t?.('common.result(s)') ?? 'result(s)'}
           {/* {locale !== 'vi' && locale !== 'vi-VN'
             ? ' ' + t('common.selected').toLowerCase()
@@ -124,9 +124,9 @@ export function DataTablePagination<TData>({
             </SelectContent>
           </Select>
         </div>
-        <div className="text-muted-foreground w-fit text-sm">
+        <div className="w-fit text-sm text-muted-foreground">
           {t?.('common.page') ?? 'Page'}{' '}
-          <span className="text-primary font-semibold">
+          <span className="font-semibold text-primary">
             {isPageOutOfRange
               ? 1
               : (pageIndex ?? table?.getState().pagination.pageIndex ?? 0) + 1}
@@ -135,7 +135,7 @@ export function DataTablePagination<TData>({
             <>
               {' '}
               {t?.('common.of') ?? 'of'}{' '}
-              <span className="text-primary font-semibold">
+              <span className="font-semibold text-primary">
                 {pageCount ?? table?.getPageCount() ?? 1}
               </span>
             </>

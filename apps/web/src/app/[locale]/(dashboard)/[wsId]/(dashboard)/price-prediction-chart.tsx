@@ -1,24 +1,19 @@
 'use client';
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@repo/ui/components/ui/card';
-// import { DatePickerWithRange } from '@repo/ui/components/ui/date-picker-with-range';
+import type { AuroraForecast } from '@tutur3u/types/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { addDays } from 'date-fns';
+} from '@tutur3u/ui/select';
+import { useLocale, useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useState } from 'react';
-// import { DateRange } from 'react-day-picker';
 import {
-  Brush,
+  Area,
   CartesianGrid,
   Legend,
   Line,
@@ -29,126 +24,332 @@ import {
   YAxis,
 } from 'recharts';
 
-const generateMockData = (startDate: Date, days: number) => {
-  const data = [];
-  for (let i = 0; i < days; i++) {
-    const date = addDays(startDate, i);
-    data.push({
-      date: date.toISOString().split('T')[0],
-      actual: Math.round(400 + Math.random() * 100),
-      predicted: Math.round(400 + Math.random() * 100),
-      lowerBound: Math.round(350 + Math.random() * 100),
-      upperBound: Math.round(450 + Math.random() * 100),
-    });
-  }
-  return data;
+const COLORS = {
+  light: {
+    primary: '#2563eb', // Blue 600
+    success: '#16a34a', // Green 600
+    warning: '#d97706', // Amber 600
+    info: '#0891b2', // Cyan 600
+    grid: '#e5e7eb', // Gray 200
+    axis: '#4b5563', // Gray 600
+    confidence: 'rgba(37, 99, 235, 0.15)', // Blue 600 with opacity
+    tooltip: {
+      bg: '#ffffff',
+      border: '#e5e7eb',
+      text: '#1f2937',
+    },
+  },
+  dark: {
+    primary: '#3b82f6', // Blue 500
+    success: '#22c55e', // Green 500
+    warning: '#f59e0b', // Amber 500
+    info: '#06b6d4', // Cyan 500
+    grid: '#374151', // Gray 700
+    axis: '#9ca3af', // Gray 400
+    confidence: 'rgba(59, 130, 246, 0.15)', // Blue 500 with opacity
+    tooltip: {
+      bg: '#1f2937',
+      border: '#374151',
+      text: '#f3f4f6',
+    },
+  },
 };
 
-const PricePredictionChart = () => {
-  const [selectedCommodity, setSelectedCommodity] = useState('rice');
-  const [dateRange] = useState<
-    | {
-        from: Date;
-        to: Date;
-      }
-    | undefined
-  >({
-    from: addDays(new Date(), -30),
-    to: addDays(new Date(), 30),
-  });
+const formatDate = (locale: string, dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString(locale, { year: 'numeric', month: 'short' });
+};
 
-  const translations = {
-    en: {
-      pricePrediction: 'Price Prediction',
-      selectCommodity: 'Select Commodity',
-      rice: 'Rice',
-      wheat: 'Wheat',
-      corn: 'Corn',
-      actual: 'Actual',
-      predicted: 'Predicted',
-      confidenceInterval: 'Confidence Interval',
-    },
-    vi: {
-      pricePrediction: 'Dự đoán giá',
-      selectCommodity: 'Chọn mặt hàng',
-      rice: 'Gạo',
-      wheat: 'Lúa mì',
-      corn: 'Ngô',
-      actual: 'Thực tế',
-      predicted: 'Dự đoán',
-      confidenceInterval: 'Khoảng tin cậy',
-    },
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
+const formatPercentage = (value: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value / 100);
+};
+
+const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
+  const locale = useLocale();
+  const t = useTranslations();
+
+  const { resolvedTheme } = useTheme();
+  const colors = resolvedTheme === 'dark' ? COLORS.dark : COLORS.light;
+  const [selectedModel, setSelectedModel] = useState('elasticnet');
+
+  const chartData =
+    data?.ml_forecast?.map((forecast) => ({
+      ...forecast,
+      displayDate: formatDate(locale, forecast.date),
+    })) || [];
+
+  // Calculate insights
+  const getModelInsights = (modelData: any[], model: string) => {
+    if (!modelData.length) return null;
+
+    const values = modelData.map((d) => d[model] || 0);
+    const sortedValues = [...values].sort((a, b) => a - b);
+    const high = sortedValues[sortedValues.length - 1];
+    const low = sortedValues[0];
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+
+    // Calculate volatility (standard deviation)
+    const volatility = Math.sqrt(
+      values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / values.length
+    );
+
+    // Calculate trend
+    const trendWindow = Math.min(30, values.length);
+    const recentValues = values.slice(-trendWindow);
+    const trendSlope = calculateTrendSlope(recentValues);
+
+    return {
+      high,
+      low,
+      average: avg,
+      volatility,
+      trendSlope,
+    };
   };
 
-  const t = translations['en'];
+  const calculateTrendSlope = (values: number[]) => {
+    const n = values.length;
+    if (n < 2) return 0;
 
-  const data =
-    dateRange?.from && dateRange?.to
-      ? generateMockData(
-          dateRange.from,
-          Math.ceil(
-            (dateRange.to.getTime() - dateRange.from.getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
-        )
-      : [];
+    const xMean = (n - 1) / 2;
+    const yMean = values.reduce((a, b) => a + b, 0) / n;
+
+    let numerator = 0;
+    let denominator = 0;
+
+    for (let i = 0; i < n; i++) {
+      const x = i;
+      const y = values[i];
+      if (typeof y === 'number') {
+        numerator += (x - xMean) * (y - yMean);
+        denominator += Math.pow(x - xMean, 2);
+      }
+    }
+
+    return denominator === 0 ? 0 : numerator / denominator;
+  };
+
+  const insights = chartData.length
+    ? getModelInsights(chartData, selectedModel)
+    : null;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t.pricePrediction}</CardTitle>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle>{t('aurora.ml_price_prediction')}</CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex flex-col items-start justify-between space-y-4 sm:flex-row sm:items-center sm:space-y-0">
-          <Select
-            value={selectedCommodity}
-            onValueChange={setSelectedCommodity}
-          >
+          <Select value={selectedModel} onValueChange={setSelectedModel}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t.selectCommodity} />
+              <SelectValue placeholder={t('aurora_select_model')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="rice">{t.rice}</SelectItem>
-              <SelectItem value="wheat">{t.wheat}</SelectItem>
-              <SelectItem value="corn">{t.corn}</SelectItem>
+              <SelectItem value="elasticnet">elasticnet</SelectItem>
+              <SelectItem value="lightgbm">lightgbm</SelectItem>
+              <SelectItem value="xgboost">xgboost</SelectItem>
+              <SelectItem value="catboost">catboost</SelectItem>
             </SelectContent>
           </Select>
-          {/* <DatePickerWithRange date={dateRange} setDate={setDateRange} /> */}
         </div>
+
+        {insights && (
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Card className="transition-all duration-200 hover:shadow-md">
+              <CardContent className="pt-6">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {t('aurora.trend')}
+                </h3>
+                <div className="mt-2">
+                  <div
+                    className={`flex items-center gap-2 text-2xl font-bold ${
+                      insights.trendSlope > 0
+                        ? 'text-success'
+                        : 'text-destructive'
+                    }`}
+                  >
+                    {insights.trendSlope > 0 ? '↗' : '↘'}{' '}
+                    <div className="flex flex-col">
+                      <span>{Math.abs(insights.trendSlope).toFixed(2)}</span>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {t('aurora.slope')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="transition-all duration-200 hover:shadow-md">
+              <CardContent className="pt-6">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {t('aurora.volatility')}
+                </h3>
+                <div className="mt-2">
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(insights.volatility)}
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div
+                      className="h-2 rounded-full"
+                      style={{
+                        width: `${Math.min(
+                          (insights.volatility / insights.average) * 100,
+                          100
+                        )}%`,
+                        backgroundColor: colors.info,
+                      }}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {formatPercentage(insights.volatility / insights.average)}{' '}
+                      {t('aurora.relative')}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="transition-all duration-200 hover:shadow-md">
+              <CardContent className="pt-6">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {t('aurora.prediction_insights')}
+                </h3>
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {t('aurora.high')}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-1.5 rounded-full"
+                        style={{
+                          width: `${(insights.high / insights.high) * 100}%`,
+                          backgroundColor: colors.success,
+                        }}
+                      />
+                      <span className="text-success font-medium">
+                        {formatCurrency(insights.high)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {t('aurora.low')}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-1.5 rounded-full"
+                        style={{
+                          width: `${(insights.low / insights.high) * 100}%`,
+                          backgroundColor: colors.warning,
+                        }}
+                      />
+                      <span className="font-medium text-destructive">
+                        {formatCurrency(insights.low)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {t('aurora.average')}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-1.5 rounded-full"
+                        style={{
+                          width: `${(insights.average / insights.high) * 100}%`,
+                          backgroundColor: colors.primary,
+                        }}
+                      />
+                      <span className="font-medium">
+                        {formatCurrency(insights.average)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+              <XAxis
+                dataKey="displayDate"
+                stroke={colors.axis}
+                tick={{ fill: colors.axis, fontSize: 12 }}
+                tickMargin={10}
+              />
+              <YAxis
+                stroke={colors.axis}
+                tick={{ fill: colors.axis, fontSize: 12 }}
+                tickMargin={10}
+                tickFormatter={(value) => formatCurrency(value)}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: colors.tooltip.bg,
+                  border: `1px solid ${colors.tooltip.border}`,
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                  borderRadius: '6px',
+                  padding: '8px 12px',
+                }}
+                formatter={(value: number) => [formatCurrency(value)]}
+                labelStyle={{ color: colors.tooltip.text }}
+              />
+              <Legend
+                wrapperStyle={{
+                  paddingTop: '20px',
+                }}
+                formatter={(value) => <span>{value}</span>}
+              />
+              <Area
                 type="monotone"
-                dataKey="actual"
-                stroke="#8884d8"
-                name={t.actual}
+                dataKey={`${selectedModel}_hi_90`}
+                stroke="none"
+                fill={colors.confidence}
+                fillOpacity={1}
+                name={t('aurora.90_confidence_high')}
               />
               <Line
                 type="monotone"
-                dataKey="predicted"
-                stroke="#82ca9d"
-                name={t.predicted}
+                dataKey={selectedModel}
+                stroke={colors.primary}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{
+                  r: 6,
+                  fill: colors.primary,
+                  strokeWidth: 0,
+                }}
+                name={selectedModel}
+                animationDuration={300}
               />
-              <Line
+              <Area
                 type="monotone"
-                dataKey="lowerBound"
-                stroke="#ff7300"
-                strokeDasharray="3 3"
-                name={t.confidenceInterval}
+                dataKey={`${selectedModel}_lo_90`}
+                stroke="none"
+                fill={colors.confidence}
+                fillOpacity={1}
+                name={t('aurora.90_confidence_lo')}
               />
-              <Line
-                type="monotone"
-                dataKey="upperBound"
-                stroke="#ff7300"
-                strokeDasharray="3 3"
-              />
-              <Brush dataKey="date" height={30} stroke="#8884d8" />
             </LineChart>
           </ResponsiveContainer>
         </div>

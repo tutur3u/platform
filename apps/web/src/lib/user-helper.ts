@@ -1,5 +1,5 @@
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getCurrentSupabaseUser() {

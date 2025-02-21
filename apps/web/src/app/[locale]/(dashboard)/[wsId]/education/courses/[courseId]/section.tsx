@@ -1,8 +1,7 @@
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 import { isEqual } from 'lodash';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
-import { JSONContent } from 'novel';
 import { ReactNode } from 'react';
 
 export async function CourseSection({
@@ -16,7 +15,7 @@ export async function CourseSection({
   href?: string;
   title: string;
   icon: ReactNode;
-  rawContent?: JSONContent;
+  rawContent?: any;
   content?: ReactNode;
   hideContent?: boolean;
 }) {
@@ -36,7 +35,7 @@ export async function CourseSection({
       : !content);
 
   return (
-    <div className="bg-foreground/5 border-foreground/10 rounded-lg border p-4">
+    <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-4">
       {href ? (
         <Link
           href={href}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar } from '@repo/ui/components/ui/calendar';
+import { Calendar } from '@tutur3u/ui/calendar';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
 import React from 'react';

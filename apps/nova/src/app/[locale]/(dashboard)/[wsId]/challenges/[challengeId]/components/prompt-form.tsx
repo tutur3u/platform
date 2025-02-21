@@ -2,7 +2,7 @@
 
 import { Problems } from '../../challenges';
 import Mosaic from '@/components/common/LoadingIndicator';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,9 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
+} from '@tutur3u/ui/dialog';
+import { Input } from '@tutur3u/ui/input';
+import { Separator } from '@tutur3u/ui/separator';
 import { History } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';

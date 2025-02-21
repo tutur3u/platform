@@ -1,9 +1,9 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { TableOfContentsStorage } from '@tiptap-pro/extension-table-of-contents';
 import { Editor as CoreEditor } from '@tiptap/core';
 import { useEditorState } from '@tiptap/react';
+import { cn } from '@tutur3u/utils/format';
 import { memo } from 'react';
 
 export type TableOfContentsProps = {
@@ -21,7 +21,7 @@ export const TableOfContents = memo(
 
     return (
       <>
-        <div className="mb-2 text-xs font-semibold uppercase text-neutral-500 dark:text-neutral-400">
+        <div className="mb-2 text-xs font-semibold text-neutral-500 uppercase dark:text-neutral-400">
           Table of contents
         </div>
         {content.length > 0 ? (
@@ -33,7 +33,7 @@ export const TableOfContents = memo(
                 style={{ marginLeft: `${1 * item.level - 1}rem` }}
                 onClick={onItemClick}
                 className={cn(
-                  'block w-full truncate rounded bg-opacity-10 p-1 text-sm font-medium text-neutral-500 transition-all hover:bg-black hover:bg-opacity-5 hover:text-neutral-800 dark:text-neutral-300',
+                  'block w-full truncate rounded p-1 text-sm font-medium text-neutral-500 transition-all hover:bg-black hover:text-neutral-800 dark:text-neutral-300',
                   item.isActive &&
                     'bg-neutral-100 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-100'
                 )}

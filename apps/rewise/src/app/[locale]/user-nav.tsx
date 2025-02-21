@@ -4,13 +4,8 @@ import { SystemLanguageWrapper } from './(dashboard)/_components/system-language
 import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
 import { TTR_URL } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
-import { cn } from '@/lib/utils';
 import { getInitials } from '@/utils/name-helper';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +18,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
+} from '@tutur3u/ui/dropdown-menu';
+import { cn } from '@tutur3u/utils/format';
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -44,7 +40,7 @@ export async function UserNav({
             'flex w-full gap-2 rounded border p-2 text-start transition',
             hideMetadata
               ? 'items-center justify-center border-transparent'
-              : 'hover:bg-foreground/10 hover:border-foreground/10 border-foreground/10 bg-foreground/10 items-start justify-start md:border-transparent md:bg-transparent'
+              : 'items-start justify-start border-foreground/10 bg-foreground/10 hover:border-foreground/10 hover:bg-foreground/10 md:border-transparent md:bg-transparent'
           )}
         >
           <Avatar className="relative cursor-pointer overflow-visible font-semibold">
@@ -62,10 +58,10 @@ export async function UserNav({
           </Avatar>
           {hideMetadata || (
             <div className="grid w-full">
-              <div className="line-clamp-1 break-all text-sm font-semibold">
+              <div className="line-clamp-1 text-sm font-semibold break-all">
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </div>
-              <div className="line-clamp-1 break-all text-sm opacity-70">
+              <div className="line-clamp-1 text-sm break-all opacity-70">
                 {user?.email}
               </div>
             </div>
@@ -81,11 +77,11 @@ export async function UserNav({
           <div className="flex flex-col">
             <Link
               href="/settings/account"
-              className="line-clamp-1 w-fit break-all text-sm font-medium hover:underline"
+              className="line-clamp-1 w-fit text-sm font-medium break-all hover:underline"
             >
               {user?.display_name || user?.handle || t('common.unnamed')}
             </Link>
-            <p className="text-muted-foreground line-clamp-1 break-all text-xs">
+            <p className="line-clamp-1 text-xs break-all text-muted-foreground">
               {user?.email}
             </p>
           </div>

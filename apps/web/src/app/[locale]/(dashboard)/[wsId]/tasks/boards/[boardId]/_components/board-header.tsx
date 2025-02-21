@@ -1,13 +1,13 @@
-import { createClient } from '@/utils/supabase/client';
-import { Button } from '@repo/ui/components/ui/button';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Button } from '@tutur3u/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { cn } from '@repo/ui/lib/utils';
+} from '@tutur3u/ui/dropdown-menu';
+import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import {
   CalendarDays,
   LayoutGrid,
@@ -66,7 +66,7 @@ export function BoardHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="bg-background flex items-center rounded-lg border p-1">
+        <div className="flex items-center rounded-lg border bg-background p-1">
           <Button
             variant="ghost"
             size="sm"

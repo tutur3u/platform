@@ -1,8 +1,8 @@
 'use client';
 
 import { Sidebar } from '@/components/layout/sidebar';
-import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@repo/ui/components/ui/toaster';
+import { Toaster } from '@tutur3u/ui/toaster';
+import { ThemeProvider } from 'next-themes';
 import { Inter } from 'next/font/google';
 import { usePathname } from 'next/navigation';
 
@@ -15,12 +15,10 @@ export default function RootLayout({
 }) {
   const pathName = usePathname();
 
-
-  const SIDEBAR_HIDDEN_ROUTES = ['/login', '/signup']; 
+  const SIDEBAR_HIDDEN_ROUTES = ['/login', '/signup'];
   const SIDEBAR_HIDDEN_ROUTE_PATTERNS = [
     /^\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\/challenges\/\d+$/, // Matches UUID/challenges/{id}
   ];
-
 
   const shouldShowSidebar = !(
     SIDEBAR_HIDDEN_ROUTES.includes(pathName) ||
@@ -29,7 +27,13 @@ export default function RootLayout({
 
   return (
     <div className={`${inter.className} bg-background text-foreground`}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        themes={['system', 'light', 'dark']}
+        enableColorScheme={false}
+        enableSystem
+      >
         <div className="flex h-screen overflow-hidden">
           {shouldShowSidebar && <Sidebar />}
           <main className="flex-1 overflow-y-auto">{children}</main>

@@ -1,9 +1,9 @@
 'use client';
 
 import { RowActions } from './row-actions';
-import type { WorkspaceDataset } from '@/types/db';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceDataset } from '@tutur3u/types/db';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -82,41 +82,6 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[2rem]">{row.getValue('rows')}</div>
-    ),
-  },
-  {
-    accessorKey: 'url',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        t={t}
-        column={column}
-        title={t(`${namespace}.url`)}
-      />
-    ),
-    cell: ({ row }) => (
-      <Link
-        href={row.getValue('url') || '#'}
-        target={row.getValue('url') ? '_blank' : '_self'}
-        className="min-w-[4rem]"
-        rel="noreferrer"
-      >
-        <span className="line-clamp-1 font-semibold hover:underline">
-          {row.getValue('url') || '-'}
-        </span>
-      </Link>
-    ),
-  },
-  {
-    accessorKey: 'type',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        t={t}
-        column={column}
-        title={t(`${namespace}.type`)}
-      />
-    ),
-    cell: ({ row }) => (
-      <div className="font-semibold uppercase">{row.getValue('type')}</div>
     ),
   },
   {

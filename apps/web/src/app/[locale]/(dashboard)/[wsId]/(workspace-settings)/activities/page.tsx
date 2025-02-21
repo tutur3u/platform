@@ -1,6 +1,6 @@
 import LogList from './log-list';
-import { AuditLog } from '@/types/primitives/audit-log';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { AuditLog } from '@tutur3u/types/primitives/audit-log';
 import { notFound } from 'next/navigation';
 
 interface Props {

@@ -1,20 +1,17 @@
-import { createClient } from '@/utils/supabase/client';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
+import { TTR_URL } from '@/constants/common';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@repo/ui/components/ui/dialog';
-import { Input } from '@repo/ui/components/ui/input';
-import { Label } from '@repo/ui/components/ui/label';
-import { Switch } from '@repo/ui/components/ui/switch';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/dialog';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Label } from '@tutur3u/ui/label';
+import { Switch } from '@tutur3u/ui/switch';
 import { Copy, Link, QrCode, User, UserPlus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -31,6 +28,7 @@ interface ChatPermissionsProps {
   isPublic: boolean;
   creatorId: string;
   currentUserId?: string;
+  // eslint-disable-next-line no-unused-vars
   onUpdateVisibility: (isPublic: boolean) => void;
 }
 
@@ -49,7 +47,7 @@ export function ChatPermissions({
   const [showQR, setShowQR] = useState(false);
 
   const isOwner = currentUserId === creatorId;
-  const chatUrl = `${window.location.origin}/c/${chatId}`;
+  const chatUrl = `${TTR_URL}/ai/chats/${chatId}`;
 
   // Fetch members
   useEffect(() => {
@@ -210,9 +208,9 @@ export function ChatPermissions({
       <div className="space-y-2">
         <Label className="font-medium">{t('members')}</Label>
         {loading ? (
-          <div className="text-muted-foreground text-sm">{t('loading')}</div>
+          <div className="text-sm text-muted-foreground">{t('loading')}</div>
         ) : members.length === 0 ? (
-          <div className="text-muted-foreground text-sm">{t('no_members')}</div>
+          <div className="text-sm text-muted-foreground">{t('no_members')}</div>
         ) : (
           <div className="space-y-2">
             {members.map((member) => (
@@ -233,7 +231,7 @@ export function ChatPermissions({
                     <div className="font-medium">
                       {member.display_name || t('unnamed_user')}
                     </div>
-                    <div className="text-muted-foreground text-xs">
+                    <div className="text-xs text-muted-foreground">
                       {member.email}
                     </div>
                   </div>

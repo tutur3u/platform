@@ -1,18 +1,18 @@
 'use client';
 
 import { RoleForm } from './form';
-import { WorkspaceRole } from '@/types/db';
-import { Button } from '@repo/ui/components/ui/button';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
+import { Row } from '@tanstack/react-table';
+import type { SupabaseUser } from '@tutur3u/supabase/next/user';
+import { WorkspaceRole } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/button';
+import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/ui/dropdown-menu';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { User } from '@supabase/supabase-js';
-import { Row } from '@tanstack/react-table';
+} from '@tutur3u/ui/dropdown-menu';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
 import { Ellipsis, Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -62,7 +62,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
@@ -84,7 +84,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
         form={
           <RoleForm
             wsId={data.ws_id}
-            user={{} as unknown as User}
+            user={{} as unknown as SupabaseUser}
             data={data}
           />
         }

@@ -1,9 +1,9 @@
 'use client';
 
-import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { Button } from '@tutur3u/ui/button';
+import { Card } from '@tutur3u/ui/card';
 import {
   Form,
   FormControl,
@@ -11,13 +11,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { motion } from 'framer-motion';
 import { Brain, Github, Globe, Mail, MessageCircle, Star } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -84,6 +84,19 @@ export default function ContactPage() {
     },
   });
 
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user?.email) {
+        form.setValue('email', user.email);
+      }
+    };
+
+    getUser();
+  }, []);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     const { error } = await supabase.from('support_inquiries').insert({
@@ -123,7 +136,7 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -left-[8rem] top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="absolute top-0 -left-[8rem] h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -135,7 +148,7 @@ export default function ContactPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -right-[8rem] top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="absolute top-[30%] -right-[8rem] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -195,14 +208,14 @@ export default function ContactPage() {
                 ease: 'easeInOut',
               },
             }}
-            className="bg-primary/10 group relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl"
+            className="group relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
           >
             <div className="animate-spin-slow absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
-            <div className="bg-background/80 absolute inset-[2px] rounded-xl backdrop-blur-sm" />
-            <MessageCircle className="text-primary relative h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
+            <div className="absolute inset-[2px] rounded-xl bg-background/80 backdrop-blur-sm" />
+            <MessageCircle className="relative h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
 
-          <motion.h1 className="text-foreground mb-4 text-4xl font-bold md:text-5xl">
+          <motion.h1 className="mb-4 text-4xl font-bold text-foreground md:text-5xl">
             <motion.span
               animate={{
                 backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
@@ -212,13 +225,13 @@ export default function ContactPage() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              className="relative bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
             >
               Let&apos;s Build Together
             </motion.span>
           </motion.h1>
 
-          <motion.p className="text-foreground/60 mx-auto max-w-2xl text-lg leading-relaxed">
+          <motion.p className="mx-auto max-w-2xl text-lg leading-relaxed text-foreground/60">
             Whether you&apos;re looking to innovate, collaborate, or simply
             learn more about our technology, we&apos;re here to help. Join us in
             our mission to create the world&apos;s best technology solutions.
@@ -233,7 +246,7 @@ export default function ContactPage() {
             className="space-y-12"
           >
             <div className="space-y-8">
-              <motion.h2 className="text-foreground text-3xl font-bold">
+              <motion.h2 className="text-3xl font-bold text-foreground">
                 <motion.span
                   animate={{
                     backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
@@ -243,7 +256,7 @@ export default function ContactPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-blue-500 to-cyan-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="relative bg-gradient-to-r from-primary via-blue-500 to-cyan-500 bg-[length:200%_auto] bg-clip-text text-transparent"
                 >
                   Get in Touch
                 </motion.span>
@@ -273,10 +286,10 @@ export default function ContactPage() {
                           repeat: Infinity,
                           ease: 'linear',
                         }}
-                        className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                        className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                       />
                       <div className="relative flex flex-col gap-4">
-                        <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
                           <motion.div
                             animate={{
                               scale: [1, 1.1, 1],
@@ -296,16 +309,16 @@ export default function ContactPage() {
                           {method.href ? (
                             <a
                               href={method.href}
-                              className="text-foreground/60 hover:text-primary mb-2 block text-sm transition-colors"
+                              className="mb-2 block text-sm text-foreground/60 transition-colors hover:text-primary"
                             >
                               {method.value}
                             </a>
                           ) : (
-                            <p className="text-foreground/60 mb-2 text-sm">
+                            <p className="mb-2 text-sm text-foreground/60">
                               {method.value}
                             </p>
                           )}
-                          <p className="text-foreground/60 text-sm">
+                          <p className="text-sm text-foreground/60">
                             {method.description}
                           </p>
                         </div>
@@ -318,7 +331,7 @@ export default function ContactPage() {
 
             {/* Service Highlights */}
             <div className="space-y-6">
-              <motion.h2 className="text-foreground text-2xl font-bold">
+              <motion.h2 className="text-2xl font-bold text-foreground">
                 <motion.span
                   animate={{
                     backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
@@ -328,7 +341,7 @@ export default function ContactPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-orange-500 to-red-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="relative bg-gradient-to-r from-primary via-orange-500 to-red-500 bg-[length:200%_auto] bg-clip-text text-transparent"
                 >
                   Why Choose Us
                 </motion.span>
@@ -342,7 +355,7 @@ export default function ContactPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: 0.3 + 0.1 * index }}
                   >
-                    <Card className="hover:bg-foreground/5 group relative overflow-hidden p-4 transition-all duration-300">
+                    <Card className="group relative overflow-hidden p-4 transition-all duration-300 hover:bg-foreground/5">
                       <motion.div
                         initial={{ opacity: 0 }}
                         whileHover={{ opacity: 1 }}
@@ -358,10 +371,10 @@ export default function ContactPage() {
                           repeat: Infinity,
                           ease: 'linear',
                         }}
-                        className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                        className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                       />
                       <div className="relative flex items-start gap-4">
-                        <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
                           <motion.div
                             animate={{
                               scale: [1, 1.1, 1],
@@ -378,7 +391,7 @@ export default function ContactPage() {
                         </div>
                         <div>
                           <h3 className="font-semibold">{highlight.title}</h3>
-                          <p className="text-foreground/60 text-sm">
+                          <p className="text-sm text-foreground/60">
                             {highlight.description}
                           </p>
                         </div>
@@ -395,7 +408,7 @@ export default function ContactPage() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="space-y-6"
             >
-              <motion.h2 className="text-foreground text-2xl font-bold">
+              <motion.h2 className="text-2xl font-bold text-foreground">
                 <motion.span
                   animate={{
                     backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
@@ -405,7 +418,7 @@ export default function ContactPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="from-primary relative bg-gradient-to-r via-green-500 to-emerald-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="relative bg-gradient-to-r from-primary via-green-500 to-emerald-500 bg-[length:200%_auto] bg-clip-text text-transparent"
                 >
                   Connect with Our Founder
                 </motion.span>
@@ -427,12 +440,12 @@ export default function ContactPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
+                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
                 />
                 <div className="relative flex flex-col gap-4">
                   <div>
                     <h3 className="text-xl font-bold">Võ Hoàng Phúc</h3>
-                    <p className="text-foreground/60 text-sm">
+                    <p className="text-sm text-foreground/60">
                       Founder & CEO, driving innovation and excellence in
                       technology
                     </p>
@@ -441,19 +454,19 @@ export default function ContactPage() {
                   <div className="flex flex-col gap-3">
                     <a
                       href="mailto:phucvo@tuturuuu.com"
-                      className="text-foreground/60 hover:text-primary flex items-center gap-2 text-sm transition-colors"
+                      className="flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-primary"
                     >
-                      <div className="bg-primary/10 group-hover:bg-primary/20 flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-300 group-hover:rotate-12">
-                        <Mail className="text-primary h-4 w-4" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
+                        <Mail className="h-4 w-4 text-primary" />
                       </div>
                       phucvo@tuturuuu.com
                     </a>
                     <a
                       href="https://github.com/vhpx"
-                      className="text-foreground/60 hover:text-primary flex items-center gap-2 text-sm transition-colors"
+                      className="flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-primary"
                     >
-                      <div className="bg-primary/10 group-hover:bg-primary/20 flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-300 group-hover:rotate-12">
-                        <Github className="text-primary h-4 w-4" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
+                        <Github className="h-4 w-4 text-primary" />
                       </div>
                       @vhpx on GitHub
                     </a>
@@ -468,7 +481,7 @@ export default function ContactPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <motion.h2 className="text-foreground mb-8 text-3xl font-bold">
+            <motion.h2 className="mb-8 text-3xl font-bold text-foreground">
               <motion.span
                 animate={{
                   backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
@@ -478,7 +491,7 @@ export default function ContactPage() {
                   repeat: Infinity,
                   ease: 'linear',
                 }}
-                className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                className="relative bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
               >
                 Send Us a Message
               </motion.span>
@@ -500,7 +513,7 @@ export default function ContactPage() {
                   repeat: Infinity,
                   ease: 'linear',
                 }}
-                className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
               />
               <div className="bg-primary/5 p-6">
                 <p className="text-foreground/80">
@@ -579,7 +592,7 @@ export default function ContactPage() {
                           <FormControl>
                             <Textarea
                               placeholder="Tell us more about your ideas..."
-                              className="bg-background/50 min-h-[150px] resize-none backdrop-blur-sm"
+                              className="min-h-[150px] resize-none bg-background/50 backdrop-blur-sm"
                               {...field}
                             />
                           </FormControl>

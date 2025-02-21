@@ -1,9 +1,9 @@
 'use client';
 
 import { QuizSetRowActions } from './row-actions';
-import { WorkspaceQuizSet } from '@/types/db';
-import { DataTableColumnHeader } from '@repo/ui/components/ui/custom/tables/data-table-column-header';
 import { ColumnDef } from '@tanstack/react-table';
+import { WorkspaceQuizSet } from '@tutur3u/types/db';
+import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 

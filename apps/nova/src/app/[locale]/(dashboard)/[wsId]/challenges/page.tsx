@@ -1,6 +1,6 @@
 import ChallengeCard from './challengeCard';
 import { getChallenges } from './challenges';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@tutur3u/supabase/next/server';
 import { redirect } from 'next/navigation';
 
 interface Props {

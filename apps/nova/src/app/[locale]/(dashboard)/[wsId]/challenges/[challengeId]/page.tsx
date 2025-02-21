@@ -5,9 +5,9 @@ import CustomizedHeader from './customizedHeader';
 import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Props {
   params: Promise<{
@@ -111,7 +111,10 @@ export default function Page({ params }: Props) {
           />
         </div>
 
-        <PromptComponent challengeId={} problem={problems[currentProblemIndex]} />
+        <PromptComponent
+          challengeId={challenge.id}
+          problem={problems[currentProblemIndex]}
+        />
       </div>
     </>
   );

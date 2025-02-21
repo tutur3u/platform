@@ -25,7 +25,7 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -left-[8rem] top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="absolute top-0 -left-[8rem] h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -37,7 +37,7 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -right-[8rem] top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="absolute top-[30%] -right-[8rem] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{

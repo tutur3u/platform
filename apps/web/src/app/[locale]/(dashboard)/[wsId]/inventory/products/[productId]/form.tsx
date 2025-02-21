@@ -2,18 +2,12 @@
 
 import { ProductCategoryForm } from '../../categories/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
-import { cn } from '@/lib/utils';
-import { ProductCategory } from '@/types/primitives/ProductCategory';
-import { ProductUnit } from '@/types/primitives/ProductUnit';
-import { ProductWarehouse } from '@/types/primitives/ProductWarehouse';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@repo/ui/components/ui/card';
+import { ProductCategory } from '@tutur3u/types/primitives/ProductCategory';
+import { ProductUnit } from '@tutur3u/types/primitives/ProductUnit';
+import { ProductWarehouse } from '@tutur3u/types/primitives/ProductWarehouse';
+import { Button } from '@tutur3u/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
 import {
   Command,
   CommandEmpty,
@@ -22,8 +16,8 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@repo/ui/components/ui/command';
-import ModifiableDialogTrigger from '@repo/ui/components/ui/custom/modifiable-dialog-trigger';
+} from '@tutur3u/ui/command';
+import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
 import {
   Form,
   FormControl,
@@ -31,23 +25,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@repo/ui/components/ui/popover';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/ui/select';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/select';
+import { Separator } from '@tutur3u/ui/separator';
+import { Textarea } from '@tutur3u/ui/textarea';
+import { cn } from '@tutur3u/utils/format';
 import { Check, ChevronsUpDown, Plus, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -478,7 +469,7 @@ export function ProductForm({
             </Card>
           </div>
 
-          <div className="w-full flex-shrink-0 space-y-4 lg:max-w-sm">
+          <div className="w-full shrink-0 space-y-4 lg:max-w-sm">
             <Card>
               <CardHeader>
                 <CardTitle>

@@ -2,12 +2,13 @@ import { useDropZone, useFileUpload, useUploader } from './hooks';
 import { Button } from '@/components/components/ui/Button';
 import { Icon } from '@/components/components/ui/Icon';
 import { Spinner } from '@/components/components/ui/Spinner';
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { ChangeEvent, useCallback } from 'react';
 
 export const ImageUploader = ({
   onUpload,
 }: {
+  // eslint-disable-next-line no-unused-vars
   onUpload: (url: string) => void;
 }) => {
   const { loading, uploadFile } = useUploader({ onUpload });
@@ -28,14 +29,14 @@ export const ImageUploader = ({
 
   if (loading) {
     return (
-      <div className="flex min-h-[10rem] items-center justify-center rounded-lg bg-opacity-80 p-8">
+      <div className="flex min-h-[10rem] items-center justify-center rounded-lg p-8">
         <Spinner className="text-neutral-500" size={1.5} />
       </div>
     );
   }
 
   const wrapperClass = cn(
-    'flex flex-col items-center justify-center px-8 py-10 rounded-lg bg-opacity-80',
+    'flex flex-col items-center justify-center rounded-lg px-8 py-10',
     draggedInside && 'bg-neutral-100'
   );
 

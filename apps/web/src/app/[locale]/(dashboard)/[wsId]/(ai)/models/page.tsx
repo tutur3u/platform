@@ -1,10 +1,10 @@
 import { getColumns } from './columns';
 import ModelForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import type { WorkspaceAIModel } from '@/types/db';
-import { createClient } from '@/utils/supabase/server';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import type { WorkspaceAIModel } from '@tutur3u/types/db';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

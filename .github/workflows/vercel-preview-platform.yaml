@@ -18,7 +18,23 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Check for newer commits
+        id: check_commits
+        run: |
+          CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
+          git fetch origin $CURRENT_BRANCH
+          LATEST_COMMIT=$(git rev-parse origin/$CURRENT_BRANCH)
+          CURRENT_COMMIT=${GITHUB_SHA}
+          if [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
+            echo "Newer commit found on $CURRENT_BRANCH branch. Skipping build."
+            echo "skip_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "This is the latest commit. Proceeding with build."
+            echo "skip_build=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Cache turbo build setup
+        if: steps.check_commits.outputs.skip_build != 'true'
         uses: actions/cache@v4
         with:
           path: .turbo
@@ -27,30 +43,38 @@ jobs:
             ${{ runner.os }}-turbo-platform-
 
       - name: Setup pnpm
+        if: steps.check_commits.outputs.skip_build != 'true'
         uses: pnpm/action-setup@v4
 
       - name: Use Node.js 22
+        if: steps.check_commits.outputs.skip_build != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          cache: 'pnpm'
 
       - name: Configure Tiptap Pro
+        if: steps.check_commits.outputs.skip_build != 'true'
         run: |
           pnpm config set "@tiptap-pro:registry" https://registry.tiptap.dev/
           pnpm config set "//registry.tiptap.dev/:_authToken" ${{ secrets.TIPTAP_PRO_TOKEN }}
 
       - name: Install dependencies
+        if: steps.check_commits.outputs.skip_build != 'true'
         run: pnpm install
 
       - name: Install Vercel CLI
+        if: steps.check_commits.outputs.skip_build != 'true'
         run: pnpm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
+        if: steps.check_commits.outputs.skip_build != 'true'
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
+        if: steps.check_commits.outputs.skip_build != 'true'
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
+        if: steps.check_commits.outputs.skip_build != 'true'
         run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}

@@ -1,10 +1,10 @@
 import { groupTagColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { UserGroupTag } from '@/types/primitives/UserGroupTag';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { UserGroupTag } from '@tutur3u/types/primitives/UserGroupTag';
+import { Button } from '@tutur3u/ui/button';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
 import { Bot } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

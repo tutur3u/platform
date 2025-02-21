@@ -1,5 +1,4 @@
-import { Button } from '@repo/ui/components/ui/button';
-import React from 'react';
+import { Button } from '@tutur3u/ui/button';
 
 interface Props {
   proNum: number;

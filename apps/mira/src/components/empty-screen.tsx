@@ -1,8 +1,8 @@
-import { capitalize, cn } from '@/lib/utils';
-import { AIChat } from '@/types/db';
-import { Button } from '@repo/ui/components/ui/button';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { UseChatHelpers } from 'ai/react';
+import { type UseChatHelpers } from '@tutur3u/ai/types';
+import { AIChat } from '@tutur3u/types/db';
+import { Button } from '@tutur3u/ui/button';
+import { Separator } from '@tutur3u/ui/separator';
+import { capitalize, cn } from '@tutur3u/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -80,16 +80,16 @@ export function EmptyScreen({
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-4xl xl:max-w-6xl">
-      <div className="bg-background rounded-lg border p-4 md:p-8">
+      <div className="rounded-lg border bg-background p-4 md:p-8">
         <div className="flex flex-col items-center justify-center text-center">
           <h1 className="mb-2 text-lg font-semibold">
             {t('welcome_to')}{' '}
-            <span className="from-dynamic-red via-dynamic-purple to-dynamic-sky overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent">
+            <span className="overflow-hidden bg-gradient-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky bg-clip-text font-bold text-transparent">
               Rewise
             </span>
             .
           </h1>
-          <p className="text-foreground/90 text-sm leading-normal md:text-base">
+          <p className="text-sm leading-normal text-foreground/90 md:text-base">
             {t('welcome_msg')}
           </p>
 
@@ -105,7 +105,7 @@ export function EmptyScreen({
                 onClick={() => setInput(message.message)}
               >
                 {message.icon}
-                <div className="line-clamp-1 whitespace-normal break-all">
+                <div className="line-clamp-1 break-all whitespace-normal">
                   {message.heading}
                 </div>
               </Button>
@@ -124,9 +124,9 @@ export function EmptyScreen({
                 {chats.slice(0, 2).map((chat) => (
                   <div
                     key={chat.id}
-                    className="bg-foreground/5 flex w-full items-center gap-2 rounded border p-2"
+                    className="flex w-full items-center gap-2 rounded border bg-foreground/5 p-2"
                   >
-                    <MessageCircle className="text-foreground/80 shrink-0" />
+                    <MessageCircle className="shrink-0 text-foreground/80" />
                     <div className="flex w-full flex-col items-start">
                       <Link
                         href={`/${wsId}/chat/${chat.id}`}
@@ -140,8 +140,8 @@ export function EmptyScreen({
                           className={cn(
                             'inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase',
                             chat.is_public
-                              ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
-                              : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
+                              ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'
+                              : 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red'
                           )}
                         >
                           {chat.is_public ? (
@@ -157,13 +157,13 @@ export function EmptyScreen({
                           )}
                         </span>
                         {chat.model && (
-                          <span className="bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                          <span className="inline-flex items-center gap-1 rounded border border-dynamic-yellow/20 bg-dynamic-yellow/10 px-1 py-0.5 font-mono font-semibold text-dynamic-yellow lowercase">
                             <Sparkle className="h-3 w-3" />
                             {chat.model}
                           </span>
                         )}
                         {chat.summary && (
-                          <span className="bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                          <span className="inline-flex items-center gap-1 rounded border border-dynamic-purple/20 bg-dynamic-purple/10 px-1 py-0.5 font-mono font-semibold text-dynamic-purple lowercase">
                             <Box className="h-3 w-3" />
                             {t('summarized')}
                           </span>

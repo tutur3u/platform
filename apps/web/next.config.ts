@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@repo/ui'],
+  transpilePackages: ['@tutur3u/ui'],
   images: {
     remotePatterns: [
       {
@@ -31,8 +31,26 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // matching all API routes
+        // matching all v1 API routes
         source: '/api/v1/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET,DELETE,PATCH,POST,PUT',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value:
+              'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version',
+          },
+        ],
+      },
+
+      {
+        // matching all AI Chat API routes
+        source: '/api/ai/chat/:path*',
         headers: [
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
           { key: 'Access-Control-Allow-Origin', value: '*' },

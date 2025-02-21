@@ -2,7 +2,7 @@
 
 import { Calendar } from './core';
 import { WorkspaceUserAttendance } from './utils';
-import { Button } from '@repo/ui/components/ui/button';
+import { Button } from '@tutur3u/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
@@ -34,7 +34,7 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
 
   return (
     <div>
-      <div className="bg-foreground/5 mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border p-4 text-xl font-bold md:text-2xl">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border bg-foreground/5 p-4 text-xl font-bold md:text-2xl">
         <div className="flex items-center gap-1">{currentYear}</div>
         <div className="flex items-center gap-1">
           <Button size="xs" variant="secondary" onClick={handlePrevYear}>

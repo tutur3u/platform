@@ -1,19 +1,15 @@
 'use client';
 
 import { Filter } from '../../../users/filters';
-import { cn } from '@/lib/utils';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
 import { getInitials } from '@/utils/name-helper';
-import { createClient } from '@/utils/supabase/client';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@repo/ui/components/ui/avatar';
-import { Button } from '@repo/ui/components/ui/button';
-import SearchBar from '@repo/ui/components/ui/custom/search-bar';
-import { ScrollArea } from '@repo/ui/components/ui/scroll-area';
 import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Button } from '@tutur3u/ui/button';
+import SearchBar from '@tutur3u/ui/custom/search-bar';
+import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { cn } from '@tutur3u/utils/format';
 import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -101,9 +97,9 @@ export default function GroupMemberForm({
               <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
                 <AvatarImage
                   src={user?.avatar_url ?? undefined}
-                  className="border-foreground/50 overflow-clip rounded-full border"
+                  className="overflow-clip rounded-full border border-foreground/50"
                 />
-                <AvatarFallback className="border-foreground/50 border font-semibold">
+                <AvatarFallback className="border border-foreground/50 font-semibold">
                   {user?.display_name ? (
                     getInitials(user.display_name)
                   ) : (
@@ -137,9 +133,9 @@ export default function GroupMemberForm({
                   <Avatar className="relative h-12 w-12 overflow-visible font-semibold">
                     <AvatarImage
                       src={user?.avatar_url ?? undefined}
-                      className="border-foreground/50 overflow-clip rounded-full border"
+                      className="overflow-clip rounded-full border border-foreground/50"
                     />
-                    <AvatarFallback className="border-foreground/50 border font-semibold">
+                    <AvatarFallback className="border border-foreground/50 font-semibold">
                       {user?.display_name
                         ? getInitials(user?.display_name)
                         : null}
@@ -168,7 +164,7 @@ export default function GroupMemberForm({
           </div>
         </ScrollArea>
       ) : (
-        <div className="text-foreground/50 mt-4 rounded border border-dashed p-4 text-center font-semibold md:p-8">
+        <div className="mt-4 rounded border border-dashed p-4 text-center font-semibold text-foreground/50 md:p-8">
           This group has no members yet.
         </div>
       )}

@@ -1,13 +1,13 @@
 'use client';
 
-import { MeetTogetherPlan } from '@/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@/types/primitives/Timeblock';
-import { User as PlatformUser } from '@/types/primitives/User';
 import {
   addTimeblocks,
   durationToTimeblocks,
   removeTimeblocks,
 } from '@/utils/timeblock-helper';
+import { MeetTogetherPlan } from '@tutur3u/types/primitives/MeetTogetherPlan';
+import { Timeblock } from '@tutur3u/types/primitives/Timeblock';
+import { User as PlatformUser } from '@tutur3u/types/primitives/User';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';

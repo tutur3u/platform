@@ -1,8 +1,8 @@
 'use client';
 
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@tutur3u/supabase/next/client';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Props {
   params: Promise<{

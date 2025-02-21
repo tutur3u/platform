@@ -1,12 +1,13 @@
 'use client';
 
 import { Filter } from '../filters';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { UserGroupTag } from '@/types/primitives/UserGroupTag';
-import { createClient } from '@/utils/supabase/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import { ColorPicker } from '@repo/ui/components/ui/color-picker';
+import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import { UserGroupTag } from '@tutur3u/types/primitives/UserGroupTag';
+import { Button } from '@tutur3u/ui/button';
+import { ColorPicker } from '@tutur3u/ui/color-picker';
 import {
   Form,
   FormControl,
@@ -14,11 +15,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Input } from '@repo/ui/components/ui/input';
-import { Separator } from '@repo/ui/components/ui/separator';
-import { toast } from '@repo/ui/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Input } from '@tutur3u/ui/input';
+import { Separator } from '@tutur3u/ui/separator';
 import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -124,7 +124,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
                   text={form.watch('name')}
                   value={field.value}
                   onChange={field.onChange}
-                  className="line-clamp-1 w-full flex-grow-0 overflow-ellipsis whitespace-nowrap break-all"
+                  className="line-clamp-1 w-full grow-0 break-all text-ellipsis whitespace-nowrap"
                 />
               </FormControl>
               <FormMessage />

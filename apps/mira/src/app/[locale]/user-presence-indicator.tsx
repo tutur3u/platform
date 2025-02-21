@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@tutur3u/utils/format';
 import { ReactNode } from 'react';
 
 export default function UserPresenceIndicator({
@@ -13,7 +13,7 @@ export default function UserPresenceIndicator({
   return (
     <div
       className={cn(
-        'border-background absolute bottom-0 right-0 z-20 h-2 w-2 rounded-full border',
+        'absolute right-0 bottom-0 z-20 h-2 w-2 rounded-full border border-background',
         'bg-dynamic-green',
         className
       )}

@@ -1,8 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
+import { Button } from '@tutur3u/ui/button';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
 import {
   Form,
   FormControl,
@@ -11,9 +11,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@repo/ui/components/ui/form';
-import { Textarea } from '@repo/ui/components/ui/textarea';
-import { toast } from '@repo/ui/hooks/use-toast';
+} from '@tutur3u/ui/form';
+import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Textarea } from '@tutur3u/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { use } from 'react';
 import { useForm } from 'react-hook-form';
@@ -85,7 +85,7 @@ export default function WorkspaceUserGroupTagsPage({ params }: Props) {
         pluralTitle={t('ai_chat.new_chatbot')}
         description={t('ai_chat.my_chatbots_description')}
       />
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-6 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-6 md:flex-row md:items-start">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -100,7 +100,7 @@ export default function WorkspaceUserGroupTagsPage({ params }: Props) {
                   <FormControl>
                     <input
                       type="text"
-                      className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
                       placeholder="e.g., Marketing Assistant, Code Review Expert"
                       {...field}
                     />

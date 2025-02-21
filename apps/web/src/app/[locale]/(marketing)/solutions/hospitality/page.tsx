@@ -6,10 +6,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@repo/ui/components/ui/accordion';
-import { Badge } from '@repo/ui/components/ui/badge';
-import { Button } from '@repo/ui/components/ui/button';
-import { Card } from '@repo/ui/components/ui/card';
+} from '@tutur3u/ui/accordion';
+import { Badge } from '@tutur3u/ui/badge';
+import { Button } from '@tutur3u/ui/button';
+import { Card } from '@tutur3u/ui/card';
 import { motion } from 'framer-motion';
 import {
   BarChart3,
@@ -145,12 +145,12 @@ export default function HospitalityPage() {
         <Badge variant="secondary" className="mb-4">
           Hospitality Management Solutions
         </Badge>
-        <h1 className="mb-4 text-balance text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
           <GradientHeadline>
             Transform Your Hospitality Business
           </GradientHeadline>
         </h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Elevate guest experiences and streamline operations with our
           comprehensive hospitality management platform.
         </p>
@@ -168,7 +168,7 @@ export default function HospitalityPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <Star className="text-primary h-12 w-12" />
+            <Star className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">
               Trusted by Leading Hospitality Brands
             </h2>
@@ -193,7 +193,7 @@ export default function HospitalityPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Card className="hover:border-primary h-full p-6 transition-colors">
+              <Card className="h-full p-6 transition-colors hover:border-primary">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
                   <h3 className="text-xl font-semibold">{feature.title}</h3>
@@ -211,7 +211,7 @@ export default function HospitalityPage() {
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
-              <Bed className="text-primary mb-4 h-8 w-8" />
+              <Bed className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-2 text-xl font-bold">
                 Enhanced Guest Experience
               </h3>
@@ -219,11 +219,11 @@ export default function HospitalityPage() {
                 Deliver exceptional service and personalized experiences with
                 our comprehensive hospitality solution.
               </p>
-              <div className="bg-background/50 mt-4 flex-grow rounded-lg p-4">
+              <div className="mt-4 flex-grow rounded-lg bg-background/50 p-4">
                 <div className="space-y-2">
-                  <div className="bg-primary/20 h-2 w-3/4 rounded" />
-                  <div className="bg-primary/20 h-2 w-1/2 rounded" />
-                  <div className="bg-primary/20 h-2 w-2/3 rounded" />
+                  <div className="h-2 w-3/4 rounded bg-primary/20" />
+                  <div className="h-2 w-1/2 rounded bg-primary/20" />
+                  <div className="h-2 w-2/3 rounded bg-primary/20" />
                 </div>
               </div>
             </div>
@@ -237,10 +237,10 @@ export default function HospitalityPage() {
               >
                 {benefit.icon}
                 <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {benefit.description}
                 </p>
-                <div className="bg-primary/10 mt-4 h-1 w-0 transition-all group-hover:w-full" />
+                <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
               </motion.div>
             </Card>
           ))}
@@ -252,23 +252,23 @@ export default function HospitalityPage() {
         <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
-            <Users className="text-primary mx-auto mb-4 h-8 w-8" />
+            <Users className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Guest Management</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Comprehensive guest profiles
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Clock className="text-primary mx-auto mb-4 h-8 w-8" />
+            <Clock className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">24/7 Operations</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Round-the-clock service support
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <Coffee className="text-primary mx-auto mb-4 h-8 w-8" />
+            <Coffee className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Service Management</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Streamlined service delivery
             </p>
           </Card>
@@ -280,41 +280,41 @@ export default function HospitalityPage() {
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="p-8">
-              <HeartHandshake className="text-primary mb-4 h-8 w-8" />
+              <HeartHandshake className="mb-4 h-8 w-8 text-primary" />
               <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
-              <p className="text-muted-foreground mb-4">
+              <p className="mb-4 text-muted-foreground">
                 "This platform has revolutionized how we manage our properties.
                 Guest satisfaction has soared, and our operations are more
                 efficient than ever."
               </p>
               <p className="font-semibold">- Sarah Thompson</p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 General Manager, Luxury Hotels Group
               </p>
             </div>
-            <div className="bg-primary/5 flex items-center justify-center p-8">
+            <div className="flex items-center justify-center bg-primary/5 p-8">
               <div className="grid gap-4 text-center">
                 <div>
-                  <div className="text-primary mb-2 text-3xl font-bold">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     40%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Increased Efficiency
                   </div>
                 </div>
                 <div>
-                  <div className="text-primary mb-2 text-3xl font-bold">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     95%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Guest Satisfaction
                   </div>
                 </div>
                 <div>
-                  <div className="text-primary mb-2 text-3xl font-bold">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     30%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Revenue Growth
                   </div>
                 </div>
@@ -362,7 +362,7 @@ export default function HospitalityPage() {
           <h2 className="mb-4 text-3xl font-bold">
             Ready to Transform Your Hospitality Business?
           </h2>
-          <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
+          <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">
             Join leading hospitality brands using our platform to enhance guest
             experiences and streamline operations.
           </p>

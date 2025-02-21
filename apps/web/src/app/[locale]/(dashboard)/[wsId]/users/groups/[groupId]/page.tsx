@@ -5,14 +5,14 @@ import GroupMemberForm from './form';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { cn } from '@/lib/utils';
-import { UserGroup } from '@/types/primitives/UserGroup';
-import { WorkspaceUser } from '@/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@/types/primitives/WorkspaceUserField';
-import { createClient } from '@/utils/supabase/server';
-import { Button } from '@repo/ui/components/ui/button';
-import FeatureSummary from '@repo/ui/components/ui/custom/feature-summary';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { createClient } from '@tutur3u/supabase/next/server';
+import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
+import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
+import { Button } from '@tutur3u/ui/button';
+import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Separator } from '@tutur3u/ui/separator';
+import { cn } from '@tutur3u/utils/format';
 import {
   Box,
   Calendar,
@@ -160,7 +160,7 @@ export default async function UserGroupDetailsPage({
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
         {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start"> */}
         {excludedUserGroups.length ? (
-          <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
             <div className="mb-2 text-xl font-semibold">
               {t('ws-roles.members')}
             </div>
@@ -173,14 +173,14 @@ export default async function UserGroupDetailsPage({
           </div>
         ) : null}
 
-        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+        <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
           <div className="mb-2 text-xl font-semibold">
             {t('ws-user-group-details.schedule')}
           </div>
           <GroupSchedule wsId={wsId} groupId={groupId} />
         </div>
 
-        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+        <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
           <PostsClient
             wsId={wsId}
             groupId={groupId}
@@ -190,7 +190,7 @@ export default async function UserGroupDetailsPage({
         </div>
 
         {lpCount ? (
-          <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
+          <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
             <div className="mb-2 text-xl font-semibold">
               {t('user-data-table.linked_products')}
               {!!lpCount && ` (${lpCount})`}
@@ -199,7 +199,7 @@ export default async function UserGroupDetailsPage({
               {linkedProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-background flex items-center rounded-lg border p-2 md:p-4"
+                  className="flex items-center rounded-lg border bg-background p-2 md:p-4"
                 >
                   <Box className="mr-2 h-8 w-8" />
                   <div>

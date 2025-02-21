@@ -1,6 +1,6 @@
 import WorkspaceInvites from './workspace-invites';
 import LoadingIndicator from '@/components/common/LoadingIndicator';
-import { Separator } from '@repo/ui/components/ui/separator';
+import { Separator } from '@tutur3u/ui/separator';
 // import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
@@ -9,7 +9,7 @@ export default async function OnboardingPage() {
 
   return (
     <div className="inset-0 flex h-full items-center justify-center p-4 lg:px-32">
-      <div className="border-foreground/20 flex max-h-full w-full max-w-2xl flex-col items-center gap-4 rounded-xl border p-4 backdrop-blur-2xl md:p-8">
+      <div className="flex max-h-full w-full max-w-2xl flex-col items-center gap-4 rounded-xl border border-foreground/20 p-4 backdrop-blur-2xl md:p-8">
         <Suspense
           fallback={
             <div className="flex h-full w-full items-center justify-center">
@@ -22,7 +22,7 @@ export default async function OnboardingPage() {
               {'just-a-moment'}
             </div>
 
-            <div className="text-foreground/80 text-lg font-semibold md:text-xl">
+            <div className="text-lg font-semibold text-foreground/80 md:text-xl">
               {'just-a-moment-desc'}
             </div>
           </div>

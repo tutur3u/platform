@@ -7,8 +7,6 @@ import { BoardColumn, BoardContainer } from './task-list';
 import { TaskListForm } from './task-list-form';
 import { hasDraggableData } from './utils';
 import { getTaskLists, moveTask } from '@/lib/task-helper';
-import { type Task as TaskType } from '@/types/primitives/TaskBoard';
-import { createClient } from '@/utils/supabase/client';
 import {
   DndContext,
   type DragEndEvent,
@@ -24,6 +22,8 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
+import { createClient } from '@tutur3u/supabase/next/client';
+import { type Task as TaskType } from '@tutur3u/types/primitives/TaskBoard';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
