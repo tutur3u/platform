@@ -1,0 +1,17 @@
+import { Problems } from '../challenges';
+import ChatBox from './components/prompt-form';
+import { Card } from '@tutur3u/ui/card';
+
+export default function PromptComponent({
+  problem,
+  challengeId,
+}: {
+  problem: Problems;
+  challengeId: string;
+}) {
+  return (
+    <Card className="h-[813px] w-1/2 overflow-y-auto p-4 pt-10">
+      <ChatBox challengeId={challengeId} problem={problem}></ChatBox>
+    </Card>
+  );
+}
