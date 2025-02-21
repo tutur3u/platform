@@ -22,7 +22,8 @@
     "next-env.d.ts",
     "next.config.mjs",
     "postcss.config.mjs",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "../../packages/ui/src/components/ui/markdown.tsx"
   ],
   "exclude": ["node_modules"]
 }

@@ -1,11 +1,11 @@
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
 import { ChatMessageActions } from '@/components/chat-message-actions';
-import { MemoizedReactMarkdown } from '@/components/markdown';
 import { type Message } from '@tutur3u/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
 import { CodeBlock } from '@tutur3u/ui/codeblock';
 import { IconUser } from '@tutur3u/ui/icons';
+import { MemoizedReactMarkdown } from '@tutur3u/ui/markdown';
 import { cn } from '@tutur3u/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
@@ -20,6 +20,7 @@ import remarkMath from 'remark-math';
 export interface ChatMessageProps {
   message: Message & { chat_id?: string; created_at?: string };
   model?: string | null;
+  // eslint-disable-next-line no-unused-vars
   setInput?: (input: string) => void;
 }
 
@@ -100,9 +101,13 @@ export function FleetingAssistantMessage({
         <ChatMessageActions message={message} />
       </div>
 
-      <div className="flex-1 space-y-2">
+      <div
+        className={cn(
+          'flex-1 space-y-2',
+          'prose w-[calc(100vw-8rem)] min-w-full break-words text-foreground md:w-[38rem] lg:w-full dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2'
+        )}
+      >
         <MemoizedReactMarkdown
-          className="prose w-[calc(100%-2rem)] break-words text-foreground md:w-[30.8rem] dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2"
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
@@ -186,7 +191,7 @@ export function FleetingAssistantMessage({
                 </blockquote>
               );
             },
-            code({ node, className, children, ...props }) {
+            code({ className, children, ...props }) {
               if (children && Array.isArray(children) && children.length) {
                 if (children[0] == '▍') {
                   return (

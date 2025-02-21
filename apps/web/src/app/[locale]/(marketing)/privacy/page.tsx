@@ -1,8 +1,8 @@
 'use client';
 
-import { MemoizedReactMarkdown } from '@/components/markdown';
 import { Badge } from '@tutur3u/ui/badge';
 import { Card } from '@tutur3u/ui/card';
+import { MemoizedReactMarkdown } from '@tutur3u/ui/markdown';
 import { ScrollArea } from '@tutur3u/ui/scroll-area';
 import { Separator } from '@tutur3u/ui/separator';
 import {

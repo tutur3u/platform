@@ -2,7 +2,6 @@
 
 import CrawlButton from './crawl-button';
 import { formatHTML, unescapeMarkdownString } from './utils';
-import { MemoizedReactMarkdown } from '@/components/markdown';
 import { Button } from '@tutur3u/ui/button';
 import {
   Card,
@@ -11,7 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@tutur3u/ui/card';
+import { MemoizedReactMarkdown } from '@tutur3u/ui/markdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
+import { cn } from '@tutur3u/utils/format';
 import { formatDistance } from 'date-fns';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -144,9 +145,14 @@ export function CrawlerContent({
                       </span>
                     </Button>
                   </div>
-                  <div className="p-4">
+                  <div
+                    className={cn(
+                      'p-4',
+                      'prose w-[calc(100vw-8rem)] min-w-full break-words text-foreground md:w-[38rem] lg:w-full dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2'
+                    )}
+                  >
                     {crawledUrl.markdown ? (
-                      <MemoizedReactMarkdown className="prose max-w-full dark:prose-invert">
+                      <MemoizedReactMarkdown>
                         {unescapeMarkdownString(
                           JSON.parse(crawledUrl.markdown)?.text_content
                         )}
