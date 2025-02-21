@@ -64,7 +64,7 @@ export default function LoginForm() {
       // if on DEV_MODE, auto-open inbucket
       if (DEV_MODE) {
         window.open(
-          window.location.origin.replace('7803', '8004') + '/monitor',
+          window.location.origin.replace('7805', '8004') + '/monitor',
           '_blank'
         );
       }
@@ -125,8 +125,13 @@ export default function LoginForm() {
     });
 
     if (res.ok) {
-      const nextUrl = searchParams.get('nextUrl');
-      router.push(nextUrl ?? '/onboarding');
+      const nextUrl = searchParams.get('nextUrl') ?? '/onboarding';
+      console.log('Before redirect:', nextUrl);
+
+      // Save to localStorage to persist after refresh
+      localStorage.setItem('nextUrl', nextUrl);
+
+      router.push(nextUrl);
       router.refresh();
     } else {
       setLoading(false);
@@ -140,6 +145,14 @@ export default function LoginForm() {
       });
     }
   };
+
+  useEffect(() => {
+    const storedNextUrl = localStorage.getItem('nextUrl');
+    if (storedNextUrl) {
+      console.log('After refresh:', storedNextUrl);
+      localStorage.removeItem('nextUrl'); // Clear after logging
+    }
+  }, []);
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     const { email, otp } = data;
