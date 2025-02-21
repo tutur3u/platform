@@ -28,6 +28,7 @@ export default function Page({ params }: Props) {
   );
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
   const [wsId, setWsId] = useState('');
+  const [challengeId, setChallengeId] = useState('');
   const database = createClient();
   const router = useRouter();
 
@@ -65,6 +66,7 @@ export default function Page({ params }: Props) {
       const { wsId, challengeId } = await params;
       const challengeData = getChallenge(parseInt(challengeId));
       setChallenge(challengeData);
+      setChallengeId(challengeId);
       setWsId(wsId);
       const timerData = await fetchTimer(String(challengeData?.id));
       setFetchedTimer(timerData);
@@ -112,7 +114,7 @@ export default function Page({ params }: Props) {
         </div>
 
         <PromptComponent
-          challengeId={challenge.id}
+          challengeId={challengeId}
           problem={problems[currentProblemIndex]}
         />
       </div>
