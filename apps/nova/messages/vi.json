@@ -60,7 +60,7 @@
     "download": "Tải xuống",
     "rename": "Đổi tên",
     "processing": "Đang xử lý...",
-    "saving": "Đang lưu",
+    "saving": "Đang lưu...",
     "loading": "Đang tải",
     "success": "Thành công",
     "complete": "Hoàn tất",
@@ -92,6 +92,7 @@
     "view": "Xem",
     "show-all": "Hiển thị tất cả",
     "hide-all": "Ẩn tất cả",
+    "columns": "Cột",
     "toggle-columns": "Hiển thị cột",
     "no-results": "Không có kết quả",
     "of": "trên",
@@ -170,11 +171,11 @@
     "about": "Giới thiệu",
     "contact": "Liên hệ",
     "ai-assistant": "Trợ lý AI",
-    "lms": "Hệ thống quản lý học tập",
+    "lms": "LMS",
     "calendar": "Lịch",
     "documents": "Tài liệu",
     "drive": "Kho lưu trữ",
-    "crm": "Quản lý quan hệ khách hàng",
+    "crm": "CRM",
     "inventory": "Quản kho",
     "finance": "Tài chính",
     "mail": "Hộp thư",
@@ -189,7 +190,11 @@
     "blog-description": "Đọc các bài viết và cập nhật mới nhất của chúng tôi.",
     "documentation-description": "Tìm tài liệu và hướng dẫn chi tiết.",
     "education-description": "Giải pháp dành riêng cho các tổ chức giáo dục.",
+    "retail-description": "Giải pháp dành riêng cho các doanh nghiệp bán lẻ.",
+    "hospitality-description": "Giải pháp dành riêng cho các doanh nghiệp khách sạn.",
+    "construction-description": "Giải pháp dành riêng cho các doanh nghiệp xây dựng.",
     "restaurants-description": "Quản lý hoạt động nhà hàng của bạn một cách hiệu quả.",
+    "manufacturing-description": "Giải pháp dành riêng cho các doanh nghiệp chế tạo.",
     "pharmacies-description": "Chuẩn hóa việc quản lý và dịch vụ nhà thuốc.",
     "realestate-description": "Tối ưu hóa hoạt động kinh doanh bất động sản của bạn.",
     "meet-together-description": "Lên lịch cuộc họp dễ dàng giữa các múi giờ khác nhau và đội ngũ khác nhau.",
@@ -213,7 +218,61 @@
     "usage_based_pricing": "Bảng giá",
     "usage_based_pricing_description": "Chỉ trả tiền cho những gì bạn sử dụng. Tất cả các gói đều bao gồm các tính năng cốt lõi với các giới hạn sử dụng khác nhau.",
     "faq": "Câu hỏi thường gặp",
-    "unlink": "Hủy liên kết"
+    "unlink": "Hủy liên kết",
+    "add_column": "Thêm Cột",
+    "add_column_description": "Nhập tên cho cột mới",
+    "column_name": "Tên Cột",
+    "explore": "Khám phá",
+    "actions": "hành động",
+    "clear_all": "Xóa tất cả",
+    "clear_all_title": "Xóa tất cả nội dung",
+    "clear_all_description": "Bạn có chắc chắn muốn xóa tất cả nội dung? Hành động này không thể hoàn tác.",
+    "clearing": "Đang xoá",
+    "retail": "Bán lẻ",
+    "manufacturing": "Chế tạo",
+    "hospitality": "Du lịch & Khách sạn",
+    "construction": "Thi công",
+    "changelog": "Nhật ký thay đổi",
+    "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
+    "security": "Bảo mật",
+    "security-description": "Tìm hiểu về cách chúng tôi bảo vệ dữ liệu và thông tin của bạn.",
+    "pitch-description": "Kế hoạch kinh doanh của Tuturuuu.",
+    "product-updates": "Cập nhật sản phẩm",
+    "product-updates-title": "Cập nhật sản phẩm",
+    "product-updates-description": "Theo dõi các tính năng, cải tiến và sửa lỗi mới nhất trong hành trình phát triển sản phẩm của chúng tôi.",
+    "new-features": "Tính năng mới",
+    "improvements": "Cải tiến",
+    "bug-fixes": "Sửa lỗi",
+    "stay-updated": "Cập nhật thường xuyên",
+    "changelog-subscribe-description": "Đăng ký nhận thông báo về các cập nhật và tính năng mới khi chúng được phát hành.",
+    "enter-email": "Nhập email của bạn",
+    "subscribe": "Đăng ký",
+    "view-full-documentation": "Xem tài liệu đầy đủ",
+    "company": "Công ty",
+    "pitch": "Kế hoạch kinh doanh",
+    "careers": "Việc làm",
+    "not_whitelisted": "Không có trong danh sách trắng",
+    "email_added": "Đã thêm email",
+    "error_adding_email": "Lỗi khi thêm email",
+    "history": "Lịch sử",
+    "public_document": "Tài liệu công khai",
+    "private_document": "Tài liệu riêng tư",
+    "last_saved": "Lần lưu cuối: {time}",
+    "unsaved_changes": "Bạn có thay đổi chưa được lưu",
+    "error_saving": "Lỗi khi lưu thay đổi",
+    "save_failed": "Không thể lưu thay đổi",
+    "retry_save": "Thử lưu lại",
+    "auto_save_enabled": "Tự động lưu đã bật",
+    "save_status": "Trạng thái lưu",
+    "document_status": "Trạng thái tài liệu",
+    "updating": "Đang cập nhật...",
+    "name_updated": "Đã cập nhật tên thành công",
+    "error_updating_name": "Lỗi khi cập nhật tên",
+    "visibility_updated": "Đã cập nhật quyền truy cập thành công",
+    "error_updating_visibility": "Lỗi khi cập nhật quyền truy cập",
+    "error_deleting": "Lỗi khi xoá tài liệu",
+    "domain_added": "Tên miền được thêm vào",
+    "error_adding_domain": "Không thể thêm miền"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -392,7 +451,11 @@
     "invalid_verification_code": "Mã xác thực không hợp lệ.",
     "resend": "Gửi lại",
     "processing": "Đang xử lý...",
-    "continue": "Tiếp tục"
+    "continue": "Tiếp tục",
+    "continue_with_google": "Tiếp tục với Google",
+    "continue_with_github": "Tiếp tục với GitHub",
+    "continue_with_apple": "Tiếp tục với Apple",
+    "continue_with_discord": "Tiếp tục với Discord"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",
@@ -459,7 +522,18 @@
     "slides": "Trang trình bày",
     "mail": "Hộp thư",
     "tasks": "Nhiệm vụ",
-    "education": "Giáo dục"
+    "education": "Giáo dục",
+    "models": "Các mô hình",
+    "datasets": "Bộ dữ liệu",
+    "pipelines": "Quy trình",
+    "cron": "Công việc định kỳ",
+    "workouts": "Vận động thể chất",
+    "readings": "Đọc sách",
+    "diet_and_nutrition": "Ăn uống",
+    "progress": "Tiến độ",
+    "metrics": "Chỉ số",
+    "crawlers": "Công cụ cào dữ liệu",
+    "queues": "Hàng chờ"
   },
   "team-tabs": {
     "overview": "Tổng quan",
@@ -556,8 +630,10 @@
   "user-data-table": {
     "id": "Mã số",
     "avatar_url": "Ảnh đại diện",
+    "name": "Tên",
     "full_name": "Họ và tên",
     "display_name": "Tên hiển thị",
+    "description": "Mô tả",
     "email": "Email",
     "phone": "SĐT",
     "gender": "Giới tính",
@@ -593,7 +669,11 @@
     "applying": "Đang áp dụng...",
     "selected": "nhóm",
     "linked_products": "Sản phẩm liên kết",
-    "remove-from-group": "Xóa khỏi nhóm"
+    "remove-from-group": "Xóa khỏi nhóm",
+    "url": "Liên kết",
+    "columns": "Cột",
+    "rows": "Dòng",
+    "type": "Loại"
   },
   "email-data-table": {
     "id": "Mã số",
@@ -801,6 +881,35 @@
     "user_count": "Số người dùng",
     "created_at": "Tạo lúc"
   },
+  "cron-job-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "description": "Mô tả",
+    "schedule": "Lịch trình",
+    "status": "Trạng thái",
+    "last_run": "Lần chạy cuối",
+    "next_run": "Lần Chạy tới",
+    "inactive": "Không hoạt động",
+    "active": "Đang hoạt động",
+    "running": "Đang chạy",
+    "failed": "Thất bại",
+    "created_at": "Tạo lúc"
+  },
+  "cron-execution-data-table": {
+    "id": "Mã số",
+    "job": "Công việc",
+    "status": "Trạng thái",
+    "started_at": "Bắt đầu lúc",
+    "finished_at": "Kết thúc lúc",
+    "created_at": "Tạo lúc"
+  },
+  "crawled-url-data-table": {
+    "id": "Mã số",
+    "url": "URL",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "created_at": "Tạo lúc"
+  },
   "ws-home": {
     "home": "Trang chủ",
     "description_p1": "Tổng quan về không gian làm việc",
@@ -880,15 +989,17 @@
     "create": "Tạo mã bí mật"
   },
   "ws-api-keys": {
-    "api_key": "Khoá API",
-    "api_keys": "Khoá API",
-    "description": "Khoá bí mật để truy cập dữ liệu của bạn từ bên ngoài thông qua API của Tuturuuu một cách an toàn và bảo mật.",
+    "api_key": "Khóa API",
+    "api_keys": "Khóa API",
+    "description": "Khóa API được sử dụng để xác thực các yêu cầu API.",
     "name": "Tên",
     "value": "Giá trị",
-    "create_key": "Tạo khoá",
-    "edit_key": "Sửa khoá",
-    "add_new_workspace_key": "Thêm một khoá API mới cho không gian làm việc này.",
-    "edit_existing_workspace_key": "Sửa khoá API đã tồn tại cho không gian làm việc này."
+    "create_key": "Tạo khóa",
+    "edit_key": "Sửa khóa",
+    "add_new_workspace_key": "Thêm khóa mới",
+    "edit_existing_workspace_key": "Sửa khóa hiện có",
+    "no_api_keys_found": "Không tìm thấy khóa API nào",
+    "select_api_key": "Chọn khóa API"
   },
   "ws-reports": {
     "report": "Báo cáo",
@@ -1584,7 +1695,10 @@
     "prompts": "Lệnh nhắc",
     "workflows": "Quy trình",
     "pipeline": "Luồng xử lý",
-    "pipelines": "Luồng xử lý"
+    "pipelines": "Luồng xử lý",
+    "executions": "Lịch sử chạy",
+    "cron_jobs": "Lịch trình",
+    "jobs": "Lịch trình"
   },
   "workspace-settings-layout": {
     "workspace": "Không gian làm việc",
@@ -1943,5 +2057,419 @@
         }
       }
     }
-  }
+  },
+  "ws-models": {
+    "plural": "Các mô hình",
+    "singular": "Mô hình",
+    "create": "Tạo mô hình",
+    "create_description": "Tạo một mô hình mới",
+    "description": "Các mô hình là các mô hình AI được huấn luyện có thể được sử dụng cho các nhiệm vụ khác nhau."
+  },
+  "ws-datasets": {
+    "plural": "Bộ dữ liệu",
+    "singular": "Tập dữ liệu",
+    "description": "Tập dữ liệu được sử dụng để huấn luyện các mô hình AI.",
+    "create": "Tạo tập dữ liệu",
+    "create_description": "Tạo một tập dữ liệu",
+    "total_columns": "Tổng số cột",
+    "total_rows": "Tổng số dòng",
+    "last_updated": "Cập nhật lần cuối",
+    "add_row": "Thêm dòng",
+    "edit_row": "Chỉnh sửa dòng",
+    "delete_row": "Xóa dòng",
+    "confirm_delete_row": "Bạn có chắc chắn muốn xóa dòng này?",
+    "no_data": "Không có dữ liệu",
+    "columns_description": "Quản lý các cột trong bộ dữ liệu của bạn, bao gồm tên, mô tả và tên thay thế."
+  },
+  "ws-cron": {
+    "description": "Lịch trình được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể."
+  },
+  "ws-cron-jobs": {
+    "singular": "Công việc định kỳ",
+    "plural": "Công việc định kỳ",
+    "create": "Tạo công việc",
+    "create_description": "Tạo một công việc mới",
+    "description": "Công việc định kỳ được sử dụng để lên lịch các nhiệm vụ chạy vào thời gian cụ thể.",
+    "edit": "Chỉnh sửa công việc",
+    "edit_description": "Chỉnh sửa công việc hiện có"
+  },
+  "ws-cron-executions": {
+    "plural": "Lịch sử chạy",
+    "singular": "Lịch sử chạy",
+    "description": "Lịch sử chạy được sử dụng để xem lịch sử của các công việc định kỳ."
+  },
+  "landing": {
+    "headline": "Lối tắt thông minh của bạn",
+    "subheadline": "Kiểm soát quy trình làm việc, được tăng cường bởi AI",
+    "features": {
+      "title": "Tính năng",
+      "subtitle": "Khám phá các tính năng mạnh mẽ được thiết kế để nâng cao năng suất và tối ưu hóa quy trình làm việc của bạn",
+      "ai_powered": {
+        "title": "Được hỗ trợ bởi AI",
+        "description": "Phát triển và tổ chức ý tưởng của bạn với tốc độ tư duy, với các công cụ thông minh được hỗ trợ bởi AI"
+      },
+      "collaboration": {
+        "title": "Hợp tác Nhóm",
+        "description": "Tính năng giao tiếp và hợp tác liền mạch cho toàn bộ đội ngũ của bạn"
+      },
+      "task_management": {
+        "title": "Quản lý Công việc",
+        "description": "Tạo công việc, giao cho đội ngũ của bạn và theo dõi tiến độ, tất cả trong một nơi"
+      },
+      "document_management": {
+        "title": "Quản lý Tài liệu",
+        "description": "Viết và duy trì tài liệu của bạn một cách dễ dàng, với trình soạn thảo trực quan và mạnh mẽ"
+      },
+      "finance_tracking": {
+        "title": "Theo dõi Tài chính",
+        "description": "Theo dõi tài chính và cập nhật cho đội ngũ của bạn, để bạn có thể tập trung vào những điều quan trọng"
+      },
+      "open_source": {
+        "title": "Mã nguồn Mở",
+        "description": "Tuturuuu là mã nguồn mở, vì vậy bạn có thể đóng góp cho dự án và làm cho nó tốt hơn cho mọi người"
+      }
+    },
+    "products": {
+      "title": "Sản phẩm",
+      "subtitle": "Khám phá bộ sản phẩm mạnh mẽ được thiết kế để giúp bạn làm việc thông minh hơn",
+      "ai_assistant": {
+        "title": "Trợ lý AI",
+        "description": "Tự động hóa thông minh và thông tin chi tiết được hỗ trợ bởi AI tiên tiến"
+      },
+      "meet_together": {
+        "title": "Họp cùng nhau",
+        "description": "Cuộc họp trực tuyến, hợp tác nhóm và quản lý dự án trong một nơi"
+      },
+      "calendar": {
+        "title": "Lịch",
+        "description": "Công cụ lập lịch và quản lý thời gian thông minh"
+      },
+      "documents": {
+        "title": "Tài liệu",
+        "description": "Lưu trữ, chia sẻ và cộng tác tài liệu tập trung"
+      },
+      "drive": {
+        "title": "Kho lưu trữ",
+        "description": "Lưu trữ đám mây an toàn cho tất cả tệp và dữ liệu kinh doanh của bạn"
+      },
+      "crm": {
+        "title": "CRM",
+        "description": "Xây dựng và duy trì các mối quan hệ khách hàng có giá trị"
+      },
+      "finance": {
+        "title": "Tài chính",
+        "description": "Quản lý và báo cáo tài chính toàn diện"
+      },
+      "inventory": {
+        "title": "Kho hàng",
+        "description": "Theo dõi và quản lý kho hàng theo thời gian thực"
+      },
+      "tasks": {
+        "title": "Công việc",
+        "description": "Theo dõi công việc và phối hợp nhóm được tối ưu hóa"
+      },
+      "workflows": {
+        "title": "Quy trình",
+        "description": "Quy trình kinh doanh và công việc tự động hóa"
+      }
+    },
+    "solutions": {
+      "title": "Giải pháp",
+      "subtitle": "Giải pháp tùy chỉnh cho từng ngành",
+      "industries": {
+        "manufacturing": "Sản xuất",
+        "healthcare": "Y tế",
+        "education": "Giáo dục",
+        "retail": "Bán lẻ",
+        "real_estate": "Bất động sản",
+        "hospitality": "Khách sạn",
+        "construction": "Xây dựng",
+        "pharmacies": "Nhà thuốc"
+      }
+    },
+    "benefits": {
+      "title": "Lợi ích Vượt trội",
+      "subtitle": "Trải nghiệm những ưu điểm của nền tảng tất cả trong một được thiết kế cho doanh nghiệp hiện đại",
+      "for_businesses": {
+        "title": "Cho Doanh nghiệp",
+        "items": [
+          "Giảm chi phí vận hành",
+          "Cải thiện hiệu quả và năng suất",
+          "Ra quyết định tốt hơn với thông tin chi tiết từ AI",
+          "Tăng cường hợp tác nhóm",
+          "Tối ưu hóa quy trình làm việc",
+          "Giải pháp có thể mở rộng cho sự phát triển"
+        ]
+      },
+      "for_teams": {
+        "title": "Cho Đội ngũ",
+        "items": [
+          "Giao tiếp liền mạch",
+          "Hợp tác thời gian thực",
+          "Quản lý công việc tự động",
+          "Truy cập thông tin tập trung",
+          "Công cụ và tính năng tích hợp",
+          "Nâng cao năng suất"
+        ]
+      }
+    },
+    "how_it_works": {
+      "title": "Cách Hoạt động",
+      "subtitle": "Bắt đầu với Tuturuuu chỉ trong vài bước đơn giản",
+      "steps": {
+        "step1": {
+          "title": "Đăng Ký",
+          "description": "Tạo tài khoản trong vài giây và bắt đầu dùng thử miễn phí"
+        },
+        "step2": {
+          "title": "Thiết Lập Không Gian Làm Việc",
+          "description": "Tùy chỉnh không gian làm việc và mời các thành viên trong nhóm"
+        },
+        "step3": {
+          "title": "Bắt Đầu Cộng Tác",
+          "description": "Bắt đầu sử dụng các công cụ mạnh mẽ để tăng năng suất"
+        },
+        "step4": {
+          "title": "Mở Rộng & Phát Triển",
+          "description": "Mở rộng việc sử dụng khi doanh nghiệp phát triển với nền tảng linh hoạt của chúng tôi"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Người Dùng Nói Gì",
+      "subtitle": "Tham gia cùng hàng nghìn người dùng hài lòng tin tưởng Tuturuuu",
+      "items": [
+        {
+          "quote": "Tuturuuu đã thay đổi cách chúng tôi làm việc. Các tính năng AI thật đáng kinh ngạc!",
+          "author": "Sarah Chen",
+          "role": "Quản lý Sản phẩm",
+          "company": "TechCorp"
+        },
+        {
+          "quote": "Giải pháp tất cả trong một tốt nhất mà chúng tôi từng tìm thấy cho nhu cầu của đội ngũ.",
+          "author": "Michael Rodriguez",
+          "role": "Giám đốc Điều hành",
+          "company": "StartupX"
+        },
+        {
+          "quote": "Giao diện trực quan và tính năng mạnh mẽ. Rất đáng để giới thiệu!",
+          "author": "Emily Johnson",
+          "role": "Trưởng nhóm",
+          "company": "DesignPro"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Sẵn Sàng Bắt Đầu?",
+      "subtitle": "Tham gia cùng hàng nghìn đội nhóm đang sử dụng Tuturuuu",
+      "primary_button": "Dùng Thử Miễn Phí",
+      "secondary_button": "Liên Hệ Bán Hàng",
+      "no_card_required": "Không cần thẻ tín dụng"
+    },
+    "ai_revolution": {
+      "title": "Cuộc Cách Mạng AI",
+      "subtitle": "Trải nghiệm tương lai của công việc với AI hiểu, thích nghi và phát triển cùng bạn",
+      "items": [
+        {
+          "title": "Tư duy Nhanh hơn",
+          "description": "Thông tin chi tiết và tự động hóa được hỗ trợ bởi AI giúp bạn ra quyết định nhanh hơn 10 lần"
+        },
+        {
+          "title": "Làm việc Thông minh hơn",
+          "description": "Để AI xử lý các công việc lặp lại trong khi bạn tập trung vào những điều quan trọng nhất"
+        },
+        {
+          "title": "Phát triển Lớn mạnh hơn",
+          "description": "Mở rộng hoạt động một cách dễ dàng với AI học hỏi và thích nghi"
+        },
+        {
+          "title": "Luôn Dẫn đầu",
+          "description": "Luôn ở vị trí dẫn đầu với khả năng AI không ngừng phát triển"
+        }
+      ]
+    },
+    "universal_value": {
+      "title": "Cho Mọi người, Mọi nơi",
+      "subtitle": "Từ doanh nhân cá nhân đến doanh nghiệp toàn cầu, Tuturuuu thích nghi với nhu cầu của bạn",
+      "categories": {
+        "business_size": {
+          "title": "Mọi Quy mô",
+          "items": [
+            "Doanh nhân & Freelancer",
+            "Doanh nghiệp Vừa và Nhỏ",
+            "Doanh nghiệp Lớn",
+            "Tổ chức Toàn cầu"
+          ]
+        },
+        "industries": {
+          "title": "Mọi Ngành nghề",
+          "items": [
+            "Công nghệ & Đổi mới",
+            "Y tế & Sức khỏe",
+            "Giáo dục & Học tập",
+            "Bán lẻ & Thương mại điện tử",
+            "Sản xuất & Chế tạo",
+            "Dịch vụ & Tư vấn",
+            "Sáng tạo & Giải trí",
+            "Phi lợi nhuận & Tác động xã hội"
+          ]
+        },
+        "use_cases": {
+          "title": "Mọi Mục tiêu",
+          "items": [
+            "Tối ưu hóa Hoạt động",
+            "Tăng Năng suất",
+            "Nâng cao Hợp tác",
+            "Thúc đẩy Đổi mới",
+            "Cải thiện Trải nghiệm Khách hàng",
+            "Mở rộng Toàn cầu",
+            "Giảm Chi phí",
+            "Đạt được Tính bền vững"
+          ]
+        }
+      }
+    },
+    "ai_features": {
+      "title": "AI là Cốt lõi",
+      "subtitle": "Mọi tính năng đều được nâng cao bởi trí tuệ nhân tạo tiên tiến",
+      "features": [
+        {
+          "title": "Tự động hóa Thông minh",
+          "description": "Tự động hóa quy trình phức tạp với AI học hỏi từ sở thích của bạn"
+        },
+        {
+          "title": "Thông tin Chi tiết Thông minh",
+          "description": "Nhận các đề xuất hữu ích dựa trên dữ liệu và xu hướng ngành của bạn"
+        },
+        {
+          "title": "Hợp tác Tự nhiên",
+          "description": "Làm việc với AI hiểu ngữ cảnh và giao tiếp tự nhiên"
+        },
+        {
+          "title": "Phân tích Dự đoán",
+          "description": "Dự đoán thách thức và cơ hội với dự báo được hỗ trợ bởi AI"
+        },
+        {
+          "title": "Học hỏi Thích nghi",
+          "description": "AI liên tục cải thiện dựa trên mô hình sử dụng của đội ngũ bạn"
+        },
+        {
+          "title": "Trí tuệ Toàn cầu",
+          "description": "Truy cập thông tin từ dữ liệu toàn cầu trong khi vẫn đảm bảo quyền riêng tư"
+        }
+      ]
+    },
+    "success_metrics": {
+      "title": "Tác động Thực tế",
+      "subtitle": "Tham gia cùng hàng nghìn tổ chức đạt được kết quả đáng kinh ngạc",
+      "metrics": [
+        {
+          "value": "10x",
+          "label": "Ra quyết định Nhanh hơn"
+        },
+        {
+          "value": "80%",
+          "label": "Thời gian Tiết kiệm cho Công việc Thường xuyên"
+        },
+        {
+          "value": "50%",
+          "label": "Giảm Chi phí Hoạt động"
+        },
+        {
+          "value": "3x",
+          "label": "Tăng Năng suất Đội ngũ"
+        }
+      ]
+    },
+    "transformation": {
+      "title": "Chuyển đổi Công việc",
+      "subtitle": "Trải nghiệm sức mạnh của chuyển đổi được hỗ trợ bởi AI",
+      "steps": [
+        {
+          "title": "Bắt đầu Ngay lập tức",
+          "description": "Bắt đầu và vận hành trong vài phút với hướng dẫn trực quan"
+        },
+        {
+          "title": "Mở rộng Dễ dàng",
+          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại"
+        },
+        {
+          "title": "Phát triển Liên tục",
+          "description": "Luôn dẫn đầu với AI học hỏi và cải thiện mỗi ngày"
+        }
+      ]
+    }
+  },
+  "ai-whitelist": {
+    "add_email": "Thêm email",
+    "add_domain": "Thêm tên miền"
+  },
+  "ws-ai-whitelist-domains": {
+    "plural": "Tên miền thuộc danh sách trắng",
+    "singular": "Tên miền thuộc danh sách trắng",
+    "description": "Các miền được liệt kê trắng được sử dụng để cho phép các miền cụ thể truy cập các tính năng AI.",
+    "create": "Tạo tên miền danh sách trắng",
+    "create_description": "Tạo một miền được liệt kê trong danh sách trắng"
+  },
+  "ws-crawlers": {
+    "plural": "Công cụ cào dữ liệu",
+    "singular": "Công cụ cào dữ liệu",
+    "description": "Công cụ cào dữ liệu được sử dụng để thu thập dữ liệu từ các trang web và nguồn dữ liệu khác.",
+    "create": "Tạo công cụ cào dữ liệu",
+    "create_description": "Tạo một công cụ cào dữ liệu mới"
+  },
+  "ws-pipelines": {
+    "plural": "Quy trình",
+    "singular": "Quy trình",
+    "description": "Quy trình được sử dụng để chạy các tác vụ có thể lập trình.",
+    "create": "Tạo quy trình",
+    "create_description": "Tạo một quy trình mới"
+  },
+  "ws-queues": {
+    "plural": "Hàng chờ",
+    "singular": "Hàng chờ",
+    "description": "Hàng chờ được sử dụng để quản lý các công việc và tác vụ.",
+    "create": "Tạo hàng chờ",
+    "create_description": "Tạo một hàng chờ mới"
+  },
+  "aurora": {
+    "statistical_models": "Mô hình thống kê",
+    "ml_models": "Mô hình học máy",
+    "last_updated": "Cập nhật lần cuối",
+    "current_price": "Giá hiện tại",
+    "forecast_range": "Phạm vi dự báo",
+    "high": "Cao",
+    "low": "Thấp",
+    "average": "Trung bình",
+    "trend": "Xu hướng",
+    "volatility": "Biến động giá",
+    "90_confidence_high": "Tự tin 90% (cao)",
+    "90_confidence_lo": "Tự tin 90% (thấp)",
+    "ml_price_prediction": "Dự đoán giá mô hình học máy",
+    "slope": "độ dốc",
+    "prediction_insights": "Những insights từ dự đoán",
+    "relative": "liên quan",
+    "strong": "Mạnh",
+    "moderate": "Vừa phải",
+    "weak": "Yếu đuối",
+    "model_comparison": "So sánh mô hình",
+    "select_date": "Chọn ngày",
+    "model_correlation": "Tương quan mô hình",
+    "no_data": "Không có dữ liệu.",
+    "model_performance": "Hiệu suất mô hình",
+    "stable": "Ổn định",
+    "improving": "Cải thiện",
+    "declining": "Suy giảm",
+    "best_performing": "Hiệu năng tốt nhất",
+    "average_performance": "Hiệu năng trung bình",
+    "worst_performing": "Hiệu năng tệ nhất",
+    "scaled_model": "(Scaled)",
+    "weighted_score": "Trọng số",
+    "turning_point_accuracy": "Độ chính xác điểm",
+    "directional_accuracy": "Độ chính xác định hướng",
+    "accuracy": "Độ chính xác",
+    "consistency": "Tính nhất quán",
+    "overall": "Tổng thể"
+  },
+  "aurora_select_model": "Chọn mô hình"
 }

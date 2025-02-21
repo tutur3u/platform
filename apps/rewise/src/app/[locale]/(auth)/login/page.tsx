@@ -29,7 +29,7 @@ export default async function Login() {
         <div className="text-center text-sm font-semibold text-foreground/50">
           {t('auth.notice-p1')}{' '}
           <Link
-            href="/terms"
+            href="https://tuturuuu.com/terms"
             target="_blank"
             className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
           >
@@ -37,7 +37,7 @@ export default async function Login() {
           </Link>{' '}
           {t('common.and')}{' '}
           <Link
-            href="/privacy"
+            href="https://tuturuuu.com/privacy"
             target="_blank"
             className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
           >

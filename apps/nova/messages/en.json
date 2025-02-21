@@ -49,6 +49,9 @@
     "delete": "Delete",
     "create": "Create",
     "add": "Add",
+    "add_column": "Add Column",
+    "add_column_description": "Enter a name for the new column",
+    "column_name": "Column Name",
     "new": "New",
     "save": "Save",
     "reset": "Reset",
@@ -60,7 +63,7 @@
     "download": "Download",
     "rename": "Rename",
     "processing": "Processing...",
-    "saving": "Saving",
+    "saving": "Saving changes...",
     "loading": "Loading",
     "success": "Success",
     "complete": "Complete",
@@ -92,6 +95,7 @@
     "view": "View",
     "show-all": "Show All",
     "hide-all": "Hide All",
+    "columns": "Columns",
     "toggle-columns": "Toggle Columns",
     "no-results": "No Results",
     "of": "of",
@@ -142,7 +146,7 @@
     "share": "Share",
     "confirm_delete_title": "Delete confirmation",
     "confirm_delete_description": "Are you sure you want to delete this item? This action is permanent and irreversible.",
-    "saved": "Saved",
+    "saved": "All changes saved",
     "unsaved": "Unsaved",
     "previous": "Previous",
     "next": "Next",
@@ -170,11 +174,11 @@
     "about": "About",
     "contact": "Contact",
     "ai-assistant": "AI Assistant",
-    "lms": "Learning Management System",
+    "lms": "LMS",
     "calendar": "Calendar",
     "documents": "Documents",
     "drive": "Drive",
-    "crm": "Customer Relationship Management",
+    "crm": "CRM",
     "inventory": "Inventory",
     "finance": "Finance",
     "mail": "Mail",
@@ -189,7 +193,11 @@
     "blog-description": "Read our latest articles and updates.",
     "documentation-description": "Find detailed documentation and guides.",
     "education-description": "Solutions tailored for educational institutions.",
+    "retail-description": "Solutions tailored for retail businesses.",
+    "hospitality-description": "Solutions tailored for hospitality businesses.",
+    "construction-description": "Solutions tailored for construction businesses.",
     "restaurants-description": "Manage your restaurant operations efficiently.",
+    "manufacturing-description": "Solutions tailored for manufacturing businesses.",
     "pharmacies-description": "Streamline pharmacy management and services.",
     "realestate-description": "Optimize your real estate business operations.",
     "meet-together-description": "Schedule meetings effortlessly across time zones and teams.",
@@ -213,7 +221,58 @@
     "usage_based_pricing": "Usage-Based Pricing",
     "usage_based_pricing_description": "Pay only for what you use. All plans include core features with different usage limits.",
     "faq": "Frequently Asked Questions",
-    "unlink": "Unlink"
+    "unlink": "Unlink",
+    "explore": "Explore",
+    "actions": "Actions",
+    "clear_all": "Clear All",
+    "clear_all_title": "Clear All Content",
+    "clear_all_description": "Are you sure you want to clear all content? This action cannot be undone.",
+    "clearing": "Clearing",
+    "retail": "Retail",
+    "manufacturing": "Manufacturing",
+    "hospitality": "Hospitality",
+    "construction": "Construction",
+    "changelog": "Changelog",
+    "changelog-description": "Stay up to date with our latest product updates and improvements.",
+    "security": "Security",
+    "security-description": "Learn about our security practices and commitments.",
+    "pitch-description": "Tuturuuu's business plan pitch deck.",
+    "product-updates": "Product Updates",
+    "product-updates-title": "Product Updates",
+    "product-updates-description": "Stay up to date with the latest features, improvements, and fixes in our product journey.",
+    "new-features": "New Features",
+    "improvements": "Improvements",
+    "bug-fixes": "Bug Fixes",
+    "stay-updated": "Stay in the Loop",
+    "changelog-subscribe-description": "Subscribe to our newsletter to get notified about new updates and features as they roll out.",
+    "enter-email": "Enter your email",
+    "subscribe": "Subscribe",
+    "view-full-documentation": "View full documentation",
+    "company": "Company",
+    "pitch": "Pitch Deck",
+    "careers": "Careers",
+    "not_whitelisted": "Not whitelisted",
+    "email_added": "Email added",
+    "error_adding_email": "Error adding email",
+    "history": "History",
+    "public_document": "Public document",
+    "private_document": "Private document",
+    "last_saved": "Last saved: {time}",
+    "unsaved_changes": "You have unsaved changes",
+    "error_saving": "Error saving changes",
+    "save_failed": "Failed to save changes",
+    "retry_save": "Retry saving",
+    "auto_save_enabled": "Auto-save enabled",
+    "save_status": "Save status",
+    "document_status": "Document status",
+    "updating": "Updating...",
+    "name_updated": "Name updated successfully",
+    "error_updating_name": "Error updating name",
+    "visibility_updated": "Visibility updated successfully",
+    "error_updating_visibility": "Error updating visibility",
+    "error_deleting": "Error deleting document",
+    "domain_added": "Domain added",
+    "error_adding_domain": "Failed to add domain"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -392,7 +451,11 @@
     "invalid_verification_code": "Invalid verification code.",
     "resend": "Resend",
     "processing": "Processing...",
-    "continue": "Continue"
+    "continue": "Continue",
+    "continue_with_google": "Continue with Google",
+    "continue_with_github": "Continue with GitHub",
+    "continue_with_apple": "Continue with Apple",
+    "continue_with_discord": "Continue with Discord"
   },
   "signup": {
     "get-started": "Get started",
@@ -459,7 +522,18 @@
     "slides": "Slides",
     "mail": "Mail",
     "tasks": "Tasks",
-    "education": "Education"
+    "education": "Education",
+    "models": "Models",
+    "datasets": "Datasets",
+    "pipelines": "Pipelines",
+    "cron": "Cron Jobs",
+    "workouts": "Workouts",
+    "readings": "Readings",
+    "diet_and_nutrition": "Diet & Nutrition",
+    "progress": "Progress",
+    "metrics": "Metrics",
+    "crawlers": "Crawlers",
+    "queues": "Queues"
   },
   "team-tabs": {
     "overview": "Overview",
@@ -556,8 +630,10 @@
   "user-data-table": {
     "id": "ID",
     "avatar_url": "Avatar",
+    "name": "Name",
     "full_name": "Full Name",
     "display_name": "Display Name",
+    "description": "Description",
     "email": "Email",
     "phone": "Phone",
     "gender": "Gender",
@@ -593,7 +669,11 @@
     "applying": "Applying...",
     "selected": "Selected",
     "linked_products": "Linked products",
-    "remove-from-group": "Remove from group"
+    "remove-from-group": "Remove from group",
+    "url": "URL",
+    "columns": "Columns",
+    "rows": "Rows",
+    "type": "Type"
   },
   "email-data-table": {
     "id": "ID",
@@ -801,6 +881,35 @@
     "user_count": "User count",
     "created_at": "Created at"
   },
+  "cron-job-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "description": "Description",
+    "schedule": "Schedule",
+    "status": "Status",
+    "last_run": "Last run",
+    "next_run": "Next run",
+    "inactive": "Inactive",
+    "active": "Active",
+    "running": "Running",
+    "failed": "Failed",
+    "created_at": "Created at"
+  },
+  "cron-execution-data-table": {
+    "id": "ID",
+    "job": "Job",
+    "status": "Status",
+    "started_at": "Started at",
+    "finished_at": "Finished at",
+    "created_at": "Created at"
+  },
+  "crawled-url-data-table": {
+    "id": "ID",
+    "url": "URL",
+    "html": "HTML",
+    "markdown": "Markdown",
+    "created_at": "Created at"
+  },
   "ws-home": {
     "home": "Home",
     "description_p1": "A quick summary of the",
@@ -888,7 +997,9 @@
     "create_key": "Create API Key",
     "edit_key": "Edit API Key",
     "add_new_workspace_key": "Add a new API key for this workspace.",
-    "edit_existing_workspace_key": "Edit an existing API key for this workspace."
+    "edit_existing_workspace_key": "Edit an existing API key for this workspace.",
+    "no_api_keys_found": "No API keys found",
+    "select_api_key": "Select an API key"
   },
   "ws-reports": {
     "report": "Report",
@@ -1584,7 +1695,10 @@
     "prompts": "Prompts",
     "workflows": "Workflows",
     "pipelines": "Pipelines",
-    "pipeline": "Pipeline"
+    "pipeline": "Pipeline",
+    "executions": "Executions",
+    "jobs": "Jobs",
+    "cron_jobs": "Jobs"
   },
   "workspace-settings-layout": {
     "workspace": "Workspace",
@@ -1943,5 +2057,494 @@
         }
       }
     }
-  }
+  },
+  "ws-models": {
+    "plural": "Models",
+    "singular": "Model",
+    "create": "Create model",
+    "create_description": "Create a new model",
+    "description": "Models are trained AI models that can be used for different tasks."
+  },
+  "ws-datasets": {
+    "plural": "Datasets",
+    "singular": "Dataset",
+    "description": "Datasets are used to train AI models.",
+    "create": "Create dataset",
+    "create_description": "Create a dataset",
+    "total_columns": "Total Columns",
+    "total_rows": "Total Rows",
+    "last_updated": "Last Updated",
+    "add_row": "Add Row",
+    "edit_row": "Edit Row",
+    "delete_row": "Delete Row",
+    "confirm_delete_row": "Are you sure you want to delete this row? This action cannot be undone.",
+    "no_data": "No data available",
+    "columns_description": "Manage the columns in your dataset, including their names, descriptions, and aliases."
+  },
+  "ws-cron": {
+    "description": "Cron jobs are used to schedule tasks to run at specific times."
+  },
+  "ws-cron-jobs": {
+    "plural": "Cron Jobs",
+    "singular": "Cron Job",
+    "create": "Create job",
+    "create_description": "Create a new job",
+    "description": "Cron jobs are used to schedule tasks to run at specific times.",
+    "edit": "Edit job",
+    "edit_description": "Edit an existing job"
+  },
+  "ws-cron-executions": {
+    "plural": "Cron Executions",
+    "singular": "Cron Execution",
+    "description": "Cron executions are used to view the history of cron jobs."
+  },
+  "landing": {
+    "headline": "Your intelligent shortcut",
+    "subheadline": "Take control of workflows, supercharged by AI",
+    "features": {
+      "title": "Features",
+      "subtitle": "Discover powerful features designed to enhance your productivity and streamline your workflow.",
+      "ai_powered": {
+        "title": "Powered by AI",
+        "description": "Brainstorm and organize your ideas at the speed of thought, with our smart AI-powered tools."
+      },
+      "collaboration": {
+        "title": "Team Collaboration",
+        "description": "Seamless communication and collaboration features for your entire team."
+      },
+      "task_management": {
+        "title": "Task Management",
+        "description": "Create tasks, assign them to your team, and track their progress, all in one place."
+      },
+      "document_management": {
+        "title": "Document Management",
+        "description": "Write and maintain your documents with ease, with an intuitive and powerful document editor."
+      },
+      "finance_tracking": {
+        "title": "Finance Tracking",
+        "description": "Track your finances, and keep your team in the loop, so you can focus on what matters."
+      },
+      "open_source": {
+        "title": "Open Source",
+        "description": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone."
+      }
+    },
+    "products": {
+      "title": "Products",
+      "subtitle": "Explore our suite of powerful products designed to help you work smarter, not harder.",
+      "ai_assistant": {
+        "title": "AI Assistant",
+        "description": "Smart automation and intelligent insights powered by advanced AI."
+      },
+      "meet_together": {
+        "title": "Meet Together",
+        "description": "Virtual meetings, team collaboration, and project management in one place."
+      },
+      "calendar": {
+        "title": "Calendar",
+        "description": "Smart scheduling and time management tools."
+      },
+      "documents": {
+        "title": "Documents",
+        "description": "Centralized document storage, sharing, and collaboration."
+      },
+      "drive": {
+        "title": "Drive",
+        "description": "Secure cloud storage for all your business files and data."
+      },
+      "crm": {
+        "title": "CRM",
+        "description": "Build and maintain valuable customer relationships."
+      },
+      "finance": {
+        "title": "Finance",
+        "description": "Comprehensive financial management and reporting."
+      },
+      "inventory": {
+        "title": "Inventory",
+        "description": "Real-time inventory tracking and management."
+      },
+      "tasks": {
+        "title": "Tasks",
+        "description": "Streamlined task tracking and team coordination."
+      },
+      "workflows": {
+        "title": "Workflows",
+        "description": "Automated business processes and workflows."
+      }
+    },
+    "solutions": {
+      "title": "For Every Industry",
+      "subtitle": "Tailored solutions for every industry, from small businesses to large enterprises.",
+      "industries": {
+        "manufacturing": "Manufacturing",
+        "healthcare": "Healthcare",
+        "education": "Education",
+        "retail": "Retail",
+        "real_estate": "Real Estate",
+        "hospitality": "Hospitality",
+        "construction": "Construction",
+        "pharmacies": "Pharmacies"
+      }
+    },
+    "benefits": {
+      "title": "Tremendous Benefits",
+      "subtitle": "Experience the advantages of an all-in-one platform designed for modern businesses.",
+      "for_businesses": {
+        "title": "For Businesses",
+        "items": [
+          "Reduced operational costs",
+          "Improved efficiency and productivity",
+          "Better decision-making with AI insights",
+          "Enhanced team collaboration",
+          "Streamlined workflows",
+          "Scalable solutions for growth"
+        ]
+      },
+      "for_teams": {
+        "title": "For Teams",
+        "items": [
+          "Seamless communication",
+          "Real-time collaboration",
+          "Automated task management",
+          "Centralized information access",
+          "Integrated tools and features",
+          "Enhanced productivity"
+        ]
+      }
+    },
+    "how_it_works": {
+      "title": "How It Works",
+      "subtitle": "Get started with Tuturuuu in just a few simple steps",
+      "steps": {
+        "step1": {
+          "title": "Sign Up",
+          "description": "Create your account in seconds and get started with a free trial"
+        },
+        "step2": {
+          "title": "Set Up Your Workspace",
+          "description": "Customize your workspace and invite your team members"
+        },
+        "step3": {
+          "title": "Start Collaborating",
+          "description": "Begin using our powerful tools to boost your productivity"
+        },
+        "step4": {
+          "title": "Scale & Grow",
+          "description": "Expand your usage as your business grows with our flexible platform"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "What Our Users Say",
+      "subtitle": "Join thousands of satisfied users who trust Tuturuuu",
+      "items": [
+        {
+          "quote": "Tuturuuu has transformed how we work. The AI features are incredible!",
+          "author": "Sarah Chen",
+          "role": "Product Manager",
+          "company": "TechCorp"
+        },
+        {
+          "quote": "The best all-in-one solution we've found for our team's needs.",
+          "author": "Michael Rodriguez",
+          "role": "CEO",
+          "company": "StartupX"
+        },
+        {
+          "quote": "Intuitive interface and powerful features. Highly recommended!",
+          "author": "Emily Johnson",
+          "role": "Team Lead",
+          "company": "DesignPro"
+        }
+      ]
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "subtitle": "Choose the plan that's right for you",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "save_percent": "Save 20%",
+      "plans": {
+        "free": {
+          "title": "Free",
+          "description": "Perfect for individuals and small teams",
+          "price": "$0",
+          "period": "/month",
+          "features": [
+            "Up to 3 team members",
+            "Basic AI features",
+            "2GB storage",
+            "Community support"
+          ]
+        },
+        "pro": {
+          "title": "Pro",
+          "description": "Great for growing teams",
+          "price": "$12",
+          "period": "/user/month",
+          "features": [
+            "Unlimited team members",
+            "Advanced AI features",
+            "20GB storage per user",
+            "Priority support",
+            "Advanced analytics",
+            "Custom integrations"
+          ]
+        },
+        "enterprise": {
+          "title": "Enterprise",
+          "description": "For large organizations",
+          "price": "Custom",
+          "period": "",
+          "features": [
+            "Everything in Pro",
+            "Unlimited storage",
+            "24/7 dedicated support",
+            "Custom AI models",
+            "Advanced security",
+            "SLA guarantee"
+          ]
+        }
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Find answers to common questions about Tuturuuu",
+      "items": [
+        {
+          "question": "What is Tuturuuu?",
+          "answer": "Tuturuuu is an all-in-one workspace platform that combines AI-powered productivity tools, team collaboration features, and business management solutions."
+        },
+        {
+          "question": "How does the pricing work?",
+          "answer": "We offer flexible pricing plans starting from free. Our Pro plan is priced per user, and Enterprise plans are customized to your needs."
+        },
+        {
+          "question": "Can I try before I buy?",
+          "answer": "Yes! You can start with our free plan or request a demo of our Pro features."
+        },
+        {
+          "question": "How secure is my data?",
+          "answer": "We use enterprise-grade encryption and follow industry best practices to ensure your data is always secure."
+        },
+        {
+          "question": "Do you offer customer support?",
+          "answer": "Yes, we provide customer support through various channels depending on your plan, from community support to 24/7 dedicated assistance."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Ready to Get Started?",
+      "subtitle": "Join thousands of teams already using Tuturuuu",
+      "primary_button": "Start Free Trial",
+      "secondary_button": "Contact Sales",
+      "no_card_required": "No credit card required"
+    },
+    "ai_revolution": {
+      "title": "AI Revolution",
+      "subtitle": "Experience the future of work with AI that understands, adapts, and grows with you",
+      "items": [
+        {
+          "title": "Think Faster",
+          "description": "AI-powered insights and automation help you make decisions 10x faster"
+        },
+        {
+          "title": "Work Smarter",
+          "description": "Let AI handle repetitive tasks while you focus on what matters most"
+        },
+        {
+          "title": "Grow Bigger",
+          "description": "Scale your operations effortlessly with AI that learns and adapts"
+        },
+        {
+          "title": "Stay Ahead",
+          "description": "Always be at the cutting edge with continuously evolving AI capabilities"
+        }
+      ]
+    },
+    "universal_value": {
+      "title": "For Everyone, Everywhere",
+      "subtitle": "From solo entrepreneurs to global enterprises, Tuturuuu adapts to your needs",
+      "categories": {
+        "business_size": {
+          "title": "Any Size",
+          "items": [
+            "Solopreneurs & Freelancers",
+            "Small & Medium Businesses",
+            "Large Enterprises",
+            "Global Organizations"
+          ]
+        },
+        "industries": {
+          "title": "Any Industry",
+          "items": [
+            "Technology & Innovation",
+            "Healthcare & Wellness",
+            "Education & Learning",
+            "Retail & E-commerce",
+            "Manufacturing & Production",
+            "Services & Consulting",
+            "Creative & Entertainment",
+            "Non-profit & Social Impact"
+          ]
+        },
+        "use_cases": {
+          "title": "Any Goal",
+          "items": [
+            "Streamline Operations",
+            "Boost Productivity",
+            "Enhance Collaboration",
+            "Drive Innovation",
+            "Improve Customer Experience",
+            "Scale Globally",
+            "Reduce Costs",
+            "Achieve Sustainability"
+          ]
+        }
+      }
+    },
+    "ai_features": {
+      "title": "AI at Its Core",
+      "subtitle": "Every feature is enhanced by cutting-edge artificial intelligence",
+      "features": [
+        {
+          "title": "Smart Automation",
+          "description": "Automate complex workflows with AI that learns your preferences"
+        },
+        {
+          "title": "Intelligent Insights",
+          "description": "Get actionable recommendations based on your data and industry trends"
+        },
+        {
+          "title": "Natural Collaboration",
+          "description": "Work with AI that understands context and communicates naturally"
+        },
+        {
+          "title": "Predictive Analytics",
+          "description": "Anticipate challenges and opportunities with AI-powered forecasting"
+        },
+        {
+          "title": "Adaptive Learning",
+          "description": "AI that continuously improves based on your team's usage patterns"
+        },
+        {
+          "title": "Global Intelligence",
+          "description": "Access insights from worldwide data while maintaining privacy"
+        }
+      ]
+    },
+    "success_metrics": {
+      "title": "Real Impact",
+      "subtitle": "Join thousands of organizations achieving remarkable results",
+      "metrics": [
+        {
+          "value": "10x",
+          "label": "Faster Decision Making"
+        },
+        {
+          "value": "80%",
+          "label": "Time Saved on Routine Tasks"
+        },
+        {
+          "value": "50%",
+          "label": "Reduction in Operating Costs"
+        },
+        {
+          "value": "3x",
+          "label": "Increase in Team Productivity"
+        }
+      ]
+    },
+    "transformation": {
+      "title": "Transform Your Work",
+      "subtitle": "Experience the power of AI-driven transformation",
+      "steps": [
+        {
+          "title": "Start Instantly",
+          "description": "Get up and running in minutes with intuitive onboarding"
+        },
+        {
+          "title": "Scale Effortlessly",
+          "description": "Grow from one to thousands of users without friction"
+        },
+        {
+          "title": "Evolve Continuously",
+          "description": "Stay ahead with AI that learns and improves every day"
+        }
+      ]
+    }
+  },
+  "ai-whitelist": {
+    "add_email": "Add email",
+    "add_domain": "Add domain"
+  },
+  "ws-ai-whitelist-domains": {
+    "plural": "Whitelisted domains",
+    "singular": "Whitelisted domain",
+    "description": "Whitelisted domains are used to allow specific domains to access AI features.",
+    "create": "Create whitelisted domain",
+    "create_description": "Create a whitelisted domain"
+  },
+  "ws-crawlers": {
+    "plural": "Crawlers",
+    "singular": "Crawler",
+    "description": "Crawlers are used to scrape data from websites.",
+    "create": "Create crawler",
+    "create_description": "Create a new crawler"
+  },
+  "ws-pipelines": {
+    "plural": "Pipelines",
+    "singular": "Pipeline",
+    "description": "Pipelines are used to run programmable workflows.",
+    "create": "Create pipeline",
+    "create_description": "Create a new pipeline"
+  },
+  "ws-queues": {
+    "plural": "Queues",
+    "singular": "Queue",
+    "description": "Queues are used to manage tasks and jobs.",
+    "create": "Create queue",
+    "create_description": "Create a new queue"
+  },
+  "aurora": {
+    "statistical_models": "Statistical models",
+    "ml_models": "Machine learning models",
+    "last_updated": "Last updated",
+    "current_price": "Current price",
+    "forecast_range": "Forecast range",
+    "high": "High",
+    "low": "Low",
+    "average": "Average",
+    "trend": "Trend",
+    "volatility": "Price volatility",
+    "90_confidence_high": "90% Confidence (High)",
+    "90_confidence_lo": "90% Confidence (Low)",
+    "ml_price_prediction": "ML Model Price Prediction",
+    "slope": "slope",
+    "prediction_insights": "Prediction insights",
+    "relative": "relative",
+    "strong": "Strong",
+    "moderate": "Moderate",
+    "weak": "Weak",
+    "model_comparison": "Model comparison",
+    "select_date": "Select date",
+    "model_correlation": "Model correlation",
+    "no_data": "No data.",
+    "model_performance": "Model Performance",
+    "stable": "Stable",
+    "improving": "Improving",
+    "declining": "Declining",
+    "best_performing": "Best performing",
+    "average_performance": "Average performance",
+    "worst_performing": "Worst performing",
+    "scaled_model": "(Scaled)",
+    "weighted_score": "Weighted Score",
+    "turning_point_accuracy": "Turning Point Accuracy",
+    "directional_accuracy": "Directional Accuracy",
+    "accuracy": "Accuracy",
+    "consistency": "Consistency",
+    "overall": "Overall"
+  },
+  "aurora_select_model": "Select model"
 }

@@ -262,12 +262,15 @@ Response Time: 48 hours
         <Badge variant="secondary" className="mb-6">
           Legal Documentation
         </Badge>
-        <h1 className="mb-6 text-5xl font-bold text-balance text-foreground">
+        <h1 className="text-foreground mb-6 text-5xl font-bold text-balance">
           Privacy Policy
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-foreground/80">
+        <p className="text-foreground/80 mx-auto max-w-2xl text-lg">
           Effective Date:{' '}
-          {new Date().toLocaleDateString('en-US', {
+          {new Date(
+            // January 10, 2025
+            '2025-01-10'
+          ).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -292,9 +295,9 @@ Response Time: 48 hours
                     <a
                       key={item.id}
                       href={`#${item.id}`}
-                      className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
                     >
-                      <span className="text-xs text-primary/50">
+                      <span className="text-primary/50 text-xs">
                         {item.number.toString().padStart(2, '0')}
                       </span>
                       {item.title}
@@ -316,7 +319,7 @@ Response Time: 48 hours
           {/* Key Points Summary */}
           <Card className="bg-primary/5 p-6">
             <div className="flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-primary" />
+              <AlertCircle className="text-primary h-6 w-6" />
               <h2 className="text-lg font-semibold">Key Privacy Principles</h2>
             </div>
             <Table className="mt-4">
@@ -368,7 +371,7 @@ Response Time: 48 hours
                     </div>
                     <h2 className="text-2xl font-semibold">{section.title}</h2>
                   </div>
-                  <div className="prose max-w-none text-card-foreground prose-gray dark:prose-invert">
+                  <div className="prose text-card-foreground prose-gray dark:prose-invert max-w-none">
                     <MemoizedReactMarkdown>
                       {section.content}
                     </MemoizedReactMarkdown>
@@ -390,7 +393,7 @@ Response Time: 48 hours
         transition={{ duration: 0.6, delay: 0.4 }}
         className="text-center"
       >
-        <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-sm">
           This Privacy Policy is a legally binding document that outlines our
           commitment to protecting your privacy. For questions or concerns,
           please contact our Data Protection Officer.
