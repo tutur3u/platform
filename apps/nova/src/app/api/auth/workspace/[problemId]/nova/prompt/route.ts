@@ -19,9 +19,9 @@ export async function GET(_: Request, { params }: Params) {
   }
   const { data, error } = await supabase
     .from('nova_users_problem_history')
-    .select('score,feedback,user_prompt')
-    .eq('problemId', id)
-    .eq('userId', user.id);
+    .select('score, feedback, user_prompt')
+    .eq('problem_id', id)
+    .eq('user_id', user.id);
   if (error) {
     return NextResponse.json(
       { message: 'Error fetching problem history' },

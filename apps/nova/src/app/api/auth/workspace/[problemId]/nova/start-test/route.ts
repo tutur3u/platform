@@ -25,9 +25,9 @@ export async function GET(_: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .from('nova_test_timer_record')
-    .select('duration, created_at,test_status')
-    .eq('problemId', problemId)
-    .eq('userId', userId)
+    .select('duration, created_at, test_status')
+    .eq('problem_id', problemId)
+    .eq('user_id', userId)
     .single();
 
   if (error) {
@@ -101,8 +101,8 @@ export async function PUT(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('nova_test_timer_record')
     .update({ test_status })
-    .eq('problemId', problemId)
-    .eq('userId', userId);
+    .eq('problem_id', problemId)
+    .eq('user_id', userId);
 
   if (error) {
     console.log(error);

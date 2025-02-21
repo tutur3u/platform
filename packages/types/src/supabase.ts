@@ -2027,42 +2027,42 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
-          problemId: string | null;
+          problem_id: string | null;
           score: number | null;
-          userId: string | null;
+          user_id: string | null;
         };
         Insert: {
           created_at?: string;
           id?: string;
-          problemId?: string | null;
+          problem_id?: string | null;
           score?: number | null;
-          userId?: string | null;
+          user_id?: string | null;
         };
         Update: {
           created_at?: string;
           id?: string;
-          problemId?: string | null;
+          problem_id?: string | null;
           score?: number | null;
-          userId?: string | null;
+          user_id?: string | null;
         };
         Relationships: [
           {
             foreignKeyName: 'nova_leaderboard_userId_fkey';
-            columns: ['userId'];
+            columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'distinct_invoice_creators';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'nova_leaderboard_userId_fkey';
-            columns: ['userId'];
+            columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'nova_leaderboard_userId_fkey';
-            columns: ['userId'];
+            columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
@@ -2074,30 +2074,30 @@ export type Database = {
           created_at: string;
           duration: number | null;
           id: string;
-          problemId: string | null;
+          problem_id: string | null;
           test_status: string | null;
-          userId: string | null;
+          user_id: string | null;
         };
         Insert: {
           created_at?: string;
           duration?: number | null;
           id?: string;
-          problemId?: string | null;
+          problem_id?: string | null;
           test_status?: string | null;
-          userId?: string | null;
+          user_id?: string | null;
         };
         Update: {
           created_at?: string;
           duration?: number | null;
           id?: string;
-          problemId?: string | null;
+          problem_id?: string | null;
           test_status?: string | null;
-          userId?: string | null;
+          user_id?: string | null;
         };
         Relationships: [
           {
             foreignKeyName: 'nova_test_timer_record_userId_fkey';
-            columns: ['userId'];
+            columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
@@ -2109,36 +2109,36 @@ export type Database = {
           created_at: string;
           feedback: string | null;
           id: number;
+          problem_id: string | null;
           problem_set_id: string | null;
-          problemId: string | null;
           score: number | null;
+          user_id: string | null;
           user_prompt: string | null;
-          userId: string | null;
         };
         Insert: {
           created_at?: string;
           feedback?: string | null;
           id?: number;
+          problem_id?: string | null;
           problem_set_id?: string | null;
-          problemId?: string | null;
           score?: number | null;
+          user_id?: string | null;
           user_prompt?: string | null;
-          userId?: string | null;
         };
         Update: {
           created_at?: string;
           feedback?: string | null;
           id?: number;
+          problem_id?: string | null;
           problem_set_id?: string | null;
-          problemId?: string | null;
           score?: number | null;
+          user_id?: string | null;
           user_prompt?: string | null;
-          userId?: string | null;
         };
         Relationships: [
           {
             foreignKeyName: 'nova_users_problem_history_userId_fkey';
-            columns: ['userId'];
+            columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
