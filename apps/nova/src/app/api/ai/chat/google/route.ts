@@ -76,6 +76,7 @@ Important Notes:
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(response);
+      // eslint-disable-next-line no-unused-vars
     } catch (parseError) {
       return NextResponse.json(
         {

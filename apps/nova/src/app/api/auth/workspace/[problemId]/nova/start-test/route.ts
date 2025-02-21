@@ -15,11 +15,7 @@ export async function GET(_: Request, { params }: Params) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    console.log('Unauthorized');
-  }
-  const userId = user?.id;
-  if (!userId) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -27,8 +23,7 @@ export async function GET(_: Request, { params }: Params) {
     .from('nova_test_timer_record')
     .select('duration, created_at, test_status')
     .eq('problem_id', problemId)
-    .eq('user_id', userId)
-    .single();
+    .eq('user_id', user.id);
 
   if (error) {
     console.log(error);
@@ -44,22 +39,25 @@ export async function GET(_: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { problemId } = await params;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { duration, test_status } = await req.json();
 
   if (!user) {
     console.log('Unauthorized');
     return;
   }
 
+  const { duration, test_status } = await req.json();
+
   const upsertData = {
-    userId: user?.id,
-    problemId: problemId,
+    user_id: user?.id,
+    problem_id: problemId,
     duration: duration,
     test_status: test_status,
   };
+
   const { error } = await supabase
     .from('nova_test_timer_record')
     .upsert(upsertData);

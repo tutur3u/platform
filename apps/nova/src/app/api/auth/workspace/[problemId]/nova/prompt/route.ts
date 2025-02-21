@@ -10,18 +10,22 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { problemId: id } = await params;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
+
+  if (!user?.id) {
     console.log('Unauthorized');
-    return;
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+
   const { data, error } = await supabase
     .from('nova_users_problem_history')
     .select('score, feedback, user_prompt')
     .eq('problem_id', id)
     .eq('user_id', user.id);
+
   if (error) {
     return NextResponse.json(
       { message: 'Error fetching problem history' },
@@ -52,8 +56,8 @@ export async function POST(req: Request, { params }: Params) {
   const { feedback, score, user_prompt, challengeId } = await req.json();
 
   const upsertData = {
-    userId: user?.id,
-    problemId: id,
+    user_id: user?.id,
+    problem_id: id,
     feedback: feedback || '',
     score: score || 0,
     user_prompt: user_prompt,
