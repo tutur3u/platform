@@ -1,8 +1,8 @@
 'use client';
 
 import { Row } from '@tanstack/react-table';
-import type { CrawledUrl } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/button';
+import type { CrawledUrl } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import { Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

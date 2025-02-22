@@ -2,5 +2,5 @@
   "compilerOptions": {
     "jsx": "react"
   },
-  "extends": "@tutur3u/typescript-config/base.json"
+  "extends": "@tuturuuu/typescript-config/base.json"
 }

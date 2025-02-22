@@ -1,7 +1,7 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import { format, parse } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from 'next-intl';

@@ -2,12 +2,12 @@
 
 import { MigrationModule, ModulePackage, generateModules } from './modules';
 import { useLocalStorage } from '@mantine/hooks';
-import { Button } from '@tutur3u/ui/button';
-import { Card } from '@tutur3u/ui/card';
-import { Input } from '@tutur3u/ui/input';
-import { Label } from '@tutur3u/ui/label';
-import { Progress } from '@tutur3u/ui/progress';
-import { Separator } from '@tutur3u/ui/separator';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import { Progress } from '@tuturuuu/ui/progress';
+import { Separator } from '@tuturuuu/ui/separator';
 import { GitMerge, Play, RefreshCcw } from 'lucide-react';
 import { useState } from 'react';
 

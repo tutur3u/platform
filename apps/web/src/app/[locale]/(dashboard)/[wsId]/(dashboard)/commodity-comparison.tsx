@@ -1,16 +1,16 @@
 'use client';
 
-import type { AuroraForecast } from '@tutur3u/types/db';
-import { Alert, AlertTitle } from '@tutur3u/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
-import { useToast } from '@tutur3u/ui/hooks/use-toast';
+import type { AuroraForecast } from '@tuturuuu/types/db';
+import { Alert, AlertTitle } from '@tuturuuu/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/select';
+} from '@tuturuuu/ui/select';
 import { AlertCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';

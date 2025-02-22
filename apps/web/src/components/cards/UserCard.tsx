@@ -1,5 +1,5 @@
-import { User } from '@tutur3u/types/primitives/User';
-import { Separator } from '@tutur3u/ui/separator';
+import { User } from '@tuturuuu/types/primitives/User';
+import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
 import Link from 'next/link';
 

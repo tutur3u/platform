@@ -1,7 +1,7 @@
 'use client';
 
 import { Sidebar } from '@/components/layout/sidebar';
-import { Toaster } from '@tutur3u/ui/toaster';
+import { Toaster } from '@tuturuuu/ui/toaster';
 import { ThemeProvider } from 'next-themes';
 import { Inter } from 'next/font/google';
 import { usePathname } from 'next/navigation';

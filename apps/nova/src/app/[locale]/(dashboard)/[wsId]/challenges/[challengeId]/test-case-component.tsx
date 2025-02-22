@@ -1,4 +1,4 @@
-import { Card } from '@tutur3u/ui/card';
+import { Card } from '@tuturuuu/ui/card';
 
 export default function TestCaseComponent({ testcase }: { testcase?: string }) {
   return (

@@ -1,4 +1,4 @@
-import { POST } from '@tutur3u/ai/chat/openai/new/route';
+import { POST } from '@tuturuuu/ai/chat/openai/new/route';
 
 export const config = {
   maxDuration: 60,

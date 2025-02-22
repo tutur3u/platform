@@ -1,6 +1,9 @@
 import type { ResponseMode } from '../../types';
 import { vertex } from '@ai-sdk/google-vertex/edge';
-import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { CoreMessage, smoothStream, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 

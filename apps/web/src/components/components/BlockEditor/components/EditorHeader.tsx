@@ -11,10 +11,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@tutur3u/ui/alert-dialog';
-import { Button } from '@tutur3u/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/alert-dialog';
+import { Button } from '@tuturuuu/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import {
   AlignCenter,
   AlignJustify,

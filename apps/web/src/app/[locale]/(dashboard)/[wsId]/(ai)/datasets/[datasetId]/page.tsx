@@ -1,15 +1,15 @@
 import { DuplicateHandler } from './components/duplicate-handler';
 import { DatasetCrawler } from './explore/dataset-crawler';
 import { getDatasetMetrics } from './utils';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { Button } from '@tutur3u/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
+} from '@tuturuuu/ui/card';
 import { BarChart, FileText, RefreshCw, Upload } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';

@@ -10,9 +10,9 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@/lib/workspace-helper';
-import { Button } from '@tutur3u/ui/button';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { UserPlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

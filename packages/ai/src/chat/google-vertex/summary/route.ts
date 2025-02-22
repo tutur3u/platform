@@ -1,5 +1,5 @@
 import { vertex } from '@ai-sdk/google-vertex/edge';
-import { createClient } from '@tutur3u/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { Message, generateText } from 'ai';
 import { NextResponse } from 'next/server';
 

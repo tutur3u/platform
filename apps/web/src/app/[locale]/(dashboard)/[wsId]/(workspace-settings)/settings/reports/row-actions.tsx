@@ -2,15 +2,15 @@
 
 import ConfigEditDialog from './edit-dialog';
 import { Row } from '@tanstack/react-table';
-import { WorkspaceConfig } from '@tutur3u/types/primitives/WorkspaceConfig';
-import { Button } from '@tutur3u/ui/button';
+import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
+} from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

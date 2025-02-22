@@ -2,10 +2,10 @@ import { projectColumns } from './columns';
 import { TaskBoardForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { TaskBoard } from '@tutur3u/types/primitives/TaskBoard';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

@@ -1,4 +1,4 @@
-import { PATCH } from '@tutur3u/ai/chat/google-vertex/summary/route';
+import { PATCH } from '@tuturuuu/ai/chat/google-vertex/summary/route';
 
 export const config = {
   maxDuration: 60,

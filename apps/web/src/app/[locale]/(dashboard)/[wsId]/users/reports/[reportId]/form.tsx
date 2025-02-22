@@ -1,6 +1,6 @@
 import { UserReportFormSchema } from './editable-report-preview';
-import { Button } from '@tutur3u/ui/button';
-import { AutosizeTextarea } from '@tutur3u/ui/custom/autosize-textarea';
+import { Button } from '@tuturuuu/ui/button';
+import { AutosizeTextarea } from '@tuturuuu/ui/custom/autosize-textarea';
 import {
   Form,
   FormControl,
@@ -8,9 +8,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { Input } from '@tutur3u/ui/input';
-import { Separator } from '@tutur3u/ui/separator';
+} from '@tuturuuu/ui/form';
+import { Input } from '@tuturuuu/ui/input';
+import { Separator } from '@tuturuuu/ui/separator';
 import { UseFormReturn } from 'react-hook-form';
 import * as z from 'zod';
 

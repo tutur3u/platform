@@ -5,8 +5,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { Input } from '@tutur3u/ui/input';
+} from '@tuturuuu/ui/form';
+import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 
 export default function RoleFormDisplaySection({ form }: SectionProps) {

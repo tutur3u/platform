@@ -1,8 +1,8 @@
 'use client';
 
 import ApiKeySelector from './api-key-selector';
-import { Alert, AlertDescription } from '@tutur3u/ui/alert';
-import { CodeBlock } from '@tutur3u/ui/codeblock';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
+import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { Info } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

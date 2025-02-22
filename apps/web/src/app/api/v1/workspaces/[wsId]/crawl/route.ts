@@ -1,5 +1,8 @@
 import { ROOT_WORKSPACE_ID } from '@/constants/common';
-import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 

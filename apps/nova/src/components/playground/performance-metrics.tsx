@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@tutur3u/ui/card';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 
 interface PerformanceMetricsProps {
   metrics: {

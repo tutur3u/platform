@@ -1,14 +1,14 @@
 'use client';
 
-import { createDynamicClient } from '@tutur3u/supabase/next/client';
-import { Button } from '@tutur3u/ui/button';
-import { FileUploader, StatedFile } from '@tutur3u/ui/custom/file-uploader';
+import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import { Button } from '@tuturuuu/ui/button';
+import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tutur3u/ui/tooltip';
+} from '@tuturuuu/ui/tooltip';
 import { File, FileText, ImageIcon, X } from 'lucide-react';
 import { useState } from 'react';
 

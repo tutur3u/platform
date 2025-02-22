@@ -1,8 +1,8 @@
 import { CustomDataTable } from '@/components/custom-data-table';
 import { timezoneColumns } from '@/data/columns/timezones';
 import timezones from '@/data/timezones.json';
-import { createAdminClient } from '@tutur3u/supabase/next/server';
-import { Timezone } from '@tutur3u/types/primitives/Timezone';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { notFound } from 'next/navigation';
 
 interface Props {

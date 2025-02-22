@@ -1,5 +1,5 @@
 {
-  "name": "@tutur3u/external",
+  "name": "@tuturuuu/external",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,13 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@tutur3u/ai": "^0.0.10",
-    "@tutur3u/eslint-config": "^0.1.2",
-    "@tutur3u/supabase": "^0.0.5",
-    "@tutur3u/types": "^0.1.4",
-    "@tutur3u/typescript-config": "^0.1.0",
-    "@tutur3u/ui": "^0.0.4",
-    "@tutur3u/utils": "workspace:*",
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "@tuturuuu/ai": "npm:@jsr/tuturuuu__ai@^0.0.1",
     "next": "^15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

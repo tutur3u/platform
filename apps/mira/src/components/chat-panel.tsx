@@ -4,22 +4,22 @@ import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
 import { BASE_URL } from '@/constants/common';
-import { Model } from '@tutur3u/ai/models';
-import { type Message, type UseChatHelpers } from '@tutur3u/ai/types';
-import { createDynamicClient } from '@tutur3u/supabase/next/client';
-import { AIChat } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/button';
-import { FileUploader, StatedFile } from '@tutur3u/ui/custom/file-uploader';
+import { Model } from '@tuturuuu/ai/models';
+import { type Message, type UseChatHelpers } from '@tuturuuu/ai/types';
+import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/dialog';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
-import { Separator } from '@tutur3u/ui/separator';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/dialog';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import {
   ArrowDownToLine,
   Check,

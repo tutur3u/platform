@@ -1,9 +1,9 @@
 import FlashcardForm from '../../../../../flashcards/form';
 import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
-import { createClient } from '@tutur3u/supabase/next/server';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { SwatchBook } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 

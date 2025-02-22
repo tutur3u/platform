@@ -3,7 +3,7 @@
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@tutur3u/ui/dropdown-menu';
+} from '@tuturuuu/ui/dropdown-menu';
 import { Check, Monitor, Moon, Sun } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';

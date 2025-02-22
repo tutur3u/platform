@@ -1,7 +1,7 @@
 'use client';
 
-import { Workspace } from '@tutur3u/types/primitives/Workspace';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
+import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale, useTranslations } from 'next-intl';

@@ -1,8 +1,8 @@
 import AccountBadge from './account-badge';
 import { useTimeBlocking } from './time-blocking-provider';
-import { User as PlatformUser } from '@tutur3u/types/primitives/User';
-import { Button } from '@tutur3u/ui/button';
-import { Separator } from '@tutur3u/ui/separator';
+import { User as PlatformUser } from '@tuturuuu/types/primitives/User';
+import { Button } from '@tuturuuu/ui/button';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 
 export default function LoggedInAsButton({

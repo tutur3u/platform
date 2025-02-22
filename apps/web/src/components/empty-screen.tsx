@@ -1,8 +1,8 @@
-import { type UseChatHelpers } from '@tutur3u/ai/types';
-import { AIChat } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/button';
-import { Separator } from '@tutur3u/ui/separator';
-import { capitalize, cn } from '@tutur3u/utils/format';
+import { type UseChatHelpers } from '@tuturuuu/ai/types';
+import { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { Separator } from '@tuturuuu/ui/separator';
+import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

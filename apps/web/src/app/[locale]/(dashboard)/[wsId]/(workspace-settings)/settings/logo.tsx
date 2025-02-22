@@ -1,7 +1,7 @@
 'use client';
 
 import LogoInput from './logo-input';
-import { Workspace } from '@tutur3u/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { useTranslations } from 'next-intl';
 
 interface Props {

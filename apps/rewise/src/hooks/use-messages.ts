@@ -1,5 +1,5 @@
-import { type Message } from '@tutur3u/ai/types';
-import { createClient } from '@tutur3u/supabase/next/client';
+import { type Message } from '@tuturuuu/ai/types';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { useCallback, useEffect, useState } from 'react';
 
 export function useMessages(

@@ -1,14 +1,14 @@
 'use client';
 
 import { StorageFolderForm, StorageObjectForm } from './form';
-import { Button } from '@tutur3u/ui/button';
-import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
+import { Button } from '@tuturuuu/ui/button';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
+} from '@tuturuuu/ui/dropdown-menu';
 import { FileText, Folder, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

@@ -3,7 +3,7 @@
 import { TableOfContentsStorage } from '@tiptap-pro/extension-table-of-contents';
 import { Editor as CoreEditor } from '@tiptap/core';
 import { useEditorState } from '@tiptap/react';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { memo } from 'react';
 
 export type TableOfContentsProps = {

@@ -7,8 +7,8 @@ import {
 } from '@/components/components/BlockEditor';
 import { TiptapCollabProvider } from '@hocuspocus/provider';
 import { JSONContent } from '@tiptap/core';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceDocument } from '@tutur3u/types/db';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { WorkspaceDocument } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,11 +19,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@tutur3u/ui/alert-dialog';
-import { Button } from '@tutur3u/ui/button';
-import { Input } from '@tutur3u/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/alert-dialog';
+import { Button } from '@tuturuuu/ui/button';
+import { Input } from '@tuturuuu/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import debounce from 'lodash/debounce';
 import {
   AlertCircle,

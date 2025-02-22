@@ -1,0 +1,9 @@
+{
+    "$schema": "https://jsr.io/schema/config-file.v1.json",
+    "name": "@tuturuuu/ui",
+    "license": "MIT",
+    "version": "0.0.4",
+    "exports": {
+        "./button": "./src/components/ui/button.tsx"
+    }
+}

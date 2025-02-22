@@ -1,17 +1,17 @@
 import { Filter } from '../../../users/filters';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { Invoice } from '@tutur3u/types/primitives/Invoice';
-import type { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
+} from '@tuturuuu/ui/card';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Package, TicketPercent, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 

@@ -5,16 +5,16 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/accordion';
-import { Badge } from '@tutur3u/ui/badge';
+} from '@tuturuuu/ui/accordion';
+import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/card';
+import { cn } from '@tuturuuu/utils/format';
 import { CalendarDays } from 'lucide-react';
 
 interface Task {

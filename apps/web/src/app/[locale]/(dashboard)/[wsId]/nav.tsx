@@ -6,11 +6,11 @@ import {
   PROD_MODE,
   ROOT_WORKSPACE_ID,
 } from '@/constants/common';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { buttonVariants } from '@tutur3u/ui/button';
-import { Separator } from '@tutur3u/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { buttonVariants } from '@tuturuuu/ui/button';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { DraftingCompass, FlaskConical } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

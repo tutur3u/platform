@@ -1,9 +1,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Button } from '@tutur3u/ui/button';
-import { Card } from '@tutur3u/ui/card';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
 import {
   Form,
   FormControl,
@@ -11,10 +11,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
-import { Textarea } from '@tutur3u/ui/textarea';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { motion } from 'framer-motion';
 import { Brain, Github, Globe, Mail, MessageCircle, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';

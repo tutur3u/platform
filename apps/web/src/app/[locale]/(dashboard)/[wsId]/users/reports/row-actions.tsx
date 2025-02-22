@@ -1,14 +1,14 @@
 'use client';
 
 import { Row } from '@tanstack/react-table';
-import { WorkspaceUserReport } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/button';
+import { WorkspaceUserReport } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
+} from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

@@ -1,15 +1,15 @@
-# @tutur3u/crawler
+# @tuturuuu/crawler
 
 Web crawling and scraping utilities for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install @tutur3u/crawler
+npm install @tuturuuu/crawler
 # or
-yarn add @tutur3u/crawler
+yarn add @tuturuuu/crawler
 # or
-pnpm add @tutur3u/crawler
+pnpm add @tuturuuu/crawler
 ```
 
 ## Features

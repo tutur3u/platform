@@ -1,5 +1,5 @@
 import { type Button, buttonVariants } from './button';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,

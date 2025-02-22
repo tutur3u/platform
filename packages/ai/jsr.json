@@ -1,0 +1,15 @@
+{
+    "$schema": "https://jsr.io/schema/config-file.v1.json",
+    "name": "@tuturuuu/ai",
+    "license": "MIT",
+    "version": "0.0.10",
+    "exports": {
+        ".": "./src/index.ts",
+        "./types": "./src/types.ts",
+        "./supported-actions": "./src/supported-actions.ts",
+        "./supported-providers": "./src/supported-providers.ts",
+        "./react": "./src/react.ts",
+        "./models": "./src/models.ts",
+        "./hooks": "./src/hooks.ts"
+    }
+}

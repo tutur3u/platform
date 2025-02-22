@@ -1,13 +1,13 @@
 import { BASE_URL } from '@/constants/common';
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/dialog';
-import { Separator } from '@tutur3u/ui/separator';
+} from '@tuturuuu/ui/dialog';
+import { Separator } from '@tuturuuu/ui/separator';
 import {
   Check,
   CheckCheck,

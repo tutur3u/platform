@@ -3,19 +3,19 @@
 import { AttendanceDialog } from './attendance-dialogue';
 import useSearchParams from '@/hooks/useSearchParams';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { createClient } from '@tutur3u/supabase/next/client';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   WorkspaceUser,
   WorkspaceUserAttendance,
-} from '@tutur3u/types/primitives/WorkspaceUser';
-import { Button } from '@tutur3u/ui/button';
+} from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale } from 'next-intl';

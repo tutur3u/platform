@@ -1,7 +1,7 @@
 'use client';
 
 import QuizForm from '../../../../../quizzes/form';
-import { createClient } from '@tutur3u/supabase/next/client';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,10 +12,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@tutur3u/ui/alert-dialog';
-import { Button } from '@tutur3u/ui/button';
-import { Separator } from '@tutur3u/ui/separator';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/alert-dialog';
+import { Button } from '@tuturuuu/ui/button';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { Pencil, Trash, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

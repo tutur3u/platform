@@ -1,6 +1,9 @@
 'use client';
 
-import { DropdownMenuGroup, DropdownMenuItem } from '@tutur3u/ui/dropdown-menu';
+import {
+  DropdownMenuGroup,
+  DropdownMenuItem,
+} from '@tuturuuu/ui/dropdown-menu';
 import { CalendarClock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

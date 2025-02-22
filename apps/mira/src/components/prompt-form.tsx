@@ -1,18 +1,18 @@
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import { type UseChatHelpers } from '@tutur3u/ai/types';
-import type { AIChat } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/button';
-import { StatedFile } from '@tutur3u/ui/custom/file-uploader';
-import { Dialog } from '@tutur3u/ui/dialog';
-import { IconArrowElbow } from '@tutur3u/ui/icons';
+import { type UseChatHelpers } from '@tuturuuu/ai/types';
+import type { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import { Dialog } from '@tuturuuu/ui/dialog';
+import { IconArrowElbow } from '@tuturuuu/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import {
   ArrowDownWideNarrow,
   Bolt,

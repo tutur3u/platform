@@ -15,7 +15,7 @@ export default [...compat.config({
             rootDir: 'apps/web/',
         },
     },
-}), ...compat.extends("@tutur3u/eslint-config/library.js"), {
+}), ...compat.extends("@tuturuuu/eslint-config/library.js"), {
     languageOptions: {
         parser: tsParser,
         ecmaVersion: 2020,

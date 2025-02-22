@@ -1,12 +1,12 @@
 import { Row } from '@tanstack/react-table';
-import type { AIWhitelistDomain } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/button';
+import type { AIWhitelistDomain } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
+} from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

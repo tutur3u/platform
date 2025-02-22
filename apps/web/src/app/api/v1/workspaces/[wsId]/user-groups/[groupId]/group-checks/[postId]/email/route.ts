@@ -1,7 +1,10 @@
 import { DEV_MODE } from '@/constants/common';
 import { getPermissions } from '@/lib/workspace-helper';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
-import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import dayjs from 'dayjs';
 import juice from 'juice';
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,10 +18,10 @@ const domainBlacklist = [
 ];
 
 const sesClient = new SESClient({
-  region: process.env.AWS_REGION as string,
+  region: (process.env.AWS_REGION || 'ap-southeast-1') as string,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
+    accessKeyId: (process.env.AWS_ACCESS_KEY_ID || '') as string,
+    secretAccessKey: (process.env.AWS_SECRET_ACCESS_KEY || '') as string,
   },
 });
 

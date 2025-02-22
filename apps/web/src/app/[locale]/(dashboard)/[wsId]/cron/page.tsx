@@ -1,8 +1,8 @@
 import ExecutionStatistics from './executions';
 import JobsStatistics from './jobs';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 

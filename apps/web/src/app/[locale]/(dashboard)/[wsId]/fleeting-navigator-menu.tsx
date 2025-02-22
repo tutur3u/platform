@@ -1,4 +1,4 @@
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import { Sparkles } from 'lucide-react';
 
 export default function FleetingNavigatorMenu({

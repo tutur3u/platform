@@ -1,7 +1,7 @@
 'use client';
 
 // Error components must be Client Components
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 
 export default function Error({
   error,

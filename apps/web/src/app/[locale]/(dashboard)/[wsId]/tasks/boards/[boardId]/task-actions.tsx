@@ -1,9 +1,9 @@
 import { AssigneeSelect } from './_components/assignee-select';
 import { deleteTask, updateTask } from '@/lib/task-helper';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Button } from '@tutur3u/ui/button';
-import { Calendar } from '@tutur3u/ui/calendar';
-import { Checkbox } from '@tutur3u/ui/checkbox';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Button } from '@tuturuuu/ui/button';
+import { Calendar } from '@tuturuuu/ui/calendar';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -11,28 +11,28 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
-import { Input } from '@tutur3u/ui/input';
-import { Label } from '@tutur3u/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+} from '@tuturuuu/ui/dropdown-menu';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/select';
-import { Separator } from '@tutur3u/ui/separator';
-import { Textarea } from '@tutur3u/ui/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/select';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import {
   AlertCircle,

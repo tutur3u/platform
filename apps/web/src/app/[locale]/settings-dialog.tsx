@@ -2,9 +2,9 @@ import UserAvatar from './settings-avatar';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
 import SettingItemTab from '@/components/settings/SettingItemTab';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { DialogContent, DialogHeader, DialogTitle } from '@tutur3u/ui/dialog';
-import { Separator } from '@tutur3u/ui/separator';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 

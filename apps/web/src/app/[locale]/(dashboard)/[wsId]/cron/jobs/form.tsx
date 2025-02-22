@@ -2,9 +2,9 @@
 
 import { useWorkspaceDatasets } from '@/hooks/useWorkspaceDatasets';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { WorkspaceCronJob } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/button';
-import { Checkbox } from '@tutur3u/ui/checkbox';
+import type { WorkspaceCronJob } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -13,18 +13,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/select';
-import { Separator } from '@tutur3u/ui/separator';
+} from '@tuturuuu/ui/select';
+import { Separator } from '@tuturuuu/ui/separator';
 import cronstrue from 'cronstrue';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';

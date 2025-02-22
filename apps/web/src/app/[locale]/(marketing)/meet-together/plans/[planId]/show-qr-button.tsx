@@ -1,7 +1,7 @@
 'use client';
 
 import CopyLinkButton from './copy-link-button';
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tutur3u/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import { QrCode } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { QRCode } from 'react-qrcode-logo';

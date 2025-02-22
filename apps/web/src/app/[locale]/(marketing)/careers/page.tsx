@@ -1,7 +1,7 @@
 'use client';
 
-import { Badge } from '@tutur3u/ui/badge';
-import { Card } from '@tutur3u/ui/card';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import {
   Building2,

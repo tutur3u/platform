@@ -1,5 +1,5 @@
 {
-  "name": "@tutur3u/utils",
+  "name": "@tuturuuu/utils",
   "license": "MIT",
   "version": "0.0.1",
   "publishConfig": {
@@ -20,8 +20,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.20.0",
-    "@tutur3u/eslint-config": "workspace:*",
-    "@tutur3u/typescript-config": "workspace:*",
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
     "@typescript-eslint/eslint-plugin": "^8.24.1",

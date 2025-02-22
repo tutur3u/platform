@@ -1,5 +1,5 @@
-import { Badge } from '@tutur3u/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 
 export interface Challenge {
   id?: number | null;

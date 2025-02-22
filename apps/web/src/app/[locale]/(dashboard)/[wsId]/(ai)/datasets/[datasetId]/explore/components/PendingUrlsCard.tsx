@@ -1,6 +1,6 @@
 import type { UrlWithProgress } from '../types';
-import { Badge } from '@tutur3u/ui/badge';
-import { Card, CardContent } from '@tutur3u/ui/card';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Clock } from 'lucide-react';
 
 interface Props {

@@ -64,7 +64,7 @@ export const generateMetadata = async ({
       title,
       description,
       images: [siteConfig.ogImage],
-      creator: '@tutur3u',
+      creator: '@tuturuuu',
     },
   };
 };

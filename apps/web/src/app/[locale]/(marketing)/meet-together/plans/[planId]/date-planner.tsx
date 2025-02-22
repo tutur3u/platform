@@ -4,7 +4,7 @@ import DayPlanners from './day-planners';
 import { useTimeBlocking } from './time-blocking-provider';
 import TimeColumn from './time-column';
 import { timetzToHour } from '@/utils/date-helper';
-import { Timeblock } from '@tutur3u/types/primitives/Timeblock';
+import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 
 export default function DatePlanner({
   timeblocks,

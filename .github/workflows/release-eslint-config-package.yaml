@@ -1,15 +1,16 @@
-name: Release ESLint Config Package
+name: Release @tuturuuu/eslint-config package
 
 on:
   pull_request:
     types: [closed]
     paths:
       - 'packages/eslint-config/package.json'
+      - 'packages/eslint-config/jsr.json'
   workflow_dispatch:
 
 jobs:
   check-version-bump:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tutur3u/eslint-config)')
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tuturuuu/eslint-config)')
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
@@ -55,6 +56,42 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Run tests
+        working-directory: packages/eslint-config
+        run: pnpm test
+
+  publish-jsr:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          registry-url: https://npm.jsr.io
+
+      - name: Configure Tiptap Pro
+        run: |
+          pnpm config set "@tiptap-pro:registry" https://registry.tiptap.dev/
+          pnpm config set "//registry.tiptap.dev/:_authToken" ${{ secrets.TIPTAP_PRO_TOKEN }}
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Publish package to JSR
+        working-directory: packages/eslint-config
+        run: pnpm dlx jsr publish
+
   publish-gpr:
     needs: [build]
     runs-on: ubuntu-latest
@@ -72,7 +109,7 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
-          registry-url: https://npm.pkg.github.com/
+          registry-url: https://npm.pkg.github.com
 
       - name: Configure Tiptap Pro
         run: |

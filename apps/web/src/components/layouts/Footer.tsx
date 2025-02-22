@@ -1,6 +1,6 @@
 'use client';
 
-import { CommonFooter } from '@tutur3u/ui/custom/common-footer';
+import { CommonFooter } from '@tuturuuu/ui/custom/common-footer';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 

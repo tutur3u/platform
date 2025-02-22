@@ -1,9 +1,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { TransactionCategory } from '@tutur3u/types/primitives/TransactionCategory';
-import { Button } from '@tutur3u/ui/button';
-import { SelectField } from '@tutur3u/ui/custom/select-field';
+import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import { Button } from '@tuturuuu/ui/button';
+import { SelectField } from '@tuturuuu/ui/custom/select-field';
 import {
   Form,
   FormControl,
@@ -11,9 +11,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

@@ -4,8 +4,8 @@ import FloatingElements from './floating-elements';
 import GetStartedButton from './get-started-button';
 import GradientHeadline from './gradient-headline';
 import { fireConfetti, fireRocket } from '@/lib/confetti';
-import { Badge } from '@tutur3u/ui/badge';
-import { Card } from '@tutur3u/ui/card';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
   InfinityIcon,

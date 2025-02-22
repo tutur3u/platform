@@ -1,8 +1,8 @@
 import { siteConfig } from '@/constants/configs';
 import { routing, supportedLocales } from '@/i18n/routing';
-import '@tutur3u/ui/globals.css';
-import { Toaster } from '@tutur3u/ui/toaster';
-import { cn } from '@tutur3u/utils/format';
+import '@tuturuuu/ui/globals.css';
+import { Toaster } from '@tuturuuu/ui/toaster';
+import { cn } from '@tuturuuu/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
@@ -71,7 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: siteConfig.name,
       description,
       images: [siteConfig.ogImage],
-      creator: '@tutur3u',
+      creator: '@tuturuuu',
     },
     icons: {
       icon: '/favicon.ico',

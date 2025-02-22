@@ -2,8 +2,8 @@
 
 import { UserGroupRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';

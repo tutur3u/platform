@@ -1,8 +1,8 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import { Badge } from '@tutur3u/ui/badge';
-import { Button } from '@tutur3u/ui/button';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -11,11 +11,11 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@tutur3u/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
-import { Separator } from '@tutur3u/ui/separator';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { Check, CheckCheck, Trash, Undo } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

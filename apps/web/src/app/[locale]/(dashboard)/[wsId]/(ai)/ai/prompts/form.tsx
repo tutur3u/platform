@@ -2,14 +2,14 @@
 
 import AIModelSelector from './model-selector';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AIPrompt } from '@tutur3u/types/db';
+import { AIPrompt } from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/accordion';
-import { Button } from '@tutur3u/ui/button';
+} from '@tuturuuu/ui/accordion';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
   FormControl,
@@ -17,11 +17,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
-import { Separator } from '@tutur3u/ui/separator';
-import { Textarea } from '@tutur3u/ui/textarea';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

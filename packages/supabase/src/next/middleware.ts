@@ -1,6 +1,6 @@
 import { checkEnvVariables } from './common';
 import { createServerClient } from '@supabase/ssr';
-import type { Database } from '@tutur3u/types/supabase';
+import type { Database } from '@tuturuuu/types/supabase';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function updateSession(request: NextRequest) {

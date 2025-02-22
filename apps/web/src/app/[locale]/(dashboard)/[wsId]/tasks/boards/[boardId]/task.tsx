@@ -4,14 +4,14 @@ import { updateTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Task as TaskType } from '@tutur3u/types/primitives/TaskBoard';
-import { Badge } from '@tutur3u/ui/badge';
-import { Button } from '@tutur3u/ui/button';
-import { Card } from '@tutur3u/ui/card';
-import { Checkbox } from '@tutur3u/ui/checkbox';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Task as TaskType } from '@tuturuuu/types/primitives/TaskBoard';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { formatDistanceToNow } from 'date-fns';
 import {
   AlertCircle,

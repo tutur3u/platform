@@ -1,9 +1,12 @@
 import { permissions as rolePermissions } from './permissions';
 import { DEV_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
-import { PermissionId } from '@tutur3u/types/db';
-import { Workspace } from '@tutur3u/types/primitives/Workspace';
-import { WorkspaceSecret } from '@tutur3u/types/primitives/WorkspaceSecret';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { PermissionId } from '@tuturuuu/types/db';
+import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 
 export async function getWorkspace(id: string) {

@@ -3,14 +3,14 @@
 import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
 import { isEmail } from '@/utils/email-helper';
-import { createClient } from '@tutur3u/supabase/next/client';
-import type { GroupPostCheck } from '@tutur3u/types/db';
-import type { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback } from '@tutur3u/ui/avatar';
-import { Button } from '@tutur3u/ui/button';
-import { Card } from '@tutur3u/ui/card';
-import { Textarea } from '@tutur3u/ui/textarea';
-import { cn } from '@tutur3u/utils/format';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { GroupPostCheck } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import {
   Check,
   CircleSlash,

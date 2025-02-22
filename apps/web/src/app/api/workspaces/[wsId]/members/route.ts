@@ -1,4 +1,4 @@
-import { createClient } from '@tutur3u/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface Params {

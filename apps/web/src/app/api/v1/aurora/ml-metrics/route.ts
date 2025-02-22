@@ -1,5 +1,5 @@
 import type { AuroraExternalMLMetrics } from '../types';
-import { createClient } from '@tutur3u/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export async function GET() {

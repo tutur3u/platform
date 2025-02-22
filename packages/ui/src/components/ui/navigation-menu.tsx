@@ -1,7 +1,7 @@
 'use client';
 
 import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { cva } from 'class-variance-authority';
 import { ChevronDownIcon } from 'lucide-react';
 import * as React from 'react';

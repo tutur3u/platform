@@ -1,8 +1,8 @@
 'use client';
 
-import { Badge } from '@tutur3u/ui/badge';
-import { Button } from '@tutur3u/ui/button';
-import { Card } from '@tutur3u/ui/card';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
 import {
   BarChart3,
   Building,

@@ -1,5 +1,5 @@
 {
-  "extends": "@tutur3u/typescript-config/react-library.json",
+  "extends": "@tuturuuu/typescript-config/react-library.json",
   "compilerOptions": {
     "baseUrl": "."
   },

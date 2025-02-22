@@ -1,17 +1,17 @@
 import { Mail } from '../data';
-import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
-import { Button } from '@tutur3u/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
-import { Label } from '@tutur3u/ui/label';
-import { Separator } from '@tutur3u/ui/separator';
-import { Switch } from '@tutur3u/ui/switch';
-import { Textarea } from '@tutur3u/ui/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
+} from '@tuturuuu/ui/dropdown-menu';
+import { Label } from '@tuturuuu/ui/label';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Switch } from '@tuturuuu/ui/switch';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { format } from 'date-fns';
 import {
   Archive,

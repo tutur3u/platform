@@ -1,6 +1,6 @@
 import { siteConfig } from '@/constants/configs';
-import { createAdminClient } from '@tutur3u/supabase/next/server';
-import { WorkspaceDocument } from '@tutur3u/types/db';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceDocument } from '@tuturuuu/types/db';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -86,7 +86,7 @@ export const generateMetadata = async ({
       title,
       description,
       images: [siteConfig.ogImage],
-      creator: '@tutur3u',
+      creator: '@tuturuuu',
     },
   };
 };

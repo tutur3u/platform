@@ -1,28 +1,28 @@
 'use client';
 
 import { PlanRequest, SkillLevel, TimeOfDay } from '../../types';
-import { Alert, AlertDescription } from '@tutur3u/ui/alert';
-import { Button } from '@tutur3u/ui/button';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
-import { Checkbox } from '@tutur3u/ui/checkbox';
-import { Input } from '@tutur3u/ui/input';
-import { Label } from '@tutur3u/ui/label';
+} from '@tuturuuu/ui/card';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/select';
-import { Separator } from '@tutur3u/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
-import { TagInput } from '@tutur3u/ui/tag-input';
+} from '@tuturuuu/ui/select';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { TagInput } from '@tuturuuu/ui/tag-input';
 import {
   Brain,
   Clock,

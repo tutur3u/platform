@@ -1,7 +1,7 @@
 import LogoTitle from './logo-title';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 // import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

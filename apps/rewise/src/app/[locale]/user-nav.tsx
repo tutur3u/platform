@@ -5,7 +5,7 @@ import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-ite
 import { TTR_URL } from '@/constants/common';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getInitials } from '@/utils/name-helper';
-import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,8 +18,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/dropdown-menu';
+import { cn } from '@tuturuuu/utils/format';
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

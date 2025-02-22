@@ -1,4 +1,7 @@
-import { createAdminClient, createClient } from '@tutur3u/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(req: NextRequest) {

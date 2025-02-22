@@ -2,7 +2,7 @@ import { useDropZone, useFileUpload, useUploader } from './hooks';
 import { Button } from '@/components/components/ui/Button';
 import { Icon } from '@/components/components/ui/Icon';
 import { Spinner } from '@/components/components/ui/Spinner';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { ChangeEvent, useCallback } from 'react';
 
 export const ImageUploader = ({

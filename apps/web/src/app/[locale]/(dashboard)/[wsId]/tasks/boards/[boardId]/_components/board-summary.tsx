@@ -2,9 +2,9 @@
 
 import { getTasks } from '@/lib/task-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Progress } from '@tutur3u/ui/progress';
-import { cn } from '@tutur3u/utils/format';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Progress } from '@tuturuuu/ui/progress';
+import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import {
   AlertCircle,

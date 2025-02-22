@@ -1,16 +1,16 @@
 'use client';
 
-import type { AuroraForecast } from '@tutur3u/types/db';
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import type { AuroraForecast } from '@tuturuuu/types/db';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { cn } from '@tuturuuu/utils/format';
 import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';

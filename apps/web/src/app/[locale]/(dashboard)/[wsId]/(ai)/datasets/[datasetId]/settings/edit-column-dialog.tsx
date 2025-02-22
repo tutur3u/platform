@@ -1,5 +1,5 @@
 import LoadingIndicator from '@/components/common/LoadingIndicator';
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,8 +7,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/dialog';
-import { Input } from '@tutur3u/ui/input';
+} from '@tuturuuu/ui/dialog';
+import { Input } from '@tuturuuu/ui/input';
 import { useEffect, useState } from 'react';
 
 interface Props {

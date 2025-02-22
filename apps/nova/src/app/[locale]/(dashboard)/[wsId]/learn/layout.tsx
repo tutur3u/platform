@@ -1,4 +1,4 @@
-import { Card } from '@tutur3u/ui/card';
+import { Card } from '@tuturuuu/ui/card';
 import { ReactNode } from 'react';
 
 export default function LearnLayout({ children }: { children: ReactNode }) {

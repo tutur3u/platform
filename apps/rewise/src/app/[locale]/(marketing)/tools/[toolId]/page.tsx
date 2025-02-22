@@ -1,10 +1,10 @@
 import { tools } from '../data';
 import { ToolForm } from './tool-form';
 import { supportedLocales } from '@/i18n/routing';
-import { Badge } from '@tutur3u/ui/badge';
-import { Button } from '@tutur3u/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
-import { Separator } from '@tutur3u/ui/separator';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Separator } from '@tuturuuu/ui/separator';
 import { ChevronLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

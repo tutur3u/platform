@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@tutur3u/supabase/next/client';
+import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 
 export async function downloadPublicObject({
   supabase,

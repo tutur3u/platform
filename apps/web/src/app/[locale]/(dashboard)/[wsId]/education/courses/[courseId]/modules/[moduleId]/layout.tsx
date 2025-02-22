@@ -3,10 +3,10 @@ import ModuleToggles from './toggles';
 import {
   createClient,
   createDynamicClient,
-} from '@tutur3u/supabase/next/server';
-import { WorkspaceCourseModule } from '@tutur3u/types/db';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+} from '@tuturuuu/supabase/next/server';
+import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import {
   BookText,
   Box,

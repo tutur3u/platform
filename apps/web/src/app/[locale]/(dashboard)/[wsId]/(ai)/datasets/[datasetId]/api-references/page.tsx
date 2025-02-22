@@ -1,14 +1,14 @@
 import EnvironmentSetup from './environment-setup';
-import { createClient } from '@tutur3u/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
-import { CodeBlock } from '@tutur3u/ui/codeblock';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
+} from '@tuturuuu/ui/card';
+import { CodeBlock } from '@tuturuuu/ui/codeblock';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { headers } from 'next/headers';
 
 interface Props {
