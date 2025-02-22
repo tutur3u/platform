@@ -1,7 +1,7 @@
 'use client';
 
-import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { ArrowRight, Globe } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, use, useState } from 'react';

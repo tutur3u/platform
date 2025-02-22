@@ -1,6 +1,5 @@
 'use client';
 
-import LoadingIndicator from '@/components/common/LoadingIndicator';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

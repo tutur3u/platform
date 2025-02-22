@@ -1,5 +1,4 @@
 import { ChatModelSelector } from './chat-model-selector';
-import LoadingIndicator from './common/LoadingIndicator';
 import { PromptForm } from './prompt-form';
 import { ScrollToBottomButton } from './scroll-to-bottom-button';
 import { ScrollToTopButton } from './scroll-to-top-button';
@@ -10,6 +9,7 @@ import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
   Dialog,
   DialogContent,

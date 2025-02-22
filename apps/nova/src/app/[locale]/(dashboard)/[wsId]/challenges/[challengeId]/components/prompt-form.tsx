@@ -1,8 +1,8 @@
 'use client';
 
 import { Problems } from '../../challenges';
-import Mosaic from '@/components/common/LoadingIndicator';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
   Dialog,
   DialogContent,
@@ -194,7 +194,7 @@ export default function ChatBox({
       <div className="flex-1 space-y-2 rounded-md border p-2">
         {loading && (
           <div className="flex h-screen items-center justify-center">
-            <Mosaic className="h-6" />
+            <LoadingIndicator className="h-6" />
             <p>We are processing your prompt please wait...</p>
           </div>
         )}

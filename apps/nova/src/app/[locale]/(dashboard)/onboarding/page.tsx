@@ -1,5 +1,5 @@
 import WorkspaceInvites from './workspace-invites';
-import LoadingIndicator from '@/components/common/LoadingIndicator';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Separator } from '@tuturuuu/ui/separator';
 // import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';

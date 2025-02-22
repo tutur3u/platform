@@ -1,6 +1,5 @@
 'use client';
 
-import LoadingIndicator from '@/components/common/LoadingIndicator';
 import useEmail from '@/hooks/useEmail';
 import { isEmail } from '@/utils/email-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -9,6 +8,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import {
