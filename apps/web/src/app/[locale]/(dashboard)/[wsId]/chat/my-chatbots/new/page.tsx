@@ -11,12 +11,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { use } from 'react';
-import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const FormSchema = z.object({

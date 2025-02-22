@@ -9,9 +9,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
-import { UseFormReturn } from 'react-hook-form';
 import * as z from 'zod';
 
 export default function UserReportForm({

@@ -5,11 +5,11 @@ import UserReportForm from './form';
 import { WorkspaceUserReport } from '@tuturuuu/types/db';
 import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useLocale, useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 export const UserReportFormSchema = z.object({

@@ -323,10 +323,10 @@ importers:
         version: 2.7.22
       '@vercel/analytics':
         specifier: ^1.5.0
-        version: 1.5.0(next@15.1.7(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.5.0(next@15.1.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       '@vercel/speed-insights':
         specifier: ^1.2.0
-        version: 1.2.0(next@15.1.7(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.2.0(next@15.1.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-21e868a-20250216
         version: 19.0.0-beta-21e868a-20250216
@@ -377,10 +377,10 @@ importers:
         version: 1.0.0
       next:
         specifier: ^15.1.7
-        version: 15.1.7(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 15.1.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-intl:
         specifier: ^3.26.5
-        version: 3.26.5(next@15.1.7(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 3.26.5(next@15.1.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -402,9 +402,6 @@ importers:
       react-email:
         specifier: ^3.0.7
         version: 3.0.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      react-hook-form:
-        specifier: ^7.54.2
-        version: 7.54.2(react@19.0.0)
       react-intersection-observer:
         specifier: ^9.15.1
         version: 9.15.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -856,9 +853,6 @@ importers:
       react-email:
         specifier: ^3.0.7
         version: 3.0.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      react-hook-form:
-        specifier: ^7.54.2
-        version: 7.54.2(react@19.0.0)
       react-intersection-observer:
         specifier: ^9.15.1
         version: 9.15.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1106,9 +1100,6 @@ importers:
       react-email:
         specifier: ^3.0.7
         version: 3.0.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      react-hook-form:
-        specifier: ^7.54.2
-        version: 7.54.2(react@19.0.0)
       react-intersection-observer:
         specifier: ^9.15.1
         version: 9.15.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1448,10 +1439,10 @@ importers:
         version: 2.7.22
       '@vercel/analytics':
         specifier: ^1.5.0
-        version: 1.5.0(next@15.1.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.5.0(next@15.1.7(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       '@vercel/speed-insights':
         specifier: ^1.2.0
-        version: 1.2.0(next@15.1.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.2.0(next@15.1.7(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-21e868a-20250216
         version: 19.0.0-beta-21e868a-20250216
@@ -1511,10 +1502,10 @@ importers:
         version: 1.0.0
       next:
         specifier: ^15.1.7
-        version: 15.1.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 15.1.7(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-intl:
         specifier: ^3.26.5
-        version: 3.26.5(next@15.1.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 3.26.5(next@15.1.7(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1542,9 +1533,6 @@ importers:
       react-email:
         specifier: ^3.0.7
         version: 3.0.7(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      react-hook-form:
-        specifier: ^7.54.2
-        version: 7.54.2(react@19.0.0)
       react-intersection-observer:
         specifier: ^9.15.1
         version: 9.15.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1967,8 +1955,8 @@ importers:
   packages/ui:
     dependencies:
       '@hookform/resolvers':
-        specifier: ^4.1.0
-        version: 4.1.0(react-hook-form@7.54.2(react@19.0.0))
+        specifier: ^4.1.1
+        version: 4.1.1(react-hook-form@7.54.2(react@19.0.0))
       '@radix-ui/react-accordion':
         specifier: ^1.2.3
         version: 1.2.3(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -3120,8 +3108,8 @@ packages:
       y-protocols: ^1.0.6
       yjs: ^13.6.8
 
-  '@hookform/resolvers@4.1.0':
-    resolution: {integrity: sha512-fX/uHKb+OOCpACLc6enuTQsf0ZpRrKbeBBPETg5PCPLCIYV6osP2Bw6ezuclM61lH+wBF9eXcuC0+BFh9XOEnQ==}
+  '@hookform/resolvers@4.1.1':
+    resolution: {integrity: sha512-S9YN1RgNWG+klUz5uQaV6rjE4pr6Py2tamj7ekshzLcMyg+/Pal1KZAYgGszV0+doiy41dUiQgXL3uRS9stndQ==}
     peerDependencies:
       react-hook-form: ^7.0.0
 
@@ -10827,7 +10815,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@hookform/resolvers@4.1.0(react-hook-form@7.54.2(react@19.0.0))':
+  '@hookform/resolvers@4.1.1(react-hook-form@7.54.2(react@19.0.0))':
     dependencies:
       caniuse-lite: 1.0.30001700
       react-hook-form: 7.54.2(react@19.0.0)

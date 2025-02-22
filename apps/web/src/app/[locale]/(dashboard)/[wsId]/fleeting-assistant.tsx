@@ -5,6 +5,7 @@ import { type Message } from '@tuturuuu/ai/types';
 import { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Form, FormControl, FormField, FormItem } from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -13,7 +14,6 @@ import { ArrowDownToLine, Expand, RotateCcw, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const FormSchema = z.object({

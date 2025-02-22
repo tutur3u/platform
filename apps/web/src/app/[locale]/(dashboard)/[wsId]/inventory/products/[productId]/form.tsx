@@ -25,6 +25,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { useFieldArray, useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -43,7 +44,6 @@ import { Check, ChevronsUpDown, Plus, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 const InventorySchema = z.object({
