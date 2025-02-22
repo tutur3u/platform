@@ -4,7 +4,7 @@ import NavbarSeparator from './navbar-separator';
 import { MainNavigationMenu } from './navigation-menu';
 import ServerMenu from './server-menu';
 import WorkspaceSelect from './workspace-select';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';

@@ -10,7 +10,7 @@ import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { DraftingCompass, FlaskConical } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

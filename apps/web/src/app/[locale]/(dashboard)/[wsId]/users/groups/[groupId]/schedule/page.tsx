@@ -4,7 +4,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { YearCalendar } from '@tuturuuu/ui/custom/calendar/year-calendar';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { CalendarIcon, ChartColumn, FileUser, UserCheck } from 'lucide-react';

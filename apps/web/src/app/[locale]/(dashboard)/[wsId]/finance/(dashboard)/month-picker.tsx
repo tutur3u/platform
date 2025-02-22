@@ -1,6 +1,6 @@
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import {
   add,
   eachMonthOfInterval,

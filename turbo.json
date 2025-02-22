@@ -33,8 +33,21 @@
     "NODE_ENV"
   ],
   "tasks": {
+    "rollup": {
+      "dependsOn": [
+        "^rollup"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
+    },
     "build": {
       "dependsOn": [
+        "rollup",
         "^build"
       ],
       "inputs": [

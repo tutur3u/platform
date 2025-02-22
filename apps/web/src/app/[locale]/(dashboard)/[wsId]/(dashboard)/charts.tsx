@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import {

@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { IconUser } from '@tuturuuu/ui/icons';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

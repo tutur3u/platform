@@ -1,7 +1,7 @@
 import { ChatMessage } from '@/components/chat-message';
 import { type Message } from '@tuturuuu/ai/types';
 import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { Box, Globe, Lock, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';

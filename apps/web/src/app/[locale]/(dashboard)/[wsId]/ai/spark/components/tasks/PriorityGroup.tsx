@@ -8,7 +8,7 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 
 interface PriorityGroupProps {
   priority: Priority;

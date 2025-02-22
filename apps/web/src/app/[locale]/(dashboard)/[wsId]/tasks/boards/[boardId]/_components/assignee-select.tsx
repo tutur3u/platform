@@ -13,7 +13,7 @@ import {
   CommandSeparator,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { Check, ChevronsUpDown, Loader2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

@@ -27,7 +27,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

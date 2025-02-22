@@ -3,7 +3,7 @@
 import GradientHeadline from '../../(marketing)/gradient-headline';
 import { ThemeToggle } from '../../theme-toggle';
 import { Button } from '@tuturuuu/ui/button';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Activity,

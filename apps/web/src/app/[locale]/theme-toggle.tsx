@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 

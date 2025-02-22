@@ -12,7 +12,7 @@ import {
 } from '@tuturuuu/ui/card';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { formatDistance } from 'date-fns';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import Link from 'next/link';

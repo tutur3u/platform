@@ -19,7 +19,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import {
   ArrowDownToLine,
   Check,

@@ -5,7 +5,7 @@ import GetStartedButton from './get-started-button';
 import GradientHeadline from './gradient-headline';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
   Archive,

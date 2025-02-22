@@ -1,6 +1,6 @@
 import { Node } from '@tiptap/pm/model';
 import { Editor, NodeViewWrapper } from '@tiptap/react';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { useCallback, useRef } from 'react';
 
 interface ImageBlockViewProps {

@@ -1,4 +1,4 @@
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { useTranslations } from 'next-intl';
 import { QRCode } from 'react-qrcode-logo';
 

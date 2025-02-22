@@ -7,7 +7,7 @@ import { routing, supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/toaster';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';

@@ -9,7 +9,7 @@ import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { Calendar, ChartColumn, FileUser, User, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

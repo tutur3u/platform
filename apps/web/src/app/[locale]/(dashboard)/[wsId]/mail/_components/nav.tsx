@@ -2,7 +2,7 @@
 
 import { buttonVariants } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 

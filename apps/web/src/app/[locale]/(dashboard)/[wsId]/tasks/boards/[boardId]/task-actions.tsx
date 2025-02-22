@@ -32,7 +32,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import {
   AlertCircle,

@@ -1,4 +1,4 @@
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { memo, useCallback } from 'react';
 
 export type ColorButtonProps = {

@@ -1,5 +1,5 @@
 import { Button } from '../../button';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const MonthHeader: React.FC<{

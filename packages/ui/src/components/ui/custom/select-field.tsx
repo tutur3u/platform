@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from '../select';
 import { Root } from '@radix-ui/react-select';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import React, { forwardRef } from 'react';
 
 type SelectOption = {

@@ -1,4 +1,4 @@
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 
 export default function LoadingIndicator({
   className,

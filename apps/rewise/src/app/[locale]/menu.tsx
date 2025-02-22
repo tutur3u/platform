@@ -7,7 +7,7 @@ import { type SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@tuturuuu/ui/sheet';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

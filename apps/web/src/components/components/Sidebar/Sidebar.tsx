@@ -1,5 +1,5 @@
 // import { TableOfContents } from '../TableOfContents';
-// import { cn } from '@tuturuuu/utils/format';
+// import { cn } from '@tuturuuu/utils';
 // import { Editor } from '@tiptap/react';
 // import { memo, useCallback } from 'react';
 

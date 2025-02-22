@@ -14,7 +14,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { Archive, Inbox, Search, Send } from 'lucide-react';
 import * as React from 'react';
 

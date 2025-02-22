@@ -3,7 +3,7 @@ import { OnlineUsers } from '@/components/online-users';
 import { type Message } from '@tuturuuu/ai/types';
 import { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { Box, Globe, Lock, Sparkle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';

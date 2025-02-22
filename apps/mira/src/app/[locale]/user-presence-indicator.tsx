@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { ReactNode } from 'react';
 
 export default function UserPresenceIndicator({

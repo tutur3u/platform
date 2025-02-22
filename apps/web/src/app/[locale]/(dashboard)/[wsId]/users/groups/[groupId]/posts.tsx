@@ -25,7 +25,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { format } from 'date-fns';
 import { BookPlus, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';

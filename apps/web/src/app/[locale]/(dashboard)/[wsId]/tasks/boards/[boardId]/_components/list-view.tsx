@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { format } from 'date-fns';
 import {
   ArrowDownUp,

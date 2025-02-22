@@ -11,7 +11,7 @@ import { useSidebar } from '@/hooks/useSidebar';
 import '@/style/index.css';
 import { Editor } from '@tiptap/core';
 import { EditorContent, JSONContent } from '@tiptap/react';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import { Loader2 } from 'lucide-react';
 import {
   forwardRef,

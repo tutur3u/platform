@@ -3,7 +3,7 @@ import ProblemChanger from './problem-changer';
 import LogoTitle from '@/app/[locale]/(marketing)/logo-title';
 import NavbarSeparator from '@/app/[locale]/(marketing)/navbar-separator';
 import { Button } from '@tuturuuu/ui/button';
-import { cn } from '@tuturuuu/utils/format';
+import { cn } from '@tuturuuu/utils';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
