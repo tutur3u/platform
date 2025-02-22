@@ -1,7 +1,6 @@
 'use client';
 
 import { getInitials } from '@/utils/name-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { User } from '@tuturuuu/types/primitives/User';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -25,6 +24,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Settings, User as UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

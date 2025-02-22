@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,6 +21,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';

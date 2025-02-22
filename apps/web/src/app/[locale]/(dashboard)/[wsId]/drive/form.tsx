@@ -2,7 +2,6 @@
 
 import { joinPath } from '@/utils/path-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,6 +15,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Check, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';

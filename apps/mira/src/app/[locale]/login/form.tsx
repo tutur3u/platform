@@ -1,7 +1,6 @@
 'use client';
 
 import { DEV_MODE } from '@/constants/common';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -15,6 +14,7 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';

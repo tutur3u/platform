@@ -2,10 +2,10 @@
 
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { WorkspaceUserReport } from '@tuturuuu/types/db';
 import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useLocale, useTranslations } from 'next-intl';
 import { ReactNode } from 'react';

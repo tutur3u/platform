@@ -2,7 +2,6 @@
 
 import AvailabilityPlanner from './availability-planner';
 import { useTimeBlocking } from './time-blocking-provider';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { User } from '@tuturuuu/types/primitives/User';
@@ -26,6 +25,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';

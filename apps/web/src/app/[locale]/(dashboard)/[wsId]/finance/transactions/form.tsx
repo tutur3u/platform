@@ -3,7 +3,6 @@
 import { WalletForm } from '../wallets/form';
 import { TransactionCategoryForm } from './categories/form';
 import { fetcher } from '@/utils/fetcher';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { Wallet } from '@tuturuuu/types/primitives/Wallet';
@@ -22,6 +21,7 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';

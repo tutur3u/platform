@@ -1,7 +1,6 @@
 'use client';
 
 import { Filter } from '../filters';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
@@ -18,6 +17,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';

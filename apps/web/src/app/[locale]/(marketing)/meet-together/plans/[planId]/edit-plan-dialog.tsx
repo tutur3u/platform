@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import {
   AlertDialog,
@@ -33,6 +32,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';

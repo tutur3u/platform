@@ -101,6 +101,7 @@
     "./tailwind.config": "./tailwind.config.ts",
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts",
+    "./resolvers": "./src/resolvers.ts",
     "./*": "./src/components/ui/*.tsx"
   }
 }

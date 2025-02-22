@@ -4,6 +4,7 @@
     "license": "MIT",
     "version": "0.0.4",
     "exports": {
+        "./resolvers": "./src/resolvers.ts",
         "./button": "./src/components/ui/button.tsx"
     }
 }

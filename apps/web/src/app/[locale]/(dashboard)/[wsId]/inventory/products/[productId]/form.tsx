@@ -2,7 +2,6 @@
 
 import { ProductCategoryForm } from '../../categories/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
@@ -29,6 +28,7 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
   Select,
   SelectContent,

@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,6 +21,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';

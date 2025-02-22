@@ -1,7 +1,6 @@
 'use client';
 
 import { getInitials } from '@/utils/name-helper';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
@@ -36,6 +35,7 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
   Select,
   SelectContent,

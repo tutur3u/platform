@@ -1,6 +1,5 @@
 import { DatePicker } from '@/components/row-actions/users/date-picker';
 import { fetcher } from '@/utils/fetcher';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,6 +21,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';

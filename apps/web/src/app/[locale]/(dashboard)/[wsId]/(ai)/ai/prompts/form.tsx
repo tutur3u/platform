@@ -1,7 +1,6 @@
 'use client';
 
 import AIModelSelector from './model-selector';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { AIPrompt } from '@tuturuuu/types/db';
 import {
   Accordion,
@@ -20,6 +19,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
