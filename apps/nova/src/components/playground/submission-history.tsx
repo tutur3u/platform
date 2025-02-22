@@ -1,5 +1,5 @@
-import { Badge } from '@tutur3u/ui/badge';
-import { CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { Badge } from '@tuturuuu/ui/badge';
+import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 
 interface SubmissionHistoryProps {
   submissions: {

@@ -1,15 +1,15 @@
-# @tutur3u/supabase
+# @tuturuuu/supabase
 
 Supabase client and utilities for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install @tutur3u/supabase
+npm install @tuturuuu/supabase
 # or
-yarn add @tutur3u/supabase
+yarn add @tuturuuu/supabase
 # or
-pnpm add @tutur3u/supabase
+pnpm add @tuturuuu/supabase
 ```
 
 ## Development

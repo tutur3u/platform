@@ -11,9 +11,9 @@ import RewiseMenuItem from './rewise-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 import { getInitials } from '@/utils/name-helper';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
-import { Dialog } from '@tutur3u/ui/dialog';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,8 +26,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/dropdown-menu';
+import { cn } from '@tuturuuu/utils/format';
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

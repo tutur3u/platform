@@ -1,15 +1,15 @@
-# @tutur3u/eslint-config
+# @tuturuuu/eslint-config
 
 Shared ESLint configurations for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install --dev @tutur3u/eslint-config
+npm install --dev @tuturuuu/eslint-config
 # or
-yarn add --dev @tutur3u/eslint-config
+yarn add --dev @tuturuuu/eslint-config
 # or
-pnpm add -D @tutur3u/eslint-config
+pnpm add -D @tuturuuu/eslint-config
 ```
 
 ## Usage
@@ -18,7 +18,7 @@ pnpm add -D @tutur3u/eslint-config
 
 ```js
 // eslint.config.mjs
-import nextConfig from '@tutur3u/eslint-config/next';
+import nextConfig from '@tuturuuu/eslint-config/next';
 
 export default nextConfig;
 ```
@@ -27,7 +27,7 @@ export default nextConfig;
 
 ```js
 // eslint.config.mjs
-import reactConfig from '@tutur3u/eslint-config/react-internal';
+import reactConfig from '@tuturuuu/eslint-config/react-internal';
 
 export default reactConfig;
 ```
@@ -36,7 +36,7 @@ export default reactConfig;
 
 ```js
 // eslint.config.mjs
-import libraryConfig from '@tutur3u/eslint-config/library';
+import libraryConfig from '@tuturuuu/eslint-config/library';
 
 export default libraryConfig;
 ```

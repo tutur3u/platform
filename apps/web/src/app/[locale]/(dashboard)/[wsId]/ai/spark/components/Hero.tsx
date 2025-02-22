@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '@tutur3u/ui/badge';
+import { Badge } from '@tuturuuu/ui/badge';
 
 export function Hero() {
   return (

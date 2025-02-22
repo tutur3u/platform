@@ -6,14 +6,14 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
+} from '@tuturuuu/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/select';
+} from '@tuturuuu/ui/select';
 import { Settings2 } from 'lucide-react';
 
 interface PlanSettingsProps {

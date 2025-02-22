@@ -3,9 +3,9 @@
 import { joinPath } from '@/utils/path-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tutur3u/types/primitives/StorageObject';
-import { Button } from '@tutur3u/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
   FormControl,
@@ -13,10 +13,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Check, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

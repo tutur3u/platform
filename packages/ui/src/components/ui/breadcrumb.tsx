@@ -1,5 +1,5 @@
 import { Slot } from '@radix-ui/react-slot';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { ChevronRight, MoreHorizontal } from 'lucide-react';
 import * as React from 'react';
 

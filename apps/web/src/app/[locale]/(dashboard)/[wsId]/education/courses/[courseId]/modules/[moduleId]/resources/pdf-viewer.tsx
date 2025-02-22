@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@tutur3u/ui/button';
-import { cn } from '@tutur3u/utils/format';
+import { Button } from '@tuturuuu/ui/button';
+import { cn } from '@tuturuuu/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';

@@ -6,16 +6,16 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { WorkspaceDataset } from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/button';
+import type { WorkspaceDataset } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tutur3u/ui/dialog';
-import { Input } from '@tutur3u/ui/input';
+} from '@tuturuuu/ui/dialog';
+import { Input } from '@tuturuuu/ui/input';
 import {
   Pagination,
   PaginationContent,
@@ -24,16 +24,16 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@tutur3u/ui/pagination';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
+} from '@tuturuuu/ui/pagination';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/select';
-import { Skeleton } from '@tutur3u/ui/skeleton';
+} from '@tuturuuu/ui/select';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Plus, RotateCw, Trash, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

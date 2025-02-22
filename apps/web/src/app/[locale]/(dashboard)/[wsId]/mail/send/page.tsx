@@ -2,11 +2,11 @@ import { getUserColumns } from '../../users/database/columns';
 import Filters from '../../users/database/filters';
 import MailPosts from './posts';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import type { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import type { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

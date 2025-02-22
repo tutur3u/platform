@@ -1,7 +1,7 @@
 'use client';
 
 import { BlockEditor } from '@/components/components/BlockEditor';
-import { WorkspaceDocument } from '@tutur3u/types/db';
+import { WorkspaceDocument } from '@tuturuuu/types/db';
 import { Globe2, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 

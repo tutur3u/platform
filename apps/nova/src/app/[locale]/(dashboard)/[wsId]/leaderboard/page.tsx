@@ -1,7 +1,7 @@
 import { Leaderboard } from '@/components/leaderboard/leaderboard';
 import { getLeaderboardData } from '@/lib/leaderboard';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Trophy } from 'lucide-react';
 import { redirect } from 'next/navigation';
 

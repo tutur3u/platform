@@ -1,5 +1,5 @@
 {
-  "name": "@tutur3u/supabase",
+  "name": "@tuturuuu/supabase",
   "license": "MIT",
   "version": "0.0.5",
   "publishConfig": {
@@ -14,7 +14,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
-    "@tutur3u/types": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
     "eslint": "^9.20.1",
     "next": "^15.1.7",
     "react": "^19.0.0",
@@ -24,8 +24,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.20.0",
-    "@tutur3u/eslint-config": "workspace:*",
-    "@tutur3u/typescript-config": "workspace:*",
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
     "@typescript-eslint/eslint-plugin": "^8.24.1",

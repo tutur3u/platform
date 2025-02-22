@@ -3,11 +3,11 @@
 import { Filter } from '../filters';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
-import { UserGroupTag } from '@tutur3u/types/primitives/UserGroupTag';
-import { Button } from '@tutur3u/ui/button';
-import { ColorPicker } from '@tutur3u/ui/color-picker';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
+import { Button } from '@tuturuuu/ui/button';
+import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import {
   Form,
   FormControl,
@@ -15,10 +15,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
-import { Separator } from '@tutur3u/ui/separator';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { Separator } from '@tuturuuu/ui/separator';
 import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

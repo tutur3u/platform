@@ -4,11 +4,11 @@ import { DatePicker } from '@/components/row-actions/users/date-picker';
 import { getInitials } from '@/utils/name-helper';
 import { generateRandomUUID } from '@/utils/uuid-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
-import { Button } from '@tutur3u/ui/button';
-import { SelectField } from '@tutur3u/ui/custom/select-field';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
+import { SelectField } from '@tuturuuu/ui/custom/select-field';
 import {
   Form,
   FormControl,
@@ -17,11 +17,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
-import { Separator } from '@tutur3u/ui/separator';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
 import { Loader2, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

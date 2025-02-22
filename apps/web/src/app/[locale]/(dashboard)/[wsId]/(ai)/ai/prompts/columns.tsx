@@ -2,8 +2,8 @@
 
 import { AIPromptRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { AIPrompt } from '@tutur3u/types/db';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { AIPrompt } from '@tuturuuu/types/db';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const aiPromptsColumns = (

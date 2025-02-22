@@ -6,9 +6,9 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/accordion';
-import { Badge } from '@tutur3u/ui/badge';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/accordion';
+import { Badge } from '@tuturuuu/ui/badge';
+import { cn } from '@tuturuuu/utils/format';
 
 interface PriorityGroupProps {
   priority: Priority;

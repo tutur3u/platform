@@ -6,9 +6,9 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/accordion';
-import { FormField, FormItem } from '@tutur3u/ui/form';
-import { Separator } from '@tutur3u/ui/separator';
+} from '@tuturuuu/ui/accordion';
+import { FormField, FormItem } from '@tuturuuu/ui/form';
+import { Separator } from '@tuturuuu/ui/separator';
 import { ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';

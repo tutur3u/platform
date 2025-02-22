@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,10 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tutur3u/ui/dialog';
-import { useToast } from '@tutur3u/ui/hooks/use-toast';
-import { Progress } from '@tutur3u/ui/progress';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
+} from '@tuturuuu/ui/dialog';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { Progress } from '@tuturuuu/ui/progress';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   AlertCircle,
   CheckCircle,

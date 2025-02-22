@@ -1,5 +1,5 @@
-import { Model, models, providers } from '@tutur3u/ai/models';
-import { Button } from '@tutur3u/ui/button';
+import { Model, models, providers } from '@tuturuuu/ai/models';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -7,10 +7,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@tutur3u/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
-import { Separator } from '@tutur3u/ui/separator';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 

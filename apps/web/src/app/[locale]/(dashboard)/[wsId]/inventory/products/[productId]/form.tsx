@@ -3,11 +3,11 @@
 import { ProductCategoryForm } from '../../categories/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ProductCategory } from '@tutur3u/types/primitives/ProductCategory';
-import { ProductUnit } from '@tutur3u/types/primitives/ProductUnit';
-import { ProductWarehouse } from '@tutur3u/types/primitives/ProductWarehouse';
-import { Button } from '@tutur3u/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
+import { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
+import { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Command,
   CommandEmpty,
@@ -16,8 +16,8 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@tutur3u/ui/command';
-import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
+} from '@tuturuuu/ui/command';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   Form,
   FormControl,
@@ -25,20 +25,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/select';
-import { Separator } from '@tutur3u/ui/separator';
-import { Textarea } from '@tutur3u/ui/textarea';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/select';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import { Check, ChevronsUpDown, Plus, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

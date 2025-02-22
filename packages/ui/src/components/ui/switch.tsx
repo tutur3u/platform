@@ -1,7 +1,7 @@
 'use client';
 
 import * as SwitchPrimitive from '@radix-ui/react-switch';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import * as React from 'react';
 
 function Switch({

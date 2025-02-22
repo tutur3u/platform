@@ -2,17 +2,17 @@
 
 import { WalletForm } from './form';
 import { Row } from '@tanstack/react-table';
-import { Wallet } from '@tutur3u/types/primitives/Wallet';
-import { Button } from '@tutur3u/ui/button';
-import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
+import { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import { Button } from '@tuturuuu/ui/button';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

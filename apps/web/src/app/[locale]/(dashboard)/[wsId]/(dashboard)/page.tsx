@@ -28,10 +28,10 @@ import {
   getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
-import { createClient } from '@tutur3u/supabase/next/server';
-import type { AuroraForecast } from '@tutur3u/types/db';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { AuroraForecast } from '@tuturuuu/types/db';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';

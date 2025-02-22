@@ -1,7 +1,7 @@
 import type { FinanceDashboardSearchParams } from '../../finance/(dashboard)/page';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getPermissions } from '@/lib/workspace-helper';
-import { createClient } from '@tutur3u/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;

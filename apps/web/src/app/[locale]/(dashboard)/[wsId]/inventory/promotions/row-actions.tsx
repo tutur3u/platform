@@ -2,22 +2,22 @@
 
 import { PromotionForm } from './form';
 import { Row } from '@tanstack/react-table';
-import { ProductPromotion } from '@tutur3u/types/primitives/ProductPromotion';
-import { Button } from '@tutur3u/ui/button';
+import { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

@@ -2,8 +2,8 @@
 
 // import { UserRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { EmailHistoryEntry } from '@tutur3u/types/db';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { EmailHistoryEntry } from '@tuturuuu/types/db';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 

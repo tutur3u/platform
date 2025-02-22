@@ -1,19 +1,19 @@
 'use client';
 
 import { LogoutDropdownItem } from '../logout-dropdown-item';
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@tutur3u/ui/collapsible';
+} from '@tuturuuu/ui/collapsible';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/dropdown-menu';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { cn } from '@tuturuuu/utils/format';
 import {
   BookOpen,
   ChevronDown,

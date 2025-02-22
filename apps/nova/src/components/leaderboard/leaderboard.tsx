@@ -1,8 +1,8 @@
 'use client';
 
 import { UserRankingModal } from './user-ranking-modal';
-import { LeaderboardEntry } from '@tutur3u/types/primitives/leaderboard';
-import { Button } from '@tutur3u/ui/button';
+import { LeaderboardEntry } from '@tuturuuu/types/primitives/leaderboard';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@tutur3u/ui/table';
+} from '@tuturuuu/ui/table';
 import { useState } from 'react';
 
 interface LeaderboardProps {

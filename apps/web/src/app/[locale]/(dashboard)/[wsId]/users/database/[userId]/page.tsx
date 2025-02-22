@@ -1,12 +1,12 @@
 import { invoiceColumns } from '../../../finance/invoices/columns';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { WorkspaceUserReport } from '@tutur3u/types/db';
-import { Invoice } from '@tutur3u/types/primitives/Invoice';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Button } from '@tutur3u/ui/button';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceUserReport } from '@tuturuuu/types/db';
+import { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
+import { Separator } from '@tuturuuu/ui/separator';
 import { TicketCheck, Users } from 'lucide-react';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';

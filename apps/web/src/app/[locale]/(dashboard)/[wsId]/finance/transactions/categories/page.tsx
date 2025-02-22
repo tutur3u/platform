@@ -1,10 +1,10 @@
 import { transactionCategoryColumns } from './columns';
 import { TransactionCategoryForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { TransactionCategory } from '@tutur3u/types/primitives/TransactionCategory';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

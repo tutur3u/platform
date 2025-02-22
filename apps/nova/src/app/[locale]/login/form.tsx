@@ -2,7 +2,7 @@
 
 import { DEV_MODE } from '@/constants/common';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
   FormControl,
@@ -11,10 +11,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tutur3u/ui/input-otp';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';

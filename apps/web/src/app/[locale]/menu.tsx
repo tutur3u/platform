@@ -2,21 +2,21 @@
 
 import { AuthButton } from './auth-button';
 import { ThemeToggle } from './theme-toggle';
-import type { SupabaseUser } from '@tutur3u/supabase/next/user';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/accordion';
+} from '@tuturuuu/ui/accordion';
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetTrigger,
-} from '@tutur3u/ui/sheet';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/sheet';
+import { cn } from '@tuturuuu/utils/format';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

@@ -7,9 +7,9 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceSecret } from '@tutur3u/types/primitives/WorkspaceSecret';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
-import { Switch } from '@tutur3u/ui/switch';
+import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Loader2 } from 'lucide-react';
 import moment from 'moment';
 import { useParams, useRouter } from 'next/navigation';

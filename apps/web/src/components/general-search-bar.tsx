@@ -1,8 +1,8 @@
 'use client';
 
 import useSearchParams from '@/hooks/useSearchParams';
-import SearchBar from '@tutur3u/ui/custom/search-bar';
-import { cn } from '@tutur3u/utils/format';
+import SearchBar from '@tuturuuu/ui/custom/search-bar';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
 interface Props {

@@ -5,7 +5,7 @@ import CustomizedHeader from './customizedHeader';
 import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
-import { createClient } from '@tutur3u/supabase/next/client';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

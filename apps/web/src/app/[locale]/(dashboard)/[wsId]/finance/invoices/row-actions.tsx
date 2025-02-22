@@ -1,17 +1,17 @@
 'use client';
 
 import { Row } from '@tanstack/react-table';
-import { Invoice } from '@tutur3u/types/primitives/Invoice';
-import { Button } from '@tutur3u/ui/button';
-import ModifiableDialogTrigger from '@tutur3u/ui/custom/modifiable-dialog-trigger';
+import { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import { Button } from '@tuturuuu/ui/button';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
+} from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

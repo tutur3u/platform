@@ -4,7 +4,7 @@ import useSearchParams from '@/hooks/useSearchParams';
 import {
   DataTable,
   DataTableProps,
-} from '@tutur3u/ui/custom/tables/data-table';
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';

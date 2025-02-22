@@ -1,10 +1,10 @@
 import { groupTagColumns } from './columns';
 import GroupTagForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { WorkspaceApiKey } from '@tutur3u/types/primitives/WorkspaceApiKey';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

@@ -1,7 +1,7 @@
 'use client';
 
-import { Badge } from '@tutur3u/ui/badge';
-import { Card } from '@tutur3u/ui/card';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -10,8 +10,8 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
-} from '@tutur3u/ui/navigation-menu';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/navigation-menu';
+import { cn } from '@tuturuuu/utils/format';
 import {
   Archive,
   Banknote,

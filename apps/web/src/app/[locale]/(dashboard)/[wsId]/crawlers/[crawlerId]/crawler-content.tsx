@@ -2,17 +2,17 @@
 
 import CrawlButton from './crawl-button';
 import { formatHTML, unescapeMarkdownString } from './utils';
-import { Button } from '@tutur3u/ui/button';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
-import { MemoizedReactMarkdown } from '@tutur3u/ui/markdown';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tutur3u/ui/tabs';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/card';
+import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { cn } from '@tuturuuu/utils/format';
 import { formatDistance } from 'date-fns';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import Link from 'next/link';

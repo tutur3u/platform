@@ -1,4 +1,4 @@
-import { Separator } from '@tutur3u/ui/separator';
+import { Separator } from '@tuturuuu/ui/separator';
 import { isEqual } from 'lodash';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

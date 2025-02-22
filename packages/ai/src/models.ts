@@ -222,14 +222,14 @@ export const models: {
 );
 
 const fallbackModel = models.find((model) => !model.disabled);
-export const defaultModel =
+export const defaultModel: Model | undefined =
   models.find(
     (model) =>
       model.value === 'gemini-2.0-flash-001' &&
       model.provider === 'Google Vertex'
   ) || fallbackModel;
 
-export const providers = models.reduce((acc, model) => {
+export const providers: Provider[] = models.reduce((acc, model) => {
   if (!acc.includes(model.provider)) acc.push(model.provider);
   return acc;
 }, [] as Provider[]);

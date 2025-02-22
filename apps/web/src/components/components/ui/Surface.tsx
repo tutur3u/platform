@@ -1,4 +1,4 @@
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { HTMLProps, forwardRef } from 'react';
 
 export type SurfaceProps = HTMLProps<HTMLDivElement> & {

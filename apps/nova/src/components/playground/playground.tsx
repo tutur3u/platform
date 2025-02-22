@@ -5,12 +5,12 @@
 // import { PromptInput } from './prompt-input';
 // import { ResultsDisplay } from './results-display';
 // import { useToast } from './use-toast';
-// import { Card } from '@tutur3u/ui/card';
+// import { Card } from '@tuturuuu/ui/card';
 // import {
 //   ResizableHandle,
 //   ResizablePanel,
 //   ResizablePanelGroup,
-// } from '@tutur3u/ui/resizable';
+// } from '@tuturuuu/ui/resizable';
 // import { useEffect, useState } from 'react';
 
 // export interface Challenge {

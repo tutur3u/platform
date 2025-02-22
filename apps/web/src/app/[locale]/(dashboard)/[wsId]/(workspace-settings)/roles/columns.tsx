@@ -2,8 +2,8 @@
 
 import { RoleRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceRole } from '@tutur3u/types/db';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { WorkspaceRole } from '@tuturuuu/types/db';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { UserCircle } from 'lucide-react';
 import moment from 'moment';
 

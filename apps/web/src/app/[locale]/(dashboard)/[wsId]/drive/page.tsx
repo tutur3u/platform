@@ -6,13 +6,13 @@ import { joinPath } from '@/utils/path-helper';
 import {
   createClient,
   createDynamicClient,
-} from '@tutur3u/supabase/next/server';
+} from '@tuturuuu/supabase/next/server';
 import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
   StorageObject,
-} from '@tutur3u/types/primitives/StorageObject';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+} from '@tuturuuu/types/primitives/StorageObject';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

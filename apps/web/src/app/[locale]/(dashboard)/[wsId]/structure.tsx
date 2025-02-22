@@ -5,8 +5,8 @@ import WorkspaceSelect from '../../workspace-select';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { Workspace } from '@tutur3u/types/primitives/Workspace';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -14,22 +14,22 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from '@tutur3u/ui/breadcrumb';
-import { Button } from '@tutur3u/ui/button';
+} from '@tuturuuu/ui/breadcrumb';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
+} from '@tuturuuu/ui/dropdown-menu';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@tutur3u/ui/resizable';
-import { Separator } from '@tutur3u/ui/separator';
-import { TooltipProvider } from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/resizable';
+import { Separator } from '@tuturuuu/ui/separator';
+import { TooltipProvider } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';

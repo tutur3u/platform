@@ -1,7 +1,7 @@
 import SparkClientPage from './client-page';
 import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import { getCurrentUser } from '@/lib/user-helper';
-import { createAdminClient } from '@tutur3u/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

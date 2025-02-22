@@ -1,4 +1,4 @@
-import { POST } from '@tutur3u/ai/chat/anthropic/route';
+import { POST } from '@tuturuuu/ai/chat/anthropic/route';
 
 export const config = {
   maxDuration: 60,

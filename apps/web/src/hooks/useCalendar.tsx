@@ -1,5 +1,5 @@
-import { Workspace } from '@tutur3u/types/primitives/Workspace';
-import { CalendarEvent } from '@tutur3u/types/primitives/calendar-event';
+import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import moment from 'moment';
 import 'moment/locale/vi';
 import {

@@ -6,10 +6,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/accordion';
-import { Badge } from '@tutur3u/ui/badge';
-import { Button } from '@tutur3u/ui/button';
-import { Card } from '@tutur3u/ui/card';
+} from '@tuturuuu/ui/accordion';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
 import { motion } from 'framer-motion';
 import {
   Activity,

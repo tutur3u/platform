@@ -1,4 +1,4 @@
-import { ColorPicker } from '@tutur3u/ui/color-picker';
+import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import { useTranslations } from 'next-intl';
 
 function QRColorPicker({

@@ -8,9 +8,9 @@ import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
   createDynamicClient,
-} from '@tutur3u/supabase/next/server';
-import { WorkspaceCourseModule } from '@tutur3u/types/db';
-import { Separator } from '@tutur3u/ui/separator';
+} from '@tuturuuu/supabase/next/server';
+import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { Separator } from '@tuturuuu/ui/separator';
 import {
   BookText,
   Goal,

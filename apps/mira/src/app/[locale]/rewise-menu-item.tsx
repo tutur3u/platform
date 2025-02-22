@@ -3,7 +3,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@tutur3u/ui/dropdown-menu';
+} from '@tuturuuu/ui/dropdown-menu';
 import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 

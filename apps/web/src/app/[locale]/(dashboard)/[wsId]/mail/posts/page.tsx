@@ -1,10 +1,10 @@
 import { getPostEmailColumns } from './columns';
 import Filters from './filters';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { PostEmail } from '@tutur3u/types/primitives/post-email';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { MailWarning, Send } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 

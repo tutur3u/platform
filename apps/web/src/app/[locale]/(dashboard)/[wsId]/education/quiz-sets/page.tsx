@@ -1,10 +1,10 @@
 import { getQuizSetColumns } from './columns';
 import QuizForm from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { type WorkspaceQuizSet } from '@tutur3u/types/db';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { type WorkspaceQuizSet } from '@tuturuuu/types/db';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

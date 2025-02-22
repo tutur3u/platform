@@ -1,7 +1,7 @@
 'use client';
 
 import UserFieldForm, { ApiConfigFormSchema } from './form';
-import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
+import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tutur3u/ui/dialog';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
+} from '@tuturuuu/ui/dialog';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';

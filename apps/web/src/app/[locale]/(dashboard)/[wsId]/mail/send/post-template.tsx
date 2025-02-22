@@ -1,6 +1,6 @@
 import type { UserGroupPost } from '../../users/groups/[groupId]/posts/[postId]/card';
 import { Head, Html, Img, Tailwind } from '@react-email/components';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 
 interface Props {
   post: UserGroupPost;

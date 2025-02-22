@@ -2,8 +2,8 @@
 
 import { TransactionCategoryRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { TransactionCategory } from '@tutur3u/types/primitives/TransactionCategory';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const transactionCategoryColumns = (

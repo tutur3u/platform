@@ -1,4 +1,4 @@
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { icons } from 'lucide-react';
 import { memo } from 'react';
 

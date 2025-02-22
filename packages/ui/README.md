@@ -1,21 +1,21 @@
-# @tutur3u/ui
+# @tuturuuu/ui
 
 Shared UI components and design system for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install @tutur3u/ui
+npm install @tuturuuu/ui
 # or
-yarn add @tutur3u/ui
+yarn add @tuturuuu/ui
 # or
-pnpm add @tutur3u/ui
+pnpm add @tuturuuu/ui
 ```
 
 ## Usage
 
 ```typescript
-import { Button, Card } from '@tutur3u/ui'
+import { Button, Card } from '@tuturuuu/ui'
 
 export default function MyComponent() {
   return (

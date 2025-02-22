@@ -1,13 +1,13 @@
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Button } from '@tutur3u/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@tutur3u/ui/dropdown-menu';
-import { Separator } from '@tutur3u/ui/separator';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/dropdown-menu';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import {
   CalendarDays,
   LayoutGrid,

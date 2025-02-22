@@ -11,7 +11,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { ScrollArea } from '../scroll-area';
 import { Separator } from '../separator';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { CommandList } from 'cmdk';
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
 import * as React from 'react';

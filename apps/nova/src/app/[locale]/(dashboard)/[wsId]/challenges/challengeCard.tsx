@@ -1,15 +1,15 @@
 'use client';
 
 import { Challenge } from './challenges';
-import { Badge } from '@tutur3u/ui/badge';
-import { Button } from '@tutur3u/ui/button';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
+} from '@tuturuuu/ui/card';
 import { ArrowRight, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

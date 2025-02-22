@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';
 
 interface ResultsPanelProps {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Separator } from '@tutur3u/ui/separator';
+import { Separator } from '@tuturuuu/ui/separator';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

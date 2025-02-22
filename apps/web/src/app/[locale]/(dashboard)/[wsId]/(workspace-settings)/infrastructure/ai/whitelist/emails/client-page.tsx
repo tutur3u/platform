@@ -2,7 +2,7 @@
 
 import { addWhitelistEmail } from './actions';
 import WhitelistEmailForm from './form';
-import { useToast } from '@tutur3u/ui/hooks/use-toast';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 
 interface Props {

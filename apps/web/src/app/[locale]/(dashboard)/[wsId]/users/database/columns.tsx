@@ -2,15 +2,15 @@
 
 import { UserRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@tutur3u/types/primitives/WorkspaceUserField';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tutur3u/ui/tooltip';
+} from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import moment from 'moment';

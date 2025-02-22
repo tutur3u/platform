@@ -3,10 +3,10 @@
 import { getInitials } from '@/utils/name-helper';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Workspace } from '@tutur3u/types/primitives/Workspace';
-import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
-import { Button } from '@tutur3u/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -15,7 +15,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@tutur3u/ui/command';
+} from '@tuturuuu/ui/command';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tutur3u/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
@@ -32,18 +32,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { toast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
+} from '@tuturuuu/ui/form';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tutur3u/ui/select';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/select';
+import { cn } from '@tuturuuu/utils/format';
 import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';

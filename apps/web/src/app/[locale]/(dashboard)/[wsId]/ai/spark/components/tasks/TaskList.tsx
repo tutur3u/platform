@@ -1,15 +1,15 @@
 'use client';
 
 import { Priority, Task, TaskStatus } from '../../types';
-import { Badge } from '@tutur3u/ui/badge';
-import { Button } from '@tutur3u/ui/button';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
+} from '@tuturuuu/ui/card';
 import { format, parseISO } from 'date-fns';
 import {
   AlertCircle,

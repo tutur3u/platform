@@ -4,9 +4,9 @@ import { CsvCrawler } from './crawlers/csv-crawler';
 import { ExcelCrawler } from './crawlers/excel-crawler';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import type { WorkspaceDataset } from '@tutur3u/types/db';
-import { Alert, AlertDescription, AlertTitle } from '@tutur3u/ui/alert';
-import { Button } from '@tutur3u/ui/button';
+import type { WorkspaceDataset } from '@tuturuuu/types/db';
+import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@tutur3u/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
@@ -23,8 +23,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@tutur3u/ui/form';
-import { Input } from '@tutur3u/ui/input';
+} from '@tuturuuu/ui/form';
+import { Input } from '@tuturuuu/ui/input';
 import { Info, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';

@@ -1,6 +1,6 @@
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
-import { SupabaseUser } from '@tutur3u/supabase/next/user';
-import { PermissionId } from '@tutur3u/types/db';
+import { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { PermissionId } from '@tuturuuu/types/db';
 import {
   Archive,
   Banknote,

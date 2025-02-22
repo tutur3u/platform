@@ -3,8 +3,8 @@
 import GetStartedButton from '../get-started-button';
 import GradientHeadline from '../gradient-headline';
 import { getFeatures } from './features';
-import { Card } from '@tutur3u/ui/card';
-import { Separator } from '@tutur3u/ui/separator';
+import { Card } from '@tuturuuu/ui/card';
+import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
 import { Rocket, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';

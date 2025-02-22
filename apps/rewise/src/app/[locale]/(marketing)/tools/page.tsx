@@ -1,5 +1,5 @@
 import { recommendedTools, tools } from './data';
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import Link from 'next/link';
 
 export default function ToolsPage() {

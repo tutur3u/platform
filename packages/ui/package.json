@@ -1,5 +1,5 @@
 {
-  "name": "@tutur3u/ui",
+  "name": "@tuturuuu/ui",
   "version": "0.0.4",
   "license": "MIT",
   "publishConfig": {
@@ -40,7 +40,7 @@
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@tanstack/react-table": "^8.21.2",
-    "@tutur3u/utils": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.0.4",
     "date-fns": "^4.1.0",
@@ -73,8 +73,8 @@
     "@eslint/js": "^9.20.0",
     "@tailwindcss/postcss": "^4.0.8",
     "@tailwindcss/typography": "^0.5.16",
-    "@tutur3u/eslint-config": "workspace:*",
-    "@tutur3u/typescript-config": "workspace:*",
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.15",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",

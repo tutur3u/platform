@@ -4,8 +4,8 @@ import {
   HarmBlockThreshold,
   HarmCategory,
 } from '@google/generative-ai';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { AIPrompt } from '@tutur3u/types/db';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { AIPrompt } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 
 interface Params {

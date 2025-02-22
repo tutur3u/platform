@@ -1,4 +1,4 @@
-import { capitalize } from '@tutur3u/utils/format';
+import { capitalize } from '@tuturuuu/utils/format';
 import { describe, expect, it } from 'vitest';
 
 describe('capitalize', () => {

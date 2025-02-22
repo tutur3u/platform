@@ -3,12 +3,12 @@
 import ChatLink from './chat-link';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE } from '@/constants/common';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Button } from '@tutur3u/ui/button';
-import { Checkbox } from '@tutur3u/ui/checkbox';
-import { Separator } from '@tutur3u/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { CirclePlus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';

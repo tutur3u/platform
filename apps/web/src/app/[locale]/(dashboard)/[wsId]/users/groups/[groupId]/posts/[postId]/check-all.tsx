@@ -1,7 +1,7 @@
 'use client';
 
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Button } from '@tutur3u/ui/button';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
 import { CheckCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

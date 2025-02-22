@@ -1,6 +1,6 @@
-import { Badge } from '@tutur3u/ui/badge';
-import { CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Badge } from '@tuturuuu/ui/badge';
+import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 
 export interface Challenge {
   id?: number | null;

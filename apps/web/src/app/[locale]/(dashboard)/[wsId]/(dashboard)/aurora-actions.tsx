@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@tutur3u/ui/button';
-import { toast } from '@tutur3u/ui/sonner';
+import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 

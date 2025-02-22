@@ -2,19 +2,19 @@
 import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm, ResponseMode } from './prompt-form';
 import { ChatPermissions } from '@/components/chat-permissions';
-import { Model } from '@tutur3u/ai/models';
-import { type Message, type UseChatHelpers } from '@tutur3u/ai/types';
-import { createDynamicClient } from '@tutur3u/supabase/next/client';
-import { RealtimePresenceState } from '@tutur3u/supabase/next/realtime';
-import { AIChat } from '@tutur3u/types/db';
-import { FileUploader, StatedFile } from '@tutur3u/ui/custom/file-uploader';
+import { Model } from '@tuturuuu/ai/models';
+import { type Message, type UseChatHelpers } from '@tuturuuu/ai/types';
+import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import { AIChat } from '@tuturuuu/types/db';
+import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/dialog';
+} from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 

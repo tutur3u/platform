@@ -1,15 +1,15 @@
-# @tutur3u/typescript-config
+# @tuturuuu/typescript-config
 
 Shared TypeScript configurations for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install --dev @tutur3u/typescript-config
+npm install --dev @tuturuuu/typescript-config
 # or
-yarn add --dev @tutur3u/typescript-config
+yarn add --dev @tuturuuu/typescript-config
 # or
-pnpm add -D @tutur3u/typescript-config
+pnpm add -D @tuturuuu/typescript-config
 ```
 
 ## Usage
@@ -18,7 +18,7 @@ pnpm add -D @tutur3u/typescript-config
 
 ```json
 {
-  "extends": "@tutur3u/typescript-config/nextjs.json"
+  "extends": "@tuturuuu/typescript-config/nextjs.json"
 }
 ```
 
@@ -26,7 +26,7 @@ pnpm add -D @tutur3u/typescript-config
 
 ```json
 {
-  "extends": "@tutur3u/typescript-config/base.json"
+  "extends": "@tuturuuu/typescript-config/base.json"
 }
 ```
 

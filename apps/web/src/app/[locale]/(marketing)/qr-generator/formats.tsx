@@ -1,4 +1,4 @@
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
 function QRFormats({

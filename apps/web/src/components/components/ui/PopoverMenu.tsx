@@ -2,7 +2,7 @@ import { Surface } from './Surface';
 import { Toolbar } from './Toolbar';
 import * as Popover from '@radix-ui/react-popover';
 import { Editor } from '@tiptap/core';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { icons } from 'lucide-react';
 import { forwardRef } from 'react';
 

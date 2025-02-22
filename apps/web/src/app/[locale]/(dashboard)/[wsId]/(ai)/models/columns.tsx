@@ -2,8 +2,8 @@
 
 import { RowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import type { WorkspaceAIModel } from '@tutur3u/types/db';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import type { WorkspaceAIModel } from '@tuturuuu/types/db';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 

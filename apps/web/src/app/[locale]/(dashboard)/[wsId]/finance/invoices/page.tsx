@@ -1,10 +1,10 @@
 import { invoiceColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { Invoice } from '@tutur3u/types/primitives/Invoice';
-import { Button } from '@tutur3u/ui/button';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

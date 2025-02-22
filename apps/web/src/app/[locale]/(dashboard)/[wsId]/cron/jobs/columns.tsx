@@ -2,8 +2,8 @@
 
 import { RowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import type { WorkspaceCronJob } from '@tutur3u/types/db';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import type { WorkspaceCronJob } from '@tuturuuu/types/db';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import { CheckCircle, Clock, PowerOff, XCircle } from 'lucide-react';

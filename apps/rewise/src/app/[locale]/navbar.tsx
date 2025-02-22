@@ -2,7 +2,7 @@ import LogoTitle from './logo-title';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import ServerMenu from './server-menu';
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';

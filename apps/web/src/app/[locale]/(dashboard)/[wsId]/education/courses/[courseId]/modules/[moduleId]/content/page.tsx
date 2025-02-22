@@ -1,6 +1,6 @@
 import { ModuleContentEditor } from './editor';
-import { Button } from '@tutur3u/ui/button';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Goal, Sparkles } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 

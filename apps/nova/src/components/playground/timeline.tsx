@@ -1,5 +1,5 @@
-import { Button } from '@tutur3u/ui/button';
-import { ScrollArea } from '@tutur3u/ui/scroll-area';
+import { Button } from '@tuturuuu/ui/button';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 

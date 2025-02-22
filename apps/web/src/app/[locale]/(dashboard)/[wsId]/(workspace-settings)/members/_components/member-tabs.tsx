@@ -1,5 +1,5 @@
 import TabNavigation from './tab-navigation';
-import { Tabs, TabsList } from '@tutur3u/ui/tabs';
+import { Tabs, TabsList } from '@tuturuuu/ui/tabs';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

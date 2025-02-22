@@ -2,8 +2,8 @@
 
 import { ProductUnitRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { ProductUnit } from '@tutur3u/types/primitives/ProductUnit';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const productUnitColumns = (

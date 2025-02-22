@@ -7,8 +7,8 @@
         "@eslint/eslintrc": "^3.2.0",
         "@eslint/js": "^9.20.0",
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "eslint": "^9.20.1",
         "prettier": "^3.5.1",
         "prettier-plugin-tailwindcss": "^0.6.11",
@@ -19,23 +19,23 @@
       },
     },
     "apps/db": {
-      "name": "@tutur3u/db",
+      "name": "@tuturuuu/db",
       "version": "1.0.0",
       "devDependencies": {
         "supabase": "^2.12.1",
       },
     },
     "apps/external": {
-      "name": "@tutur3u/external",
+      "name": "@tuturuuu/external",
       "version": "0.1.0",
       "dependencies": {
-        "@tutur3u/ai": "^0.0.10",
-        "@tutur3u/eslint-config": "^0.1.2",
-        "@tutur3u/supabase": "^0.0.5",
-        "@tutur3u/types": "^0.1.4",
-        "@tutur3u/typescript-config": "^0.1.0",
-        "@tutur3u/ui": "^0.0.4",
-        "@tutur3u/utils": "workspace:*",
+        "@tuturuuu/ai": "npm:@jsr/tuturuuu__ai@^0.0.1",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
         "next": "^15.1.7",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
@@ -53,7 +53,7 @@
       },
     },
     "apps/mira": {
-      "name": "@tutur3u/mira",
+      "name": "@tuturuuu/mira",
       "version": "0.14.0",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.750.0",
@@ -121,11 +121,11 @@
         "@tiptap/react": "^2.11.5",
         "@tiptap/starter-kit": "^2.11.5",
         "@tiptap/suggestion": "^2.11.5",
-        "@tutur3u/ai": "workspace:*",
-        "@tutur3u/supabase": "workspace:*",
-        "@tutur3u/types": "workspace:*",
-        "@tutur3u/ui": "workspace:*",
-        "@tutur3u/utils": "workspace:*",
+        "@tuturuuu/ai": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
         "@upstash/qstash": "^2.7.22",
         "@vercel/analytics": "^1.5.0",
         "@vercel/speed-insights": "^1.2.0",
@@ -187,8 +187,8 @@
         "@tanstack/eslint-plugin-query": "^5.66.1",
         "@tanstack/react-query-devtools": "^5.66.9",
         "@testing-library/react": "^16.2.0",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/eslint": "^9.6.1",
         "@types/file-saver": "^2.0.7",
         "@types/js-cookie": "^3.0.6",
@@ -212,7 +212,7 @@
       },
     },
     "apps/nova": {
-      "name": "@tutur3u/nova",
+      "name": "@tuturuuu/nova",
       "version": "0.14.0",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.750.0",
@@ -280,11 +280,11 @@
         "@tiptap/react": "^2.11.5",
         "@tiptap/starter-kit": "^2.11.5",
         "@tiptap/suggestion": "^2.11.5",
-        "@tutur3u/ai": "workspace:*",
-        "@tutur3u/supabase": "workspace:*",
-        "@tutur3u/types": "workspace:*",
-        "@tutur3u/ui": "workspace:*",
-        "@tutur3u/utils": "workspace:*",
+        "@tuturuuu/ai": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
         "@upstash/qstash": "^2.7.22",
         "@vercel/analytics": "^1.5.0",
         "@vercel/speed-insights": "^1.2.0",
@@ -345,8 +345,8 @@
         "@tanstack/eslint-plugin-query": "^5.66.1",
         "@tanstack/react-query-devtools": "^5.66.9",
         "@testing-library/react": "^16.2.0",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/eslint": "^9.6.1",
         "@types/file-saver": "^2.0.7",
         "@types/js-cookie": "^3.0.6",
@@ -370,7 +370,7 @@
       },
     },
     "apps/rewise": {
-      "name": "@tutur3u/rewise",
+      "name": "@tuturuuu/rewise",
       "version": "0.14.0",
       "dependencies": {
         "@deepgram/sdk": "^3.11.1",
@@ -381,11 +381,11 @@
         "@hookform/resolvers": "^3.10.0",
         "@tanstack/react-query": "^5.66.9",
         "@tanstack/react-table": "^8.21.2",
-        "@tutur3u/ai": "workspace:*",
-        "@tutur3u/supabase": "workspace:*",
-        "@tutur3u/types": "workspace:*",
-        "@tutur3u/ui": "workspace:*",
-        "@tutur3u/utils": "workspace:*",
+        "@tuturuuu/ai": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
         "@upstash/qstash": "^2.7.22",
         "@vercel/analytics": "^1.5.0",
         "@vercel/speed-insights": "^1.2.0",
@@ -427,8 +427,8 @@
         "@tanstack/eslint-plugin-query": "^5.66.1",
         "@tanstack/react-query-devtools": "^5.66.9",
         "@testing-library/react": "^16.2.0",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/js-cookie": "^3.0.6",
         "@types/lodash": "^4.17.15",
         "@types/negotiator": "^0.6.3",
@@ -449,7 +449,7 @@
       },
     },
     "apps/web": {
-      "name": "@tutur3u/web",
+      "name": "@tuturuuu/web",
       "version": "0.14.0",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.750.0",
@@ -518,11 +518,11 @@
         "@tiptap/react": "^2.11.5",
         "@tiptap/starter-kit": "^2.11.5",
         "@tiptap/suggestion": "^2.11.5",
-        "@tutur3u/ai": "workspace:*",
-        "@tutur3u/supabase": "workspace:*",
-        "@tutur3u/types": "workspace:*",
-        "@tutur3u/ui": "workspace:*",
-        "@tutur3u/utils": "workspace:*",
+        "@tuturuuu/ai": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
         "@types/canvas-confetti": "^1.9.0",
         "@types/papaparse": "^5.3.15",
         "@upstash/qstash": "^2.7.22",
@@ -592,8 +592,8 @@
         "@tanstack/eslint-plugin-query": "^5.66.1",
         "@tanstack/react-query-devtools": "^5.66.9",
         "@testing-library/react": "^16.2.0",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/eslint": "^9.6.1",
         "@types/file-saver": "^2.0.7",
         "@types/js-cookie": "^3.0.6",
@@ -617,7 +617,7 @@
       },
     },
     "packages/ai": {
-      "name": "@tutur3u/ai",
+      "name": "@tuturuuu/ai",
       "version": "0.0.10",
       "dependencies": {
         "@ai-sdk/amazon-bedrock": "^2.0.2",
@@ -640,7 +640,7 @@
         "@ai-sdk/togetherai": "^0.1.12",
         "@ai-sdk/xai": "^1.1.11",
         "@google/generative-ai": "^0.21.0",
-        "@tutur3u/supabase": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
         "ai": "^4.1.45",
         "eslint": "^9.20.1",
         "next": "^15.1.7",
@@ -651,8 +651,8 @@
       "devDependencies": {
         "@eslint/eslintrc": "^3.2.0",
         "@eslint/js": "^9.20.0",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^22.13.4",
         "@types/react": "^19.0.10",
         "@typescript-eslint/eslint-plugin": "^8.24.1",
@@ -662,7 +662,7 @@
       },
     },
     "packages/eslint-config": {
-      "name": "@tutur3u/eslint-config",
+      "name": "@tuturuuu/eslint-config",
       "version": "0.1.2",
       "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^8.24.1",
@@ -673,12 +673,12 @@
       },
     },
     "packages/supabase": {
-      "name": "@tutur3u/supabase",
+      "name": "@tuturuuu/supabase",
       "version": "0.0.5",
       "dependencies": {
         "@supabase/ssr": "^0.5.2",
         "@supabase/supabase-js": "^2.48.1",
-        "@tutur3u/types": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
         "eslint": "^9.20.1",
         "next": "^15.1.7",
         "react": "^19.0.0",
@@ -688,8 +688,8 @@
       "devDependencies": {
         "@eslint/eslintrc": "^3.2.0",
         "@eslint/js": "^9.20.0",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^22.13.4",
         "@types/react": "^19.0.10",
         "@typescript-eslint/eslint-plugin": "^8.24.1",
@@ -699,7 +699,7 @@
       },
     },
     "packages/transactional": {
-      "name": "@tutur3u/transactional",
+      "name": "@tuturuuu/transactional",
       "version": "1.0.0",
       "dependencies": {
         "@react-email/components": "^0.0.32",
@@ -713,7 +713,7 @@
       },
     },
     "packages/types": {
-      "name": "@tutur3u/types",
+      "name": "@tuturuuu/types",
       "version": "0.1.5",
       "dependencies": {
         "eslint": "^9.20.1",
@@ -724,8 +724,8 @@
       "devDependencies": {
         "@eslint/eslintrc": "^3.2.0",
         "@eslint/js": "^9.20.0",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^22.13.4",
         "@types/react": "^19.0.10",
         "@typescript-eslint/eslint-plugin": "^8.24.1",
@@ -734,11 +734,11 @@
       },
     },
     "packages/typescript-config": {
-      "name": "@tutur3u/typescript-config",
+      "name": "@tuturuuu/typescript-config",
       "version": "0.1.0",
     },
     "packages/ui": {
-      "name": "@tutur3u/ui",
+      "name": "@tuturuuu/ui",
       "version": "0.0.4",
       "dependencies": {
         "@hookform/resolvers": "^4.1.0",
@@ -770,7 +770,7 @@
         "@radix-ui/react-toggle-group": "^1.1.2",
         "@radix-ui/react-tooltip": "^1.1.8",
         "@tanstack/react-table": "^8.21.2",
-        "@tutur3u/utils": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "cmdk": "^1.0.4",
         "date-fns": "^4.1.0",
@@ -803,8 +803,8 @@
         "@eslint/js": "^9.20.0",
         "@tailwindcss/postcss": "^4.0.8",
         "@tailwindcss/typography": "^0.5.16",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/lodash": "^4.17.15",
         "@types/node": "^22.13.4",
         "@types/react": "^19.0.10",
@@ -820,7 +820,7 @@
       },
     },
     "packages/utils": {
-      "name": "@tutur3u/utils",
+      "name": "@tuturuuu/utils",
       "version": "0.0.1",
       "dependencies": {
         "clsx": "^2.1.1",
@@ -833,8 +833,8 @@
       "devDependencies": {
         "@eslint/eslintrc": "^3.2.0",
         "@eslint/js": "^9.20.0",
-        "@tutur3u/eslint-config": "workspace:*",
-        "@tutur3u/typescript-config": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^22.13.4",
         "@types/react": "^19.0.10",
         "@typescript-eslint/eslint-plugin": "^8.24.1",
@@ -1731,33 +1731,33 @@
 
     "@trivago/prettier-plugin-sort-imports": ["@trivago/prettier-plugin-sort-imports@5.2.2", "", { "dependencies": { "@babel/generator": "^7.26.5", "@babel/parser": "^7.26.7", "@babel/traverse": "^7.26.7", "@babel/types": "^7.26.7", "javascript-natural-sort": "^0.7.1", "lodash": "^4.17.21" }, "peerDependencies": { "@vue/compiler-sfc": "3.x", "prettier": "2.x - 3.x", "prettier-plugin-svelte": "3.x", "svelte": "4.x || 5.x" }, "optionalPeers": ["@vue/compiler-sfc", "prettier-plugin-svelte", "svelte"] }, "sha512-fYDQA9e6yTNmA13TLVSA+WMQRc5Bn/c0EUBditUHNfMMxN7M82c38b1kEggVE3pLpZ0FwkwJkUEKMiOi52JXFA=="],
 
-    "@tutur3u/ai": ["@tutur3u/ai@workspace:packages/ai"],
+    "@tuturuuu/ai": ["@tuturuuu/ai@workspace:packages/ai"],
 
-    "@tutur3u/db": ["@tutur3u/db@workspace:apps/db"],
+    "@tuturuuu/db": ["@tuturuuu/db@workspace:apps/db"],
 
-    "@tutur3u/eslint-config": ["@tutur3u/eslint-config@workspace:packages/eslint-config"],
+    "@tuturuuu/eslint-config": ["@tuturuuu/eslint-config@workspace:packages/eslint-config"],
 
-    "@tutur3u/external": ["@tutur3u/external@workspace:apps/external"],
+    "@tuturuuu/external": ["@tuturuuu/external@workspace:apps/external"],
 
-    "@tutur3u/mira": ["@tutur3u/mira@workspace:apps/mira"],
+    "@tuturuuu/mira": ["@tuturuuu/mira@workspace:apps/mira"],
 
-    "@tutur3u/nova": ["@tutur3u/nova@workspace:apps/nova"],
+    "@tuturuuu/nova": ["@tuturuuu/nova@workspace:apps/nova"],
 
-    "@tutur3u/rewise": ["@tutur3u/rewise@workspace:apps/rewise"],
+    "@tuturuuu/rewise": ["@tuturuuu/rewise@workspace:apps/rewise"],
 
-    "@tutur3u/supabase": ["@tutur3u/supabase@workspace:packages/supabase"],
+    "@tuturuuu/supabase": ["@tuturuuu/supabase@workspace:packages/supabase"],
 
-    "@tutur3u/transactional": ["@tutur3u/transactional@workspace:packages/transactional"],
+    "@tuturuuu/transactional": ["@tuturuuu/transactional@workspace:packages/transactional"],
 
-    "@tutur3u/types": ["@tutur3u/types@workspace:packages/types"],
+    "@tuturuuu/types": ["@tuturuuu/types@workspace:packages/types"],
 
-    "@tutur3u/typescript-config": ["@tutur3u/typescript-config@workspace:packages/typescript-config"],
+    "@tuturuuu/typescript-config": ["@tuturuuu/typescript-config@workspace:packages/typescript-config"],
 
-    "@tutur3u/ui": ["@tutur3u/ui@workspace:packages/ui"],
+    "@tuturuuu/ui": ["@tuturuuu/ui@workspace:packages/ui"],
 
-    "@tutur3u/utils": ["@tutur3u/utils@workspace:packages/utils"],
+    "@tuturuuu/utils": ["@tuturuuu/utils@workspace:packages/utils"],
 
-    "@tutur3u/web": ["@tutur3u/web@workspace:apps/web"],
+    "@tuturuuu/web": ["@tuturuuu/web@workspace:apps/web"],
 
     "@types/aria-query": ["@types/aria-query@5.0.4", "", {}, "sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw=="],
 
@@ -3887,11 +3887,13 @@
 
     "@tiptap-pro/extension-unique-id/uuid": ["uuid@10.0.0", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ=="],
 
-    "@tutur3u/ui/@hookform/resolvers": ["@hookform/resolvers@4.1.0", "", { "dependencies": { "caniuse-lite": "^1.0.30001698" }, "peerDependencies": { "react-hook-form": "^7.0.0" } }, "sha512-fX/uHKb+OOCpACLc6enuTQsf0ZpRrKbeBBPETg5PCPLCIYV6osP2Bw6ezuclM61lH+wBF9eXcuC0+BFh9XOEnQ=="],
+    "@tuturuuu/external/@tuturuuu/ai": ["@jsr/tuturuuu__ai@0.0.1", "https://npm.jsr.io/~/11/@jsr/tuturuuu__ai/0.0.1.tgz", { "dependencies": { "@ai-sdk/react": "^1.1.17", "ai": "^4.1.45" } }, "sha512-svKHOrALkDMgmG4q4yO23I0N2UCNIwk8GXM1MufekKo4lwacjT5eCypiGtGap0tDpIMuf9dYDEkGWDOz3hvnOg=="],
 
-    "@tutur3u/web/@hookform/resolvers": ["@hookform/resolvers@4.1.0", "", { "dependencies": { "caniuse-lite": "^1.0.30001698" }, "peerDependencies": { "react-hook-form": "^7.0.0" } }, "sha512-fX/uHKb+OOCpACLc6enuTQsf0ZpRrKbeBBPETg5PCPLCIYV6osP2Bw6ezuclM61lH+wBF9eXcuC0+BFh9XOEnQ=="],
+    "@tuturuuu/ui/@hookform/resolvers": ["@hookform/resolvers@4.1.0", "", { "dependencies": { "caniuse-lite": "^1.0.30001698" }, "peerDependencies": { "react-hook-form": "^7.0.0" } }, "sha512-fX/uHKb+OOCpACLc6enuTQsf0ZpRrKbeBBPETg5PCPLCIYV6osP2Bw6ezuclM61lH+wBF9eXcuC0+BFh9XOEnQ=="],
 
-    "@tutur3u/web/@react-email/components": ["@react-email/components@0.0.33", "", { "dependencies": { "@react-email/body": "0.0.11", "@react-email/button": "0.0.19", "@react-email/code-block": "0.0.11", "@react-email/code-inline": "0.0.5", "@react-email/column": "0.0.13", "@react-email/container": "0.0.15", "@react-email/font": "0.0.9", "@react-email/head": "0.0.12", "@react-email/heading": "0.0.15", "@react-email/hr": "0.0.11", "@react-email/html": "0.0.11", "@react-email/img": "0.0.11", "@react-email/link": "0.0.12", "@react-email/markdown": "0.0.14", "@react-email/preview": "0.0.12", "@react-email/render": "1.0.5", "@react-email/row": "0.0.12", "@react-email/section": "0.0.16", "@react-email/tailwind": "1.0.4", "@react-email/text": "0.0.11" }, "peerDependencies": { "react": "^18.0 || ^19.0 || ^19.0.0-rc" } }, "sha512-/GKdT3YijT1iEWPAXF644jr12w5xVgzUr0zlbZGt2KOkGeFHNZUCL5UtRopmnjrH/Fayf8Gjv6q/4E2cZgDtdQ=="],
+    "@tuturuuu/web/@hookform/resolvers": ["@hookform/resolvers@4.1.0", "", { "dependencies": { "caniuse-lite": "^1.0.30001698" }, "peerDependencies": { "react-hook-form": "^7.0.0" } }, "sha512-fX/uHKb+OOCpACLc6enuTQsf0ZpRrKbeBBPETg5PCPLCIYV6osP2Bw6ezuclM61lH+wBF9eXcuC0+BFh9XOEnQ=="],
+
+    "@tuturuuu/web/@react-email/components": ["@react-email/components@0.0.33", "", { "dependencies": { "@react-email/body": "0.0.11", "@react-email/button": "0.0.19", "@react-email/code-block": "0.0.11", "@react-email/code-inline": "0.0.5", "@react-email/column": "0.0.13", "@react-email/container": "0.0.15", "@react-email/font": "0.0.9", "@react-email/head": "0.0.12", "@react-email/heading": "0.0.15", "@react-email/hr": "0.0.11", "@react-email/html": "0.0.11", "@react-email/img": "0.0.11", "@react-email/link": "0.0.12", "@react-email/markdown": "0.0.14", "@react-email/preview": "0.0.12", "@react-email/render": "1.0.5", "@react-email/row": "0.0.12", "@react-email/section": "0.0.16", "@react-email/tailwind": "1.0.4", "@react-email/text": "0.0.11" }, "peerDependencies": { "react": "^18.0 || ^19.0 || ^19.0.0-rc" } }, "sha512-/GKdT3YijT1iEWPAXF644jr12w5xVgzUr0zlbZGt2KOkGeFHNZUCL5UtRopmnjrH/Fayf8Gjv6q/4E2cZgDtdQ=="],
 
     "@types/babel__core/@babel/parser": ["@babel/parser@7.26.5", "", { "dependencies": { "@babel/types": "^7.26.5" }, "bin": "./bin/babel-parser.js" }, "sha512-SRJ4jYmXRqV1/Xc+TIVG84WjHBXKlxO9sHQnA2Pf12QQEAp1LOh6kDzNHXcUnbH1QI0FDoPPVOt+vyUDucxpaw=="],
 
@@ -4227,7 +4229,7 @@
 
     "@supabase/node-fetch/whatwg-url/webidl-conversions": ["webidl-conversions@3.0.1", "", {}, "sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ=="],
 
-    "@tutur3u/web/@react-email/components/@react-email/render": ["@react-email/render@1.0.5", "", { "dependencies": { "html-to-text": "9.0.5", "prettier": "3.4.2", "react-promise-suspense": "0.3.4" }, "peerDependencies": { "react": "^18.0 || ^19.0 || ^19.0.0-rc", "react-dom": "^18.0 || ^19.0 || ^19.0.0-rc" } }, "sha512-CA69HYXPk21HhtAXATIr+9JJwpDNmAFCvdMUjWmeoD1+KhJ9NAxusMRxKNeibdZdslmq3edaeOKGbdQ9qjK8LQ=="],
+    "@tuturuuu/web/@react-email/components/@react-email/render": ["@react-email/render@1.0.5", "", { "dependencies": { "html-to-text": "9.0.5", "prettier": "3.4.2", "react-promise-suspense": "0.3.4" }, "peerDependencies": { "react": "^18.0 || ^19.0 || ^19.0.0-rc", "react-dom": "^18.0 || ^19.0 || ^19.0.0-rc" } }, "sha512-CA69HYXPk21HhtAXATIr+9JJwpDNmAFCvdMUjWmeoD1+KhJ9NAxusMRxKNeibdZdslmq3edaeOKGbdQ9qjK8LQ=="],
 
     "@typescript-eslint/typescript-estree/fast-glob/glob-parent": ["glob-parent@5.1.2", "", { "dependencies": { "is-glob": "^4.0.1" } }, "sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow=="],
 
@@ -4425,7 +4427,7 @@
 
     "@shadcn/ui/ora/strip-ansi/ansi-regex": ["ansi-regex@6.1.0", "", {}, "sha512-7HSX4QQb4CspciLpVFwyRe79O3xsIZDDLER21kERQ71oaPodF8jL725AgJMFAYbooIqolJoRLuM81SpeUkpkvA=="],
 
-    "@tutur3u/web/@react-email/components/@react-email/render/prettier": ["prettier@3.4.2", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-e9MewbtFo+Fevyuxn/4rrcDAaq0IYxPGLvObpQjiZBMAzB9IGmzlnG9RZy3FFas+eBMu2vA0CszMeduow5dIuQ=="],
+    "@tuturuuu/web/@react-email/components/@react-email/render/prettier": ["prettier@3.4.2", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-e9MewbtFo+Fevyuxn/4rrcDAaq0IYxPGLvObpQjiZBMAzB9IGmzlnG9RZy3FFas+eBMu2vA0CszMeduow5dIuQ=="],
 
     "bl/readable-stream/string_decoder/safe-buffer": ["safe-buffer@5.1.2", "", {}, "sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g=="],
 

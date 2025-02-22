@@ -1,6 +1,6 @@
 'use client';
 
-import { TabsTrigger } from '@tutur3u/ui/tabs';
+import { TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
 
 interface Props {

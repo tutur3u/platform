@@ -1,13 +1,13 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@tutur3u/ui/chart';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/chart';
+import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 

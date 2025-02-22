@@ -1,6 +1,6 @@
-import { createClient } from '@tutur3u/supabase/next/server';
-import { Product2 } from '@tutur3u/types/primitives/Product';
-import { ProductInventory } from '@tutur3u/types/primitives/ProductInventory';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Product2 } from '@tuturuuu/types/primitives/Product';
+import { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
 import { NextResponse } from 'next/server';
 
 interface Params {

@@ -1,8 +1,8 @@
 'use client';
 
-import { createClient } from '@tutur3u/supabase/next/client';
-import { Avatar, AvatarFallback, AvatarImage } from '@tutur3u/ui/avatar';
-import { Button } from '@tutur3u/ui/button';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -11,9 +11,9 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@tutur3u/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@tutur3u/ui/popover';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { cn } from '@tuturuuu/utils/format';
 import { Check, ChevronsUpDown, Loader2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

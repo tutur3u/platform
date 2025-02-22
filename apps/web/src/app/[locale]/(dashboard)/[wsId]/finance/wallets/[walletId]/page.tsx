@@ -1,9 +1,9 @@
 import { transactionColumns } from '../../transactions/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { Transaction } from '@tutur3u/types/primitives/Transaction';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import 'dayjs/locale/vi';
 import { Calendar, CreditCard, DollarSign, Wallet } from 'lucide-react';
 import moment from 'moment';

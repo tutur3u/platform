@@ -5,9 +5,9 @@ import {
   durationToTimeblocks,
   removeTimeblocks,
 } from '@/utils/timeblock-helper';
-import { MeetTogetherPlan } from '@tutur3u/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@tutur3u/types/primitives/Timeblock';
-import { User as PlatformUser } from '@tutur3u/types/primitives/User';
+import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { User as PlatformUser } from '@tuturuuu/types/primitives/User';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';

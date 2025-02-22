@@ -1,15 +1,15 @@
-# @tutur3u/ai
+# @tuturuuu/ai
 
 AI utilities and helpers for Tuturuuu Platform.
 
 ## Installation
 
 ```bash
-npm install @tutur3u/ai
+npm install @tuturuuu/ai
 # or
-yarn add @tutur3u/ai
+yarn add @tuturuuu/ai
 # or
-pnpm add @tutur3u/ai
+pnpm add @tuturuuu/ai
 ```
 
 ## Development

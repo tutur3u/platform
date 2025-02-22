@@ -3,10 +3,10 @@ import { PromotionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspaceUser } from '@/lib/workspace-helper';
-import { createClient } from '@tutur3u/supabase/next/server';
-import { ProductPromotion } from '@tutur3u/types/primitives/ProductPromotion';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

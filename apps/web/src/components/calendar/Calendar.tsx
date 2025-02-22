@@ -5,7 +5,7 @@ import CalendarViewWithTrail from './CalendarViewWithTrail';
 import DynamicIsland from './DynamicIsland';
 import WeekdayBar from './WeekdayBar';
 import { CalendarProvider } from '@/hooks/useCalendar';
-import { Workspace } from '@tutur3u/types/primitives/Workspace';
+import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 

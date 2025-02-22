@@ -2,8 +2,8 @@
 
 import { UserReportRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceUserReport } from '@tutur3u/types/db';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { WorkspaceUserReport } from '@tuturuuu/types/db';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 

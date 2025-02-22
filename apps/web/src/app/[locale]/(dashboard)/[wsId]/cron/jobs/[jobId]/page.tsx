@@ -1,18 +1,18 @@
 import { getColumns } from '../../executions/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { createClient } from '@tutur3u/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   WorkspaceCronExecution,
   WorkspaceCronJob,
-} from '@tutur3u/types/db';
-import { Button } from '@tutur3u/ui/button';
+} from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@tutur3u/ui/card';
+} from '@tuturuuu/ui/card';
 import { ArrowLeft, CheckCircle, Clock, PowerOff, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

@@ -2,11 +2,11 @@
 
 import { Filter } from '../../../users/filters';
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tutur3u/supabase/next/client';
-import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
-import { Button } from '@tutur3u/ui/button';
-import SearchBar from '@tutur3u/ui/custom/search-bar';
-import { cn } from '@tutur3u/utils/format';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { Button } from '@tuturuuu/ui/button';
+import SearchBar from '@tuturuuu/ui/custom/search-bar';
+import { cn } from '@tuturuuu/utils/format';
 import { Users, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

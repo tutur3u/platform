@@ -3,22 +3,22 @@
 import LogoTitle from '../logo-title';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tutur3u/ui/accordion';
-import { Button } from '@tutur3u/ui/button';
+} from '@tuturuuu/ui/accordion';
+import { Button } from '@tuturuuu/ui/button';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@tutur3u/ui/resizable';
-import { Separator } from '@tutur3u/ui/separator';
-import { TooltipProvider } from '@tutur3u/ui/tooltip';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/resizable';
+import { Separator } from '@tuturuuu/ui/separator';
+import { TooltipProvider } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import {
   ChevronDown,
   Crown,

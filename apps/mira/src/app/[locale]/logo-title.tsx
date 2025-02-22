@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@tutur3u/utils/format';
+import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 
 export default function LogoTitle({

@@ -1,10 +1,10 @@
-import { createClient } from '@tutur3u/supabase/next/server';
-import { UserGroup } from '@tutur3u/types/primitives/UserGroup';
-import { WorkspaceUser } from '@tutur3u/types/primitives/WorkspaceUser';
-import { Button } from '@tutur3u/ui/button';
-import FeatureSummary from '@tutur3u/ui/custom/feature-summary';
-import { Separator } from '@tutur3u/ui/separator';
-import { cn } from '@tutur3u/utils/format';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import 'dayjs/locale/vi';
 import { CalendarIcon, ChartColumn, FileUser, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';

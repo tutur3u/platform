@@ -2,9 +2,9 @@
 
 import { GroupTagRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
-import { UserGroupTag } from '@tutur3u/types/primitives/UserGroupTag';
-import { ColorPicker } from '@tutur3u/ui/color-picker';
-import { DataTableColumnHeader } from '@tutur3u/ui/custom/tables/data-table-column-header';
+import { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
+import { ColorPicker } from '@tuturuuu/ui/color-picker';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 
