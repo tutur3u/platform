@@ -23,7 +23,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { ReactNode, useState } from 'react';
 
 export interface DataTableProps<TData, TValue> {

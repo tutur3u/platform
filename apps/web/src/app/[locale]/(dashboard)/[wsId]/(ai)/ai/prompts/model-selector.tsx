@@ -10,7 +10,7 @@ import {
 } from '@tuturuuu/ui/command';
 import { FormControl, FormLabel } from '@tuturuuu/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import useSWR from 'swr';
 

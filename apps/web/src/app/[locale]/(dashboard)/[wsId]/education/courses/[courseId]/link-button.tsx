@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';

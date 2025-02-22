@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import {
   BookOpen,
   ChevronDown,

@@ -16,7 +16,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@tuturuuu/ui/sheet';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { MenuIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

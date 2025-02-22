@@ -12,7 +12,7 @@ import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserFiel
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import {
   Box,
   Calendar,

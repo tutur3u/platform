@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';

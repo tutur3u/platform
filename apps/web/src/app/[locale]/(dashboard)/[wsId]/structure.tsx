@@ -29,7 +29,7 @@ import {
 } from '@tuturuuu/ui/resizable';
 import { Separator } from '@tuturuuu/ui/separator';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';

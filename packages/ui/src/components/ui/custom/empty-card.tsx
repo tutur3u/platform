@@ -1,5 +1,5 @@
 import { Card, CardDescription, CardTitle } from '@tuturuuu/ui/card';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { Image } from 'lucide-react';
 import React from 'react';
 

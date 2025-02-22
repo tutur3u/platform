@@ -10,7 +10,7 @@ import {
 } from '../../select';
 import { Separator } from '../../separator';
 import { Table } from '@tanstack/react-table';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,

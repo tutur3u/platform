@@ -1,6 +1,6 @@
 import { Button } from '../button';
 import ModifiableDialogTrigger from './modifiable-dialog-trigger';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { Cog, Plus } from 'lucide-react';
 import { type ReactElement, ReactNode } from 'react';
 

@@ -1,4 +1,4 @@
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 
 export function LoadingIndicator({ className }: { className?: string }) {
   return (

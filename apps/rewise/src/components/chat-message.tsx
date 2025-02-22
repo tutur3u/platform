@@ -9,7 +9,7 @@ import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { IconUser } from '@tuturuuu/ui/icons';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Separator } from '@tuturuuu/ui/separator';
-import { capitalize, cn } from '@tuturuuu/utils';
+import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';

@@ -1,5 +1,5 @@
 import { Icon } from '@/components/components/ui/Icon';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { icons } from 'lucide-react';
 import { forwardRef } from 'react';
 

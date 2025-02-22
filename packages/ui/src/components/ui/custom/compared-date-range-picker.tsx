@@ -13,7 +13,7 @@ import {
 } from '../select';
 import { Switch } from '../switch';
 import { DateInput } from './date-input';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 

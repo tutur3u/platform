@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 
 // import { useParams } from 'next/navigation';
 

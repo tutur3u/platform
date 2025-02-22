@@ -2,7 +2,7 @@
 
 import useSearchParams from '@/hooks/useSearchParams';
 import SearchBar from '@tuturuuu/ui/custom/search-bar';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
 interface Props {

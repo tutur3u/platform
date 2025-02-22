@@ -1,7 +1,7 @@
 import { Button, ButtonProps } from './Button';
 import { Surface } from './Surface';
 import Tooltip from './Tooltip';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { ButtonHTMLAttributes, HTMLProps, forwardRef } from 'react';
 
 export type ToolbarWrapperProps = {

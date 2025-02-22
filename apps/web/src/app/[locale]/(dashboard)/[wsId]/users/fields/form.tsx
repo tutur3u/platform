@@ -26,7 +26,7 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { CheckIcon, ChevronsUpDown, PlusIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

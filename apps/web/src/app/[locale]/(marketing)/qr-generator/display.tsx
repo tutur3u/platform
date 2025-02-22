@@ -1,5 +1,5 @@
 import LogoTitle from '../../logo-title';
-import { cn } from '@tuturuuu/utils';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { QRCode } from 'react-qrcode-logo';
 
