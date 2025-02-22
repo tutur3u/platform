@@ -1,4 +1,4 @@
-import { Database, Tables } from '@tuturuuu/types/supabase';
+import { Database, Tables } from './supabase';
 
 export type AIChat = Tables<'ai_chats'>;
 export type AIPrompt = Tables<'workspace_ai_prompts'>;

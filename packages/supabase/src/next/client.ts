@@ -5,11 +5,15 @@ import { Database } from '@tuturuuu/types/supabase';
 
 const { url, key } = checkEnvVariables({ useServiceKey: false });
 
-export function createDynamicClient() {
+export function createDynamicClient(): SupabaseClient<any, 'public', any> {
   return createBrowserClient(url, key);
 }
 
-export function createClient() {
+export function createClient(): SupabaseClient<
+  Database,
+  'public',
+  Database['public']
+> {
   return createBrowserClient<Database>(url, key);
 }
 

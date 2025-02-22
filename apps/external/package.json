@@ -9,24 +9,24 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@tuturuuu/eslint-config": "workspace:*",
-    "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/types": "workspace:*",
-    "@tuturuuu/typescript-config": "workspace:*",
-    "@tuturuuu/ui": "workspace:*",
-    "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/ai": "npm:@jsr/tuturuuu__ai@^0.0.1",
+    "@tuturuuu/eslint-config": "npm:@jsr/tuturuuu__eslint-config@^0.1.5",
+    "@tuturuuu/supabase": "npm:@jsr/tuturuuu__supabase@^0.0.7",
+    "@tuturuuu/types": "npm:@jsr/tuturuuu__types@^0.1.5",
+    "@tuturuuu/typescript-config": "npm:@jsr/tuturuuu__typescript-config@^0.1.0",
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/utils": "npm:@jsr/tuturuuu__utils@^0.0.1",
     "next": "^15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.0.8"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.2.0",
-    "@types/node": "^22.13.4",
+    "@eslint/eslintrc": "^3.3.0",
+    "@types/node": "^22.13.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
-    "eslint": "^9.20.1",
+    "eslint": "^9.21.0",
     "eslint-config-next": "^15.1.7",
     "postcss": "^8.5.3",
     "typescript": "^5.7.3"

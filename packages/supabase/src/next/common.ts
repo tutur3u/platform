@@ -10,7 +10,10 @@ export function checkEnvVariables({
   useServiceKey = false,
 }: {
   useServiceKey?: boolean;
-}) {
+}): {
+  url: string;
+  key: string;
+} {
   // eslint-disable-next-line no-undef
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = useServiceKey
