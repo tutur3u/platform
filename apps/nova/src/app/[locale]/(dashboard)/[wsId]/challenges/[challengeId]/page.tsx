@@ -94,7 +94,8 @@ export default function Page({ params }: Props) {
       <CustomizedHeader
         proNum={problems.length}
         currentProblem={currentProblemIndex + 1}
-        duraion={fetchedTimer?.duration || 0}
+        challengeId={challengeId}
+        duration={fetchedTimer?.duration || 0}
         wsId={wsId}
         createdAt={fetchedTimer?.created_at || ''}
         onNext={nextProblem}
