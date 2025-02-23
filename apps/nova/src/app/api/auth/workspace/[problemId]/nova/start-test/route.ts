@@ -87,8 +87,18 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const userId = user?.id;
-  const { test_status } = await req.json();
+  const { test_status, created_at } = await req.json();
 
+  if (created_at) {
+    const { error } = await supabase
+      .from('nova_test_timer_record')
+      .update({ test_status, created_at })
+      .eq('problem_id', problemId)
+      .eq('user_id', userId);
+    if (error) {
+      return NextResponse.json({ message: 'Error Updating ', status: 400 });
+    }
+  }
   if (!test_status) {
     return NextResponse.json(
       { message: 'Missing test_status' },

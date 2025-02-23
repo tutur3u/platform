@@ -64,7 +64,10 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ test_status: 'START' }),
+            body: JSON.stringify({
+              test_status: 'START',
+              created_at: new Date().toISOString(),
+            }),
           }
         );
 
