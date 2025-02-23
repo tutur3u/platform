@@ -23,7 +23,8 @@ export async function GET(_: Request, { params }: Params) {
     .from('nova_test_timer_record')
     .select('duration, created_at, test_status')
     .eq('problem_id', problemId)
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .single();
 
   if (error) {
     console.log(error);
