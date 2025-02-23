@@ -18,7 +18,7 @@ export default function ProblemChanger({
       <Button onClick={onPrev} variant="outline" size="sm">
         {'<'}
       </Button>
-      <div className="text-sm text-black">
+      <div className="text-foreground text-sm text-black">
         {currentProblem} of {proNum}
       </div>
       <Button onClick={onNext} variant="outline" size="sm">

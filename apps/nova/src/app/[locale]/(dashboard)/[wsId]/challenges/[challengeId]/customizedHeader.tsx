@@ -28,7 +28,7 @@ export default function CustomizedHeader({
   wsId,
   challengeId,
   createdAt,
-  duration, 
+  duration,
 }: Props) {
   const router = useRouter();
 
@@ -36,11 +36,14 @@ export default function CustomizedHeader({
     const confirmEnd = window.confirm('Are you sure you want to end the test?');
     if (confirmEnd) {
       try {
-        const response = await fetch(`/api/auth/workspace/${challengeId}/nova/start-test`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ test_status: 'END' }),
-        });
+        const response = await fetch(
+          `/api/auth/workspace/${challengeId}/nova/start-test`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ test_status: 'END' }),
+          }
+        );
 
         if (!response.ok) {
           throw new Error('Failed to end test');
@@ -54,7 +57,10 @@ export default function CustomizedHeader({
   };
 
   return (
-    <nav id="navbar" className={cn('fixed inset-x-0 top-0 z-50 bg-white shadow-sm')}>
+    <nav
+      id="navbar"
+      className={cn('bg-foreground/2 fixed inset-x-0 top-0 z-50 shadow-sm')}
+    >
       <div className="container mx-auto px-4 py-2 font-semibold">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -80,14 +86,21 @@ export default function CustomizedHeader({
           </div>
 
           <div className="flex items-center gap-4">
-            <Suspense fallback={<div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />}>
+            <Suspense
+              fallback={
+                <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+              }
+            >
               <CountdownTimer
                 problemId={currentProblem}
                 createdAt={createdAt}
                 wsId={wsId}
                 duration={duration} // Fixed typo
               />
-              <Button className="bg-red-500 hover:bg-red-700" onClick={handleEndTest}>
+              <Button
+                className="bg-red-500 hover:bg-red-700"
+                onClick={handleEndTest}
+              >
                 End Test
               </Button>
             </Suspense>

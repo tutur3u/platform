@@ -77,14 +77,14 @@ export default function Page({ params }: Props) {
 
   const problems = challenge?.problems || [];
 
-  // Navigate to next problem
+
   const nextProblem = () => {
     setCurrentProblemIndex((prev) =>
       prev < problems.length - 1 ? prev + 1 : prev
     );
   };
 
-  // Navigate to previous problem
+
   const prevProblem = () => {
     setCurrentProblemIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
@@ -102,7 +102,7 @@ export default function Page({ params }: Props) {
         onPrev={prevProblem}
       />
 
-      <div className="flex gap-4 p-6">
+      <div className="flex gap-4 p-6 pt-20">
         <div className="flex w-1/2 flex-col">
           {problems.length > 0 ? (
             <ProblemComponent problem={problems[currentProblemIndex]} />
