@@ -1,8 +1,8 @@
 'use client';
 
-import { Alert, AlertDescription } from '@tutur3u/ui/alert';
-import { Card, CardContent } from '@tutur3u/ui/card';
-import { Skeleton } from '@tutur3u/ui/skeleton';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
+import { Card, CardContent } from '@tuturuuu/ui/card';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { AlertCircle, ArrowUpRight, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

@@ -1,19 +1,19 @@
 'use client';
 
 import CrawlButton from '../../[crawlerId]/crawl-button';
-import { Alert, AlertDescription } from '@tutur3u/ui/alert';
-import { Button } from '@tutur3u/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
-import { Combobox } from '@tutur3u/ui/custom/combobox';
-import { Input } from '@tutur3u/ui/input';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import { Input } from '@tuturuuu/ui/input';
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationLink,
   PaginationNext,
-} from '@tutur3u/ui/pagination';
-import { Skeleton } from '@tutur3u/ui/skeleton';
+} from '@tuturuuu/ui/pagination';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';

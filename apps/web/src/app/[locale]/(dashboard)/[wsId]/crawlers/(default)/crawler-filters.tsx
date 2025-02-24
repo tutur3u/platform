@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@tutur3u/ui/button';
-import { Combobox } from '@tutur3u/ui/custom/combobox';
-import { useToast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
+import { Button } from '@tuturuuu/ui/button';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
 import { Filter, Loader2, RotateCw, ScanSearch, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';

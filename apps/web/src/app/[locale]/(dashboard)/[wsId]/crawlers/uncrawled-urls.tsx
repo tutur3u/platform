@@ -1,10 +1,10 @@
 'use client';
 
 import CrawlButton from './[crawlerId]/crawl-button';
-import { Alert, AlertDescription } from '@tutur3u/ui/alert';
-import { Button } from '@tutur3u/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tutur3u/ui/card';
-import { Combobox } from '@tutur3u/ui/custom/combobox';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   Dialog,
   DialogContent,
@@ -12,18 +12,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tutur3u/ui/dialog';
-import { useToast } from '@tutur3u/ui/hooks/use-toast';
-import { Input } from '@tutur3u/ui/input';
+} from '@tuturuuu/ui/dialog';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { Input } from '@tuturuuu/ui/input';
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationLink,
   PaginationNext,
-} from '@tutur3u/ui/pagination';
-import { Skeleton } from '@tutur3u/ui/skeleton';
-import { cn } from '@tutur3u/utils/format';
+} from '@tuturuuu/ui/pagination';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, BugPlay, Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';

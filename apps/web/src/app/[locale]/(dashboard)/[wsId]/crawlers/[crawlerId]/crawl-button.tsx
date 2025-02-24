@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@tutur3u/ui/button';
-import { useToast } from '@tutur3u/ui/hooks/use-toast';
-import { Progress } from '@tutur3u/ui/progress';
-import { cn } from '@tutur3u/utils/format';
+import { Button } from '@tuturuuu/ui/button';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { Progress } from '@tuturuuu/ui/progress';
+import { cn } from '@tuturuuu/utils/format';
 import { BugPlay, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
