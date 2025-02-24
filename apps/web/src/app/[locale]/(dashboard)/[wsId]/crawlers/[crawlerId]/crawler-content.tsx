@@ -92,7 +92,7 @@ export function CrawlerContent({
 
         {!(crawledUrl?.html && crawledUrl?.markdown) && (
           <CardContent>
-            <CrawlButton id={crawledUrl?.id} wsId={wsId} url={url} />
+            <CrawlButton wsId={wsId} url={url} />
           </CardContent>
         )}
       </Card>

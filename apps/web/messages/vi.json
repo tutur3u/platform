@@ -1696,7 +1696,8 @@
     "pipelines": "Luồng xử lý",
     "executions": "Lịch sử chạy",
     "cron_jobs": "Lịch trình",
-    "jobs": "Lịch trình"
+    "jobs": "Lịch trình",
+    "uncrawled": "Chưa cào"
   },
   "workspace-settings-layout": {
     "workspace": "Không gian làm việc",
@@ -2414,7 +2415,11 @@
     "singular": "Công cụ cào dữ liệu",
     "description": "Công cụ cào dữ liệu được sử dụng để thu thập dữ liệu từ các trang web và nguồn dữ liệu khác.",
     "create": "Tạo công cụ cào dữ liệu",
-    "create_description": "Tạo một công cụ cào dữ liệu mới"
+    "create_description": "Tạo một công cụ cào dữ liệu mới",
+    "uncrawled": "Chưa cào",
+    "domains": "Tên miền",
+    "connections": "Kết nối",
+    "crawled": "Đã cào"
   },
   "ws-pipelines": {
     "plural": "Quy trình",
