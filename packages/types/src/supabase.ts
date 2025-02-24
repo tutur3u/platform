@@ -2069,6 +2069,27 @@ export type Database = {
           },
         ];
       };
+      nova_problem_testcases: {
+        Row: {
+          constraint_content: string | null;
+          created_at: string;
+          id: string;
+          problem_id: string | null;
+        };
+        Insert: {
+          constraint_content?: string | null;
+          created_at?: string;
+          id?: string;
+          problem_id?: string | null;
+        };
+        Update: {
+          constraint_content?: string | null;
+          created_at?: string;
+          id?: string;
+          problem_id?: string | null;
+        };
+        Relationships: [];
+      };
       nova_test_timer_record: {
         Row: {
           created_at: string;

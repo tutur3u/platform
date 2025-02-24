@@ -142,9 +142,9 @@ export default function ChatBox({
   };
 
   return (
-    <div className="flex h-full flex-col p-4">
+    <div className="bg-foreground/10 text-foreground round round-sm flex h-full flex-col p-4">
       <h2 className="text-lg font-bold">Chat Box</h2>
-      <div className="mb-2 flex items-center text-gray-500">
+      <div className="mb-2 flex items-center">
         <p className="mr-2">
           You only have 5 tries for each question. [{attempts}/5]
         </p>
@@ -191,7 +191,7 @@ export default function ChatBox({
         </Dialog>
       </div>
 
-      <div className="flex-1 space-y-2 rounded-md border p-2">
+      <div className="text-foreground bg-foreground/10 flex-1 space-y-2 rounded-md border p-2">
         {loading && (
           <div className="flex h-screen items-center justify-center">
             <LoadingIndicator className="h-6" />
@@ -200,7 +200,7 @@ export default function ChatBox({
         )}
 
         {!loading && _history.length > 0 && (
-          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 shadow-md">
+          <div className="text-foreground mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 shadow-md">
             <h3 className="text-2xl font-semibold text-gray-800">
               Your Last Attempt
             </h3>

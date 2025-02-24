@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { ArrowRight, Star } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -20,25 +20,71 @@ interface ChallengeCardProps {
 
 const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
   const [isTestStarted, setIsTestStarted] = useState(false);
+  const [isRedoTest, setIsRedoTest] = useState(false);
 
   useEffect(() => {
-    const checkTestStarted = async () => {
-      const response = await fetch(
-        `/api/auth/workspace/${challenge.id}/nova/start-test`
-      );
-      const data = await response.json();
+    const checkTestStatus = async () => {
+      try {
+        const response = await fetch(
+          `/api/auth/workspace/${challenge.id}/nova/start-test`
+        );
+        const data = await response.json();
 
-      if (data?.test_status === 'START') {
-        setIsTestStarted(true);
-      } else {
-        setIsTestStarted(false);
+        if (data?.test_status === 'END') {
+          setIsRedoTest(true);
+          setIsTestStarted(false);
+        } else if (data?.test_status === 'START') {
+          setIsTestStarted(true);
+          setIsRedoTest(false);
+        } else {
+          setIsTestStarted(false);
+          setIsRedoTest(false);
+        }
+      } catch (error) {
+        console.error('Error fetching test status:', error);
       }
     };
 
-    checkTestStarted();
+    checkTestStatus();
   }, [challenge.id, wsId]);
 
-  const handleButton = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleStartTestAgain = async (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    event.preventDefault();
+
+    const confirmStart = window.confirm(
+      'Are you sure you want to restart this challenge?'
+    );
+
+    if (confirmStart) {
+      try {
+        const response = await fetch(
+          `/api/auth/workspace/${challenge.id}/nova/start-test`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              test_status: 'START',
+              created_at: new Date().toISOString(),
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to restart challenge');
+        }
+
+        window.location.href = `/${wsId}/challenges/${challenge.id}`;
+      } catch (error) {
+        console.error('Error restarting challenge:', error);
+      }
+    }
+  };
+
+  const handleStartChallenge = async (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
     event.preventDefault();
 
     const confirmStart = window.confirm(
@@ -65,7 +111,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
 
         window.location.href = `/${wsId}/challenges/${challenge.id}`;
       } catch (error) {
-        console.error('Error: ', error);
+        console.error('Error starting challenge:', error);
       }
     }
   };
@@ -83,24 +129,33 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+        <p className="text-muted-foreground mb-4">{challenge.description}</p>
         <div className="flex items-center text-yellow-500">
           <Star className="mr-1 h-4 w-4 fill-current" />
           <Star className="mr-1 h-4 w-4 fill-current" />
           <Star className="mr-1 h-4 w-4 fill-current" />
           <Star className="mr-1 h-4 w-4 stroke-current" />
           <Star className="mr-1 h-4 w-4 stroke-current" />
-          <span className="ml-2 text-sm text-muted-foreground">Difficulty</span>
+          <span className="text-muted-foreground ml-2 text-sm">Difficulty</span>
         </div>
       </CardContent>
       <CardFooter>
-        <Button
-          onClick={isTestStarted ? handleResumeTest : handleButton}
-          className="w-full gap-2"
-        >
-          {isTestStarted ? 'Resume test' : 'Start Challenge'}{' '}
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+        {isTestStarted ? (
+          <Button onClick={handleResumeTest} className="w-full gap-2">
+            Resume Test <ArrowRight className="h-4 w-4" />
+          </Button>
+        ) : isRedoTest ? (
+          <Button
+            onClick={handleStartTestAgain}
+            className="w-full gap-2 bg-blue-500 hover:bg-blue-700"
+          >
+            Redo Challenge <ArrowRight className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button onClick={handleStartChallenge} className="w-full gap-2">
+            Start Challenge <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
