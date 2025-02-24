@@ -101,8 +101,14 @@ export default function MarketingPage() {
 
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <div className="relative">
-            <input className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 ease-in-out placeholder:text-white/40 hover:border-white/30 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 sm:w-80" />
-            <label className="absolute left-2.5 top-2.5 origin-left transform cursor-text px-1 text-sm text-white/60 transition-all peer-focus:-top-2 peer-focus:left-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-white">
+            <input
+              id="prompt"
+              className="peer rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 ease-in-out placeholder:text-white/40 hover:border-white/30 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 sm:w-80"
+            />
+            <label
+              htmlFor="prompt"
+              className="absolute left-2.5 top-2.5 transform cursor-text px-1 text-sm text-white/60 transition-all peer-focus:-top-2 peer-focus:left-2.5 peer-focus:text-xs peer-focus:text-white"
+            >
               Prompt here..
             </label>
           </div>
