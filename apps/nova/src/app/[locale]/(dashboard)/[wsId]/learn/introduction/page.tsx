@@ -15,8 +15,13 @@ const lessonData = {
     },
     {
       title: 'Key Concepts in Prompt Engineering',
-      content:
-        "1. Clarity: Ensuring the prompt is unambiguous and easy to understand.\n2. Specificity: Providing enough detail to guide the AI towards the desired output.\n3. Context: Including relevant background information to frame the AI's response.\n4. Constraints: Setting boundaries or limitations for the AI's output.\n5. Examples: Demonstrating the expected format or style of the response.",
+      content: [
+        '1. Clarity: Ensuring the prompt is unambiguous and easy to understand.',
+        '2. Specificity: Providing enough detail to guide the AI towards the desired output.',
+        "3. Context: Including relevant background information to frame the AI's response.",
+        "4. Constraints: Setting boundaries or limitations for the AI's output.",
+        '5. Examples: Demonstrating the expected format or style of the response.',
+      ],
     },
   ],
 };
