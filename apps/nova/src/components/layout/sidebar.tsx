@@ -1,6 +1,7 @@
 'use client';
 
 import { LogoutDropdownItem } from '../logout-dropdown-item';
+import { ThemeToggle } from '../playground/theme-toggle';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -48,7 +49,7 @@ export function Sidebar() {
   const wsId = pathname.split('/')[1];
 
   return (
-    <div className="flex w-64 flex-col border-r bg-card text-card-foreground">
+    <div className="bg-card text-card-foreground flex w-64 flex-col border-r">
       <div className="p-4">
         <h1 className="text-xl font-bold">Prompt Engineering</h1>
       </div>
@@ -104,8 +105,7 @@ export function Sidebar() {
         </nav>
       </ScrollArea>
       <div className="flex items-center justify-between border-t p-4">
-        {/* <ThemeToggle /> */}
-        <div></div>
+        <ThemeToggle />
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">

@@ -9,11 +9,20 @@ import { motion } from 'framer-motion';
 import { Rocket, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
-function MarketingPage() {
+interface RainingElement {
+  id: number;
+  content: string;
+  color: string;
+  initialX: number;
+  targetY: number;
+}
+
+export default function MarketingPage() {
   const t = useTranslations();
   const features = getFeatures(t);
-  const isBrowser = typeof window !== 'undefined';
+  const [rainingElements, setRainingElements] = useState<RainingElement[]>([]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -25,28 +34,37 @@ function MarketingPage() {
     },
   };
 
-  const rainingElements = Array.from({ length: 50 }).map((_, i) => ({
-    id: i,
-    content: i % 3 === 0 ? '✨' : i % 3 === 1 ? '🌟' : '❄️',
-    color: i % 2 === 0 ? 'text-blue-400' : 'text-pink-400',
-  }));
+  useEffect(() => {
+    const isBrowser = typeof window !== 'undefined';
+    const windowWidth = isBrowser ? window.innerWidth : 1024; // Default for SSR
+    const windowHeight = isBrowser ? window.innerHeight : 768; // Default for SSR
+
+    const rainingElements: RainingElement[] = Array.from({ length: 50 }).map(
+      (_, i) => ({
+        id: i,
+        content: i % 3 === 0 ? '✨' : i % 3 === 1 ? '🌟' : '❄️',
+        color: i % 2 === 0 ? 'text-blue-400' : 'text-pink-400',
+        initialX: Math.random() * windowWidth,
+        targetY: Math.random() * windowHeight,
+      })
+    );
+
+    setRainingElements(rainingElements);
+  }, []);
 
   return (
-    <div className="relative flex h-full w-full flex-col items-center bg-gradient-to-b from-deep-blue via-midnight-blue to-dark-purple">
+    <div className="from-deep-blue via-midnight-blue to-dark-purple relative flex h-full w-full flex-col items-center bg-gradient-to-b">
       {/* Raining Effect */}
       <div className="absolute inset-0 h-screen overflow-hidden">
         {rainingElements.map((element) => (
           <motion.div
             key={element.id}
             initial={{
-              x: isBrowser ? Math.random() * window.innerWidth : 0,
+              x: element.initialX,
               y: -50,
             }}
             animate={{
-              y: [
-                Math.random() * -200,
-                Math.random() * (isBrowser ? window.innerHeight : 500),
-              ],
+              y: [Math.random() * -200, element.targetY],
               opacity: [0, 1, 0],
             }}
             transition={{
@@ -83,8 +101,14 @@ function MarketingPage() {
 
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <div className="relative">
-            <input className="ease placeholder:text-white-400 hover:border-white-300 peer rounded-xl border border-slate-200 bg-white px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 focus:border-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-hidden sm:w-80" />
-            <label className="absolute top-2.5 left-2.5 origin-left transform cursor-text px-1 text-sm text-white transition-all peer-focus:-top-2 peer-focus:left-2.5 peer-focus:scale-90 peer-focus:text-xs peer-focus:text-white">
+            <input
+              id="prompt"
+              className="peer rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 ease-in-out placeholder:text-white/40 hover:border-white/30 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 sm:w-80"
+            />
+            <label
+              htmlFor="prompt"
+              className="absolute left-2.5 top-2.5 transform cursor-text px-1 text-sm text-white/60 transition-all peer-focus:-top-2 peer-focus:left-2.5 peer-focus:text-xs peer-focus:text-white"
+            >
               Prompt here..
             </label>
           </div>
@@ -107,14 +131,14 @@ function MarketingPage() {
           </motion.div>
         </div>
       </motion.div> */}
-      <Separator className="mb-8 bg-foreground/5" />
+      <Separator className="bg-foreground/5 mb-8" />
       <motion.section
         id="features"
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
         variants={containerVariants}
-        className="w-full bg-gradient-to-b from-midnight-blue via-midnight-blue to-dark-purple py-24 pt-16"
+        className="from-midnight-blue via-midnight-blue to-dark-purple w-full bg-gradient-to-b py-24 pt-16"
       >
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="mb-12 text-center text-4xl font-bold text-white">
@@ -179,5 +203,3 @@ function MarketingPage() {
     </div>
   );
 }
-
-export default MarketingPage;
