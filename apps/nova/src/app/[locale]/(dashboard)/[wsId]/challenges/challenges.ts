@@ -94,7 +94,7 @@ const challenges: Challenge[] = [
         ],
       },
     ],
-    duration: 45, // Added duration (in minutes)
+    duration: 45, 
   },
   {
     id: 3,

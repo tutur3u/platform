@@ -10,7 +10,7 @@ export default function PromptComponent({
   challengeId: string;
 }) {
   return (
-    <Card className="h-[813px] w-1/2 overflow-y-auto p-4 pt-10">
+    <Card className="text-foreground bg-foreground/10 h-[813px] w-1/2 overflow-y-auto p-4 pt-10">
       <ChatBox challengeId={challengeId} problem={problem}></ChatBox>
     </Card>
   );
