@@ -19,7 +19,7 @@ interface RainingElement {
   targetY: number;
 }
 
-export function MarketingPage() {
+export default function MarketingPage() {
   const t = useTranslations();
   const features = getFeatures(t);
   const [rainingElements, setRainingElements] = useState<RainingElement[]>([]);
@@ -36,13 +36,16 @@ export function MarketingPage() {
 
   useEffect(() => {
     const isBrowser = typeof window !== 'undefined';
+    const windowWidth = isBrowser ? window.innerWidth : 1024; // Default for SSR
+    const windowHeight = isBrowser ? window.innerHeight : 768; // Default for SSR
+
     const rainingElements: RainingElement[] = Array.from({ length: 50 }).map(
       (_, i) => ({
         id: i,
         content: i % 3 === 0 ? '✨' : i % 3 === 1 ? '🌟' : '❄️',
         color: i % 2 === 0 ? 'text-blue-400' : 'text-pink-400',
-        initialX: Math.random() * window.innerWidth,
-        targetY: Math.random() * (isBrowser ? window.innerHeight : 500),
+        initialX: Math.random() * windowWidth,
+        targetY: Math.random() * windowHeight,
       })
     );
 
@@ -194,5 +197,3 @@ export function MarketingPage() {
     </div>
   );
 }
-
-export default MarketingPage;
