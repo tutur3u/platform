@@ -68,7 +68,7 @@ export async function getLeaderboardData(): Promise<LeaderboardEntry[]> {
     {
       userId: 3,
       username: 'Charlie',
-      totalScore: 930,
+      totalScore: 900,
       challengeScores: [
         {
           challengeId: 1,
