@@ -49,7 +49,7 @@ export default function CustomizedHeader({
           throw new Error('Failed to end test');
         }
 
-        router.push('/');
+        router.push(`/${wsId}/challenges/${challengeId}/test-ended`);
       } catch (error) {
         console.error('Error ending test:', error);
       }

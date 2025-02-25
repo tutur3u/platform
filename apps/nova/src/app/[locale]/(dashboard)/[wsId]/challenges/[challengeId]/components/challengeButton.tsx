@@ -27,14 +27,28 @@ export default function CountdownTimer({
     const startTime = new Date(createdAt).getTime();
     const endTime = startTime + duration * 60000;
 
-    const updateTimer = () => {
+    const updateTimer = async () => {
       const now = new Date().getTime();
-      const remaining = Math.max(0, Math.floor((endTime - now) / 1000)); // Get remaining seconds
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeLeft(remaining);
 
       if (remaining === 0) {
-        // onUpdateDuration(0);
-        router.push(`/${wsId}/challenges/${problemId}/test-ended`);
+        try {
+          const response = await fetch(
+            `/api/auth/workspace/${problemId}/nova/start-test`,
+            {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ test_status: 'END' }),
+            }
+          );
+          if (!response.ok) {
+            throw new Error('Failed to end test');
+          }
+          router.push(`/${wsId}/challenges/${problemId}/test-ended`);
+        } catch (error) {
+          console.error('Error ending test: ', error);
+        }
       }
     };
 
