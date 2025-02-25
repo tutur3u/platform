@@ -1,3 +1,6 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import moment from 'moment';
@@ -10,48 +13,51 @@ import {
   useMemo,
   useState,
 } from 'react';
-import useSWR, { mutate as swrMutate } from 'swr';
 
-const CalendarContext = createContext({
-  getEvent: (eventId: string) => {
-    console.log('getEvent', eventId);
-    return undefined as CalendarEvent | undefined;
-  },
-
-  getCurrentEvents: () => [] as CalendarEvent[],
-  getUpcomingEvent: () => undefined as CalendarEvent | undefined,
-
-  getEvents: () => [] as CalendarEvent[],
-
-  getEventLevel: (eventId: string) => {
-    console.log('getEventLevel', eventId);
-    return 0 as number;
-  },
-
-  addEvent: (event: CalendarEvent) => console.log('addEvent', event),
-  addEmptyEvent: (date: Date) => {
-    console.log('addEmptyEvent', date);
-    return {} as CalendarEvent | undefined;
-  },
-  updateEvent: (eventId: string, data: Partial<CalendarEvent>) =>
-    console.log('updateEvent', eventId, data),
-  deleteEvent: (eventId: string) => console.log('deleteEvent', eventId),
-
-  getModalStatus: (id: string) => {
-    console.log('getModalStatus', id);
-    return false as boolean;
-  },
-  getActiveEvent: () => {
-    console.log('getActiveEvent');
-    return undefined as CalendarEvent | undefined;
-  },
-  isModalActive: () => false as boolean,
-  isEditing: () => false as boolean,
-  openModal: (id: string) => console.log('openModal', id),
-  closeModal: () => console.log('closeModal'),
-
-  hideModal: () => console.log('hideModal'),
-  showModal: () => console.log('showModal'),
+// Updated context with improved type definitions
+const CalendarContext = createContext<{
+  getEvent: (eventId: string) => CalendarEvent | undefined;
+  getCurrentEvents: (date?: Date) => CalendarEvent[];
+  getUpcomingEvent: () => CalendarEvent | undefined;
+  getEvents: () => CalendarEvent[];
+  getEventLevel: (eventId: string) => number;
+  addEvent: (event: Omit<CalendarEvent, 'id'>) => Promise<CalendarEvent>;
+  addEmptyEvent: (date: Date) => CalendarEvent;
+  updateEvent: (
+    eventId: string,
+    data: Partial<CalendarEvent>
+  ) => Promise<CalendarEvent>;
+  deleteEvent: (eventId: string) => Promise<void>;
+  isModalOpen: boolean;
+  activeEvent: CalendarEvent | undefined;
+  openModal: (eventId?: string) => void;
+  closeModal: () => void;
+  isEditing: () => boolean;
+  hideModal: () => void;
+  showModal: () => void;
+  getModalStatus: (id: string) => boolean;
+  getActiveEvent: () => CalendarEvent | undefined;
+  isModalActive: () => boolean;
+}>({
+  getEvent: () => undefined,
+  getCurrentEvents: () => [],
+  getUpcomingEvent: () => undefined,
+  getEvents: () => [],
+  getEventLevel: () => 0,
+  addEvent: () => Promise.resolve({} as CalendarEvent),
+  addEmptyEvent: () => ({}) as CalendarEvent,
+  updateEvent: () => Promise.resolve({} as CalendarEvent),
+  deleteEvent: () => Promise.resolve(),
+  isModalOpen: false,
+  activeEvent: undefined,
+  openModal: () => undefined,
+  closeModal: () => undefined,
+  isEditing: () => false,
+  hideModal: () => undefined,
+  showModal: () => undefined,
+  getModalStatus: () => false,
+  getActiveEvent: () => undefined,
+  isModalActive: () => false,
 });
 
 export const CalendarProvider = ({
@@ -61,6 +67,8 @@ export const CalendarProvider = ({
   ws: Workspace;
   children: ReactNode;
 }) => {
+  const queryClient = useQueryClient();
+
   const getDateRangeQuery = ({
     startDate,
     endDate,
@@ -71,259 +79,377 @@ export const CalendarProvider = ({
     return `?start_at=${startDate.toISOString()}&end_at=${endDate.toISOString()}`;
   };
 
-  const apiPath = ws?.id
-    ? `/api/workspaces/${ws?.id}/calendar/events${getDateRangeQuery({
-        startDate: new Date(),
-        endDate: new Date(),
-      })}`
-    : null;
+  // Extended date range to fetch events for the entire month
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
 
-  const { data } = useSWR<{
-    data: CalendarEvent[];
-    count: number;
-  }>(apiPath);
+  const endOfMonth = new Date();
+  endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+  endOfMonth.setDate(0);
+  endOfMonth.setHours(23, 59, 59, 999);
 
-  const refresh = useCallback(async () => await swrMutate(apiPath), [apiPath]);
+  // Define an async function to fetch the calendar events
+  const fetchCalendarEvents = async () => {
+    if (!ws?.id) return { data: [], count: 0 };
+
+    const dateRangeQuery = getDateRangeQuery({
+      startDate: startOfMonth,
+      endDate: endOfMonth,
+    });
+
+    const response = await fetch(
+      `/api/v1/workspaces/${ws.id}/calendar/events${dateRangeQuery}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch calendar events');
+    }
+
+    return await response.json();
+  };
+
+  // Use React Query to fetch and cache the events
+  const { data } = useQuery({
+    queryKey: [
+      'calendarEvents',
+      ws?.id,
+      startOfMonth.toISOString(),
+      endOfMonth.toISOString(),
+    ],
+    queryFn: fetchCalendarEvents,
+    enabled: !!ws?.id,
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+  });
 
   const events = useMemo(() => data?.data ?? [], [data]);
 
-  const [openedModalId, setOpenedModalId] = useState<string | null>(null);
-  const [lastCreatedEventId, setLastCreatedEventId] = useState<string | null>(
-    null
-  );
+  // Invalidate and refetch events
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: ['calendarEvents', ws?.id],
+    });
+  }, [queryClient, ws?.id]);
 
+  // Modal state
+  const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const [isModalHidden, setModalHidden] = useState(false);
+  const [pendingNewEvent, setPendingNewEvent] =
+    useState<Partial<CalendarEvent> | null>(null);
+
+  // Event getters
   const getEvent = useCallback(
-    (eventId: string) => events.find((e) => e.id === eventId),
+    (eventId: string) =>
+      events.find((e: Partial<CalendarEvent>) => e.id === eventId),
     [events]
   );
 
-  const getCurrentEvents = useCallback(() => {
-    const now = new Date();
+  const getCurrentEvents = useCallback(
+    (date?: Date) => {
+      const targetDate = date || new Date();
 
-    // Get events that is happening right now
-    return events.filter((e) => {
-      const start = e.start_at;
-      const end = e.end_at;
+      return events.filter((e: CalendarEvent) => {
+        const eventStart = new Date(e.start_at);
+        const eventEnd = new Date(e.end_at);
 
-      const startDate = moment(start).toDate();
-      const endDate = moment(end).toDate();
+        // For all-day events or events spanning multiple days
+        if (eventStart.getHours() === 0 && eventEnd.getHours() === 23) {
+          return (
+            eventStart.getDate() <= targetDate.getDate() &&
+            eventEnd.getDate() >= targetDate.getDate() &&
+            eventStart.getMonth() === targetDate.getMonth() &&
+            eventStart.getFullYear() === targetDate.getFullYear()
+          );
+        }
 
-      const isSameDay =
-        startDate.getDate() === now.getDate() &&
-        startDate.getMonth() === now.getMonth() &&
-        startDate.getFullYear() === now.getFullYear();
-
-      return isSameDay && startDate <= now && endDate >= now;
-    });
-  }, [events]);
+        // For normal events
+        return (
+          eventStart.getDate() === targetDate.getDate() &&
+          eventStart.getMonth() === targetDate.getMonth() &&
+          eventStart.getFullYear() === targetDate.getFullYear()
+        );
+      });
+    },
+    [events]
+  );
 
   const getUpcomingEvent = useCallback(() => {
     const now = new Date();
-
     // Get the next event that is happening
-    return events.find((e) => {
+    return events.find((e: CalendarEvent) => {
       const start = e.start_at;
       const end = e.end_at;
-
       const startDate = moment(start).toDate();
       const endDate = moment(end).toDate();
-
       const isSameDay =
         startDate.getDate() === now.getDate() &&
         startDate.getMonth() === now.getMonth() &&
         startDate.getFullYear() === now.getFullYear();
-
       return isSameDay && startDate > now && endDate > now;
     });
   }, [events]);
 
   const getEvents = useCallback(() => events, [events]);
 
-  const getLevel = useCallback(
-    (events: CalendarEvent[], eventId: string): number => {
-      const event = events.find((e) => e.id === eventId);
+  // Event level calculation for overlapping events
+  const getEventLevel = useCallback(
+    (eventId: string) => {
+      const event = events.find((e: CalendarEvent) => e.id === eventId);
       if (!event) return 0;
 
-      const eventIndex = events.findIndex((e) => e.id === eventId);
+      const eventIndex = events.findIndex(
+        (e: CalendarEvent) => e.id === eventId
+      );
+      const prevEvents = events
+        .slice(0, eventIndex)
+        .filter((e: CalendarEvent) => {
+          if (e.id === eventId) return false;
 
-      const prevEvents = events.slice(0, eventIndex).filter((e) => {
-        // If the event is the same
-        if (e.id === eventId) return false;
+          const eventStart = moment(event.start_at).toDate();
+          const eventEnd = moment(event.end_at).toDate();
+          const eStart = moment(e.start_at).toDate();
+          const eEnd = moment(e.end_at).toDate();
 
-        // If the event is not on the same day
-        if (
-          moment(e.start_at).toDate().getDate() !==
-          moment(event.start_at).toDate().getDate()
-        )
-          return false;
-
-        // If the event ends before the current event starts,
-        // or if the event starts after the current event ends
-        return !(e.end_at <= event.start_at || e.start_at >= event.end_at);
-      });
+          if (eventStart.getDate() !== eStart.getDate()) return false;
+          return !(eEnd <= eventStart || eStart >= eventEnd);
+        });
 
       if (prevEvents.length === 0) return 0;
 
-      const prevEventLevels = prevEvents.map((e) => getLevel(events, e.id));
+      const prevEventLevels = prevEvents.map((e: CalendarEvent) =>
+        getEventLevel(e.id)
+      );
       return Math.max(...prevEventLevels) + 1;
     },
-    []
+    [events]
   );
 
-  const getEventLevel = useCallback(
-    (eventId: string) => getLevel(events, eventId),
-    [events, getLevel]
-  );
+  // CRUD operations with Supabase
+  const addEvent = useCallback(
+    async (event: Omit<CalendarEvent, 'id'>) => {
+      if (!ws) throw new Error('No workspace selected');
 
-  const addEvent = async (event: CalendarEvent) => {
-    if (!apiPath) return;
+      try {
+        const supabase = createClient();
 
-    try {
-      const res = await fetch(apiPath, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(event),
-      });
+        const { data, error } = await supabase
+          .from('workspace_calendar_events')
+          .insert({
+            title: event.title || '',
+            description: event.description || '',
+            start_at: event.start_at,
+            end_at: event.end_at,
+            color: (event.color || 'blue') as SupportedColor,
+            ws_id: ws.id,
+          })
+          .select()
+          .single();
 
-      if (!res.ok) {
-        throw new Error('Failed to add event');
+        if (error) throw error;
+
+        // Refresh the query cache after adding an event
+        refresh();
+
+        if (data) {
+          // Clear any pending new event
+          setPendingNewEvent(null);
+          return data as CalendarEvent;
+        }
+
+        return {} as CalendarEvent;
+      } catch (err) {
+        console.error('Failed to add event:', err);
+        throw err;
       }
+    },
+    [ws, refresh]
+  );
 
-      const { id: eventId } = await res.json();
-      await refresh();
+  const addEmptyEvent = useCallback(
+    (date: Date) => {
+      const start_at = new Date(date);
+      const end_at = new Date(date);
+      end_at.setHours(end_at.getHours() + 1);
 
-      setOpenedModalId(eventId);
-      setLastCreatedEventId(eventId);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+      // Create a new event with default values
+      const newEvent: Omit<CalendarEvent, 'id'> = {
+        title: '',
+        description: '',
+        start_at: start_at.toISOString(),
+        end_at: end_at.toISOString(),
+        color: 'blue',
+        ws_id: ws?.id || '',
+      };
 
-  const addEmptyEvent = (date: Date) => {
-    if (lastCreatedEventId) {
-      setLastCreatedEventId(null);
-      setOpenedModalId(null);
-      return;
-    }
+      // Store the pending new event
+      setPendingNewEvent(newEvent);
 
-    const start_at = new Date(date);
-    const end_at = new Date(date);
-    end_at.setHours(end_at.getHours() + 1);
+      // Open the modal with the pending event
+      setModalHidden(false);
 
-    const event: CalendarEvent = {
-      id: crypto.randomUUID(),
-      start_at: start_at.toISOString(),
-      end_at: end_at.toISOString(),
-      local: true,
-    };
-
-    addEvent(event);
-
-    return event;
-  };
+      // Return the pending event object
+      return newEvent as CalendarEvent;
+    },
+    [ws?.id]
+  );
 
   const updateEvent = useCallback(
-    async (eventId: string, event: Partial<CalendarEvent>) => {
-      if (!ws) return;
+    async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
+      if (!ws) throw new Error('No workspace selected');
 
-      const newEvents =
-        data?.data
-          .map((e) => {
-            if (e.id !== eventId) return e;
+      // If this is a newly created event that hasn't been saved to the database yet
+      if (pendingNewEvent && eventId === 'new') {
+        const newEventData = {
+          ...pendingNewEvent,
+          ...eventUpdates,
+        };
 
-            if (
-              (event.title !== undefined && event.title !== e.title) ||
-              (event.description !== undefined &&
-                event.description !== e.description) ||
-              (event.start_at !== undefined &&
-                !moment(event.start_at).isSame(e.start_at)) ||
-              (event.end_at !== undefined &&
-                !moment(event.end_at).isSame(e.end_at)) ||
-              (event.color !== undefined && event.color !== e.color)
-            ) {
-              return { ...e, ...event, local: true };
-            }
+        try {
+          // Create a new event instead of updating
+          const result = await addEvent(
+            newEventData as Omit<CalendarEvent, 'id'>
+          );
+          return result;
+        } catch (err) {
+          console.error('Failed to create new event:', err);
+          throw err;
+        }
+      }
 
-            return { ...e, ...event };
+      // Normal update flow for existing events
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('workspace_calendar_events')
+          .update({
+            title: eventUpdates.title,
+            description: eventUpdates.description,
+            start_at: eventUpdates.start_at,
+            end_at: eventUpdates.end_at,
+            color: eventUpdates.color,
           })
-          .sort((a, b) => {
-            if (a.start_at === b.end_at || a.end_at === b.start_at) return 0;
-            if (a.start_at < b.start_at) return -1;
-            if (a.start_at > b.start_at) return 1;
-            if (a.end_at < b.end_at) return 1;
-            if (a.end_at > b.end_at) return -1;
-            return 0;
-          }) ?? [];
+          .eq('id', eventId)
+          .select()
+          .single();
 
-      return { data: newEvents, count: newEvents?.length ?? 0 };
+        if (error) throw error;
+
+        // Refresh the query cache after updating an event
+        refresh();
+
+        return data as CalendarEvent;
+      } catch (err) {
+        console.error(`Failed to update event ${eventId}:`, err);
+        throw err;
+      }
     },
-    [ws, data?.data]
+    [ws, refresh, pendingNewEvent, addEvent]
   );
 
-  const deleteEvent = async (eventId: string) => {
-    if (!ws) return;
+  const deleteEvent = useCallback(
+    async (eventId: string) => {
+      // If this is a pending new event that hasn't been saved yet
+      if (pendingNewEvent && eventId === 'new') {
+        // Just clear the pending event
+        setPendingNewEvent(null);
+        setActiveEventId(null);
+        return;
+      }
 
-    try {
-      const res = await fetch(
-        `/api/workspaces/${ws.id}/calendar/events/${eventId}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      if (!ws) throw new Error('No workspace selected');
 
-      if (!res.ok) throw new Error('Failed to delete event');
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('workspace_calendar_events')
+          .delete()
+          .eq('id', eventId);
 
-      await refresh();
-    } catch (err) {
-      console.error(err);
+        if (error) throw error;
+
+        // Refresh the query cache after deleting an event
+        refresh();
+
+        setActiveEventId(null);
+      } catch (err) {
+        console.error(`Failed to delete event ${eventId}:`, err);
+        throw err;
+      }
+    },
+    [ws, refresh, pendingNewEvent]
+  );
+
+  // Modal management
+  const openModal = useCallback((eventId?: string) => {
+    if (eventId) {
+      // Opening an existing event
+      setActiveEventId(eventId);
+      setPendingNewEvent(null);
+    } else {
+      // Creating a new event
+      const now = new Date();
+      const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+
+      // Create a pending new event
+      const newEvent: Omit<CalendarEvent, 'id'> = {
+        title: '',
+        description: '',
+        start_at: now.toISOString(),
+        end_at: oneHourLater.toISOString(),
+        color: 'blue',
+      };
+
+      setPendingNewEvent(newEvent);
+      setActiveEventId('new');
+    }
+    setModalHidden(false);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setActiveEventId(null);
+    setPendingNewEvent(null);
+  }, []);
+
+  const activeEvent = useMemo(() => {
+    // If it's a pending new event
+    if (pendingNewEvent && activeEventId === 'new') {
+      return {
+        id: 'new', // Use 'new' as the ID for pending events
+        ...pendingNewEvent,
+      } as CalendarEvent;
     }
 
-    setLastCreatedEventId(null);
-    setOpenedModalId(null);
-  };
+    // Otherwise try to find an existing event
+    return activeEventId && activeEventId !== 'new'
+      ? events.find((e: Partial<CalendarEvent>) => e.id === activeEventId)
+      : undefined;
+  }, [activeEventId, events, pendingNewEvent]);
 
-  const [isModalHidden, setModalHidden] = useState(false);
+  const isEditing = useCallback(() => !!activeEventId, [activeEventId]);
+  const hideModal = useCallback(() => setModalHidden(true), []);
+  const showModal = useCallback(() => setModalHidden(false), []);
 
+  // Legacy support
   const getModalStatus = useCallback(
-    (id: string) => (isModalHidden ? false : openedModalId === id),
-    [isModalHidden, openedModalId]
+    (id: string) => (isModalHidden ? false : activeEventId === id),
+    [isModalHidden, activeEventId]
   );
 
   const getActiveEvent = useCallback(
-    () =>
-      isModalHidden ? undefined : events.find((e) => e.id === openedModalId),
-    [isModalHidden, events, openedModalId]
+    () => (isModalHidden ? undefined : activeEvent),
+    [isModalHidden, activeEvent]
   );
 
   const isModalActive = useCallback(
-    () => (isModalHidden ? false : openedModalId !== null),
-    [isModalHidden, openedModalId]
+    () => (isModalHidden ? false : activeEventId !== null),
+    [isModalHidden, activeEventId]
   );
-
-  const isEditing = useCallback(
-    () => isModalHidden || !!openedModalId,
-    [isModalHidden, openedModalId]
-  );
-
-  const openModal = useCallback((id: string) => {
-    setOpenedModalId(id);
-    setLastCreatedEventId(id);
-  }, []);
-
-  const closeModal = useCallback(() => setOpenedModalId(null), []);
-
-  const hideModal = useCallback(() => setModalHidden(true), []);
-  const showModal = useCallback(() => setModalHidden(false), []);
 
   const values = {
     getEvent,
     getCurrentEvents,
     getUpcomingEvent,
-
     getEvents,
-
     getEventLevel,
 
     addEvent,
@@ -331,13 +457,17 @@ export const CalendarProvider = ({
     updateEvent,
     deleteEvent,
 
+    // New API
+    isModalOpen: !isModalHidden && activeEventId !== null,
+    activeEvent,
+    openModal,
+    closeModal,
+
+    // Legacy API
     getModalStatus,
     getActiveEvent,
     isModalActive,
     isEditing,
-    openModal,
-    closeModal,
-
     hideModal,
     showModal,
   };
@@ -351,9 +481,7 @@ export const CalendarProvider = ({
 
 export const useCalendar = () => {
   const context = useContext(CalendarContext);
-
   if (context === undefined)
     throw new Error('useCalendar() must be used within a CalendarProvider.');
-
   return context;
 };

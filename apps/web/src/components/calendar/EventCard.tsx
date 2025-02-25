@@ -1,6 +1,7 @@
 import { useCalendar } from '@/hooks/useCalendar';
 import { useDebouncedState } from '@mantine/hooks';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
 
@@ -10,156 +11,24 @@ interface EventCardProps {
   event: CalendarEvent;
 }
 
-export default function EventCard({ dates, wsId, event }: EventCardProps) {
-  const { id, start_at, end_at } = event;
+export default function EventCard({ dates, event }: EventCardProps) {
+  const { id, title, description, start_at, end_at, color = 'blue' } = event;
 
   const {
     getEventLevel: getLevel,
     updateEvent,
-    // getActiveEvent,
-    // openModal,
-    // closeModal,
     hideModal,
     showModal,
   } = useCalendar();
-
-  useEffect(() => {
-    const syncEvent = async () => {
-      try {
-        const res = await fetch(
-          `/api/workspaces/${wsId}/calendar/events/${id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(event),
-          }
-        );
-
-        if (!res.ok) throw new Error('Failed to sync event');
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    if (event.local) {
-      // Wait 500ms before syncing the event
-      const timeout = setTimeout(() => {
-        syncEvent();
-      }, 500);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [event, wsId, id]);
-
-  // const convertTime = (time: number) => {
-  //   // 9.5 => 9:30
-  //   const hours = Math.floor(time);
-  //   const minutes = Math.round((time - hours) * 60);
-
-  //   // pad with 0
-  //   const pad = (n: number) => (n < 10 ? '0' + n : n);
-  //   return `${pad(hours)}:${pad(minutes)}`;
-  // };
 
   const startDate = moment(start_at).toDate();
   const endDate = moment(end_at).toDate();
 
   const startHours = startDate.getHours() + startDate.getMinutes() / 60;
   const endHours = endDate.getHours() + endDate.getMinutes() / 60;
-
-  // const startTime = convertTime(startHours);
-  // const endTime = convertTime(endHours);
-
   const duration =
     startHours > endHours ? 24 - startHours : endHours - startHours;
-
   const level = getLevel ? getLevel(id) : 0;
-
-  // const cardStyle = {
-  //   minHeight: 16,
-  //   opacity: 0,
-  //   transition:
-  //     'width 150ms ease-in-out,' +
-  //     'left 150ms ease-in-out,' +
-  //     'opacity 0.3s ease-in-out,' +
-  //     'background-color 0.5s ease-in-out,' +
-  //     'border-color 0.5s ease-in-out,' +
-  //     'color 0.5s ease-in-out',
-  // };
-
-  useEffect(() => {
-    // Every time the event is updated, update the card style
-    const cardEl = document.getElementById(`event-${id}`);
-
-    const cellEl = document.querySelector(
-      `.calendar-cell`
-    ) as HTMLDivElement | null;
-
-    if (!cardEl || !cellEl) return;
-
-    const startHours = startDate.getHours() + startDate.getMinutes() / 60;
-    const endHours = endDate.getHours() + endDate.getMinutes() / 60;
-
-    const duration =
-      startHours > endHours ? 24 - startHours : endHours - startHours;
-
-    // Calculate event height
-    const height = Math.max(20 - 4, duration * 80 - 4);
-
-    // Calculate the index of the day the event is in
-    const dateIdx = dates.findIndex((date) => {
-      return (
-        date.getFullYear() === startDate.getFullYear() &&
-        date.getMonth() === startDate.getMonth() &&
-        date.getDate() === startDate.getDate()
-      );
-    });
-
-    if (dateIdx === -1) {
-      cardEl.style.transitionDelay = '0ms, 0ms, 0ms, 0ms, 0ms, 0ms';
-      cardEl.style.opacity = '0';
-      cardEl.style.pointerEvents = 'none';
-      return;
-    } else {
-      cardEl.style.transitionDelay = '0ms, 0ms, 300ms, 0ms, 0ms, 0ms';
-      cardEl.style.opacity = '1';
-      cardEl.style.pointerEvents = 'all';
-    }
-
-    // Update event dimensions
-    cardEl.style.height = `${height}px`;
-
-    // Update event position
-    cardEl.style.top = `${startHours * 80}px`;
-
-    const observer = new ResizeObserver(() => {
-      const left = dateIdx * (cellEl.offsetWidth + 0.5) + level * 12;
-      cardEl.style.left = `${left}px`;
-    });
-
-    observer.observe(cellEl);
-
-    // Update event time visibility
-    const timeEl = cardEl.querySelector('#time');
-    if (duration <= 0.5) timeEl?.classList.add('hidden');
-    else timeEl?.classList.remove('hidden');
-
-    return () => observer.disconnect();
-  }, [id, startDate, endDate, level, dates]);
-
-  // const isPast = () => {
-  //   const endAt = new Date(startDate);
-
-  //   const extraHours = Math.floor(duration);
-  //   const extraMinutes = Math.round((duration - extraHours) * 60);
-
-  //   endAt.setHours(endAt.getHours() + extraHours);
-  //   endAt.setMinutes(endAt.getMinutes() + extraMinutes);
-
-  //   return endAt < new Date();
-  // };
 
   const handleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -167,113 +36,108 @@ export default function EventCard({ dates, wsId, event }: EventCardProps) {
   const [isDragging, setIsDragging] = useDebouncedState(false, 200);
   const [isResizing, setIsResizing] = useState(false);
 
+  // Event positioning and sizing
   useEffect(() => {
-    // If the event is being dragged or resized, update the card width
     const cardEl = document.getElementById(`event-${id}`);
-    if (!cardEl) return;
+    const cellEl = document.querySelector('.calendar-cell') as HTMLDivElement;
 
-    const cellEl = document.querySelector(
-      `.calendar-cell`
-    ) as HTMLDivElement | null;
-    if (!cellEl) return;
+    if (!cardEl || !cellEl) return;
+
+    // Calculate event height
+    const height = Math.max(20 - 4, duration * 80 - 4);
+
+    // Calculate the index of the day the event is in
+    const dateIdx = dates.findIndex((date) => {
+      const eventDate = startDate;
+      return (
+        date.getFullYear() === eventDate.getFullYear() &&
+        date.getMonth() === eventDate.getMonth() &&
+        date.getDate() === eventDate.getDate()
+      );
+    });
+
+    if (dateIdx === -1) {
+      cardEl.style.opacity = '0';
+      cardEl.style.pointerEvents = 'none';
+      return;
+    }
+
+    // Update event dimensions and position
+    cardEl.style.height = `${height}px`;
+    cardEl.style.top = `${startHours * 80}px`;
 
     const observer = new ResizeObserver(() => {
-      const paddedWidth = cellEl.offsetWidth - (level + 1) * 12;
-      const normalWidth = cellEl.offsetWidth - level * 12 - 4;
+      const columnWidth = cellEl.offsetWidth;
+      const left = dateIdx * columnWidth + level * 12;
+      const width = columnWidth - level * 12 - 4;
 
-      const isEditing = isDragging || isResizing;
-      const padding = isEditing ? paddedWidth : normalWidth;
-
-      cardEl.style.width = `${padding}px`;
-      if (isEditing) hideModal();
+      cardEl.style.width = `${width}px`;
+      cardEl.style.left = `${left}px`;
     });
 
     observer.observe(cellEl);
 
-    return () => {
-      observer.disconnect();
-    };
-  }, [id, level, isDragging, isResizing, hideModal]);
+    cardEl.style.opacity = '1';
+    cardEl.style.pointerEvents = 'all';
 
-  // const activeEvent = getActiveEvent();
-  // const isOpened = activeEvent?.id === id;
+    return () => observer.disconnect();
+  }, [id, startDate, duration, level, dates]);
 
   // Event resizing
   useEffect(() => {
     const rootEl = handleRef.current;
-    if (!rootEl) return;
-
-    const cardEl = rootEl.parentElement;
-    if (!cardEl) return;
+    const cardEl = rootEl?.parentElement;
+    if (!rootEl || !cardEl) return;
 
     const handleMouseDown = (e: MouseEvent) => {
-      e.preventDefault();
-
+      e.stopPropagation();
       if (isDragging || isResizing) return;
       setIsResizing(true);
+      hideModal();
 
       const startY = e.clientY;
       const startHeight = cardEl.offsetHeight;
 
       const handleMouseMove = (e: MouseEvent) => {
         e.preventDefault();
-
         if (isDragging) return;
-        setIsResizing(true);
 
-        const height =
-          Math.round((startHeight + e.clientY - startY) / 20) * 20 - 4;
+        const height = Math.round((startHeight + e.clientY - startY) / 20) * 20;
+        if (height <= 20) return; // Minimum height
 
-        // If the height doesn't change, don't update
-        if (height === cardEl.offsetHeight) return;
-        cardEl.style.height = height + 'px';
+        cardEl.style.height = `${height - 4}px`;
 
-        // calculate new end time
-        const newDuration = Math.round(cardEl.offsetHeight / 20) / 4;
+        // Calculate new end time
+        const newDuration = Math.round(height / 20) / 4;
         const newEndAt = new Date(startDate);
-
         const extraHours = Math.floor(newDuration);
         const extraMinutes = Math.round((newDuration - extraHours) * 60);
 
-        newEndAt.setHours(newEndAt.getHours() + extraHours);
-        newEndAt.setMinutes(newEndAt.getMinutes() + extraMinutes);
+        newEndAt.setHours(startDate.getHours() + extraHours);
+        newEndAt.setMinutes(startDate.getMinutes() + extraMinutes);
 
-        // update event
         updateEvent(id, { end_at: newEndAt.toISOString() });
       };
 
-      const handleMouseUp = (e: MouseEvent) => {
-        e.preventDefault();
-
-        if (isDragging) return;
+      const handleMouseUp = () => {
         setIsResizing(false);
         showModal();
-
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
       };
 
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
-
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
     };
 
-    if (isDragging) return;
     rootEl.addEventListener('mousedown', handleMouseDown);
-
-    return () => {
-      rootEl.removeEventListener('mousedown', handleMouseDown);
-    };
+    return () => rootEl.removeEventListener('mousedown', handleMouseDown);
   }, [
     id,
-    updateEvent,
-    isResizing,
     startDate,
+    updateEvent,
     isDragging,
+    isResizing,
     hideModal,
     showModal,
   ]);
@@ -281,256 +145,196 @@ export default function EventCard({ dates, wsId, event }: EventCardProps) {
   // Event dragging
   useEffect(() => {
     const rootEl = contentRef.current;
-    if (!rootEl) return;
+    const cardEl = rootEl?.parentElement;
+    const cellEl = document.querySelector('.calendar-cell') as HTMLDivElement;
 
-    const cardEl = rootEl.parentElement;
-    if (!cardEl) return;
-
-    const cellEl = document.querySelector(
-      `.calendar-cell`
-    ) as HTMLDivElement | null;
-    if (!cellEl) return;
+    if (!rootEl || !cardEl || !cellEl) return;
 
     const handleMouseDown = (e: MouseEvent) => {
-      e.preventDefault();
-
+      e.stopPropagation();
       if (isResizing) return;
       setIsDragging(true);
+      hideModal();
 
       const startX = e.clientX;
       const startY = e.clientY;
-
       const startLeft = cardEl.offsetLeft;
       const startTop = cardEl.offsetTop;
+      const columnWidth = cellEl.offsetWidth;
 
       const handleMouseMove = (e: MouseEvent) => {
         e.preventDefault();
-
         if (isResizing) return;
 
-        const top = Math.round((startTop + e.clientY - startY) / 20) * 20;
+        // Calculate new position
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
 
-        const cellWidth = cellEl.offsetWidth;
-        const halfCellWidth = cellWidth / 2;
-
+        // Snap to grid
+        const top = Math.round((startTop + deltaY) / 20) * 20;
         const left =
-          Math.round((startLeft + e.clientX - startX) / halfCellWidth) *
-          halfCellWidth;
+          Math.round((startLeft + deltaX) / columnWidth) * columnWidth;
 
-        // If the top or left doesn't change, don't update
-        if (top === cardEl.offsetTop && left === cardEl.offsetLeft) return;
+        // Update position if changed
+        if (top !== cardEl.offsetTop || left !== cardEl.offsetLeft) {
+          cardEl.style.top = `${top}px`;
+          cardEl.style.left = `${left}px`;
 
-        const dateIdx = dates.findIndex((date) => {
-          return (
-            date.getFullYear() === startDate.getFullYear() &&
-            date.getMonth() === startDate.getMonth() &&
-            date.getDate() === startDate.getDate()
+          // Calculate new date index
+          const newDateIdx = Math.floor(left / columnWidth);
+
+          // Calculate new times
+          const newStartAt = new Date(startDate);
+          const newStartHour = Math.floor(top / 80);
+          const newStartMinute = Math.round(((top % 80) / 80) * 60);
+
+          newStartAt.setHours(newStartHour);
+          newStartAt.setMinutes(newStartMinute);
+
+          // Update date if moved to different day
+          if (newDateIdx >= 0 && newDateIdx < dates.length) {
+            const newDate = dates[newDateIdx];
+            if (!newDate) return;
+            newStartAt.setFullYear(newDate.getFullYear());
+            newStartAt.setMonth(newDate.getMonth());
+            newStartAt.setDate(newDate.getDate());
+          }
+
+          // Calculate new end time maintaining duration
+          const newEndAt = new Date(newStartAt);
+          newEndAt.setTime(
+            newStartAt.getTime() + (endDate.getTime() - startDate.getTime())
           );
-        });
 
-        if (dateIdx === -1) return;
-        const newDateIdx = Math.round(left / halfCellWidth / 2);
-
-        // calculate new start time
-        const newStartAt = new Date(startDate);
-
-        const newStartHour = Math.round(top / 20) / 4;
-        const leftoverHour = newStartHour - Math.floor(newStartHour);
-
-        const newStartMinute = Math.round(leftoverHour * 60);
-
-        newStartAt.setHours(Math.floor(newStartHour));
-        newStartAt.setMinutes(newStartMinute);
-
-        // calculate new end time (duration)
-        const newEndAt = new Date(endDate);
-
-        const extraHours = Math.floor(duration);
-        const extraMinutes = Math.round((duration - extraHours) * 60);
-
-        newEndAt.setHours(newStartAt.getHours() + extraHours);
-        newEndAt.setMinutes(newStartAt.getMinutes() + extraMinutes);
-
-        // Update startDate and endDate if the date changes
-        if (dateIdx !== newDateIdx) {
-          const newDate = dates[newDateIdx];
-          if (!newDate) return;
-
-          newStartAt.setFullYear(newDate.getFullYear());
-          newStartAt.setMonth(newDate.getMonth());
-          newStartAt.setDate(newDate.getDate());
-
-          newEndAt.setFullYear(newDate.getFullYear());
-          newEndAt.setMonth(newDate.getMonth());
-          newEndAt.setDate(newDate.getDate());
+          updateEvent(id, {
+            start_at: newStartAt.toISOString(),
+            end_at: newEndAt.toISOString(),
+          });
         }
-
-        // update event
-        updateEvent(id, {
-          start_at: newStartAt.toISOString(),
-          end_at: newEndAt.toISOString(),
-        });
       };
 
-      const handleMouseUp = (e: MouseEvent) => {
-        e.preventDefault();
-
-        if (isResizing) return;
+      const handleMouseUp = () => {
         setIsDragging(false);
         showModal();
-
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
       };
 
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
-
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
     };
 
-    if (isResizing) return;
-    cardEl.addEventListener('mousedown', handleMouseDown);
-
-    return () => {
-      cardEl.removeEventListener('mousedown', handleMouseDown);
-    };
+    rootEl.addEventListener('mousedown', handleMouseDown);
+    return () => rootEl.removeEventListener('mousedown', handleMouseDown);
   }, [
     id,
+    updateEvent,
+    isResizing,
     startDate,
     endDate,
     duration,
-    level,
+    isDragging,
     dates,
-    startHours,
-    isResizing,
-    updateEvent,
+    hideModal,
     showModal,
-    setIsDragging,
   ]);
 
-  // const isNotFocused = activeEvent != null && !isOpened;
+  // Color styles based on event color
+  const getEventStyles = () => {
+    const colorStyles: Record<
+      string,
+      { bg: string; border: string; text: string }
+    > = {
+      blue: {
+        bg: 'bg-blue-100 dark:bg-blue-900/30',
+        border: 'border-blue-500/80 dark:border-blue-300/80',
+        text: 'text-blue-700 dark:text-blue-300',
+      },
+      red: {
+        bg: 'bg-red-100 dark:bg-red-900/30',
+        border: 'border-red-500/80 dark:border-red-300/80',
+        text: 'text-red-700 dark:text-red-300',
+      },
+      green: {
+        bg: 'bg-green-100 dark:bg-green-900/30',
+        border: 'border-green-500/80 dark:border-green-300/80',
+        text: 'text-green-700 dark:text-green-300',
+      },
+      yellow: {
+        bg: 'bg-yellow-100 dark:bg-yellow-900/30',
+        border: 'border-yellow-500/80 dark:border-yellow-300/80',
+        text: 'text-yellow-700 dark:text-yellow-300',
+      },
+      purple: {
+        bg: 'bg-purple-100 dark:bg-purple-900/30',
+        border: 'border-purple-500/80 dark:border-purple-300/80',
+        text: 'text-purple-700 dark:text-purple-300',
+      },
+      pink: {
+        bg: 'bg-pink-100 dark:bg-pink-900/30',
+        border: 'border-pink-500/80 dark:border-pink-300/80',
+        text: 'text-pink-700 dark:text-pink-300',
+      },
+      orange: {
+        bg: 'bg-orange-100 dark:bg-orange-900/30',
+        border: 'border-orange-500/80 dark:border-orange-300/80',
+        text: 'text-orange-700 dark:text-orange-300',
+      },
+      gray: {
+        bg: 'bg-gray-100 dark:bg-gray-900/30',
+        border: 'border-gray-500/80 dark:border-gray-300/80',
+        text: 'text-gray-700 dark:text-gray-300',
+      },
+    };
 
-  // const generateColor = () => {
-  //   const eventColor = color?.toLowerCase() || 'blue';
+    return colorStyles[color.toLowerCase()] || colorStyles.blue;
+  };
 
-  //   const colors: {
-  //     [key: string]: string;
-  //   } = {
-  //     red: isNotFocused
-  //       ? 'bg-[#fdecec] dark:bg-[#241f22] border-red-500/40 text-red-600/50 dark:border-red-300/30 dark:text-red-200/50'
-  //       : 'bg-[#fcdada] dark:bg-[#302729] border-red-500/80 text-red-600 dark:border-red-300/80 dark:text-red-200',
-  //     blue: isNotFocused
-  //       ? 'bg-[#ebf2fe] dark:bg-[#1e2127] border-blue-500/40 text-blue-600/50 dark:border-blue-300/30 dark:text-blue-200/50'
-  //       : 'bg-[#d8e6fd] dark:bg-[#252a32] border-blue-500/80 text-blue-600 dark:border-blue-300/80 dark:text-blue-200',
-  //     green: isNotFocused
-  //       ? 'bg-[#e8f9ef] dark:bg-[#1e2323] border-green-500/40 text-green-600/50 dark:border-green-300/30 dark:text-green-200/50'
-  //       : 'bg-[#d3f3df] dark:bg-[#242e2a] border-green-500/80 text-green-600 dark:border-green-300/80 dark:text-green-200',
-  //     yellow: isNotFocused
-  //       ? 'bg-[#fdf7e6] dark:bg-[#24221e] border-yellow-500/40 text-yellow-600/50 dark:border-yellow-300/30 dark:text-yellow-200/50'
-  //       : 'bg-[#fbf0ce] dark:bg-[#302d1f] border-yellow-500/80 text-yellow-600 dark:border-yellow-300/80 dark:text-yellow-200',
-  //     orange: isNotFocused
-  //       ? 'bg-[#fef1e7] dark:bg-[#242020] border-orange-500/40 text-orange-600/50 dark:border-orange-300/30 dark:text-orange-200/50'
-  //       : 'bg-[#fee3d0] dark:bg-[#302924] border-orange-500/80 text-orange-600 dark:border-orange-300/80 dark:text-orange-200',
-  //     purple: isNotFocused
-  //       ? 'bg-[#f6eefe] dark:bg-[#222027] border-purple-500/40 text-purple-600/50 dark:border-purple-300/30 dark:text-purple-200/50'
-  //       : 'bg-[#eeddfd] dark:bg-[#2c2832] border-purple-500/80 text-purple-600 dark:border-purple-300/80 dark:text-purple-200',
-  //     pink: isNotFocused
-  //       ? 'bg-[#fdecf5] dark:bg-[#242025] border-pink-500/40 text-pink-600/50 dark:border-pink-300/30 dark:text-pink-200/50'
-  //       : 'bg-[#fbdaeb] dark:bg-[#2f272e] border-pink-500/80 text-pink-600 dark:border-pink-300/80 dark:text-pink-200',
-  //     indigo: isNotFocused
-  //       ? 'bg-[#efeffe] dark:bg-[#1f2027] border-indigo-500/40 text-indigo-600/50 dark:border-indigo-300/30 dark:text-indigo-200/50'
-  //       : 'bg-[#e0e0fc] dark:bg-[#272832] border-indigo-500/80 text-indigo-600 dark:border-indigo-300/80 dark:text-indigo-200',
-  //     cyan: isNotFocused
-  //       ? 'bg-[#e6f8fb] dark:bg-[#1c2327] border-cyan-500/40 text-cyan-600/50 dark:border-cyan-300/30 dark:text-cyan-200/50'
-  //       : 'bg-[#cdf0f6] dark:bg-[#212e31] border-cyan-500/80 text-cyan-600 dark:border-cyan-300/80 dark:text-cyan-200',
-  //     gray: isNotFocused
-  //       ? 'bg-[#f0f1f2] dark:bg-[#222225] border-gray-500/40 text-gray-600/50 dark:border-gray-300/30 dark:text-gray-200/50'
-  //       : 'bg-[#e1e3e6] dark:bg-[#2b2c2e] border-gray-500/80 text-gray-600 dark:border-gray-300/80 dark:text-gray-200',
-  //   };
+  const { bg, border, text } = getEventStyles()!;
 
-  //   return colors[eventColor];
-  // };
+  return (
+    <div
+      id={`event-${id}`}
+      className={cn(
+        'pointer-events-auto absolute max-w-none overflow-hidden rounded border select-none',
+        'hover:ring-2 hover:ring-primary/50',
+        'active:ring-2 active:ring-primary',
+        bg,
+        border,
+        text
+      )}
+      style={{
+        transition:
+          'width 150ms ease-in-out, left 150ms ease-in-out, opacity 300ms ease-in-out',
+        zIndex: isDragging || isResizing ? 50 : 1,
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        showModal();
+      }}
+    >
+      <div
+        ref={contentRef}
+        className={cn(
+          'h-full cursor-move p-1 text-left text-sm select-none',
+          duration <= 0.25 && 'text-xs'
+        )}
+      >
+        <div className="line-clamp-2 font-medium">
+          {title || 'Untitled event'}
+        </div>
+        {duration > 0.5 && description && (
+          <div className="line-clamp-2 text-xs opacity-80">{description}</div>
+        )}
+      </div>
 
-  return <div></div>;
-
-  // return (
-  //   <Popover
-  //     opened={isOpened}
-  //     position="right"
-  //     onClose={closeModal}
-  //     disabled={window.innerWidth < 768}
-  //     classNames={{
-  //       arrow: `${generateColor()} border-2`,
-  //     }}
-  //     trapFocus
-  //   >
-  //     <Popover.Dropdown className={`${generateColor()} border-2`}>
-  //       {/* <CalendarEventEditForm id={id} /> */}
-  //     </Popover.Dropdown>
-
-  //     <div
-  //       id={`event-${id}`}
-  //       className={`pointer-events-auto absolute max-w-2xl overflow-hidden rounded border-l-4 ${
-  //         isPast() && !isOpened
-  //           ? 'border-zinc-400 bg-[#e3e3e4] text-zinc-400 dark:border-zinc-600 dark:bg-[#1c1c1e]'
-  //           : generateColor()
-  //       } ${isNotFocused && 'border-transparent'} ${
-  //         level && 'border'
-  //       }`}
-  //       style={cardStyle}
-  //       onContextMenu={(e) => {
-  //         e.preventDefault();
-  //         openModal(id);
-  //       }}
-  //       onDoubleClick={(e) => {
-  //         e.preventDefault();
-  //         openModal(id);
-  //       }}
-  //     >
-  //       <Popover.Target>
-  //         <div
-  //           id="content"
-  //           ref={contentRef}
-  //           className={`flex cursor-pointer flex-col items-start text-left ${
-  //             duration <= 0.25
-  //               ? 'h-[calc(100%-0.25rem)] px-1 text-xs'
-  //               : 'h-[calc(100%-0.5rem)] p-1 text-sm'
-  //           }`}
-  //         >
-  //           <div
-  //             className={`flex-none font-semibold ${
-  //               duration <= 0.75 ? 'line-clamp-1' : 'line-clamp-2'
-  //             }`}
-  //           >
-  //             {isPast() ? '✅'.concat(title || '') : title}
-  //           </div>
-  //           {duration > 0.5 && (
-  //             <div
-  //               id="time"
-  //               className={
-  //                 isPast()
-  //                   ? 'text-zinc-400/50'
-  //                   : `${generateColor()} opacity-80`
-  //               }
-  //             >
-  //               {startTime} - {endTime}
-  //             </div>
-  //           )}
-  //         </div>
-  //       </Popover.Target>
-
-  //       <div
-  //         id="handle"
-  //         ref={handleRef}
-  //         className={`absolute inset-x-0 bottom-0 cursor-s-resize ${
-  //           duration <= 0.25 ? 'h-1' : 'h-2'
-  //         }`}
-  //       />
-  //     </div>
-  //   </Popover>
-  // );
+      <div
+        ref={handleRef}
+        className={cn(
+          'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/10',
+          duration <= 0.25 ? 'h-1.5' : 'h-2'
+        )}
+      />
+    </div>
+  );
 }
