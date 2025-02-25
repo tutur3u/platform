@@ -49,7 +49,7 @@ export default function CustomizedHeader({
           throw new Error('Failed to end test');
         }
 
-        router.push('/');
+        router.push(`/${wsId}/challenges/${challengeId}/test-ended`);
       } catch (error) {
         console.error('Error ending test:', error);
       }
@@ -95,7 +95,7 @@ export default function CustomizedHeader({
                 problemId={currentProblem}
                 createdAt={createdAt}
                 wsId={wsId}
-                duration={duration} // Fixed typo
+                duration={duration} 
               />
               <Button
                 className="bg-red-500 hover:bg-red-700"

@@ -12,7 +12,13 @@ import {
 } from '@tuturuuu/ui/card';
 import { ArrowRight, Star } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-
+interface Challenge {
+  id: string;
+  title: string;
+  topic: string;
+  description: string;
+  created_at: string;
+}
 interface ChallengeCardProps {
   challenge: Challenge;
   wsId: string;
