@@ -95,7 +95,7 @@ export default function CustomizedHeader({
                 problemId={currentProblem}
                 createdAt={createdAt}
                 wsId={wsId}
-                duration={duration} // Fixed typo
+                duration={duration} 
               />
               <Button
                 className="bg-red-500 hover:bg-red-700"

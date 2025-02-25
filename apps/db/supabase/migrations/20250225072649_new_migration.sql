@@ -34,6 +34,7 @@ grant insert on table "public"."nova_challenges" to "authenticated";
 
 grant references on table "public"."nova_challenges" to "authenticated";
 
+grant select on table "public"."nova_challenges" to "authenticated";
 
 grant trigger on table "public"."nova_challenges" to "authenticated";
 

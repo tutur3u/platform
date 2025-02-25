@@ -18,7 +18,7 @@ interface Challenge {
 
 export default async function ChallengesPage({ params }: Props) {
   const challenges = await fetchChallenges();
-
+  const { wsId } = await params;
   // If the user is unauthorized, redirect them to login
   if (!challenges) {
     redirect('/login');
@@ -32,7 +32,7 @@ export default async function ChallengesPage({ params }: Props) {
           challenges.map((challenge: Challenge) => (
             <ChallengeCard
               key={challenge.id}
-              wsId={params.wsId}
+              wsId={wsId}
               challenge={challenge}
             />
           ))
@@ -44,7 +44,6 @@ export default async function ChallengesPage({ params }: Props) {
   );
 }
 
-// Function to fetch challenges from Supabase
 async function fetchChallenges(): Promise<Challenge[] | null> {
   const supabase = createClient();
 

@@ -65,7 +65,6 @@ export default function Page({ params }: Props) {
     const fetchData = async () => {
       const { wsId, challengeId } = await params;
       const challengeData = await getChallenge(challengeId);
-      console.log(challengeData, 'đaata');
       setChallenge(challengeData);
       setChallengeId(challengeId);
       setWsId(wsId);
