@@ -270,7 +270,10 @@
     "error_updating_visibility": "Error updating visibility",
     "error_deleting": "Error deleting document",
     "domain_added": "Domain added",
-    "error_adding_domain": "Failed to add domain"
+    "error_adding_domain": "Failed to add domain",
+    "rewise-description": "Access a wide-range of enterprise AI-powered tools.",
+    "nova-description": "Prompt engineering playground for everyone.",
+    "waitlist": "Waitlist"
   },
   "date_helper": {
     "time-unit": "Time unit",

@@ -1,5 +1,6 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -13,30 +14,23 @@ import {
 } from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
 import {
-  Archive,
-  Banknote,
   BookText,
-  Brain,
   Building,
-  Calendar,
-  CircleCheck,
   Factory,
   FileText,
   Github,
   GraduationCap,
-  HardDrive,
   HardHat,
   Hotel,
-  Mail,
   Paintbrush,
   Pill,
   Presentation,
   Shield,
+  Sparkles,
   Store,
-  Users,
   UsersRound,
   Utensils,
-  Workflow,
+  WandSparkles,
   Zap,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -53,81 +47,101 @@ export function MainNavigationMenu() {
       description: t('common.meet-together-description'),
       icon: <UsersRound className="h-4 w-4" />,
     },
+    // {
+    //   title: t('common.ai-assistant'),
+    //   href: '/products/ai',
+    //   description: t('common.ai-assistant-description'),
+    //   icon: <Brain className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.lms'),
+    //   href: '/products/lms',
+    //   description: t('common.lms-description'),
+    //   icon: <GraduationCap className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.calendar'),
+    //   href: '/products/calendar',
+    //   description: t('common.calendar-description'),
+    //   icon: <Calendar className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.documents'),
+    //   href: '/products/documents',
+    //   description: t('common.documents-description'),
+    //   icon: <FileText className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.drive'),
+    //   href: '/products/drive',
+    //   description: t('common.drive-description'),
+    //   icon: <HardDrive className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.crm'),
+    //   href: '/products/crm',
+    //   description: t('common.crm-description'),
+    //   icon: <Users className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.inventory'),
+    //   href: '/products/inventory',
+    //   description: t('common.inventory-description'),
+    //   icon: <Archive className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.finance'),
+    //   href: '/products/finance',
+    //   description: t('common.finance-description'),
+    //   icon: <Banknote className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.mail'),
+    //   href: '/products/mail',
+    //   description: t('common.mail-description'),
+    //   icon: <Mail className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.tasks'),
+    //   href: '/products/tasks',
+    //   description: t('common.tasks-description'),
+    //   icon: <CircleCheck className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: t('common.workflows'),
+    //   href: '/products/workflows',
+    //   description: t('common.workflows-description'),
+    //   icon: <Workflow className="h-4 w-4" />,
+    //   badge: t('common.coming_soon'),
+    // },
+    // {
+    //   title: 'Mira',
+    //   href: DEV_MODE ? 'http://localhost:7806' : 'https://mira.tuturuuu.com',
+    //   description: t('common.workflows-description'),
+    //   icon: <Factory className="h-4 w-4" />,
+    // },
     {
-      title: t('common.ai-assistant'),
-      href: '/products/ai',
-      description: t('common.ai-assistant-description'),
-      icon: <Brain className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
+      title: 'Rewise',
+      href: DEV_MODE ? 'http://localhost:7804' : 'https://rewise.me',
+      description: t('common.rewise-description'),
+      icon: <Sparkles className="h-4 w-4" />,
+      badge: t('common.waitlist'),
     },
     {
-      title: t('common.lms'),
-      href: '/products/lms',
-      description: t('common.lms-description'),
-      icon: <GraduationCap className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-    {
-      title: t('common.calendar'),
-      href: '/products/calendar',
-      description: t('common.calendar-description'),
-      icon: <Calendar className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-    {
-      title: t('common.documents'),
-      href: '/products/documents',
-      description: t('common.documents-description'),
-      icon: <FileText className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-    {
-      title: t('common.drive'),
-      href: '/products/drive',
-      description: t('common.drive-description'),
-      icon: <HardDrive className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-    {
-      title: t('common.crm'),
-      href: '/products/crm',
-      description: t('common.crm-description'),
-      icon: <Users className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-    {
-      title: t('common.inventory'),
-      href: '/products/inventory',
-      description: t('common.inventory-description'),
-      icon: <Archive className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-    {
-      title: t('common.finance'),
-      href: '/products/finance',
-      description: t('common.finance-description'),
-      icon: <Banknote className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-    {
-      title: t('common.mail'),
-      href: '/products/mail',
-      description: t('common.mail-description'),
-      icon: <Mail className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-    {
-      title: t('common.tasks'),
-      href: '/products/tasks',
-      description: t('common.tasks-description'),
-      icon: <CircleCheck className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-    {
-      title: t('common.workflows'),
-      href: '/products/workflows',
-      description: t('common.workflows-description'),
-      icon: <Workflow className="h-4 w-4" />,
+      title: 'Nova',
+      href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.tuturuuu.com',
+      description: t('common.nova-description'),
+      icon: <WandSparkles className="h-4 w-4" />,
       badge: t('common.coming_soon'),
     },
   ];
@@ -189,7 +203,6 @@ export function MainNavigationMenu() {
       href: '/blog',
       description: t('common.blog-description'),
       icon: <BookText className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
     },
     {
       title: t('common.changelog'),
@@ -314,7 +327,7 @@ export function MainNavigationMenu() {
                   title={resource.title}
                   href={resource.href}
                   icon={resource.icon}
-                  badge={resource.badge}
+                  // badge={resource.badge}
                 >
                   {resource.description}
                 </ListItem>
