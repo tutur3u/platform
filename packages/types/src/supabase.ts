@@ -2023,6 +2023,33 @@ export type Database = {
           },
         ];
       };
+      nova_challenges: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          duration: number | null;
+          id: string;
+          title: string | null;
+          topic: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          duration?: number | null;
+          id?: string;
+          title?: string | null;
+          topic?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          duration?: number | null;
+          id?: string;
+          title?: string | null;
+          topic?: string | null;
+        };
+        Relationships: [];
+      };
       nova_leaderboard: {
         Row: {
           created_at: string;
@@ -2069,7 +2096,7 @@ export type Database = {
           },
         ];
       };
-      nova_problem_testcases: {
+      nova_problem_constraints: {
         Row: {
           constraint_content: string | null;
           created_at: string;
@@ -2088,7 +2115,82 @@ export type Database = {
           id?: string;
           problem_id?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'nova_problem_constraints_problem_id_fkey';
+            columns: ['problem_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_problems';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_problem_testcases: {
+        Row: {
+          created_at: string;
+          id: string;
+          problem_id: string | null;
+          testcase_content: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          problem_id?: string | null;
+          testcase_content?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          problem_id?: string | null;
+          testcase_content?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_problem_testcases_problem_id_fkey';
+            columns: ['problem_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_problems';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_problems: {
+        Row: {
+          challenge_id: string | null;
+          created_at: string;
+          description: string | null;
+          exampleInput: string | null;
+          exampleOutput: string | null;
+          id: string;
+          title: string | null;
+        };
+        Insert: {
+          challenge_id?: string | null;
+          created_at?: string;
+          description?: string | null;
+          exampleInput?: string | null;
+          exampleOutput?: string | null;
+          id?: string;
+          title?: string | null;
+        };
+        Update: {
+          challenge_id?: string | null;
+          created_at?: string;
+          description?: string | null;
+          exampleInput?: string | null;
+          exampleOutput?: string | null;
+          id?: string;
+          title?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_problems_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       nova_test_timer_record: {
         Row: {
