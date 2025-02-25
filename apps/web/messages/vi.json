@@ -1476,7 +1476,10 @@
     "current": "Hiện tại",
     "day": "Ngày",
     "4-days": "4 ngày",
-    "week": "Tuần"
+    "week": "Tuần",
+    "month": "Tháng",
+    "view": "Chế độ hiển thị",
+    "this-month": "Tháng này"
   },
   "documents": {
     "documents": "Tài liệu",

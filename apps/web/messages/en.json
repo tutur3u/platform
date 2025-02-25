@@ -1476,7 +1476,10 @@
     "current": "Current",
     "day": "Day",
     "4-days": "4 Days",
-    "week": "Week"
+    "week": "Week",
+    "month": "Month",
+    "view": "View",
+    "this-month": "This month"
   },
   "documents": {
     "documents": "Documents",

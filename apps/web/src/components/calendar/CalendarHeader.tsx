@@ -1,5 +1,17 @@
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import dayjs from 'dayjs';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 
 export default function CalendarHeader({
@@ -7,18 +19,20 @@ export default function CalendarHeader({
   setDate,
   view,
   offset,
-  // availableViews,
+  availableViews,
+  onViewChange,
 }: {
   date: Date;
   setDate: React.Dispatch<React.SetStateAction<Date>>;
-  view: 'day' | '4-days' | 'week';
+  view: 'day' | '4-days' | 'week' | 'month';
   offset: number;
   availableViews: { value: string; label: string; disabled?: boolean }[];
+  onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
 }) {
   const locale = useLocale();
   const t = useTranslations('calendar');
 
-  // const views = availableViews.filter((view) => view?.disabled !== true);
+  const views = availableViews.filter((view) => view?.disabled !== true);
 
   const title = dayjs(date)
     .locale(locale)
@@ -28,70 +42,94 @@ export default function CalendarHeader({
   const handleNext = () =>
     setDate((date) => {
       const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() + offset);
+      if (view === 'month') {
+        newDate.setMonth(newDate.getMonth() + 1);
+      } else {
+        newDate.setDate(newDate.getDate() + offset);
+      }
       return newDate;
     });
 
   const handlePrev = () =>
     setDate((date) => {
       const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() - offset);
+      if (view === 'month') {
+        newDate.setMonth(newDate.getMonth() - 1);
+      } else {
+        newDate.setDate(newDate.getDate() - offset);
+      }
       return newDate;
     });
 
   const selectToday = () => setDate(new Date());
   const isToday = () => dayjs(date).isSame(dayjs(), 'day');
+  const isCurrentMonth = () =>
+    view === 'month' &&
+    date.getMonth() === new Date().getMonth() &&
+    date.getFullYear() === new Date().getFullYear();
 
   return (
-    <div className="mb-2 flex items-center justify-between gap-2">
-      <div className="flex items-center gap-4 text-2xl font-semibold lg:text-3xl">
-        <span>{title}</span>
+    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-2">
+        <CalendarIcon className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       </div>
 
-      <div className="flex items-center justify-center gap-4 text-zinc-600 dark:text-zinc-300">
-        <div className="flex h-full gap-0.5">
-          <button
-            className="h-full rounded-l-lg bg-zinc-500/10 p-2 text-3xl transition hover:bg-zinc-500/20 dark:bg-zinc-300/10 dark:hover:bg-zinc-300/20"
-            onClick={handlePrev}
-          >
-            <ChevronLeft className="w-4" />
-          </button>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={handlePrev}
+          aria-label="Previous period"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
 
-          <button
-            onClick={isToday() ? undefined : selectToday}
-            className={`px-4 py-1 font-semibold transition ${
-              isToday()
-                ? 'cursor-not-allowed bg-zinc-500/20 text-foreground/80 opacity-50 dark:bg-zinc-300/10 dark:text-zinc-300'
-                : 'cursor-pointer bg-zinc-500/10 text-zinc-600 hover:bg-zinc-500/20 dark:bg-zinc-300/10 dark:text-zinc-300 dark:hover:bg-zinc-300/20'
-            }`}
-          >
-            {view === 'day'
-              ? t('today')
-              : view === 'week'
-                ? t('this-week')
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
+          disabled={isToday() || isCurrentMonth()}
+        >
+          {view === 'day'
+            ? t('today')
+            : view === 'week'
+              ? t('this-week')
+              : view === 'month'
+                ? t('this-month')
                 : t('current')}
-          </button>
+        </Button>
 
-          <button
-            className="h-full rounded-r-lg bg-zinc-500/10 p-2 text-3xl transition hover:bg-zinc-500/20 dark:bg-zinc-300/10 dark:hover:bg-zinc-300/20"
-            onClick={handleNext}
-          >
-            <ChevronRight className="w-4" />
-          </button>
-        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={handleNext}
+          aria-label="Next period"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
 
-        {/* {views.length > 1 && (
-          <SegmentedControl
-            radius="md"
+        {views.length > 1 && (
+          <Select
             value={view}
-            data={views}
-            onChange={(value) => {
-              if (value === 'day') enableDayView();
-              if (value === '4-days') enable4DayView();
-              if (value === 'week') enableWeekView();
-            }}
-          />
-        )} */}
+            onValueChange={(value) =>
+              onViewChange(value as 'day' | '4-days' | 'week' | 'month')
+            }
+          >
+            <SelectTrigger className="h-8 w-[120px]">
+              <SelectValue placeholder={t('view')} />
+            </SelectTrigger>
+            <SelectContent>
+              {views.map((view) => (
+                <SelectItem key={view.value} value={view.value}>
+                  {view.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
     </div>
   );

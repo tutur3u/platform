@@ -3,25 +3,27 @@
 import CalendarHeader from './CalendarHeader';
 import CalendarViewWithTrail from './CalendarViewWithTrail';
 import DynamicIsland from './DynamicIsland';
+import MonthCalendar from './MonthCalendar';
 import WeekdayBar from './WeekdayBar';
 import { CalendarProvider } from '@/hooks/useCalendar';
+import { CalendarView, useViewTransition } from '@/hooks/useViewTransition';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 const Calendar = ({ workspace }: { workspace: Workspace }) => {
   const t = useTranslations('calendar');
+  const { transition } = useViewTransition();
 
   const [initialized, setInitialized] = useState(false);
-
   const [date, setDate] = useState(new Date());
-  const [view, setView] = useState<undefined | 'day' | '4-days' | 'week'>();
-
+  const [view, setView] = useState<CalendarView>();
   const [dates, setDates] = useState<Date[]>([]);
   const [availableViews, setAvailableViews] = useState<
     { value: string; label: string; disabled?: boolean }[]
   >([]);
 
+  // Initialize available views
   useEffect(() => {
     if (initialized) return;
 
@@ -42,33 +44,31 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
         label: t('week'),
         disabled: window.innerWidth <= 768,
       },
+      {
+        value: 'month',
+        label: t('month'),
+        disabled: false,
+      },
     ]);
   }, [t, initialized]);
 
   // Update the date's hour and minute, every minute
   useEffect(() => {
-    // calculate seconds to next minute
     const secondsToNextMinute = 60 - new Date().getSeconds();
 
-    // Make sure the date is updated at the start of the next minute
     const timeout = setTimeout(() => {
       setDate((date) => {
         const newDate = new Date(date);
-
         newDate.setHours(new Date().getHours());
         newDate.setMinutes(new Date().getMinutes());
-
         return newDate;
       });
 
-      // And then update it every minute
       const interval = setInterval(() => {
         setDate((date) => {
           const newDate = new Date(date);
-
           newDate.setHours(new Date().getHours());
           newDate.setMinutes(new Date().getMinutes());
-
           return newDate;
         });
       }, 60000);
@@ -79,25 +79,32 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
     return () => clearTimeout(timeout);
   }, []);
 
+  // View switching handlers
   const enableDayView = useCallback(() => {
     const newDate = new Date(date);
     newDate.setHours(0, 0, 0, 0);
-    setView('day');
-    setDates([newDate]);
-  }, [date]);
 
-  // const enable4DayView = () => {
-  //   const dates: Date[] = [];
+    transition('day', () => {
+      setView('day');
+      setDates([newDate]);
+    });
+  }, [date, transition]);
 
-  //   for (let i = 0; i < 4; i++) {
-  //     const newDate = new Date(date);
-  //     newDate.setHours(0, 0, 0, 0);
-  //     newDate.setDate(newDate.getDate() + i);
-  //     dates.push(newDate);
-  //   }
+  const enable4DayView = useCallback(() => {
+    const dates: Date[] = [];
 
-  //   setDates(dates);
-  // };
+    for (let i = 0; i < 4; i++) {
+      const newDate = new Date(date);
+      newDate.setHours(0, 0, 0, 0);
+      newDate.setDate(newDate.getDate() + i);
+      dates.push(newDate);
+    }
+
+    transition('4-days', () => {
+      setView('4-days');
+      setDates(dates);
+    });
+  }, [date, transition]);
 
   const enableWeekView = useCallback(() => {
     const getMonday = () => {
@@ -120,25 +127,82 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
       return dates;
     };
 
-    setView('week');
-    setDates(getWeekdays());
-  }, [date]);
+    transition('week', () => {
+      setView('week');
+      setDates(getWeekdays());
+    });
+  }, [date, transition]);
 
+  const enableMonthView = useCallback(() => {
+    const newDate = new Date(date);
+    newDate.setHours(0, 0, 0, 0);
+    newDate.setDate(1); // First day of month
+
+    transition('month', () => {
+      setView('month');
+      setDates([newDate]);
+    });
+  }, [date, transition]);
+
+  // Update the dates array when date changes while maintaining the same view
+  useEffect(() => {
+    if (!view) return;
+
+    if (view === 'day') {
+      const newDate = new Date(date);
+      newDate.setHours(0, 0, 0, 0);
+      setDates([newDate]);
+    } else if (view === '4-days') {
+      const dates: Date[] = [];
+      for (let i = 0; i < 4; i++) {
+        const newDate = new Date(date);
+        newDate.setHours(0, 0, 0, 0);
+        newDate.setDate(newDate.getDate() + i);
+        dates.push(newDate);
+      }
+      setDates(dates);
+    } else if (view === 'week') {
+      const getMonday = () => {
+        const day = date.getDay() || 7;
+        const newDate = new Date(date);
+        if (day !== 1) newDate.setHours(-24 * (day - 1));
+        return newDate;
+      };
+
+      const monday = getMonday();
+      const weekDates: Date[] = [];
+      for (let i = 0; i < 7; i++) {
+        const newDate = new Date(monday);
+        newDate.setHours(0, 0, 0, 0);
+        newDate.setDate(newDate.getDate() + i);
+        weekDates.push(newDate);
+      }
+      setDates(weekDates);
+    } else if (view === 'month') {
+      const newDate = new Date(date);
+      newDate.setHours(0, 0, 0, 0);
+      newDate.setDate(1);
+      setDates([newDate]);
+    }
+  }, [date, view]);
+
+  // Set initial view based on screen size
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 768) enableDayView();
-      else enableWeekView();
+      if (!view) {
+        // Only set default view if there isn't one already
+        if (window.innerWidth <= 768) enableDayView();
+        else enableWeekView();
+      } else if (view === '4-days' || view === 'week') {
+        // If the current view is 4-days or week and the screen is small, switch to day view
+        if (window.innerWidth <= 768) enableDayView();
+      }
     };
 
-    // Call handleResize directly to handle the case when the component mounts
     handleResize();
-
-    // Add event listener for window resize
     window.addEventListener('resize', handleResize);
-
-    // Cleanup function to remove the event listener when the component unmounts
     return () => window.removeEventListener('resize', handleResize);
-  }, [enableDayView, enableWeekView]);
+  }, [enableDayView, enableWeekView, view]);
 
   if (!initialized || !view || !dates.length) return null;
 
@@ -150,10 +214,26 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
           date={date}
           setDate={setDate}
           view={view}
-          offset={view === 'day' ? 1 : view === '4-days' ? 4 : 7}
+          offset={
+            view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
+          }
+          onViewChange={(newView) => {
+            if (newView === 'day') enableDayView();
+            else if (newView === '4-days') enable4DayView();
+            else if (newView === 'week') enableWeekView();
+            else if (newView === 'month') enableMonthView();
+          }}
         />
-        <WeekdayBar view={view} dates={dates} />
-        <CalendarViewWithTrail dates={dates} />
+        {view !== 'month' && <WeekdayBar view={view} dates={dates} />}
+
+        <div className="relative flex-1 overflow-hidden">
+          {view === 'month' && dates?.[0] ? (
+            <MonthCalendar date={dates[0]} workspace={workspace} />
+          ) : (
+            <CalendarViewWithTrail dates={dates} />
+          )}
+        </div>
+
         <DynamicIsland />
       </div>
     </CalendarProvider>

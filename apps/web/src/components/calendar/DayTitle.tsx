@@ -1,5 +1,7 @@
+import { cn } from '@tuturuuu/utils/format';
+
 interface DayTitleProps {
-  view: 'day' | '4-days' | 'week';
+  view: 'day' | '4-days' | 'week' | 'month';
   date: Date;
   weekday: string;
 }
@@ -10,26 +12,26 @@ export default function DayTitle({ view, date, weekday }: DayTitleProps) {
 
   return (
     <div
-      className={`border-b border-l border-border text-center font-semibold dark:border-zinc-800 ${
-        view !== 'day' ? 'p-1' : 'md:p-1'
-      }`}
+      className={cn(
+        'border-b border-l border-border text-center font-medium dark:border-zinc-800',
+        view !== 'day' ? 'p-1.5' : 'md:p-1.5'
+      )}
     >
       <div
-        className={`flex items-center justify-center gap-1 rounded p-1 ${
-          isToday
-            ? `text-purple-500 dark:text-purple-300 ${
-                view !== 'day' && 'bg-purple-500/20 dark:bg-purple-300/10'
-              }`
-            : 'text-zinc-700 dark:text-zinc-300'
-        }`}
+        className={cn(
+          'flex items-center justify-center gap-1.5 rounded-md p-1.5',
+          isToday &&
+            'bg-primary/5 text-primary dark:bg-primary/10 dark:text-primary'
+        )}
       >
-        <span className="text-lg">{weekday}</span>
+        <span className="text-sm">{weekday}</span>
         <span
-          className={`${
+          className={cn(
+            'flex h-6 w-6 items-center justify-center rounded-full text-xs',
             isToday
-              ? 'bg-purple-500/20 dark:bg-purple-300/20'
-              : 'bg-zinc-500/20 dark:bg-zinc-300/10 dark:text-white'
-          } flex aspect-square items-center justify-center rounded px-1`}
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground'
+          )}
         >
           {date.getDate()}
         </span>
