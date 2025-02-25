@@ -55,6 +55,8 @@ const getPositionStyles = (index: number) => {
 };
 
 export function TopThreeCards({ data }: TopThreeCardsProps) {
+  if (!data.length) return null;
+
   return (
     <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
       {data.slice(0, 3).map((entry, index) => {
