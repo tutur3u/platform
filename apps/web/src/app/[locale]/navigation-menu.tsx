@@ -1,5 +1,6 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -32,10 +33,12 @@ import {
   Pill,
   Presentation,
   Shield,
+  Sparkles,
   Store,
   Users,
   UsersRound,
   Utensils,
+  WandSparkles,
   Workflow,
   Zap,
 } from 'lucide-react';
@@ -129,6 +132,24 @@ export function MainNavigationMenu() {
       description: t('common.workflows-description'),
       icon: <Workflow className="h-4 w-4" />,
       badge: t('common.coming_soon'),
+    },
+    {
+      title: 'Mira',
+      href: DEV_MODE ? 'http://localhost:7806' : 'https://mira.tuturuuu.com',
+      description: t('common.workflows-description'),
+      icon: <Factory className="h-4 w-4" />,
+    },
+    {
+      title: 'Nova',
+      href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.tuturuuu.com',
+      description: t('common.workflows-description'),
+      icon: <WandSparkles className="h-4 w-4" />,
+    },
+    {
+      title: 'Rewise',
+      href: DEV_MODE ? 'http://localhost:7804' : 'https://rewise.me',
+      description: t('common.workflows-description'),
+      icon: <Sparkles className="h-4 w-4" />,
     },
   ];
 
@@ -233,18 +254,18 @@ export function MainNavigationMenu() {
     <NavigationMenu className="flex w-full max-w-none">
       <NavigationMenuList className="flex w-full justify-between">
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="group bg-gradient-to-r font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5">
+          <NavigationMenuTrigger className="hover:from-primary/10 hover:to-primary/5 group bg-gradient-to-r font-semibold transition-all duration-300">
             <span className="flex items-center gap-2">
               {t('common.products')}
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/50 opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+                <span className="bg-primary/50 absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+                <span className="bg-primary relative inline-flex h-2 w-2 rounded-full"></span>
               </span>
             </span>
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="grid w-[400px] gap-3 bg-gradient-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px] xl:w-[1000px] xl:grid-cols-3">
-              <Card className="col-span-full mb-2 bg-primary/5 p-4">
+            <ul className="from-background via-background/95 to-background/90 grid w-[400px] gap-3 bg-gradient-to-br p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px] xl:w-[1000px] xl:grid-cols-3">
+              <Card className="bg-primary/5 col-span-full mb-2 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Zap className="h-4 w-4" />
                   <span>Featured Products</span>
@@ -266,17 +287,17 @@ export function MainNavigationMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="group bg-gradient-to-r font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5">
+          <NavigationMenuTrigger className="hover:from-primary/10 hover:to-primary/5 group bg-gradient-to-r font-semibold transition-all duration-300">
             <span className="flex items-center gap-2">
               {t('common.solutions')}
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+              <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
                 {t('common.new')}
               </span>
             </span>
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="grid w-[400px] gap-3 bg-gradient-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
-              <Card className="col-span-full mb-2 bg-primary/5 p-4">
+            <ul className="from-background via-background/95 to-background/90 grid w-[400px] gap-3 bg-gradient-to-br p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
+              <Card className="bg-primary/5 col-span-full mb-2 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Building className="h-4 w-4" />
                   <span>Industry Solutions</span>
@@ -297,12 +318,12 @@ export function MainNavigationMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="group bg-gradient-to-r font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5">
+          <NavigationMenuTrigger className="hover:from-primary/10 hover:to-primary/5 group bg-gradient-to-r font-semibold transition-all duration-300">
             {t('common.resources')}
           </NavigationMenuTrigger>
           <NavigationMenuContent>
-            <ul className="grid w-[400px] gap-3 bg-gradient-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
-              <Card className="col-span-full mb-2 bg-primary/5 p-4">
+            <ul className="from-background via-background/95 to-background/90 grid w-[400px] gap-3 bg-gradient-to-br p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
+              <Card className="bg-primary/5 col-span-full mb-2 p-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <BookText className="h-4 w-4" />
                   <span>Learning Resources</span>
@@ -328,7 +349,7 @@ export function MainNavigationMenu() {
             <NavigationMenuLink
               className={cn(
                 navigationMenuTriggerStyle(),
-                'group bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
+                'hover:from-primary/10 hover:to-primary/5 group bg-gradient-to-r px-6 font-semibold transition-all duration-300'
               )}
             >
               <span className="flex items-center gap-2">
@@ -343,7 +364,7 @@ export function MainNavigationMenu() {
             <NavigationMenuLink
               className={cn(
                 navigationMenuTriggerStyle(),
-                'bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
+                'hover:from-primary/10 hover:to-primary/5 bg-gradient-to-r px-6 font-semibold transition-all duration-300'
               )}
             >
               {t('common.about')}
@@ -356,7 +377,7 @@ export function MainNavigationMenu() {
             <NavigationMenuLink
               className={cn(
                 navigationMenuTriggerStyle(),
-                'group bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
+                'hover:from-primary/10 hover:to-primary/5 group bg-gradient-to-r px-6 font-semibold transition-all duration-300'
               )}
             >
               <span className="flex items-center gap-2">
@@ -371,7 +392,7 @@ export function MainNavigationMenu() {
             <NavigationMenuLink
               className={cn(
                 navigationMenuTriggerStyle(),
-                'bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
+                'hover:from-primary/10 hover:to-primary/5 bg-gradient-to-r px-6 font-semibold transition-all duration-300'
               )}
             >
               {t('common.contact')}
@@ -398,7 +419,7 @@ const ListItem = React.forwardRef<
         <a
           ref={ref}
           className={cn(
-            'group relative block h-full space-y-1 rounded-md p-4 leading-none no-underline outline-hidden transition-all duration-300 select-none',
+            'outline-hidden group relative block h-full select-none space-y-1 rounded-md p-4 leading-none no-underline transition-all duration-300',
             'via-primary/10 to-primary/5 hover:bg-gradient-to-br',
             'opacity-90 hover:opacity-100',
             'hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]',
@@ -409,10 +430,10 @@ const ListItem = React.forwardRef<
         >
           <div className="relative">
             <div className="flex items-center gap-2">
-              <div className="text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
                 {icon}
               </div>
-              <div className="text-sm leading-none font-semibold">{title}</div>
+              <div className="text-sm font-semibold leading-none">{title}</div>
               {badge && (
                 <Badge
                   variant="secondary"
@@ -422,7 +443,7 @@ const ListItem = React.forwardRef<
                 </Badge>
               )}
             </div>
-            <p className="mt-2 line-clamp-2 text-sm leading-snug text-muted-foreground opacity-80 transition-opacity duration-300 group-hover:opacity-100">
+            <p className="text-muted-foreground mt-2 line-clamp-2 text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
               {children}
             </p>
           </div>
