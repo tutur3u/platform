@@ -156,7 +156,7 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
 
       <div className="grid grid-cols-7 divide-x divide-y">
         {calendarDays.map((day) => {
-          const events = getCurrentEvents();
+          const events = getCurrentEvents(day);
           const isCurrentMonth = isSameMonth(day, currDate);
           const isTodayDate = isToday(day);
           const isHovered =

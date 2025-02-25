@@ -2,14 +2,41 @@
 
 import CalendarHeader from './CalendarHeader';
 import CalendarViewWithTrail from './CalendarViewWithTrail';
-import DynamicIsland from './DynamicIsland';
+import { EventModal } from './EventModal';
 import MonthCalendar from './MonthCalendar';
 import WeekdayBar from './WeekdayBar';
-import { CalendarProvider } from '@/hooks/useCalendar';
+import { CalendarProvider, useCalendar } from '@/hooks/useCalendar';
 import { CalendarView, useViewTransition } from '@/hooks/useViewTransition';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
+import { Button } from '@tuturuuu/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
+import { PlusIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+
+// Floating action button for quick event creation
+const CreateEventButton = () => {
+  const { openModal } = useCalendar();
+
+  return (
+    <div className="fixed right-6 bottom-6 z-10">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="icon"
+            className="h-14 w-14 rounded-full shadow-lg"
+            onClick={() => openModal()}
+          >
+            <PlusIcon className="h-6 w-6" />
+            <span className="sr-only">Create new event</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Create new event</TooltipContent>
+      </Tooltip>
+    </div>
+  );
+};
 
 const Calendar = ({ workspace }: { workspace: Workspace }) => {
   const t = useTranslations('calendar');
@@ -208,7 +235,14 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
 
   return (
     <CalendarProvider ws={workspace}>
-      <div className="grid h-[calc(100%-4rem)] w-full md:pb-4">
+      <div
+        className={cn(
+          'grid h-[calc(100%-4rem)] w-full md:pb-4',
+          view === 'month'
+            ? 'grid-rows-[auto_1fr]'
+            : 'grid-rows-[auto_auto_1fr]'
+        )}
+      >
         <CalendarHeader
           availableViews={availableViews}
           date={date}
@@ -224,6 +258,7 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
             else if (newView === 'month') enableMonthView();
           }}
         />
+
         {view !== 'month' && <WeekdayBar view={view} dates={dates} />}
 
         <div className="relative flex-1 overflow-hidden">
@@ -234,7 +269,11 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
           )}
         </div>
 
-        <DynamicIsland />
+        {/* Event Creation/Editing Modal */}
+        <EventModal />
+
+        {/* Floating action button */}
+        <CreateEventButton />
       </div>
     </CalendarProvider>
   );
