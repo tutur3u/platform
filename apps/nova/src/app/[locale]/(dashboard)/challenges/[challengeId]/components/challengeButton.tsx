@@ -7,7 +7,6 @@ interface CountdownTimerProps {
   createdAt: string;
   duration: number;
   problemId: number;
-  wsId: string;
   // onUpdateDuration: (remainingTime: number) => void;
 }
 
@@ -15,7 +14,6 @@ export default function CountdownTimer({
   createdAt,
   duration,
   problemId,
-  wsId,
   // onUpdateDuration,
 }: CountdownTimerProps) {
   const router = useRouter();
@@ -45,7 +43,7 @@ export default function CountdownTimer({
           if (!response.ok) {
             throw new Error('Failed to end test');
           }
-          router.push(`/${wsId}/challenges/${problemId}/test-ended`);
+          router.push(`/challenges/${problemId}/test-ended`);
         } catch (error) {
           console.error('Error ending test: ', error);
         }

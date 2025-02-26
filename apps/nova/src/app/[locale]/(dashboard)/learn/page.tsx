@@ -40,13 +40,8 @@ const lessons = [
     duration: '20 min',
   },
 ];
-interface Props {
-  params: Promise<{
-    wsId: string;
-  }>;
-}
 
-export default async function LearnPage({ params }: Props) {
+export default async function LearnPage() {
   const database = await createClient();
   const {
     data: { user },
@@ -55,7 +50,7 @@ export default async function LearnPage({ params }: Props) {
   if (!user?.id) {
     redirect('/login');
   }
-  const { wsId } = await params;
+
   return (
     <div className="container mx-auto p-6">
       <h1 className="mb-6 text-3xl font-bold">Learn Prompt Engineering</h1>
@@ -72,7 +67,7 @@ export default async function LearnPage({ params }: Props) {
                   <BookOpen className="mr-2 h-4 w-4" />
                   {lesson.duration}
                 </span>
-                <Link href={`/${wsId}/learn/${lesson.id}`}>
+                <Link href={`/learn/${lesson.id}`}>
                   <Button variant="outline" className="gap-2">
                     Start Lesson <ArrowRight className="h-4 w-4" />
                   </Button>

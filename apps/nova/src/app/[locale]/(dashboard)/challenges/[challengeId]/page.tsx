@@ -10,7 +10,6 @@ import { useEffect, useState } from 'react';
 
 interface Props {
   params: Promise<{
-    wsId: string;
     challengeId: string;
   }>;
 }
@@ -26,7 +25,6 @@ export default function Page({ params }: Props) {
     null
   );
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
-  const [wsId, setWsId] = useState('');
   const [challengeId, setChallengeId] = useState('');
 
   const supabase = createClient();
@@ -63,11 +61,10 @@ export default function Page({ params }: Props) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { wsId, challengeId } = await params;
+      const { challengeId } = await params;
       const challengeData = await getChallenge(challengeId);
       setChallenge(challengeData);
       setChallengeId(challengeId);
-      setWsId(wsId);
       const timerData = await fetchTimer(String(challengeData?.id));
       setFetchedTimer(timerData);
     };
@@ -94,7 +91,6 @@ export default function Page({ params }: Props) {
         currentProblem={currentProblemIndex + 1}
         challengeId={challengeId}
         duration={fetchedTimer?.duration || 0}
-        wsId={wsId}
         createdAt={fetchedTimer?.created_at || ''}
         onNext={nextProblem}
         onPrev={prevProblem}

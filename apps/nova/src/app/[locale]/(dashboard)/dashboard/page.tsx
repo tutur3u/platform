@@ -11,12 +11,7 @@ import { ArrowRight, BookOpen, Code, Trophy, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-interface Props {
-  params: Promise<{
-    wsId: string;
-  }>;
-}
-export default async function HomePage({ params }: Props) {
+export default async function HomePage() {
   const database = await createClient();
   const {
     data: { user },
@@ -25,7 +20,7 @@ export default async function HomePage({ params }: Props) {
   if (!user?.id) {
     redirect('/login');
   }
-  const { wsId } = await params;
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-12 text-center">
@@ -95,17 +90,17 @@ export default async function HomePage({ params }: Props) {
         </Card>
       </div>
       <div className="flex flex-wrap justify-center gap-4">
-        <Link href={`/${wsId}/challenges`}>
+        <Link href="/challenges">
           <Button size="lg" className="gap-2">
             Start a Challenge <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
-        <Link href={`/${wsId}/learn`}>
+        <Link href="/learn">
           <Button size="lg" variant="outline" className="gap-2">
             Explore Tutorials <BookOpen className="h-4 w-4" />
           </Button>
         </Link>
-        <Link href={`/${wsId}/leaderboard`}>
+        <Link href="/leaderboard">
           <Button size="lg" variant="secondary" className="gap-2">
             View Leaderboard <Trophy className="h-4 w-4" />
           </Button>

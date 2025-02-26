@@ -15,10 +15,9 @@ import React, { useEffect, useState } from 'react';
 
 interface ChallengeCardProps {
   challenge: NovaChallenge;
-  wsId: string;
 }
 
-const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
+const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
   const [isTestStarted, setIsTestStarted] = useState(false);
   const [isRedoTest, setIsRedoTest] = useState(false);
 
@@ -46,7 +45,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
     };
 
     checkTestStatus();
-  }, [challenge.id, wsId]);
+  }, [challenge.id]);
 
   const handleStartTestAgain = async (
     event: React.MouseEvent<HTMLButtonElement>
@@ -75,7 +74,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
           throw new Error('Failed to restart challenge');
         }
 
-        window.location.href = `/${wsId}/challenges/${challenge.id}`;
+        window.location.href = `/challenges/${challenge.id}`;
       } catch (error) {
         console.error('Error restarting challenge:', error);
       }
@@ -109,7 +108,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
           throw new Error('Failed to update problem history');
         }
 
-        window.location.href = `/${wsId}/challenges/${challenge.id}`;
+        window.location.href = `/challenges/${challenge.id}`;
       } catch (error) {
         console.error('Error starting challenge:', error);
       }
@@ -117,7 +116,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
   };
 
   const handleResumeTest = () => {
-    window.location.href = `/${wsId}/challenges/${challenge.id}`;
+    window.location.href = `/challenges/${challenge.id}`;
   };
 
   return (

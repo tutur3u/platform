@@ -3,20 +3,9 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types/db';
 import { redirect } from 'next/navigation';
 
-interface Props {
-  params: Promise<{
-    wsId: string;
-  }>;
-}
-
-export default async function ChallengesPage({ params }: Props) {
+export default async function ChallengesPage() {
   const challenges = await fetchChallenges();
-  const { wsId } = await params;
-
-  // If the user is unauthorized, redirect them to login
-  if (!challenges) {
-    redirect('/login');
-  }
+  if (!challenges) redirect('/login');
 
   return (
     <div className="container mx-auto p-6">
@@ -24,11 +13,7 @@ export default async function ChallengesPage({ params }: Props) {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {challenges?.length > 0 ? (
           challenges.map((challenge: NovaChallenge) => (
-            <ChallengeCard
-              key={challenge.id}
-              wsId={wsId}
-              challenge={challenge}
-            />
+            <ChallengeCard key={challenge.id} challenge={challenge} />
           ))
         ) : (
           <p className="text-gray-500">No challenges available.</p>

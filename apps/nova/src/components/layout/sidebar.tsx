@@ -46,8 +46,6 @@ const sidebarItems = [
 export function Sidebar() {
   const pathname = usePathname();
 
-  const wsId = pathname.split('/')[1];
-
   return (
     <div className="flex w-64 flex-col border-r bg-card text-card-foreground">
       <div className="p-4">
@@ -70,12 +68,12 @@ export function Sidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="ml-4 space-y-2">
                     {item.subItems.map((subItem) => (
-                      <Link key={subItem.href} href={`/${wsId}${subItem.href}`}>
+                      <Link key={subItem.href} href={subItem.href}>
                         <Button
                           variant="ghost"
                           className={cn(
                             'w-full justify-start',
-                            pathname === `/${wsId}${subItem.href}` &&
+                            pathname === subItem.href &&
                               'bg-accent text-accent-foreground'
                           )}
                         >
@@ -86,12 +84,12 @@ export function Sidebar() {
                   </CollapsibleContent>
                 </Collapsible>
               ) : (
-                <Link href={`/${wsId}${item.href}`}>
+                <Link href={item.href}>
                   <Button
                     variant="ghost"
                     className={cn(
                       'w-full justify-start',
-                      pathname === `/${wsId}${item.href}` &&
+                      pathname === item.href &&
                         'bg-accent text-accent-foreground'
                     )}
                   >

@@ -14,7 +14,6 @@ interface Props {
   currentProblem: number;
   createdAt: string;
   duration: number;
-  wsId: string;
   challengeId: string;
   onNext: () => void;
   onPrev: () => void;
@@ -25,7 +24,6 @@ export default function CustomizedHeader({
   currentProblem,
   onNext,
   onPrev,
-  wsId,
   challengeId,
   createdAt,
   duration,
@@ -49,7 +47,7 @@ export default function CustomizedHeader({
           throw new Error('Failed to end test');
         }
 
-        router.push(`/${wsId}/challenges/${challengeId}/test-ended`);
+        router.push(`/challenges/${challengeId}/test-ended`);
       } catch (error) {
         console.error('Error ending test:', error);
       }
@@ -94,7 +92,6 @@ export default function CustomizedHeader({
               <CountdownTimer
                 problemId={currentProblem}
                 createdAt={createdAt}
-                wsId={wsId}
                 duration={duration}
               />
               <Button

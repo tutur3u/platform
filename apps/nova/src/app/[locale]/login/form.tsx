@@ -125,7 +125,7 @@ export default function LoginForm() {
     });
 
     if (res.ok) {
-      const nextUrl = searchParams.get('nextUrl') ?? '/onboarding';
+      const nextUrl = searchParams.get('nextUrl') ?? '/dashboard';
       console.log('Before redirect:', nextUrl);
 
       // Save to localStorage to persist after refresh
