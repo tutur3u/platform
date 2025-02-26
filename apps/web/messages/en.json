@@ -400,7 +400,10 @@
     "delete_plan_warning": "This action cannot be undone. The plan and all related information will be permanently deleted from Tuturuuu.",
     "select_users_to_filter": "Select users to filter",
     "show_qr_code": "Show QR Code",
-    "qr_code_description": "Scan this QR code to quickly access the meet together plan details."
+    "qr_code_description": "Scan this QR code to quickly access the meet together plan details.",
+    "save_credentials": "Save credentials for this plan",
+    "save_credentials_desc": "Automatically log in when you return to this plan",
+    "logged_in_as": "Logged in as"
   },
   "invite": {
     "invited-to": "You have been invited to join",

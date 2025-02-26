@@ -400,7 +400,10 @@
     "delete_plan_warning": "Thao tác này không thể hoàn tác. Kế hoạch và tất cả thông tin liên quan sẽ bị xóa vĩnh viễn khỏi hệ thống của Tuturuuu.",
     "select_users_to_filter": "Chọn người dùng để lọc kết quả",
     "show_qr_code": "Xem mã QR",
-    "qr_code_description": "Quét mã QR này để truy cập nhanh vào thông tin chi tiết về kế hoạch gặp mặt."
+    "qr_code_description": "Quét mã QR này để truy cập nhanh vào thông tin chi tiết về kế hoạch gặp mặt.",
+    "save_credentials": "Lưu thông tin đăng nhập cho kế hoạch này",
+    "save_credentials_desc": "Tự động đăng nhập khi bạn quay lại kế hoạch này",
+    "logged_in_as": "Đăng nhập như"
   },
   "invite": {
     "invited-to": "Bạn được mời vào",

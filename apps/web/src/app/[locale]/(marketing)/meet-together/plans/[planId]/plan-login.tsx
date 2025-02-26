@@ -6,6 +6,7 @@ import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -27,15 +28,19 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
 const formSchema = z.object({
   guestName: z.string().min(1).max(255),
   guestPassword: z.string().max(255).optional(),
+  saveCredentials: z.boolean().default(true),
 });
+
+const GUEST_CREDENTIALS_KEY_PREFIX = 'meet_together_guest_';
 
 export default function PlanLogin({
   plan,
@@ -55,11 +60,39 @@ export default function PlanLogin({
 
   const [loading, setLoading] = useState(false);
 
+  // Try to load saved credentials from localStorage on component mount
+  useEffect(() => {
+    if (!plan.id || user) return;
+
+    try {
+      const savedCredentialsJSON = localStorage.getItem(
+        `${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`
+      );
+      if (savedCredentialsJSON) {
+        const savedCredentials = JSON.parse(savedCredentialsJSON);
+        form.setValue('guestName', savedCredentials.name || '');
+        form.setValue('guestPassword', savedCredentials.password || '');
+
+        // Auto login if we have saved credentials
+        if (savedCredentials.name) {
+          onSubmit({
+            guestName: savedCredentials.name,
+            guestPassword: savedCredentials.password || '',
+            saveCredentials: true,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load saved credentials', error);
+    }
+  }, [plan.id]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       guestName: user?.display_name ?? '',
       guestPassword: '',
+      saveCredentials: true,
     },
   });
 
@@ -81,6 +114,29 @@ export default function PlanLogin({
 
     if (res.ok) {
       const data = await res.json();
+
+      // Save credentials to localStorage if checkbox is checked
+      if (values.saveCredentials) {
+        try {
+          localStorage.setItem(
+            `${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`,
+            JSON.stringify({
+              name: values.guestName,
+              password: values.guestPassword,
+            })
+          );
+        } catch (error) {
+          console.error('Failed to save credentials', error);
+        }
+      } else {
+        // If checkbox is unchecked, clear any previously saved credentials
+        try {
+          localStorage.removeItem(`${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`);
+        } catch (error) {
+          console.error('Failed to remove credentials', error);
+        }
+      }
+
       setUser(plan.id, data.user);
       setLoading(false);
       setDisplayMode();
@@ -91,6 +147,21 @@ export default function PlanLogin({
       setLoading(false);
     }
   }
+
+  const handleLogout = () => {
+    if (!plan.id) return;
+
+    // Clear saved credentials if they exist
+    try {
+      localStorage.removeItem(`${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`);
+    } catch (error) {
+      console.error('Failed to remove credentials', error);
+    }
+
+    // Clear the user state
+    setUser(plan.id, null);
+    setDisplayMode();
+  };
 
   const missingFields = !form.watch('guestName');
 
@@ -132,6 +203,25 @@ export default function PlanLogin({
 
         {displayMode === 'account-switcher' ? (
           <div className="grid gap-2">
+            {user?.is_guest ? (
+              <>
+                <div className="mb-2 text-sm text-muted-foreground">
+                  {t('meet-together-plan-details.logged_in_as')}{' '}
+                  <span className="font-semibold text-foreground">
+                    {user.display_name}
+                  </span>
+                  .
+                </div>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={handleLogout}
+                >
+                  {t('common.logout')}
+                </Button>
+                <Separator className="my-2" />
+              </>
+            ) : null}
             <Button
               className="w-full"
               onClick={() => {
@@ -216,6 +306,30 @@ export default function PlanLogin({
                       {t('meet-together-plan-details.password_desc')}
                     </FormDescription>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="saveCredentials"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-y-0 space-x-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={loading}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        {t('meet-together-plan-details.save_credentials')}
+                      </FormLabel>
+                      <FormDescription>
+                        {t('meet-together-plan-details.save_credentials_desc')}
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
