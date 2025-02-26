@@ -1,6 +1,5 @@
 'use client';
 
-// import { getChallenge } from '../challenges';
 import CustomizedHeader from './customizedHeader';
 import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
@@ -29,7 +28,8 @@ export default function Page({ params }: Props) {
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
   const [wsId, setWsId] = useState('');
   const [challengeId, setChallengeId] = useState('');
-  const database = createClient();
+
+  const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function Page({ params }: Props) {
     const authCheck = async () => {
       const {
         data: { user },
-      } = await database.auth.getUser();
+      } = await supabase.auth.getUser();
 
       if (!user?.id) {
         router.push('/login');
@@ -150,18 +150,16 @@ export interface Challenge {
 
 export interface Problems {
   id: string;
-  title: string;
-  description: string;
-  exampleInput: string;
-  exampleOutput: string;
-  constraints?: string[];
-  testcase?: string[];
+  title: string | null;
+  description: string | null;
+  exampleInput: string | null;
+  exampleOutput: string | null;
+  constraints?: (string | null)[];
+  testcase?: (string | null)[];
 }
 
 // Fetch Challenge from Supabase
-export async function getChallenge(
-  challengeId: string
-): Promise<Challenge | null> {
+async function getChallenge(challengeId: string): Promise<Challenge | null> {
   const supabase = createClient();
 
   try {
@@ -228,9 +226,9 @@ export async function getChallenge(
 
     return {
       id: challenge.id,
-      title: challenge.title,
-      topic: challenge.topic,
-      description: challenge.description,
+      title: challenge.title || '',
+      topic: challenge.topic || '',
+      description: challenge.description || '',
       problems: formattedProblems,
       duration: 60, // Assuming a default duration, update based on your DB
     };

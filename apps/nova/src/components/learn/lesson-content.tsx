@@ -85,9 +85,9 @@ export function LessonContent({ lesson }: LessonProps) {
                   ?.scrollIntoView({ behavior: 'smooth' });
               }}
               className={cn(
-                'hover:bg-accent w-full rounded px-2 py-1 text-left text-sm transition-colors',
+                'w-full rounded px-2 py-1 text-left text-sm transition-colors hover:bg-accent',
                 activeSection === index
-                  ? 'text-primary bg-accent font-medium'
+                  ? 'bg-accent font-medium text-primary'
                   : 'text-muted-foreground'
               )}
             >
@@ -124,14 +124,14 @@ export function LessonContent({ lesson }: LessonProps) {
                     {section.content.map((item, idx) => (
                       <p
                         key={idx}
-                        className="text-muted-foreground whitespace-pre-line text-lg leading-relaxed"
+                        className="text-lg leading-relaxed whitespace-pre-line text-muted-foreground"
                       >
                         {item}
                       </p>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground whitespace-pre-line text-lg leading-relaxed">
+                  <p className="text-lg leading-relaxed whitespace-pre-line text-muted-foreground">
                     {section.content}
                   </p>
                 )}

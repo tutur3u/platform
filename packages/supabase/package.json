@@ -14,7 +14,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.1",
-    "@tuturuuu/types": "npm:@jsr/tuturuuu__types@^0.1.5",
+    "@tuturuuu/types": "workspace:*",
     "eslint": "^9.21.0",
     "next": "^15.1.7",
     "react": "^19.0.0",
@@ -24,8 +24,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",
     "@eslint/js": "^9.21.0",
-    "@tuturuuu/eslint-config": "npm:@jsr/tuturuuu__eslint-config@^0.1.5",
-    "@tuturuuu/typescript-config": "npm:@jsr/tuturuuu__typescript-config@^0.1.0",
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.13.5",
     "@types/react": "^19.0.10",
     "@typescript-eslint/eslint-plugin": "^8.25.0",

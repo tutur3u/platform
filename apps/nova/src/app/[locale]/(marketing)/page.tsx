@@ -53,7 +53,7 @@ export default function MarketingPage() {
   }, []);
 
   return (
-    <div className="from-deep-blue via-midnight-blue to-dark-purple relative flex h-full w-full flex-col items-center bg-gradient-to-b">
+    <div className="relative flex h-full w-full flex-col items-center bg-gradient-to-b from-deep-blue via-midnight-blue to-dark-purple">
       {/* Raining Effect */}
       <div className="absolute inset-0 h-screen overflow-hidden">
         {rainingElements.map((element) => (
@@ -103,11 +103,11 @@ export default function MarketingPage() {
           <div className="relative">
             <input
               id="prompt"
-              className="peer rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 ease-in-out placeholder:text-white/40 hover:border-white/30 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 sm:w-80"
+              className="peer rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-white shadow-sm backdrop-blur-lg transition duration-300 ease-in-out placeholder:text-white/40 hover:border-white/30 focus:border-white/40 focus:ring-2 focus:ring-blue-500/50 focus:outline-none sm:w-80"
             />
             <label
               htmlFor="prompt"
-              className="absolute left-2.5 top-2.5 transform cursor-text px-1 text-sm text-white/60 transition-all peer-focus:-top-2 peer-focus:left-2.5 peer-focus:text-xs peer-focus:text-white"
+              className="absolute top-2.5 left-2.5 transform cursor-text px-1 text-sm text-white/60 transition-all peer-focus:-top-2 peer-focus:left-2.5 peer-focus:text-xs peer-focus:text-white"
             >
               Prompt here..
             </label>
@@ -131,14 +131,14 @@ export default function MarketingPage() {
           </motion.div>
         </div>
       </motion.div> */}
-      <Separator className="bg-foreground/5 mb-8" />
+      <Separator className="mb-8 bg-foreground/5" />
       <motion.section
         id="features"
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
         variants={containerVariants}
-        className="from-midnight-blue via-midnight-blue to-dark-purple w-full bg-gradient-to-b py-24 pt-16"
+        className="w-full bg-gradient-to-b from-midnight-blue via-midnight-blue to-dark-purple py-24 pt-16"
       >
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="mb-12 text-center text-4xl font-bold text-white">

@@ -1,11 +1,8 @@
-export interface Challenge {
-  id?: number;
-  title: string;
-  topic: string;
-  description: string;
+import type { NovaChallenge } from '@tuturuuu/types/db';
+
+export type ChallengeWithProblems = NovaChallenge & {
   problems: Problems[];
-  duration: number;
-}
+};
 
 export interface Problems {
   id: string;
@@ -17,9 +14,9 @@ export interface Problems {
   testcase?: string[];
 }
 
-const challenges: Challenge[] = [
+const challenges: ChallengeWithProblems[] = [
   {
-    id: 1,
+    id: '1',
     title: 'Text Suma',
     topic: 'Summarization',
     description:
@@ -58,9 +55,10 @@ const challenges: Challenge[] = [
       },
     ],
     duration: 60,
+    created_at: new Date().toISOString(),
   },
   {
-    id: 2,
+    id: '2',
     title: 'Sentiment Analysis',
     topic: 'Classification',
     description:
@@ -95,9 +93,10 @@ const challenges: Challenge[] = [
       },
     ],
     duration: 45,
+    created_at: new Date().toISOString(),
   },
   {
-    id: 3,
+    id: '3',
     title: 'Code Explanation',
     topic: 'Programming',
     description: 'Explain programming concepts in simple terms.',
@@ -146,14 +145,15 @@ function fibonacci(n) {
         ],
       },
     ],
-    duration: 75, // Added duration (in minutes)
+    duration: 75,
+    created_at: new Date().toISOString(),
   },
 ];
 
-export function getChallenges(): Challenge[] {
+export function getChallenges(): NovaChallenge[] {
   return challenges;
 }
 
-export function getChallenge(id: number): Challenge | undefined {
+export function getChallenge(id: string): NovaChallenge | undefined {
   return challenges.find((challenge) => challenge.id === id);
 }

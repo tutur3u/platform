@@ -77,3 +77,5 @@ export type AuroraForecast = {
   statistical_forecast: AuroraStatisticalForecast[];
   ml_forecast: AuroraMLForecast[];
 };
+
+export type NovaChallenge = Tables<'nova_challenges'>;
