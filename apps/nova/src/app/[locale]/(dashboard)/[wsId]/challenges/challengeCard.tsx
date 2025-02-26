@@ -1,6 +1,6 @@
 'use client';
 
-import { Challenge } from './challenges';
+import type { NovaChallenge } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -14,7 +14,7 @@ import { ArrowRight, Star } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface ChallengeCardProps {
-  challenge: Challenge;
+  challenge: NovaChallenge;
   wsId: string;
 }
 
@@ -129,14 +129,14 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge, wsId }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-muted-foreground mb-4">{challenge.description}</p>
+        <p className="mb-4 text-muted-foreground">{challenge.description}</p>
         <div className="flex items-center text-yellow-500">
           <Star className="mr-1 h-4 w-4 fill-current" />
           <Star className="mr-1 h-4 w-4 fill-current" />
           <Star className="mr-1 h-4 w-4 fill-current" />
           <Star className="mr-1 h-4 w-4 stroke-current" />
           <Star className="mr-1 h-4 w-4 stroke-current" />
-          <span className="text-muted-foreground ml-2 text-sm">Difficulty</span>
+          <span className="ml-2 text-sm text-muted-foreground">Difficulty</span>
         </div>
       </CardContent>
       <CardFooter>

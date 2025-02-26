@@ -1824,8 +1824,8 @@ importers:
         specifier: ^2.49.1
         version: 2.49.1
       '@tuturuuu/types':
-        specifier: npm:@jsr/tuturuuu__types@^0.1.5
-        version: '@jsr/tuturuuu__types@0.1.5'
+        specifier: workspace:*
+        version: link:../types
       eslint:
         specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
@@ -1849,11 +1849,11 @@ importers:
         specifier: ^9.21.0
         version: 9.21.0
       '@tuturuuu/eslint-config':
-        specifier: npm:@jsr/tuturuuu__eslint-config@^0.1.5
-        version: '@jsr/tuturuuu__eslint-config@0.1.5'
+        specifier: workspace:*
+        version: link:../eslint-config
       '@tuturuuu/typescript-config':
-        specifier: npm:@jsr/tuturuuu__typescript-config@^0.1.0
-        version: '@jsr/tuturuuu__typescript-config@0.1.0'
+        specifier: workspace:*
+        version: link:../typescript-config
       '@types/node':
         specifier: ^22.13.5
         version: 22.13.5

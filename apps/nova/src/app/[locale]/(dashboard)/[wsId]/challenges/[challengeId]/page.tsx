@@ -1,6 +1,5 @@
 'use client';
 
-import { getChallenge } from '../challenges';
 import CustomizedHeader from './customizedHeader';
 import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
@@ -29,7 +28,8 @@ export default function Page({ params }: Props) {
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
   const [wsId, setWsId] = useState('');
   const [challengeId, setChallengeId] = useState('');
-  const database = createClient();
+
+  const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function Page({ params }: Props) {
     const authCheck = async () => {
       const {
         data: { user },
-      } = await database.auth.getUser();
+      } = await supabase.auth.getUser();
 
       if (!user?.id) {
         router.push('/login');
@@ -64,7 +64,7 @@ export default function Page({ params }: Props) {
   useEffect(() => {
     const fetchData = async () => {
       const { wsId, challengeId } = await params;
-      const challengeData = getChallenge(parseInt(challengeId));
+      const challengeData = await getChallenge(challengeId);
       setChallenge(challengeData);
       setChallengeId(challengeId);
       setWsId(wsId);
@@ -77,13 +77,11 @@ export default function Page({ params }: Props) {
 
   const problems = challenge?.problems || [];
 
-
   const nextProblem = () => {
     setCurrentProblemIndex((prev) =>
       prev < problems.length - 1 ? prev + 1 : prev
     );
   };
-
 
   const prevProblem = () => {
     setCurrentProblemIndex((prev) => (prev > 0 ? prev - 1 : prev));
@@ -137,6 +135,105 @@ async function fetchTimer(problemId: string): Promise<Timer | null> {
     return data;
   } catch (error) {
     console.log('Timer record error: ', error);
+    return null;
+  }
+}
+
+export interface Challenge {
+  id: string;
+  title: string;
+  topic: string;
+  description: string;
+  problems: Problems[];
+  duration: number;
+}
+
+export interface Problems {
+  id: string;
+  title: string | null;
+  description: string | null;
+  exampleInput: string | null;
+  exampleOutput: string | null;
+  constraints?: (string | null)[];
+  testcase?: (string | null)[];
+}
+
+// Fetch Challenge from Supabase
+async function getChallenge(challengeId: string): Promise<Challenge | null> {
+  const supabase = createClient();
+
+  try {
+    // Fetch challenge details
+    const { data: challenge, error: challengeError } = await supabase
+      .from('nova_challenges')
+      .select('*')
+      .eq('id', challengeId)
+      .single();
+
+    if (challengeError || !challenge) {
+      console.error('Error fetching challenge:', challengeError?.message);
+      return null;
+    }
+
+    // Fetch problems linked to this challenge
+    const { data: problems, error: problemError } = await supabase
+      .from('nova_problems')
+      .select('id, title, description, exampleInput, exampleOutput')
+      .eq('challenge_id', challengeId);
+
+    if (problemError) {
+      console.error('Error fetching problems:', problemError.message);
+      return null;
+    }
+
+    // Fetch constraints and test cases for all problems in one request
+    const problemIds = problems.map((problem) => problem.id);
+
+    const { data: constraints, error: constraintError } = await supabase
+      .from('nova_problem_constraints')
+      .select('problem_id, constraint_content')
+      .in('problem_id', problemIds);
+    console.log(constraints, 'chacha');
+    if (constraintError) {
+      console.error('Error fetching constraints:', constraintError.message);
+    }
+
+    const { data: testcases, error: testcaseError } = await supabase
+      .from('nova_problem_testcases')
+      .select('problem_id, testcase_content')
+      .in('problem_id', problemIds);
+    console.log('test case in fetch', testcases);
+    if (testcaseError) {
+      console.error('Error fetching test cases:', testcaseError.message);
+    }
+
+    // Map problems with constraints and test cases
+    const formattedProblems = problems.map((problem) => ({
+      id: problem.id,
+      title: problem.title,
+      description: problem.description,
+      exampleInput: problem.exampleInput,
+      exampleOutput: problem.exampleOutput,
+      constraints:
+        constraints
+          ?.filter((c) => c.problem_id === problem.id)
+          .map((c) => c.constraint_content) || [],
+      testcase:
+        testcases
+          ?.filter((t) => t.problem_id === problem.id)
+          .map((t) => t.testcase_content) || [],
+    }));
+
+    return {
+      id: challenge.id,
+      title: challenge.title || '',
+      topic: challenge.topic || '',
+      description: challenge.description || '',
+      problems: formattedProblems,
+      duration: 60, // Assuming a default duration, update based on your DB
+    };
+  } catch (error) {
+    console.error('Unexpected error fetching challenge:', error);
     return null;
   }
 }
