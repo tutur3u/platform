@@ -92,7 +92,7 @@ export default function PlanLogin({
     }
   }
 
-  const missingFields = !form.getValues().guestName;
+  const missingFields = !form.watch('guestName');
 
   return (
     <Dialog
@@ -178,7 +178,14 @@ export default function PlanLogin({
                       {t('meet-together-plan-details.your_name')}
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Tuturuuu" autoFocus {...field} />
+                      <Input
+                        placeholder="Tuturuuu"
+                        disabled={loading}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoFocus
+                        {...field}
+                      />
                     </FormControl>
                     <FormDescription>
                       {t('meet-together-plan-details.your_name_desc')}
@@ -199,7 +206,7 @@ export default function PlanLogin({
                       <Input
                         placeholder="••••••••"
                         type="password"
-                        disabled={missingFields}
+                        disabled={missingFields || loading}
                         autoComplete="off"
                         autoCorrect="off"
                         {...field}
