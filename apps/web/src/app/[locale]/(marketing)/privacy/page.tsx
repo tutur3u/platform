@@ -13,10 +13,14 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,
   Baby,
+  Check,
+  ChevronRight,
+  Clock,
   Cookie,
   FileText,
   Globe,
@@ -28,8 +32,11 @@ import {
   UserCog,
   Users,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function PrivacyPage() {
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
   const sections = [
     {
       title: 'Overview',
@@ -38,26 +45,31 @@ export default function PrivacyPage() {
 
 This Policy applies to all users of our services, including our website, applications, and related services (collectively, the "Services"). 
 
-**By using our Services, you consent to the data practices described in this Policy.**`,
+**By using our Services, you consent to the data practices described in this Policy.**
+
+**Important Age Restriction Notice:** Artificial intelligence (AI) features are only available to users 18+ in age. If you are under this age limit, access to AI services and features will not be available.`,
     },
     {
       title: 'Information Collection',
       icon: <FileText className="h-6 w-6" />,
       content: `We collect the following categories of information:
 
-1. **Personal Information**
-   * Name and contact details
-   * Account credentials
-   * Payment information
-   * Professional and employment information
+1. **Required Information**
+   * Email address (mandatory for authentication and platform access)
 
-2. **Usage Information**
+2. **Optional Information**
+   * Name and contact details (provided at user discretion)
+   * Gender and birthday (when voluntarily provided by user)
+   * Professional and employment information (when voluntarily provided by user)
+   * Payment information (required only for paid plans, processed by Stripe)
+
+3. **Usage Information**
    * Device and browser information
    * IP address and location data
    * Service usage patterns
    * Performance metrics
 
-3. **User-Generated Content**
+4. **User-Generated Content**
    * Documents and files
    * Communications
    * Feedback and preferences`,
@@ -107,8 +119,8 @@ This Policy applies to all users of our services, including our website, applica
       content: `We may share your information with:
 
 1. **Service Providers**
+   * Stripe (payment processing for paid plans)
    * Cloud infrastructure providers
-   * Payment processors
    * Analytics services
    * Customer support platforms
 
@@ -171,9 +183,10 @@ To exercise any of these rights, please contact our [Data Protection Officer](#c
       content: `Our commitment to protecting minors includes:
 
 1. **Age Restrictions**
-   * Services are not intended for users under 13
-   * Parental consent required for users 13-18
-   * Age verification measures
+   * General services are not intended for users under 13
+   * Artificial intelligence (AI) features are strictly limited to users 18 years and older
+   * Parental consent required for users 13-18 for non-AI features
+   * Age verification measures are implemented during registration
 
 2. **Data Protection**
    * Immediate deletion of identified minor data
@@ -185,7 +198,7 @@ To exercise any of these rights, please contact our [Data Protection Officer](#c
    * Prompt investigation procedures
    * Parental involvement protocols
 
-> If you believe we have inadvertently collected information from a minor, please contact us immediately.`,
+> If you believe we have inadvertently collected information from a minor, or if you are under 18 and have gained access to AI features, please contact us immediately.`,
     },
     {
       title: 'International Transfer',
@@ -210,14 +223,35 @@ To exercise any of these rights, please contact our [Data Protection Officer](#c
 > We ensure appropriate safeguards are in place for all international data transfers.`,
     },
     {
+      title: 'Payment Processing',
+      icon: <Lock className="h-6 w-6" />,
+      content: `Payment information is handled as follows:
+
+1. **Collection Circumstances**
+   * Payment information is only collected when a user starts a non-trial paid plan
+   * No payment information is required for free or trial accounts
+   * Users are clearly notified when payment information is required
+
+2. **Third-Party Processing**
+   * All payment credentials are processed and stored by Stripe, our payment processor
+   * We do not directly store payment card information in our systems
+   * Stripe employs industry-standard security practices for payment data protection
+
+3. **Data Minimization**
+   * Only payment information necessary for transaction processing is collected
+   * Payment history is retained for legal compliance purposes
+   * Access to payment data is strictly limited
+
+> We maintain PCI DSS compliance through our partnership with Stripe for all payment processing operations.`,
+    },
+    {
       title: 'Policy Updates',
       icon: <RefreshCcw className="h-6 w-6" />,
       content: `This Privacy Policy may be updated periodically:
 
 1. **Notification Process**
-   * Email notifications for material changes
-   * Website announcements
-   * In-app notifications
+   * Website announcements (currently our only notification method)
+   * No automated email or in-app notifications at this time
 
 2. **Version Control**
    * Change documentation
@@ -225,11 +259,11 @@ To exercise any of these rights, please contact our [Data Protection Officer](#c
    * Effective date tracking
 
 3. **User Actions**
-   * Review of changes required
-   * Consent renewal if necessary
+   * Review of changes recommended
+   * Continued use constitutes acceptance of updated terms
    * Opt-out options when applicable
 
-> Changes become effective 30 days after posting unless otherwise specified.`,
+> Changes become effective immediately after posting unless otherwise specified.`,
     },
     {
       title: 'Contact Information',
@@ -250,6 +284,40 @@ Response Time: 48 hours
     number: index + 1,
   }));
 
+  // Track active section for better navigation
+  const handleScroll = () => {
+    const sectionElements = sections.map((section) => {
+      const id = section.title.toLowerCase().replace(/\s+/g, '-');
+      return {
+        id,
+        element: document.getElementById(id),
+      };
+    });
+
+    for (let i = sectionElements.length - 1; i >= 0; i--) {
+      if (!sectionElements[i]?.element) continue;
+      const { id, element } = sectionElements[i]!;
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        if (rect.top <= 200) {
+          setActiveSection(id);
+          break;
+        }
+      }
+    }
+  };
+
+  // Add scroll event listener when component mounts
+  useEffect(() => {
+    if (typeof window !== 'undefined')
+      window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      if (typeof window !== 'undefined')
+        window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
     <main className="relative container space-y-16 py-24">
       {/* Hero Section */}
@@ -268,8 +336,8 @@ Response Time: 48 hours
         <p className="mx-auto max-w-2xl text-lg text-foreground/80">
           Effective Date:{' '}
           {new Date(
-            // January 10, 2025
-            '2025-01-10'
+            // February 27, 2025
+            '2025-02-27'
           ).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -278,7 +346,7 @@ Response Time: 48 hours
         </p>
       </motion.section>
 
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[250px_1fr]">
+      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[280px_1fr]">
         {/* Table of Contents - Fixed on Desktop */}
         <motion.aside
           initial={{ opacity: 0, x: -20 }}
@@ -288,19 +356,44 @@ Response Time: 48 hours
         >
           <div className="sticky top-24">
             <Card className="p-6">
-              <h2 className="mb-4 text-lg font-semibold">Table of Contents</h2>
-              <ScrollArea className="h-[calc(100vh-250px)]">
-                <div className="space-y-2">
+              <h2 className="mb-4 flex items-center text-lg font-semibold">
+                <FileText className="mr-2 h-5 w-5 text-primary" />
+                Table of Contents
+              </h2>
+
+              <div className="mb-3 flex items-center text-xs text-muted-foreground">
+                <Clock className="mr-1 h-3 w-3" />
+                <span>Last updated: February 27, 2025</span>
+              </div>
+
+              <Separator className="my-2" />
+
+              <ScrollArea className="h-[calc(100vh-350px)]">
+                <div className="space-y-1 py-2">
                   {tableOfContents.map((item) => (
                     <a
                       key={item.id}
                       href={`#${item.id}`}
-                      className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className={`flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+                        activeSection === item.id
+                          ? 'bg-primary/10 font-medium text-primary'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
                     >
-                      <span className="text-xs text-primary/50">
-                        {item.number.toString().padStart(2, '0')}
-                      </span>
-                      {item.title}
+                      <div className="flex items-center">
+                        <span className="mr-2 w-5 text-xs text-primary/70">
+                          {item.number.toString().padStart(2, '0')}
+                        </span>
+                        {item.title}
+                      </div>
+                      <Check
+                        className={cn(
+                          'h-4 w-4 text-primary transition',
+                          activeSection === item.id
+                            ? 'opacity-100'
+                            : 'opacity-0'
+                        )}
+                      />
                     </a>
                   ))}
                 </div>
@@ -318,36 +411,62 @@ Response Time: 48 hours
         >
           {/* Key Points Summary */}
           <Card className="bg-primary/5 p-6">
-            <div className="flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3">
               <AlertCircle className="h-6 w-6 text-primary" />
               <h2 className="text-lg font-semibold">Key Privacy Principles</h2>
             </div>
+
+            <p className="mb-4 text-sm text-muted-foreground">
+              This summary highlights important aspects of our privacy practices
+              but does not replace the complete policy.
+            </p>
+
             <Table className="mt-4">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">Principle</TableHead>
-                  <TableHead>Description</TableHead>
+                  <TableHead className="w-[150px]">Data Category</TableHead>
+                  <TableHead>Collection Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell className="font-medium">Transparency</TableCell>
-                  <TableCell>
-                    Clear disclosure of data collection and use
+                  <TableCell className="font-medium">Email Address</TableCell>
+                  <TableCell className="flex items-center">
+                    <Badge variant="destructive" className="mr-2">
+                      Required
+                    </Badge>
+                    Mandatory for authentication
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium">Security</TableCell>
-                  <TableCell>Robust protection of user information</TableCell>
+                  <TableCell className="font-medium">
+                    Personal Details
+                  </TableCell>
+                  <TableCell className="flex items-center">
+                    <Badge variant="outline" className="mr-2">
+                      Optional
+                    </Badge>
+                    Name, gender, birthday, etc.
+                  </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium">Control</TableCell>
-                  <TableCell>User rights over personal data</TableCell>
+                  <TableCell className="font-medium">
+                    Professional Info
+                  </TableCell>
+                  <TableCell className="flex items-center">
+                    <Badge variant="outline" className="mr-2">
+                      Optional
+                    </Badge>
+                    Employment details
+                  </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium">Compliance</TableCell>
-                  <TableCell>
-                    Adherence to privacy laws and regulations
+                  <TableCell className="font-medium">Payment Info</TableCell>
+                  <TableCell className="flex items-center">
+                    <Badge variant="secondary" className="mr-2">
+                      Conditional
+                    </Badge>
+                    Required for paid plans, processed by Stripe
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -362,11 +481,12 @@ Response Time: 48 hours
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 * index }}
+              className="scroll-mt-32"
             >
-              <Card className="group overflow-hidden">
-                <div className="bg-card p-6">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="text-primary transition-transform duration-300 group-hover:scale-110">
+              <Card className="group overflow-hidden border-l-4 border-l-primary/20 transition-all duration-200 hover:border-l-primary">
+                <div className="bg-card p-8">
+                  <div className="mb-5 flex items-center gap-3">
+                    <div className="rounded-lg bg-primary/10 p-2 text-primary transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary/20">
                       {section.icon}
                     </div>
                     <h2 className="text-2xl font-semibold">{section.title}</h2>
@@ -377,12 +497,43 @@ Response Time: 48 hours
                     </MemoizedReactMarkdown>
                   </div>
                 </div>
+                <div className="bg-muted/50 px-8 py-3 text-xs text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>
+                      Section {index + 1} of {sections.length}
+                    </span>
+                    {index < sections.length - 1 && (
+                      <a
+                        href={`#${sections[index + 1]!.title.toLowerCase().replace(/\s+/g, '-')}`}
+                        className="flex items-center hover:text-primary"
+                      >
+                        Next: {sections[index + 1]!.title}
+                        <ChevronRight className="ml-1 h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
               </Card>
               {index < sections.length - 1 && (
                 <Separator className="my-8 opacity-50" />
               )}
             </motion.div>
           ))}
+
+          {/* GDPR Compliance Statement */}
+          <Card className="border-primary/20 p-6">
+            <h3 className="text-md mb-3 flex items-center font-semibold">
+              <Shield className="mr-2 h-4 w-4 text-primary" />
+              GDPR & International Compliance Statement
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Tuturuuu is committed to compliance with international data
+              protection regulations, including GDPR, CCPA, and other applicable
+              laws. We process personal data lawfully, fairly, and
+              transparently. For EU/UK users, we serve as a data controller for
+              account information and a processor for content you create.
+            </p>
+          </Card>
         </motion.div>
       </div>
 
@@ -391,11 +542,11 @@ Response Time: 48 hours
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        className="text-center"
+        className="pt-12 text-center"
       >
         <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-          This Privacy Policy is a legally binding document that outlines our
-          commitment to protecting your privacy. For questions or concerns,
+          This Privacy Policy outlines our commitment to protecting your
+          personal information. For questions or concerns about your privacy,
           please contact our Data Protection Officer.
         </p>
       </motion.section>

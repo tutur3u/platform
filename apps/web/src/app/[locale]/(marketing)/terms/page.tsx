@@ -13,12 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,
   BookOpen,
+  Check,
+  ChevronRight,
+  Clock,
   Copyright,
   Database,
+  FileText,
   Info,
   Mail,
   RefreshCcw,
@@ -27,8 +32,11 @@ import {
   UserX,
   Users,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function TermsPage() {
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
   const sections = [
     {
       title: 'Introduction',
@@ -52,11 +60,27 @@ The specific features and functionality may be modified, updated, or discontinue
       icon: <Users className="h-6 w-6" />,
       content: `Users of the Services must comply with the following requirements:
 
-1. **Age Requirement:** Users must be at least 18 years of age or have obtained parental/guardian consent
-2. **Account Security:** Maintain the confidentiality of account credentials and promptly notify us of any security breaches
-3. **Accurate Information:** Provide and maintain accurate, current, and complete account information
-4. **Compliance:** Adhere to all applicable laws, regulations, and these Terms
-5. **Prohibited Activities:** Refrain from unauthorized access, interference with Services, or any malicious activities`,
+1. **Age Requirement:** 
+   * Users must be at least 13 years of age to access our basic services
+   * Users must be at least 18 years of age to access AI features
+   * Parental/guardian consent is required for users aged 13-18 for non-AI features
+
+2. **Account Security:** 
+   * Maintain the confidentiality of account credentials 
+   * Promptly notify us of any security breaches
+   * Do not share access to your account with unauthorized users
+
+3. **Accurate Information:** 
+   * Provide and maintain accurate, current, and complete account information
+   * Update your information promptly if it changes
+
+4. **Compliance:** 
+   * Adhere to all applicable laws, regulations, and these Terms
+   * Follow our Community Guidelines and Acceptable Use Policy
+
+5. **Prohibited Activities:** 
+   * Refrain from unauthorized access, interference with Services, or any malicious activities
+   * Do not attempt to circumvent age restrictions, particularly for AI features`,
     },
     {
       title: 'Intellectual Property Rights',
@@ -158,6 +182,40 @@ Response Time: Within 2 business days
     number: index + 1,
   }));
 
+  // Track active section for better navigation
+  const handleScroll = () => {
+    const sectionElements = sections.map((section) => {
+      const id = section.title.toLowerCase().replace(/\s+/g, '-');
+      return {
+        id,
+        element: document.getElementById(id),
+      };
+    });
+
+    for (let i = sectionElements.length - 1; i >= 0; i--) {
+      if (!sectionElements[i]?.element) continue;
+      const { id, element } = sectionElements[i]!;
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        if (rect.top <= 200) {
+          setActiveSection(id);
+          break;
+        }
+      }
+    }
+  };
+
+  // Add scroll event listener when component mounts
+  useEffect(() => {
+    if (typeof window !== 'undefined')
+      window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      if (typeof window !== 'undefined')
+        window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
     <main className="relative container space-y-16 py-24">
       {/* Hero Section */}
@@ -176,8 +234,8 @@ Response Time: Within 2 business days
         <p className="mx-auto max-w-2xl text-lg text-foreground/80">
           Effective Date:{' '}
           {new Date(
-            // January 10, 2025
-            '2025-01-10'
+            // February 27, 2025
+            '2025-02-27'
           ).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -186,7 +244,7 @@ Response Time: Within 2 business days
         </p>
       </motion.section>
 
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[250px_1fr]">
+      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[280px_1fr]">
         {/* Table of Contents - Fixed on Desktop */}
         <motion.aside
           initial={{ opacity: 0, x: -20 }}
@@ -196,19 +254,44 @@ Response Time: Within 2 business days
         >
           <div className="sticky top-24">
             <Card className="p-6">
-              <h2 className="mb-4 text-lg font-semibold">Table of Contents</h2>
-              <ScrollArea className="h-[calc(100vh-250px)]">
-                <div className="space-y-2">
+              <h2 className="mb-4 flex items-center text-lg font-semibold">
+                <FileText className="mr-2 h-5 w-5 text-primary" />
+                Table of Contents
+              </h2>
+
+              <div className="mb-3 flex items-center text-xs text-muted-foreground">
+                <Clock className="mr-1 h-3 w-3" />
+                <span>Last updated: February 27, 2025</span>
+              </div>
+
+              <Separator className="my-2" />
+
+              <ScrollArea className="h-[calc(100vh-350px)]">
+                <div className="space-y-1 py-2">
                   {tableOfContents.map((item) => (
                     <a
                       key={item.id}
                       href={`#${item.id}`}
-                      className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className={`flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+                        activeSection === item.id
+                          ? 'bg-primary/10 font-medium text-primary'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
                     >
-                      <span className="text-xs text-primary/50">
-                        {item.number.toString().padStart(2, '0')}
-                      </span>
-                      {item.title}
+                      <div className="flex items-center">
+                        <span className="mr-2 w-5 text-xs text-primary/70">
+                          {item.number.toString().padStart(2, '0')}
+                        </span>
+                        {item.title}
+                      </div>
+                      <Check
+                        className={cn(
+                          'h-4 w-4 text-primary transition',
+                          activeSection === item.id
+                            ? 'opacity-100'
+                            : 'opacity-0'
+                        )}
+                      />
                     </a>
                   ))}
                 </div>
@@ -224,16 +307,22 @@ Response Time: Within 2 business days
           transition={{ duration: 0.6, delay: 0.3 }}
           className="space-y-8"
         >
-          {/* Key Points Summary */}
+          {/* Document Information Card */}
           <Card className="bg-primary/5 p-6">
-            <div className="flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3">
               <AlertCircle className="h-6 w-6 text-primary" />
               <h2 className="text-lg font-semibold">Key Points Summary</h2>
             </div>
+
+            <p className="mb-4 text-sm text-muted-foreground">
+              This summary provides a quick overview of the key terms but does
+              not replace the full agreement below.
+            </p>
+
             <Table className="mt-4">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">Topic</TableHead>
+                  <TableHead className="w-[150px]">Topic</TableHead>
                   <TableHead>Summary</TableHead>
                 </TableRow>
               </TableHeader>
@@ -272,11 +361,12 @@ Response Time: Within 2 business days
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 * index }}
+              className="scroll-mt-32"
             >
-              <Card className="group overflow-hidden">
-                <div className="bg-card p-6">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="text-primary transition-transform duration-300 group-hover:scale-110">
+              <Card className="group overflow-hidden border-l-4 border-l-primary/20 transition-all duration-200 hover:border-l-primary">
+                <div className="bg-card p-8">
+                  <div className="mb-5 flex items-center gap-3">
+                    <div className="rounded-lg bg-primary/10 p-2 text-primary transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary/20">
                       {section.icon}
                     </div>
                     <h2 className="text-2xl font-semibold">{section.title}</h2>
@@ -285,6 +375,22 @@ Response Time: Within 2 business days
                     <MemoizedReactMarkdown>
                       {section.content}
                     </MemoizedReactMarkdown>
+                  </div>
+                </div>
+                <div className="bg-muted/50 px-8 py-3 text-xs text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>
+                      Section {index + 1} of {sections.length}
+                    </span>
+                    {index < sections.length - 1 && (
+                      <a
+                        href={`#${sections[index + 1]!.title.toLowerCase().replace(/\s+/g, '-')}`}
+                        className="flex items-center hover:text-primary"
+                      >
+                        Next: {sections[index + 1]!.title}
+                        <ChevronRight className="ml-1 h-3 w-3" />
+                      </a>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -301,7 +407,7 @@ Response Time: Within 2 business days
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        className="text-center"
+        className="pt-12 text-center"
       >
         <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
           These Terms of Service constitute a legally binding agreement between
