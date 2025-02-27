@@ -60,7 +60,7 @@ export function Sidebar() {
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" className="w-full justify-between">
                       <span className="flex items-center">
-                        <item.icon className="mr-2 h-4 w-4" />
+                        <item.icon className="mr-4 h-4 w-4" />
                         {item.name}
                       </span>
                       <ChevronDown className="h-4 w-4" />
