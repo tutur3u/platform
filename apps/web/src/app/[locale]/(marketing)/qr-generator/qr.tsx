@@ -5,7 +5,6 @@ import QRDisplay from './display';
 import QRFormats from './formats';
 import QRStyles from './styles';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
@@ -16,7 +15,6 @@ export default function QR() {
 
   const ref = useRef<HTMLCanvasElement>(null);
 
-  const [name, setName] = useState('');
   const [value, setValue] = useState('');
   const [style, setStyle] = useState<'default' | 'brand' | 'scan-me'>(
     'default'
@@ -30,15 +28,6 @@ export default function QR() {
     <>
       <div className="flex flex-col items-center justify-between gap-8 md:flex-row md:items-start">
         <div className="w-full">
-          <div className="mb-4 grid gap-2">
-            <Label>{t('common.qr_name')}</Label>
-            <Input
-              placeholder={t('common.qr_name')}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-
           <div className="grid gap-2">
             <Label>{t('ws-user-fields.value')}</Label>
             <Textarea
@@ -70,14 +59,12 @@ export default function QR() {
             <Button
               variant="destructive"
               onClick={() => {
-                setName('');
                 setValue('');
                 setColor('#000000');
                 setBgColor('#FFFFFF');
                 setStyle('default');
               }}
               disabled={
-                !name &&
                 !value &&
                 color === '#000000' &&
                 bgColor === '#FFFFFF' &&
@@ -94,7 +81,7 @@ export default function QR() {
                 const canvas = ref.current;
                 const link = document.createElement('a');
 
-                link.download = `${name || 'qr-code'}.${format}`;
+                link.download = `Tuturuuu.${format}`;
                 link.href = canvas.toDataURL(`image/${format}`);
                 document.body.appendChild(link);
                 link.click();
