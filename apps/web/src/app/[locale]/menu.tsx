@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthButton } from './auth-button';
+import { NavItem, useNavigation } from './shared/navigation-config';
 import { ThemeToggle } from './theme-toggle';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -35,113 +36,6 @@ interface NavLinkProps {
   className?: string;
 }
 
-interface NavItem {
-  href: string;
-  label: string;
-  external?: boolean;
-  badge?: string;
-}
-
-const navItems = (t: any) => {
-  return [
-    // Main Links
-    { href: '/', label: t('common.home') },
-
-    // Products
-    { href: '/meet-together', label: t('common.meet-together') },
-    {
-      href: '/products/ai',
-      label: t('common.ai-assistant'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/lms',
-      label: t('common.lms'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/calendar',
-      label: t('common.calendar'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/documents',
-      label: t('common.documents'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/drive',
-      label: t('common.drive'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/crm',
-      label: t('common.crm'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/inventory',
-      label: t('common.inventory'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/finance',
-      label: t('common.finance'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/mail',
-      label: t('common.mail'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/tasks',
-      label: t('common.tasks'),
-      badge: t('common.coming_soon'),
-    },
-    {
-      href: '/products/workflows',
-      label: t('common.workflows'),
-      badge: t('common.coming_soon'),
-    },
-
-    // Solutions
-    { href: '/solutions/manufacturing', label: t('common.manufacturing') },
-    { href: '/solutions/restaurants', label: t('common.restaurants') },
-    { href: '/solutions/pharmacies', label: t('common.pharmacies') },
-    { href: '/solutions/realestate', label: t('common.realestate') },
-    { href: '/solutions/retail', label: t('common.retail') },
-    { href: '/solutions/education', label: t('common.education') },
-    { href: '/solutions/hospitality', label: t('common.hospitality') },
-    { href: '/solutions/construction', label: t('common.construction') },
-
-    // Resources
-    { href: '/blog', label: t('common.blog'), badge: t('common.coming_soon') },
-    { href: '/changelog', label: t('common.changelog') },
-    { href: '/pitch', label: t('common.pitch') },
-    { href: '/branding', label: t('common.branding') },
-    {
-      href: 'https://docs.tuturuuu.com',
-      label: t('common.documentation'),
-      external: true,
-    },
-    {
-      href: 'https://github.com/tutur3u',
-      label: 'GitHub',
-      external: true,
-    },
-
-    // Company
-    { href: '/pricing', label: t('common.pricing') },
-    { href: '/about', label: t('common.about') },
-    {
-      href: '/careers',
-      label: t('common.careers'),
-    },
-    { href: '/contact', label: t('common.contact') },
-  ] as NavItem[];
-};
-
 const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   const pathname = usePathname();
   const isActive = pathname === item.href;
@@ -160,6 +54,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   return (
     <Link {...linkProps}>
       <span className="flex items-center gap-2">
+        {item.icon}
         {item.label}
         {item.badge && (
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
@@ -181,24 +76,18 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
   const [isOpened, setIsOpened] = useState(false);
   const closeMenu = () => setIsOpened(false);
 
-  const items = navItems(t);
-  const mainLinks = items.slice(0, 1); // Only home
-  const products = items.filter(
-    (item) =>
-      item.href === '/meet-together' || item.href.startsWith('/products')
-  );
-  const solutions = items.filter((item) => item.href.startsWith('/solutions'));
-  const resources = items.filter(
-    (item) =>
-      item.href.startsWith('/blog') ||
-      item.href.startsWith('/changelog') ||
-      item.href.startsWith('/pitch') ||
-      item.href.startsWith('/branding') ||
-      item.href.startsWith('https://')
-  );
-  const company = items.filter((item) =>
-    ['/pricing', '/about', '/careers', '/contact'].includes(item.href)
-  );
+  const { categories } = useNavigation(t);
+
+  // Extract categories by their titles
+  const mainLinks = categories.find((cat) => cat.title === 'main')?.items || [];
+  const products =
+    categories.find((cat) => cat.title === 'products')?.items || [];
+  const solutions =
+    categories.find((cat) => cat.title === 'solutions')?.items || [];
+  const resources =
+    categories.find((cat) => cat.title === 'resources')?.items || [];
+  const company =
+    categories.find((cat) => cat.title === 'company')?.items || [];
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
@@ -242,7 +131,9 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 {/* Products Section */}
                 <AccordionItem value="products" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="text-sm font-semibold">Products</span>
+                    <span className="text-sm font-semibold">
+                      {t('common.products')}
+                    </span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
@@ -261,7 +152,9 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 {/* Solutions Section */}
                 <AccordionItem value="solutions" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="text-sm font-semibold">Solutions</span>
+                    <span className="text-sm font-semibold">
+                      {t('common.solutions')}
+                    </span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
@@ -280,7 +173,9 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 {/* Resources Section */}
                 <AccordionItem value="resources" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="text-sm font-semibold">Resources</span>
+                    <span className="text-sm font-semibold">
+                      {t('common.resources')}
+                    </span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">
@@ -299,7 +194,9 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 {/* Company Section */}
                 <AccordionItem value="company" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="text-sm font-semibold">Company</span>
+                    <span className="text-sm font-semibold">
+                      {t('common.company')}
+                    </span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
                     <div className="grid gap-2 px-2">

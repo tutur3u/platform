@@ -1,6 +1,6 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
+import { useNavigation } from './shared/navigation-config';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -13,248 +13,23 @@ import {
   navigationMenuTriggerStyle,
 } from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
-import {
-  BookText,
-  Building,
-  Factory,
-  FileText,
-  Github,
-  GraduationCap,
-  HardHat,
-  Hotel,
-  Info,
-  Paintbrush,
-  Pill,
-  Presentation,
-  Shield,
-  Sparkles,
-  Store,
-  Users,
-  UsersRound,
-  Utensils,
-  WandSparkles,
-  Zap,
-} from 'lucide-react';
+import { BookText, Building, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import * as React from 'react';
 
 export function MainNavigationMenu() {
   const t = useTranslations();
+  const { categories } = useNavigation(t);
 
-  const products = [
-    {
-      title: t('common.meet-together'),
-      href: '/meet-together',
-      description: t('common.meet-together-description'),
-      icon: <UsersRound className="h-4 w-4" />,
-    },
-    // {
-    //   title: t('common.ai-assistant'),
-    //   href: '/products/ai',
-    //   description: t('common.ai-assistant-description'),
-    //   icon: <Brain className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.lms'),
-    //   href: '/products/lms',
-    //   description: t('common.lms-description'),
-    //   icon: <GraduationCap className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.calendar'),
-    //   href: '/products/calendar',
-    //   description: t('common.calendar-description'),
-    //   icon: <Calendar className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.documents'),
-    //   href: '/products/documents',
-    //   description: t('common.documents-description'),
-    //   icon: <FileText className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.drive'),
-    //   href: '/products/drive',
-    //   description: t('common.drive-description'),
-    //   icon: <HardDrive className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.crm'),
-    //   href: '/products/crm',
-    //   description: t('common.crm-description'),
-    //   icon: <Users className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.inventory'),
-    //   href: '/products/inventory',
-    //   description: t('common.inventory-description'),
-    //   icon: <Archive className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.finance'),
-    //   href: '/products/finance',
-    //   description: t('common.finance-description'),
-    //   icon: <Banknote className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.mail'),
-    //   href: '/products/mail',
-    //   description: t('common.mail-description'),
-    //   icon: <Mail className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.tasks'),
-    //   href: '/products/tasks',
-    //   description: t('common.tasks-description'),
-    //   icon: <CircleCheck className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: t('common.workflows'),
-    //   href: '/products/workflows',
-    //   description: t('common.workflows-description'),
-    //   icon: <Workflow className="h-4 w-4" />,
-    //   badge: t('common.coming_soon'),
-    // },
-    // {
-    //   title: 'Mira',
-    //   href: DEV_MODE ? 'http://localhost:7806' : 'https://mira.tuturuuu.com',
-    //   description: t('common.workflows-description'),
-    //   icon: <Factory className="h-4 w-4" />,
-    // },
-    {
-      title: 'Rewise',
-      href: DEV_MODE ? 'http://localhost:7804' : 'https://rewise.me',
-      description: t('common.rewise-description'),
-      icon: <Sparkles className="h-4 w-4" />,
-      badge: t('common.waitlist'),
-    },
-    {
-      title: 'Nova',
-      href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.tuturuuu.com',
-      description: t('common.nova-description'),
-      icon: <WandSparkles className="h-4 w-4" />,
-      badge: t('common.coming_soon'),
-    },
-  ];
-
-  const solutions = [
-    {
-      title: t('common.manufacturing'),
-      href: '/solutions/manufacturing',
-      description: t('common.manufacturing-description'),
-      icon: <Factory className="h-4 w-4" />,
-    },
-    {
-      title: t('common.restaurants'),
-      href: '/solutions/restaurants',
-      description: t('common.restaurants-description'),
-      icon: <Utensils className="h-4 w-4" />,
-    },
-    {
-      title: t('common.pharmacies'),
-      href: '/solutions/pharmacies',
-      description: t('common.pharmacies-description'),
-      icon: <Pill className="h-4 w-4" />,
-    },
-    {
-      title: t('common.realestate'),
-      href: '/solutions/realestate',
-      description: t('common.realestate-description'),
-      icon: <Building className="h-4 w-4" />,
-    },
-    {
-      title: t('common.retail'),
-      href: '/solutions/retail',
-      description: t('common.retail-description'),
-      icon: <Store className="h-4 w-4" />,
-    },
-    {
-      title: t('common.education'),
-      href: '/solutions/education',
-      description: t('common.education-description'),
-      icon: <GraduationCap className="h-4 w-4" />,
-    },
-    {
-      title: t('common.hospitality'),
-      href: '/solutions/hospitality',
-      description: t('common.hospitality-description'),
-      icon: <Hotel className="h-4 w-4" />,
-    },
-    {
-      title: t('common.construction'),
-      href: '/solutions/construction',
-      description: t('common.construction-description'),
-      icon: <HardHat className="h-4 w-4" />,
-    },
-  ];
-
-  const resources = [
-    {
-      title: t('common.blog'),
-      href: '/blog',
-      description: t('common.blog-description'),
-      icon: <BookText className="h-4 w-4" />,
-    },
-    {
-      title: t('common.about'),
-      href: '/about',
-      description: t('common.about-description'),
-      icon: <Info className="h-4 w-4" />,
-    },
-    {
-      title: t('common.changelog'),
-      href: '/changelog',
-      description: t('common.changelog-description'),
-      icon: <FileText className="h-4 w-4" />,
-    },
-    {
-      title: t('common.careers'),
-      href: '/careers',
-      description: t('common.careers-description'),
-      icon: <Users className="h-4 w-4" />,
-    },
-    {
-      title: t('common.security'),
-      href: '/security',
-      description: t('common.security-description'),
-      icon: <Shield className="h-4 w-4" />,
-    },
-    {
-      title: t('common.pitch'),
-      href: '/pitch',
-      description: t('common.pitch-description'),
-      icon: <Presentation className="h-4 w-4" />,
-    },
-    {
-      title: t('common.branding'),
-      href: '/branding',
-      description: t('common.branding-description'),
-      icon: <Paintbrush className="h-4 w-4" />,
-    },
-    {
-      title: t('common.documentation'),
-      href: 'https://docs.tuturuuu.com',
-      description: t('common.documentation-description'),
-      icon: <FileText className="h-4 w-4" />,
-    },
-    {
-      title: 'GitHub',
-      href: 'https://github.com/tutur3u',
-      description: t('common.github-description'),
-      icon: <Github className="h-4 w-4" />,
-    },
-  ];
+  const products =
+    categories.find((cat) => cat.title === 'products')?.items || [];
+  const solutions =
+    categories.find((cat) => cat.title === 'solutions')?.items || [];
+  const resources =
+    categories.find((cat) => cat.title === 'resources')?.items || [];
+  const company =
+    categories.find((cat) => cat.title === 'company')?.items || [];
 
   return (
     <NavigationMenu className="flex w-full max-w-none">
@@ -279,8 +54,8 @@ export function MainNavigationMenu() {
               </Card>
               {products.map((product) => (
                 <ListItem
-                  key={product.title}
-                  title={product.title}
+                  key={product.href}
+                  title={product.label}
                   href={product.href}
                   icon={product.icon}
                   badge={product.badge}
@@ -311,8 +86,8 @@ export function MainNavigationMenu() {
               </Card>
               {solutions.map((solution) => (
                 <ListItem
-                  key={solution.title}
-                  title={solution.title}
+                  key={solution.href}
+                  title={solution.label}
                   href={solution.href}
                   icon={solution.icon}
                 >
@@ -337,11 +112,10 @@ export function MainNavigationMenu() {
               </Card>
               {resources.map((resource) => (
                 <ListItem
-                  key={resource.title}
-                  title={resource.title}
+                  key={resource.href}
+                  title={resource.label}
                   href={resource.href}
                   icon={resource.icon}
-                  // badge={resource.badge}
                 >
                   {resource.description}
                 </ListItem>
@@ -350,33 +124,20 @@ export function MainNavigationMenu() {
           </NavigationMenuContent>
         </NavigationMenuItem>
 
-        <NavigationMenuItem>
-          <Link href="/pricing" legacyBehavior passHref>
-            <NavigationMenuLink
-              className={cn(
-                navigationMenuTriggerStyle(),
-                'group bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
-              )}
-            >
-              <span className="flex items-center gap-2">
-                {t('common.pricing')}
-              </span>
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
-
-        <NavigationMenuItem>
-          <Link href="/contact" legacyBehavior passHref>
-            <NavigationMenuLink
-              className={cn(
-                navigationMenuTriggerStyle(),
-                'bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
-              )}
-            >
-              {t('common.contact')}
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
+        {company.map((item) => (
+          <NavigationMenuItem key={item.href}>
+            <Link href={item.href} legacyBehavior passHref>
+              <NavigationMenuLink
+                className={cn(
+                  navigationMenuTriggerStyle(),
+                  'bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
+                )}
+              >
+                <span className="flex items-center gap-2">{item.label}</span>
+              </NavigationMenuLink>
+            </Link>
+          </NavigationMenuItem>
+        ))}
       </NavigationMenuList>
     </NavigationMenu>
   );
