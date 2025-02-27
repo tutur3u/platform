@@ -85,7 +85,7 @@ export default function Page({ params }: Props) {
   };
 
   return (
-    <>
+    <div className="relative">
       <CustomizedHeader
         proNum={problems.length}
         currentProblem={currentProblemIndex + 1}
@@ -113,7 +113,7 @@ export default function Page({ params }: Props) {
           problem={problems[currentProblemIndex]}
         />
       </div>
-    </>
+    </div>
   );
 }
 

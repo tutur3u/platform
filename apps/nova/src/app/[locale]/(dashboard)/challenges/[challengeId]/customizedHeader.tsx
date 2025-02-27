@@ -2,10 +2,7 @@ import CountdownTimer from './components/challengeButton';
 import ProblemChanger from './problem-changer';
 import NavbarSeparator from '@/app/[locale]/(marketing)/navbar-separator';
 import { Button } from '@tuturuuu/ui/button';
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { cn } from '@tuturuuu/utils/format';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -57,23 +54,10 @@ export default function CustomizedHeader({
   return (
     <nav
       id="navbar"
-      className={cn('fixed inset-x-0 top-0 z-50 bg-foreground/2 shadow-sm')}
+      className={cn('bg-foreground/2 absolute inset-x-0 top-0 z-50 shadow-sm')}
     >
       <div className="container mx-auto px-4 py-2 font-semibold">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/media/logos/transparent.png"
-                className="h-8 w-8"
-                width={32}
-                height={32}
-                alt="logo"
-              />
-              <LogoTitle />
-            </Link>
-          </div>
-
           <div className="flex flex-1 items-center justify-center">
             <ProblemChanger
               onPrev={onPrev}
@@ -86,7 +70,7 @@ export default function CustomizedHeader({
           <div className="flex items-center gap-4">
             <Suspense
               fallback={
-                <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+                <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
               }
             >
               <CountdownTimer
