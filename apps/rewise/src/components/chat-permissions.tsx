@@ -12,10 +12,10 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Copy, Link, QrCode, User, UserPlus, X } from 'lucide-react';
+import { Copy, QrCode, User, UserPlus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 
 interface ChatMember {
   email: string;
@@ -255,11 +255,12 @@ export function ChatPermissions({
             <DialogTitle>{t('chat_visibility.qr_code')}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4">
-            <QRCode value={chatUrl} size={256} />
-            <Button variant="outline" onClick={copyLink}>
-              <Link className="mr-2 h-4 w-4" />
-              {chatUrl}
-            </Button>
+            <QRCodeCanvas
+              value={chatUrl}
+              size={256}
+              marginSize={2}
+              className="rounded-lg"
+            />
           </div>
         </DialogContent>
       </Dialog>

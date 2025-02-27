@@ -9,20 +9,18 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
 
   // Get all events and filter them based on the visible dates
   const allEvents = getEvents();
-  const visibleEvents = allEvents.filter(event => {
+  const visibleEvents = allEvents.filter((event) => {
     const eventStart = new Date(event.start_at);
     const eventEnd = new Date(event.end_at);
 
     // Check if the event falls within any of the visible dates
-    return dates.some(date => {
-      const isAllDay = eventStart.getHours() === 0 && eventEnd.getHours() === 23;
-      
+    return dates.some((date) => {
+      const isAllDay =
+        eventStart.getHours() === 0 && eventEnd.getHours() === 23;
+
       if (isAllDay) {
         // For all-day events, check if the date falls within the event's range
-        return (
-          eventStart <= date && 
-          eventEnd >= date
-        );
+        return eventStart <= date && eventEnd >= date;
       }
 
       // For regular events, check if the event starts on this date

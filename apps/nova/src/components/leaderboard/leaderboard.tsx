@@ -41,7 +41,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
 
   if (!data.length) {
     return (
-      <Card className="text-muted-foreground flex h-96 items-center justify-center">
+      <Card className="flex h-96 items-center justify-center text-muted-foreground">
         No leaderboard data available
       </Card>
     );
@@ -93,7 +93,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                       <div
                         className={cn(
                           'h-full rounded-full transition-all',

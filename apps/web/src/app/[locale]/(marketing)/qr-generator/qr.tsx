@@ -3,7 +3,6 @@
 import QRColorPicker from './color';
 import QRDisplay from './display';
 import QRFormats from './formats';
-import QRShapes from './shapes';
 import QRStyles from './styles';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -11,16 +10,14 @@ import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 
 export default function QR() {
   const t = useTranslations();
 
-  const ref = useRef<QRCode>(null);
+  const ref = useRef<HTMLCanvasElement>(null);
 
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
-  const [shape, setShape] = useState<'squares' | 'dots' | 'fluid'>('squares');
   const [style, setStyle] = useState<'default' | 'brand' | 'scan-me'>(
     'default'
   );
@@ -58,17 +55,15 @@ export default function QR() {
             setBgColor={setBgColor}
           />
 
-          <QRShapes shape={shape} setShape={setShape} />
           <QRStyles style={style} setStyle={setStyle} />
           <QRFormats format={format} setFormat={setFormat} />
         </div>
         <div>
           <QRDisplay
-            ref={ref as React.RefObject<QRCode>}
+            ref={ref as React.RefObject<HTMLCanvasElement>}
             value={value}
             color={color}
             bgColor={bgColor}
-            shape={shape}
             style={style}
           />
           <div className="mt-2 flex gap-2">
@@ -79,7 +74,6 @@ export default function QR() {
                 setValue('');
                 setColor('#000000');
                 setBgColor('#FFFFFF');
-                setShape('squares');
                 setStyle('default');
               }}
               disabled={
@@ -87,7 +81,6 @@ export default function QR() {
                 !value &&
                 color === '#000000' &&
                 bgColor === '#FFFFFF' &&
-                shape === 'squares' &&
                 style === 'default'
               }
             >
@@ -96,7 +89,16 @@ export default function QR() {
             <Button
               className="w-full"
               onClick={() => {
-                ref.current?.download(format, name || 'qr-code');
+                if (!ref.current) return;
+
+                const canvas = ref.current;
+                const link = document.createElement('a');
+
+                link.download = `${name || 'qr-code'}.${format}`;
+                link.href = canvas.toDataURL(`image/${format}`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
               }}
             >
               {t('common.download')}

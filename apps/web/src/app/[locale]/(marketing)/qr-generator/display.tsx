@@ -1,21 +1,19 @@
 import LogoTitle from '../../logo-title';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { QRCode } from 'react-qrcode-logo';
+import { QRCodeCanvas } from 'qrcode.react';
 
 function QRDisplay({
   ref,
   value,
   color,
   bgColor,
-  shape,
   style,
 }: {
-  ref: React.RefObject<QRCode>;
+  ref: React.RefObject<HTMLCanvasElement>;
   value: string;
   color: string;
   bgColor: string;
-  shape: 'squares' | 'dots' | 'fluid';
   style: 'default' | 'brand' | 'scan-me';
 }) {
   const t = useTranslations();
@@ -31,12 +29,12 @@ function QRDisplay({
         className="aspect-square w-full rounded p-2 pb-0"
         style={{ backgroundColor: bgColor }}
       >
-        <QRCode
+        <QRCodeCanvas
           ref={ref}
           value={value}
           size={256}
-          quietZone={0}
-          qrStyle={shape}
+          marginSize={2}
+          className="rounded-lg"
           fgColor={color}
           bgColor={bgColor}
         />

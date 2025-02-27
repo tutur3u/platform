@@ -32,8 +32,8 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { QRCodeCanvas } from 'qrcode.react';
 import React, { useEffect, useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 
 export interface ChatPanelProps
   extends Pick<
@@ -413,12 +413,11 @@ export function ChatPanel({
                   <Separator className="my-4" />
 
                   <div className="flex items-center justify-center">
-                    <QRCode
+                    <QRCodeCanvas
                       value={`${BASE_URL}/ai/chats/${id}`}
                       size={256}
-                      style={{
-                        borderRadius: '0.5rem',
-                      }}
+                      marginSize={2}
+                      className="rounded-lg"
                     />
                   </div>
                 </>

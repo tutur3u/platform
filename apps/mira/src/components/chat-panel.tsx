@@ -33,7 +33,6 @@ import {
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 
 export interface ChatPanelProps
   extends Pick<
@@ -407,22 +406,6 @@ export function ChatPanel({
                   <div className="line-clamp-1">{t('only_me')}</div>
                 </Button>
               </div>
-
-              {chat?.is_public && (
-                <>
-                  <Separator className="my-4" />
-
-                  <div className="flex items-center justify-center">
-                    <QRCode
-                      value={`${BASE_URL}/ai/chats/${id}`}
-                      size={256}
-                      style={{
-                        borderRadius: '0.5rem',
-                      }}
-                    />
-                  </div>
-                </>
-              )}
 
               <Separator className="my-4" />
 

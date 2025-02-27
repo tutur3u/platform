@@ -16,8 +16,8 @@ import {
   LinkIcon,
   Lock,
 } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import React, { useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 
 interface DocumentShareDialogProps {
   isOpen: boolean;
@@ -94,12 +94,11 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
             <>
               <Separator className="my-4" />
               <div className="flex items-center justify-center">
-                <QRCode
+                <QRCodeCanvas
                   value={publicLink}
                   size={256}
-                  style={{
-                    borderRadius: '0.5rem',
-                  }}
+                  marginSize={2}
+                  className="rounded-lg"
                 />
               </div>
             </>

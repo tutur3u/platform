@@ -82,14 +82,14 @@ export function TopThreeCards({ data }: TopThreeCardsProps) {
               <p className="text-2xl font-bold tracking-tight">
                 {entry.username}
               </p>
-              <p className="text-muted-foreground mt-2 flex items-center">
+              <p className="mt-2 flex items-center text-muted-foreground">
                 <span className="text-lg font-semibold">
                   {entry.totalScore.toLocaleString()}
                 </span>
                 <span className="ml-2">points</span>
               </p>
             </CardContent>
-            <div className="absolute bottom-0 right-0 h-32 w-32 translate-x-8 translate-y-8 transform rounded-full bg-white/10 blur-2xl" />
+            <div className="absolute right-0 bottom-0 h-32 w-32 translate-x-8 translate-y-8 transform rounded-full bg-white/10 blur-2xl" />
           </Card>
         );
       })}
