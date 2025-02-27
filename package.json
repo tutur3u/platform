@@ -6,6 +6,7 @@
     "buildx": "pnpm i && bun i && turbo test lint build",
     "dev": "turbo run dev --parallel",
     "devx": "cd apps/db && pnpm supabase stop && pnpm i && pnpm supabase start && cd ../.. && turbo run dev --parallel",
+    "devrs": "cd apps/db && pnpm supabase stop && pnpm i && pnpm supabase start && pnpm sb:reset && cd ../.. && turbo run dev --parallel",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",

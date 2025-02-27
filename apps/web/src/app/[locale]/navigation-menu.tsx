@@ -22,12 +22,14 @@ import {
   GraduationCap,
   HardHat,
   Hotel,
+  Info,
   Paintbrush,
   Pill,
   Presentation,
   Shield,
   Sparkles,
   Store,
+  Users,
   UsersRound,
   Utensils,
   WandSparkles,
@@ -205,10 +207,22 @@ export function MainNavigationMenu() {
       icon: <BookText className="h-4 w-4" />,
     },
     {
+      title: t('common.about'),
+      href: '/about',
+      description: t('common.about-description'),
+      icon: <Info className="h-4 w-4" />,
+    },
+    {
       title: t('common.changelog'),
       href: '/changelog',
       description: t('common.changelog-description'),
       icon: <FileText className="h-4 w-4" />,
+    },
+    {
+      title: t('common.careers'),
+      href: '/careers',
+      description: t('common.careers-description'),
+      icon: <Users className="h-4 w-4" />,
     },
     {
       title: t('common.security'),
@@ -346,34 +360,6 @@ export function MainNavigationMenu() {
             >
               <span className="flex items-center gap-2">
                 {t('common.pricing')}
-              </span>
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
-
-        <NavigationMenuItem>
-          <Link href="/about" legacyBehavior passHref>
-            <NavigationMenuLink
-              className={cn(
-                navigationMenuTriggerStyle(),
-                'bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
-              )}
-            >
-              {t('common.about')}
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
-
-        <NavigationMenuItem>
-          <Link href="/careers" legacyBehavior passHref>
-            <NavigationMenuLink
-              className={cn(
-                navigationMenuTriggerStyle(),
-                'group bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
-              )}
-            >
-              <span className="flex items-center gap-2">
-                {t('common.careers')}
               </span>
             </NavigationMenuLink>
           </Link>
