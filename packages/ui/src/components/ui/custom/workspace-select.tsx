@@ -1,6 +1,5 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -61,7 +60,7 @@ export function WorkspaceSelect({
   hideLeading,
 }: {
   t: any;
-  localUseQuery: typeof useQuery;
+  localUseQuery: any;
   hideLeading?: boolean;
 }) {
   const router = useRouter();
@@ -138,7 +137,7 @@ export function WorkspaceSelect({
       id: 'workspaces',
       label: t('common.workspaces'),
       teams:
-        workspaces?.map((workspace) => ({
+        workspaces?.map((workspace: Workspace) => ({
           label: workspace.name || 'Untitled',
           value: workspace.id,
         })) || [],
@@ -158,7 +157,7 @@ export function WorkspaceSelect({
     }
   };
 
-  const workspace = workspaces?.find((ws) => ws.id === wsId);
+  const workspace = workspaces?.find((ws: Workspace) => ws.id === wsId);
 
   // Toggle the menu when ⌘K is pressed
   useEffect(() => {
@@ -238,35 +237,35 @@ export function WorkspaceSelect({
               <CommandList className="max-h-64">
                 {groups.map((group) => (
                   <CommandGroup key={group.label} heading={group.label}>
-                    {group.teams.map((ws) => (
+                    {group.teams.map((team: any) => (
                       <CommandItem
-                        key={ws.value}
+                        key={team.value}
                         onSelect={() => {
-                          if (!ws?.value || ws?.value === wsId) return;
-                          onValueChange(ws.value);
+                          if (!team?.value || team?.value === wsId) return;
+                          onValueChange(team.value);
                           setOpen(false);
                         }}
                         className={`text-sm ${
                           group.id === 'personal' ? 'opacity-50' : ''
                         }`}
-                        disabled={!ws || group.id === 'personal'}
+                        disabled={!team || group.id === 'personal'}
                       >
                         <Avatar className="mr-2 h-5 w-5">
                           <AvatarImage
-                            src={`https://avatar.vercel.sh/${ws.label}.png`}
-                            alt={ws.label}
+                            src={`https://avatar.vercel.sh/${team.label}.png`}
+                            alt={team.label}
                             className="grayscale"
                           />
                           <AvatarFallback>
-                            {getInitials(ws.label)}
+                            {getInitials(team.label)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="line-clamp-1">{ws.label}</span>
+                        <span className="line-clamp-1">{team.label}</span>
                         {group.id !== 'personal' && (
                           <CheckIcon
                             className={cn(
                               'ml-auto h-4 w-4',
-                              wsId === ws.value ? 'opacity-100' : 'opacity-0'
+                              wsId === team.value ? 'opacity-100' : 'opacity-0'
                             )}
                           />
                         )}
