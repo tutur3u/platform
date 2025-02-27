@@ -1,9 +1,8 @@
-import LogoTitle from './logo-title';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import { MainNavigationMenu } from './navigation-menu';
 import ServerMenu from './server-menu';
-import WorkspaceSelect from './workspace-select';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -34,14 +33,6 @@ export default function Navbar({
               />
               <LogoTitle />
             </Link>
-
-            <Suspense
-              fallback={
-                <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
-              }
-            >
-              <WorkspaceSelect />
-            </Suspense>
 
             <div className="ml-4 hidden w-full md:block">
               <MainNavigationMenu />

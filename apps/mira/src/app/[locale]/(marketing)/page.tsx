@@ -1,10 +1,10 @@
 'use client';
 
 import { getFeatures } from './features';
-import GetStartedButton from './get-started-button';
 import GradientHeadline from './gradient-headline';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
+import { GetStartedGradientButton } from '@tuturuuu/ui/custom/get-started-gradient-button';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
@@ -130,7 +130,10 @@ export default function MarketingPage() {
             </h2>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <GetStartedButton href="/login" />
+              <GetStartedGradientButton
+                text={t('home.get-started')}
+                href="/login"
+              />
             </div>
           </motion.div>
         </div>

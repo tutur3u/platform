@@ -1,6 +1,5 @@
 'use client';
 
-import { getInitials } from '@/utils/name-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
@@ -45,8 +44,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -56,19 +55,22 @@ const FormSchema = z.object({
   plan: z.enum(['FREE', 'PRO', 'ENTERPRISE']),
 });
 
-export default function WorkspaceSelect({
+export function WorkspaceSelect({
+  t,
+  localUseQuery,
   hideLeading,
 }: {
+  t: any;
+  localUseQuery: typeof useQuery;
   hideLeading?: boolean;
 }) {
-  const t = useTranslations();
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
 
   const wsId = params.wsId as string | undefined;
 
-  const workspacesQuery = useQuery({
+  const workspacesQuery = localUseQuery({
     queryKey: ['workspaces'],
     queryFn: fetchWorkspaces,
     enabled: !!wsId,

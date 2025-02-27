@@ -1,11 +1,11 @@
 import InviteMemberButton from './invite-member-button';
 import { MemberSettingsButton } from './member-settings-button';
 import { getCurrentUser } from '@/lib/user-helper';
-import { getInitials } from '@/utils/name-helper';
 import { User } from '@tuturuuu/types/primitives/User';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { cn } from '@tuturuuu/utils/format';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { User as UserIcon } from 'lucide-react';
 import moment from 'moment';
 import { getLocale, getTranslations } from 'next-intl/server';

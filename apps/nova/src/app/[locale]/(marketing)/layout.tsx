@@ -1,4 +1,4 @@
-import Header from './header';
+import Navbar from './navbar';
 import Footer from '@/components/Footer';
 import React from 'react';
 
@@ -9,11 +9,11 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <>
-      <Header></Header>
+      <Navbar hideMetadata />
       <div id="main-content" className="flex flex-col pt-[53px]">
         {children}
       </div>
-      <Footer></Footer>
+      <Footer />
     </>
   );
 }

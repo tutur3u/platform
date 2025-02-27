@@ -1,3 +1,4 @@
+import { Providers } from './providers';
 import { siteConfig } from '@/constants/configs';
 import { routing, supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
@@ -98,6 +99,7 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children, params }: Props) {
+  // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes((await params).locale as any)) {
     notFound();
   }
@@ -108,12 +110,19 @@ export default async function RootLayout({ children, params }: Props) {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={cn('overflow-y-scroll antialiased', font.className)}>
+      <body
+        className={cn(
+          'overflow-y-scroll bg-background antialiased',
+          font.className
+        )}
+      >
         <VercelAnalytics />
         <VercelInsights />
-        <NextIntlClientProvider messages={messages}>
-          {children}
-        </NextIntlClientProvider>
+        <Providers>
+          <NextIntlClientProvider messages={messages}>
+            {children}
+          </NextIntlClientProvider>
+        </Providers>
         <Toaster />
       </body>
     </html>

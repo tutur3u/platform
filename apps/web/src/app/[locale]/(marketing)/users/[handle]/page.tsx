@@ -1,7 +1,7 @@
-import { getInitials } from '@/utils/name-helper';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { User } from 'lucide-react';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';

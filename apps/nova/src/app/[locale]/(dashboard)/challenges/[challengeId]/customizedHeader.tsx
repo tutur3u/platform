@@ -1,8 +1,8 @@
 import CountdownTimer from './components/challengeButton';
 import ProblemChanger from './problem-changer';
-import LogoTitle from '@/app/[locale]/(marketing)/logo-title';
 import NavbarSeparator from '@/app/[locale]/(marketing)/navbar-separator';
 import { Button } from '@tuturuuu/ui/button';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';

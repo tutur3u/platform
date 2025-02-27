@@ -1,10 +1,9 @@
 'use client';
 
-import LogoTitle from '../../logo-title';
-import WorkspaceSelect from '../../workspace-select';
 import { Nav } from './nav';
 import { NavLink } from '@/components/navigation';
 import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
+import { useQuery } from '@tanstack/react-query';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
@@ -16,6 +15,8 @@ import {
   BreadcrumbSeparator,
 } from '@tuturuuu/ui/breadcrumb';
 import { Button } from '@tuturuuu/ui/button';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -246,7 +247,11 @@ export function Structure({
                         <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
                       }
                     >
-                      <WorkspaceSelect hideLeading={isCollapsed} />
+                      <WorkspaceSelect
+                        t={t}
+                        hideLeading={isCollapsed}
+                        localUseQuery={useQuery}
+                      />
                     </Suspense>
                     {isCollapsed || (
                       <Button

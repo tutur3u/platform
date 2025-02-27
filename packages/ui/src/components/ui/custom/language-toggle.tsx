@@ -1,17 +1,16 @@
 'use client';
 
-import { Locale } from '@/i18n/routing';
-import { Button } from '@tuturuuu/ui/button';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { Button } from '../button';
+import { LoadingIndicator } from './loading-indicator';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export default function LanguageToggle({
+export function LanguageToggle({
   forceDisplay = false,
   currentLocale,
 }: {
   forceDisplay?: boolean;
-  currentLocale: Locale;
+  currentLocale: string;
 }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();

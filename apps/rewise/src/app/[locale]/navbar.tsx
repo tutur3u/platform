@@ -1,7 +1,7 @@
-import LogoTitle from './logo-title';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import ServerMenu from './server-menu';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -30,7 +30,13 @@ export default function Navbar({
                 height={32}
                 alt="logo"
               />
-              <LogoTitle />
+              <LogoTitle
+                text="Rewise"
+                className={cn(
+                  'bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
+                  'text-4xl font-bold md:text-3xl lg:text-4xl'
+                )}
+              />
             </Link>
           </div>
 

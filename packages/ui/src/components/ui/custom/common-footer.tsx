@@ -2,7 +2,11 @@ import { Separator } from '../separator';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export function CommonFooter({ t }: { t: any }) {
+export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
+  const TUTURUUU_URL = devMode
+    ? 'http://localhost:7803'
+    : 'https://tuturuuu.com';
+
   return (
     <div className="w-full text-center">
       {/* {pathname.startsWith('/contact') || (
@@ -105,31 +109,31 @@ export function CommonFooter({ t }: { t: any }) {
               {t('common.resources')}
             </div>
             <Link
-              href="https://tuturuuu.com/blog"
+              href={`${TUTURUUU_URL}/blog`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.blog')}
             </Link>
             <Link
-              href="https://tuturuuu.com/changelog"
+              href={`${TUTURUUU_URL}/changelog`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.changelog')}
             </Link>
             <Link
-              href="https://tuturuuu.com/meet-together"
+              href={`${TUTURUUU_URL}/meet-together`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.meet-together')}
             </Link>
             <Link
-              href="https://tuturuuu.com/qr-generator"
+              href={`${TUTURUUU_URL}/qr-generator`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.qr_generator')}
             </Link>
             <Link
-              href="https://tuturuuu.com/branding"
+              href={`${TUTURUUU_URL}/branding`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.branding')}
@@ -141,19 +145,19 @@ export function CommonFooter({ t }: { t: any }) {
               {t('common.company')}
             </div>
             <Link
-              href="https://tuturuuu.com/about"
+              href={`${TUTURUUU_URL}/about`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.about')}
             </Link>
             <Link
-              href="https://tuturuuu.com/contact"
+              href={`${TUTURUUU_URL}/contact`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.contact')}
             </Link>
             <Link
-              href="https://tuturuuu.com/pricing"
+              href={`${TUTURUUU_URL}/pricing`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.pricing')}
@@ -165,19 +169,19 @@ export function CommonFooter({ t }: { t: any }) {
               {t('common.legal')}
             </div>
             <Link
-              href="https://tuturuuu.com/security"
+              href={`${TUTURUUU_URL}/security`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.security')}
             </Link>
             <Link
-              href="https://tuturuuu.com/terms"
+              href={`${TUTURUUU_URL}/terms`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.terms')}
             </Link>
             <Link
-              href="https://tuturuuu.com/privacy"
+              href={`${TUTURUUU_URL}/privacy`}
               className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.privacy')}

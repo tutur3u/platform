@@ -1,4 +1,4 @@
-import LogoTitle from '../../logo-title';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { cn } from '@tuturuuu/utils/format';
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';

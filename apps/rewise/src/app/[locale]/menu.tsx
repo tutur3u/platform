@@ -1,10 +1,10 @@
 'use client';
 
 import { AuthButton } from './auth-button';
-import { ThemeToggle } from './theme-toggle';
 import { PUBLIC_PATHS } from '@/constants/common';
 import { type SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Sheet, SheetContent, SheetTrigger } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';

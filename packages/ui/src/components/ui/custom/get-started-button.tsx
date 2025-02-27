@@ -1,15 +1,12 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
+import { Button } from '../button';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function GetStartedButton() {
-  const t = useTranslations();
+export function GetStartedButton({ text }: { text: string }) {
   const pathname = usePathname();
-
   const hidden = pathname === '/login';
 
   return (
@@ -22,7 +19,7 @@ export default function GetStartedButton() {
             'pointer-events-none text-foreground/50 opacity-50 select-none'
         )}
       >
-        {t('common.get-started')}
+        {text}
       </Button>
     </Link>
   );

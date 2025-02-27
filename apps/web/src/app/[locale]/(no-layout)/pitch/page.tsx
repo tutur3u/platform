@@ -1,8 +1,8 @@
 'use client';
 
 import GradientHeadline from '../../(marketing)/gradient-headline';
-import { ThemeToggle } from '../../theme-toggle';
 import { Button } from '@tuturuuu/ui/button';
+import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { cn } from '@tuturuuu/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import {

@@ -1,13 +1,13 @@
 'use client';
 
 import { LogoutDropdownItem } from '../logout-dropdown-item';
-import { ThemeToggle } from '../playground/theme-toggle';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import {
   DropdownMenu,
   DropdownMenuContent,

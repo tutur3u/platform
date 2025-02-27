@@ -1,4 +1,4 @@
-import { getInitials } from '@/utils/name-helper';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { describe, expect, it } from 'vitest';
 
 describe('getInitials', () => {

@@ -1,11 +1,11 @@
 'use client';
 
 import FloatingElements from './floating-elements';
-import GetStartedButton from './get-started-button';
 import GradientHeadline from './gradient-headline';
 import { fireConfetti, fireRocket } from '@/lib/confetti';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
+import { GetStartedGradientButton } from '@tuturuuu/ui/custom/get-started-gradient-button';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
   InfinityIcon,
@@ -257,7 +257,10 @@ export default function MarketingPage() {
             </h2>
 
             <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
-              <GetStartedButton href="/login" />
+              <GetStartedGradientButton
+                text={t('home.get-started')}
+                href="/login"
+              />
             </div>
 
             {/* Trust Indicators */}
