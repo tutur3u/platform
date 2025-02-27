@@ -1,6 +1,6 @@
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import { Brain, Crown, Star, Target } from 'lucide-react';
+import { Crown, Star, Target } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function FloatingNav() {
@@ -11,7 +11,6 @@ export default function FloatingNav() {
     { id: 'hero', icon: Star, label: 'Top' },
     { id: 'neo-league', icon: Crown, label: 'NEO League' },
     { id: 'features', icon: Target, label: 'Features' },
-    { id: 'ai', icon: Brain, label: 'AI Features' },
   ];
 
   useEffect(() => {
