@@ -1,6 +1,16 @@
 'use client';
 
 import { DEV_MODE } from '@/constants/common';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -29,7 +39,7 @@ const FormSchema = z.object({
 });
 
 export default function LoginForm() {
-  const t = useTranslations('login');
+  const t = useTranslations();
   const locale = useLocale();
 
   const router = useRouter();
@@ -82,6 +92,9 @@ export default function LoginForm() {
     }
   }, [resendCooldown]);
 
+  const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [emailForConsent, setEmailForConsent] = useState('');
+
   const sendOtp = async (data: { email: string }) => {
     if (!locale || !data.email) return;
     setLoading(true);
@@ -94,8 +107,8 @@ export default function LoginForm() {
     if (res.ok) {
       // Notify user
       toast({
-        title: t('success'),
-        description: t('otp_sent'),
+        title: t('login.success'),
+        description: t('login.otp_sent'),
       });
 
       // OTP has been sent
@@ -107,8 +120,8 @@ export default function LoginForm() {
       setResendCooldown(cooldown);
     } else {
       toast({
-        title: t('failed'),
-        description: t('failed_to_send'),
+        title: t('login.failed'),
+        description: t('login.failed_to_send'),
       });
     }
 
@@ -136,12 +149,12 @@ export default function LoginForm() {
     } else {
       setLoading(false);
 
-      form.setError('otp', { message: t('invalid_verification_code') });
+      form.setError('otp', { message: t('login.invalid_verification_code') });
       form.setValue('otp', '');
 
       toast({
-        title: t('failed'),
-        description: t('failed_to_verify'),
+        title: t('login.failed'),
+        description: t('login.failed_to_verify'),
       });
     }
   };
@@ -157,8 +170,10 @@ export default function LoginForm() {
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     const { email, otp } = data;
 
-    if (!otpSent) await sendOtp({ email });
-    else if (otp) await verifyOtp({ email, otp });
+    if (!otpSent) {
+      setEmailForConsent(email);
+      setShowConsentDialog(true);
+    } else if (otp) await verifyOtp({ email, otp });
     else {
       setLoading(false);
       toast({
@@ -170,116 +185,180 @@ export default function LoginForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('email_placeholder')}
-                  {...field}
-                  disabled={otpSent || loading}
-                />
-              </FormControl>
-
-              {otpSent || (
-                <FormDescription>{t('email_description')}</FormDescription>
-              )}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="otp"
-          render={({ field }) => (
-            <FormItem className={otpSent ? '' : 'hidden'}>
-              <FormLabel>{t('otp_code')}</FormLabel>
-              <FormControl>
-                <div className="flex flex-col gap-2 md:flex-row">
-                  <InputOTP
-                    maxLength={maxOTPLength}
-                    {...field}
-                    onChange={(value) => {
-                      form.setValue('otp', value);
-                      if (value.length === maxOTPLength)
-                        form.handleSubmit(onSubmit)();
-                    }}
-                    disabled={loading}
-                  >
-                    <InputOTPGroup className="w-full justify-center">
-                      {Array.from({ length: maxOTPLength }).map((_, index) => (
-                        <InputOTPSlot
-                          key={index}
-                          index={index}
-                          className="max-md:w-full"
-                        />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
-
-                  <Button
-                    onClick={() => sendOtp({ email: form.getValues('email') })}
-                    disabled={loading || resendCooldown > 0}
-                    className="md:w-full"
-                    variant="secondary"
-                    type="button"
-                  >
-                    {resendCooldown > 0
-                      ? `${t('resend')} (${resendCooldown})`
-                      : t('resend')}
-                  </Button>
-                </div>
-              </FormControl>
-              {form.formState.errors.otp && (
-                <FormMessage>{form.formState.errors.otp.message}</FormMessage>
-              )}
-              <FormDescription>{t('otp_description')}</FormDescription>
-            </FormItem>
-          )}
-        />
-
-        {otpSent && DEV_MODE && (
-          <div className="grid gap-2 md:grid-cols-2">
-            <Link
-              href={window.location.origin.replace('7803', '8004') + '/monitor'}
-              target="_blank"
-              className="col-span-full"
-              aria-disabled={loading}
-            >
-              <Button
-                type="button"
-                className="w-full"
-                variant="outline"
-                disabled={loading}
+    <>
+      <AlertDialog open={showConsentDialog} onOpenChange={setShowConsentDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('auth.tos')} & {t('auth.privacy')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('auth.by_continuing')}{' '}
+              <Link
+                href="https://tuturuuu.com/terms"
+                target="_blank"
+                className="font-semibold underline hover:text-foreground"
               >
-                <Mail size={18} className="mr-1" />
-                {t('open_inbucket')}
-              </Button>
-            </Link>
-          </div>
-        )}
+                {t('auth.tos')}
+              </Link>{' '}
+              and{' '}
+              <Link
+                href="https://tuturuuu.com/privacy"
+                target="_blank"
+                className="font-semibold underline hover:text-foreground"
+              >
+                {t('auth.privacy')}
+              </Link>
+              . {t('auth.consent_notice')}
+              <br />
+              <br />
+              {t('auth.your_email')}{' '}
+              <span className="font-semibold text-foreground">
+                "{emailForConsent}"
+              </span>{' '}
+              {t('auth.will_be_sent')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setShowConsentDialog(false);
+                setLoading(false);
+              }}
+            >
+              {t('auth.decline')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setShowConsentDialog(false);
+                await sendOtp({ email: emailForConsent });
+              }}
+            >
+              {t('auth.accept_and_continue')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-        <div className="grid gap-2">
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={
-              loading ||
-              form.formState.isSubmitting ||
-              !form.formState.isValid ||
-              (otpSent && !form.formState.dirtyFields.otp)
-            }
-          >
-            {loading ? t('processing') : t('continue')}
-          </Button>
-        </div>
-      </form>
-    </Form>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('login.email_placeholder')}
+                    {...field}
+                    disabled={otpSent || loading}
+                  />
+                </FormControl>
+
+                {otpSent || (
+                  <FormDescription>
+                    {t('login.email_description')}
+                  </FormDescription>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="otp"
+            render={({ field }) => (
+              <FormItem className={otpSent ? '' : 'hidden'}>
+                <FormLabel>{t('login.otp_code')}</FormLabel>
+                <FormControl>
+                  <div className="flex flex-col gap-2 md:flex-row">
+                    <InputOTP
+                      maxLength={maxOTPLength}
+                      {...field}
+                      onChange={(value) => {
+                        form.setValue('otp', value);
+                        if (value.length === maxOTPLength)
+                          form.handleSubmit(onSubmit)();
+                      }}
+                      disabled={loading}
+                    >
+                      <InputOTPGroup className="w-full justify-center">
+                        {Array.from({ length: maxOTPLength }).map(
+                          (_, index) => (
+                            <InputOTPSlot
+                              key={index}
+                              index={index}
+                              className="max-md:w-full"
+                            />
+                          )
+                        )}
+                      </InputOTPGroup>
+                    </InputOTP>
+
+                    <Button
+                      onClick={() =>
+                        sendOtp({ email: form.getValues('email') })
+                      }
+                      disabled={loading || resendCooldown > 0}
+                      className="md:w-full"
+                      variant="secondary"
+                      type="button"
+                    >
+                      {resendCooldown > 0
+                        ? `${t('login.resend')} (${resendCooldown})`
+                        : t('login.resend')}
+                    </Button>
+                  </div>
+                </FormControl>
+                {form.formState.errors.otp && (
+                  <FormMessage>{form.formState.errors.otp.message}</FormMessage>
+                )}
+                <FormDescription>{t('login.otp_description')}</FormDescription>
+              </FormItem>
+            )}
+          />
+
+          {otpSent && DEV_MODE && (
+            <div className="grid gap-2 md:grid-cols-2">
+              <Link
+                href={
+                  window.location.origin.replace('7803', '8004') + '/monitor'
+                }
+                target="_blank"
+                className="col-span-full"
+                aria-disabled={loading}
+              >
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant="outline"
+                  disabled={loading}
+                >
+                  <Mail size={18} className="mr-1" />
+                  {t('login.open_inbucket')}
+                </Button>
+              </Link>
+            </div>
+          )}
+
+          <div className="grid gap-2">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                loading ||
+                form.formState.isSubmitting ||
+                !form.formState.isValid ||
+                (otpSent && !form.formState.dirtyFields.otp)
+              }
+            >
+              {loading ? t('login.processing') : t('login.continue')}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </>
   );
 }

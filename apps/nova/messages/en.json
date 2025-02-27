@@ -426,7 +426,13 @@
     "notice-p1": "By continuing, you agree to Tuturuuu's",
     "notice-p2": " to receive periodic emails with updates",
     "tos": "Terms of Service",
-    "privacy": "Privacy Policy"
+    "privacy": "Privacy Policy",
+    "by_continuing": "By continuing, you agree to Tuturuuu's",
+    "consent_notice": "You consent to provide your email for authentication purposes and platform access. Other profile information will be optionally collected when you voluntarily fill in your profile details.",
+    "your_email": "Your email",
+    "will_be_sent": "will be used to send a one-time password (OTP) for authentication.",
+    "decline": "Decline",
+    "accept_and_continue": "Accept & Continue"
   },
   "auth-email-sent": {
     "email-sent-p1": "A confirmation email has been sent to your email",
