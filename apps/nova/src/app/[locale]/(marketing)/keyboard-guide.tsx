@@ -32,7 +32,7 @@ export default function KeyboardGuide() {
     <>
       <button
         onClick={() => setIsVisible(true)}
-        className="fixed right-4 bottom-4 z-50 rounded-full bg-primary/10 p-3 backdrop-blur-sm transition-transform hover:scale-110"
+        className="fixed right-4 bottom-4 z-50 hidden rounded-full bg-primary/10 p-3 backdrop-blur-sm transition-transform hover:scale-110 md:block"
         aria-label="Show keyboard shortcuts"
       >
         <KeyboardIcon className="h-5 w-5" />

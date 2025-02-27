@@ -47,7 +47,7 @@ export default function FloatingNav() {
         x: isVisible ? 0 : 50,
       }}
       transition={{ duration: 0.3 }}
-      className="fixed top-1/2 right-4 z-50 -translate-y-1/2 space-y-2"
+      className="fixed top-1/2 right-4 z-50 hidden -translate-y-1/2 space-y-2 md:block"
     >
       {sections.map(({ id, icon: Icon, label }) => (
         <motion.button

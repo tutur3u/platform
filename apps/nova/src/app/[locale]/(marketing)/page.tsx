@@ -252,22 +252,6 @@ export default function MarketingPage() {
               viewport={{ once: true }}
               className="relative w-full overflow-hidden py-24"
             >
-              <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.08)_1px,transparent_1px)] bg-[size:32px_32px]" />
-                <motion.div
-                  animate={{
-                    y: [-20, 20, -20],
-                    opacity: [0.3, 0.5, 0.3],
-                  }}
-                  transition={{
-                    duration: 10,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 via-transparent to-primary/10"
-                />
-              </div>
-
               <div className="relative mx-auto max-w-6xl px-4">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -283,7 +267,7 @@ export default function MarketingPage() {
                     Featured Event
                   </Badge>
 
-                  <h2 className="mb-4 bg-gradient-to-r from-primary via-dynamic-purple to-dynamic-blue bg-clip-text text-4xl font-bold text-transparent">
+                  <h2 className="mb-4 bg-gradient-to-r from-primary via-dynamic-purple to-dynamic-blue bg-clip-text text-4xl font-bold text-balance text-transparent">
                     NEO League Season 1
                   </h2>
 
