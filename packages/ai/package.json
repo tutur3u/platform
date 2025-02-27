@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "pnpm@10.4.1",
+  "packageManager": "pnpm@10.5.2",
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.0.5",
     "@ai-sdk/anthropic": "^1.1.11",
