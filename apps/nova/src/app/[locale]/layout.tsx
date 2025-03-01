@@ -25,8 +25,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
 
-  const enDescription = 'Take control of your workflow, supercharged by AI.';
-  const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
+  const enDescription =
+    'Master the art of prompt engineering with interactive challenges, comprehensive learning resources, and AI-powered tools.';
+  const viDescription =
+    'Làm chủ nghệ thuật prompt engineering với các thử thách tương tác, tài liệu học tập toàn diện và công cụ được hỗ trợ bởi AI.';
 
   const description = locale === 'vi' ? viDescription : enDescription;
 
@@ -38,11 +40,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     metadataBase: new URL(siteConfig.url),
     description,
     keywords: [
+      'Prompt Engineering',
+      'AI',
+      'Machine Learning',
       'Next.js',
       'React',
-      'Tailwind CSS',
-      'Server Components',
-      'Radix UI',
+      'Artificial Intelligence',
+      'LLM',
+      'Large Language Models',
+      'AI Training',
+      'AI Education',
     ],
     authors: [
       {
