@@ -43,7 +43,7 @@ export default function CountdownTimer({
           if (!response.ok) {
             throw new Error('Failed to end test');
           }
-          router.push(`/challenges/${challengeId}/test-ended`);
+          router.push(`/challenges/${challengeId}/results`);
         } catch (error) {
           console.error('Error ending test: ', error);
         }

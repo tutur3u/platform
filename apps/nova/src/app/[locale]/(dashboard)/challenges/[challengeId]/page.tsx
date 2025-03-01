@@ -85,7 +85,7 @@ export default function Page({ params }: Props) {
 
         // If challenge is ended, redirect to report page
         if (statusData?.status === 'ENDED') {
-          router.push(`/challenges/${challengeId}/test-ended`);
+          router.push(`/challenges/${challengeId}/results`);
         }
       }
     };
@@ -129,7 +129,7 @@ export default function Page({ params }: Props) {
       });
 
       if (response.ok) {
-        router.push(`/challenges/${challengeId}/test-ended`);
+        router.push(`/challenges/${challengeId}/results`);
       }
     }
   };
