@@ -11,13 +11,13 @@
   },
   "packageManager": "pnpm@10.5.2",
   "dependencies": {
-    "@react-email/components": "^0.0.32",
+    "@react-email/components": "^0.0.33",
     "@react-email/tailwind": "^1.0.4",
     "react": "19.0.0",
     "react-email": "^3.0.7"
   },
   "devDependencies": {
-    "@types/node": "^22.13.5",
+    "@types/node": "^22.13.7",
     "@types/react": "^19.0.10"
   }
 }
