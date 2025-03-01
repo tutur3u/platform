@@ -31,13 +31,13 @@ interface Problem {
   testcases: string[];
 }
 
-export default function ChatBox({ problem }: { problem: Problem }) {
+export default function PromptForm({ problem }: { problem: Problem }) {
   const [_messages, setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [_submissions, setSubmissions] = useState<HistoryEntry[]>([]);
+  const [submissions, setSubmissions] = useState<HistoryEntry[]>([]);
   const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
@@ -165,9 +165,9 @@ export default function ChatBox({ problem }: { problem: Problem }) {
             </DialogHeader>
 
             <div className="max-h-[400px] overflow-y-auto">
-              {_submissions && _submissions.length > 0 ? (
+              {submissions && submissions.length > 0 ? (
                 <ul>
-                  {_submissions.map((entry, index) => (
+                  {submissions.map((entry, index) => (
                     <li key={index}>
                       <div className="flex justify-between pt-5">
                         <span>Attempt {index + 1}:</span>
@@ -202,7 +202,7 @@ export default function ChatBox({ problem }: { problem: Problem }) {
           </div>
         )}
 
-        {!loading && _submissions.length > 0 && (
+        {!loading && submissions.length > 0 && (
           <div className="text-foreground mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 shadow-md">
             <h3 className="text-2xl font-semibold text-gray-800">
               Your Last Attempt
@@ -214,7 +214,7 @@ export default function ChatBox({ problem }: { problem: Problem }) {
                     <strong className="font-medium text-gray-900">
                       Prompt:{' '}
                     </strong>
-                    {_submissions[_submissions?.length - 1]?.user_prompt}
+                    {submissions[submissions?.length - 1]?.user_prompt}
                   </p>
                 </div>
                 <div>
@@ -222,7 +222,7 @@ export default function ChatBox({ problem }: { problem: Problem }) {
                     <strong className="font-medium text-gray-900">
                       Score:{' '}
                     </strong>
-                    {_submissions[_submissions?.length - 1]?.score}/10
+                    {submissions[submissions?.length - 1]?.score}/10
                   </p>
                 </div>
               </div>
