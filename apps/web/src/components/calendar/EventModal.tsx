@@ -35,7 +35,7 @@ export function EventModal() {
     description: '',
     start_at: new Date().toISOString(),
     end_at: new Date(new Date().getTime() + 60 * 60 * 1000).toISOString(), // Default to 1 hour
-    color: 'blue',
+    color: 'BLUE',
   });
 
   const [isAllDay, setIsAllDay] = useState(false);
@@ -68,7 +68,7 @@ export function EventModal() {
         description: '',
         start_at: now.toISOString(),
         end_at: oneHourLater.toISOString(),
-        color: 'blue',
+        color: 'BLUE',
       });
       setIsAllDay(false);
     }
@@ -223,8 +223,8 @@ export function EventModal() {
           <div className="grid gap-2">
             <Label>Color</Label>
             <ColorPicker
-              value={event.color || 'blue'}
-              color={event.color || 'blue'}
+              value={event.color || 'BLUE'}
+              color={event.color || 'BLUE'}
               onChange={(color) =>
                 setEvent({ ...event, color: color as SupportedColor })
               }
