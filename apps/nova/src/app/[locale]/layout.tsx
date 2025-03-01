@@ -109,10 +109,14 @@ export default async function RootLayout({ children, params }: Props) {
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      className="w-screen overflow-x-hidden"
+      suppressHydrationWarning
+    >
       <body
         className={cn(
-          'overflow-y-scroll bg-background antialiased',
+          'w-screen overflow-x-hidden overflow-y-scroll bg-background antialiased',
           font.className
         )}
       >

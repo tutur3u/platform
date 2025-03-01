@@ -9,29 +9,36 @@ export default function NavbarSeparator() {
   const [scroll, setScroll] = useState(0);
 
   useEffect(() => {
-    const mainContentElement = document.getElementById('main-content');
-
     const handleScroll = () => {
-      if (mainContentElement) {
-        setScroll(mainContentElement.scrollTop);
-      }
+      setScroll(window.scrollY);
     };
 
     // Set initial scroll value
     handleScroll();
 
     // Add event listener
-    if (mainContentElement) {
-      mainContentElement.addEventListener('scroll', handleScroll);
-    }
+    window.addEventListener('scroll', handleScroll);
 
     // Remove event listener
-    return () => {
-      if (mainContentElement) {
-        mainContentElement.removeEventListener('scroll', handleScroll);
-      }
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // when scrolled down, remove bg-transparent and add bg-background
+  // to the navbar-content's className
+  useEffect(() => {
+    const navbarContent = document.getElementById('navbar-content');
+    if (!navbarContent) return;
+
+    if (scroll > 0) {
+      navbarContent.classList.remove('bg-transparent');
+      navbarContent.classList.add('bg-background/50');
+      navbarContent.classList.add('backdrop-blur-md');
+    } else {
+      navbarContent.classList.remove('bg-background/50');
+      navbarContent.classList.remove('backdrop-blur-md');
+      navbarContent.classList.add('bg-transparent');
+    }
+  }, [scroll]);
 
   const forceShow = pathname.startsWith('/docs');
 

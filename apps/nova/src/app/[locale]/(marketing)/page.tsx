@@ -1,31 +1,22 @@
 'use client';
 
 import GradientHeadline from '../gradient-headline';
+import AiFeatures from './ai-features';
 import AnimatedTimeline from './animated-timeline';
-import FloatingNav from './floating-nav';
-import KeyboardGuide from './keyboard-guide';
-import ParallaxBackground from './parallax-background';
-import ScrollProgress from './scroll-progress';
-import ScrollToTop from './scroll-to-top';
-import { useKeyboardNav } from './use-keyboard-nav';
+import FeatureShowcase from './feature-showcase';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { Separator } from '@tuturuuu/ui/separator';
-import { motion } from 'framer-motion';
+import { type Variants, motion } from 'framer-motion';
 import {
   ArrowRight,
-  Brain,
   CalendarDays,
   CheckCircle,
   Clock,
-  Code,
-  FileCode2,
   GraduationCap,
-  LineChart,
   MapPin,
-  MessageSquareCode,
   RocketIcon,
   School,
   Sparkles,
@@ -36,39 +27,36 @@ import {
   Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+
+// Dynamically import HeroAnimation with no SSR to prevent hydration issues
+const HeroAnimation = dynamic(() => import('./hero-animation'), {
+  ssr: false,
+});
 
 export default function MarketingPage() {
   const t = useTranslations();
-  const [scrollProgress, setScrollProgress] = useState(0);
 
-  const sections = [
-    { id: 'hero', label: 'Top' },
-    { id: 'neo-league', label: 'NEO League' },
-    { id: 'features', label: 'Features' },
-    { id: 'learning', label: 'Learning' },
-    { id: 'ai', label: 'AI Features' },
-  ];
-
-  const { isNavigating } = useKeyboardNav(sections);
-
-  // Animation variants
   const containerVariants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 0, y: 20 },
     show: {
       opacity: 1,
+      y: 0,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: 0.15,
+        duration: 0.8,
+        ease: 'easeOut',
       },
     },
   };
 
   const cardVariants = {
-    hidden: { scale: 0.95, opacity: 0 },
+    hidden: { scale: 0.95, opacity: 0, y: 20 },
     show: {
       scale: 1,
       opacity: 1,
+      y: 0,
       transition: {
         type: 'spring',
         stiffness: 100,
@@ -76,7 +64,8 @@ export default function MarketingPage() {
       },
     },
     hover: {
-      scale: 1.02,
+      scale: 1.03,
+      y: -5,
       transition: {
         type: 'spring',
         stiffness: 400,
@@ -85,166 +74,114 @@ export default function MarketingPage() {
     },
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const winScroll = window.scrollY;
-      const height = document.documentElement.scrollHeight - window.innerHeight;
-      const scrolled = (winScroll / height) * 100;
-      setScrollProgress(scrolled);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // Enhanced floating effect variants with reduced movement for better performance
+  const floatingVariants = {
+    initial: { y: 0 },
+    float: {
+      y: [-8, 8],
+      transition: {
+        duration: 5,
+        repeat: Infinity,
+        repeatType: 'mirror',
+        ease: 'easeInOut',
+      },
+    },
+  } as Variants;
 
   return (
     <>
-      <ScrollProgress />
-      <FloatingNav />
-      <KeyboardGuide />
-      <ScrollToTop />
-
-      <>
-        {/* Keyboard Navigation Indicator */}
-        {isNavigating && (
-          <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-background/80 px-4 py-2 text-sm backdrop-blur-sm">
-            Keyboard navigation active - Use ↑/↓ to navigate
-          </div>
-        )}
-
-        {/* Scroll Progress Indicator */}
-        <motion.div
-          className="fixed top-0 right-0 left-0 z-50 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
-          style={{
-            scaleX: scrollProgress / 100,
-            transformOrigin: '0%',
-          }}
-        />
-
-        <div className="relative flex h-full min-h-screen w-full flex-col items-center">
-          {/* Enhanced Animated Background Patterns */}
-          <div className="pointer-events-none fixed inset-0 overflow-hidden">
+      <HeroAnimation />
+      <div className="relative flex h-full min-h-screen w-full flex-col items-center will-change-transform">
+        <section id="hero" className="relative w-full">
+          <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-24 sm:py-32">
+            {/* Existing hero content */}
             <motion.div
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.5, 0.3],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute top-0 -left-32 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
-            />
-            <motion.div
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.2, 0.4, 0.2],
-              }}
-              transition={{
-                duration: 10,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute top-[30%] -right-32 h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
-            />
-            <motion.div
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.2, 0.3, 0.2],
-              }}
-              transition={{
-                duration: 12,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute -bottom-32 left-1/2 h-[22.5rem] w-[22.5rem] -translate-x-1/2 rounded-full bg-gradient-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-[45rem] sm:w-[45rem]"
-            />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:120px] opacity-20" />
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0.1, 0.15, 0.1] }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
-            />
-          </div>
-
-          {/* Improved Hero Section */}
-          <section id="hero" aria-label="Welcome to Nova">
-            <ParallaxBackground />
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1 }}
-              className="relative mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-32"
+              variants={floatingVariants}
+              initial="initial"
+              animate="float"
+              className="relative"
             >
-              {/* Enhanced Floating Badge */}
-              <motion.div
-                animate={{
-                  y: [0, -10, 0],
-                  rotate: [0, 2, -2, 0],
-                }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
+              <Badge
+                variant="outline"
+                className="group relative mb-8 overflow-hidden border-transparent backdrop-blur-sm"
               >
-                <Badge
-                  variant="outline"
-                  className="mb-8 border-primary/50 text-primary backdrop-blur-sm"
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
+                <motion.div
+                  className="absolute inset-0 bg-foreground/10 opacity-100 transition-opacity"
+                  whileHover={{ opacity: 1 }}
+                />
+                <Sparkles className="mr-2 h-4 w-4" />
+                <span className="relative z-10">
                   Welcome to the Future of Prompt Engineering
-                </Badge>
-              </motion.div>
-
-              <h1 className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl">
-                Master the Art of
-                <br />
-                <GradientHeadline title="Prompt Engineering" />
-              </h1>
-
-              <div className="mb-8 max-w-2xl text-center text-lg text-balance text-muted-foreground">
-                Your playground for crafting, testing, and perfecting AI
-                prompts. Join a community of innovators solving real-world
-                problems through advanced prompt engineering.
-              </div>
-
-              <div className="mb-12 flex flex-col items-center gap-4 sm:flex-row">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <GetStartedButton text={t('home.get-started')} />
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link href="/challenges">
-                    <Button
-                      variant="outline"
-                      className="group relative overflow-hidden"
-                    >
-                      <span className="relative z-10 flex items-center">
-                        Explore Challenges
-                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                      </span>
-                    </Button>
-                  </Link>
-                </motion.div>
-              </div>
+                </span>
+              </Badge>
             </motion.div>
-          </section>
 
-          {/* NEO League Section with Enhanced Visuals */}
-          <section id="neo-league" aria-label="NEO League Information">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl"
+            >
+              Master the Art of
+              <br />
+              <GradientHeadline title="Prompt Engineering" />
+            </motion.h1>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/50"
+            >
+              Your playground for crafting, testing, and perfecting AI prompts.
+              Join a community of innovators solving real-world problems through
+              advanced prompt engineering.
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="mb-12 flex flex-col items-center gap-4 sm:flex-row"
+            >
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: 'spring', stiffness: 400 }}
+              >
+                <GetStartedButton text={t('home.get-started')} />
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: 'spring', stiffness: 400 }}
+              >
+                <Link href="/challenges">
+                  <Button
+                    variant="outline"
+                    className="group relative overflow-hidden"
+                  >
+                    <motion.span
+                      className="absolute inset-0 bg-primary/10"
+                      initial={{ x: '-100%' }}
+                      whileHover={{ x: '100%' }}
+                      transition={{ duration: 0.5 }}
+                    />
+                    <span className="relative z-10 flex items-center">
+                      Explore Challenges
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </Button>
+                </Link>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* NEO League Section */}
+        <section id="neo-league" className="w-full py-24">
+          <div className="mx-auto max-w-6xl px-4">
+            {/* Existing NEO League content */}
             <motion.section
               variants={containerVariants}
               initial="hidden"
@@ -261,7 +198,7 @@ export default function MarketingPage() {
                 >
                   <Badge
                     variant="outline"
-                    className="mb-4 animate-pulse border-primary/50 bg-background/50 text-primary backdrop-blur-sm"
+                    className="mb-4 animate-pulse bg-background/50 text-primary backdrop-blur-sm"
                   >
                     <Trophy className="mr-2 h-4 w-4" />
                     Featured Event
@@ -312,7 +249,7 @@ export default function MarketingPage() {
                   ]}
                 />
 
-                <Separator className="my-12" />
+                <Separator className="my-12 bg-foreground/10" />
 
                 {/* Enhanced Requirements and Info Cards */}
                 <div className="mt-16 grid gap-6 md:grid-cols-2">
@@ -321,7 +258,7 @@ export default function MarketingPage() {
                     whileHover="hover"
                     className="group"
                   >
-                    <Card className="h-full overflow-hidden bg-foreground/5">
+                    <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5">
                       <div className="relative overflow-hidden rounded-xl p-6">
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
@@ -352,7 +289,7 @@ export default function MarketingPage() {
                     whileHover="hover"
                     className="group"
                   >
-                    <Card className="h-full overflow-hidden bg-foreground/5">
+                    <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5">
                       <div className="relative overflow-hidden rounded-xl p-6">
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
@@ -397,149 +334,176 @@ export default function MarketingPage() {
                 </motion.div>
               </div>
             </motion.section>
-          </section>
+          </div>
+        </section>
 
-          {/* Features Section */}
-          <section id="features" aria-label="Platform Features">
-            <div className="w-full py-24">
-              <div className="mx-auto max-w-6xl px-4">
-                <div className="mb-16 text-center">
-                  <Badge variant="outline" className="mb-4">
-                    Platform Features
-                  </Badge>
-                  <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                    Everything You Need to Excel in Prompt Engineering
-                  </h2>
-                  <p className="text-muted-foreground">
-                    A comprehensive suite of tools designed for modern prompt
-                    engineers
-                  </p>
-                </div>
+        {/* Features Section */}
+        <section id="features" className="w-full py-24">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="mb-16 text-center">
+              <Badge variant="outline" className="mb-4">
+                Platform Features
+              </Badge>
+              <h2 className="mb-4 text-3xl font-bold md:text-4xl">
+                Everything You Need to Excel in Prompt Engineering
+              </h2>
+              <p className="text-muted-foreground">
+                A comprehensive suite of tools designed for modern prompt
+                engineers
+              </p>
+            </div>
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <FeatureShowcase />
+          </div>
+        </section>
+
+        {/* Learning Section with enhanced visuals */}
+        <section id="learning" className="relative w-full py-24">
+          <div className="absolute inset-0 bg-primary/5" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
+
+          <div className="relative mx-auto max-w-6xl px-4">
+            <div className="grid gap-12 md:grid-cols-2 md:items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="space-y-6"
+              >
+                <Badge variant="outline">Learning Resources</Badge>
+                <h2 className="text-3xl font-bold md:text-4xl">
+                  Master Prompt Engineering Through Structured Learning
+                </h2>
+                <p className="text-foreground/60">
+                  Access comprehensive tutorials, guides, and real-world
+                  examples to enhance your prompt engineering skills. Learn from
+                  industry experts and join a supportive community.
+                </p>
+                <div className="space-y-4">
                   {[
-                    {
-                      title: 'Interactive Challenges',
-                      description:
-                        'Practice with real-world scenarios and level up your prompt engineering skills',
-                      icon: <Target className="h-6 w-6" />,
-                      badge: 'Popular',
-                    },
-                    {
-                      title: 'AI Model Integration',
-                      description:
-                        'Test your prompts across multiple AI models including GPT-4, Claude, and more',
-                      icon: <Brain className="h-6 w-6" />,
-                    },
-                    {
-                      title: 'Performance Analytics',
-                      description:
-                        'Track your progress and optimize your prompts with detailed metrics',
-                      icon: <LineChart className="h-6 w-6" />,
-                    },
-                    {
-                      title: 'Community Showcase',
-                      description:
-                        'Share your solutions and learn from other prompt engineers',
-                      icon: <Users className="h-6 w-6" />,
-                    },
-                    {
-                      title: 'Learning Resources',
-                      description:
-                        'Access comprehensive guides and best practices for prompt engineering',
-                      icon: <GraduationCap className="h-6 w-6" />,
-                    },
-                    {
-                      title: 'Prompt Version Control',
-                      description:
-                        'Track changes and maintain different versions of your prompts',
-                      icon: <Code className="h-6 w-6" />,
-                      badge: 'New',
-                    },
-                  ].map((feature, index) => (
-                    <div key={index}>
-                      <Card className="h-full overflow-hidden border-primary/10">
-                        <div className="flex h-full flex-col space-y-4 bg-primary/5 p-6 transition-all duration-300 group-hover:bg-primary/10">
-                          <div className="flex items-center justify-between">
-                            <div className="rounded-full bg-primary/10 p-3 text-primary">
-                              {feature.icon}
-                            </div>
-                            {feature.badge && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-primary/10"
-                              >
-                                {feature.badge}
-                              </Badge>
-                            )}
-                          </div>
-                          <h3 className="text-xl font-bold">{feature.title}</h3>
-                          <p className="flex-1 text-muted-foreground">
-                            {feature.description}
-                          </p>
-                        </div>
-                      </Card>
-                    </div>
+                    'Interactive tutorials and exercises',
+                    'Real-world case studies',
+                    'Expert-led workshops',
+                    'Community challenges and competitions',
+                  ].map((item, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex items-center gap-2"
+                    >
+                      <div className="rounded-full bg-primary/10 p-1 text-primary">
+                        <CheckCircle className="h-4 w-4" />
+                      </div>
+                      <span>{item}</span>
+                    </motion.div>
                   ))}
                 </div>
-              </div>
-            </div>
-          </section>
+              </motion.div>
 
-          {/* CTA Section */}
-          <section aria-label="Get Started">
-            <motion.section
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-              className="w-full py-24"
-            >
-              <div className="mx-auto max-w-4xl px-4">
-                <Card className="overflow-hidden border-primary/10">
-                  <div className="relative bg-primary/5 p-8 md:p-12">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-                    <div className="relative space-y-6 text-center">
-                      <RocketIcon className="mx-auto h-12 w-12 text-primary" />
-                      <h2 className="text-3xl font-bold md:text-4xl">
-                        Ready to Start Your Journey?
-                      </h2>
-                      <p className="mx-auto max-w-2xl text-muted-foreground">
-                        Join thousands of prompt engineers who are shaping the
-                        future of AI interaction. Start crafting powerful
-                        prompts today.
-                      </p>
-                      <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                        <GetStartedButton text={t('home.get-started')} />
-                        <Link href="/learn">
-                          <Button variant="outline" className="group">
-                            Browse Learning Resources
-                            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                          </Button>
-                        </Link>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <FileCode2 className="h-4 w-4 text-primary" />
-                          <span>No coding required</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MessageSquareCode className="h-4 w-4 text-primary" />
-                          <span>Active community support</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-primary" />
-                          <span>Regular challenges & contests</span>
-                        </div>
-                      </div>
-                    </div>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="relative aspect-video rounded-xl border bg-background/30 backdrop-blur-sm">
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
+                  <div className="relative p-8">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      className="grid gap-4"
+                    >
+                      {[
+                        {
+                          icon: <GraduationCap className="h-5 w-5" />,
+                          title: 'Structured Learning Path',
+                          description:
+                            'Follow a curated path from basics to advanced topics',
+                        },
+                        {
+                          icon: <Users className="h-5 w-5" />,
+                          title: 'Community Support',
+                          description:
+                            'Learn and grow with fellow prompt engineers',
+                        },
+                        {
+                          icon: <Trophy className="h-5 w-5" />,
+                          title: 'Earn Certifications',
+                          description: 'Get recognized for your expertise',
+                        },
+                      ].map((item, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: index * 0.1 }}
+                          className="flex items-start gap-4 rounded-lg border bg-background/10 p-4 backdrop-blur-sm"
+                        >
+                          <div className="rounded-full bg-foreground/10 p-2 text-primary">
+                            {item.icon}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">{item.title}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {item.description}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </motion.div>
                   </div>
-                </Card>
-              </div>
-            </motion.section>
-          </section>
-        </div>
-      </>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Add AI Features section before the CTA */}
+        <AiFeatures />
+
+        {/* Enhanced CTA Section */}
+        <section className="relative w-full py-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative mx-auto max-w-4xl px-4 text-center"
+          >
+            <Badge variant="outline" className="mb-4">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Get Started Today
+            </Badge>
+            <h2 className="mb-4 text-4xl font-bold md:text-5xl">
+              Ready to Transform Your AI Interactions?
+            </h2>
+            <p className="mb-8 text-muted-foreground">
+              Join thousands of prompt engineers who are already creating more
+              effective and efficient AI interactions with Nova.
+            </p>
+            <motion.div
+              className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+            >
+              <GetStartedButton text={t('home.get-started')} />
+              <Link href="/learn">
+                <Button variant="outline" className="group">
+                  Browse Learning Resources
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
+            </motion.div>
+          </motion.div>
+        </section>
+      </div>
     </>
   );
 }
