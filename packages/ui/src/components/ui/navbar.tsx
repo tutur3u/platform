@@ -85,7 +85,7 @@ export function Navbar({
       <div
         id="navbar-content"
         className={cn(
-          'bg-transparent px-4 py-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32',
+          'bg-transparent px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32',
           contentClassName
         )}
       >

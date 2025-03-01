@@ -4,17 +4,12 @@ import GradientHeadline from '../gradient-headline';
 import AiFeatures from './ai-features';
 import AnimatedTimeline from './animated-timeline';
 import FeatureShowcase from './feature-showcase';
-import FloatingNav from './floating-nav';
-import HeroAnimation from './hero-animation';
-import KeyboardGuide from './keyboard-guide';
-import ScrollProgress from './scroll-progress';
-import ScrollToTop from './scroll-to-top';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { Separator } from '@tuturuuu/ui/separator';
-import { motion } from 'framer-motion';
+import { type Variants, motion } from 'framer-motion';
 import {
   ArrowRight,
   CalendarDays,
@@ -32,12 +27,17 @@ import {
   Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
+
+// Dynamically import HeroAnimation with no SSR to prevent hydration issues
+const HeroAnimation = dynamic(() => import('./hero-animation'), {
+  ssr: false,
+});
 
 export default function MarketingPage() {
   const t = useTranslations();
 
-  // Enhanced animation variants
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     show: {
@@ -74,32 +74,26 @@ export default function MarketingPage() {
     },
   };
 
-  // Enhanced floating effect variants
+  // Enhanced floating effect variants with reduced movement for better performance
   const floatingVariants = {
     initial: { y: 0 },
     float: {
-      y: [-10, 10],
+      y: [-8, 8],
       transition: {
-        duration: 4,
+        duration: 5,
         repeat: Infinity,
-        repeatType: 'mirror' as const,
+        repeatType: 'mirror',
         ease: 'easeInOut',
       },
     },
-  };
+  } as Variants;
 
   return (
     <>
-      <ScrollProgress />
-      <FloatingNav />
-      <KeyboardGuide />
-      <ScrollToTop />
-
-      <div className="relative flex h-full min-h-screen w-full flex-col items-center">
-        {/* Hero Section */}
+      <HeroAnimation />
+      <div className="relative flex h-full min-h-screen w-full flex-col items-center will-change-transform">
         <section id="hero" className="relative w-full">
-          <HeroAnimation />
-          <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-32">
+          <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-24 sm:py-32">
             {/* Existing hero content */}
             <motion.div
               variants={floatingVariants}
@@ -125,7 +119,7 @@ export default function MarketingPage() {
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
               className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl"
             >
               Master the Art of
