@@ -87,8 +87,6 @@ export async function POST(req: Request) {
       ) {
         throw new Error('Invalid response format');
       }
-
-      console.log('Parsed Response:', parsedResponse);
     } catch (parseError) {
       return NextResponse.json(
         {

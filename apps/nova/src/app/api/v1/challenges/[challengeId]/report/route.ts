@@ -46,7 +46,5 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  console.log(report);
-
   return NextResponse.json(report);
 }
