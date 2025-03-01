@@ -4,46 +4,46 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface CountdownTimerProps {
-  createdAt: string;
+  challengeId: string;
+  startTime: string | null;
+  endTime: string | null;
   duration: number;
-  problemId: number;
-  // onUpdateDuration: (remainingTime: number) => void;
 }
 
 export default function CountdownTimer({
-  createdAt,
+  challengeId,
+  startTime,
+  endTime,
   duration,
-  problemId,
-  // onUpdateDuration,
 }: CountdownTimerProps) {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState(duration * 60);
-  console.log(duration);
-  useEffect(() => {
-    if (!createdAt || !duration) return;
 
-    const startTime = new Date(createdAt).getTime();
-    const endTime = startTime + duration * 60000;
+  useEffect(() => {
+    if (!startTime || !endTime || !duration) return;
+
+    const start = new Date(startTime).getTime();
+    const end = start + duration * 60000;
 
     const updateTimer = async () => {
       const now = new Date().getTime();
-      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      const remaining = Math.max(0, Math.floor((end - now) / 1000));
       setTimeLeft(remaining);
 
       if (remaining === 0) {
         try {
           const response = await fetch(
-            `/api/auth/workspace/${problemId}/nova/start-test`,
+            `/api/v1/challenges/${challengeId}/status`,
             {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ test_status: 'END' }),
+              body: JSON.stringify({ status: 'ENDED' }),
             }
           );
           if (!response.ok) {
             throw new Error('Failed to end test');
           }
-          router.push(`/challenges/${problemId}/test-ended`);
+          router.push(`/challenges/${challengeId}/results`);
         } catch (error) {
           console.error('Error ending test: ', error);
         }
@@ -54,7 +54,7 @@ export default function CountdownTimer({
     updateTimer();
 
     return () => clearInterval(interval);
-  }, [createdAt, duration, router]);
+  }, [challengeId, duration, router, startTime, endTime]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;

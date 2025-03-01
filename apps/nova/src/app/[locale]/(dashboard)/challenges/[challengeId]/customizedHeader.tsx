@@ -1,56 +1,33 @@
-import CountdownTimer from './components/challengeButton';
+import CountdownTimer from './components/countdown-timer';
 import ProblemChanger from './problem-changer';
 import NavbarSeparator from '@/app/[locale]/(marketing)/navbar-separator';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
 interface Props {
   proNum: number;
   currentProblem: number;
-  createdAt: string;
-  duration: number;
   challengeId: string;
   onNext: () => void;
   onPrev: () => void;
+  onEnd: () => void;
+  startTime: string | null;
+  endTime: string | null;
+  duration: number;
 }
 
 export default function CustomizedHeader({
   proNum,
   currentProblem,
+  challengeId,
   onNext,
   onPrev,
-  challengeId,
-  createdAt,
+  onEnd,
+  startTime,
+  endTime,
   duration,
 }: Props) {
-  const router = useRouter();
-
-  const handleEndTest = async () => {
-    const confirmEnd = window.confirm('Are you sure you want to end the test?');
-    if (confirmEnd) {
-      try {
-        const response = await fetch(
-          `/api/auth/workspace/${challengeId}/nova/start-test`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ test_status: 'END' }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to end test');
-        }
-
-        router.push(`/challenges/${challengeId}/test-ended`);
-      } catch (error) {
-        console.error('Error ending test:', error);
-      }
-    }
-  };
-
   return (
     <nav
       id="navbar"
@@ -74,14 +51,12 @@ export default function CustomizedHeader({
               }
             >
               <CountdownTimer
-                problemId={currentProblem}
-                createdAt={createdAt}
+                challengeId={challengeId}
+                startTime={startTime}
+                endTime={endTime}
                 duration={duration}
               />
-              <Button
-                className="bg-red-500 hover:bg-red-700"
-                onClick={handleEndTest}
-              >
+              <Button className="bg-red-500 hover:bg-red-700" onClick={onEnd}>
                 End Test
               </Button>
             </Suspense>

@@ -1,0 +1,50 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
+
+interface Params {
+  params: Promise<{
+    challengeId: string;
+  }>;
+}
+
+export async function GET(_: Request, { params }: Params) {
+  const supabase = await createClient();
+  const { challengeId } = await params;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Get challenge status, challenge info and submissions in a single query
+  const { data: report, error } = await supabase
+    .from('nova_challenge_status')
+    .select(
+      `
+      *,
+      challenge:nova_challenges(
+        *,
+        problems:nova_problems(
+          *,
+          submissions:nova_submissions(*)
+        )
+      )
+    `
+    )
+    .eq('challenge_id', challengeId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching challenge report:', error);
+    return NextResponse.json(
+      { message: 'Error fetching challenge report' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(report);
+}

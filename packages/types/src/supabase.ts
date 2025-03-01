@@ -2023,97 +2023,96 @@ export type Database = {
           },
         ];
       };
+      nova_challenge_status: {
+        Row: {
+          challenge_id: string;
+          created_at: string;
+          end_time: string | null;
+          id: string;
+          start_time: string | null;
+          status: string | null;
+          total_score: number | null;
+          user_id: string;
+        };
+        Insert: {
+          challenge_id: string;
+          created_at?: string;
+          end_time?: string | null;
+          id?: string;
+          start_time?: string | null;
+          status?: string | null;
+          total_score?: number | null;
+          user_id: string;
+        };
+        Update: {
+          challenge_id?: string;
+          created_at?: string;
+          end_time?: string | null;
+          id?: string;
+          start_time?: string | null;
+          status?: string | null;
+          total_score?: number | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_challenge_status_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_challenge_status_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_challenges: {
         Row: {
           created_at: string;
           description: string | null;
           duration: number | null;
           id: string;
-          title: string | null;
-          topic: string | null;
+          title: string;
         };
         Insert: {
           created_at?: string;
           description?: string | null;
           duration?: number | null;
           id?: string;
-          title?: string | null;
-          topic?: string | null;
+          title: string;
         };
         Update: {
           created_at?: string;
           description?: string | null;
           duration?: number | null;
           id?: string;
-          title?: string | null;
-          topic?: string | null;
+          title?: string;
         };
         Relationships: [];
-      };
-      nova_leaderboard: {
-        Row: {
-          created_at: string;
-          id: string;
-          problem_id: string | null;
-          score: number | null;
-          user_id: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          id?: string;
-          problem_id?: string | null;
-          score?: number | null;
-          user_id?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          problem_id?: string | null;
-          score?: number | null;
-          user_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_leaderboard_userId_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_leaderboard_userId_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_leaderboard_userId_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-        ];
       };
       nova_problem_constraints: {
         Row: {
           constraint_content: string | null;
           created_at: string;
           id: string;
-          problem_id: string | null;
+          problem_id: string;
         };
         Insert: {
           constraint_content?: string | null;
           created_at?: string;
           id?: string;
-          problem_id?: string | null;
+          problem_id: string;
         };
         Update: {
           constraint_content?: string | null;
           created_at?: string;
           id?: string;
-          problem_id?: string | null;
+          problem_id?: string;
         };
         Relationships: [
           {
@@ -2129,19 +2128,19 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
-          problem_id: string | null;
+          problem_id: string;
           testcase_content: string | null;
         };
         Insert: {
           created_at?: string;
           id?: string;
-          problem_id?: string | null;
+          problem_id: string;
           testcase_content?: string | null;
         };
         Update: {
           created_at?: string;
           id?: string;
-          problem_id?: string | null;
+          problem_id?: string;
           testcase_content?: string | null;
         };
         Relationships: [
@@ -2156,31 +2155,31 @@ export type Database = {
       };
       nova_problems: {
         Row: {
-          challenge_id: string | null;
+          challenge_id: string;
           created_at: string;
           description: string | null;
-          exampleInput: string | null;
-          exampleOutput: string | null;
+          example_input: string | null;
+          example_output: string | null;
           id: string;
-          title: string | null;
+          title: string;
         };
         Insert: {
-          challenge_id?: string | null;
+          challenge_id: string;
           created_at?: string;
           description?: string | null;
-          exampleInput?: string | null;
-          exampleOutput?: string | null;
+          example_input?: string | null;
+          example_output?: string | null;
           id?: string;
-          title?: string | null;
+          title: string;
         };
         Update: {
-          challenge_id?: string | null;
+          challenge_id?: string;
           created_at?: string;
           description?: string | null;
-          exampleInput?: string | null;
-          exampleOutput?: string | null;
+          example_input?: string | null;
+          example_output?: string | null;
           id?: string;
-          title?: string | null;
+          title?: string;
         };
         Relationships: [
           {
@@ -2192,75 +2191,44 @@ export type Database = {
           },
         ];
       };
-      nova_test_timer_record: {
-        Row: {
-          created_at: string;
-          duration: number | null;
-          id: string;
-          problem_id: string | null;
-          test_status: string | null;
-          user_id: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          duration?: number | null;
-          id?: string;
-          problem_id?: string | null;
-          test_status?: string | null;
-          user_id?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          duration?: number | null;
-          id?: string;
-          problem_id?: string | null;
-          test_status?: string | null;
-          user_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_test_timer_record_userId_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      nova_users_problem_history: {
+      nova_submissions: {
         Row: {
           created_at: string;
           feedback: string | null;
           id: number;
-          problem_id: string | null;
-          problem_set_id: string | null;
+          problem_id: string;
           score: number | null;
-          user_id: string | null;
-          user_prompt: string | null;
+          user_id: string;
+          user_prompt: string;
         };
         Insert: {
           created_at?: string;
           feedback?: string | null;
           id?: number;
-          problem_id?: string | null;
-          problem_set_id?: string | null;
+          problem_id: string;
           score?: number | null;
-          user_id?: string | null;
-          user_prompt?: string | null;
+          user_id: string;
+          user_prompt: string;
         };
         Update: {
           created_at?: string;
           feedback?: string | null;
           id?: number;
-          problem_id?: string | null;
-          problem_set_id?: string | null;
+          problem_id?: string;
           score?: number | null;
-          user_id?: string | null;
-          user_prompt?: string | null;
+          user_id?: string;
+          user_prompt?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'nova_users_problem_history_userId_fkey';
+            foreignKeyName: 'nova_submissions_problem_id_fkey';
+            columns: ['problem_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_problems';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_submissions_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';

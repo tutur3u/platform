@@ -1,7 +1,6 @@
 'use client';
 
-import type { NovaChallenge } from '@tuturuuu/types/db';
-import { Badge } from '@tuturuuu/ui/badge';
+import type { NovaChallenge, NovaChallengeStatus } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -10,145 +9,89 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 interface ChallengeCardProps {
   challenge: NovaChallenge;
 }
 
-const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
-  const [isTestStarted, setIsTestStarted] = useState(false);
-  const [isRedoTest, setIsRedoTest] = useState(false);
+export default function ChallengeCard({ challenge }: ChallengeCardProps) {
+  const router = useRouter();
+
+  const [status, setStatus] = useState<NovaChallengeStatus | null>(null);
 
   useEffect(() => {
-    const checkTestStatus = async () => {
-      try {
-        const response = await fetch(
-          `/api/auth/workspace/${challenge.id}/nova/start-test`
-        );
-        const data = await response.json();
-
-        if (data?.test_status === 'END') {
-          setIsRedoTest(true);
-          setIsTestStarted(false);
-        } else if (data?.test_status === 'START') {
-          setIsTestStarted(true);
-          setIsRedoTest(false);
-        } else {
-          setIsTestStarted(false);
-          setIsRedoTest(false);
-        }
-      } catch (error) {
-        console.error('Error fetching test status:', error);
-      }
+    const fetchStatus = async () => {
+      const challengeStatus = await fetchChallengeStatus(challenge.id);
+      setStatus(challengeStatus);
     };
-
-    checkTestStatus();
+    fetchStatus();
   }, [challenge.id]);
 
-  const handleStartTestAgain = async (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault();
+  const handleStartChallenge = async () => {
+    if (confirm('Are you sure you want to start this challenge?')) {
+      const status = await fetchChallengeStatus(challenge.id);
 
-    const confirmStart = window.confirm(
-      'Are you sure you want to restart this challenge?'
-    );
+      if (status?.status === 'IN_PROGRESS') {
+        router.push(`/challenges/${challenge.id}`);
+        return;
+      }
 
-    if (confirmStart) {
-      try {
-        const response = await fetch(
-          `/api/auth/workspace/${challenge.id}/nova/start-test`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              test_status: 'START',
-              created_at: new Date().toISOString(),
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to restart challenge');
+      const response = await fetch(
+        `/api/v1/challenges/${challenge.id}/status`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            startTime: new Date().toISOString(),
+            endTime: new Date(
+              new Date().getTime() + (challenge.duration || 0) * 60000
+            ).toISOString(),
+            status: 'IN_PROGRESS',
+          }),
         }
+      );
 
-        window.location.href = `/challenges/${challenge.id}`;
-      } catch (error) {
-        console.error('Error restarting challenge:', error);
+      if (response.ok) {
+        router.push(`/challenges/${challenge.id}`);
       }
     }
   };
 
-  const handleStartChallenge = async (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault();
-
-    const confirmStart = window.confirm(
-      'Are you sure you want to start this challenge?'
-    );
-
-    if (confirmStart) {
-      try {
-        const response = await fetch(
-          `/api/auth/workspace/${challenge.id}/nova/start-test`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              duration: challenge.duration,
-              test_status: 'START',
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to update problem history');
-        }
-
-        window.location.href = `/challenges/${challenge.id}`;
-      } catch (error) {
-        console.error('Error starting challenge:', error);
-      }
-    }
+  const handleResumeChallenge = async () => {
+    router.push(`/challenges/${challenge.id}`);
   };
 
-  const handleResumeTest = () => {
-    window.location.href = `/challenges/${challenge.id}`;
+  const handleViewResults = async () => {
+    router.push(`/challenges/${challenge.id}/results`);
   };
 
   return (
     <Card key={challenge.id} className="flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-start justify-between">
+        <CardTitle className="flex">
           <span>{challenge.title}</span>
-          <Badge variant="secondary">{challenge.topic}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="mb-4 text-muted-foreground">{challenge.description}</p>
-        <div className="flex items-center text-yellow-500">
-          <Star className="mr-1 h-4 w-4 fill-current" />
-          <Star className="mr-1 h-4 w-4 fill-current" />
-          <Star className="mr-1 h-4 w-4 fill-current" />
-          <Star className="mr-1 h-4 w-4 stroke-current" />
-          <Star className="mr-1 h-4 w-4 stroke-current" />
-          <span className="ml-2 text-sm text-muted-foreground">Difficulty</span>
+        <p className="text-muted-foreground mb-4">{challenge.description}</p>
+        <div className="flex items-center">
+          <Clock className="h-4 w-4" />
+          <span className="text-muted-foreground ml-2 text-sm">
+            Duration: {challenge.duration} minutes
+          </span>
         </div>
       </CardContent>
       <CardFooter>
-        {isTestStarted ? (
-          <Button onClick={handleResumeTest} className="w-full gap-2">
-            Resume Test <ArrowRight className="h-4 w-4" />
+        {status?.status === 'IN_PROGRESS' ? (
+          <Button onClick={handleResumeChallenge} className="w-full gap-2">
+            Resume Challenge <ArrowRight className="h-4 w-4" />
           </Button>
-        ) : isRedoTest ? (
-          <Button
-            onClick={handleStartTestAgain}
-            className="w-full gap-2 bg-blue-500 hover:bg-blue-700"
-          >
-            Redo Challenge <ArrowRight className="h-4 w-4" />
+        ) : status?.status === 'ENDED' ? (
+          <Button onClick={handleViewResults} className="w-full gap-2">
+            View Results <ArrowRight className="h-4 w-4" />
           </Button>
         ) : (
           <Button onClick={handleStartChallenge} className="w-full gap-2">
@@ -158,6 +101,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
       </CardFooter>
     </Card>
   );
-};
+}
 
-export default ChallengeCard;
+async function fetchChallengeStatus(challengeId: string) {
+  const response = await fetch(`/api/v1/challenges/${challengeId}/status`);
+  return response.json();
+}
