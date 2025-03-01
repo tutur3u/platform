@@ -22,10 +22,7 @@
     "next-env.d.ts",
     "next.config.mjs",
     "postcss.config.mjs",
-    ".next/types/**/*.ts",
-    "../../packages/ui/src/components/ui/custom/workspace-select.tsx",
-    "../../packages/utils/src/name-helper.ts",
-    "../../packages/ai/src/calendar/events.ts"
+    ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
