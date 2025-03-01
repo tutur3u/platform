@@ -87,6 +87,8 @@ export default function Page({ params }: Props) {
         if (statusData?.status === 'ENDED') {
           router.push(`/challenges/${challengeId}/results`);
         }
+      } else {
+        router.push(`/challenges`);
       }
     };
 
@@ -135,7 +137,11 @@ export default function Page({ params }: Props) {
   };
 
   if (!status) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-xl font-semibold text-gray-700">Loading...</p>
+      </div>
+    );
   }
 
   return (
@@ -209,7 +215,7 @@ async function getChallenge(
       .eq('id', challengeId)
       .single();
 
-    if (challengeError || !challenge) {
+    if (challengeError) {
       console.error('Error fetching challenge:', challengeError?.message);
       return null;
     }

@@ -39,7 +39,6 @@ export default function Page({ params }: Props) {
         } = await supabase.auth.getUser();
 
         if (!user?.id) {
-          console.log('Unauthorized');
           router.push('/login');
           return;
         }
