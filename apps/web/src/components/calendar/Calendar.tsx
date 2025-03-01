@@ -3,6 +3,7 @@
 import CalendarHeader from './CalendarHeader';
 import CalendarViewWithTrail from './CalendarViewWithTrail';
 import { EventModal } from './EventModal';
+import { GenerateEventModal } from './GenerateEventModal';
 import MonthCalendar from './MonthCalendar';
 import WeekdayBar from './WeekdayBar';
 import { CalendarProvider, useCalendar } from '@/hooks/useCalendar';
@@ -11,16 +12,31 @@ import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 // Floating action button for quick event creation
 const CreateEventButton = () => {
   const { openModal } = useCalendar();
+  const [showAIModal, setShowAIModal] = useState(false);
 
   return (
-    <div className="fixed right-6 bottom-6 z-10">
+    <div className="fixed right-6 bottom-6 z-10 flex flex-col gap-3">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="icon"
+            className="h-14 w-14 rounded-full shadow-lg bg-primary/90"
+            onClick={() => setShowAIModal(true)}
+          >
+            <Sparkles className="h-5 w-5" />
+            <span className="sr-only">Generate event with AI</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Generate event with AI</TooltipContent>
+      </Tooltip>
+      
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -34,6 +50,11 @@ const CreateEventButton = () => {
         </TooltipTrigger>
         <TooltipContent>Create new event</TooltipContent>
       </Tooltip>
+      
+      <GenerateEventModal 
+        open={showAIModal} 
+        onOpenChange={setShowAIModal} 
+      />
     </div>
   );
 };

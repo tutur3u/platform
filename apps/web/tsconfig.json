@@ -24,7 +24,8 @@
     "postcss.config.mjs",
     ".next/types/**/*.ts",
     "../../packages/ui/src/components/ui/custom/workspace-select.tsx",
-    "../../packages/utils/src/name-helper.ts"
+    "../../packages/utils/src/name-helper.ts",
+    "../../packages/ai/src/calendar/events.ts"
   ],
   "exclude": ["node_modules"]
 }
