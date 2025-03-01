@@ -1,4 +1,4 @@
-import CountdownTimer from './components/countdown-timer';
+import CountdownTimer from './countdown-timer';
 import ProblemChanger from './problem-changer';
 import NavbarSeparator from '@/app/[locale]/(marketing)/navbar-separator';
 import { Button } from '@tuturuuu/ui/button';

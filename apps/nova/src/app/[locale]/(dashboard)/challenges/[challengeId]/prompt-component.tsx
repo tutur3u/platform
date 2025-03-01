@@ -1,4 +1,4 @@
-import PromptForm from './components/prompt-form';
+import PromptForm from './prompt-form';
 import { Card } from '@tuturuuu/ui/card';
 
 interface Problem {
