@@ -1,21 +1,20 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUp } from 'lucide-react';
+import { Button } from '@tuturuuu/ui/button';
+import { motion } from 'framer-motion';
+import { ArrowUpIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const toggleVisibility = () => {
-      if (window.pageYOffset > 300) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > window.innerHeight);
     };
 
-    window.addEventListener('scroll', toggleVisibility);
-    return () => window.removeEventListener('scroll', toggleVisibility);
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const scrollToTop = () => {
@@ -26,21 +25,22 @@ export default function ScrollToTop() {
   };
 
   return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          onClick={scrollToTop}
-          className="fixed right-4 bottom-20 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary backdrop-blur-sm transition-colors hover:bg-primary/20"
-          aria-label="Scroll to top"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <ArrowUp className="h-5 w-5" />
-        </motion.button>
-      )}
-    </AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: isVisible ? 1 : 0, scale: isVisible ? 1 : 0.8 }}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      className="fixed bottom-4 left-4 z-50"
+    >
+      <Button
+        size="icon"
+        variant="outline"
+        onClick={scrollToTop}
+        className="h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm"
+        aria-label="Scroll to top"
+      >
+        <ArrowUpIcon className="h-5 w-5" />
+      </Button>
+    </motion.div>
   );
 }
