@@ -30,16 +30,16 @@ export default function HeroAnimation() {
   );
 
   return (
-    <div className="pointer-events-none fixed inset-0 h-screen w-screen overflow-hidden">
+    <div className="pointer-events-none fixed inset-0">
       <motion.div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 will-change-transform"
         animate={{
-          rotate: [0, 360]
+          rotate: [0, 360],
         }}
         transition={{
           duration: 60, // Even faster base rotation
           repeat: Infinity,
-          ease: "linear"
+          ease: 'linear',
         }}
       >
         {/* Main rainbow gradient blob with original colors but more dramatic motion */}
@@ -52,7 +52,7 @@ export default function HeroAnimation() {
           transition={{
             duration: 30, // Faster rotation
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         />
 
@@ -68,7 +68,7 @@ export default function HeroAnimation() {
           transition={{
             duration: 25, // Faster movement
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         />
 
@@ -83,7 +83,7 @@ export default function HeroAnimation() {
           transition={{
             duration: 20, // Even faster movement
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         />
 
@@ -98,7 +98,7 @@ export default function HeroAnimation() {
           transition={{
             duration: 15, // Fastest movement
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: 'easeInOut',
           }}
         />
       </motion.div>
@@ -121,7 +121,7 @@ export default function HeroAnimation() {
             transition={{
               duration: particle.duration,
               repeat: Infinity,
-              ease: "easeInOut",
+              ease: 'easeInOut',
               delay: particle.delay,
             }}
           />
