@@ -1,6 +1,5 @@
 'use client';
 
-import { Problems } from '../../challenges';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
@@ -15,7 +14,6 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
 import { History } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 type HistoryEntry = {
@@ -23,58 +21,62 @@ type HistoryEntry = {
   feedback: string;
   user_prompt: string;
 };
-export default function ChatBox({
-  problem,
-  challengeId,
-}: {
-  problem: Problems;
-  challengeId: string;
-}) {
+
+interface Problem {
+  id: string;
+  title: string;
+  description: string;
+  example_input: string;
+  example_output: string;
+  testcases: string[];
+}
+
+export default function ChatBox({ problem }: { problem: Problem }) {
   const [_messages, setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [_history, setHistory] = useState<HistoryEntry[]>([]);
+  const [_submissions, setSubmissions] = useState<HistoryEntry[]>([]);
   const [attempts, setAttempts] = useState(0);
 
-  const router = useRouter();
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchSubmissions = async () => {
       if (problem?.id) {
-        const fetchedHistory = await fetchProblemHistoryFromAPI(problem.id);
-        if (fetchedHistory) {
-          setHistory(fetchedHistory);
-          setAttempts(fetchedHistory.length);
+        const fetchedSubmissions = await fetchSubmissionsFromAPI(problem.id);
+        if (fetchedSubmissions) {
+          setSubmissions(fetchedSubmissions);
+          setAttempts(fetchedSubmissions.length);
         }
       }
     };
 
-    fetchHistory();
+    fetchSubmissions();
   }, [problem?.id]);
 
-  const updateProblemHistory = async (
-    problemId: string,
-    feedback: string,
+  const addSubmission = async (
+    user_prompt: string,
     score: number,
-    user_prompt: string
+    feedback: string,
+    problemId: string
   ) => {
     try {
       const response = await fetch(
-        `/api/auth/workspace/${problemId}/nova/prompt`,
+        `/api/v1/problems/${problemId}/submissions`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ feedback, score, user_prompt, challengeId }),
+          body: JSON.stringify({
+            user_prompt,
+            score,
+            feedback,
+          }),
         }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to update problem history');
+        throw new Error('Failed to update submissions');
       }
-
-      const data = await response.json();
-      console.log('Update Response:', data);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -87,23 +89,21 @@ export default function ChatBox({
     setMessages((prev) => [...prev, newUserMessage]);
     setInput('');
     setLoading(true);
-    setAttempts((prev) => prev + 1);
 
     try {
       const response = await fetch('/api/ai/chat/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          problemDescription: problem.description,
-          testCase: problem.testcase,
           answer: input,
-          exampleOutput: problem.exampleOutput,
-          exampleInput: problem.exampleInput,
+          problemDescription: problem.description,
+          testCases: problem.testcases,
+          exampleInput: problem.example_input,
+          exampleOutput: problem.example_output,
         }),
       });
 
       const data = await response.json();
-      console.log(data);
 
       const aiResponseText =
         data.response?.score !== undefined && data.response?.feedback
@@ -113,17 +113,18 @@ export default function ChatBox({
       const newAIMessage = { text: aiResponseText, sender: 'ai' as const };
       setMessages((prev) => [...prev, newAIMessage]);
 
-      if (data.response?.score !== undefined && data.response?.feedback) {
-        await updateProblemHistory(
-          problem.id,
-          data.response.feedback,
+      if (data.response?.score && data.response?.feedback) {
+        await addSubmission(
+          input,
           data.response.score,
-          input
+          data.response.feedback,
+          problem.id
         );
+        setAttempts((prev) => prev + 1);
+
+        const fetchedSubmissions = await fetchSubmissionsFromAPI(problem.id);
+        setSubmissions(fetchedSubmissions);
       }
-      const fetchedHistory = await fetchProblemHistoryFromAPI(problem.id);
-      setHistory(fetchedHistory);
-      router.refresh();
     } catch (error) {
       const errorMsg = {
         text: 'An error occurred. Please try again.',
@@ -142,7 +143,7 @@ export default function ChatBox({
   };
 
   return (
-    <div className="round round-sm flex h-full flex-col bg-foreground/10 p-4 text-foreground">
+    <div className="round round-sm bg-foreground/10 text-foreground flex h-full flex-col p-4">
       <h2 className="text-lg font-bold">Chat Box</h2>
       <div className="mb-2 flex items-center">
         <p className="mr-2">
@@ -164,9 +165,9 @@ export default function ChatBox({
             </DialogHeader>
 
             <div className="max-h-[400px] overflow-y-auto">
-              {_history && _history.length > 0 ? (
+              {_submissions && _submissions.length > 0 ? (
                 <ul>
-                  {_history.map((entry, index) => (
+                  {_submissions.map((entry, index) => (
                     <li key={index}>
                       <div className="flex justify-between pt-5">
                         <span>Attempt {index + 1}:</span>
@@ -191,16 +192,18 @@ export default function ChatBox({
         </Dialog>
       </div>
 
-      <div className="flex-1 space-y-2 rounded-md border bg-foreground/10 p-2 text-foreground">
+      <div className="bg-foreground/10 text-foreground flex-1 space-y-2 rounded-md border p-2">
         {loading && (
-          <div className="flex h-screen items-center justify-center">
-            <LoadingIndicator className="h-6" />
-            <p>We are processing your prompt please wait...</p>
+          <div className="flex h-full items-center justify-center">
+            <div className="flex items-center justify-center gap-2">
+              <LoadingIndicator className="h-6" />
+              <p>We are processing your prompt please wait...</p>
+            </div>
           </div>
         )}
 
-        {!loading && _history.length > 0 && (
-          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 text-foreground shadow-md">
+        {!loading && _submissions.length > 0 && (
+          <div className="text-foreground mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 shadow-md">
             <h3 className="text-2xl font-semibold text-gray-800">
               Your Last Attempt
             </h3>
@@ -211,7 +214,7 @@ export default function ChatBox({
                     <strong className="font-medium text-gray-900">
                       Prompt:{' '}
                     </strong>
-                    {_history[_history?.length - 1]?.user_prompt}
+                    {_submissions[_submissions?.length - 1]?.user_prompt}
                   </p>
                 </div>
                 <div>
@@ -219,15 +222,13 @@ export default function ChatBox({
                     <strong className="font-medium text-gray-900">
                       Score:{' '}
                     </strong>
-                    {_history[_history?.length - 1]?.score}/10
+                    {_submissions[_submissions?.length - 1]?.score}/10
                   </p>
                 </div>
               </div>
             </div>
           </div>
         )}
-
-        <div />
       </div>
 
       {/* Chat Input */}
@@ -252,8 +253,8 @@ export default function ChatBox({
   );
 }
 
-async function fetchProblemHistoryFromAPI(problemId: string) {
-  const response = await fetch(`/api/auth/workspace/${problemId}/nova/prompt`);
+async function fetchSubmissionsFromAPI(problemId: string) {
+  const response = await fetch(`/api/v1/problems/${problemId}/submissions`);
   const data = await response.json();
 
   if (response.ok) {

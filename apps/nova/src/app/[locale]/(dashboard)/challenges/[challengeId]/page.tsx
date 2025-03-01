@@ -5,8 +5,22 @@ import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import {
+  NovaChallenge,
+  NovaChallengeStatus,
+  NovaProblem,
+  NovaProblemConstraint,
+  NovaProblemTestCase,
+} from '@tuturuuu/types/db';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
+type ExtendedNovaChallenge = NovaChallenge & {
+  problems: (NovaProblem & {
+    constraints: NovaProblemConstraint[];
+    testcases: NovaProblemTestCase[];
+  })[];
+};
 
 interface Props {
   params: Promise<{
@@ -14,16 +28,11 @@ interface Props {
   }>;
 }
 
-interface Timer {
-  duration: number;
-  created_at: string;
-}
-
 export default function Page({ params }: Props) {
-  const [challenge, setChallenge] = useState<any | null>(null);
-  const [fetchedTimer, setFetchedTimer] = useState<Timer | null | undefined>(
+  const [challenge, setChallenge] = useState<ExtendedNovaChallenge | null>(
     null
   );
+  const [status, setStatus] = useState<NovaChallengeStatus | null>(null);
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
   const [challengeId, setChallengeId] = useState('');
 
@@ -32,10 +41,12 @@ export default function Page({ params }: Props) {
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      const confirmationMessage =
-        'You have unsaved changes, are you sure you want to leave?';
-      event.returnValue = confirmationMessage;
-      return confirmationMessage;
+      if (status?.status === 'IN_PROGRESS') {
+        const confirmationMessage =
+          'You have an ongoing challenge, are you sure you want to leave?';
+        event.returnValue = confirmationMessage;
+        return confirmationMessage;
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -43,7 +54,7 @@ export default function Page({ params }: Props) {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, []);
+  }, [status]);
 
   useEffect(() => {
     const authCheck = async () => {
@@ -63,10 +74,20 @@ export default function Page({ params }: Props) {
     const fetchData = async () => {
       const { challengeId } = await params;
       const challengeData = await getChallenge(challengeId);
-      setChallenge(challengeData);
+      setChallenge(challengeData as ExtendedNovaChallenge);
       setChallengeId(challengeId);
-      const timerData = await fetchTimer(String(challengeData?.id));
-      setFetchedTimer(timerData);
+
+      // Fetch challenge status
+      const response = await fetch(`/api/v1/challenges/${challengeId}/status`);
+      if (response.ok) {
+        const statusData = await response.json();
+        setStatus(statusData);
+
+        // If challenge is ended, redirect to report page
+        if (statusData?.status === 'ENDED') {
+          router.push(`/challenges/${challengeId}/test-ended`);
+        }
+      }
     };
 
     fetchData();
@@ -84,78 +105,100 @@ export default function Page({ params }: Props) {
     setCurrentProblemIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
 
+  const handleEndChallenge = async () => {
+    if (confirm('Are you sure you want to end this challenge?')) {
+      const problemSubmissions = await Promise.all(
+        problems.map(async (problem) => {
+          const response = await fetch(
+            `/api/v1/problems/${problem.id}/submissions`
+          );
+          const data = await response.json();
+          return data.sort((a: any, b: any) => b.score - a.score);
+        })
+      );
+
+      const totalScore = problemSubmissions.reduce(
+        (acc, curr) => acc + curr[0].score,
+        0
+      );
+
+      const response = await fetch(`/api/v1/challenges/${challengeId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'ENDED', totalScore, feedback: '' }),
+      });
+
+      if (response.ok) {
+        router.push(`/challenges/${challengeId}/test-ended`);
+      }
+    }
+  };
+
+  if (!status) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="relative">
       <CustomizedHeader
         proNum={problems.length}
         currentProblem={currentProblemIndex + 1}
         challengeId={challengeId}
-        duration={fetchedTimer?.duration || 0}
-        createdAt={fetchedTimer?.created_at || ''}
         onNext={nextProblem}
         onPrev={prevProblem}
+        onEnd={handleEndChallenge}
+        startTime={status.start_time}
+        endTime={status.end_time}
+        duration={challenge?.duration || 0}
       />
 
       <div className="flex gap-4 p-6 pt-20">
         <div className="flex w-1/2 flex-col">
-          {problems.length > 0 ? (
-            <ProblemComponent problem={problems[currentProblemIndex]} />
+          {problems.length > 0 && problems[currentProblemIndex] ? (
+            <ProblemComponent
+              problem={{
+                id: problems[currentProblemIndex].id,
+                title: problems[currentProblemIndex].title ?? '',
+                description: problems[currentProblemIndex].description ?? '',
+                exampleInput: problems[currentProblemIndex].example_input ?? '',
+                exampleOutput:
+                  problems[currentProblemIndex].example_output ?? '',
+                constraints:
+                  problems[currentProblemIndex].constraints?.map(
+                    (constraint) => constraint.constraint_content
+                  ) ?? [],
+              }}
+            />
           ) : (
             <p>No problems available.</p>
           )}
           <TestCaseComponent
-            testcase={problems[currentProblemIndex]?.testcase[0]}
+            testcases={problems[currentProblemIndex]?.testcases ?? []}
           />
         </div>
 
         <PromptComponent
-          challengeId={challengeId}
-          problem={problems[currentProblemIndex]}
+          problem={{
+            id: problems[currentProblemIndex]?.id || '',
+            title: problems[currentProblemIndex]?.title || '',
+            description: problems[currentProblemIndex]?.description || '',
+            example_input: problems[currentProblemIndex]?.example_input || '',
+            example_output: problems[currentProblemIndex]?.example_output || '',
+            testcases:
+              problems[currentProblemIndex]?.testcases?.map(
+                (testCase) => testCase.testcase_content ?? ''
+              ) ?? [],
+          }}
         />
       </div>
     </div>
   );
 }
 
-async function fetchTimer(problemId: string): Promise<Timer | null> {
-  try {
-    console.log(problemId, 'id ');
-    const response = await fetch(
-      `/api/auth/workspace/${problemId}/nova/start-test`
-    );
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch timer');
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.log('Timer record error: ', error);
-    return null;
-  }
-}
-
-export interface Challenge {
-  id: string;
-  title: string;
-  topic: string;
-  description: string;
-  problems: Problems[];
-  duration: number;
-}
-
-export interface Problems {
-  id: string;
-  title: string | null;
-  description: string | null;
-  exampleInput: string | null;
-  exampleOutput: string | null;
-  constraints?: (string | null)[];
-  testcase?: (string | null)[];
-}
-
 // Fetch Challenge from Supabase
-async function getChallenge(challengeId: string): Promise<Challenge | null> {
+async function getChallenge(
+  challengeId: string
+): Promise<ExtendedNovaChallenge | null> {
   const supabase = createClient();
 
   try {
@@ -174,7 +217,7 @@ async function getChallenge(challengeId: string): Promise<Challenge | null> {
     // Fetch problems linked to this challenge
     const { data: problems, error: problemError } = await supabase
       .from('nova_problems')
-      .select('id, title, description, exampleInput, exampleOutput')
+      .select('id, title, description, example_input, example_output')
       .eq('challenge_id', challengeId);
 
     if (problemError) {
@@ -189,7 +232,6 @@ async function getChallenge(challengeId: string): Promise<Challenge | null> {
       .from('nova_problem_constraints')
       .select('problem_id, constraint_content')
       .in('problem_id', problemIds);
-    console.log(constraints, 'chacha');
     if (constraintError) {
       console.error('Error fetching constraints:', constraintError.message);
     }
@@ -198,7 +240,6 @@ async function getChallenge(challengeId: string): Promise<Challenge | null> {
       .from('nova_problem_testcases')
       .select('problem_id, testcase_content')
       .in('problem_id', problemIds);
-    console.log('test case in fetch', testcases);
     if (testcaseError) {
       console.error('Error fetching test cases:', testcaseError.message);
     }
@@ -206,27 +247,28 @@ async function getChallenge(challengeId: string): Promise<Challenge | null> {
     // Map problems with constraints and test cases
     const formattedProblems = problems.map((problem) => ({
       id: problem.id,
-      title: problem.title,
-      description: problem.description,
-      exampleInput: problem.exampleInput,
-      exampleOutput: problem.exampleOutput,
+      title: problem.title || '',
+      description: problem.description || '',
+      example_input: problem.example_input || '',
+      example_output: problem.example_output || '',
       constraints:
         constraints
-          ?.filter((c) => c.problem_id === problem.id)
-          .map((c) => c.constraint_content) || [],
-      testcase:
+          ?.filter(
+            (c) => c.problem_id === problem.id && c.constraint_content !== null
+          )
+          .map((c) => c.constraint_content!) || [],
+      testcases:
         testcases
-          ?.filter((t) => t.problem_id === problem.id)
-          .map((t) => t.testcase_content) || [],
+          ?.filter(
+            (t) => t.problem_id === problem.id && t.testcase_content !== null
+          )
+          .map((t) => t.testcase_content!) || [],
     }));
 
     return {
-      id: challenge.id,
-      title: challenge.title || '',
-      topic: challenge.topic || '',
-      description: challenge.description || '',
-      problems: formattedProblems,
-      duration: 60, // Assuming a default duration, update based on your DB
+      ...challenge,
+      problems:
+        formattedProblems as unknown as ExtendedNovaChallenge['problems'],
     };
   } catch (error) {
     console.error('Unexpected error fetching challenge:', error);

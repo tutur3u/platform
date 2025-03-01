@@ -78,4 +78,9 @@ export type AuroraForecast = {
   ml_forecast: AuroraMLForecast[];
 };
 
+export type NovaChallengeStatus = Tables<'nova_challenge_status'>;
 export type NovaChallenge = Tables<'nova_challenges'>;
+export type NovaProblemConstraint = Tables<'nova_problem_constraints'>;
+export type NovaProblem = Tables<'nova_problems'>;
+export type NovaSubmission = Tables<'nova_submissions'>;
+export type NovaProblemTestCase = Tables<'nova_problem_testcases'>;
