@@ -1,4 +1,5 @@
 import ChallengeCard from './challengeCard';
+import CreateChallengeDialog from './createChallengeDialog';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types/db';
 import { redirect } from 'next/navigation';
@@ -17,7 +18,10 @@ export default async function ChallengesPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="mb-6 text-3xl font-bold">Prompt Engineering Challenges</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Prompt Engineering Challenges</h1>
+        <CreateChallengeDialog />
+      </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {challenges.length > 0 ? (
           challenges.map((challenge: NovaChallenge) => (

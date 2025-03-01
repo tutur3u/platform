@@ -1,5 +1,6 @@
 'use client';
 
+import EditChallengeDialog from './editChallengeDialog';
 import type { NovaChallenge, NovaChallengeStatus } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -9,7 +10,19 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { ArrowRight, Clock } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import {
+  ArrowRight,
+  Clock,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
@@ -68,12 +81,62 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
     router.push(`/challenges/${challenge.id}/results`);
   };
 
+  const handleDeleteChallenge = async () => {
+    if (
+      confirm(
+        'Are you sure you want to delete this challenge? This action cannot be undone.'
+      )
+    ) {
+      try {
+        const response = await fetch(`/api/v1/challenges/${challenge.id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          router.refresh();
+        } else {
+          alert('Failed to delete challenge.');
+        }
+      } catch (error) {
+        console.error('Error deleting challenge:', error);
+        alert('An error occurred while deleting the challenge.');
+      }
+    }
+  };
+
   return (
     <Card key={challenge.id} className="flex flex-col">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <CardTitle className="flex">
           <span>{challenge.title}</span>
         </CardTitle>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <EditChallengeDialog
+              challenge={challenge}
+              trigger={
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+              }
+              onSuccess={() => router.refresh()}
+            />
+            <DropdownMenuItem
+              onClick={handleDeleteChallenge}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </CardHeader>
       <CardContent className="flex-grow">
         <p className="text-muted-foreground mb-4">{challenge.description}</p>
