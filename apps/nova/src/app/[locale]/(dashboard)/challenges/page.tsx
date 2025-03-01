@@ -4,14 +4,22 @@ import type { NovaChallenge } from '@tuturuuu/types/db';
 import { redirect } from 'next/navigation';
 
 export default async function ChallengesPage() {
+  const database = await createClient();
+  const {
+    data: { user },
+  } = await database.auth.getUser();
+
+  if (!user?.id) {
+    redirect('/login');
+  }
+
   const challenges = await fetchChallenges();
-  if (!challenges) redirect('/login');
 
   return (
     <div className="container mx-auto p-6">
       <h1 className="mb-6 text-3xl font-bold">Prompt Engineering Challenges</h1>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {challenges?.length > 0 ? (
+        {challenges.length > 0 ? (
           challenges.map((challenge: NovaChallenge) => (
             <ChallengeCard key={challenge.id} challenge={challenge} />
           ))
@@ -23,7 +31,7 @@ export default async function ChallengesPage() {
   );
 }
 
-async function fetchChallenges(): Promise<NovaChallenge[] | null> {
+async function fetchChallenges(): Promise<NovaChallenge[]> {
   const supabase = await createClient();
 
   try {
