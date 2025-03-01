@@ -10,7 +10,7 @@ interface Params {
   }>;
 }
 
-export async function GET({ params }: Params) {
+export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { constraintId } = await params;
 
@@ -104,7 +104,7 @@ export async function PUT(request: Request, { params }: Params) {
   }
 }
 
-export async function DELETE({ params }: Params) {
+export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createAdminClient();
   const { constraintId } = await params;
 
