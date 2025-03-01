@@ -5,7 +5,7 @@ export const siteConfig = {
   url: DEV_MODE ? 'http://localhost:7805' : 'https://nova.tuturuuu.com',
   ogImage: DEV_MODE
     ? 'http://localhost:7805/api/og'
-    : 'https://tuturuuu.com/api/og',
+    : 'https://nova.tuturuuu.com/api/og',
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',
