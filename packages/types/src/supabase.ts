@@ -2097,19 +2097,19 @@ export type Database = {
       };
       nova_problem_constraints: {
         Row: {
-          constraint_content: string | null;
+          constraint_content: string;
           created_at: string;
           id: string;
           problem_id: string;
         };
         Insert: {
-          constraint_content?: string | null;
+          constraint_content: string;
           created_at?: string;
           id?: string;
           problem_id: string;
         };
         Update: {
-          constraint_content?: string | null;
+          constraint_content?: string;
           created_at?: string;
           id?: string;
           problem_id?: string;
@@ -2129,19 +2129,19 @@ export type Database = {
           created_at: string;
           id: string;
           problem_id: string;
-          testcase_content: string | null;
+          testcase_content: string;
         };
         Insert: {
           created_at?: string;
           id?: string;
           problem_id: string;
-          testcase_content?: string | null;
+          testcase_content: string;
         };
         Update: {
           created_at?: string;
           id?: string;
           problem_id?: string;
-          testcase_content?: string | null;
+          testcase_content?: string;
         };
         Relationships: [
           {

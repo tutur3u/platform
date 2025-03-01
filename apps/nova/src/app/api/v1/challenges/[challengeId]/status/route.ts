@@ -13,9 +13,9 @@ export async function GET(_: Request, { params }: Params) {
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
-
-  if (!user?.id) {
+  if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -45,9 +45,9 @@ export async function POST(request: Request, { params }: Params) {
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -103,9 +103,9 @@ export async function PUT(request: Request, { params }: Params) {
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
