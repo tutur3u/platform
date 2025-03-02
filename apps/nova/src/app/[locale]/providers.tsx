@@ -6,8 +6,8 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider
       attribute="class"
+      defaultTheme="dark"
       themes={['system', 'light', 'dark']}
-      enableColorScheme={false}
       enableSystem
     >
       <ClientProviders>{children}</ClientProviders>
