@@ -45,6 +45,67 @@ importers:
         specifier: ^3.0.7
         version: 3.0.7(@types/debug@4.1.12)(@types/node@22.13.8)(jiti@2.4.2)(jsdom@26.0.0(canvas@3.1.0))(lightningcss@1.29.1)(yaml@2.7.0)
 
+  apps/calendar:
+    dependencies:
+      '@tuturuuu/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@tuturuuu/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@tuturuuu/supabase':
+        specifier: workspace:*
+        version: link:../../packages/supabase
+      '@tuturuuu/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@tuturuuu/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@tuturuuu/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@tuturuuu/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      next:
+        specifier: ^15.2.0
+        version: 15.2.0(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      react:
+        specifier: ^19.0.0
+        version: 19.0.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.0.0(react@19.0.0)
+      tailwindcss:
+        specifier: ^4.0.9
+        version: 4.0.9
+    devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.3.0
+        version: 3.3.0
+      '@types/node':
+        specifier: ^22.13.8
+        version: 22.13.8
+      '@types/react':
+        specifier: ^19.0.10
+        version: 19.0.10
+      '@types/react-dom':
+        specifier: ^19.0.4
+        version: 19.0.4(@types/react@19.0.10)
+      eslint:
+        specifier: ^9.21.0
+        version: 9.21.0(jiti@2.4.2)
+      eslint-config-next:
+        specifier: ^15.2.0
+        version: 15.2.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2)
+      postcss:
+        specifier: ^8.5.3
+        version: 8.5.3
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
+
   apps/db:
     devDependencies:
       supabase:
@@ -756,10 +817,10 @@ importers:
         version: 2.7.22
       '@vercel/analytics':
         specifier: ^1.5.0
-        version: 1.5.0(next@15.2.0(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.5.0(next@15.2.0(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       '@vercel/speed-insights':
         specifier: ^1.2.0
-        version: 1.2.0(next@15.2.0(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.2.0(next@15.2.0(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-21e868a-20250216
         version: 19.0.0-beta-21e868a-20250216
@@ -810,10 +871,10 @@ importers:
         version: 1.0.0
       next:
         specifier: ^15.2.0
-        version: 15.2.0(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 15.2.0(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-intl:
         specifier: ^3.26.5
-        version: 3.26.5(next@15.2.0(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 3.26.5(next@15.2.0(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1024,10 +1085,10 @@ importers:
         version: 2.7.22
       '@vercel/analytics':
         specifier: ^1.5.0
-        version: 1.5.0(next@15.2.0(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.5.0(next@15.2.0(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       '@vercel/speed-insights':
         specifier: ^1.2.0
-        version: 1.2.0(next@15.2.0(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 1.2.0(next@15.2.0(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-21e868a-20250216
         version: 19.0.0-beta-21e868a-20250216
@@ -1054,10 +1115,10 @@ importers:
         version: 1.0.0
       next:
         specifier: ^15.2.0
-        version: 15.2.0(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 15.2.0(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-intl:
         specifier: ^3.26.5
-        version: 3.26.5(next@15.2.0(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        version: 3.26.5(next@15.2.0(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
