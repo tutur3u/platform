@@ -1,8 +1,8 @@
 'use client';
 
 import { useCalendar } from '@/hooks/useCalendar';
-import { experimental_useObject as useObject } from '@ai-sdk/react';
 import { calendarEventSchema } from '@tuturuuu/ai/calendar/events';
+import { useObject } from '@tuturuuu/ai/object/core';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
