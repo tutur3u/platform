@@ -39,6 +39,7 @@ export const PUBLIC_PATHS = [
   '/features',
   '/products',
   '/solutions',
+  '/learn',
   '/blog',
   '/faq',
   '/terms',

@@ -1,8 +1,10 @@
 {
   "common": {
     "alpha": "Alpha",
+    "learn": "Learn",
     "beta": "Beta",
     "and": "and",
+    "learn-description": "Learn description",
     "login": "Login",
     "export-content": "Please choose file type to export",
     "export": "Export",
