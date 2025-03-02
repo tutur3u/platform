@@ -1,6 +1,6 @@
 'use client';
 
-import ChallengeForm from './challengeForm';
+import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
 import { type NovaChallenge } from '@tuturuuu/types/db';
 import {
   Dialog,
@@ -10,24 +10,54 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface EditChallengeDialogProps {
   challenge: NovaChallenge;
   trigger: React.ReactNode;
-  onSuccess?: () => void;
 }
 
 export default function EditChallengeDialog({
   challenge,
   trigger,
-  onSuccess,
 }: EditChallengeDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  const handleSuccess = () => {
-    setOpen(false);
-    if (onSuccess) onSuccess();
+  const onSubmit = async (values: ChallengeFormValues) => {
+    try {
+      const url = `/api/v1/challenges/${challenge.id}`;
+      const method = 'PUT';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save challenge');
+      }
+
+      toast({
+        title: `Challenge updated successfully`,
+        variant: 'default',
+      });
+
+      setOpen(false);
+      router.refresh();
+    } catch (error) {
+      console.error('Error saving challenge:', error);
+      toast({
+        title: 'Failed to save challenge',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -47,7 +77,7 @@ export default function EditChallengeDialog({
             description: challenge.description || '',
             duration: challenge.duration || 60,
           }}
-          onSuccess={handleSuccess}
+          onSubmit={onSubmit}
         />
       </DialogContent>
     </Dialog>

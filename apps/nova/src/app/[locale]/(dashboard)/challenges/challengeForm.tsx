@@ -11,11 +11,9 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useRouter } from 'next/navigation';
 import * as z from 'zod';
 
 const formSchema = z.object({
@@ -30,12 +28,12 @@ const formSchema = z.object({
   }),
 });
 
-type ChallengeFormValues = z.infer<typeof formSchema>;
+export type ChallengeFormValues = z.infer<typeof formSchema>;
 
 interface ChallengeFormProps {
   defaultValues?: Partial<ChallengeFormValues>;
   challengeId?: string;
-  onSuccess?: () => void;
+  onSubmit: (values: ChallengeFormValues) => void;
 }
 
 export default function ChallengeForm({
@@ -45,55 +43,14 @@ export default function ChallengeForm({
     duration: 60,
   },
   challengeId,
-  onSuccess,
+  onSubmit,
 }: ChallengeFormProps) {
-  const { toast } = useToast();
-  const router = useRouter();
   const isEditing = !!challengeId;
 
   const form = useForm<ChallengeFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
-
-  async function onSubmit(values: ChallengeFormValues) {
-    try {
-      const url = isEditing
-        ? `/api/v1/challenges/${challengeId}`
-        : '/api/v1/challenges';
-      const method = isEditing ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save challenge');
-      }
-
-      toast({
-        title: `Challenge ${isEditing ? 'updated' : 'created'} successfully`,
-        variant: 'default',
-      });
-
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.refresh();
-      }
-    } catch (error) {
-      console.error('Error saving challenge:', error);
-      toast({
-        title: 'Failed to save challenge',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
-    }
-  }
 
   return (
     <Form {...form}>

@@ -32,7 +32,6 @@ interface ChallengeCardProps {
 
 export default function ChallengeCard({ challenge }: ChallengeCardProps) {
   const router = useRouter();
-
   const [status, setStatus] = useState<NovaChallengeStatus | null>(null);
 
   useEffect(() => {
@@ -126,7 +125,6 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
                   Edit
                 </DropdownMenuItem>
               }
-              onSuccess={() => router.refresh()}
             />
             <DropdownMenuItem
               onClick={handleDeleteChallenge}
