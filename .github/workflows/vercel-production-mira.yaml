@@ -40,9 +40,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .turbo
-          key: ${{ runner.os }}-turbo-mira-${{ github.sha }}
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-turbo-mira-
+            ${{ runner.os }}-turbo-
 
       - name: Setup pnpm
         if: steps.check_commits.outputs.skip_build != 'true'

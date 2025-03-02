@@ -1,16 +1,19 @@
-name: Vercel Rewise Preview Deployment
+name: Vercel Calendar Production Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_REWISE_PROJECT_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_CALENDAR_PROJECT_ID }}
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.PRODUCTION_SUPABASE_SERVICE_KEY }}
 on:
   push:
-    branches-ignore:
+    branches:
       - production
 
 jobs:
-  Deploy-Preview:
+  Deploy-Production:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -21,12 +24,11 @@ jobs:
       - name: Check for newer commits
         id: check_commits
         run: |
-          CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
-          git fetch origin $CURRENT_BRANCH
-          LATEST_COMMIT=$(git rev-parse origin/$CURRENT_BRANCH)
+          git fetch origin production
+          LATEST_COMMIT=$(git rev-parse origin/production)
           CURRENT_COMMIT=${GITHUB_SHA}
           if [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
-            echo "Newer commit found on $CURRENT_BRANCH branch. Skipping build."
+            echo "Newer commit found on production branch. Skipping build."
             echo "skip_build=true" >> $GITHUB_OUTPUT
           else
             echo "This is the latest commit. Proceeding with build."
@@ -69,12 +71,12 @@ jobs:
 
       - name: Pull Vercel Environment Information
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

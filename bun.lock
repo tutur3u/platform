@@ -18,6 +18,33 @@
         "vitest": "^3.0.7",
       },
     },
+    "apps/calendar": {
+      "name": "@tuturuuu/calendar",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/ai": "workspace:*",
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "next": "^15.2.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "tailwindcss": "^4.0.9",
+      },
+      "devDependencies": {
+        "@eslint/eslintrc": "^3.3.0",
+        "@types/node": "^22.13.8",
+        "@types/react": "^19.0.10",
+        "@types/react-dom": "^19.0.4",
+        "eslint": "^9.21.0",
+        "eslint-config-next": "^15.2.0",
+        "postcss": "^8.5.3",
+        "typescript": "^5.8.2",
+      },
+    },
     "apps/db": {
       "name": "@tuturuuu/db",
       "version": "1.0.0",
@@ -601,7 +628,7 @@
       "version": "0.0.10",
       "dependencies": {
         "@ai-sdk/amazon-bedrock": "^2.0.5",
-        "@ai-sdk/anthropic": "^1.1.12",
+        "@ai-sdk/anthropic": "^1.1.13",
         "@ai-sdk/azure": "^1.1.15",
         "@ai-sdk/cerebras": "^0.1.12",
         "@ai-sdk/cohere": "^1.1.12",
@@ -610,7 +637,7 @@
         "@ai-sdk/fal": "^0.0.6",
         "@ai-sdk/fireworks": "^0.1.12",
         "@ai-sdk/google": "^1.1.17",
-        "@ai-sdk/google-vertex": "^2.1.20",
+        "@ai-sdk/google-vertex": "^2.1.21",
         "@ai-sdk/groq": "^1.1.11",
         "@ai-sdk/luma": "^0.0.8",
         "@ai-sdk/mistral": "^1.1.13",
@@ -835,7 +862,7 @@
   "packages": {
     "@ai-sdk/amazon-bedrock": ["@ai-sdk/amazon-bedrock@2.0.5", "", { "dependencies": { "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10", "@smithy/eventstream-codec": "^4.0.1", "@smithy/util-utf8": "^4.0.0", "aws4fetch": "^1.0.20" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-vis7WBedDgN/311D9KQfRFO8G3HU3Noemtt9iw1TVR3t/Fkw8jcMdkhJ+jV8LXSt6s6U1DTfx+iAru7xi8OgZg=="],
 
-    "@ai-sdk/anthropic": ["@ai-sdk/anthropic@1.1.12", "", { "dependencies": { "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-EygyzN8Ng5r4kj5hI2ONn1HQv0Z0NJKAQqBu4U3ZE9pKotjYuU9xkvvyteJwhQiRm4qfpqCdWHeUuC99Q30grA=="],
+    "@ai-sdk/anthropic": ["@ai-sdk/anthropic@1.1.13", "", { "dependencies": { "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-dBivw7ggokys0c9UmbhxHW36S+EHMQEHk/hVcakGO3sMEe6Vi0dR575xDjXJqs8uZPAmbcZjNb1s89U8cA0Y+Q=="],
 
     "@ai-sdk/azure": ["@ai-sdk/azure@1.1.15", "", { "dependencies": { "@ai-sdk/openai": "1.1.15", "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-/2XMyl3+BP/zUxunmUKHAxyw3lYOGloEQ5J//yERys42CsMWj2jqut3Qred8ruyQKHsb19rk+HUWlCRg/WUuOA=="],
 
@@ -853,7 +880,7 @@
 
     "@ai-sdk/google": ["@ai-sdk/google@1.1.17", "", { "dependencies": { "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-LFdRO+BMUagDplhZExOSr0cfmnoeV1s/gxpIsqt/AWCYnqY/dYGT74nhjbQ+rILeoE8vwnwUu/7OOZexhccm9A=="],
 
-    "@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@2.1.20", "", { "dependencies": { "@ai-sdk/anthropic": "1.1.12", "@ai-sdk/google": "1.1.17", "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10", "google-auth-library": "^9.15.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-m/RedWHiiWPEfTbc9ywN4+9cT1Vgg00qwimLtP9Skw9mXB3zbtbcY0n5msd49VWTasOPm+E/9DINZ7LoC8YTsA=="],
+    "@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@2.1.21", "", { "dependencies": { "@ai-sdk/anthropic": "1.1.13", "@ai-sdk/google": "1.1.17", "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10", "google-auth-library": "^9.15.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-4XwMOjrCJ0RRru7vAfMaWWFCC5bZIli7psA6WgRWr9NQd3On56QIu8NkRFGQiaME076AkzoZ3cuMCE4838JCQA=="],
 
     "@ai-sdk/groq": ["@ai-sdk/groq@1.1.11", "", { "dependencies": { "@ai-sdk/provider": "1.0.9", "@ai-sdk/provider-utils": "2.1.10" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-Y5WUyWuxkQarl4AVGeIMbNSp4/XiwW/mxp9SKeagfDhflVnQHd2ggISVD6HiOBQhznusITjWYYC66DJeBn0v6A=="],
 
@@ -1740,6 +1767,8 @@
     "@trivago/prettier-plugin-sort-imports": ["@trivago/prettier-plugin-sort-imports@5.2.2", "", { "dependencies": { "@babel/generator": "^7.26.5", "@babel/parser": "^7.26.7", "@babel/traverse": "^7.26.7", "@babel/types": "^7.26.7", "javascript-natural-sort": "^0.7.1", "lodash": "^4.17.21" }, "peerDependencies": { "@vue/compiler-sfc": "3.x", "prettier": "2.x - 3.x", "prettier-plugin-svelte": "3.x", "svelte": "4.x || 5.x" }, "optionalPeers": ["@vue/compiler-sfc", "prettier-plugin-svelte", "svelte"] }, "sha512-fYDQA9e6yTNmA13TLVSA+WMQRc5Bn/c0EUBditUHNfMMxN7M82c38b1kEggVE3pLpZ0FwkwJkUEKMiOi52JXFA=="],
 
     "@tuturuuu/ai": ["@tuturuuu/ai@workspace:packages/ai"],
+
+    "@tuturuuu/calendar": ["@tuturuuu/calendar@workspace:apps/calendar"],
 
     "@tuturuuu/db": ["@tuturuuu/db@workspace:apps/db"],
 
