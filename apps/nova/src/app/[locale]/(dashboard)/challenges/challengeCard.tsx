@@ -45,6 +45,12 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
   const handleStartChallenge = async () => {
     if (confirm('Are you sure you want to start this challenge?')) {
       const status = await fetchChallengeStatus(challenge.id);
+      const problems = await fetchChallengeProblems(challenge.id);
+
+      if (problems.length === 0) {
+        alert('No problems found for this challenge.');
+        return;
+      }
 
       if (status?.status === 'IN_PROGRESS') {
         router.push(`/challenges/${challenge.id}`);
@@ -166,5 +172,12 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
 
 async function fetchChallengeStatus(challengeId: string) {
   const response = await fetch(`/api/v1/challenges/${challengeId}/status`);
+  if (!response.ok) return null;
+  return response.json();
+}
+
+async function fetchChallengeProblems(challengeId: string) {
+  const response = await fetch(`/api/v1/problems?challengeId=${challengeId}`);
+  if (!response.ok) return [];
   return response.json();
 }
