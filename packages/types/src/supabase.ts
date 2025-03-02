@@ -2191,6 +2191,30 @@ export type Database = {
           },
         ];
       };
+      nova_roles: {
+        Row: {
+          created_at: string;
+          email: string | null;
+          enable: boolean | null;
+          id: string;
+          role: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          email?: string | null;
+          enable?: boolean | null;
+          id?: string;
+          role?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          email?: string | null;
+          enable?: boolean | null;
+          id?: string;
+          role?: string | null;
+        };
+        Relationships: [];
+      };
       nova_submissions: {
         Row: {
           created_at: string;

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-// Import Link from Next.js
+
 
 const lessonContents = [
   {

@@ -5,6 +5,7 @@ import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   NovaChallenge,
   NovaChallengeStatus,
@@ -12,6 +13,7 @@ import {
   NovaProblemConstraint,
   NovaProblemTestCase,
 } from '@tuturuuu/types/db';
+import { redirect } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -28,7 +30,8 @@ interface Props {
   }>;
 }
 
-export default function Page({ params }: Props) {
+export default async function Page({ params }: Props) {
+  const adminSb = await createAdminClient();
   const [challenge, setChallenge] = useState<ExtendedNovaChallenge | null>(
     null
   );
@@ -38,7 +41,21 @@ export default function Page({ params }: Props) {
 
   const supabase = createClient();
   const router = useRouter();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  if (!user?.id) {
+    router.push('/login');
+  }
+
+  const { data: whitelisted, error } = await adminSb
+    .from('nova_roles')
+    .select('enable')
+    .eq('email', user?.email as string)
+    .maybeSingle();
+
+  if (error || !whitelisted?.enable) redirect('/not-wishlist');
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (status?.status === 'IN_PROGRESS') {
@@ -57,20 +74,6 @@ export default function Page({ params }: Props) {
   }, [status]);
 
   useEffect(() => {
-    const authCheck = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user?.id) {
-        router.push('/login');
-      }
-    };
-
-    authCheck();
-  }, []);
-
-  useEffect(() => {
     const fetchData = async () => {
       const { challengeId } = await params;
       const challengeData = await getChallenge(challengeId);
@@ -83,7 +86,7 @@ export default function Page({ params }: Props) {
         const statusData = await response.json();
         setStatus(statusData);
 
-        // If challenge is ended, redirect to report page
+
         if (statusData?.status === 'ENDED') {
           router.push(`/challenges/${challengeId}/results`);
         }
@@ -163,14 +166,15 @@ export default function Page({ params }: Props) {
           {problems.length > 0 && problems[currentProblemIndex] ? (
             <ProblemComponent
               problem={{
-                id: problems[currentProblemIndex].id,
-                title: problems[currentProblemIndex].title ?? '',
-                description: problems[currentProblemIndex].description ?? '',
-                exampleInput: problems[currentProblemIndex].example_input ?? '',
+                id: problems[currentProblemIndex]?.id as string,
+                title: problems[currentProblemIndex]?.title ?? '',
+                description: problems[currentProblemIndex]?.description ?? '',
+                exampleInput:
+                  problems[currentProblemIndex]?.example_input ?? '',
                 exampleOutput:
-                  problems[currentProblemIndex].example_output ?? '',
+                  problems[currentProblemIndex]?.example_output ?? '',
                 constraints:
-                  problems[currentProblemIndex].constraints?.map(
+                  problems[currentProblemIndex]?.constraints?.map(
                     (constraint) => constraint.constraint_content
                   ) ?? [],
               }}
