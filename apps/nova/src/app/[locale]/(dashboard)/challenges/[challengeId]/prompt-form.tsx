@@ -6,7 +6,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -157,7 +156,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
 
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Problem History</DialogTitle>
+              <DialogTitle>Submission History</DialogTitle>
               <DialogDescription>
                 Below is the history of your attempts for this problem.
                 Feedbacks will be provided after you finish the test.
@@ -184,10 +183,6 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                 <p>Nothing to show yet!</p>
               )}
             </div>
-
-            <DialogFooter>
-              <Button variant="outline">Close</Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
