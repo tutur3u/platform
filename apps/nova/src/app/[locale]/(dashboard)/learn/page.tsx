@@ -10,6 +10,9 @@ import {
   GraduationCap,
   Sparkles,
 } from 'lucide-react';
+import Link from 'next/link';
+
+// Import Link from Next.js
 
 const lessonContents = [
   {
@@ -162,10 +165,12 @@ export default function LearnPage() {
                         <Clock className="mr-2 h-3 w-3" />
                         {section.duration}
                       </Badge>
-                      <Button size="sm" className="gap-2">
-                        Start
-                        <ArrowRight className="h-3 w-3" />
-                      </Button>
+                      <Link href={`/learn/${module.id}`}>
+                        <Button size="sm" className="gap-2">
+                          Start
+                          <ArrowRight className="h-3 w-3" />
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </motion.div>
