@@ -1,11 +1,11 @@
 export type SupportedColor =
-  | 'red'
-  | 'blue'
-  | 'green'
-  | 'yellow'
-  | 'orange'
-  | 'purple'
-  | 'pink'
-  | 'indigo'
-  | 'cyan'
-  | 'gray';
+  | 'RED'
+  | 'BLUE'
+  | 'GREEN'
+  | 'YELLOW'
+  | 'ORANGE'
+  | 'PURPLE'
+  | 'PINK'
+  | 'INDIGO'
+  | 'CYAN'
+  | 'GRAY';
