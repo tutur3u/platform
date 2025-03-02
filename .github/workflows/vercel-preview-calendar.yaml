@@ -1,7 +1,7 @@
-name: Vercel Rewise Preview Deployment
+name: Vercel Calendar Preview Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_REWISE_PROJECT_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_CALENDAR_PROJECT_ID }}
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 on:
