@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(_: Request) {
@@ -44,7 +41,7 @@ export async function GET(_: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createAdminClient();
+  const supabase = await createClient();
   const body = await request.json();
 
   try {
@@ -52,6 +49,7 @@ export async function POST(request: Request) {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+
     if (authError || !user?.id) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }

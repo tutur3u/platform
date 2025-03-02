@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -55,7 +52,7 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
-  const supabase = await createAdminClient();
+  const supabase = await createClient();
   const { constraintId } = await params;
   const updates = await request.json();
 
@@ -105,7 +102,7 @@ export async function PUT(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createAdminClient();
+  const supabase = await createClient();
   const { constraintId } = await params;
 
   try {
