@@ -66,9 +66,9 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     // Validate required fields
-    if (!updates.problem_id || !updates.testcase_content) {
+    if (!updates.problemId || !updates.input) {
       return NextResponse.json(
-        { message: 'problem_id and testcase_content are required' },
+        { message: 'problemId and input are required' },
         { status: 400 }
       );
     }
@@ -76,8 +76,8 @@ export async function PUT(request: Request, { params }: Params) {
     const { data, error } = await supabase
       .from('nova_problem_testcases')
       .update({
-        problem_id: updates.problem_id,
-        testcase_content: updates.testcase_content,
+        problem_id: updates.problemId,
+        input: updates.input,
       })
       .eq('id', testcaseId)
       .select()

@@ -62,9 +62,19 @@ export async function POST(request: Request) {
     }
 
     // Validate required fields
-    if (!body.title || !body.challenge_id) {
+    if (
+      !body.title ||
+      !body.challengeId ||
+      !body.description ||
+      !body.maxInputLength ||
+      !body.exampleInput ||
+      !body.exampleOutput
+    ) {
       return NextResponse.json(
-        { message: 'Title and challenge_id are required' },
+        {
+          message:
+            'Title, challengeId, description, maxInputLength, exampleInput, and exampleOutput are required',
+        },
         { status: 400 }
       );
     }
@@ -75,9 +85,10 @@ export async function POST(request: Request) {
       .insert({
         title: body.title,
         description: body.description,
-        example_input: body.example_input,
-        example_output: body.example_output,
-        challenge_id: body.challenge_id,
+        max_input_length: body.maxInputLength,
+        example_input: body.exampleInput,
+        example_output: body.exampleOutput,
+        challenge_id: body.challengeId,
       })
       .select()
       .single();

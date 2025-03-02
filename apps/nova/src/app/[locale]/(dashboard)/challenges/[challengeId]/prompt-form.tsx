@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
 import { History } from 'lucide-react';
@@ -17,16 +18,17 @@ import React, { useEffect, useState } from 'react';
 
 type HistoryEntry = {
   score: number;
-  feedback: string;
-  user_prompt: string;
+  input: string;
+  output: string;
 };
 
 interface Problem {
   id: string;
   title: string;
   description: string;
-  example_input: string;
-  example_output: string;
+  maxInputLength: number;
+  exampleInput: string;
+  exampleOutput: string;
   testcases: string[];
 }
 
@@ -36,6 +38,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   >([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [submissions, setSubmissions] = useState<HistoryEntry[]>([]);
   const [attempts, setAttempts] = useState(0);
 
@@ -53,36 +56,33 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     fetchSubmissions();
   }, [problem?.id]);
 
-  const addSubmission = async (
-    user_prompt: string,
-    score: number,
-    feedback: string,
-    problemId: string
-  ) => {
-    try {
-      const response = await fetch(
-        `/api/v1/problems/${problemId}/submissions`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_prompt,
-            score,
-            feedback,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to update submissions');
-      }
-    } catch (error) {
-      console.error('Error:', error);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
   const handleSend = async () => {
-    if (!input.trim() || loading || attempts >= 5) return;
+    if (!input.trim()) {
+      setError('Input cannot be empty.');
+      return;
+    }
+
+    if (input.length > problem.maxInputLength) {
+      setError('Input length exceeds the maximum allowed length.');
+      return;
+    }
+
+    if (attempts >= 5) {
+      setError('You have reached the maximum number of attempts.');
+      return;
+    }
+
+    if (loading) {
+      setError('Please wait for the previous attempt to complete.');
+      return;
+    }
 
     const newUserMessage = { text: input, sender: 'user' as const };
     setMessages((prev) => [...prev, newUserMessage]);
@@ -97,103 +97,159 @@ export default function PromptForm({ problem }: { problem: Problem }) {
           answer: input,
           problemDescription: problem.description,
           testCases: problem.testcases,
-          exampleInput: problem.example_input,
-          exampleOutput: problem.example_output,
+          exampleInput: problem.exampleInput,
+          exampleOutput: problem.exampleOutput,
         }),
       });
 
       const data = await response.json();
+      const output = data.response.feedback || '';
+      const score = data.response.score || 0;
 
-      const aiResponseText =
-        data.response?.score !== undefined && data.response?.feedback
-          ? `Score: ${data.response.score}/10 - ${data.response.feedback}`
-          : "I couldn't process that. Try again!";
+      // Add to submissions
+      await addSubmission(input, output, score, problem.id);
 
-      const newAIMessage = { text: aiResponseText, sender: 'ai' as const };
-      setMessages((prev) => [...prev, newAIMessage]);
-
-      if (data.response?.score && data.response?.feedback) {
-        await addSubmission(
-          input,
-          data.response.score,
-          data.response.feedback,
-          problem.id
-        );
-        setAttempts((prev) => prev + 1);
-
-        const fetchedSubmissions = await fetchSubmissionsFromAPI(problem.id);
+      // Refresh submissions
+      const fetchedSubmissions = await fetchSubmissionsFromAPI(problem.id);
+      if (fetchedSubmissions) {
         setSubmissions(fetchedSubmissions);
+        setAttempts(fetchedSubmissions.length);
       }
-    } catch (error) {
-      const errorMsg = {
-        text: 'An error occurred. Please try again.',
+
+      // Add AI response to chat
+      const newAiMessage = {
+        text: `Score: ${score}/10\n\n${output}`,
         sender: 'ai' as const,
       };
-      setMessages((prev) => [...prev, errorMsg]);
+      setMessages((prev) => [...prev, newAiMessage]);
+    } catch (error) {
+      console.error('Error:', error);
+      const errorMessage = {
+        text: 'Sorry, there was an error processing your request.',
+        sender: 'ai' as const,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      toast({
+        title: 'Error',
+        description: 'Failed to update submissions',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSend();
+  const addSubmission = async (
+    input: string,
+    output: string,
+    score: number,
+    problemId: string
+  ) => {
+    try {
+      const response = await fetch(
+        `/api/v1/problems/${problemId}/submissions`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input,
+            output,
+            score,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update submissions');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update submissions',
+        variant: 'destructive',
+      });
     }
   };
 
   return (
-    <div className="round round-sm bg-foreground/10 text-foreground flex h-full flex-col p-4">
-      <h2 className="text-lg font-bold">Chat Box</h2>
-      <div className="mb-2 flex items-center">
-        <p className="mr-2">
-          You only have 5 tries for each question. [{attempts}/5]
-        </p>
-
-        <Dialog>
-          <DialogTrigger>
-            <History size={16} />
-          </DialogTrigger>
-
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Submission History</DialogTitle>
-              <DialogDescription>
-                Below is the history of your attempts for this problem.
-                Feedbacks will be provided after you finish the test.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="max-h-[400px] overflow-y-auto">
-              {submissions && submissions.length > 0 ? (
-                <ul>
-                  {submissions.map((entry, index) => (
-                    <li key={index}>
-                      <div className="flex justify-between pt-5">
-                        <span>Attempt {index + 1}:</span>
-                        <span className="rounded-lg bg-gray-300 px-4 py-2 text-sm font-semibold">
-                          Score: {entry.score}/10
+    <div className="flex h-full flex-col">
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold">Your Prompt</h2>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <History className="h-4 w-4" />
+                History
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Submission History</DialogTitle>
+                <DialogDescription>
+                  Your previous submissions for this problem.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 space-y-4">
+                {submissions.length > 0 ? (
+                  submissions.map((submission, index) => (
+                    <div
+                      key={index}
+                      className="rounded-lg border border-gray-200 p-4 shadow-sm"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="font-medium text-gray-700">
+                          Attempt {index + 1}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs font-medium ${
+                            submission.score >= 8
+                              ? 'bg-green-100 text-green-800'
+                              : submission.score >= 5
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          Score: {submission.score}/10
                         </span>
                       </div>
-                      <p>{entry.user_prompt}</p>
-                      <Separator></Separator>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>Nothing to show yet!</p>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+                      <Separator className="my-2" />
+                      <div className="mt-2">
+                        <p className="text-sm font-medium text-gray-700">
+                          Your Prompt:
+                        </p>
+                        <p className="mt-1 text-sm text-gray-600">
+                          {submission.input}
+                        </p>
+                      </div>
+                      <div className="mt-4">
+                        <p className="text-sm font-medium text-gray-700">
+                          Output:
+                        </p>
+                        <p className="mt-1 text-sm text-gray-600">
+                          {submission.output}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-500">
+                    No submissions yet.
+                  </p>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      <div className="bg-foreground/10 text-foreground flex-1 space-y-2 rounded-md border p-2">
+        <div className="mb-4">
+          <p>You only have 5 tries for each question. [{attempts}/5]</p>
+        </div>
+
         {loading && (
-          <div className="flex h-full items-center justify-center">
-            <div className="flex items-center justify-center gap-2">
-              <LoadingIndicator className="h-6" />
-              <p>We are processing your prompt please wait...</p>
-            </div>
+          <div className="flex items-center justify-center py-10">
+            <LoadingIndicator />
           </div>
         )}
 
@@ -209,7 +265,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     <strong className="font-medium text-gray-900">
                       Prompt:{' '}
                     </strong>
-                    {submissions[submissions?.length - 1]?.user_prompt}
+                    {submissions[submissions?.length - 1]?.input}
                   </p>
                 </div>
                 <div>
@@ -244,6 +300,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
           {loading ? 'Sending...' : 'Send'}
         </Button>
       </div>
+      {error && <p className="mt-2 text-red-500">{error}</p>}
     </div>
   );
 }

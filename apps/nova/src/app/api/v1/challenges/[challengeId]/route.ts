@@ -66,9 +66,9 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     // Validate required fields
-    if (!updates.title) {
+    if (!updates.title || !updates.description || !updates.duration) {
       return NextResponse.json(
-        { message: 'Title is required' },
+        { message: 'Title, description, and duration are required' },
         { status: 400 }
       );
     }

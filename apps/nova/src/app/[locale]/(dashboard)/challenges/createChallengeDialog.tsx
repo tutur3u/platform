@@ -37,7 +37,7 @@ export default function CreateChallengeDialog() {
       }
 
       toast({
-        title: `Challenge created successfully`,
+        title: 'Challenge created successfully',
         variant: 'default',
       });
 

@@ -24,7 +24,7 @@ export default async function ChallengesPage() {
       </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {challenges.length > 0 ? (
-          challenges.map((challenge: NovaChallenge) => (
+          challenges.map((challenge) => (
             <ChallengeCard key={challenge.id} challenge={challenge} />
           ))
         ) : (
@@ -41,7 +41,8 @@ async function fetchChallenges(): Promise<NovaChallenge[]> {
   try {
     const { data: challenges, error } = await supabase
       .from('nova_challenges')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching challenges:', error.message);

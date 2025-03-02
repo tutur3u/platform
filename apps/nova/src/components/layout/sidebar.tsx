@@ -20,6 +20,7 @@ import {
   ChevronDown,
   Code,
   Home,
+  List,
   Settings,
   Trophy,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ const sidebarItems = [
     ],
   },
   { name: 'Challenges', href: '/challenges', icon: Code },
+  { name: 'Problems', href: '/problems', icon: List },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
 ];
 
@@ -47,7 +49,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex w-64 flex-col border-r bg-card text-card-foreground">
+    <div className="bg-card text-card-foreground flex w-64 flex-col border-r">
       <div className="p-4">
         <h1 className="text-xl font-bold">Prompt Engineering</h1>
       </div>

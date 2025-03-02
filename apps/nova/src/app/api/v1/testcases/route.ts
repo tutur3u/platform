@@ -62,9 +62,9 @@ export async function POST(request: Request) {
     }
 
     // Validate required fields
-    if (!body.problem_id || !body.testcase_content) {
+    if (!body.problemId || !body.input) {
       return NextResponse.json(
-        { message: 'problem_id and testcase_content are required' },
+        { message: 'problemId and input are required' },
         { status: 400 }
       );
     }
@@ -74,8 +74,8 @@ export async function POST(request: Request) {
       await supabase
         .from('nova_problem_testcases')
         .insert({
-          problem_id: body.problem_id,
-          testcase_content: body.testcase_content,
+          problem_id: body.problemId,
+          input: body.input,
         })
         .select()
         .single();

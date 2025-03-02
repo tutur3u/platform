@@ -3,8 +3,8 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   NovaChallenge,
-  NovaChallengeStatus,
   NovaProblem,
+  NovaSession,
   NovaSubmission,
 } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,7 +12,7 @@ import { ArrowLeft, BookOpen, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-type ReportData = NovaChallengeStatus & {
+type ReportData = NovaSession & {
   challenge: NovaChallenge & {
     problems: (NovaProblem & {
       submissions: NovaSubmission[];
@@ -167,13 +167,13 @@ export default function Page({ params }: Props) {
                   <tr key={index} className="hover:bg-muted/50">
                     <td className="border px-4 py-2">Problem {index + 1}</td>
                     <td className="border px-4 py-2">
-                      {bestSubmission?.user_prompt || 'Not attempted'}
+                      {bestSubmission?.input || 'Not attempted'}
                     </td>
                     <td className="border px-4 py-2 text-center">
-                      {bestSubmission?.score || 0}
+                      {`${bestSubmission?.score || 0}/10`}
                     </td>
                     <td className="border px-4 py-2">
-                      {bestSubmission?.feedback || '-'}
+                      {bestSubmission?.output || '-'}
                     </td>
                   </tr>
                 );

@@ -1,7 +1,7 @@
 'use client';
 
 import EditChallengeDialog from './editChallengeDialog';
-import type { NovaChallenge, NovaChallengeStatus } from '@tuturuuu/types/db';
+import type { NovaChallenge, NovaSession } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { formatDuration } from '@tuturuuu/utils/format';
 import {
   ArrowRight,
   Clock,
@@ -44,20 +45,20 @@ interface ChallengeCardProps {
 export default function ChallengeCard({ challenge }: ChallengeCardProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [status, setStatus] = useState<NovaChallengeStatus | null>(null);
+  const [session, setSession] = useState<NovaSession | null>(null);
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
-    const fetchStatus = async () => {
-      const challengeStatus = await fetchChallengeStatus(challenge.id);
-      setStatus(challengeStatus);
+    const fetchSession = async () => {
+      const challengeSession = await fetchChallengeSession(challenge.id);
+      setSession(challengeSession);
     };
-    fetchStatus();
+    fetchSession();
   }, [challenge.id]);
 
   const handleStartChallenge = async () => {
-    const status = await fetchChallengeStatus(challenge.id);
+    const session = await fetchChallengeSession(challenge.id);
     const problems = await fetchChallengeProblems(challenge.id);
 
     if (problems.length === 0) {
@@ -70,25 +71,35 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
       return;
     }
 
-    if (status?.status === 'IN_PROGRESS') {
+    if (session?.status === 'IN_PROGRESS') {
       router.push(`/challenges/${challenge.id}`);
       return;
     }
 
-    const response = await fetch(`/api/v1/challenges/${challenge.id}/status`, {
+    const startTime = new Date();
+    const endTime = new Date(
+      startTime.getTime() + (challenge.duration || 0) * 1000
+    );
+
+    const response = await fetch(`/api/v1/challenges/${challenge.id}/session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        startTime: new Date().toISOString(),
-        endTime: new Date(
-          new Date().getTime() + (challenge.duration || 0) * 60000
-        ).toISOString(),
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
         status: 'IN_PROGRESS',
+        totalScore: 0,
       }),
     });
 
     if (response.ok) {
       router.push(`/challenges/${challenge.id}`);
+    } else {
+      toast({
+        title: 'Failed to start challenge.',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -163,16 +174,16 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
           <div className="flex items-center">
             <Clock className="h-4 w-4" />
             <span className="text-muted-foreground ml-2 text-sm">
-              Duration: {challenge.duration} minutes
+              Duration: {formatDuration(challenge.duration)}
             </span>
           </div>
         </CardContent>
         <CardFooter>
-          {status?.status === 'IN_PROGRESS' ? (
+          {session?.status === 'IN_PROGRESS' ? (
             <Button onClick={handleResumeChallenge} className="w-full gap-2">
               Resume Challenge <ArrowRight className="h-4 w-4" />
             </Button>
-          ) : status?.status === 'ENDED' ? (
+          ) : session?.status === 'ENDED' ? (
             <Button onClick={handleViewResults} className="w-full gap-2">
               View Results <ArrowRight className="h-4 w-4" />
             </Button>
@@ -225,8 +236,8 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
   );
 }
 
-async function fetchChallengeStatus(challengeId: string) {
-  const response = await fetch(`/api/v1/challenges/${challengeId}/status`);
+async function fetchChallengeSession(challengeId: string) {
+  const response = await fetch(`/api/v1/challenges/${challengeId}/session`);
   if (!response.ok) return null;
   return response.json();
 }

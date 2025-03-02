@@ -66,9 +66,9 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     // Validate required fields
-    if (!updates.title || !updates.challenge_id) {
+    if (!updates.title || !updates.challengeId) {
       return NextResponse.json(
-        { message: 'Title and challenge_id are required' },
+        { message: 'Title and challengeId are required' },
         { status: 400 }
       );
     }
@@ -78,9 +78,9 @@ export async function PUT(request: Request, { params }: Params) {
       .update({
         title: updates.title,
         description: updates.description,
-        example_input: updates.example_input,
-        example_output: updates.example_output,
-        challenge_id: updates.challenge_id,
+        exampleInput: updates.exampleInput,
+        exampleOutput: updates.exampleOutput,
+        challengeId: updates.challengeId,
       })
       .eq('id', problemId)
       .select()

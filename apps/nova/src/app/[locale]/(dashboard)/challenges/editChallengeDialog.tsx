@@ -36,7 +36,10 @@ export default function EditChallengeDialog({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          created_at: challenge.created_at,
+        }),
       });
 
       if (!response.ok) {
@@ -44,7 +47,7 @@ export default function EditChallengeDialog({
       }
 
       toast({
-        title: `Challenge updated successfully`,
+        title: 'Challenge updated successfully',
         variant: 'default',
       });
 
@@ -74,8 +77,8 @@ export default function EditChallengeDialog({
           challengeId={challenge.id}
           defaultValues={{
             title: challenge.title,
-            description: challenge.description || '',
-            duration: challenge.duration || 60,
+            description: challenge.description,
+            duration: challenge.duration,
           }}
           onSubmit={onSubmit}
         />

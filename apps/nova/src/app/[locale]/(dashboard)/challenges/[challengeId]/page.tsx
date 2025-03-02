@@ -7,10 +7,9 @@ import TestCaseComponent from './test-case-component';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   NovaChallenge,
-  NovaChallengeStatus,
   NovaProblem,
-  NovaProblemConstraint,
   NovaProblemTestCase,
+  NovaSession,
 } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -22,12 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   problems: (NovaProblem & {
-    constraints: NovaProblemConstraint[];
     testcases: NovaProblemTestCase[];
   })[];
 };
@@ -42,7 +41,7 @@ export default function Page({ params }: Props) {
   const [challenge, setChallenge] = useState<ExtendedNovaChallenge | null>(
     null
   );
-  const [status, setStatus] = useState<NovaChallengeStatus | null>(null);
+  const [session, setSession] = useState<NovaSession | null>(null);
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
   const [challengeId, setChallengeId] = useState('');
   const [showEndDialog, setShowEndDialog] = useState(false);
@@ -52,7 +51,7 @@ export default function Page({ params }: Props) {
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (status?.status === 'IN_PROGRESS') {
+      if (session?.status === 'IN_PROGRESS') {
         const confirmationMessage =
           'You have an ongoing challenge, are you sure you want to leave?';
         event.returnValue = confirmationMessage;
@@ -65,7 +64,7 @@ export default function Page({ params }: Props) {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [status]);
+  }, [session]);
 
   useEffect(() => {
     const authCheck = async () => {
@@ -88,14 +87,14 @@ export default function Page({ params }: Props) {
       setChallenge(challengeData as ExtendedNovaChallenge);
       setChallengeId(challengeId);
 
-      // Fetch challenge status
-      const response = await fetch(`/api/v1/challenges/${challengeId}/status`);
+      // Fetch challenge session
+      const response = await fetch(`/api/v1/challenges/${challengeId}/session`);
       if (response.ok) {
-        const statusData = await response.json();
-        setStatus(statusData);
+        const sessionData = await response.json();
+        setSession(sessionData);
 
         // If challenge is ended, redirect to report page
-        if (statusData?.status === 'ENDED') {
+        if (sessionData?.status === 'ENDED') {
           router.push(`/challenges/${challengeId}/results`);
         }
       } else {
@@ -130,22 +129,31 @@ export default function Page({ params }: Props) {
     );
 
     const totalScore = problemSubmissions.reduce(
-      (acc, curr) => acc + curr[0].score,
+      (acc, curr) => acc + (curr[0]?.score || 0),
       0
     );
 
-    const response = await fetch(`/api/v1/challenges/${challengeId}/status`, {
+    const response = await fetch(`/api/v1/challenges/${challengeId}/session`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'ENDED', totalScore, feedback: '' }),
+      body: JSON.stringify({
+        status: 'ENDED',
+        totalScore: totalScore,
+      }),
     });
 
     if (response.ok) {
       router.push(`/challenges/${challengeId}/results`);
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to end challenge',
+        variant: 'destructive',
+      });
     }
   };
 
-  if (!status) {
+  if (!session) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-xl font-semibold text-gray-700">Loading...</p>
@@ -163,8 +171,8 @@ export default function Page({ params }: Props) {
           onNext={nextProblem}
           onPrev={prevProblem}
           onEnd={() => setShowEndDialog(true)}
-          startTime={status.start_time}
-          endTime={status.end_time}
+          startTime={session.start_time}
+          endTime={session.end_time}
           duration={challenge?.duration || 0}
         />
 
@@ -175,14 +183,12 @@ export default function Page({ params }: Props) {
                 id: problems[currentProblemIndex]?.id || '',
                 title: problems[currentProblemIndex]?.title || '',
                 description: problems[currentProblemIndex]?.description || '',
+                maxInputLength:
+                  problems[currentProblemIndex]?.max_input_length || 0,
                 exampleInput:
                   problems[currentProblemIndex]?.example_input || '',
                 exampleOutput:
                   problems[currentProblemIndex]?.example_output || '',
-                constraints:
-                  problems[currentProblemIndex]?.constraints?.map(
-                    (constraint) => constraint.constraint_content
-                  ) || [],
               }}
             />
             <TestCaseComponent
@@ -195,12 +201,14 @@ export default function Page({ params }: Props) {
               id: problems[currentProblemIndex]?.id || '',
               title: problems[currentProblemIndex]?.title || '',
               description: problems[currentProblemIndex]?.description || '',
-              example_input: problems[currentProblemIndex]?.example_input || '',
-              example_output:
+              maxInputLength:
+                problems[currentProblemIndex]?.max_input_length || 0,
+              exampleInput: problems[currentProblemIndex]?.example_input || '',
+              exampleOutput:
                 problems[currentProblemIndex]?.example_output || '',
               testcases:
                 problems[currentProblemIndex]?.testcases?.map(
-                  (testCase) => testCase.testcase_content || ''
+                  (testCase) => testCase.input || ''
                 ) || [],
             }}
           />
@@ -249,7 +257,7 @@ async function getChallenge(
     // Fetch problems linked to this challenge
     const { data: problems, error: problemError } = await supabase
       .from('nova_problems')
-      .select('id, title, description, example_input, example_output')
+      .select('*')
       .eq('challenge_id', challengeId);
 
     if (problemError) {
@@ -260,48 +268,37 @@ async function getChallenge(
     // Fetch constraints and test cases for all problems in one request
     const problemIds = problems.map((problem) => problem.id);
 
-    const { data: constraints, error: constraintError } = await supabase
-      .from('nova_problem_constraints')
-      .select('problem_id, constraint_content')
-      .in('problem_id', problemIds);
-    if (constraintError) {
-      console.error('Error fetching constraints:', constraintError.message);
-    }
-
     const { data: testcases, error: testcaseError } = await supabase
       .from('nova_problem_testcases')
-      .select('problem_id, testcase_content')
+      .select('*')
       .in('problem_id', problemIds);
     if (testcaseError) {
       console.error('Error fetching test cases:', testcaseError.message);
     }
 
-    // Map problems with constraints and test cases
-    const formattedProblems = problems.map((problem) => ({
-      id: problem.id,
-      title: problem.title || '',
-      description: problem.description || '',
-      example_input: problem.example_input || '',
-      example_output: problem.example_output || '',
-      constraints:
-        constraints
-          ?.filter(
-            (c) => c.problem_id === problem.id && c.constraint_content !== null
-          )
-          .map((c) => c.constraint_content!) || [],
-      testcases:
-        testcases
-          ?.filter(
-            (t) => t.problem_id === problem.id && t.testcase_content !== null
-          )
-          .map((t) => t.testcase_content!) || [],
-    }));
+    // Map problems with test cases
+    const formattedProblems = problems.map((problem) => {
+      // Get testcases for this specific problem
+      const problemTestcases =
+        testcases?.filter((t) => t.problem_id === problem.id) || [];
+
+      return {
+        id: problem.id,
+        title: problem.title,
+        description: problem.description,
+        example_input: problem.example_input,
+        example_output: problem.example_output,
+        challenge_id: challenge.id,
+        max_input_length: problem.max_input_length,
+        created_at: problem.created_at,
+        testcases: problemTestcases,
+      };
+    });
 
     return {
       ...challenge,
-      problems:
-        formattedProblems as unknown as ExtendedNovaChallenge['problems'],
-    };
+      problems: formattedProblems,
+    } as ExtendedNovaChallenge;
   } catch (error) {
     console.error('Unexpected error fetching challenge:', error);
     return null;

@@ -19,9 +19,9 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Get the status of the challenge
-  const { data: status, error } = await supabase
-    .from('nova_challenge_status')
+  // Get the session of the challenge
+  const { data: session, error } = await supabase
+    .from('nova_sessions')
     .select('*')
     .eq('challenge_id', challengeId)
     .eq('user_id', user.id)
@@ -29,18 +29,17 @@ export async function GET(_: Request, { params }: Params) {
 
   if (error) {
     return NextResponse.json(
-      { message: 'Error fetching challenge status' },
+      { message: 'Error fetching challenge session' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(status);
+  return NextResponse.json(session);
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const { startTime, endTime, status } = await request.json();
+  const { startTime, endTime, status, totalScore } = await request.json();
   const { challengeId } = await params;
-
   const supabase = await createClient();
 
   const {
@@ -59,15 +58,15 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   // Check if user has already started this challenge
-  const { data: existingChallengeStatus } = await supabase
-    .from('nova_challenge_status')
+  const { data: existingSession } = await supabase
+    .from('nova_sessions')
     .select('*')
     .eq('status', 'IN_PROGRESS')
     .eq('challenge_id', challengeId)
     .eq('user_id', user.id)
     .single();
 
-  if (existingChallengeStatus) {
+  if (existingSession) {
     return NextResponse.json(
       { message: 'Challenge already started' },
       { status: 400 }
@@ -75,15 +74,18 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   // Create initial submission record
-  const { data: newChallengeStatus, error } = await supabase
-    .from('nova_challenge_status')
+  const { data: newSession, error } = await supabase
+    .from('nova_sessions')
     .insert({
       start_time: startTime,
       end_time: endTime,
       status: status,
+      total_score: totalScore,
       challenge_id: challengeId,
       user_id: user.id,
-    });
+    })
+    .select()
+    .single();
 
   if (error) {
     console.error('Error starting challenge:', error);
@@ -93,7 +95,7 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(newChallengeStatus);
+  return NextResponse.json(newSession);
 }
 
 export async function PUT(request: Request, { params }: Params) {
@@ -116,30 +118,31 @@ export async function PUT(request: Request, { params }: Params) {
     );
   }
 
-  const { data: existingChallengeStatus } = await supabase
-    .from('nova_challenge_status')
+  const { data: existingSession } = await supabase
+    .from('nova_sessions')
     .select('*')
     .eq('status', 'IN_PROGRESS')
     .eq('challenge_id', challengeId)
     .eq('user_id', user.id)
     .single();
 
-  if (!existingChallengeStatus) {
+  if (!existingSession) {
     return NextResponse.json(
       { message: 'Can not end challenge that is not in progress' },
       { status: 404 }
     );
   }
 
-  // Update all submissions for this challenge to mark them as ended
-  const { data: updatedChallengeStatus, error } = await supabase
-    .from('nova_challenge_status')
+  const { data: updatedSession, error } = await supabase
+    .from('nova_sessions')
     .update({
       status: status,
       total_score: totalScore,
     })
     .eq('challenge_id', challengeId)
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .select()
+    .single();
 
   if (error) {
     console.error('Error ending challenge:', error);
@@ -149,5 +152,5 @@ export async function PUT(request: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(updatedChallengeStatus);
+  return NextResponse.json(updatedSession);
 }

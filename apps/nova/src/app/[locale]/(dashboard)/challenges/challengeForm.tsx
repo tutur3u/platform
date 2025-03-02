@@ -16,17 +16,19 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import * as z from 'zod';
 
-const formSchema = z.object({
-  title: z.string().min(3, {
-    message: 'Title must be at least 3 characters.',
-  }),
-  description: z.string().min(10, {
-    message: 'Description must be at least 10 characters.',
-  }),
-  duration: z.coerce.number().min(1, {
-    message: 'Duration must be at least 1 minute.',
-  }),
-});
+const formSchema = z
+  .object({
+    title: z.string().min(3, {
+      message: 'Title must be at least 3 characters.',
+    }),
+    description: z.string().min(10, {
+      message: 'Description must be at least 10 characters.',
+    }),
+    duration: z.coerce.number().min(60, {
+      message: 'Duration must be at least 60 seconds.',
+    }),
+  })
+  .required();
 
 export type ChallengeFormValues = z.infer<typeof formSchema>;
 
@@ -40,7 +42,7 @@ export default function ChallengeForm({
   defaultValues = {
     title: '',
     description: '',
-    duration: 60,
+    duration: 3600, // Default to 1 hour in seconds
   },
   challengeId,
   onSubmit,
@@ -95,12 +97,13 @@ export default function ChallengeForm({
           name="duration"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Duration (minutes)</FormLabel>
+              <FormLabel>Duration (seconds)</FormLabel>
               <FormControl>
                 <Input type="number" {...field} />
               </FormControl>
               <FormDescription>
-                How long users have to complete this challenge.
+                How long users have to complete this challenge (in seconds). For
+                example: 3600 = 1 hour, 1800 = 30 minutes.
               </FormDescription>
               <FormMessage />
             </FormItem>

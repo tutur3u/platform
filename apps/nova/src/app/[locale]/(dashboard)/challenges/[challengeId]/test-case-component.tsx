@@ -14,7 +14,7 @@ export default function TestCaseComponent({
           <pre className="bg-foreground/10 whitespace-pre-wrap rounded-md p-2">
             {testcases?.map((testcase) => (
               <div key={testcase.id} className="mb-2 text-sm">
-                {testcase.testcase_content}
+                {testcase.input}
               </div>
             ))}
           </pre>
