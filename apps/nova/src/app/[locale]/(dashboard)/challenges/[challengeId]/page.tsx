@@ -160,26 +160,22 @@ export default function Page({ params }: Props) {
 
       <div className="flex gap-4 p-6 pt-20">
         <div className="flex w-1/2 flex-col">
-          {problems.length > 0 && problems[currentProblemIndex] ? (
-            <ProblemComponent
-              problem={{
-                id: problems[currentProblemIndex].id,
-                title: problems[currentProblemIndex].title ?? '',
-                description: problems[currentProblemIndex].description ?? '',
-                exampleInput: problems[currentProblemIndex].example_input ?? '',
-                exampleOutput:
-                  problems[currentProblemIndex].example_output ?? '',
-                constraints:
-                  problems[currentProblemIndex].constraints?.map(
-                    (constraint) => constraint.constraint_content
-                  ) ?? [],
-              }}
-            />
-          ) : (
-            <p>No problems available.</p>
-          )}
+          <ProblemComponent
+            problem={{
+              id: problems[currentProblemIndex]?.id || '',
+              title: problems[currentProblemIndex]?.title || '',
+              description: problems[currentProblemIndex]?.description || '',
+              exampleInput: problems[currentProblemIndex]?.example_input || '',
+              exampleOutput:
+                problems[currentProblemIndex]?.example_output || '',
+              constraints:
+                problems[currentProblemIndex]?.constraints?.map(
+                  (constraint) => constraint.constraint_content
+                ) || [],
+            }}
+          />
           <TestCaseComponent
-            testcases={problems[currentProblemIndex]?.testcases ?? []}
+            testcases={problems[currentProblemIndex]?.testcases || []}
           />
         </div>
 
@@ -192,8 +188,8 @@ export default function Page({ params }: Props) {
             example_output: problems[currentProblemIndex]?.example_output || '',
             testcases:
               problems[currentProblemIndex]?.testcases?.map(
-                (testCase) => testCase.testcase_content ?? ''
-              ) ?? [],
+                (testCase) => testCase.testcase_content || ''
+              ) || [],
           }}
         />
       </div>
