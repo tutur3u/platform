@@ -12,6 +12,16 @@ import {
   NovaProblemConstraint,
   NovaProblemTestCase,
 } from '@tuturuuu/types/db';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -35,6 +45,7 @@ export default function Page({ params }: Props) {
   const [status, setStatus] = useState<NovaChallengeStatus | null>(null);
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
   const [challengeId, setChallengeId] = useState('');
+  const [showEndDialog, setShowEndDialog] = useState(false);
 
   const supabase = createClient();
   const router = useRouter();
@@ -108,31 +119,29 @@ export default function Page({ params }: Props) {
   };
 
   const handleEndChallenge = async () => {
-    if (confirm('Are you sure you want to end this challenge?')) {
-      const problemSubmissions = await Promise.all(
-        problems.map(async (problem) => {
-          const response = await fetch(
-            `/api/v1/problems/${problem.id}/submissions`
-          );
-          const data = await response.json();
-          return data.sort((a: any, b: any) => b.score - a.score);
-        })
-      );
+    const problemSubmissions = await Promise.all(
+      problems.map(async (problem) => {
+        const response = await fetch(
+          `/api/v1/problems/${problem.id}/submissions`
+        );
+        const data = await response.json();
+        return data.sort((a: any, b: any) => b.score - a.score);
+      })
+    );
 
-      const totalScore = problemSubmissions.reduce(
-        (acc, curr) => acc + curr[0].score,
-        0
-      );
+    const totalScore = problemSubmissions.reduce(
+      (acc, curr) => acc + curr[0].score,
+      0
+    );
 
-      const response = await fetch(`/api/v1/challenges/${challengeId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'ENDED', totalScore, feedback: '' }),
-      });
+    const response = await fetch(`/api/v1/challenges/${challengeId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'ENDED', totalScore, feedback: '' }),
+    });
 
-      if (response.ok) {
-        router.push(`/challenges/${challengeId}/results`);
-      }
+    if (response.ok) {
+      router.push(`/challenges/${challengeId}/results`);
     }
   };
 
@@ -145,55 +154,76 @@ export default function Page({ params }: Props) {
   }
 
   return (
-    <div className="relative">
-      <CustomizedHeader
-        proNum={problems.length}
-        currentProblem={currentProblemIndex + 1}
-        challengeId={challengeId}
-        onNext={nextProblem}
-        onPrev={prevProblem}
-        onEnd={handleEndChallenge}
-        startTime={status.start_time}
-        endTime={status.end_time}
-        duration={challenge?.duration || 0}
-      />
+    <>
+      <div className="relative">
+        <CustomizedHeader
+          proNum={problems.length}
+          currentProblem={currentProblemIndex + 1}
+          challengeId={challengeId}
+          onNext={nextProblem}
+          onPrev={prevProblem}
+          onEnd={() => setShowEndDialog(true)}
+          startTime={status.start_time}
+          endTime={status.end_time}
+          duration={challenge?.duration || 0}
+        />
 
-      <div className="flex gap-4 p-6 pt-20">
-        <div className="flex w-1/2 flex-col">
-          <ProblemComponent
+        <div className="flex gap-4 p-6 pt-20">
+          <div className="flex w-1/2 flex-col">
+            <ProblemComponent
+              problem={{
+                id: problems[currentProblemIndex]?.id || '',
+                title: problems[currentProblemIndex]?.title || '',
+                description: problems[currentProblemIndex]?.description || '',
+                exampleInput:
+                  problems[currentProblemIndex]?.example_input || '',
+                exampleOutput:
+                  problems[currentProblemIndex]?.example_output || '',
+                constraints:
+                  problems[currentProblemIndex]?.constraints?.map(
+                    (constraint) => constraint.constraint_content
+                  ) || [],
+              }}
+            />
+            <TestCaseComponent
+              testcases={problems[currentProblemIndex]?.testcases || []}
+            />
+          </div>
+
+          <PromptComponent
             problem={{
               id: problems[currentProblemIndex]?.id || '',
               title: problems[currentProblemIndex]?.title || '',
               description: problems[currentProblemIndex]?.description || '',
-              exampleInput: problems[currentProblemIndex]?.example_input || '',
-              exampleOutput:
+              example_input: problems[currentProblemIndex]?.example_input || '',
+              example_output:
                 problems[currentProblemIndex]?.example_output || '',
-              constraints:
-                problems[currentProblemIndex]?.constraints?.map(
-                  (constraint) => constraint.constraint_content
+              testcases:
+                problems[currentProblemIndex]?.testcases?.map(
+                  (testCase) => testCase.testcase_content || ''
                 ) || [],
             }}
           />
-          <TestCaseComponent
-            testcases={problems[currentProblemIndex]?.testcases || []}
-          />
         </div>
-
-        <PromptComponent
-          problem={{
-            id: problems[currentProblemIndex]?.id || '',
-            title: problems[currentProblemIndex]?.title || '',
-            description: problems[currentProblemIndex]?.description || '',
-            example_input: problems[currentProblemIndex]?.example_input || '',
-            example_output: problems[currentProblemIndex]?.example_output || '',
-            testcases:
-              problems[currentProblemIndex]?.testcases?.map(
-                (testCase) => testCase.testcase_content || ''
-              ) || [],
-          }}
-        />
       </div>
-    </div>
+
+      <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>End Challenge</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to end this challenge?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEndChallenge}>
+              End
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
