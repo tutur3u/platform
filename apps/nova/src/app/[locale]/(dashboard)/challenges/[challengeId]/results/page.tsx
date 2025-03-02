@@ -7,6 +7,8 @@ import {
   NovaProblem,
   NovaSubmission,
 } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { ArrowLeft, BookOpen, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -72,81 +74,122 @@ export default function Page({ params }: Props) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-gray-700">Loading...</p>
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin" />
+          <p className="text-xl font-semibold">Loading your results...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-red-500">{error}</p>
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="bg-background mx-auto max-w-md rounded-xl p-8 shadow-xl">
+          <div className="bg-destructive/20 text-destructive mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+            <X className="h-10 w-10" />
+          </div>
+          <p className="text-destructive text-center text-xl font-semibold">
+            {error}
+          </p>
+          <Button
+            onClick={() => router.push('/challenges')}
+            variant="destructive"
+            className="mt-6 w-full"
+          >
+            Back to Challenges
+          </Button>
+        </div>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-gray-700">No data available</p>
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="bg-background mx-auto max-w-md rounded-xl p-8 text-center shadow-xl">
+          <div className="bg-muted text-muted-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+            <BookOpen className="h-10 w-10" />
+          </div>
+          <p className="text-xl font-semibold">No data available</p>
+          <p className="text-muted-foreground mt-2">
+            We couldn't find any results for this challenge.
+          </p>
+          <Button
+            onClick={() => router.push('/challenges')}
+            className="mt-6 w-full"
+          >
+            Back to Challenges
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl rounded-lg bg-white p-6 shadow-lg">
-      <h1 className="mb-4 text-2xl font-bold text-gray-800">
-        Challenge Results
-      </h1>
-      <div className="mb-6 rounded-lg bg-blue-50 p-4">
-        <p className="text-lg font-semibold text-blue-800">
-          Total Score: {data.total_score}
-        </p>
-      </div>
+    <div className="bg-background min-h-screen px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6 flex items-center">
+          <Button
+            onClick={() => router.push('/challenges')}
+            variant="outline"
+            className="mr-4 flex h-10 w-10 items-center justify-center rounded-full p-2"
+          >
+            <ArrowLeft className="h-10 w-10" />
+          </Button>
+          <h1 className="text-3xl font-bold">Challenge Results</h1>
+        </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full rounded-lg border border-gray-200">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border px-4 py-2 text-left">Problem</th>
-              <th className="border px-4 py-2 text-left">Your Solution</th>
-              <th className="border px-4 py-2 text-center">Score</th>
-              <th className="border px-4 py-2 text-left">Feedback</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.challenge.problems.map((problem, index) => {
-              const bestSubmission = problem.submissions.sort(
-                (a, b) => (b.score || 0) - (a.score || 0)
-              )[0];
+        <div className="bg-primary/10 mb-6 rounded-lg p-4">
+          <p className="text-lg font-semibold">
+            Total Score: {data.total_score}
+          </p>
+        </div>
 
-              return (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="border px-4 py-2">Problem {index + 1}</td>
-                  <td className="border px-4 py-2">
-                    {bestSubmission?.user_prompt || 'Not attempted'}
-                  </td>
-                  <td className="border px-4 py-2 text-center">
-                    {bestSubmission?.score || 0}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {bestSubmission?.feedback || '-'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+        <div className="overflow-x-auto">
+          <table className="w-full rounded-lg border">
+            <thead>
+              <tr className="bg-muted">
+                <th className="border px-4 py-2 text-left">Problem</th>
+                <th className="border px-4 py-2 text-left">Your Solution</th>
+                <th className="border px-4 py-2 text-center">Score</th>
+                <th className="border px-4 py-2 text-left">Feedback</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.challenge.problems.map((problem, index) => {
+                const bestSubmission = problem.submissions.sort(
+                  (a, b) => (b.score || 0) - (a.score || 0)
+                )[0];
 
-      <div className="mt-6 flex justify-center">
-        <button
-          onClick={() => router.push('/challenges')}
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-        >
-          Back to Challenges
-        </button>
+                return (
+                  <tr key={index} className="hover:bg-muted/50">
+                    <td className="border px-4 py-2">Problem {index + 1}</td>
+                    <td className="border px-4 py-2">
+                      {bestSubmission?.user_prompt || 'Not attempted'}
+                    </td>
+                    <td className="border px-4 py-2 text-center">
+                      {bestSubmission?.score || 0}
+                    </td>
+                    <td className="border px-4 py-2">
+                      {bestSubmission?.feedback || '-'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-6 flex justify-center">
+          <Button
+            onClick={() => router.push('/challenges')}
+            className="rounded px-4 py-2 font-bold"
+          >
+            Back to Challenges
+          </Button>
+        </div>
       </div>
     </div>
   );
