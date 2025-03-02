@@ -82,6 +82,28 @@ const lessonContents = [
       },
     ],
   },
+  {
+    id: 'best-practices',
+    title: 'Best practices',
+    description: 'Explore advanced techniques for complex prompt engineering',
+    icon: <Sparkles className="h-5 w-5" />,
+    sections: [
+      {
+        title: 'Iterative Refinement',
+        content:
+          'Learn how to iteratively improve prompts based on AI outputs for optimal results.',
+        duration: '20 min',
+        isCompleted: false,
+      },
+      {
+        title: 'Meta-prompting',
+        content:
+          'Discover advanced techniques for using prompts to generate other prompts automatically.',
+        duration: '30 min',
+        isCompleted: false,
+      },
+    ],
+  },
 ];
 
 export default function LearnPage() {
