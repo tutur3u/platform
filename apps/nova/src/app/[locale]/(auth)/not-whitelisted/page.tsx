@@ -1,4 +1,5 @@
-import LogButton from './log-out-button';
+import BackToHomeButton from './back-to-home-button';
+import LogOutButton from './log-out-button';
 import { getCurrentUser } from '@/lib/user-helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
@@ -17,15 +18,19 @@ export default async function NotWhitelistedPage() {
     .eq('email', user?.email)
     .maybeSingle();
 
-  if (data?.enabled) redirect('/');
+  if (data?.enabled) redirect('/dashboard');
 
   return (
     <div className="mx-auto flex min-h-screen w-full flex-col items-center justify-center p-4 text-center md:p-8 lg:p-16">
       <h1 className="text-xl font-bold">{t('common.not_whitelisted')}</h1>
-      <p className="text-balance opacity-70">
+      <p className="mb-4 text-balance opacity-70">
         Your account is not whitelisted. Please register to proceed.
       </p>
-      <LogButton></LogButton>
+
+      <div className="flex w-full flex-col gap-2 md:w-fit md:flex-row">
+        <BackToHomeButton />
+        <LogOutButton />
+      </div>
     </div>
   );
 }

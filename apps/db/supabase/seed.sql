@@ -1336,3 +1336,8 @@ insert into
     public.ai_whitelisted_emails (email, enabled)
 values
     ('local@tuturuuu.com', true);
+
+insert into
+    public.nova_roles (email, enabled, is_admin)
+values
+    ('local@tuturuuu.com', true, true);

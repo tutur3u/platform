@@ -52,7 +52,7 @@
     "create": "Tạo mới",
     "add": "Thêm",
     "new": "Mới",
-    "save": "Lưu",  
+    "save": "Lưu",
     "reset": "Đặt lại",
     "cancel": "Hủy bỏ",
     "start": "Bắt đầu",
@@ -277,7 +277,8 @@
     "error_updating_visibility": "Lỗi khi cập nhật quyền truy cập",
     "error_deleting": "Lỗi khi xoá tài liệu",
     "domain_added": "Tên miền được thêm vào",
-    "error_adding_domain": "Không thể thêm miền"
+    "error_adding_domain": "Không thể thêm miền",
+    "is_admin": "Quản trị viên"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

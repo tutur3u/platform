@@ -83,3 +83,4 @@ export type NovaProblemTestCase = Tables<'nova_problem_testcases'>;
 export type NovaProblem = Tables<'nova_problems'>;
 export type NovaSession = Tables<'nova_sessions'>;
 export type NovaSubmission = Tables<'nova_submissions'>;
+export type NovaRole = Tables<'nova_roles'>;

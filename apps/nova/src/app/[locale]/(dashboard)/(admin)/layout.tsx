@@ -1,4 +1,3 @@
-import { Sidebar } from '@/components/layout/sidebar';
 import {
   createAdminClient,
   createClient,
@@ -21,16 +20,12 @@ export default async function RootLayout({
 
   const { data: whitelisted } = await sbAdmin
     .from('nova_roles')
-    .select('enabled, is_admin')
+    .select('enabled')
     .eq('email', user?.email as string)
+    .eq('is_admin', true)
     .maybeSingle();
 
   if (!whitelisted?.enabled) redirect('/not-whitelisted');
 
-  return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar isAdmin={whitelisted?.is_admin || false} />
-      <main className="flex-1 overflow-y-auto">{children}</main>
-    </div>
-  );
+  return <div className="p-4 md:p-8">{children}</div>;
 }

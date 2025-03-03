@@ -277,7 +277,8 @@
     "error_updating_visibility": "Error updating visibility",
     "error_deleting": "Error deleting document",
     "domain_added": "Domain added",
-    "error_adding_domain": "Failed to add domain"
+    "error_adding_domain": "Failed to add domain",
+    "is_admin": "Administrator"
   },
   "date_helper": {
     "time-unit": "Time unit",

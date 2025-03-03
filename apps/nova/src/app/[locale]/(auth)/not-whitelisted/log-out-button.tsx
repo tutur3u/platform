@@ -13,10 +13,8 @@ export default function LogButton() {
   };
 
   return (
-    <div>
-      <Button onClick={handleLogout} className="mt-4 bg-red-500 text-white">
-        Log out
-      </Button>
-    </div>
+    <Button variant="destructive" onClick={handleLogout}>
+      Log out
+    </Button>
   );
 }
