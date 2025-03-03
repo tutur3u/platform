@@ -277,7 +277,7 @@ export const CalendarProvider = ({
         description: '',
         start_at: start_at.toISOString(),
         end_at: end_at.toISOString(),
-        color: 'blue',
+        color: 'BLUE',
         ws_id: ws?.id || '',
       };
 
@@ -396,7 +396,7 @@ export const CalendarProvider = ({
         description: '',
         start_at: now.toISOString(),
         end_at: oneHourLater.toISOString(),
-        color: 'blue',
+        color: 'BLUE',
       };
 
       setPendingNewEvent(newEvent);
