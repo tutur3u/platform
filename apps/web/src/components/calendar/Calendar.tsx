@@ -22,7 +22,7 @@ const CreateEventButton = () => {
   const [showAIModal, setShowAIModal] = useState(false);
 
   return (
-    <div className="fixed right-6 bottom-6 z-10">
+    <div className="fixed right-6 bottom-6 z-10 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
