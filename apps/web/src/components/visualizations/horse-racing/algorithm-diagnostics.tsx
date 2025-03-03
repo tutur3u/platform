@@ -1,21 +1,23 @@
-import { LineChart } from '@/components/ui/charts';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { type Horse, type Race } from './types';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { useMemo } from 'react';
-
-interface Horse {
-  id: number;
-  speed: number;
-  color: string;
-}
-
-interface Race {
-  horses: number[];
-  result: number[];
-  raceType: 'preliminary' | 'championship' | 'candidate';
-  raceDescription: string;
-}
+import { motion } from 'framer-motion';
+import {
+  AlertTriangle,
+  CheckCircle,
+  LineChart,
+  Sparkles,
+  Workflow,
+} from 'lucide-react';
+import {
+  Line,
+  LineChart as RechartsLineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 interface AlgorithmDiagnosticsProps {
   horses: Horse[];
@@ -27,225 +29,267 @@ interface AlgorithmDiagnosticsProps {
 }
 
 export function AlgorithmDiagnostics({
-  horses,
+  // horses,
   races,
   finalRanking,
   currentRaceIndex,
   numHorses,
   raceSize,
 }: AlgorithmDiagnosticsProps) {
-  // Calculate theoretical minimum races using log base 2
-  const theoreticalMinimum = Math.ceil(
-    (numHorses * Math.log2(numHorses)) / Math.log2(raceSize)
-  );
+  // Calculate current state metrics
+  const knownPositions = finalRanking.slice(0, currentRaceIndex + 1);
+  const remainingHorses = numHorses - knownPositions.length;
 
-  // Calculate percentage of ranking completed
-  const rankingProgress = useMemo(() => {
-    return (
-      (Math.min(finalRanking.length, currentRaceIndex + 1) / numHorses) * 100
-    );
-  }, [finalRanking.length, currentRaceIndex, numHorses]);
-
-  // Calculate race efficiency - ensure it's properly capped at 100%
-  const efficiency = useMemo(() => {
-    if (races.length === 0) return 0;
-    return Math.min(100, (theoreticalMinimum / races.length) * 100);
-  }, [races.length, theoreticalMinimum]);
-
-  // Generate log of algorithm decisions with improved descriptions
-  const algorithmLog = useMemo(() => {
-    const log: string[] = [];
-
-    races.slice(0, currentRaceIndex + 1).forEach((race, index) => {
-      let entry = '';
-
-      switch (race.raceType) {
-        case 'preliminary':
-          entry = `Race ${index + 1}: Initial grouping of horses ${race.horses.join(', ')}`;
-          break;
-        case 'championship':
-          entry = `Race ${index + 1}: Championship race between group winners ${race.horses.join(', ')}`;
-          break;
-        case 'candidate':
-          // Safely handle optional array access with nullish coalescing
-          const firstResult = race.result[0] ?? -1;
-          const position = finalRanking.indexOf(firstResult) + 1;
-          entry = `Race ${index + 1}: Candidate race to determine position #${position}`;
-
-          if (index > 0 && races[index - 1]?.raceType === 'candidate') {
-            const prevRace = races[index - 1];
-            const prevWinner = prevRace?.result?.[0] ?? -1;
-            const prevPosition = finalRanking.indexOf(prevWinner) + 1;
-            entry += ` (progressing from position #${prevPosition})`;
-          }
-          break;
-      }
-
-      // Handle optional array access safely
-      const firstResult = race.result[0] ?? -1;
-      const newRank = finalRanking.indexOf(firstResult);
-
-      if (newRank !== -1 && newRank <= index) {
-        const horseCurrent = firstResult;
-        const horseSpeed = horses
-          .find((h) => h.id === horseCurrent)
-          ?.speed.toFixed(2);
-        entry += ` → Horse #${horseCurrent} (speed: ${horseSpeed}) secured position #${newRank + 1}`;
-
-        if (race.raceType === 'candidate' && race.horses.length > 1) {
-          const eliminated = race.horses.filter((id) => id !== horseCurrent);
-          if (eliminated.length > 0) {
-            entry += `. Eliminated ${eliminated.length} candidate${eliminated.length > 1 ? 's' : ''}: ${eliminated.join(', ')}`;
-          }
-        }
-      }
-
-      log.push(entry);
-    });
-
-    return log;
-  }, [races, currentRaceIndex, finalRanking, horses]);
-
-  // Generate data for efficiency over time chart with corrected calculations
-  const efficiencyChartData = useMemo(() => {
-    return races.map((_, index) => {
-      const racesDone = index + 1;
-      const positionsFound = Math.min(racesDone, finalRanking.length);
-
-      // Theoretical optimal races to find X positions is approximately X*log(n)/log(m)
-      const idealRaces =
-        positionsFound > 0
-          ? Math.ceil(
-              (positionsFound * Math.log2(numHorses)) / Math.log2(raceSize)
-            )
-          : 0;
-
+  // Calculate race efficiency over time
+  const raceEfficiencyData = races
+    .slice(0, currentRaceIndex + 1)
+    .map((race, index) => {
+      const newInformation = race.result.length - 1; // Number of new relationships learned
+      const maxInformation =
+        (race.horses.length * (race.horses.length - 1)) / 2;
       return {
-        race: racesDone,
-        actualRaces: racesDone,
-        idealRaces: idealRaces,
-        efficiency: Math.min(
-          100,
-          idealRaces > 0 ? (idealRaces / racesDone) * 100 : 100
-        ),
+        race: index + 1,
+        efficiency: (newInformation / maxInformation) * 100,
       };
     });
-  }, [races, finalRanking.length, numHorses, raceSize]);
+
+  // Calculate convergence rate
+  const convergenceRate =
+    knownPositions.length > 0
+      ? (knownPositions.length / races.length) * (numHorses / raceSize)
+      : 0;
+
+  // Analyze potential bottlenecks
+  const bottlenecks = [];
+
+  // Check for suboptimal race sizes
+  if (races.some((race) => race.horses.length < raceSize - 1)) {
+    bottlenecks.push({
+      type: 'warning',
+      message: 'Some races are not utilizing full capacity',
+      impact: 'medium',
+    });
+  }
+
+  // Check for slow convergence
+  if (convergenceRate < 0.5 && currentRaceIndex > numHorses / 2) {
+    bottlenecks.push({
+      type: 'warning',
+      message: 'Algorithm is converging slower than expected',
+      impact: 'high',
+    });
+  }
+
+  // Generate optimization suggestions
+  const optimizations = [];
+
+  if (raceSize < Math.sqrt(numHorses)) {
+    optimizations.push({
+      suggestion: 'Consider increasing race size for better efficiency',
+      impact: 'high',
+    });
+  }
+
+  if (races.filter((r) => r.raceType === 'candidate').length > numHorses / 2) {
+    optimizations.push({
+      suggestion:
+        'High number of candidate races indicates potential for better preliminary grouping',
+      impact: 'medium',
+    });
+  }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Algorithm Diagnostics</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div>
-            <h4 className="mb-2 text-sm font-medium">Real-Time Metrics</h4>
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Ranking Progress</span>
-                  <span className="text-xs font-medium">
-                    {rankingProgress.toFixed(1)}%
-                  </span>
-                </div>
-                <Progress value={rankingProgress} className="h-2" />
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>0 horses</span>
-                  <span>
-                    {finalRanking.length} of {numHorses} ranked
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Algorithm Efficiency</span>
-                  <span
-                    className={`text-xs font-medium ${
-                      efficiency > 80
-                        ? 'text-green-600 dark:text-green-400'
-                        : efficiency > 60
-                          ? 'text-amber-600 dark:text-amber-400'
-                          : 'text-red-600 dark:text-red-400'
-                    }`}
-                  >
-                    {efficiency.toFixed(1)}%
-                  </span>
+    <div className="space-y-4">
+      {/* Current State Overview */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card className="p-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Workflow className="h-4 w-4 text-blue-500" />
+              Algorithm State
+            </div>
+            <div className="grid gap-2">
+              <div>
+                <div className="mb-1 text-xs text-muted-foreground">
+                  Position Resolution Progress
                 </div>
                 <Progress
-                  value={efficiency}
-                  className={`h-2 ${
-                    efficiency > 80
-                      ? 'bg-green-600'
-                      : efficiency > 60
-                        ? 'bg-amber-600'
-                        : 'bg-red-600'
-                  }`}
+                  value={(knownPositions.length / numHorses) * 100}
+                  className="h-2"
                 />
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Poor</span>
-                  <span>Optimal</span>
+                <div className="mt-1 text-xs">
+                  {knownPositions.length} of {numHorses} positions determined
                 </div>
               </div>
-
-              <div className="mt-2 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Key Metrics:</span>
+              <div>
+                <div className="mb-1 text-xs text-muted-foreground">
+                  Race Completion
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-md border p-2">
-                    <div className="text-xs text-muted-foreground">
-                      Races Completed
-                    </div>
-                    <div className="text-lg font-semibold">
-                      {currentRaceIndex + 1} of {races.length}
-                    </div>
-                  </div>
-                  <div className="rounded-md border p-2">
-                    <div className="text-xs text-muted-foreground">
-                      Theoretical Optimum
-                    </div>
-                    <div className="text-lg font-semibold">
-                      {theoreticalMinimum} races
-                    </div>
-                  </div>
+                <Progress
+                  value={((currentRaceIndex + 1) / races.length) * 100}
+                  className="h-2"
+                />
+                <div className="mt-1 text-xs">
+                  {currentRaceIndex + 1} of {races.length} races completed
                 </div>
               </div>
             </div>
           </div>
+        </Card>
 
-          <div>
-            <h4 className="mb-2 text-sm font-medium">Efficiency Over Time</h4>
-            <div className="h-[200px]">
-              <LineChart
-                data={efficiencyChartData}
-                xKey="race"
-                series={[{ key: 'efficiency', name: 'Efficiency %' }]}
-                colors={['#2563eb']}
-              />
+        <Card className="p-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <LineChart className="h-4 w-4 text-indigo-500" />
+              Performance Metrics
+            </div>
+            <div className="grid gap-2">
+              <div className="rounded-md bg-muted p-2">
+                <div className="text-xs text-muted-foreground">
+                  Convergence Rate
+                </div>
+                <div className="text-lg font-bold">
+                  {Math.round(convergenceRate * 100)}%
+                </div>
+              </div>
+              <div className="rounded-md bg-muted p-2">
+                <div className="text-xs text-muted-foreground">
+                  Remaining Horses
+                </div>
+                <div className="text-lg font-bold">{remainingHorses}</div>
+              </div>
             </div>
           </div>
+        </Card>
+      </div>
 
-          <div className="md:col-span-2">
-            <h4 className="mb-2 text-sm font-medium">Algorithm Decision Log</h4>
-            <ScrollArea className="h-[200px] rounded-md border p-2">
-              <div className="space-y-1 p-1">
-                {algorithmLog.map((log, index) => (
-                  <div
-                    key={index}
-                    className={`rounded-sm p-2 text-xs ${
-                      index === currentRaceIndex ? 'bg-muted font-medium' : ''
-                    }`}
-                  >
-                    {log}
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+      {/* Efficiency Over Time */}
+      <Card className="p-4">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Sparkles className="h-4 w-4 text-amber-500" />
+            Race Efficiency Over Time
+          </div>
+          <div className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsLineChart data={raceEfficiencyData}>
+                <XAxis dataKey="race" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    color: '#fff',
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="efficiency"
+                  stroke="#3b82f6" // Bright blue color
+                  strokeWidth={2}
+                  dot={{ fill: '#3b82f6', strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: '#2563eb' }}
+                />
+              </RechartsLineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Shows how efficiently each race contributes to the final ranking
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </Card>
+
+      {/* Bottlenecks and Optimizations */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* Bottlenecks */}
+        <Card className="p-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              Potential Bottlenecks
+            </div>
+            {bottlenecks.length > 0 ? (
+              <div className="space-y-2">
+                {bottlenecks.map((bottleneck, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex items-start gap-2 rounded-md border p-2"
+                  >
+                    <AlertTriangle
+                      className={`h-4 w-4 flex-shrink-0 ${
+                        bottleneck.impact === 'high'
+                          ? 'text-red-500'
+                          : 'text-amber-500'
+                      }`}
+                    />
+                    <div className="flex-1 text-sm">
+                      <div className="font-medium">{bottleneck.message}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Impact:{' '}
+                        <Badge
+                          variant={
+                            bottleneck.impact === 'high'
+                              ? 'destructive'
+                              : 'secondary'
+                          }
+                        >
+                          {bottleneck.impact}
+                        </Badge>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-md border border-green-500/20 bg-green-500/10 p-2 text-sm text-green-500">
+                <CheckCircle className="h-4 w-4" />
+                No significant bottlenecks detected
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Optimization Suggestions */}
+        <Card className="p-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Sparkles className="h-4 w-4 text-blue-500" />
+              Optimization Suggestions
+            </div>
+            {optimizations.length > 0 ? (
+              <div className="space-y-2">
+                {optimizations.map((opt, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="rounded-md border p-2"
+                  >
+                    <div className="text-sm">{opt.suggestion}</div>
+                    <div className="mt-1">
+                      <Badge
+                        variant={
+                          opt.impact === 'high' ? 'default' : 'secondary'
+                        }
+                      >
+                        {opt.impact} impact
+                      </Badge>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-md border border-green-500/20 bg-green-500/10 p-2 text-sm text-green-500">
+                <CheckCircle className="h-4 w-4" />
+                Algorithm is running optimally
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+    </div>
   );
 }
