@@ -1,4 +1,4 @@
-import Calendar from '@/components/calendar/Calendar';
+import CalendarClientPage from './client';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
 import { redirect } from 'next/navigation';
 
@@ -19,5 +19,5 @@ export default async function CalendarPage({ params }: PageProps) {
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
   if (!workspace) return null;
 
-  return <Calendar workspace={workspace} />;
+  return <CalendarClientPage workspace={workspace} />;
 }

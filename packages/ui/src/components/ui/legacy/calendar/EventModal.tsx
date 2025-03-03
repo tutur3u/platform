@@ -1,6 +1,6 @@
 'use client';
 
-import { useCalendar } from '@/hooks/useCalendar';
+import { useCalendar } from '../../../../hooks/use-calendar';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';

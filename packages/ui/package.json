@@ -103,6 +103,7 @@
     "./tailwind.config": "./tailwind.config.ts",
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts",
+    "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
     "./resolvers": "./src/resolvers.ts",
     "./*": "./src/components/ui/*.tsx"
   }
