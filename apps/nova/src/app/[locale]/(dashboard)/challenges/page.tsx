@@ -1,30 +1,9 @@
 import ChallengeCard from './challengeCard';
 import CreateChallengeDialog from './createChallengeDialog';
 import { createClient } from '@tuturuuu/supabase/next/server';
-// import { getCurrentUser } from '@/lib/user-helper';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types/db';
-import { redirect } from 'next/navigation';
 
 export default async function ChallengesPage() {
-  const adminSb = await createAdminClient();
-  const database = await createClient();
-
-  const {
-    data: { user },
-  } = await database.auth.getUser();
-
-  if (!user?.id) {
-    redirect('/login');
-  }
-
-  const { data: whitelisted, error } = await adminSb
-    .from('nova_roles')
-    .select('enable')
-    .eq('email', user?.email as string)
-    .maybeSingle();
-
-  if (error || !whitelisted?.enable) redirect('/not-wishlist');
   const challenges = await fetchChallenges();
 
   return (

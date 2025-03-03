@@ -5,7 +5,6 @@ import ProblemComponent from './problem-component';
 import PromptComponent from './prompt-component';
 import TestCaseComponent from './test-case-component';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   NovaChallenge,
   NovaProblem,
@@ -24,7 +23,6 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { redirect } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -40,7 +38,6 @@ interface Props {
 }
 
 export default async function Page({ params }: Props) {
-  const adminSb = await createAdminClient();
   const [challenge, setChallenge] = useState<ExtendedNovaChallenge | null>(
     null
   );
@@ -49,36 +46,7 @@ export default async function Page({ params }: Props) {
   const [challengeId, setChallengeId] = useState('');
   const [showEndDialog, setShowEndDialog] = useState(false);
 
-  const supabase = createClient();
   const router = useRouter();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.id) {
-    router.push('/login');
-  }
-
-  const { data: whitelisted, error } = await adminSb
-    .from('nova_roles')
-    .select('enable')
-    .eq('email', user?.email as string)
-    .maybeSingle();
-
-  if (error || !whitelisted?.enable) redirect('/not-wishlist');
-  useEffect(() => {
-    const authCheck = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user?.id) {
-        router.push('/login');
-      }
-    };
-
-    authCheck();
-  }, [router, supabase]);
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {

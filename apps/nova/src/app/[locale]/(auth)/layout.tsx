@@ -1,5 +1,3 @@
-// import Navbar from '../navbar';
-// import NavbarPadding from '../navbar-padding';
 import React from 'react';
 
 interface LayoutProps {
@@ -8,10 +6,8 @@ interface LayoutProps {
 
 export default async function Layout({ children }: LayoutProps) {
   return (
-    <>
-      <div className="h-screen max-h-screen min-h-screen overflow-y-auto">
-        {children}
-      </div>
-    </>
+    <div className="h-screen max-h-screen min-h-screen overflow-y-auto">
+      {children}
+    </div>
   );
 }

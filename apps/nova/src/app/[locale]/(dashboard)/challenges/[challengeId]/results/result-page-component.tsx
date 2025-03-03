@@ -2,15 +2,14 @@
 
 import {
   NovaChallenge,
-  NovaChallengeStatus,
   NovaProblem,
+  NovaSession,
   NovaSubmission,
 } from '@tuturuuu/types/db';
 import { useRouter } from 'next/navigation';
-import React from 'react';
 import { useEffect, useState } from 'react';
 
-type ReportData = NovaChallengeStatus & {
+type ReportData = NovaSession & {
   challenge: NovaChallenge & {
     problems: (NovaProblem & {
       submissions: NovaSubmission[];
@@ -110,13 +109,13 @@ export default function ResultComponent({
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="border px-4 py-2">Problem {index + 1}</td>
                     <td className="border px-4 py-2">
-                      {bestSubmission?.user_prompt || 'Not attempted'}
+                      {bestSubmission?.input || 'Not attempted'}
                     </td>
                     <td className="border px-4 py-2 text-center">
                       {bestSubmission?.score || 0}
                     </td>
                     <td className="border px-4 py-2">
-                      {bestSubmission?.feedback || '-'}
+                      {bestSubmission?.output || '-'}
                     </td>
                   </tr>
                 );

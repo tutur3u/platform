@@ -9,23 +9,21 @@ export default async function NotWhitelistedPage() {
   const user = await getCurrentUser();
 
   if (!user?.email) redirect('/login');
-  console.log(user.email, ' emal');
-  const adminSb = await createAdminClient();
-  const {} = await adminSb
+  const sbAdmin = await createAdminClient();
+
+  const { data } = await sbAdmin
     .from('nova_roles')
     .select('enabled')
     .eq('email', user?.email)
     .maybeSingle();
 
-  // if (error || !whitelisted?.enabled) {
-  //   redirect('/');
-  // }
+  if (data?.enabled) redirect('/');
 
   return (
     <div className="mx-auto flex min-h-screen w-full flex-col items-center justify-center p-4 text-center md:p-8 lg:p-16">
       <h1 className="text-xl font-bold">{t('common.not_whitelisted')}</h1>
       <p className="text-balance opacity-70">
-        {'Your account is not whitelisted. Please register to proceed.'}
+        Your account is not whitelisted. Please register to proceed.
       </p>
       <LogButton></LogButton>
     </div>

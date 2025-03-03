@@ -2117,6 +2117,30 @@ export type Database = {
           },
         ];
       };
+      nova_roles: {
+        Row: {
+          created_at: string;
+          email: string | null;
+          enabled: boolean | null;
+          id: string;
+          is_admin: boolean | null;
+        };
+        Insert: {
+          created_at?: string;
+          email?: string | null;
+          enabled?: boolean | null;
+          id?: string;
+          is_admin?: boolean | null;
+        };
+        Update: {
+          created_at?: string;
+          email?: string | null;
+          enabled?: boolean | null;
+          id?: string;
+          is_admin?: boolean | null;
+        };
+        Relationships: [];
+      };
       nova_sessions: {
         Row: {
           challenge_id: string;
@@ -2164,30 +2188,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      nova_roles: {
-        Row: {
-          created_at: string;
-          email: string | null;
-          enable: boolean | null;
-          id: string;
-          role: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          email?: string | null;
-          enable?: boolean | null;
-          id?: string;
-          role?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          email?: string | null;
-          enable?: boolean | null;
-          id?: string;
-          role?: string | null;
-        };
-        Relationships: [];
       };
       nova_submissions: {
         Row: {

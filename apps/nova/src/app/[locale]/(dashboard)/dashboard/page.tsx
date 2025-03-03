@@ -1,5 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -10,33 +8,15 @@ import {
 } from '@tuturuuu/ui/card';
 import { ArrowRight, BookOpen, Code, Trophy, Zap } from 'lucide-react';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 export default async function HomePage() {
-  const adminSb = await createAdminClient();
-  const database = await createClient();
-  const {
-    data: { user },
-  } = await database.auth.getUser();
-
-  if (!user?.id) {
-    redirect('/login');
-  }
-  
-  const { data: whitelisted, error } = await adminSb
-    .from('nova_roles')
-    .select('enable')
-    .eq('email', user?.email as string)
-    .maybeSingle();
-
-  if (error || !whitelisted?.enable) redirect('/not-wishlist');
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-12 text-center">
         <h1 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
           Welcome to the Prompt Engineering Playground
         </h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
+        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
           Master the art of crafting effective prompts for AI models
         </p>
       </div>
