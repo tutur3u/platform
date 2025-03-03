@@ -1,6 +1,6 @@
 'use client';
 
-import { useCalendar } from '@/hooks/useCalendar';
+import { useCalendar } from '../../../../hooks/use-calendar';
 import { calendarEventSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';

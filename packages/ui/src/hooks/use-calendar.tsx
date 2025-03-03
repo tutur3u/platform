@@ -1,4 +1,3 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
@@ -62,9 +61,13 @@ const CalendarContext = createContext<{
 
 export const CalendarProvider = ({
   ws,
+  useQuery,
+  useQueryClient,
   children,
 }: {
-  ws: Workspace;
+  ws?: Workspace;
+  useQuery: any;
+  useQueryClient: any;
   children: ReactNode;
 }) => {
   const queryClient = useQueryClient();

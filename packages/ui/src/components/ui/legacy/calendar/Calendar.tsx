@@ -1,19 +1,21 @@
 'use client';
 
+import { CalendarProvider, useCalendar } from '../../../../hooks/use-calendar';
 import CalendarHeader from './CalendarHeader';
 import CalendarViewWithTrail from './CalendarViewWithTrail';
 import { EventModal } from './EventModal';
 import { GenerateEventModal } from './GenerateEventModal';
 import MonthCalendar from './MonthCalendar';
 import WeekdayBar from './WeekdayBar';
-import { CalendarProvider, useCalendar } from '@/hooks/useCalendar';
-import { CalendarView, useViewTransition } from '@/hooks/useViewTransition';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  type CalendarView,
+  useViewTransition,
+} from '@tuturuuu/ui/hooks/use-view-transition';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { PlusIcon, Sparkles } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 // Floating action button for quick event creation
@@ -22,7 +24,7 @@ const CreateEventButton = () => {
   const [showAIModal, setShowAIModal] = useState(false);
 
   return (
-    <div className="fixed right-6 bottom-6 z-10">
+    <div className="fixed right-6 bottom-6 z-10 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -56,8 +58,21 @@ const CreateEventButton = () => {
   );
 };
 
-const Calendar = ({ workspace }: { workspace: Workspace }) => {
-  const t = useTranslations('calendar');
+export const Calendar = ({
+  t,
+  locale,
+  useQuery,
+  useQueryClient,
+  workspace,
+  disabled,
+}: {
+  t: any;
+  locale: string;
+  useQuery: any;
+  useQueryClient: any;
+  workspace?: Workspace;
+  disabled?: boolean;
+}) => {
   const { transition } = useViewTransition();
 
   const [initialized, setInitialized] = useState(false);
@@ -252,7 +267,11 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
   if (!initialized || !view || !dates.length) return null;
 
   return (
-    <CalendarProvider ws={workspace}>
+    <CalendarProvider
+      ws={workspace}
+      useQuery={useQuery}
+      useQueryClient={useQueryClient}
+    >
       <div
         className={cn(
           'grid h-[calc(100%-4rem)] w-full md:pb-4',
@@ -262,6 +281,8 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
         )}
       >
         <CalendarHeader
+          t={t}
+          locale={locale}
           availableViews={availableViews}
           date={date}
           setDate={setDate}
@@ -277,7 +298,9 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
           }}
         />
 
-        {view !== 'month' && <WeekdayBar view={view} dates={dates} />}
+        {view !== 'month' && (
+          <WeekdayBar locale={locale} view={view} dates={dates} />
+        )}
 
         <div className="relative flex-1 overflow-hidden">
           {view === 'month' && dates?.[0] ? (
@@ -287,11 +310,12 @@ const Calendar = ({ workspace }: { workspace: Workspace }) => {
           )}
         </div>
 
-        {/* Event Creation/Editing Modal */}
-        <EventModal />
-
-        {/* Floating action button */}
-        <CreateEventButton />
+        {disabled ? null : (
+          <>
+            <EventModal />
+            <CreateEventButton />
+          </>
+        )}
       </div>
     </CalendarProvider>
   );

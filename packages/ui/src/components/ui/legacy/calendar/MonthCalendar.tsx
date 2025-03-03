@@ -1,6 +1,6 @@
 'use client';
 
-import { useCalendar } from '@/hooks/useCalendar';
+import { useCalendar } from '../../../../hooks/use-calendar';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -24,7 +24,7 @@ import { useEffect, useState } from 'react';
 
 interface MonthCalendarProps {
   date: Date;
-  workspace: Workspace;
+  workspace?: Workspace;
 }
 
 const MonthCalendar = ({ date }: MonthCalendarProps) => {
