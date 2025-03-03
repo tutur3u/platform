@@ -123,6 +123,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <BookText className="h-4 w-4" />,
     },
     {
+      href: '/visualizations/horse-racing',
+      label: 'Horse Racing Algorithm',
+      description: 'Visualize the horse racing ranking algorithm',
+      icon: <Sparkles className="h-4 w-4" />,
+    },
+    {
       href: '/about',
       label: t('common.about'),
       description: t('common.about-description'),
