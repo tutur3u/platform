@@ -8,6 +8,7 @@ on:
   push:
     branches-ignore:
       - production
+  workflow_dispatch:
 
 jobs:
   Deploy-Preview:
