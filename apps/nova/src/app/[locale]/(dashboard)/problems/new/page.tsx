@@ -7,11 +7,12 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function NewProblemPage() {
   const router = useRouter();
   const supabase = createClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const authCheck = async () => {
@@ -25,11 +26,11 @@ export default function NewProblemPage() {
     };
 
     authCheck();
-  }, []);
+  }, [router, supabase]);
 
   const handleCreateProblem = async (values: ProblemFormValues) => {
     try {
-      // Prepare problem data without null values for Supabase
+      setIsSubmitting(true);
       const problemData: any = {
         title: values.title,
         description: values.description,
@@ -55,7 +56,7 @@ export default function NewProblemPage() {
       }
 
       // Insert test cases
-      if (problem && problem.id) {
+      if (problem?.id) {
         const testcasesWithProblemId = values.testcases.map((tc) => ({
           problem_id: problem.id,
           input: tc.input,
@@ -83,6 +84,8 @@ export default function NewProblemPage() {
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -99,7 +102,7 @@ export default function NewProblemPage() {
         </div>
       </div>
 
-      <ProblemForm onSubmit={handleCreateProblem} />
+      <ProblemForm onSubmit={handleCreateProblem} isSubmitting={isSubmitting} />
     </div>
   );
 }

@@ -75,12 +75,14 @@ interface ProblemFormProps {
   problemId?: string;
   defaultValues?: Partial<ProblemFormValues>;
   onSubmit: (values: ProblemFormValues) => void;
+  isSubmitting: boolean;
 }
 
 export default function ProblemForm({
   problemId,
   defaultValues,
   onSubmit,
+  isSubmitting,
 }: ProblemFormProps) {
   const isEditing = !!problemId;
 
@@ -329,7 +331,7 @@ export default function ProblemForm({
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit">
+          <Button type="submit" disabled={isSubmitting}>
             {isEditing ? 'Update Problem' : 'Create Problem'}
           </Button>
         </div>

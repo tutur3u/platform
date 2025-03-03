@@ -41,7 +41,7 @@ export default function ProblemPage({ params }: Props) {
     };
 
     authCheck();
-  }, []);
+  }, [router, supabase]);
 
   useEffect(() => {
     const fetchProblem = async () => {

@@ -21,6 +21,7 @@ export default function EditProblemPage({ params }: Props) {
   const [problemId, setProblemId] = useState<string>('');
   const [initialData, setInitialData] = useState<Partial<ProblemFormValues>>();
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchProblemId = async () => {
@@ -43,7 +44,7 @@ export default function EditProblemPage({ params }: Props) {
     };
 
     authCheck();
-  }, []);
+  }, [router, supabase]);
 
   useEffect(() => {
     const fetchProblem = async () => {
@@ -117,6 +118,8 @@ export default function EditProblemPage({ params }: Props) {
 
   const handleUpdateProblem = async (values: ProblemFormValues) => {
     try {
+      setIsSubmitting(true);
+
       // Prepare problem data without null values for Supabase
       const problemData: any = {
         title: values.title,
@@ -178,6 +181,8 @@ export default function EditProblemPage({ params }: Props) {
           error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -210,6 +215,7 @@ export default function EditProblemPage({ params }: Props) {
         problemId={problemId}
         defaultValues={initialData}
         onSubmit={handleUpdateProblem}
+        isSubmitting={isSubmitting}
       />
     </div>
   );
