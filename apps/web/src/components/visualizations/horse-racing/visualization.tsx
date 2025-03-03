@@ -21,7 +21,7 @@ import {
   Play,
   RefreshCw,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Horse {
   id: number;
@@ -77,6 +77,9 @@ export function HorseRacingVisualization() {
   const [activeInfoTab, setActiveInfoTab] = useState<
     'rankings' | 'horses' | 'stats' | 'analytics' | 'diagnostics'
   >('rankings');
+
+  // Add a ref to track the animation timer
+  const timerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Custom speed generation
   const generateCustomHorses = (
@@ -225,28 +228,43 @@ export function HorseRacingVisualization() {
 
   // Toggle play/pause
   const togglePlayPause = () => {
+    // Don't allow toggling if we're at the end
+    if (currentRaceIndex >= races.length - 1) {
+      setIsAnimating(false);
+      return;
+    }
     setIsAnimating((prev) => !prev);
   };
 
   // Reset visualization
   const resetVisualization = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     setIsAnimating(false);
     setCurrentRaceIndex(-1);
   };
 
   // Animation effect
   useEffect(() => {
-    if (!isAnimating) return;
+    // Clear any existing timer when the effect runs
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
 
-    const timer = setTimeout(() => {
-      if (currentRaceIndex < races.length - 1) {
+    // Only set up new timer if animation is running and we're not at the end
+    if (isAnimating && currentRaceIndex < races.length - 1) {
+      timerRef.current = setTimeout(() => {
         setCurrentRaceIndex((prev) => prev + 1);
-      } else {
-        setIsAnimating(false);
-      }
-    }, animationSpeed);
+      }, animationSpeed);
+    }
 
-    return () => clearTimeout(timer);
+    // Cleanup function to clear timer
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
   }, [isAnimating, currentRaceIndex, races.length, animationSpeed]);
 
   // Efficiently determine theoretical minimum races
@@ -271,10 +289,15 @@ export function HorseRacingVisualization() {
 
   // Handle race animation completion
   const handleRaceComplete = () => {
-    if (currentRaceIndex < races.length - 1) {
-      setCurrentRaceIndex((prev) => prev + 1);
-    } else {
+    // If we're at the last race, stop the animation
+    if (currentRaceIndex >= races.length - 1) {
       setIsAnimating(false);
+      return;
+    }
+
+    // Only advance if we're still animating
+    if (isAnimating) {
+      setCurrentRaceIndex((prev) => prev + 1);
     }
   };
 
