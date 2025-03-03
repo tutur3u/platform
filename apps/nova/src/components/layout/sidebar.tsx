@@ -49,7 +49,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="bg-card text-card-foreground flex w-64 flex-col border-r">
+    <div className="flex w-64 flex-col border-r bg-card text-card-foreground">
       <div className="p-4">
         <h1 className="text-xl font-bold">Prompt Engineering</h1>
       </div>

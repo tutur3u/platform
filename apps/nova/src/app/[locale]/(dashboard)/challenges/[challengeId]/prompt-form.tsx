@@ -254,7 +254,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         )}
 
         {!loading && submissions.length > 0 && (
-          <div className="text-foreground mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 shadow-md">
+          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 text-foreground shadow-md">
             <h3 className="text-2xl font-semibold text-gray-800">
               Your Last Attempt
             </h3>

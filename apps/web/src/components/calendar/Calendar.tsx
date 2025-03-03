@@ -22,12 +22,12 @@ const CreateEventButton = () => {
   const [showAIModal, setShowAIModal] = useState(false);
 
   return (
-    <div className="fixed bottom-6 right-6 z-10">
+    <div className="fixed right-6 bottom-6 z-10">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             size="icon"
-            className="h-14 w-14 rounded-full shadow-lg bg-primary/90"
+            className="h-14 w-14 rounded-full bg-primary/90 shadow-lg"
             onClick={() => setShowAIModal(true)}
           >
             <Sparkles className="h-5 w-5" />
@@ -36,7 +36,7 @@ const CreateEventButton = () => {
         </TooltipTrigger>
         <TooltipContent>Generate event with AI</TooltipContent>
       </Tooltip>
-      
+
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -50,11 +50,8 @@ const CreateEventButton = () => {
         </TooltipTrigger>
         <TooltipContent>Create new event</TooltipContent>
       </Tooltip>
-      
-      <GenerateEventModal 
-        open={showAIModal} 
-        onOpenChange={setShowAIModal} 
-      />
+
+      <GenerateEventModal open={showAIModal} onOpenChange={setShowAIModal} />
     </div>
   );
 };
