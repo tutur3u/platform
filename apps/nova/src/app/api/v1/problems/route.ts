@@ -50,7 +50,19 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const body = await request.json();
+  let body: {
+    title: string;
+    challengeId: string;
+    description: string;
+    maxInputLength: number;
+    exampleInput: string;
+    exampleOutput: string;
+  };
+  try {
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
 
   try {
     const {
@@ -79,7 +91,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create the problem
+    if (typeof body.maxInputLength !== 'number' || body.maxInputLength <= 0) {
+      return NextResponse.json(
+        { message: 'Max input length must be a positive number' },
+        { status: 400 }
+      );
+    }
+
     const { data: problem, error: problemError } = await supabase
       .from('nova_problems')
       .insert({

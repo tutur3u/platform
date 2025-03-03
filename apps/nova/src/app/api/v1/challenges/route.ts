@@ -42,7 +42,17 @@ export async function GET(_: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const body = await request.json();
+
+  let body: {
+    title: string;
+    description: string;
+    duration: number;
+  };
+  try {
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
 
   try {
     const {
@@ -55,9 +65,16 @@ export async function POST(request: Request) {
     }
 
     // Validate required fields
-    if (!body.title || !body.description || !body.duration) {
+    if (!body.title || !body.description || body.duration === undefined) {
       return NextResponse.json(
         { message: 'Title, description, and duration are required' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof body.duration !== 'number' || body.duration <= 0) {
+      return NextResponse.json(
+        { message: 'Duration must be a positive number' },
         { status: 400 }
       );
     }

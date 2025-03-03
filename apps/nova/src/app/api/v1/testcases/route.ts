@@ -50,7 +50,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const body = await request.json();
+  let body: {
+    problemId: string;
+    input: string;
+  };
+  try {
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
 
   try {
     const {

@@ -54,7 +54,16 @@ export async function GET(_: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
   const { testcaseId } = await params;
-  const updates = await request.json();
+
+  let body: {
+    problemId: string;
+    input: string;
+  };
+  try {
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
 
   try {
     const {
@@ -66,7 +75,7 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     // Validate required fields
-    if (!updates.problemId || !updates.input) {
+    if (!body.problemId || !body.input) {
       return NextResponse.json(
         { message: 'problemId and input are required' },
         { status: 400 }
@@ -76,8 +85,8 @@ export async function PUT(request: Request, { params }: Params) {
     const { data, error } = await supabase
       .from('nova_problem_testcases')
       .update({
-        problem_id: updates.problemId,
-        input: updates.input,
+        problem_id: body.problemId,
+        input: body.input,
       })
       .eq('id', testcaseId)
       .select()

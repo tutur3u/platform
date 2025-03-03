@@ -54,7 +54,17 @@ export async function GET(_: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
   const { challengeId } = await params;
-  const updates = await request.json();
+
+  let body: {
+    title: string;
+    description: string;
+    duration: number;
+  };
+  try {
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
 
   try {
     const {
@@ -66,9 +76,16 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     // Validate required fields
-    if (!updates.title || !updates.description || !updates.duration) {
+    if (!body.title || !body.description || body.duration === undefined) {
       return NextResponse.json(
         { message: 'Title, description, and duration are required' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof body.duration !== 'number' || body.duration <= 0) {
+      return NextResponse.json(
+        { message: 'Duration must be a positive number' },
         { status: 400 }
       );
     }
@@ -76,9 +93,9 @@ export async function PUT(request: Request, { params }: Params) {
     const { data, error } = await supabase
       .from('nova_challenges')
       .update({
-        title: updates.title,
-        description: updates.description,
-        duration: updates.duration,
+        title: body.title,
+        description: body.description,
+        duration: body.duration,
       })
       .eq('id', challengeId)
       .select()

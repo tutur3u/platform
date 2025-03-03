@@ -54,7 +54,20 @@ export async function GET(_: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
   const { problemId } = await params;
-  const updates = await request.json();
+
+  let body: {
+    title: string;
+    description: string;
+    maxInputLength: number;
+    exampleInput: string;
+    exampleOutput: string;
+    challengeId: string;
+  };
+  try {
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
 
   try {
     const {
@@ -66,9 +79,16 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     // Validate required fields
-    if (!updates.title || !updates.challengeId) {
+    if (!body.title || !body.challengeId) {
       return NextResponse.json(
         { message: 'Title and challengeId are required' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof body.maxInputLength !== 'number' || body.maxInputLength <= 0) {
+      return NextResponse.json(
+        { message: 'Max input length must be a positive number' },
         { status: 400 }
       );
     }
@@ -76,11 +96,12 @@ export async function PUT(request: Request, { params }: Params) {
     const { data: problem, error } = await supabase
       .from('nova_problems')
       .update({
-        title: updates.title,
-        description: updates.description,
-        exampleInput: updates.exampleInput,
-        exampleOutput: updates.exampleOutput,
-        challengeId: updates.challengeId,
+        title: body.title,
+        description: body.description,
+        max_input_length: body.maxInputLength,
+        example_input: body.exampleInput,
+        example_output: body.exampleOutput,
+        challenge_id: body.challengeId,
       })
       .eq('id', problemId)
       .select()
