@@ -37,7 +37,7 @@ interface Props {
   }>;
 }
 
-export default function Page({ params }: Props) {
+export default async function Page({ params }: Props) {
   const [challenge, setChallenge] = useState<ExtendedNovaChallenge | null>(
     null
   );
@@ -46,22 +46,7 @@ export default function Page({ params }: Props) {
   const [challengeId, setChallengeId] = useState('');
   const [showEndDialog, setShowEndDialog] = useState(false);
 
-  const supabase = createClient();
   const router = useRouter();
-
-  useEffect(() => {
-    const authCheck = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user?.id) {
-        router.push('/login');
-      }
-    };
-
-    authCheck();
-  }, [router, supabase]);
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {

@@ -2117,6 +2117,30 @@ export type Database = {
           },
         ];
       };
+      nova_roles: {
+        Row: {
+          created_at: string;
+          email: string | null;
+          enabled: boolean | null;
+          id: string;
+          is_admin: boolean | null;
+        };
+        Insert: {
+          created_at?: string;
+          email?: string | null;
+          enabled?: boolean | null;
+          id?: string;
+          is_admin?: boolean | null;
+        };
+        Update: {
+          created_at?: string;
+          email?: string | null;
+          enabled?: boolean | null;
+          id?: string;
+          is_admin?: boolean | null;
+        };
+        Relationships: [];
+      };
       nova_sessions: {
         Row: {
           challenge_id: string;

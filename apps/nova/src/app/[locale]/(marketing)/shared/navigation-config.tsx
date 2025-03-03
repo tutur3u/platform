@@ -1,7 +1,7 @@
 'use client';
 
 import { DEV_MODE } from '@/constants/common';
-import { Info, Shield } from 'lucide-react';
+import { BookOpen, Info, Shield } from 'lucide-react';
 import { ReactNode } from 'react';
 
 export interface NavItem {
@@ -55,6 +55,14 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   ];
 
   const company: NavItem[] = [
+    {
+      href: DEV_MODE
+        ? 'http://localhost:7805/learn'
+        : 'https://tuturuuu.com/learn',
+      label: t('common.learn'),
+      description: t('common.learn-description'),
+      icon: <BookOpen className="h-4 w-4" />,
+    },
     {
       href: DEV_MODE
         ? 'http://localhost:7803/contact'

@@ -2,18 +2,8 @@ import ChallengeCard from './challengeCard';
 import CreateChallengeDialog from './createChallengeDialog';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types/db';
-import { redirect } from 'next/navigation';
 
 export default async function ChallengesPage() {
-  const database = await createClient();
-  const {
-    data: { user },
-  } = await database.auth.getUser();
-
-  if (!user?.id) {
-    redirect('/login');
-  }
-
   const challenges = await fetchChallenges();
 
   return (

@@ -27,6 +27,7 @@ interface Props {
 export default function Page({ params }: Props) {
   const supabase = createClient();
   const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ReportData | null>(null);
