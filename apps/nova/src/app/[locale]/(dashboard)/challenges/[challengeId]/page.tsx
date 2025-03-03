@@ -24,6 +24,7 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
