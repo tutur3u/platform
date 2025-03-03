@@ -1,17 +1,16 @@
 import DayTitle from './DayTitle';
 import { cn } from '@tuturuuu/utils/format';
 import { Clock } from 'lucide-react';
-import { useLocale } from 'next-intl';
 
 const WeekdayBar = ({
+  locale,
   view,
   dates,
 }: {
+  locale: string;
   view: 'day' | '4-days' | 'week' | 'month';
   dates: Date[];
 }) => {
-  const locale = useLocale();
-
   // Get the appropriate grid columns class based on the number of dates
   const getGridCols = (): string => {
     switch (dates.length) {

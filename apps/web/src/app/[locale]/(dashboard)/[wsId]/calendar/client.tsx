@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Calendar } from '@tuturuuu/ui/legacy/calendar/Calendar';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function CalendarClientPage({
   workspace,
@@ -11,10 +11,12 @@ export default function CalendarClientPage({
   workspace: Workspace;
 }) {
   const t = useTranslations('calendar');
+  const locale = useLocale();
 
   return (
     <Calendar
       t={t}
+      locale={locale}
       workspace={workspace}
       useQuery={useQuery}
       useQueryClient={useQueryClient}

@@ -60,12 +60,14 @@ const CreateEventButton = () => {
 
 export const Calendar = ({
   t,
+  locale,
   useQuery,
   useQueryClient,
   workspace,
   disabled,
 }: {
   t: any;
+  locale: string;
   useQuery: any;
   useQueryClient: any;
   workspace?: Workspace;
@@ -280,6 +282,7 @@ export const Calendar = ({
       >
         <CalendarHeader
           t={t}
+          locale={locale}
           availableViews={availableViews}
           date={date}
           setDate={setDate}
@@ -295,7 +298,9 @@ export const Calendar = ({
           }}
         />
 
-        {view !== 'month' && <WeekdayBar view={view} dates={dates} />}
+        {view !== 'month' && (
+          <WeekdayBar locale={locale} view={view} dates={dates} />
+        )}
 
         <div className="relative flex-1 overflow-hidden">
           {view === 'month' && dates?.[0] ? (

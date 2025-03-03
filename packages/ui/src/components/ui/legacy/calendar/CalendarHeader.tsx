@@ -12,10 +12,10 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { useLocale } from 'next-intl';
 
 export default function CalendarHeader({
   t,
+  locale,
   date,
   setDate,
   view,
@@ -24,6 +24,7 @@ export default function CalendarHeader({
   onViewChange,
 }: {
   t: any;
+  locale: string;
   date: Date;
   setDate: React.Dispatch<React.SetStateAction<Date>>;
   view: 'day' | '4-days' | 'week' | 'month';
@@ -31,8 +32,6 @@ export default function CalendarHeader({
   availableViews: { value: string; label: string; disabled?: boolean }[];
   onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
 }) {
-  const locale = useLocale();
-
   const views = availableViews.filter((view) => view?.disabled !== true);
 
   const title = dayjs(date)
