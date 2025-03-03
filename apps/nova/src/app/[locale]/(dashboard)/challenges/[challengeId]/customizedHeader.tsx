@@ -1,4 +1,4 @@
-import CountdownTimer from './components/countdown-timer';
+import CountdownTimer from './countdown-timer';
 import ProblemChanger from './problem-changer';
 import NavbarSeparator from '@/app/[locale]/(marketing)/navbar-separator';
 import { Button } from '@tuturuuu/ui/button';
@@ -31,7 +31,7 @@ export default function CustomizedHeader({
   return (
     <nav
       id="navbar"
-      className={cn('bg-foreground/2 absolute inset-x-0 top-0 z-50 shadow-sm')}
+      className={cn('absolute inset-x-0 top-0 z-50 bg-foreground/2 shadow-sm')}
     >
       <div className="container mx-auto px-4 py-2 font-semibold">
         <div className="flex items-center justify-between">
@@ -47,7 +47,7 @@ export default function CustomizedHeader({
           <div className="flex items-center gap-4">
             <Suspense
               fallback={
-                <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+                <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
               }
             >
               <CountdownTimer

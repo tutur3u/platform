@@ -13,9 +13,9 @@ export async function GET(_: Request, { params }: Params) {
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
-
-  if (!user?.id) {
+  if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -37,7 +37,7 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { user_prompt, score, feedback } = await request.json();
+  const { input, output, score } = await request.json();
   const { problemId } = await params;
 
   const {
@@ -48,21 +48,31 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  // Validate required fields
+  if (!input || !output || score === undefined) {
+    return NextResponse.json(
+      { message: 'Input, output, and score are required' },
+      { status: 400 }
+    );
+  }
+
   // Create initial submission record
   const { data: newSubmission, error } = await supabase
     .from('nova_submissions')
     .insert({
-      user_prompt: user_prompt,
+      input: input,
+      output: output,
       score: score,
-      feedback: feedback,
       problem_id: problemId,
       user_id: user.id,
-    });
+    })
+    .select()
+    .single();
 
   if (error) {
-    console.error('Error starting challenge:', error);
+    console.error('Error creating submission:', error);
     return NextResponse.json(
-      { message: 'Error starting challenge' },
+      { message: 'Error creating submission' },
       { status: 500 }
     );
   }

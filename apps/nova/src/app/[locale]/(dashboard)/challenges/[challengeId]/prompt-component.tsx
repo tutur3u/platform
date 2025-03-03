@@ -1,19 +1,20 @@
-import PromptForm from './components/prompt-form';
+import PromptForm from './prompt-form';
 import { Card } from '@tuturuuu/ui/card';
 
 interface Problem {
   id: string;
   title: string;
   description: string;
-  example_input: string;
-  example_output: string;
+  maxInputLength: number;
+  exampleInput: string;
+  exampleOutput: string;
   testcases: string[];
 }
 
 export default function PromptComponent({ problem }: { problem: Problem }) {
   return (
-    <Card className="bg-foreground/10 text-foreground h-[813px] w-1/2 overflow-y-auto p-4 pt-10">
-      <PromptForm problem={problem}></PromptForm>
+    <Card className="h-[813px] w-1/2 overflow-y-auto bg-foreground/10 p-4 pt-10 text-foreground">
+      <PromptForm problem={problem} />
     </Card>
   );
 }

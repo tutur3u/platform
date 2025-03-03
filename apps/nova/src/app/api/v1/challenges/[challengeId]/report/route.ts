@@ -13,15 +13,15 @@ export async function GET(_: Request, { params }: Params) {
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
-
-  if (!user?.id) {
+  if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Get challenge status, challenge info and submissions in a single query
+  // Get session, challenge info and submissions in a single query
   const { data: report, error } = await supabase
-    .from('nova_challenge_status')
+    .from('nova_sessions')
     .select(
       `
       *,

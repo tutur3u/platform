@@ -7,17 +7,26 @@ import TestCaseComponent from './test-case-component';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   NovaChallenge,
-  NovaChallengeStatus,
   NovaProblem,
-  NovaProblemConstraint,
   NovaProblemTestCase,
+  NovaSession,
 } from '@tuturuuu/types/db';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   problems: (NovaProblem & {
-    constraints: NovaProblemConstraint[];
     testcases: NovaProblemTestCase[];
   })[];
 };
@@ -32,29 +41,13 @@ export default function Page({ params }: Props) {
   const [challenge, setChallenge] = useState<ExtendedNovaChallenge | null>(
     null
   );
-  const [status, setStatus] = useState<NovaChallengeStatus | null>(null);
+  const [session, setSession] = useState<NovaSession | null>(null);
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
   const [challengeId, setChallengeId] = useState('');
+  const [showEndDialog, setShowEndDialog] = useState(false);
 
   const supabase = createClient();
   const router = useRouter();
-
-  useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (status?.status === 'IN_PROGRESS') {
-        const confirmationMessage =
-          'You have an ongoing challenge, are you sure you want to leave?';
-        event.returnValue = confirmationMessage;
-        return confirmationMessage;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [status]);
 
   useEffect(() => {
     const authCheck = async () => {
@@ -68,7 +61,24 @@ export default function Page({ params }: Props) {
     };
 
     authCheck();
-  }, []);
+  }, [router, supabase]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (session?.status === 'IN_PROGRESS') {
+        const confirmationMessage =
+          'You have an ongoing challenge, are you sure you want to leave?';
+        event.returnValue = confirmationMessage;
+        return confirmationMessage;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [session]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,14 +87,14 @@ export default function Page({ params }: Props) {
       setChallenge(challengeData as ExtendedNovaChallenge);
       setChallengeId(challengeId);
 
-      // Fetch challenge status
-      const response = await fetch(`/api/v1/challenges/${challengeId}/status`);
+      // Fetch challenge session
+      const response = await fetch(`/api/v1/challenges/${challengeId}/session`);
       if (response.ok) {
-        const statusData = await response.json();
-        setStatus(statusData);
+        const sessionData = await response.json();
+        setSession(sessionData);
 
         // If challenge is ended, redirect to report page
-        if (statusData?.status === 'ENDED') {
+        if (sessionData?.status === 'ENDED') {
           router.push(`/challenges/${challengeId}/results`);
         }
       } else {
@@ -108,35 +118,42 @@ export default function Page({ params }: Props) {
   };
 
   const handleEndChallenge = async () => {
-    if (confirm('Are you sure you want to end this challenge?')) {
-      const problemSubmissions = await Promise.all(
-        problems.map(async (problem) => {
-          const response = await fetch(
-            `/api/v1/problems/${problem.id}/submissions`
-          );
-          const data = await response.json();
-          return data.sort((a: any, b: any) => b.score - a.score);
-        })
-      );
+    const problemSubmissions = await Promise.all(
+      problems.map(async (problem) => {
+        const response = await fetch(
+          `/api/v1/problems/${problem.id}/submissions`
+        );
+        const data = await response.json();
+        return data.sort((a: any, b: any) => b.score - a.score);
+      })
+    );
 
-      const totalScore = problemSubmissions.reduce(
-        (acc, curr) => acc + curr[0].score,
-        0
-      );
+    const totalScore = problemSubmissions.reduce(
+      (acc, curr) => acc + (curr[0]?.score || 0),
+      0
+    );
 
-      const response = await fetch(`/api/v1/challenges/${challengeId}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'ENDED', totalScore, feedback: '' }),
+    const response = await fetch(`/api/v1/challenges/${challengeId}/session`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status: 'ENDED',
+        totalScore: totalScore,
+      }),
+    });
+
+    if (response.ok) {
+      router.push(`/challenges/${challengeId}/results`);
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to end challenge',
+        variant: 'destructive',
       });
-
-      if (response.ok) {
-        router.push(`/challenges/${challengeId}/results`);
-      }
     }
   };
 
-  if (!status) {
+  if (!session) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-xl font-semibold text-gray-700">Loading...</p>
@@ -145,59 +162,76 @@ export default function Page({ params }: Props) {
   }
 
   return (
-    <div className="relative">
-      <CustomizedHeader
-        proNum={problems.length}
-        currentProblem={currentProblemIndex + 1}
-        challengeId={challengeId}
-        onNext={nextProblem}
-        onPrev={prevProblem}
-        onEnd={handleEndChallenge}
-        startTime={status.start_time}
-        endTime={status.end_time}
-        duration={challenge?.duration || 0}
-      />
+    <>
+      <div className="relative">
+        <CustomizedHeader
+          proNum={problems.length}
+          currentProblem={currentProblemIndex + 1}
+          challengeId={challengeId}
+          onNext={nextProblem}
+          onPrev={prevProblem}
+          onEnd={() => setShowEndDialog(true)}
+          startTime={session.start_time}
+          endTime={session.end_time}
+          duration={challenge?.duration || 0}
+        />
 
-      <div className="flex gap-4 p-6 pt-20">
-        <div className="flex w-1/2 flex-col">
-          {problems.length > 0 && problems[currentProblemIndex] ? (
+        <div className="flex gap-4 p-6 pt-20">
+          <div className="flex w-1/2 flex-col">
             <ProblemComponent
               problem={{
-                id: problems[currentProblemIndex].id,
-                title: problems[currentProblemIndex].title ?? '',
-                description: problems[currentProblemIndex].description ?? '',
-                exampleInput: problems[currentProblemIndex].example_input ?? '',
+                id: problems[currentProblemIndex]?.id || '',
+                title: problems[currentProblemIndex]?.title || '',
+                description: problems[currentProblemIndex]?.description || '',
+                maxInputLength:
+                  problems[currentProblemIndex]?.max_input_length || 0,
+                exampleInput:
+                  problems[currentProblemIndex]?.example_input || '',
                 exampleOutput:
-                  problems[currentProblemIndex].example_output ?? '',
-                constraints:
-                  problems[currentProblemIndex].constraints?.map(
-                    (constraint) => constraint.constraint_content
-                  ) ?? [],
+                  problems[currentProblemIndex]?.example_output || '',
               }}
             />
-          ) : (
-            <p>No problems available.</p>
-          )}
-          <TestCaseComponent
-            testcases={problems[currentProblemIndex]?.testcases ?? []}
+            <TestCaseComponent
+              testcases={problems[currentProblemIndex]?.testcases || []}
+            />
+          </div>
+
+          <PromptComponent
+            problem={{
+              id: problems[currentProblemIndex]?.id || '',
+              title: problems[currentProblemIndex]?.title || '',
+              description: problems[currentProblemIndex]?.description || '',
+              maxInputLength:
+                problems[currentProblemIndex]?.max_input_length || 0,
+              exampleInput: problems[currentProblemIndex]?.example_input || '',
+              exampleOutput:
+                problems[currentProblemIndex]?.example_output || '',
+              testcases:
+                problems[currentProblemIndex]?.testcases?.map(
+                  (testCase) => testCase.input || ''
+                ) || [],
+            }}
           />
         </div>
-
-        <PromptComponent
-          problem={{
-            id: problems[currentProblemIndex]?.id || '',
-            title: problems[currentProblemIndex]?.title || '',
-            description: problems[currentProblemIndex]?.description || '',
-            example_input: problems[currentProblemIndex]?.example_input || '',
-            example_output: problems[currentProblemIndex]?.example_output || '',
-            testcases:
-              problems[currentProblemIndex]?.testcases?.map(
-                (testCase) => testCase.testcase_content ?? ''
-              ) ?? [],
-          }}
-        />
       </div>
-    </div>
+
+      <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>End Challenge</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to end this challenge?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEndChallenge}>
+              End
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -223,7 +257,7 @@ async function getChallenge(
     // Fetch problems linked to this challenge
     const { data: problems, error: problemError } = await supabase
       .from('nova_problems')
-      .select('id, title, description, example_input, example_output')
+      .select('*')
       .eq('challenge_id', challengeId);
 
     if (problemError) {
@@ -234,48 +268,37 @@ async function getChallenge(
     // Fetch constraints and test cases for all problems in one request
     const problemIds = problems.map((problem) => problem.id);
 
-    const { data: constraints, error: constraintError } = await supabase
-      .from('nova_problem_constraints')
-      .select('problem_id, constraint_content')
-      .in('problem_id', problemIds);
-    if (constraintError) {
-      console.error('Error fetching constraints:', constraintError.message);
-    }
-
     const { data: testcases, error: testcaseError } = await supabase
       .from('nova_problem_testcases')
-      .select('problem_id, testcase_content')
+      .select('*')
       .in('problem_id', problemIds);
     if (testcaseError) {
       console.error('Error fetching test cases:', testcaseError.message);
     }
 
-    // Map problems with constraints and test cases
-    const formattedProblems = problems.map((problem) => ({
-      id: problem.id,
-      title: problem.title || '',
-      description: problem.description || '',
-      example_input: problem.example_input || '',
-      example_output: problem.example_output || '',
-      constraints:
-        constraints
-          ?.filter(
-            (c) => c.problem_id === problem.id && c.constraint_content !== null
-          )
-          .map((c) => c.constraint_content!) || [],
-      testcases:
-        testcases
-          ?.filter(
-            (t) => t.problem_id === problem.id && t.testcase_content !== null
-          )
-          .map((t) => t.testcase_content!) || [],
-    }));
+    // Map problems with test cases
+    const formattedProblems = problems.map((problem) => {
+      // Get testcases for this specific problem
+      const problemTestcases =
+        testcases?.filter((t) => t.problem_id === problem.id) || [];
+
+      return {
+        id: problem.id,
+        title: problem.title,
+        description: problem.description,
+        example_input: problem.example_input,
+        example_output: problem.example_output,
+        challenge_id: challenge.id,
+        max_input_length: problem.max_input_length,
+        created_at: problem.created_at,
+        testcases: problemTestcases,
+      };
+    });
 
     return {
       ...challenge,
-      problems:
-        formattedProblems as unknown as ExtendedNovaChallenge['problems'],
-    };
+      problems: formattedProblems,
+    } as ExtendedNovaChallenge;
   } catch (error) {
     console.error('Unexpected error fetching challenge:', error);
     return null;

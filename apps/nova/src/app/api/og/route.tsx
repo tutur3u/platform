@@ -60,7 +60,8 @@ export async function GET() {
                   display: 'flex',
                   fontSize: '120px',
                   fontWeight: '900',
-                  background: 'linear-gradient(to right, #2563eb, #38bdf8, #0ea5e9)',
+                  background:
+                    'linear-gradient(to right, #2563eb, #38bdf8, #0ea5e9)',
                   backgroundClip: 'text',
                   color: 'transparent',
                   letterSpacing: '-0.03em',
@@ -92,7 +93,8 @@ export async function GET() {
                   display: 'flex',
                   fontSize: '32px',
                   fontWeight: '500',
-                  background: 'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
+                  background:
+                    'linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7))',
                   backgroundClip: 'text',
                   color: 'transparent',
                 }}
@@ -116,7 +118,8 @@ export async function GET() {
                   position: 'absolute',
                   width: '400px',
                   height: '400px',
-                  background: 'radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2), transparent 70%)',
+                  background:
+                    'radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2), transparent 70%)',
                   filter: 'blur(50px)',
                   transform: 'translate(-50%, -50%)',
                   top: '50%',
@@ -130,7 +133,8 @@ export async function GET() {
                 style={{
                   borderRadius: '32px',
                   position: 'relative',
-                  boxShadow: '0 0 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.3)',
+                  boxShadow:
+                    '0 0 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.3)',
                 }}
               />
             </div>
