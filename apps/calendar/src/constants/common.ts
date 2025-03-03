@@ -5,13 +5,13 @@ export const PROD_MODE = process.env.NODE_ENV === 'production';
 
 export const BASE_URL =
   process.env.BASE_URL || PROD_MODE
-    ? 'https://tuturuuu.com'
-    : 'http://localhost:7805';
+    ? 'https://calendar.tuturuuu.com'
+    : 'http://localhost:7001';
 
 export const API_URL =
   process.env.API_URL || PROD_MODE
-    ? 'https://tuturuuu.com/api'
-    : 'http://localhost:7805/api';
+    ? 'https://calendar.tuturuuu.com/api'
+    : 'http://localhost:7001/api';
 
 export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 

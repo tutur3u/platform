@@ -1,11 +1,11 @@
 import { DEV_MODE } from './common';
 
 export const siteConfig = {
-  name: 'Tuturuuu Nova',
-  url: DEV_MODE ? 'http://localhost:7805' : 'https://nova.tuturuuu.com',
+  name: 'Tuturuuu Calendar',
+  url: DEV_MODE ? 'http://localhost:7001' : 'https://calendar.tuturuuu.com',
   ogImage: DEV_MODE
-    ? 'http://localhost:7805/api/og'
-    : 'https://nova.tuturuuu.com/api/og',
+    ? 'http://localhost:7001/api/og'
+    : 'https://calendar.tuturuuu.com/api/og',
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',

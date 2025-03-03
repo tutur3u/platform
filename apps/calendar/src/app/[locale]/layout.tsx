@@ -25,8 +25,11 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
 
-  const enDescription = 'Take control of your workflow, supercharged by AI.';
-  const viDescription = 'Quản lý công việc của bạn, siêu tốc độ cùng AI.';
+  const enDescription =
+    'Tuturuuu Calendar is a free, open-source calendar application that helps you manage your time effectively. With a user-friendly interface and powerful features, it allows you to create, edit, and delete events with ease.';
+
+  const viDescription =
+    'Tuturuuu Calendar là một ứng dụng lịch miễn phí, mã nguồn mở giúp bạn quản lý thời gian hiệu quả. Với giao diện thân thiện và các tính năng mạnh mẽ, nó cho phép bạn tạo, chỉnh sửa và xóa sự kiện một cách dễ dàng.';
 
   const description = locale === 'vi' ? viDescription : enDescription;
 
