@@ -50,6 +50,20 @@ export default function Page({ params }: Props) {
   const router = useRouter();
 
   useEffect(() => {
+    const authCheck = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user?.id) {
+        router.push('/login');
+      }
+    };
+
+    authCheck();
+  }, [router, supabase]);
+
+  useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (session?.status === 'IN_PROGRESS') {
         const confirmationMessage =
@@ -65,20 +79,6 @@ export default function Page({ params }: Props) {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [session]);
-
-  useEffect(() => {
-    const authCheck = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user?.id) {
-        router.push('/login');
-      }
-    };
-
-    authCheck();
-  }, []);
 
   useEffect(() => {
     const fetchData = async () => {

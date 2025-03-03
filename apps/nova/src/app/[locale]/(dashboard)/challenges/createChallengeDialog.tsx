@@ -18,9 +18,12 @@ import { useState } from 'react';
 export default function CreateChallengeDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (values: ChallengeFormValues) => {
     try {
+      setIsSubmitting(true);
+
       const url = '/api/v1/challenges';
       const method = 'POST';
 
@@ -50,6 +53,8 @@ export default function CreateChallengeDialog() {
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,7 +74,7 @@ export default function CreateChallengeDialog() {
             with.
           </DialogDescription>
         </DialogHeader>
-        <ChallengeForm onSubmit={onSubmit} />
+        <ChallengeForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
       </DialogContent>
     </Dialog>
   );

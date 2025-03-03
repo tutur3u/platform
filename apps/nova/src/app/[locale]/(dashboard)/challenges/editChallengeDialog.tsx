@@ -25,9 +25,12 @@ export default function EditChallengeDialog({
 }: EditChallengeDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (values: ChallengeFormValues) => {
     try {
+      setIsSubmitting(true);
+
       const url = `/api/v1/challenges/${challenge.id}`;
       const method = 'PUT';
 
@@ -60,6 +63,8 @@ export default function EditChallengeDialog({
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -81,6 +86,7 @@ export default function EditChallengeDialog({
             duration: challenge.duration,
           }}
           onSubmit={onSubmit}
+          isSubmitting={isSubmitting}
         />
       </DialogContent>
     </Dialog>

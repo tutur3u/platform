@@ -36,6 +36,7 @@ interface ChallengeFormProps {
   defaultValues?: Partial<ChallengeFormValues>;
   challengeId?: string;
   onSubmit: (values: ChallengeFormValues) => void;
+  isSubmitting: boolean;
 }
 
 export default function ChallengeForm({
@@ -46,6 +47,7 @@ export default function ChallengeForm({
   },
   challengeId,
   onSubmit,
+  isSubmitting,
 }: ChallengeFormProps) {
   const isEditing = !!challengeId;
 
@@ -110,7 +112,7 @@ export default function ChallengeForm({
           )}
         />
         <div className="flex justify-end">
-          <Button type="submit">
+          <Button type="submit" disabled={isSubmitting}>
             {isEditing ? 'Update Challenge' : 'Create Challenge'}
           </Button>
         </div>
