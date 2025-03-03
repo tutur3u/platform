@@ -20,6 +20,7 @@ import {
   ChevronDown,
   Code,
   Home,
+  List,
   Settings,
   Trophy,
 } from 'lucide-react';
@@ -40,6 +41,7 @@ const sidebarItems = [
     ],
   },
   { name: 'Challenges', href: '/challenges', icon: Code },
+  { name: 'Problems', href: '/problems', icon: List },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
 ];
 

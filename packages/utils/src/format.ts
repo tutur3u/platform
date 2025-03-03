@@ -31,3 +31,29 @@ export function formatBytes(
       : (sizes[i] ?? 'Bytes')
   }`;
 }
+
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) {
+    return `${seconds} seconds`;
+  }
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  const parts = [];
+  if (hours > 0) {
+    parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`);
+  }
+  if (minutes > 0) {
+    parts.push(`${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`);
+  }
+  if (remainingSeconds > 0 && hours === 0) {
+    // Only show seconds if less than 1 hour
+    parts.push(
+      `${remainingSeconds} ${remainingSeconds === 1 ? 'second' : 'seconds'}`
+    );
+  }
+
+  return parts.join(' ');
+}

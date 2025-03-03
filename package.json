@@ -34,7 +34,7 @@
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "eslint": "^9.21.0",
-    "prettier": "^3.5.2",
+    "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "turbo": "^2.4.4",
     "typescript": "^5.8.2",
