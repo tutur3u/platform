@@ -140,7 +140,6 @@
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
     "y-prosemirror": "^1.2.16",
     "y-protocols": "^1.0.6",
-    "yjs": "^13.6.23",
     "zod": "^3.24.2"
   },
   "devDependencies": {
