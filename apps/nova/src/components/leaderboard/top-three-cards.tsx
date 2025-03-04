@@ -1,98 +1,114 @@
-import { LeaderboardEntry } from '@tuturuuu/types/primitives/leaderboard';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+'use client';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
-import { Trophy } from 'lucide-react';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { LeaderboardEntry } from './leaderboard';
+import { motion } from 'framer-motion';
+import { TrophyIcon, Medal } from 'lucide-react';
 
 interface TopThreeCardsProps {
   data: LeaderboardEntry[];
+  isLoading?: boolean;
 }
 
-const getPositionStyles = (index: number) => {
-  switch (index) {
-    case 0:
-      return {
-        background:
-          'bg-gradient-to-br from-yellow-100 via-yellow-300 to-yellow-200',
-        darkBackground:
-          'dark:from-yellow-900 dark:via-yellow-800 dark:to-yellow-950',
-        border: 'border-yellow-300 dark:border-yellow-700',
-        shadow: 'shadow-yellow-200 dark:shadow-yellow-900',
-        trophy: 'text-yellow-600 dark:text-yellow-400',
-        label: 'Champion',
-      };
-    case 1:
-      return {
-        background:
-          'bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300',
-        darkBackground:
-          'dark:from-slate-800 dark:via-slate-700 dark:to-slate-900',
-        border: 'border-slate-300 dark:border-slate-700',
-        shadow: 'shadow-slate-200 dark:shadow-slate-900',
-        trophy: 'text-slate-600 dark:text-slate-400',
-        label: 'Runner-up',
-      };
-    case 2:
-      return {
-        background:
-          'bg-gradient-to-br from-orange-100 via-orange-200 to-orange-300',
-        darkBackground:
-          'dark:from-orange-950 dark:via-orange-900 dark:to-orange-800',
-        border: 'border-orange-300 dark:border-orange-700',
-        shadow: 'shadow-orange-200 dark:shadow-orange-900',
-        trophy: 'text-orange-600 dark:text-orange-400',
-        label: 'Third Place',
-      };
-    default:
-      return {
-        background: '',
-        darkBackground: '',
-        border: '',
-        shadow: '',
-        trophy: '',
-        label: '',
-      };
-  }
-};
+export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
+  const topThree = data.slice(0, 3);
 
-export function TopThreeCards({ data }: TopThreeCardsProps) {
-  if (!data.length) return null;
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex justify-center">
+            <Skeleton className={cn(
+              "h-72 w-64",
+              i === 1 ? "h-80" : ""
+            )} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.3
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
 
   return (
-    <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-      {data.slice(0, 3).map((entry, index) => {
-        const styles = getPositionStyles(index);
+    <motion.div 
+      className="grid grid-cols-1 gap-6 sm:grid-cols-3"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {topThree.map((entry, index) => {
+        const position = index === 1 ? 0 : index === 0 ? 1 : 2;
+        const iconColor = position === 0 ? "text-yellow-500" : 
+                          position === 1 ? "text-gray-300" : "text-amber-700";
+
         return (
-          <Card
-            key={entry.userId}
-            className={cn(
-              'relative overflow-hidden border-2 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl',
-              styles.background,
-              styles.darkBackground,
-              styles.border,
-              styles.shadow
-            )}
+          <motion.div 
+            key={entry.id} 
+            className="flex justify-center"
+            variants={itemVariants}
           >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <Trophy className={`h-7 w-7 ${styles.trophy}`} />
-                <span className="text-xl font-bold">{styles.label}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative z-10">
-              <p className="text-2xl font-bold tracking-tight">
-                {entry.username}
-              </p>
-              <p className="mt-2 flex items-center text-muted-foreground">
-                <span className="text-lg font-semibold">
-                  {entry.totalScore.toLocaleString()}
-                </span>
-                <span className="ml-2">points</span>
-              </p>
-            </CardContent>
-            <div className="absolute right-0 bottom-0 h-32 w-32 translate-x-8 translate-y-8 transform rounded-full bg-white/10 blur-2xl" />
-          </Card>
+            <Card className={cn(
+              "w-64 overflow-hidden border shadow-md transition-all hover:shadow-lg",
+              position === 0 ? "h-80 bg-gradient-to-b from-yellow-500/10 to-transparent" : 
+              position === 1 ? "h-72 bg-gradient-to-b from-gray-400/10 to-transparent" : 
+                              "h-72 bg-gradient-to-b from-amber-700/10 to-transparent"
+            )}>
+              <CardContent className="flex flex-col items-center justify-center p-6">
+                {position === 0 ? (
+                  <TrophyIcon className={cn("h-12 w-12 mb-4", iconColor)} />
+                ) : (
+                  <Medal className={cn("h-10 w-10 mb-4", iconColor)} />
+                )}
+
+                <div className="relative mb-4">
+                  <motion.div
+                    className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary/50 to-blue-500/50 opacity-75 blur-sm"
+                    animate={{ 
+                      rotate: 360,
+                      scale: [1, 1.05, 1]
+                    }}
+                    transition={{ 
+                      rotate: { duration: 10, repeat: Infinity, ease: "linear" },
+                      scale: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                    }}
+                  />
+                  <Avatar className={cn(
+                    "relative h-20 w-20 border-2",
+                    position === 0 ? "border-yellow-500" : 
+                    position === 1 ? "border-gray-300" : "border-amber-700"
+                  )}>
+                    <AvatarImage src={entry.avatar} alt={entry.name} />
+                    <AvatarFallback className="text-2xl">{entry.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </div>
+                <h3 className="mb-2 text-xl font-bold">{entry.name}</h3>
+                <p className="mb-1 text-sm text-muted-foreground">{entry.country}</p>
+                <p className="text-2xl font-bold text-primary">{entry.score.toLocaleString()}</p>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  {entry.change > 0 ? `↑ +${entry.change}` : entry.change < 0 ? `↓ ${entry.change}` : '―'}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }
