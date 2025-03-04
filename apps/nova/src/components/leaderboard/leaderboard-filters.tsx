@@ -1,16 +1,8 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { Input } from '@tuturuuu/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { CalendarDays, Clock, LucideHistory, Search } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 
 interface LeaderboardFiltersProps {
   searchQuery: string;
@@ -32,7 +24,7 @@ export function LeaderboardFilters({
       <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
         <Tabs
           value={timeRange}
-          onValueChange={(value) => 
+          onValueChange={(value) =>
             changeTimeRange(value as 'weekly' | 'monthly' | 'allTime')
           }
           className="w-full md:w-auto"
@@ -54,7 +46,7 @@ export function LeaderboardFilters({
         </Tabs>
 
         <div className="relative w-full md:w-72">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search users..."
             value={searchQuery}
