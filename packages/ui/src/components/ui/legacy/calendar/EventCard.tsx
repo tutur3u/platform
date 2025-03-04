@@ -297,9 +297,9 @@ export default function EventCard({ dates, event }: EventCardProps) {
     <div
       id={`event-${id}`}
       className={cn(
-        'pointer-events-auto absolute max-w-none select-none overflow-hidden rounded border',
-        'hover:ring-primary/50 hover:ring-2',
-        'active:ring-primary active:ring-2',
+        'pointer-events-auto absolute max-w-none overflow-hidden rounded border select-none',
+        'hover:ring-2 hover:ring-primary/50',
+        'active:ring-2 active:ring-primary',
         bg,
         border,
         text
@@ -317,7 +317,7 @@ export default function EventCard({ dates, event }: EventCardProps) {
       <div
         ref={contentRef}
         className={cn(
-          'h-full cursor-move select-none p-1 text-left text-sm',
+          'h-full cursor-move p-1 text-left text-sm select-none',
           duration <= 0.25 && 'text-xs'
         )}
       >
@@ -332,7 +332,7 @@ export default function EventCard({ dates, event }: EventCardProps) {
       <div
         ref={handleRef}
         className={cn(
-          'hover:bg-primary/10 absolute inset-x-0 bottom-0 cursor-s-resize',
+          'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/10',
           duration <= 0.25 ? 'h-1.5' : 'h-2'
         )}
       />

@@ -1,10 +1,8 @@
 'use client';
 
-import { UserRankingModal } from './user-ranking-modal';
-import { LeaderboardEntry } from '@tuturuuu/types/primitives/leaderboard';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -14,125 +12,170 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
-import { Medal, Trophy, User } from 'lucide-react';
-import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ChevronDown, ChevronUp, Minus } from 'lucide-react';
+
+export type LeaderboardEntry = {
+  id: string;
+  rank: number;
+  name: string;
+  avatar: string;
+  score: number;
+  country: string | undefined;
+  change: number;
+};
 
 interface LeaderboardProps {
   data: LeaderboardEntry[];
+  isLoading?: boolean;
+  currentUserId?: string;
 }
 
-export function Leaderboard({ data }: LeaderboardProps) {
-  const [selectedUser, setSelectedUser] = useState<LeaderboardEntry | null>(
-    null
-  );
-
-  const getRankBadge = (index: number) => {
-    switch (index) {
-      case 0:
-        return <Trophy className="h-5 w-5 text-yellow-500" />;
-      case 1:
-        return <Medal className="h-5 w-5 text-gray-400" />;
-      case 2:
-        return <Medal className="h-5 w-5 text-amber-600" />;
-      default:
-        return index + 1;
-    }
-  };
-
-  if (!data.length) {
+export function Leaderboard({
+  data,
+  isLoading = false,
+  currentUserId,
+}: LeaderboardProps) {
+  if (isLoading) {
     return (
-      <Card className="flex h-96 items-center justify-center text-muted-foreground">
-        No leaderboard data available
-      </Card>
+      <div className="mt-6 w-full overflow-hidden rounded-md border shadow">
+        <div className="w-full overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Rank</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Country</TableHead>
+                <TableHead className="text-right">Score</TableHead>
+                <TableHead className="text-right">Change</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-6 w-10" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="ml-auto h-4 w-16" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="ml-auto h-4 w-12" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <Card className="overflow-hidden">
+    <div className="mt-6 w-full overflow-hidden rounded-md border shadow">
+      <div className="w-full overflow-auto">
         <Table>
-          <TableHeader className="bg-muted">
+          <TableHeader>
             <TableRow>
-              <TableHead className="w-16 text-center">Rank</TableHead>
+              <TableHead className="w-[100px]">Rank</TableHead>
               <TableHead>User</TableHead>
-              <TableHead>Total Score</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Country</TableHead>
+              <TableHead className="text-right">Score</TableHead>
+              <TableHead className="text-right">Change</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((entry, index) => (
-              <TableRow
-                key={entry.userId}
+            {data.map((entry) => (
+              <motion.tr
+                key={entry.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
                 className={cn(
-                  index === 0 &&
-                    'bg-yellow-100 hover:bg-yellow-100 dark:bg-yellow-900 dark:hover:bg-yellow-900',
-                  index === 1 &&
-                    'bg-gray-100 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-900',
-                  index === 2 &&
-                    'bg-amber-100 hover:bg-amber-100 dark:bg-amber-900 dark:hover:bg-amber-900'
+                  'group transition-colors hover:bg-muted/50',
+                  currentUserId === entry.id &&
+                    'bg-primary/5 hover:bg-primary/10'
                 )}
               >
-                <TableCell className="text-center font-medium">
-                  <span className="flex items-center justify-center">
-                    {getRankBadge(index)}
-                  </span>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {entry.rank <= 10 && (
+                      <span
+                        className={cn(
+                          'flex h-6 w-6 items-center justify-center rounded-full text-xs',
+                          entry.rank === 1
+                            ? 'bg-yellow-500 text-black'
+                            : entry.rank === 2
+                              ? 'bg-gray-300 text-black'
+                              : entry.rank === 3
+                                ? 'bg-amber-700 text-white'
+                                : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {entry.rank}
+                      </span>
+                    )}
+                    {entry.rank > 10 && entry.rank}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src={`https://avatar.vercel.sh/${entry.username}`}
-                        alt={entry.username}
-                      />
-                      <AvatarFallback>
-                        <User className="h-4 w-4" />
-                      </AvatarFallback>
+                      <AvatarImage src={entry.avatar} alt={entry.name} />
+                      <AvatarFallback>{entry.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{entry.username}</span>
+                    <span
+                      className={cn(
+                        'font-medium',
+                        currentUserId === entry.id && 'font-bold text-primary'
+                      )}
+                    >
+                      {entry.name}
+                      {currentUserId === entry.id && ' (You)'}
+                    </span>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={cn(
-                          'h-full rounded-full transition-all',
-                          index === 0 && 'bg-yellow-500',
-                          index === 1 && 'bg-gray-400',
-                          index === 2 && 'bg-amber-600',
-                          index > 2 && 'bg-primary'
-                        )}
-                        style={{
-                          width: `${
-                            (entry.totalScore / (data[0]?.totalScore ?? 0)) *
-                            100
-                          }%`,
-                        }}
-                      />
-                    </div>
-                    <span className="tabular-nums">{entry.totalScore}</span>
-                  </div>
+                <TableCell>{entry.country}</TableCell>
+                <TableCell className="text-right font-semibold">
+                  {entry.score.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedUser(entry)}
+                  <Badge
+                    variant={
+                      entry.change > 0
+                        ? 'success'
+                        : entry.change < 0
+                          ? 'destructive'
+                          : 'outline'
+                    }
+                    className="px-1.5 py-0"
                   >
-                    View Details
-                  </Button>
+                    <div className="flex items-center gap-1">
+                      {entry.change > 0 ? (
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      ) : entry.change < 0 ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <Minus className="h-3.5 w-3.5" />
+                      )}
+                      {Math.abs(entry.change)}
+                    </div>
+                  </Badge>
                 </TableCell>
-              </TableRow>
+              </motion.tr>
             ))}
           </TableBody>
         </Table>
-      </Card>
-      {selectedUser && (
-        <UserRankingModal
-          user={selectedUser}
-          onClose={() => setSelectedUser(null)}
-        />
-      )}
-    </>
+      </div>
+    </div>
   );
 }
