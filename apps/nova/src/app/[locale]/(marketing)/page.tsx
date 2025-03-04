@@ -261,20 +261,20 @@ export default function MarketingPage() {
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
                             <UserCheck className="h-5 w-5 text-primary" />
-                            Admission Requirements
+                            {t('requirements')}
                           </h3>
                           <ul className="space-y-3">
                             <li className="flex items-center gap-2 text-muted-foreground">
                               <MapPin className="h-4 w-4" />
-                              <span>Based in Ho Chi Minh City</span>
+                              <span>{t('based-in')}</span>
                             </li>
                             <li className="flex items-center gap-2 text-muted-foreground">
                               <School className="h-4 w-4" />
-                              <span>Undergraduate Students</span>
+                              <span>{t('undergraduates')}</span>
                             </li>
                             <li className="flex items-center gap-2 text-muted-foreground">
                               <Clock className="h-4 w-4" />
-                              <span>18+ years old</span>
+                              <span>{t('age')}</span>
                             </li>
                           </ul>
                         </div>
@@ -292,15 +292,15 @@ export default function MarketingPage() {
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
                             <Target className="h-5 w-5 text-primary" />
-                            Program Objectives
+                            {t('program-objectives')}
                           </h3>
                           <ul className="space-y-3">
                             {[
-                              'Democratize Prompt Engineering across all backgrounds',
-                              'Develop practical AI skills and problem-solving abilities',
-                              'Build a global community of AI innovators',
-                              'Foster creative solutions to real-world challenges',
-                              'Advance AI literacy and ethical understanding',
+                              t('program-objectives-description-1'),
+                              t('program-objectives-description-2'),
+                              t('program-objectives-description-3'),
+                              t('program-objectives-description-4'),
+                              t('program-objectives-description-5'),
                             ].map((objective, index) => (
                               <li
                                 key={index}
