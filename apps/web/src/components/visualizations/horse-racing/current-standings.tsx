@@ -136,7 +136,7 @@ export function CurrentStandings({
                     {unknownPositions.length} remaining
                   </span>
                 </h4>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {unknownPositions.map((horseId) => {
                     const horse = horses.find((h) => h.id === horseId);
                     if (!horse) return null;

@@ -360,7 +360,7 @@ export function RelationshipGraph({
         <div className="mb-2 text-xs text-muted-foreground">
           {hoveredHorse !== null ? (
             <>
-              Showing relationships for Horse #{hoveredHorse}:
+              Showing relationships for Horse #{hoveredHorse}:{' '}
               <span className="font-medium">
                 Faster than{' '}
                 {fasterThanRelationships.get(hoveredHorse)?.size || 0} horses,

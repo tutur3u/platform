@@ -296,6 +296,12 @@ export function HorseRacingVisualization() {
     return findHorseRanking(numHorses, raceSize, wrappedRaceFunction);
   };
 
+  const resetState = () => {
+    setRaces([]);
+    setCurrentRaceIndex(-1);
+    setFinalRanking([]);
+  };
+
   // Start the visualization
   const startVisualization = () => {
     // Reset state
@@ -397,7 +403,10 @@ export function HorseRacingVisualization() {
             numHorses={numHorses}
             setNumHorses={setNumHorses}
             raceSize={raceSize}
-            setRaceSize={setRaceSize}
+            setRaceSize={(value) => {
+              resetState();
+              setRaceSize(value);
+            }}
             animationSpeed={animationSpeed}
             setAnimationSpeed={setAnimationSpeed}
             speedDistribution={speedDistribution}
@@ -405,7 +414,10 @@ export function HorseRacingVisualization() {
             showAnimation={showAnimation}
             setShowAnimation={setShowAnimation}
             showHorseSpeeds={showHorseSpeeds}
-            setShowHorseSpeeds={setShowHorseSpeeds}
+            setShowHorseSpeeds={(value) => {
+              resetState();
+              setShowHorseSpeeds(value);
+            }}
             regenerateHorses={regenerateHorses}
             isRunning={isRunning}
           />

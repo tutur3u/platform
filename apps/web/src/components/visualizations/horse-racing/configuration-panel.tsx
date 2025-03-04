@@ -87,7 +87,6 @@ export function ConfigurationPanel({
                   step={1}
                   value={[numHorses]}
                   onValueChange={(value) => setNumHorses(value[0] ?? 10)}
-                  disabled={isRunning}
                   className="flex-1"
                 />
                 <Input
@@ -97,7 +96,6 @@ export function ConfigurationPanel({
                   max="100"
                   value={numHorses}
                   onChange={(e) => setNumHorses(parseInt(e.target.value) || 10)}
-                  disabled={isRunning}
                   className="w-20"
                 />
               </div>
@@ -131,7 +129,6 @@ export function ConfigurationPanel({
                   step={1}
                   value={[raceSize]}
                   onValueChange={(value) => setRaceSize(value[0] ?? 2)}
-                  disabled={isRunning}
                   className="flex-1"
                 />
                 <Input
@@ -141,7 +138,6 @@ export function ConfigurationPanel({
                   max={numHorses}
                   value={raceSize}
                   onChange={(e) => setRaceSize(parseInt(e.target.value) || 2)}
-                  disabled={isRunning}
                   className="w-20"
                 />
               </div>
