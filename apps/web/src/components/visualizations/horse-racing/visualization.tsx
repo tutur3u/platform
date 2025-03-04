@@ -2,8 +2,10 @@
 
 // Components
 import { AlgorithmAnalytics } from './algorithm-analytics';
+import { AlgorithmBenchmarks } from './algorithm-benchmarks';
 import { AlgorithmDiagnostics } from './algorithm-diagnostics';
 import { AlgorithmInsights } from './algorithm-insights';
+import { BenchmarkRunner } from './benchmark-runner';
 import { ConfigurationPanel } from './configuration-panel';
 import { CurrentStandings } from './current-standings';
 import Explaination from './explaination';
@@ -13,6 +15,7 @@ import { RaceDetails } from './race-details';
 import { RelationshipGraph } from './relationship-graph';
 // Utils
 import { findHorseRanking } from '@/utils/horseRacing';
+import { HorseRacingBenchmark } from '@/utils/horseRacingBenchmarks';
 // UI Components
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
@@ -100,8 +103,10 @@ export function HorseRacingVisualization() {
     | 'analytics'
     | 'diagnostics'
     | 'insights'
+    | 'benchmarks'
   >('standings');
   const [showExplanations, setShowExplanations] = useState(true);
+  const [benchmarks, setBenchmarks] = useState<HorseRacingBenchmark[]>([]);
 
   // Track the relationships between horses for visualization
   const fasterThanRelationships = useRef(
@@ -381,6 +386,28 @@ export function HorseRacingVisualization() {
     }
   };
 
+  // Handle a benchmark selection
+  const handleBenchmarkSelect = (horses: number, raceSize: number) => {
+    if (isRunning) {
+      resetVisualization();
+    }
+
+    setNumHorses(horses);
+    setRaceSize(raceSize);
+    resetState();
+  };
+
+  // Handle benchmarks update from the runner
+  const handleBenchmarksUpdated = (
+    updatedBenchmarks: HorseRacingBenchmark[]
+  ) => {
+    // Only update the benchmarks state if it's actually different
+    // This prevents the infinite update loop
+    if (JSON.stringify(benchmarks) !== JSON.stringify(updatedBenchmarks)) {
+      setBenchmarks(updatedBenchmarks);
+    }
+  };
+
   // Get currently visible race data
   const currentRace = races[currentRaceIndex];
   const previousRaces = races.slice(0, currentRaceIndex);
@@ -392,8 +419,9 @@ export function HorseRacingVisualization() {
         value={activeTab}
         onValueChange={setActiveTab}
       >
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid h-full w-full grid-cols-1 md:grid-cols-3">
           <TabsTrigger value="visualization">Visualization</TabsTrigger>
+          <TabsTrigger value="benchmarks">Benchmarks</TabsTrigger>
           <TabsTrigger value="explanation">Algorithm Explanation</TabsTrigger>
         </TabsList>
 
@@ -475,13 +503,14 @@ export function HorseRacingVisualization() {
                     onValueChange={(value) => setActiveInfoTab(value as any)}
                     className="w-full"
                   >
-                    <TabsList className="grid h-full w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+                    <TabsList className="grid h-full w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7">
                       <TabsTrigger value="standings">Standings</TabsTrigger>
                       <TabsTrigger value="relationships">Network</TabsTrigger>
                       <TabsTrigger value="insights">Insights</TabsTrigger>
                       <TabsTrigger value="details">Details</TabsTrigger>
                       <TabsTrigger value="analytics">Analytics</TabsTrigger>
                       <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
+                      <TabsTrigger value="benchmarks">Benchmarks</TabsTrigger>
                     </TabsList>
 
                     <div className="p-4">
@@ -510,7 +539,7 @@ export function HorseRacingVisualization() {
                         />
                       </TabsContent>
 
-                      {/* New Insights Tab */}
+                      {/* Insights Tab */}
                       <TabsContent value="insights" className="mt-0">
                         {races.length > 0 ? (
                           <AlgorithmInsights
@@ -618,6 +647,18 @@ export function HorseRacingVisualization() {
                           </div>
                         )}
                       </TabsContent>
+
+                      {/* Benchmarks Tab */}
+                      <TabsContent value="benchmarks" className="mt-0">
+                        <AlgorithmBenchmarks
+                          currentHorses={numHorses}
+                          currentRaceSize={raceSize}
+                          onSelectBenchmark={
+                            isRunning ? undefined : handleBenchmarkSelect
+                          }
+                          customBenchmarks={benchmarks}
+                        />
+                      </TabsContent>
                     </div>
                   </Tabs>
                 </CardContent>
@@ -719,6 +760,68 @@ export function HorseRacingVisualization() {
                 </Card>
               )}
             </div>
+          </div>
+        </TabsContent>
+
+        {/* Benchmarks Tab */}
+        <TabsContent value="benchmarks" className="mt-4">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">
+                Algorithm Benchmarks
+              </h2>
+              <p className="text-muted-foreground">
+                Performance metrics for the Horse Racing Ranking Algorithm
+                across different configurations.
+              </p>
+            </div>
+
+            <BenchmarkRunner onBenchmarksUpdated={handleBenchmarksUpdated} />
+
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="mb-4 text-lg font-medium">
+                  Understanding the Metrics
+                </h3>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <h4 className="font-medium">Races</h4>
+                    <p className="text-muted-foreground">
+                      The number of races required to determine the complete
+                      ranking of all horses.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium">Theoretical Minimum</h4>
+                    <p className="text-muted-foreground">
+                      The lower bound on the number of races needed, based on
+                      information theory. Calculated as
+                      max(ceil(log_raceSize(horses)), ceil(horses/raceSize)).
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium">Theoretical Maximum</h4>
+                    <p className="text-muted-foreground">
+                      The upper bound on the number of races needed, based on
+                      naive comparison. Calculated as (horses - 1) in a naive
+                      implementation.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium">Efficiency</h4>
+                    <p className="text-muted-foreground">
+                      A measure of how close the algorithm gets to the
+                      theoretical optimum. Calculated as (theoreticalMaximum -
+                      races) / (theoreticalMaximum - theoreticalMinimum). Higher
+                      values indicate better performance.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

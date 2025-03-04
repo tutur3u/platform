@@ -1809,8 +1809,8 @@ importers:
         specifier: ^1.1.12
         version: 1.1.12(zod@3.24.2)
       '@google/generative-ai':
-        specifier: ^0.22.0
-        version: 0.22.0
+        specifier: ^0.23.0
+        version: 0.23.0
       '@tuturuuu/supabase':
         specifier: workspace:*
         version: link:../supabase
@@ -3170,6 +3170,10 @@ packages:
 
   '@google/generative-ai@0.22.0':
     resolution: {integrity: sha512-mLR3PDWCk5O/BWNyDvFDIiwKeXQmFGZ+kJFd9m73QrUPCFREttJyVbBPTW4y9CwTbaltLMDaLDfroCrRv5Bl8Q==}
+    engines: {node: '>=18.0.0'}
+
+  '@google/generative-ai@0.23.0':
+    resolution: {integrity: sha512-8vGoguvLG22U3t9XpXvbxjxy/yfBhE27pqptz5QVKXwBSh9sUXXmZWS8ZdGMqifK7kiuZQCG2cjGJNUdBsgX+g==}
     engines: {node: '>=18.0.0'}
 
   '@hocuspocus/common@2.15.2':
@@ -10824,6 +10828,8 @@ snapshots:
   '@google/generative-ai@0.21.0': {}
 
   '@google/generative-ai@0.22.0': {}
+
+  '@google/generative-ai@0.23.0': {}
 
   '@hocuspocus/common@2.15.2':
     dependencies:
