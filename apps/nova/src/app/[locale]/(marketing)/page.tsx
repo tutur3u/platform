@@ -36,7 +36,7 @@ const HeroAnimation = dynamic(() => import('./hero-animation'), {
 });
 
 export default function MarketingPage() {
-  const t = useTranslations();
+  const t = useTranslations('nova');
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -111,7 +111,7 @@ export default function MarketingPage() {
                 />
                 <Sparkles className="mr-2 h-4 w-4" />
                 <span className="relative z-10">
-                  Welcome to the Future of Prompt Engineering
+                  {t('badge')}
                 </span>
               </Badge>
             </motion.div>
@@ -122,7 +122,7 @@ export default function MarketingPage() {
               transition={{ delay: 0.2, duration: 0.6 }}
               className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl"
             >
-              Master the Art of
+              {t('title')}
               <br />
               <GradientHeadline title="Prompt Engineering" />
             </motion.h1>
@@ -133,9 +133,7 @@ export default function MarketingPage() {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/50"
             >
-              Your playground for crafting, testing, and perfecting AI prompts.
-              Join a community of innovators solving real-world problems through
-              advanced prompt engineering.
+              {t('description')}
             </motion.div>
 
             <motion.div
@@ -149,7 +147,7 @@ export default function MarketingPage() {
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: 'spring', stiffness: 400 }}
               >
-                <GetStartedButton text={t('home.get-started')} />
+                <GetStartedButton text={t('get-started')} />
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -168,7 +166,7 @@ export default function MarketingPage() {
                       transition={{ duration: 0.5 }}
                     />
                     <span className="relative z-10 flex items-center">
-                      Explore Challenges
+                      {t('explore')}
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </span>
                   </Button>
@@ -205,7 +203,7 @@ export default function MarketingPage() {
                   </Badge>
 
                   <h2 className="mb-4 bg-gradient-to-r from-primary via-dynamic-purple to-dynamic-blue bg-clip-text text-4xl font-bold text-balance text-transparent">
-                    NEO League Season 1
+                    NEO League {t('season')} 1
                   </h2>
 
                   <div className="mb-6 bg-gradient-to-r from-dynamic-purple to-dynamic-red bg-clip-text text-3xl font-bold text-transparent">
@@ -218,33 +216,33 @@ export default function MarketingPage() {
                   events={[
                     {
                       date: '05 April 2025',
-                      title: 'Opening Ceremony',
+                      title: t('open-cere'),
                       type: 'Virtual',
                       icon: <CalendarDays className="h-5 w-5" />,
                       description:
-                        'Join us for the kickoff of NEO League Season 1',
+                        t('open-cere-description'),
                     },
                     {
                       date: '12 April 2025',
-                      title: 'Top 50 Selection',
+                      title: t('top-50-selection'),
                       type: 'Virtual',
                       icon: <Trophy className="h-5 w-5" />,
                       description:
-                        'First round of selections for top performers',
+                      t('top-50-selection-description'),
                     },
                     {
                       date: '19 April 2025',
-                      title: 'Top 30 Selection',
+                      title: t('top-30-selection'),
                       type: 'Virtual',
                       icon: <Star className="h-5 w-5" />,
-                      description: 'Final online round to determine finalists',
+                      description: t('top-30-selection-description'),
                     },
                     {
                       date: '26 April 2025',
-                      title: 'Final Competition',
+                      title: t('final-competition'),
                       type: 'On-site',
                       icon: <Trophy className="h-5 w-5" />,
-                      description: 'On-site finals and awards ceremony',
+                      description: t('final-competition-description'),
                     },
                   ]}
                 />

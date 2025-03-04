@@ -1,4 +1,26 @@
 {
+  "nova": {
+    "badge": "Chào mừng đến với tương lai của Prompt Engineering",
+    "title": "Làm chủ cuộc chơi với",
+    "description": "Sân chơi của bạn để chế tạo, thử nghiệm và hoàn thiện lời nhắc AI. Tham gia cộng đồng những người sáng tạo giải quyết các vấn đề thực tế thông qua kỹ thuật lời nhắc tiên tiến.",
+    "error": "Error",
+    "get-started": "Bắt đầu",
+    "explore": "Khám phá",
+    "season": "Mùa",
+    "open-cere": "Lễ Khai Mạc",
+    "top-50-selection": "Vòng loại 50",
+    "top-30-selection-description": "Vòng trực tuyến cuối cùng để xác định những người vào chung kết",
+    "top-50-selection-description": "Vòng tuyển chọn đầu tiên dành cho những người có thành tích cao nhất",
+    "final-competition": "Cuộc thi chung kết",
+    "final-competition-description": "Vòng chung kết để xác định người chiến thắng",
+    "top-30-selection": "Vòng loại 30",
+    "open-cere-description": "Hãy tham gia cùng chúng tôi để khởi động NEO League Mùa 1",
+    "error-description": "An error occurred while processing your request. Please try again later.",
+    "error-404": "Page not found",
+    "error-404-description": "The page you are looking for does not exist.",
+    "error-500": "Internal server error",
+    "error-500-description": "Something went wrong. Please try again later."
+  },
   "common": {
     "alpha": "Alpha",
     "beta": "Beta",

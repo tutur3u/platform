@@ -304,6 +304,28 @@
     "last-year": "Last year",
     "next-year": "Next year"
   },
+  "nova": {
+    "badge": "Welcome to the Future of Prompt Engineering",
+    "title": "Master the Art of",
+    "description": "Your playground for crafting, testing, and perfecting AI prompts. Join a community of innovators solving real-world problems through advanced prompt engineering.",
+    "error": "Error",
+    "get-started": "Get Started",
+    "season": "Season",
+    "open-cere": "Open Ceremony",
+    "top-50-selection": "Top 50 Selection",
+    "top-50-selection-description": "First round of selections for top performers",
+    "top-30-selection-description": "Final online round to determine finalists",
+    "final-competition": "Final Competition",
+    "final-competition-description": "Final round to determine the winners",
+    "top-30-selection": "Top 50 Selection",
+    "open-cere-description": "Join us for the kickoff of NEO League Season 1",
+    "explore": "Explore Challenges",
+    "error-description": "An error occurred while processing your request. Please try again later.",
+    "error-404": "Page not found",
+    "error-404-description": "The page you are looking for does not exist.",
+    "error-500": "Internal server error",
+    "error-500-description": "Something went wrong. Please try again later."
+  },
   "home": {
     "headline": "Your intelligent shortcut",
     "subheadline": "Take control of workflows, supercharged by AI",
