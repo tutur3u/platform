@@ -472,14 +472,13 @@ export default function MarketingPage() {
           >
             <Badge variant="outline" className="mb-4">
               <Sparkles className="mr-2 h-4 w-4" />
-              Get Started Today
+              {t('get-started-today')}
             </Badge>
             <h2 className="mb-4 text-4xl font-bold md:text-5xl">
-              Ready to Transform Your AI Interactions?
+              {t('get-started-today-subtitle')}
             </h2>
             <p className="mb-8 text-muted-foreground">
-              Join thousands of prompt engineers who are already creating more
-              effective and efficient AI interactions with Nova.
+              {t('get-started-today-description')}
             </p>
             <motion.div
               className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
@@ -488,7 +487,7 @@ export default function MarketingPage() {
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <GetStartedButton text={t('home.get-started')} />
+              <GetStartedButton text={t('get-started')} />
               <Link href="/learn">
                 <Button variant="outline" className="group">
                   Browse Learning Resources

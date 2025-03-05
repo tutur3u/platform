@@ -12,41 +12,46 @@ import {
   ShieldCheck,
   Wand2,
 } from 'lucide-react';
-
-const features = [
-  {
-    icon: <BrainCircuit className="h-5 w-5" />,
-    title: 'Advanced AI Models',
-    description: 'Access GPT-4, Claude, and other cutting-edge AI models',
-  },
-  {
-    icon: <MessageSquareCode className="h-5 w-5" />,
-    title: 'Smart Templating',
-    description: 'Create and share reusable prompt templates',
-  },
-  {
-    icon: <LineChart className="h-5 w-5" />,
-    title: 'Performance Analytics',
-    description: 'Track and optimize your prompt effectiveness',
-  },
-  {
-    icon: <Settings2 className="h-5 w-5" />,
-    title: 'Fine-tuning Controls',
-    description: 'Adjust parameters for perfect outputs',
-  },
-  {
-    icon: <Lock className="h-5 w-5" />,
-    title: 'Secure Processing',
-    description: 'Enterprise-grade security for your data',
-  },
-  {
-    icon: <ShieldCheck className="h-5 w-5" />,
-    title: 'Ethical AI Usage',
-    description: 'Built-in bias detection and ethical guidelines',
-  },
-];
+import { useTranslations } from 'next-intl';
 
 export default function AiFeatures() {
+  // Move useTranslations hook inside the component function
+  const t = useTranslations('nova');
+  
+  // Define features inside the component to access the translations
+  const features = [
+    {
+      icon: <BrainCircuit className="h-5 w-5" />,
+      title: t('advanced-ai-models'),
+      description: t('advanced-ai-models-description'),
+    },
+    {
+      icon: <MessageSquareCode className="h-5 w-5" />,
+      title: t('smart-templates'),
+      description: t('smart-templates-description'),
+    },
+    {
+      icon: <LineChart className="h-5 w-5" />,
+      title: t('performance-analytics'),
+      description: t('performance-analytics-description'),
+    },
+    {
+      icon: <Settings2 className="h-5 w-5" />,
+      title: t('fine-tune-controls'),
+      description: t('fine-tune-controls-description'),
+    },
+    {
+      icon: <Lock className="h-5 w-5" />,
+      title: t('secure=processes'),
+      description: t('secure-processes-description'),
+    },
+    {
+      icon: <ShieldCheck className="h-5 w-5" />,
+      title: t('ethical-ai'),
+      description: t('ethical-ai-description'),
+    },
+  ];
+
   return (
     <section id="ai" className="relative w-full py-24">
       {/* Background decorations */}
@@ -60,14 +65,13 @@ export default function AiFeatures() {
             className="mb-4 inline-flex items-center gap-1 border-foreground/10"
           >
             <Bot className="h-4 w-4" />
-            AI Capabilities
+            {t('ai-capabilities')}
           </Badge>
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-            Powered by Advanced AI Technology
+            {t('ai-capabilities-subtitle')}
           </h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
-            Experience the next generation of prompt engineering with our
-            cutting-edge AI features and tools
+            {t('ai-capabilities-description')}
           </p>
         </div>
 
@@ -150,10 +154,9 @@ export default function AiFeatures() {
               <Wand2 className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-xl font-bold">Magic Commands</h3>
+              <h3 className="text-xl font-bold">{t('magic-commands')}</h3>
               <p className="text-muted-foreground">
-                Use special commands to quickly generate optimized prompts for
-                different use cases
+                {t('magic-commands-description')}
               </p>
             </div>
           </div>
