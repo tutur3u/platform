@@ -4,18 +4,8 @@ import { NovaProblem } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 export default async function ProblemsPage() {
-  const database = await createClient();
-  const {
-    data: { user },
-  } = await database.auth.getUser();
-
-  if (!user?.id) {
-    redirect('/login');
-  }
-
   const problems = await fetchProblems();
 
   return (

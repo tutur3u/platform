@@ -18,6 +18,7 @@ interface Props {
 export default function EditProblemPage({ params }: Props) {
   const router = useRouter();
   const supabase = createClient();
+
   const [problemId, setProblemId] = useState<string>('');
   const [initialData, setInitialData] = useState<Partial<ProblemFormValues>>();
   const [isLoading, setIsLoading] = useState(true);
@@ -31,20 +32,6 @@ export default function EditProblemPage({ params }: Props) {
 
     fetchProblemId();
   }, [params]);
-
-  useEffect(() => {
-    const authCheck = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user?.id) {
-        router.push('/login');
-      }
-    };
-
-    authCheck();
-  }, [router, supabase]);
 
   useEffect(() => {
     const fetchProblem = async () => {

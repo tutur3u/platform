@@ -23,25 +23,10 @@ interface Props {
 }
 
 export default function ProblemPage({ params }: Props) {
+  const router = useRouter();
+
   const [problem, setProblem] = useState<ExtendedNovaProblem | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const router = useRouter();
-  const supabase = createClient();
-
-  useEffect(() => {
-    const authCheck = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user?.id) {
-        router.push('/login');
-      }
-    };
-
-    authCheck();
-  }, [router, supabase]);
 
   useEffect(() => {
     const fetchProblem = async () => {
