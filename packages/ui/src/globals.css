@@ -192,13 +192,6 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
-
-  --color-deep-blue: #0b1023;
-  --color-midnight-blue: #1e2240;
-  --color-dark-purple: #2c124b;
-
   --color-dynamic-lime: var(--lime);
   --color-dynamic-purple: var(--purple);
   --color-dynamic-blue: var(--blue);
@@ -217,6 +210,9 @@
   --color-dynamic-light-yellow: var(--light-yellow);
   --color-dynamic-light-orange: var(--light-orange);
   --color-dynamic-light-red: var(--light-red);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
 
   @keyframes accordion-down {
     from {
