@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
 import {
@@ -270,8 +271,12 @@ export const CalendarProvider = ({
 
   const addEmptyEvent = useCallback(
     (date: Date) => {
-      const start_at = new Date(date);
-      const end_at = new Date(date);
+      // TODO: Fix this weird workaround in the future
+      const selectedDate = dayjs(date);
+      const correctDate = selectedDate.add(1, 'day');
+
+      const start_at = correctDate.toDate();
+      const end_at = new Date(start_at);
       end_at.setHours(end_at.getHours() + 1);
 
       // Create a new event with default values
@@ -286,6 +291,7 @@ export const CalendarProvider = ({
 
       // Store the pending new event
       setPendingNewEvent(newEvent);
+      setActiveEventId('new');
 
       // Open the modal with the pending event
       setModalHidden(false);
