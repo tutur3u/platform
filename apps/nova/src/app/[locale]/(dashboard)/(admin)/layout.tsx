@@ -20,12 +20,12 @@ export default async function RootLayout({
 
   const { data: whitelisted } = await sbAdmin
     .from('nova_roles')
-    .select('enabled')
+    .select('enabled, is_admin')
     .eq('email', user?.email as string)
-    .eq('is_admin', true)
     .maybeSingle();
 
-  if (!whitelisted?.enabled) redirect('/not-whitelisted');
+  if (!whitelisted?.enabled || !whitelisted?.is_admin)
+    redirect('/not-whitelisted');
 
-  return <div className="p-4 md:p-8">{children}</div>;
+  return <>{children}</>;
 }

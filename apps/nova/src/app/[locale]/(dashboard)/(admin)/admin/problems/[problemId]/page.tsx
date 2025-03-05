@@ -1,9 +1,9 @@
 'use client';
 
 // Import the components we need for the problem page
-import ProblemComponent from '../../challenges/[challengeId]/problem-component';
-import PromptComponent from '../../challenges/[challengeId]/prompt-component';
-import TestCaseComponent from '../../challenges/[challengeId]/test-case-component';
+import ProblemComponent from '../../../../challenges/[challengeId]/problem-component';
+import PromptComponent from '../../../../challenges/[challengeId]/prompt-component';
+import TestCaseComponent from '../../../../challenges/[challengeId]/test-case-component';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';

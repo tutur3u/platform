@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Code,
   Home,
+  LayoutDashboard,
   List,
   Settings,
   ShieldCheck,
@@ -30,8 +31,14 @@ import { useEffect, useState } from 'react';
 
 const sidebarItems = [
   { name: 'Home', href: '/', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Challenges', href: '/challenges', icon: Code },
-  { name: 'Problems', href: '/problems', icon: List },
+  {
+    name: 'Problems',
+    href: '/admin/problems',
+    icon: List,
+    requiresAdmin: true,
+  },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   {
     name: 'Roles',
@@ -54,7 +61,7 @@ export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
   if (!initialized) return null;
 
   return (
-    <div className="flex w-64 flex-col border-r bg-card text-card-foreground">
+    <div className="bg-card text-card-foreground flex w-64 flex-col border-r">
       <div className="p-4">
         <h1 className="text-xl font-bold">Prompt Engineering</h1>
       </div>
