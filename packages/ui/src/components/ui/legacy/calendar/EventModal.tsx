@@ -4,7 +4,6 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
-import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
@@ -18,7 +17,26 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useState } from 'react';
+
+// Color options aligned with SupportedColor type
+const COLOR_OPTIONS: {
+  value: SupportedColor;
+  name: string;
+  className: string;
+}[] = [
+  { value: 'BLUE', name: 'Blue', className: 'bg-dynamic-blue/70' },
+  { value: 'RED', name: 'Red', className: 'bg-dynamic-red/70' },
+  { value: 'GREEN', name: 'Green', className: 'bg-dynamic-green/70' },
+  { value: 'YELLOW', name: 'Yellow', className: 'bg-dynamic-yellow/70' },
+  { value: 'ORANGE', name: 'Orange', className: 'bg-dynamic-orange/70' },
+  { value: 'PURPLE', name: 'Purple', className: 'bg-dynamic-purple/70' },
+  // { value: 'PINK', name: 'Pink', className: 'bg-dynamic-pink/70' },
+  // { value: 'INDIGO', name: 'Indigo', className: 'bg-dynamic-indigo/70' },
+  // { value: 'CYAN', name: 'Cyan', className: 'bg-dynamic-cyan/70' },
+  // { value: 'GRAY', name: 'Gray', className: 'bg-dynamic-gray/70' },
+];
 
 export function EventModal() {
   const {
@@ -222,13 +240,26 @@ export function EventModal() {
 
           <div className="grid gap-2">
             <Label>Color</Label>
-            <ColorPicker
-              value={event.color || 'BLUE'}
-              color={event.color || 'BLUE'}
-              onChange={(color) =>
-                setEvent({ ...event, color: color as SupportedColor })
-              }
-            />
+            <div className="flex flex-wrap gap-2">
+              {COLOR_OPTIONS.map((colorOption) => (
+                <button
+                  key={colorOption.value}
+                  type="button"
+                  className={cn(
+                    'h-8 w-8 rounded-md border transition-all',
+                    colorOption.className,
+                    event.color === colorOption.value
+                      ? 'ring-2 ring-primary ring-offset-2'
+                      : 'hover:scale-110'
+                  )}
+                  title={colorOption.name}
+                  aria-label={`Select ${colorOption.name} color`}
+                  onClick={() =>
+                    setEvent({ ...event, color: colorOption.value })
+                  }
+                />
+              ))}
+            </div>
           </div>
         </div>
 

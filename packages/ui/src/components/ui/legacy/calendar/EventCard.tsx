@@ -247,44 +247,44 @@ export default function EventCard({ dates, event }: EventCardProps) {
       { bg: string; border: string; text: string }
     > = {
       blue: {
-        bg: 'bg-blue-100 dark:bg-blue-900/30',
-        border: 'border-blue-500/80 dark:border-blue-300/80',
-        text: 'text-blue-700 dark:text-blue-300',
+        bg: 'bg-dynamic-blue/10',
+        border: 'border-dynamic-blue/50',
+        text: 'text-dynamic-blue',
       },
       red: {
-        bg: 'bg-red-100 dark:bg-red-900/30',
-        border: 'border-red-500/80 dark:border-red-300/80',
-        text: 'text-red-700 dark:text-red-300',
+        bg: 'bg-dynamic-red/10',
+        border: 'border-dynamic-red/50',
+        text: 'text-dynamic-red',
       },
       green: {
-        bg: 'bg-green-100 dark:bg-green-900/30',
-        border: 'border-green-500/80 dark:border-green-300/80',
-        text: 'text-green-700 dark:text-green-300',
+        bg: 'bg-dynamic-green/10',
+        border: 'border-dynamic-green/50',
+        text: 'text-dynamic-green',
       },
       yellow: {
-        bg: 'bg-yellow-100 dark:bg-yellow-900/30',
-        border: 'border-yellow-500/80 dark:border-yellow-300/80',
-        text: 'text-yellow-700 dark:text-yellow-300',
+        bg: 'bg-dynamic-yellow/10',
+        border: 'border-dynamic-yellow/50',
+        text: 'text-dynamic-yellow',
       },
       purple: {
-        bg: 'bg-purple-100 dark:bg-purple-900/30',
-        border: 'border-purple-500/80 dark:border-purple-300/80',
-        text: 'text-purple-700 dark:text-purple-300',
+        bg: 'bg-dynamic-purple/10',
+        border: 'border-dynamic-purple/50',
+        text: 'text-dynamic-purple',
       },
       pink: {
-        bg: 'bg-pink-100 dark:bg-pink-900/30',
-        border: 'border-pink-500/80 dark:border-pink-300/80',
-        text: 'text-pink-700 dark:text-pink-300',
+        bg: 'bg-dynamic-pink/10',
+        border: 'border-dynamic-pink/50',
+        text: 'text-dynamic-pink',
       },
       orange: {
-        bg: 'bg-orange-100 dark:bg-orange-900/30',
-        border: 'border-orange-500/80 dark:border-orange-300/80',
-        text: 'text-orange-700 dark:text-orange-300',
+        bg: 'bg-dynamic-orange/10',
+        border: 'border-dynamic-orange/50',
+        text: 'text-dynamic-orange',
       },
       gray: {
-        bg: 'bg-gray-100 dark:bg-gray-900/30',
-        border: 'border-gray-500/80 dark:border-gray-300/80',
-        text: 'text-gray-700 dark:text-gray-300',
+        bg: 'bg-dynamic-gray/10',
+        border: 'border-dynamic-gray/50',
+        text: 'text-dynamic-gray',
       },
     };
 
