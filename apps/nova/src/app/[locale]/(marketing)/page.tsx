@@ -325,7 +325,7 @@ export default function MarketingPage() {
                 >
                   <Button size="lg" disabled>
                     <span className="relative z-10 flex items-center gap-2">
-                      Register for NEO League
+                      {t('register')}
                       <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </span>
                   </Button>
@@ -340,14 +340,13 @@ export default function MarketingPage() {
           <div className="mx-auto max-w-6xl px-4">
             <div className="mb-16 text-center">
               <Badge variant="outline" className="mb-4">
-                Platform Features
+                {t('feature')}
               </Badge>
               <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                Everything You Need to Excel in Prompt Engineering
+                {t('feature-title')}
               </h2>
               <p className="text-muted-foreground">
-                A comprehensive suite of tools designed for modern prompt
-                engineers
+              {t('feature-title-description')}
               </p>
             </div>
 

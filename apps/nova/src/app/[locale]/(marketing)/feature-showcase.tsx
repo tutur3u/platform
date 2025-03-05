@@ -11,7 +11,7 @@ import {
   Users,
 } from 'lucide-react';
 import { ReactNode, useEffect } from 'react';
-
+import { useTranslations } from 'next-intl';
 interface Feature {
   icon: ReactNode;
   title: string;
@@ -20,54 +20,55 @@ interface Feature {
 }
 
 export default function FeatureShowcase() {
+  const t  = useTranslations("nova");
   const features: Feature[] = [
     {
       icon: <Brain className="h-6 w-6" />,
-      title: 'Advanced AI Models',
+      title: t("advanced-ai"),
       description:
-        'Access cutting-edge AI models for powerful prompt engineering',
+        t("advanced-ai-description"),
       gradient: 'from-purple-500/20 via-primary/20 to-blue-500/20',
     },
     {
       icon: <Code2 className="h-6 w-6" />,
-      title: 'Real-time Testing',
-      description: 'Test and iterate your prompts with instant feedback',
+      title: t("real-time"),
+      description: t("real-time-description"),
       gradient: 'from-emerald-500/20 via-primary/20 to-teal-500/20',
     },
     {
       icon: <LineChart className="h-6 w-6" />,
-      title: 'Performance Analytics',
-      description: 'Track and optimize your prompt engineering efforts',
+      title: t('preformance-analysis'),
+      description: t('preformance-analysis-description'),
       gradient: 'from-blue-500/20 via-primary/20 to-indigo-500/20',
     },
     {
       icon: <Users className="h-6 w-6" />,
-      title: 'Collaborative Learning',
-      description: 'Learn from and share with the community',
+      title: t('collaborative-learning'),
+      description: t('collaborative-learning-description'),
       gradient: 'from-pink-500/20 via-primary/20 to-rose-500/20',
     },
     {
       icon: <Command className="h-6 w-6" />,
-      title: 'Advanced Controls',
-      description: 'Fine-tune every aspect of your prompts',
+      title: t('advanced-controls'),
+      description: t('advanced-controls-description'),
       gradient: 'from-amber-500/20 via-primary/20 to-orange-500/20',
     },
     {
       icon: <MessageSquareCode className="h-6 w-6" />,
-      title: 'Smart Templates',
-      description: 'Start with optimized prompt templates',
+      title: t('smart-templates'),
+      description: t('smart-templates-description'),
       gradient: 'from-cyan-500/20 via-primary/20 to-sky-500/20',
     },
     {
       icon: <Flame className="h-6 w-6" />,
-      title: 'Performance Mode',
-      description: 'Optimize for speed and efficiency',
+      title: t('performance'),
+      description: t('performance-description'),
       gradient: 'from-red-500/20 via-primary/20 to-orange-500/20',
     },
     {
       icon: <Sparkles className="h-6 w-6" />,
-      title: 'AI Assistant',
-      description: 'Get help from our AI prompt expert',
+      title: t('AI-assistant'),
+      description: t('AI-assistant-description'),
       gradient: 'from-violet-500/20 via-primary/20 to-purple-500/20',
     },
   ];
