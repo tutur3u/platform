@@ -367,21 +367,19 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="space-y-6"
               >
-                <Badge variant="outline">Learning Resources</Badge>
+                <Badge variant="outline"> {t('learning-resources')}</Badge>
                 <h2 className="text-3xl font-bold md:text-4xl">
-                  Master Prompt Engineering Through Structured Learning
+                {t('learning-subtitle')}
                 </h2>
                 <p className="text-foreground/60">
-                  Access comprehensive tutorials, guides, and real-world
-                  examples to enhance your prompt engineering skills. Learn from
-                  industry experts and join a supportive community.
+                    {t('learning-subtitle-description')}
                 </p>
                 <div className="space-y-4">
                   {[
-                    'Interactive tutorials and exercises',
-                    'Real-world case studies',
-                    'Expert-led workshops',
-                    'Community challenges and competitions',
+                    t('learning-tututorials'),
+                    t('real-world'),
+                    t('expert-lead'),
+                    t('community'),
                   ].map((item, index) => (
                     <motion.div
                       key={index}
@@ -418,20 +416,20 @@ export default function MarketingPage() {
                       {[
                         {
                           icon: <GraduationCap className="h-5 w-5" />,
-                          title: 'Structured Learning Path',
+                          title: t("structure-learning"),
                           description:
-                            'Follow a curated path from basics to advanced topics',
+                            t('structure-learning-description'),
                         },
                         {
                           icon: <Users className="h-5 w-5" />,
-                          title: 'Community Support',
+                          title: t("community-support"),
                           description:
-                            'Learn and grow with fellow prompt engineers',
+                            t('community-support-description'),
                         },
                         {
                           icon: <Trophy className="h-5 w-5" />,
-                          title: 'Earn Certifications',
-                          description: 'Get recognized for your expertise',
+                          title: t('earn-cert'),
+                          description: t('earn-cert-description'),
                         },
                       ].map((item, index) => (
                         <motion.div
