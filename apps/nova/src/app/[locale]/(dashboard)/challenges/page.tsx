@@ -1,11 +1,11 @@
 import ChallengeCard from './challengeCard';
 import CreateChallengeDialog from './createChallengeDialog';
+import LoadingChallenges from './loading';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types/db';
+import { Suspense } from 'react';
 
 export default async function ChallengesPage() {
-  const challenges = await fetchChallenges();
-
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -13,14 +13,24 @@ export default async function ChallengesPage() {
         <CreateChallengeDialog />
       </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {challenges.length > 0 ? (
-          challenges.map((challenge) => (
-            <ChallengeCard key={challenge.id} challenge={challenge} />
-          ))
-        ) : (
-          <p className="text-gray-500">No challenges available.</p>
-        )}
+        <Suspense fallback={<LoadingChallenges />}>
+          <ChallengesList />
+        </Suspense>
       </div>
+    </div>
+  );
+}
+
+async function ChallengesList() {
+  const challenges = await fetchChallenges();
+
+  return challenges.length > 0 ? (
+    challenges.map((challenge) => (
+      <ChallengeCard key={challenge.id} challenge={challenge} />
+    ))
+  ) : (
+    <div className="col-span-full text-center">
+      <p className="text-gray-500">No challenges available.</p>
     </div>
   );
 }
