@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { validateEmail, validateOtp } from '@tuturuuu/utils/email';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -43,21 +44,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ message: 'OTP verified successfully' });
 }
-
-const validateEmail = async (email?: string | null) => {
-  if (!email) throw 'Email is required';
-
-  const regex = /\S+@\S+\.\S+/;
-  if (!regex.test(email)) throw 'Email is invalid';
-
-  return email;
-};
-
-const validateOtp = async (otp?: string | null) => {
-  if (!otp) throw 'OTP is required';
-
-  const regex = /^\d{6}$/;
-  if (!regex.test(otp)) throw 'OTP is invalid';
-
-  return otp;
-};
