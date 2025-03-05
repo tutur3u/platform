@@ -3,6 +3,7 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { calendarEventSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
+import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
@@ -113,12 +114,17 @@ export function GenerateEventModal({
 
     try {
       // Convert the AI-generated event to a format compatible with the calendar
+      // Ensure color is uppercase to match SupportedColor type
+      const colorValue = generatedEvent.color
+        ? (generatedEvent.color.toUpperCase() as SupportedColor)
+        : 'BLUE';
+
       const calendarEvent: Omit<CalendarEvent, 'id'> = {
         title: generatedEvent.title || 'New Event',
         description: generatedEvent.description || '',
         start_at: generatedEvent.start_at,
         end_at: generatedEvent.end_at,
-        color: generatedEvent.color || 'blue',
+        color: colorValue,
       };
 
       await addEvent(calendarEvent);
