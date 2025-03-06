@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "pnpm@10.5.2",
+  "packageManager": "pnpm@10.6.0",
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.1",
@@ -31,7 +31,7 @@
     "@typescript-eslint/eslint-plugin": "^8.26.0",
     "@typescript-eslint/parser": "^8.26.0",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.7"
+    "vitest": "^3.0.8"
   },
   "exports": {
     "./*": "./src/*.ts"

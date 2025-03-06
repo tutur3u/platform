@@ -186,7 +186,7 @@
     "postcss": "^8.5.3",
     "react-hot-toast": "^2.5.2",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.7"
+    "vitest": "^3.0.8"
   },
   "overrides": {
     "react-is": "^19.0.0"
@@ -195,5 +195,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@10.5.2"
+  "packageManager": "pnpm@10.6.0"
 }
