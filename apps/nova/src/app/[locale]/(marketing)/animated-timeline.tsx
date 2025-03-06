@@ -5,7 +5,7 @@ import { ReactNode } from 'react';
 interface TimelineEvent {
   date: string;
   title: string;
-  type: 'Virtual' | 'On-site';
+  type: string;
   icon: ReactNode;
   description: string;
 }
@@ -48,7 +48,7 @@ export default function AnimatedTimeline({ events }: AnimatedTimelineProps) {
                       {event.description}
                     </p>
                   </div>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
+                  <span className="flex-none rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
                     {event.type}
                   </span>
                 </div>

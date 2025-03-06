@@ -36,7 +36,7 @@ const HeroAnimation = dynamic(() => import('./hero-animation'), {
 });
 
 export default function MarketingPage() {
-  const t = useTranslations();
+  const t = useTranslations('nova');
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -110,9 +110,7 @@ export default function MarketingPage() {
                   whileHover={{ opacity: 1 }}
                 />
                 <Sparkles className="mr-2 h-4 w-4" />
-                <span className="relative z-10">
-                  Welcome to the Future of Prompt Engineering
-                </span>
+                <span className="relative z-10">{t('badge')}</span>
               </Badge>
             </motion.div>
 
@@ -122,7 +120,7 @@ export default function MarketingPage() {
               transition={{ delay: 0.2, duration: 0.6 }}
               className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl"
             >
-              Master the Art of
+              {t('title')}
               <br />
               <GradientHeadline title="Prompt Engineering" />
             </motion.h1>
@@ -133,9 +131,7 @@ export default function MarketingPage() {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/50"
             >
-              Your playground for crafting, testing, and perfecting AI prompts.
-              Join a community of innovators solving real-world problems through
-              advanced prompt engineering.
+              {t('description')}
             </motion.div>
 
             <motion.div
@@ -149,7 +145,7 @@ export default function MarketingPage() {
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: 'spring', stiffness: 400 }}
               >
-                <GetStartedButton text={t('home.get-started')} />
+                <GetStartedButton text={t('get-started')} />
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -168,7 +164,7 @@ export default function MarketingPage() {
                       transition={{ duration: 0.5 }}
                     />
                     <span className="relative z-10 flex items-center">
-                      Explore Challenges
+                      {t('explore')}
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </span>
                   </Button>
@@ -205,7 +201,7 @@ export default function MarketingPage() {
                   </Badge>
 
                   <h2 className="mb-4 bg-gradient-to-r from-primary via-dynamic-purple to-dynamic-blue bg-clip-text text-4xl font-bold text-balance text-transparent">
-                    NEO League Season 1
+                    NEO League {t('season')} 1
                   </h2>
 
                   <div className="mb-6 bg-gradient-to-r from-dynamic-purple to-dynamic-red bg-clip-text text-3xl font-bold text-transparent">
@@ -218,33 +214,31 @@ export default function MarketingPage() {
                   events={[
                     {
                       date: '05 April 2025',
-                      title: 'Opening Ceremony',
-                      type: 'Virtual',
+                      title: t('open-cere'),
+                      type: t('virtual'),
                       icon: <CalendarDays className="h-5 w-5" />,
-                      description:
-                        'Join us for the kickoff of NEO League Season 1',
+                      description: t('open-cere-description'),
                     },
                     {
                       date: '12 April 2025',
-                      title: 'Top 50 Selection',
-                      type: 'Virtual',
+                      title: t('top-50-selection'),
+                      type: t('virtual'),
                       icon: <Trophy className="h-5 w-5" />,
-                      description:
-                        'First round of selections for top performers',
+                      description: t('top-50-selection-description'),
                     },
                     {
                       date: '19 April 2025',
-                      title: 'Top 30 Selection',
-                      type: 'Virtual',
+                      title: t('top-30-selection'),
+                      type: t('virtual'),
                       icon: <Star className="h-5 w-5" />,
-                      description: 'Final online round to determine finalists',
+                      description: t('top-30-selection-description'),
                     },
                     {
                       date: '26 April 2025',
-                      title: 'Final Competition',
-                      type: 'On-site',
+                      title: t('final-competition'),
+                      type: t('onsite'),
                       icon: <Trophy className="h-5 w-5" />,
-                      description: 'On-site finals and awards ceremony',
+                      description: t('final-competition-description'),
                     },
                   ]}
                 />
@@ -263,20 +257,20 @@ export default function MarketingPage() {
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
                             <UserCheck className="h-5 w-5 text-primary" />
-                            Admission Requirements
+                            {t('requirements')}
                           </h3>
                           <ul className="space-y-3">
                             <li className="flex items-center gap-2 text-muted-foreground">
                               <MapPin className="h-4 w-4" />
-                              <span>Based in Ho Chi Minh City</span>
+                              <span>{t('based-in')}</span>
                             </li>
                             <li className="flex items-center gap-2 text-muted-foreground">
                               <School className="h-4 w-4" />
-                              <span>Undergraduate Students</span>
+                              <span>{t('undergraduates')}</span>
                             </li>
                             <li className="flex items-center gap-2 text-muted-foreground">
                               <Clock className="h-4 w-4" />
-                              <span>18+ years old</span>
+                              <span>{t('age')}</span>
                             </li>
                           </ul>
                         </div>
@@ -294,15 +288,15 @@ export default function MarketingPage() {
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
                             <Target className="h-5 w-5 text-primary" />
-                            Program Objectives
+                            {t('program-objectives')}
                           </h3>
                           <ul className="space-y-3">
                             {[
-                              'Democratize Prompt Engineering across all backgrounds',
-                              'Develop practical AI skills and problem-solving abilities',
-                              'Build a global community of AI innovators',
-                              'Foster creative solutions to real-world challenges',
-                              'Advance AI literacy and ethical understanding',
+                              t('program-objectives-description-1'),
+                              t('program-objectives-description-2'),
+                              t('program-objectives-description-3'),
+                              t('program-objectives-description-4'),
+                              t('program-objectives-description-5'),
                             ].map((objective, index) => (
                               <li
                                 key={index}
@@ -327,7 +321,7 @@ export default function MarketingPage() {
                 >
                   <Button size="lg" disabled>
                     <span className="relative z-10 flex items-center gap-2">
-                      Register for NEO League
+                      {t('register')}
                       <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </span>
                   </Button>
@@ -342,14 +336,13 @@ export default function MarketingPage() {
           <div className="mx-auto max-w-6xl px-4">
             <div className="mb-16 text-center">
               <Badge variant="outline" className="mb-4">
-                Platform Features
+                {t('feature')}
               </Badge>
               <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-                Everything You Need to Excel in Prompt Engineering
+                {t('feature-title')}
               </h2>
               <p className="text-muted-foreground">
-                A comprehensive suite of tools designed for modern prompt
-                engineers
+                {t('feature-title-description')}
               </p>
             </div>
 
@@ -370,21 +363,19 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="space-y-6"
               >
-                <Badge variant="outline">Learning Resources</Badge>
+                <Badge variant="outline"> {t('learning-resources')}</Badge>
                 <h2 className="text-3xl font-bold md:text-4xl">
-                  Master Prompt Engineering Through Structured Learning
+                  {t('learning-subtitle')}
                 </h2>
                 <p className="text-foreground/60">
-                  Access comprehensive tutorials, guides, and real-world
-                  examples to enhance your prompt engineering skills. Learn from
-                  industry experts and join a supportive community.
+                  {t('learning-subtitle-description')}
                 </p>
                 <div className="space-y-4">
                   {[
-                    'Interactive tutorials and exercises',
-                    'Real-world case studies',
-                    'Expert-led workshops',
-                    'Community challenges and competitions',
+                    t('learning-tututorials'),
+                    t('real-world'),
+                    t('expert-lead'),
+                    t('community'),
                   ].map((item, index) => (
                     <motion.div
                       key={index}
@@ -421,20 +412,18 @@ export default function MarketingPage() {
                       {[
                         {
                           icon: <GraduationCap className="h-5 w-5" />,
-                          title: 'Structured Learning Path',
-                          description:
-                            'Follow a curated path from basics to advanced topics',
+                          title: t('structure-learning'),
+                          description: t('structure-learning-description'),
                         },
                         {
                           icon: <Users className="h-5 w-5" />,
-                          title: 'Community Support',
-                          description:
-                            'Learn and grow with fellow prompt engineers',
+                          title: t('community-support'),
+                          description: t('community-support-description'),
                         },
                         {
                           icon: <Trophy className="h-5 w-5" />,
-                          title: 'Earn Certifications',
-                          description: 'Get recognized for your expertise',
+                          title: t('earn-cert'),
+                          description: t('earn-cert-description'),
                         },
                       ].map((item, index) => (
                         <motion.div
@@ -477,14 +466,13 @@ export default function MarketingPage() {
           >
             <Badge variant="outline" className="mb-4">
               <Sparkles className="mr-2 h-4 w-4" />
-              Get Started Today
+              {t('get-started-today')}
             </Badge>
             <h2 className="mb-4 text-4xl font-bold md:text-5xl">
-              Ready to Transform Your AI Interactions?
+              {t('get-started-today-subtitle')}
             </h2>
             <p className="mb-8 text-muted-foreground">
-              Join thousands of prompt engineers who are already creating more
-              effective and efficient AI interactions with Nova.
+              {t('get-started-today-description')}
             </p>
             <motion.div
               className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
@@ -493,7 +481,7 @@ export default function MarketingPage() {
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <GetStartedButton text={t('home.get-started')} />
+              <GetStartedButton text={t('get-started')} />
               <Link href="/learn">
                 <Button variant="outline" className="group">
                   Browse Learning Resources
