@@ -196,19 +196,19 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                   submissions.map((submission, index) => (
                     <div
                       key={index}
-                      className="rounded-lg border border-gray-200 p-4 shadow-sm"
+                      className="rounded-lg border p-4 shadow-sm"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="font-medium text-gray-700">
+                        <span className="font-semibold text-foreground">
                           Attempt {index + 1}
                         </span>
                         <span
-                          className={`rounded-full px-2 py-1 text-xs font-medium ${
+                          className={`rounded-full border px-2 py-1 text-xs font-medium ${
                             submission.score >= 8
-                              ? 'bg-green-100 text-green-800'
+                              ? 'border-dynamic-light-green/10 bg-dynamic-green/10 text-dynamic-light-green'
                               : submission.score >= 5
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
+                                ? 'border-dynamic-light-yellow/10 bg-dynamic-yellow/10 text-dynamic-light-yellow'
+                                : 'border-dynamic-light-red/10 bg-dynamic-red/10 text-dynamic-light-red'
                           }`}
                         >
                           Score: {submission.score}/10
@@ -216,25 +216,25 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       </div>
                       <Separator className="my-2" />
                       <div className="mt-2">
-                        <p className="text-sm font-medium text-gray-700">
+                        <p className="text-sm font-medium text-muted-foreground">
                           Your Prompt:
                         </p>
-                        <p className="mt-1 text-sm text-gray-600">
+                        <p className="mt-1 text-sm text-foreground">
                           {submission.input}
                         </p>
                       </div>
                       <div className="mt-4">
-                        <p className="text-sm font-medium text-gray-700">
+                        <p className="text-sm font-medium text-muted-foreground">
                           Output:
                         </p>
-                        <p className="mt-1 text-sm text-gray-600">
+                        <p className="mt-1 text-sm text-foreground">
                           {submission.output}
                         </p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-center text-gray-500">
+                  <p className="text-center text-muted-foreground">
                     No submissions yet.
                   </p>
                 )}
@@ -254,25 +254,19 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         )}
 
         {!loading && submissions.length > 0 && (
-          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg bg-gray-50 p-6 text-foreground shadow-md">
-            <h3 className="text-2xl font-semibold text-gray-800">
-              Your Last Attempt
-            </h3>
-            <div className="w-full rounded-lg border border-gray-200 bg-white p-4 shadow-md">
+          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border border-foreground/10 bg-foreground/10 p-6 text-foreground shadow-md">
+            <h3 className="text-2xl font-semibold">Your Last Attempt</h3>
+            <div className="w-full rounded-lg border border-foreground/5 bg-foreground/5 p-4 shadow-md">
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-600">
-                    <strong className="font-medium text-gray-900">
-                      Prompt:{' '}
-                    </strong>
+                  <p className="text-sm text-foreground">
+                    <strong className="font-medium">Prompt: </strong>
                     {submissions[submissions?.length - 1]?.input}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">
-                    <strong className="font-medium text-gray-900">
-                      Score:{' '}
-                    </strong>
+                  <p className="text-sm text-foreground">
+                    <strong className="font-medium">Score: </strong>
                     {submissions[submissions?.length - 1]?.score}/10
                   </p>
                 </div>
@@ -285,18 +279,13 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       {/* Chat Input */}
       <div className="flex gap-2 p-2">
         <Input
-          className="flex-1 rounded-md border p-2"
           placeholder="Type your answer..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={loading || attempts >= 5}
         />
-        <Button
-          className="rounded-md bg-blue-600 px-4 py-2 text-white"
-          onClick={handleSend}
-          disabled={loading || attempts >= 5}
-        >
+        <Button onClick={handleSend} disabled={loading || attempts >= 5}>
           {loading ? 'Sending...' : 'Send'}
         </Button>
       </div>

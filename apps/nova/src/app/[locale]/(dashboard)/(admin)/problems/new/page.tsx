@@ -7,26 +7,13 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function NewProblemPage() {
   const router = useRouter();
   const supabase = createClient();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    const authCheck = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user?.id) {
-        router.push('/login');
-      }
-    };
-
-    authCheck();
-  }, [router, supabase]);
 
   const handleCreateProblem = async (values: ProblemFormValues) => {
     try {

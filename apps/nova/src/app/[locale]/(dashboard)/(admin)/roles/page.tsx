@@ -30,7 +30,7 @@ export default async function WhitelistPage({ params, searchParams }: Props) {
   );
 
   return (
-    <>
+    <div className="p-4 md:p-8">
       <FeatureSummary
         pluralTitle={t('ws-ai-whitelist-emails.plural')}
         singularTitle={t('ws-ai-whitelist-emails.singular')}
@@ -49,7 +49,7 @@ export default async function WhitelistPage({ params, searchParams }: Props) {
           created_at: false,
         }}
       />
-    </>
+    </div>
   );
 }
 

@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Code,
   Home,
+  LayoutDashboard,
   List,
   Settings,
   ShieldCheck,
@@ -30,12 +31,18 @@ import { useEffect, useState } from 'react';
 
 const sidebarItems = [
   { name: 'Home', href: '/', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Challenges', href: '/challenges', icon: Code },
-  { name: 'Problems', href: '/problems', icon: List },
+  {
+    name: 'Problems',
+    href: '/problems',
+    icon: List,
+    requiresAdmin: true,
+  },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   {
     name: 'Roles',
-    href: '/admin/roles',
+    href: '/roles',
     subItems: [] as { name: string; href: string }[],
     icon: ShieldCheck,
     requiresAdmin: true,

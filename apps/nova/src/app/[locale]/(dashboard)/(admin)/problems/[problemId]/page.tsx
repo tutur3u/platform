@@ -1,9 +1,9 @@
 'use client';
 
 // Import the components we need for the problem page
-import ProblemComponent from '../../challenges/[challengeId]/problem-component';
-import PromptComponent from '../../challenges/[challengeId]/prompt-component';
-import TestCaseComponent from '../../challenges/[challengeId]/test-case-component';
+import ProblemComponent from '../../../challenges/[challengeId]/problem-component';
+import PromptComponent from '../../../challenges/[challengeId]/prompt-component';
+import TestCaseComponent from '../../../challenges/[challengeId]/test-case-component';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -23,25 +23,10 @@ interface Props {
 }
 
 export default function ProblemPage({ params }: Props) {
+  const router = useRouter();
+
   const [problem, setProblem] = useState<ExtendedNovaProblem | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const router = useRouter();
-  const supabase = createClient();
-
-  useEffect(() => {
-    const authCheck = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user?.id) {
-        router.push('/login');
-      }
-    };
-
-    authCheck();
-  }, [router, supabase]);
 
   useEffect(() => {
     const fetchProblem = async () => {
@@ -63,7 +48,7 @@ export default function ProblemPage({ params }: Props) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-gray-700">Loading...</p>
+        <p className="text-xl font-semibold">Loading...</p>
       </div>
     );
   }
@@ -71,7 +56,7 @@ export default function ProblemPage({ params }: Props) {
   if (!problem) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-xl font-semibold text-gray-700">Problem not found</p>
+        <p className="text-xl font-semibold">Problem not found</p>
         <Button onClick={() => router.push('/problems')}>
           Go back to problems
         </Button>
