@@ -177,9 +177,7 @@ export default function EditProblemPage({ params }: Props) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex min-h-[60vh] items-center justify-center">
-          <p className="text-xl font-semibold text-gray-700">
-            Loading problem...
-          </p>
+          <p className="text-xl font-semibold">Loading problem...</p>
         </div>
       </div>
     );

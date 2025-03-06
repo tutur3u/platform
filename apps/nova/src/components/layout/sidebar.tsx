@@ -35,14 +35,14 @@ const sidebarItems = [
   { name: 'Challenges', href: '/challenges', icon: Code },
   {
     name: 'Problems',
-    href: '/admin/problems',
+    href: '/problems',
     icon: List,
     requiresAdmin: true,
   },
   { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   {
     name: 'Roles',
-    href: '/admin/roles',
+    href: '/roles',
     subItems: [] as { name: string; href: string }[],
     icon: ShieldCheck,
     requiresAdmin: true,
@@ -61,7 +61,7 @@ export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
   if (!initialized) return null;
 
   return (
-    <div className="bg-card text-card-foreground flex w-64 flex-col border-r">
+    <div className="flex w-64 flex-col border-r bg-card text-card-foreground">
       <div className="p-4">
         <h1 className="text-xl font-bold">Prompt Engineering</h1>
       </div>

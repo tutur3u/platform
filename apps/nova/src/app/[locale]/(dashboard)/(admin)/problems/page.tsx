@@ -37,7 +37,7 @@ async function ProblemsList() {
     ))
   ) : (
     <div className="col-span-full text-center">
-      <p className="text-gray-500">No problems available.</p>
+      <p className="text-muted-foreground">No problems available.</p>
     </div>
   );
 }
