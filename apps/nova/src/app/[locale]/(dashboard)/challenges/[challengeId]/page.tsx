@@ -32,18 +32,18 @@ type ExtendedNovaChallenge = NovaChallenge & {
 };
 
 interface Props {
-  params: Promise<{
+  params: {
     challengeId: string;
-  }>;
+  };
 }
 
-export default async function Page({ params }: Props) {
+export default function Page({ params }: Props) {
   const [challenge, setChallenge] = useState<ExtendedNovaChallenge | null>(
     null
   );
   const [session, setSession] = useState<NovaSession | null>(null);
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
-  const [challengeId, setChallengeId] = useState('');
+  const [challengeId, setChallengeId] = useState(params.challengeId);
   const [showEndDialog, setShowEndDialog] = useState(false);
 
   const router = useRouter();
@@ -67,20 +67,19 @@ export default async function Page({ params }: Props) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { challengeId } = await params;
-      const challengeData = await getChallenge(challengeId);
+      const challengeData = await getChallenge(params.challengeId);
       setChallenge(challengeData as ExtendedNovaChallenge);
-      setChallengeId(challengeId);
+      setChallengeId(params.challengeId);
 
       // Fetch challenge session
-      const response = await fetch(`/api/v1/challenges/${challengeId}/session`);
+      const response = await fetch(`/api/v1/challenges/${params.challengeId}/session`);
       if (response.ok) {
         const sessionData = await response.json();
         setSession(sessionData);
 
         // If challenge is ended, redirect to report page
         if (sessionData?.status === 'ENDED') {
-          router.push(`/challenges/${challengeId}/results`);
+          router.push(`/challenges/${params.challengeId}/results`);
         }
       } else {
         router.push(`/challenges`);
@@ -88,7 +87,7 @@ export default async function Page({ params }: Props) {
     };
 
     fetchData();
-  }, [params]);
+  }, [params.challengeId, router]);
 
   const problems = challenge?.problems || [];
 
