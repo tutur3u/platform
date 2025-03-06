@@ -16,7 +16,7 @@ export default async function HomePage() {
         <h1 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
           Welcome to the Prompt Engineering Playground
         </h1>
-        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
           Master the art of crafting effective prompts for AI models
         </p>
       </div>
@@ -82,11 +82,6 @@ export default async function HomePage() {
         <Link href="/challenges">
           <Button size="lg" className="gap-2">
             Start a Challenge <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
-        <Link href="/learn">
-          <Button size="lg" variant="outline" className="gap-2">
-            Explore Tutorials <BookOpen className="h-4 w-4" />
           </Button>
         </Link>
         <Link href="/leaderboard">

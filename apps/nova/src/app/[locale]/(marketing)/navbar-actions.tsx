@@ -1,3 +1,4 @@
+import { UserNavWrapper } from './user-nav-wrapper';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { defaultLocale, supportedLocales } from '@/i18n/routing';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -5,15 +6,12 @@ import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { getTranslations } from 'next-intl/server';
-import Link from 'next/link';
 
-export default async function NavbarActions(
-  {
-    // hideMetadata = false,
-  }: {
-    hideMetadata?: boolean;
-  }
-) {
+export default async function NavbarActions({
+  hideMetadata = false,
+}: {
+  hideMetadata?: boolean;
+}) {
   const t = await getTranslations();
   const supabase = await createClient();
 
@@ -26,8 +24,7 @@ export default async function NavbarActions(
       <div className="flex items-center gap-1">
         {sbUser ? (
           <>
-            {/* <UserNavWrapper hideMetadata={hideMetadata} /> */}
-            <Link href="/dashboard">{t('common.dashboard')}</Link>
+            <UserNavWrapper hideMetadata={hideMetadata} />
           </>
         ) : (
           <>

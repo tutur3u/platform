@@ -140,7 +140,9 @@ export default function Page({ params }: Props) {
   if (!session) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-gray-700">Loading...</p>
+        <p className="text-xl font-semibold text-muted-foreground">
+          Loading...
+        </p>
       </div>
     );
   }
