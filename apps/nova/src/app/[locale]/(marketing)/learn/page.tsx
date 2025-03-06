@@ -11,100 +11,103 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
-
-const lessonContents = [
-  {
-    id: 'introduction',
-    title: 'Introduction to Prompt Engineering',
-    description:
-      'Learn the fundamentals and key concepts of prompt engineering',
-    icon: <GraduationCap className="h-5 w-5" />,
-    sections: [
-      {
-        title: 'What is Prompt Engineering?',
-        content:
-          'Prompt engineering is the practice of designing and refining input prompts for AI language models to generate desired outputs. It involves crafting clear, specific, and effective instructions that guide the AI in producing accurate and relevant responses.',
-        duration: '10 min',
-        isCompleted: false,
-      },
-      {
-        title: 'Why is Prompt Engineering Important?',
-        content:
-          'Prompt engineering is crucial because it directly impacts the quality and usefulness of AI-generated content. Well-crafted prompts can significantly improve the accuracy, relevance, and coherence of AI outputs.',
-        duration: '15 min',
-        isCompleted: false,
-      },
-    ],
-  },
-  {
-    id: 'basic-techniques',
-    title: 'Basic Techniques in Prompt Engineering',
-    description: 'Master fundamental strategies for effective prompting',
-    icon: <BookOpen className="h-5 w-5" />,
-    sections: [
-      {
-        title: 'Zero-shot & Few-shot Prompting',
-        content:
-          'Learn the differences between zero-shot and few-shot prompting, and when to use each approach effectively.',
-        duration: '20 min',
-        isCompleted: false,
-      },
-      {
-        title: 'Chain-of-Thought Prompting',
-        content:
-          'Master the technique of breaking down complex problems into logical steps for better AI responses.',
-        duration: '25 min',
-        isCompleted: false,
-      },
-    ],
-  },
-  {
-    id: 'advanced-strategies',
-    title: 'Advanced Strategies',
-    description: 'Explore advanced techniques for complex prompt engineering',
-    icon: <Sparkles className="h-5 w-5" />,
-    sections: [
-      {
-        title: 'Iterative Refinement',
-        content:
-          'Learn how to iteratively improve prompts based on AI outputs for optimal results.',
-        duration: '20 min',
-        isCompleted: false,
-      },
-      {
-        title: 'Meta-prompting',
-        content:
-          'Discover advanced techniques for using prompts to generate other prompts automatically.',
-        duration: '30 min',
-        isCompleted: false,
-      },
-    ],
-  },
-  {
-    id: 'best-practices',
-    title: 'Best practices',
-    description: 'Explore advanced techniques for complex prompt engineering',
-    icon: <Sparkles className="h-5 w-5" />,
-    sections: [
-      {
-        title: 'Iterative Refinement',
-        content:
-          'Learn how to iteratively improve prompts based on AI outputs for optimal results.',
-        duration: '20 min',
-        isCompleted: false,
-      },
-      {
-        title: 'Meta-prompting',
-        content:
-          'Discover advanced techniques for using prompts to generate other prompts automatically.',
-        duration: '30 min',
-        isCompleted: false,
-      },
-    ],
-  },
-];
+import { useTranslations } from 'next-intl';
 
 export default function LearnPage() {
+  const t = useTranslations('nova');
+  
+  const lessonContents = [
+    {
+      id: 'introduction',
+      title: t('module-1'),
+      description:
+        t('module-1-description'),
+      icon: <GraduationCap className="h-5 w-5" />,
+      sections: [
+        {
+          title: t('what-is-prompt-engineering'),
+          content:
+            t('what-is-prompt-engineering-description'),
+          duration: '10 min',
+          isCompleted: false,
+        },
+        {
+          title: t('why-is-prompt-engineering'),
+          content:
+            t('why-is-prompt-engineering-description'),
+          duration: '15 min',
+          isCompleted: false,
+        },
+      ],
+    },
+    {
+      id: 'basic-techniques',
+      title: t('module-2'),
+      description: t('module-2-description'),
+      icon: <BookOpen className="h-5 w-5" />,
+      sections: [
+        {
+          title: t('zero-shot'),
+          content:
+            t('zero-shot-description'),
+          duration: '20 min',
+          isCompleted: false,
+        },
+        {
+          title: t('chain-of-thought'),
+          content:
+            t('chain-of-thought-description'),
+          duration: '25 min',
+          isCompleted: false,
+        },
+      ],
+    },
+    {
+      id: 'advanced-strategies',
+      title: t('module-3'),
+      description: t('module-3-description'),
+      icon: <Sparkles className="h-5 w-5" />,
+      sections: [
+        {
+          title: t('iterative-refinement'),
+          content:
+            t('iterative-refinement-description'),
+          duration: '20 min',
+          isCompleted: false,
+        },
+        {
+          title: t('Meta-prompting'),
+          content:
+            t('Meta-prompting-description'),
+          duration: '30 min',
+          isCompleted: false,
+        },
+      ],
+    },
+    {
+      id: 'best-practices',
+      title: t('module-4'),
+      description: t('module-4-description'),
+      icon: <Sparkles className="h-5 w-5" />,
+      sections: [
+        {
+          title: t('iterative-refinement'),
+          content:
+            t('iterative-refinement-description'),
+          duration: '20 min',
+          isCompleted: false,
+        },
+        {
+          title: t('Meta-prompting'),
+          content:
+            t('Meta-prompting-description'),
+          duration: '30 min',
+          isCompleted: false,
+        },
+      ],
+    },
+  ];
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -129,7 +132,7 @@ export default function LearnPage() {
           Interactive Learning Path
         </Badge>
         <h1 className="text-4xl font-bold tracking-tight">
-          Master the Art of Prompt Engineering
+          {t('learning-subtitle')}
         </h1>
         <p className="mx-auto max-w-2xl text-muted-foreground">
           Follow our comprehensive curriculum to become an expert in crafting
@@ -187,7 +190,7 @@ export default function LearnPage() {
                       </Badge>
                       <Link href={`/learn/${module.id}`}>
                         <Button size="sm" className="gap-2">
-                          Start
+                          {t('start-button')}
                           <ArrowRight className="h-3 w-3" />
                         </Button>
                       </Link>

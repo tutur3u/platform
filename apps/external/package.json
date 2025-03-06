@@ -19,7 +19,7 @@
     "next": "^15.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwindcss": "^4.0.9"
+    "tailwindcss": "^4.0.10"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",

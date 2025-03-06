@@ -1,7 +1,7 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
-import { useDebouncedState } from '@mantine/hooks';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { cn } from '@tuturuuu/utils/format';
+import { Pencil } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
 
@@ -12,13 +12,12 @@ interface EventCardProps {
 }
 
 export default function EventCard({ dates, event }: EventCardProps) {
-  const { id, title, description, start_at, end_at, color = 'blue' } = event;
-
+  const { id, title, description, start_at, end_at, color = 'BLUE' } = event;
   const {
     getEventLevel: getLevel,
     updateEvent,
     hideModal,
-    showModal,
+    // showModal,
     openModal,
   } = useCalendar();
 
@@ -31,13 +30,83 @@ export default function EventCard({ dates, event }: EventCardProps) {
     startHours > endHours ? 24 - startHours : endHours - startHours;
   const level = getLevel ? getLevel(id) : 0;
 
+  const cardRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const [isDragging, setIsDragging] = useDebouncedState(false, 200);
-  const [isResizing, setIsResizing] = useState(false);
+  // References for tracking state - avoid unnecessary renders
+  const isDraggingRef = useRef(false);
+  const isResizingRef = useRef(false);
+  const wasDraggedRef = useRef(false);
+  const wasResizedRef = useRef(false);
+  const initialPositionRef = useRef({ x: 0, y: 0 });
+  const currentPositionRef = useRef({ top: 0, left: 0 });
+  const syncPendingRef = useRef(false);
 
-  // Event positioning and sizing
+  // Visual states that trigger renders - minimal state
+  const [isHovering, setIsHovering] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [visualState, setVisualState] = useState({
+    isDragging: false,
+    isResizing: false,
+  });
+
+  // Batch visual state updates to reduce renders
+  const updateVisualState = (updates: Partial<typeof visualState>) => {
+    setVisualState((prev) => ({ ...prev, ...updates }));
+  };
+
+  // Debounced update function to reduce API calls
+  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingUpdateRef = useRef<{
+    start_at: string;
+    end_at: string;
+  } | null>(null);
+
+  // Schedule a throttled update
+  const scheduleUpdate = (updateData: { start_at: string; end_at: string }) => {
+    // Store the latest update data
+    pendingUpdateRef.current = updateData;
+    syncPendingRef.current = true;
+
+    // Only start a new timer if there isn't one already
+    if (!updateTimeoutRef.current) {
+      // Show syncing state
+      setIsSyncing(true);
+
+      updateTimeoutRef.current = setTimeout(() => {
+        if (pendingUpdateRef.current) {
+          updateEvent(id, pendingUpdateRef.current)
+            .catch((error) => {
+              console.error('Failed to update event:', error);
+            })
+            .finally(() => {
+              syncPendingRef.current = false;
+              setTimeout(() => {
+                if (!syncPendingRef.current) {
+                  setIsSyncing(false);
+                }
+              }, 300);
+            });
+
+          pendingUpdateRef.current = null;
+        }
+
+        updateTimeoutRef.current = null;
+      }, 250); // Throttle to once every 250ms
+    }
+  };
+
+  // Clean up any pending updates
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Initial event positioning
   useEffect(() => {
     const cardEl = document.getElementById(`event-${id}`);
     const cellEl = document.querySelector('.calendar-cell') as HTMLDivElement;
@@ -67,15 +136,26 @@ export default function EventCard({ dates, event }: EventCardProps) {
     cardEl.style.height = `${height}px`;
     cardEl.style.top = `${startHours * 80}px`;
 
-    const observer = new ResizeObserver(() => {
+    const updatePosition = () => {
       const columnWidth = cellEl.offsetWidth;
       const left = dateIdx * columnWidth + level * 12;
       const width = columnWidth - level * 12 - 4;
 
       cardEl.style.width = `${width}px`;
       cardEl.style.left = `${left}px`;
-    });
 
+      // Store the initial position
+      currentPositionRef.current = {
+        top: parseInt(cardEl.style.top, 10),
+        left: parseInt(cardEl.style.left, 10),
+      };
+    };
+
+    // Set initial position
+    updatePosition();
+
+    // Track resize for responsive layout
+    const observer = new ResizeObserver(updatePosition);
     observer.observe(cellEl);
 
     cardEl.style.opacity = '1';
@@ -86,30 +166,62 @@ export default function EventCard({ dates, event }: EventCardProps) {
 
   // Event resizing
   useEffect(() => {
-    const rootEl = handleRef.current;
-    const cardEl = rootEl?.parentElement;
-    if (!rootEl || !cardEl) return;
+    const handleEl = handleRef.current;
+    const cardEl = handleEl?.parentElement;
+    if (!handleEl || !cardEl) return;
+
+    let startY = 0;
+    let startHeight = 0;
+    let hasMoved = false;
 
     const handleMouseDown = (e: MouseEvent) => {
       e.stopPropagation();
-      if (isDragging || isResizing) return;
-      setIsResizing(true);
+      e.preventDefault();
+
+      // Don't allow multiple operations
+      if (isDraggingRef.current || isResizingRef.current) return;
+
+      startY = e.clientY;
+      startHeight = cardEl.offsetHeight;
+      isResizingRef.current = true;
+      wasResizedRef.current = false;
+      hasMoved = false;
+
+      // Update visual state
+      updateVisualState({ isResizing: true });
+
+      // Prevent interaction with other events
       hideModal();
 
-      const startY = e.clientY;
-      const startHeight = cardEl.offsetHeight;
+      // Change cursor for better UX
+      document.body.style.cursor = 'ns-resize';
+      document.body.classList.add('select-none');
 
       const handleMouseMove = (e: MouseEvent) => {
         e.preventDefault();
-        if (isDragging) return;
 
-        const height = Math.round((startHeight + e.clientY - startY) / 20) * 20;
-        if (height <= 20) return; // Minimum height
+        if (!isResizingRef.current) return;
 
-        cardEl.style.height = `${height - 4}px`;
+        // Calculate height change
+        const dy = e.clientY - startY;
+
+        // Only process if there's significant movement
+        if (!hasMoved && Math.abs(dy) < 5) return;
+
+        hasMoved = true;
+        wasResizedRef.current = true;
+
+        // Snap to grid (20px)
+        const newHeight = Math.max(
+          20,
+          Math.round((startHeight + dy) / 20) * 20
+        );
+
+        // Update height
+        cardEl.style.height = `${newHeight - 4}px`;
 
         // Calculate new end time
-        const newDuration = Math.round(height / 20) / 4;
+        const newDuration = newHeight / 80; // Convert pixels to hours
         const newEndAt = new Date(startDate);
         const extraHours = Math.floor(newDuration);
         const extraMinutes = Math.round((newDuration - extraHours) * 60);
@@ -117,128 +229,220 @@ export default function EventCard({ dates, event }: EventCardProps) {
         newEndAt.setHours(startDate.getHours() + extraHours);
         newEndAt.setMinutes(startDate.getMinutes() + extraMinutes);
 
-        updateEvent(id, { end_at: newEndAt.toISOString() });
+        // Schedule the update
+        scheduleUpdate({
+          start_at: startDate.toISOString(),
+          end_at: newEndAt.toISOString(),
+        });
       };
 
       const handleMouseUp = () => {
-        setIsResizing(false);
-        showModal();
+        isResizingRef.current = false;
+        updateVisualState({ isResizing: false });
+
+        // Restore cursor
+        document.body.style.cursor = '';
+        document.body.classList.remove('select-none');
+
+        // Send a final update if needed
+        if (pendingUpdateRef.current) {
+          setIsSyncing(true);
+          updateEvent(id, pendingUpdateRef.current)
+            .catch((error) => {
+              console.error('Failed to update event:', error);
+            })
+            .finally(() => {
+              setIsSyncing(false);
+            });
+          pendingUpdateRef.current = null;
+        }
+
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
       };
 
-      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mousemove', handleMouseMove, { passive: false });
       window.addEventListener('mouseup', handleMouseUp);
     };
 
-    rootEl.addEventListener('mousedown', handleMouseDown);
-    return () => rootEl.removeEventListener('mousedown', handleMouseDown);
-  }, [
-    id,
-    startDate,
-    updateEvent,
-    isDragging,
-    isResizing,
-    hideModal,
-    showModal,
-  ]);
+    handleEl.addEventListener('mousedown', handleMouseDown);
+    return () => handleEl.removeEventListener('mousedown', handleMouseDown);
+  }, [id, startDate, updateEvent, hideModal]);
 
-  // Event dragging
+  // Event dragging - completely rewired for performance
   useEffect(() => {
-    const rootEl = contentRef.current;
-    const cardEl = rootEl?.parentElement;
+    const contentEl = contentRef.current;
+    const cardEl = cardRef.current;
     const cellEl = document.querySelector('.calendar-cell') as HTMLDivElement;
 
-    if (!rootEl || !cardEl || !cellEl) return;
+    if (!contentEl || !cardEl || !cellEl) return;
+
+    let startX = 0;
+    let startY = 0;
+    let initialCardPosition = { top: 0, left: 0 };
+    let columnWidth = 0;
+    let hasMoved = false;
 
     const handleMouseDown = (e: MouseEvent) => {
       e.stopPropagation();
-      if (isResizing) return;
-      setIsDragging(true);
-      hideModal();
 
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startLeft = cardEl.offsetLeft;
-      const startTop = cardEl.offsetTop;
-      const columnWidth = cellEl.offsetWidth;
+      // Don't allow multiple operations
+      if (isResizingRef.current || isDraggingRef.current) return;
+
+      // Record initial positions
+      startX = e.clientX;
+      startY = e.clientY;
+
+      // Record initial card position
+      initialCardPosition = {
+        top: cardEl.offsetTop,
+        left: cardEl.offsetLeft,
+      };
+
+      // Update cached dimensions
+      columnWidth = cellEl.offsetWidth;
+
+      // Reset tracking state
+      hasMoved = false;
+      wasDraggedRef.current = false;
+      initialPositionRef.current = { x: e.clientX, y: e.clientY };
 
       const handleMouseMove = (e: MouseEvent) => {
         e.preventDefault();
-        if (isResizing) return;
 
-        // Calculate new position
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
+        if (isResizingRef.current) return;
 
-        // Snap to grid
-        const top = Math.round((startTop + deltaY) / 20) * 20;
-        const left =
-          Math.round((startLeft + deltaX) / columnWidth) * columnWidth;
+        // Calculate delta movement
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
 
-        // Update position if changed
-        if (top !== cardEl.offsetTop || left !== cardEl.offsetLeft) {
-          cardEl.style.top = `${top}px`;
-          cardEl.style.left = `${left}px`;
+        // Only start dragging if moved beyond threshold
+        if (!hasMoved) {
+          if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
 
-          // Calculate new date index
-          const newDateIdx = Math.floor(left / columnWidth);
+          // Start drag mode
+          isDraggingRef.current = true;
+          wasDraggedRef.current = true;
+          hasMoved = true;
 
-          // Calculate new times
+          // Update visual state
+          updateVisualState({ isDragging: true });
+
+          // Other UI adjustments
+          hideModal();
+          document.body.classList.add('select-none');
+        }
+
+        // Snap to grid - ensure we move in whole units
+        const snapToGrid = (value: number, gridSize: number) => {
+          return Math.round(value / gridSize) * gridSize;
+        };
+
+        // Calculate new position with snapping
+        const newTop = snapToGrid(initialCardPosition.top + dy, 20); // 20px vertical grid
+        const newLeft = snapToGrid(initialCardPosition.left + dx, columnWidth); // column width grid
+
+        // Keep track of the current position to avoid redundant updates
+        const positionChanged =
+          newTop !== currentPositionRef.current.top ||
+          newLeft !== currentPositionRef.current.left;
+
+        if (positionChanged) {
+          // Update visual position immediately (with GPU acceleration)
+          cardEl.style.transform = `translate3d(${newLeft - initialCardPosition.left}px, ${newTop - initialCardPosition.top}px, 0)`;
+
+          // Store the current position
+          currentPositionRef.current = { top: newTop, left: newLeft };
+
+          // Calculate new times based on position
+          const newDateIdx = Math.floor(newLeft / columnWidth);
+          const newStartHour = Math.floor(newTop / 80);
+          const newStartMinute = Math.round(((newTop % 80) / 80) * 60);
+
           const newStartAt = new Date(startDate);
-          const newStartHour = Math.floor(top / 80);
-          const newStartMinute = Math.round(((top % 80) / 80) * 60);
-
           newStartAt.setHours(newStartHour);
           newStartAt.setMinutes(newStartMinute);
 
           // Update date if moved to different day
           if (newDateIdx >= 0 && newDateIdx < dates.length) {
             const newDate = dates[newDateIdx];
-            if (!newDate) return;
-            newStartAt.setFullYear(newDate.getFullYear());
-            newStartAt.setMonth(newDate.getMonth());
-            newStartAt.setDate(newDate.getDate());
+            if (newDate) {
+              newStartAt.setFullYear(newDate.getFullYear());
+              newStartAt.setMonth(newDate.getMonth());
+              newStartAt.setDate(newDate.getDate());
+            }
           }
 
-          // Calculate new end time maintaining duration
+          // Calculate new end time maintaining original duration
           const newEndAt = new Date(newStartAt);
           newEndAt.setTime(
             newStartAt.getTime() + (endDate.getTime() - startDate.getTime())
           );
 
-          updateEvent(id, {
+          // Schedule update
+          scheduleUpdate({
             start_at: newStartAt.toISOString(),
             end_at: newEndAt.toISOString(),
           });
         }
       };
 
-      const handleMouseUp = () => {
-        setIsDragging(false);
-        showModal();
+      const handleMouseUp = (e: MouseEvent) => {
+        if (hasMoved) {
+          // Reset drag state
+          isDraggingRef.current = false;
+          updateVisualState({ isDragging: false });
+          document.body.classList.remove('select-none');
+
+          // Need to update the actual position properties
+          // to match the transform we've been using
+          if (cardEl) {
+            const currentTop = currentPositionRef.current.top;
+            const currentLeft = currentPositionRef.current.left;
+
+            // Reset transform and set direct position
+            cardEl.style.transform = '';
+            cardEl.style.top = `${currentTop}px`;
+            cardEl.style.left = `${currentLeft}px`;
+
+            // Ensure final update is sent
+            if (pendingUpdateRef.current) {
+              setIsSyncing(true);
+              updateEvent(id, pendingUpdateRef.current)
+                .catch((error) => {
+                  console.error('Failed to update event:', error);
+                })
+                .finally(() => {
+                  setIsSyncing(false);
+                });
+              pendingUpdateRef.current = null;
+            }
+          }
+        } else {
+          // Check if this was just a click (no significant movement)
+          const deltaX = Math.abs(e.clientX - initialPositionRef.current.x);
+          const deltaY = Math.abs(e.clientY - initialPositionRef.current.y);
+
+          if (deltaX < 5 && deltaY < 5) {
+            openModal(id);
+          }
+        }
+
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
       };
 
-      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mousemove', handleMouseMove, { passive: false });
       window.addEventListener('mouseup', handleMouseUp);
     };
 
-    rootEl.addEventListener('mousedown', handleMouseDown);
-    return () => rootEl.removeEventListener('mousedown', handleMouseDown);
-  }, [
-    id,
-    updateEvent,
-    isResizing,
-    startDate,
-    endDate,
-    duration,
-    isDragging,
-    dates,
-    hideModal,
-    showModal,
-  ]);
+    contentEl.addEventListener('mousedown', handleMouseDown);
+    return () => contentEl.removeEventListener('mousedown', handleMouseDown);
+  }, [id, startDate, endDate, dates, updateEvent, hideModal, openModal]);
+
+  // Normalize color to match SupportedColor type (uppercase)
+  const normalizedColor =
+    typeof color === 'string' ? color.toUpperCase() : 'BLUE';
 
   // Color styles based on event color
   const getEventStyles = () => {
@@ -246,78 +450,137 @@ export default function EventCard({ dates, event }: EventCardProps) {
       string,
       { bg: string; border: string; text: string }
     > = {
-      blue: {
-        bg: 'bg-blue-100 dark:bg-blue-900/30',
-        border: 'border-blue-500/80 dark:border-blue-300/80',
-        text: 'text-blue-700 dark:text-blue-300',
+      BLUE: {
+        bg: 'bg-dynamic-blue/10',
+        border: 'border-dynamic-blue/50',
+        text: 'text-dynamic-blue',
       },
-      red: {
-        bg: 'bg-red-100 dark:bg-red-900/30',
-        border: 'border-red-500/80 dark:border-red-300/80',
-        text: 'text-red-700 dark:text-red-300',
+      RED: {
+        bg: 'bg-dynamic-red/10',
+        border: 'border-dynamic-red/50',
+        text: 'text-dynamic-red',
       },
-      green: {
-        bg: 'bg-green-100 dark:bg-green-900/30',
-        border: 'border-green-500/80 dark:border-green-300/80',
-        text: 'text-green-700 dark:text-green-300',
+      GREEN: {
+        bg: 'bg-dynamic-green/10',
+        border: 'border-dynamic-green/50',
+        text: 'text-dynamic-green',
       },
-      yellow: {
-        bg: 'bg-yellow-100 dark:bg-yellow-900/30',
-        border: 'border-yellow-500/80 dark:border-yellow-300/80',
-        text: 'text-yellow-700 dark:text-yellow-300',
+      YELLOW: {
+        bg: 'bg-dynamic-yellow/10',
+        border: 'border-dynamic-yellow/50',
+        text: 'text-dynamic-yellow',
       },
-      purple: {
-        bg: 'bg-purple-100 dark:bg-purple-900/30',
-        border: 'border-purple-500/80 dark:border-purple-300/80',
-        text: 'text-purple-700 dark:text-purple-300',
+      PURPLE: {
+        bg: 'bg-dynamic-purple/10',
+        border: 'border-dynamic-purple/50',
+        text: 'text-dynamic-purple',
       },
-      pink: {
-        bg: 'bg-pink-100 dark:bg-pink-900/30',
-        border: 'border-pink-500/80 dark:border-pink-300/80',
-        text: 'text-pink-700 dark:text-pink-300',
+      PINK: {
+        bg: 'bg-dynamic-pink/10',
+        border: 'border-dynamic-pink/50',
+        text: 'text-dynamic-pink',
       },
-      orange: {
-        bg: 'bg-orange-100 dark:bg-orange-900/30',
-        border: 'border-orange-500/80 dark:border-orange-300/80',
-        text: 'text-orange-700 dark:text-orange-300',
+      ORANGE: {
+        bg: 'bg-dynamic-orange/10',
+        border: 'border-dynamic-orange/50',
+        text: 'text-dynamic-orange',
       },
-      gray: {
-        bg: 'bg-gray-100 dark:bg-gray-900/30',
-        border: 'border-gray-500/80 dark:border-gray-300/80',
-        text: 'text-gray-700 dark:text-gray-300',
+      INDIGO: {
+        bg: 'bg-dynamic-indigo/10',
+        border: 'border-dynamic-indigo/50',
+        text: 'text-dynamic-indigo',
+      },
+      CYAN: {
+        bg: 'bg-dynamic-cyan/10',
+        border: 'border-dynamic-cyan/50',
+        text: 'text-dynamic-cyan',
+      },
+      GRAY: {
+        bg: 'bg-dynamic-gray/10',
+        border: 'border-dynamic-gray/50',
+        text: 'text-dynamic-gray',
       },
     };
 
-    return colorStyles[color.toLowerCase()] || colorStyles.blue;
+    return colorStyles[normalizedColor] || colorStyles.BLUE;
   };
 
   const { bg, border, text } = getEventStyles()!;
 
+  // Use the visual state for UI rendering
+  const { isDragging, isResizing } = visualState;
+
   return (
     <div
+      ref={cardRef}
       id={`event-${id}`}
       className={cn(
         'pointer-events-auto absolute max-w-none overflow-hidden rounded border select-none',
-        'hover:ring-2 hover:ring-primary/50',
-        'active:ring-2 active:ring-primary',
+        'hover:ring-2 hover:ring-primary/50 focus:outline-none',
+        'group relative',
+        {
+          'opacity-80': isDragging || isResizing, // Lower opacity during interaction
+          'animate-pulse': isSyncing, // Pulse animation during sync
+        },
         bg,
         border,
         text
       )}
       style={{
         transition:
-          'width 150ms ease-in-out, left 150ms ease-in-out, opacity 300ms ease-in-out',
-        zIndex: isDragging || isResizing ? 50 : 1,
+          isDragging || isResizing
+            ? 'none' // No transition during interaction
+            : 'opacity 300ms ease-in-out',
+        zIndex: isHovering || isDragging || isResizing ? 50 : 1,
+        willChange: isDragging || isResizing ? 'transform' : 'auto', // GPU acceleration
       }}
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        openModal(id);
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+      tabIndex={0}
+      onClick={(e) => {
+        // Only open modal if we haven't just finished dragging or resizing
+        if (!wasDraggedRef.current && !wasResizedRef.current) {
+          e.stopPropagation();
+          openModal(id);
+        }
+
+        // Reset state flags
+        wasDraggedRef.current = false;
+        wasResizedRef.current = false;
       }}
+      role="button"
+      aria-label={`Event: ${title || 'Untitled event'}`}
     >
+      {/* Edit button overlay */}
+      <div
+        className={cn(
+          'absolute top-1 right-1 rounded-full bg-background/80 p-0.5 opacity-0 shadow-sm',
+          'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
+          { '!opacity-0': isDragging || isResizing } // Hide during interaction
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          openModal(id);
+        }}
+      >
+        <Pencil className="h-3 w-3" />
+      </div>
+
+      {/* Syncing indicator */}
+      {isSyncing && (
+        <div className="pointer-events-none absolute inset-0 z-20 bg-background/5">
+          <div
+            className="animate-shimmer h-full w-full bg-gradient-to-r from-transparent via-background/10 to-transparent"
+            style={{ backgroundSize: '200% 100%' }}
+          />
+        </div>
+      )}
+
       <div
         ref={contentRef}
         className={cn(
-          'h-full cursor-move p-1 text-left text-sm select-none',
+          'h-full p-1 text-left text-sm select-none',
           duration <= 0.25 && 'text-xs'
         )}
       >
@@ -332,9 +595,10 @@ export default function EventCard({ dates, event }: EventCardProps) {
       <div
         ref={handleRef}
         className={cn(
-          'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/10',
+          'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/20',
           duration <= 0.25 ? 'h-1.5' : 'h-2'
         )}
+        aria-label="Resize event"
       />
     </div>
   );
