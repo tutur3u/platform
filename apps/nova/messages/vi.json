@@ -79,8 +79,8 @@
     "advanced-ai-description": "Truy cập các mô hình AI tiên tiến để có kỹ thuật nhắc nhở mạnh mẽ",
     "real-time": "Kiểm tra theo thời gian thực",
     "real-time-description": "Kiểm tra lời nhắc của bạn theo thời gian thực với phản hồi tức thì",
-    "preformance-analysis": "Phân tích hiệu suất",
-    "preformance-analysis-description": "Theo dõi và tối ưu hóa các nỗ lực kỹ thuật nhắc nhở của bạn",
+    "performance-analysis": "Phân tích hiệu suất",
+    "performance-analysis-description": "Theo dõi và tối ưu hóa các nỗ lực kỹ thuật nhắc nhở của bạn",
     "collaborative-learning": "Học tập cộng tác",
     "collaborative-learning-description": "Học hỏi và chia sẻ với cộng đồng",
     "advanced-controls": "Kiểm soát nâng cao",
@@ -92,7 +92,7 @@
     "AI-assistant": "Trợ lý AI",
     "AI-assistant-description": "Nhận trợ giúp từ trợ lý AI của chúng tôi để có kỹ thuật nhanh chóng",
     "program-objectives": "Mục tiêu chương trình",
-    "program-objectives-description-1": "Dân chủ hóa Kỹ thuật nhanh chóng trên mọi nền tảng",
+    "program-objectives-description-1": "Prompt engineering nhanh chóng trên mọi nền tảng",
     "program-objectives-description-2": "Phát triển các kỹ năng AI thực tế và khả năng giải quyết vấn đề",
     "program-objectives-description-3": "Xây dựng cộng đồng những người đổi mới AI toàn cầu",
     "program-objectives-description-4": "Nuôi dưỡng các giải pháp sáng tạo cho những thách thức trong thế giới thực",
@@ -104,7 +104,9 @@
     "error-404": "Page not found",
     "error-404-description": "The page you are looking for does not exist.",
     "error-500": "Internal server error",
-    "error-500-description": "Something went wrong. Please try again later."
+    "error-500-description": "Something went wrong. Please try again later.",
+    "virtual": "Trực tuyến",
+    "onsite": "Tại chỗ"
   },
   "common": {
     "alpha": "Alpha",

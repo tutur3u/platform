@@ -10,8 +10,9 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
-import { ReactNode, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { ReactNode, useEffect } from 'react';
+
 interface Feature {
   icon: ReactNode;
   title: string;
@@ -20,25 +21,24 @@ interface Feature {
 }
 
 export default function FeatureShowcase() {
-  const t  = useTranslations("nova");
+  const t = useTranslations('nova');
   const features: Feature[] = [
     {
       icon: <Brain className="h-6 w-6" />,
-      title: t("advanced-ai"),
-      description:
-        t("advanced-ai-description"),
+      title: t('advanced-ai'),
+      description: t('advanced-ai-description'),
       gradient: 'from-purple-500/20 via-primary/20 to-blue-500/20',
     },
     {
       icon: <Code2 className="h-6 w-6" />,
-      title: t("real-time"),
-      description: t("real-time-description"),
+      title: t('real-time'),
+      description: t('real-time-description'),
       gradient: 'from-emerald-500/20 via-primary/20 to-teal-500/20',
     },
     {
       icon: <LineChart className="h-6 w-6" />,
-      title: t('preformance-analysis'),
-      description: t('preformance-analysis-description'),
+      title: t('performance-analysis'),
+      description: t('performance-analysis-description'),
       gradient: 'from-blue-500/20 via-primary/20 to-indigo-500/20',
     },
     {

@@ -110,9 +110,7 @@ export default function MarketingPage() {
                   whileHover={{ opacity: 1 }}
                 />
                 <Sparkles className="mr-2 h-4 w-4" />
-                <span className="relative z-10">
-                  {t('badge')}
-                </span>
+                <span className="relative z-10">{t('badge')}</span>
               </Badge>
             </motion.div>
 
@@ -217,30 +215,28 @@ export default function MarketingPage() {
                     {
                       date: '05 April 2025',
                       title: t('open-cere'),
-                      type: 'Virtual',
+                      type: t('virtual'),
                       icon: <CalendarDays className="h-5 w-5" />,
-                      description:
-                        t('open-cere-description'),
+                      description: t('open-cere-description'),
                     },
                     {
                       date: '12 April 2025',
                       title: t('top-50-selection'),
-                      type: 'Virtual',
+                      type: t('virtual'),
                       icon: <Trophy className="h-5 w-5" />,
-                      description:
-                      t('top-50-selection-description'),
+                      description: t('top-50-selection-description'),
                     },
                     {
                       date: '19 April 2025',
                       title: t('top-30-selection'),
-                      type: 'Virtual',
+                      type: t('virtual'),
                       icon: <Star className="h-5 w-5" />,
                       description: t('top-30-selection-description'),
                     },
                     {
                       date: '26 April 2025',
                       title: t('final-competition'),
-                      type: 'On-site',
+                      type: t('onsite'),
                       icon: <Trophy className="h-5 w-5" />,
                       description: t('final-competition-description'),
                     },
@@ -346,7 +342,7 @@ export default function MarketingPage() {
                 {t('feature-title')}
               </h2>
               <p className="text-muted-foreground">
-              {t('feature-title-description')}
+                {t('feature-title-description')}
               </p>
             </div>
 
@@ -369,10 +365,10 @@ export default function MarketingPage() {
               >
                 <Badge variant="outline"> {t('learning-resources')}</Badge>
                 <h2 className="text-3xl font-bold md:text-4xl">
-                {t('learning-subtitle')}
+                  {t('learning-subtitle')}
                 </h2>
                 <p className="text-foreground/60">
-                    {t('learning-subtitle-description')}
+                  {t('learning-subtitle-description')}
                 </p>
                 <div className="space-y-4">
                   {[
@@ -416,15 +412,13 @@ export default function MarketingPage() {
                       {[
                         {
                           icon: <GraduationCap className="h-5 w-5" />,
-                          title: t("structure-learning"),
-                          description:
-                            t('structure-learning-description'),
+                          title: t('structure-learning'),
+                          description: t('structure-learning-description'),
                         },
                         {
                           icon: <Users className="h-5 w-5" />,
-                          title: t("community-support"),
-                          description:
-                            t('community-support-description'),
+                          title: t('community-support'),
+                          description: t('community-support-description'),
                         },
                         {
                           icon: <Trophy className="h-5 w-5" />,

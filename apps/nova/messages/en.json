@@ -313,7 +313,7 @@
     "season": "Season",
     "open-cere": "Open Ceremony",
     "ai-capabilities": "AI Capabilities",
-    "ai-capabilities-subtitle:": "Powered by Advanced AI Technology",
+    "ai-capabilities-subtitle": "Powered by Advanced AI Technology",
     "ai-capabilities-description": "Experience the next generation of prompt engineering with our cutting-edge AI features and tools.",
     "advanced-ai-models": "Advanced AI Models",
     "advanced-ai-models-description": "Access GPT-4, Claude, and other cutting-edge AI models",
@@ -349,8 +349,8 @@
     "advanced-ai-description": "Access cutting-edge AI models for powerful prompt engineering",
     "real-time": "Real-time Testing",
     "real-time-description": "Test your prompts in real-time with instant feedback",
-    "preformance-analysis": "Performance Analysis",
-    "preformance-analysis-description": "Track and optimize your prompt engineering efforts",
+    "performance-analysis": "Performance Analysis",
+    "performance-analysis-description": "Track and optimize your prompt engineering efforts",
     "collaborative-learning": "Collaborative Learning",
     "collaborative-learning-description": "Learn from and share with the community",
     "advanced-controls": "Advanced Controls",
@@ -410,7 +410,9 @@
     "error-404": "Page not found",
     "error-404-description": "The page you are looking for does not exist.",
     "error-500": "Internal server error",
-    "error-500-description": "Something went wrong. Please try again later."
+    "error-500-description": "Something went wrong. Please try again later.",
+    "virtual": "Virtual",
+    "onsite": "On-site"
   },
   "home": {
     "headline": "Your intelligent shortcut",
