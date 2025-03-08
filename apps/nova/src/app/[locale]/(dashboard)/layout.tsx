@@ -1,9 +1,10 @@
-import { Sidebar } from '@/components/layout/sidebar';
+import Structure from '@/components/layout/structure';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
+import React from 'react';
 
 export default async function RootLayout({
   children,
@@ -28,9 +29,6 @@ export default async function RootLayout({
   if (!whitelisted?.enabled) redirect('/not-whitelisted');
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar isAdmin={whitelisted?.is_admin || false} />
-      <main className="flex-1 overflow-y-auto">{children}</main>
-    </div>
+    <Structure isAdmin={whitelisted?.is_admin || false}>{children}</Structure>
   );
 }

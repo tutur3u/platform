@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 const sidebarItems = [
   { name: 'Home', href: '/', icon: Home },
@@ -49,19 +48,22 @@ const sidebarItems = [
   },
 ];
 
-export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
+export function Sidebar({
+  isAdmin,
+  className,
+}: {
+  isAdmin: boolean;
+  className?: string;
+}) {
   const pathname = usePathname();
 
-  const [initialized, setInitialized] = useState(false);
-
-  useEffect(() => {
-    setInitialized(true);
-  }, []);
-
-  if (!initialized) return null;
-
   return (
-    <div className="flex w-64 flex-col border-r bg-card text-card-foreground">
+    <div
+      className={cn(
+        'bg-card text-card-foreground flex flex-col border-r',
+        className
+      )}
+    >
       <div className="p-4">
         <h1 className="text-xl font-bold">Prompt Engineering</h1>
       </div>
@@ -122,7 +124,7 @@ export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
         </nav>
       </ScrollArea>
       <div className="flex items-center justify-between border-t p-4">
-        <ThemeToggle />
+        <ThemeToggle forceDisplay />
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
