@@ -8,16 +8,16 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.6.0",
+  "packageManager": "pnpm@10.6.1",
   "dependencies": {
-    "eslint": "^9.21.0",
+    "eslint": "^9.22.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",
-    "@eslint/js": "^9.21.0",
+    "@eslint/js": "^9.22.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.13.9",
