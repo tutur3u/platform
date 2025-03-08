@@ -4,15 +4,39 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { Menu, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ReactNode;
+  requiresAdmin?: boolean;
+  subItems?: { name: string; href: string }[];
+}
 
 interface StructureProps {
   children: React.ReactNode;
   isAdmin: boolean;
+  navItems: NavItem[];
 }
 
-export default function Structure({ children, isAdmin }: StructureProps) {
+export default function Structure({
+  children,
+  isAdmin,
+  navItems,
+}: StructureProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const pathname = usePathname();
+
+  // Find current page title based on pathname
+  const currentPage = navItems.find(
+    (item) =>
+      pathname === item.href ||
+      pathname.startsWith(item.href + '/') ||
+      item.subItems?.some((subItem) => pathname === subItem.href)
+  );
+  const pageTitle = currentPage?.name || 'Dashboard';
 
   // Check if we're on mobile when component mounts
   useEffect(() => {
@@ -46,7 +70,7 @@ export default function Structure({ children, isAdmin }: StructureProps) {
       {/* Mobile navbar - visible only on small screens */}
       <nav className="bg-background/70 fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden">
         <div className="flex h-[52px] items-center gap-2">
-          <span className="text-lg font-semibold">Dashboard</span>
+          <span className="text-lg font-semibold">{pageTitle}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -83,7 +107,7 @@ export default function Structure({ children, isAdmin }: StructureProps) {
             </Button>
           </div>
 
-          <Sidebar isAdmin={isAdmin} className="flex-1" />
+          <Sidebar isAdmin={isAdmin} className="flex-1" navItems={navItems} />
         </div>
 
         {/* Main content with responsive padding */}

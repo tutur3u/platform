@@ -15,46 +15,25 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
-import {
-  ChevronDown,
-  Code,
-  Home,
-  LayoutDashboard,
-  List,
-  Settings,
-  ShieldCheck,
-  Trophy,
-} from 'lucide-react';
+import { ChevronDown, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const sidebarItems = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Challenges', href: '/challenges', icon: Code },
-  {
-    name: 'Problems',
-    href: '/problems',
-    icon: List,
-    requiresAdmin: true,
-  },
-  { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
-  {
-    name: 'Roles',
-    href: '/roles',
-    subItems: [] as { name: string; href: string }[],
-    icon: ShieldCheck,
-    requiresAdmin: true,
-  },
-];
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ReactNode;
+  requiresAdmin?: boolean;
+  subItems?: { name: string; href: string }[];
+}
 
-export function Sidebar({
-  isAdmin,
-  className,
-}: {
+interface SidebarProps {
   isAdmin: boolean;
   className?: string;
-}) {
+  navItems: NavItem[];
+}
+
+export function Sidebar({ isAdmin, className, navItems }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -69,7 +48,7 @@ export function Sidebar({
       </div>
       <ScrollArea className="flex-1">
         <nav className="space-y-2 p-4">
-          {sidebarItems
+          {navItems
             .filter((item) => (isAdmin ? item : !item.requiresAdmin))
             .map((item) => (
               <div key={item.href}>
@@ -81,7 +60,7 @@ export function Sidebar({
                         className="w-full justify-between"
                       >
                         <span className="flex items-center">
-                          <item.icon className="mr-4 h-4 w-4" />
+                          {item.icon}
                           {item.name}
                         </span>
                         <ChevronDown className="h-4 w-4" />
@@ -114,7 +93,7 @@ export function Sidebar({
                           'bg-accent text-accent-foreground'
                       )}
                     >
-                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.icon}
                       {item.name}
                     </Button>
                   </Link>
