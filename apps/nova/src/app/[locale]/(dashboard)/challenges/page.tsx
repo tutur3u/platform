@@ -1,32 +1,57 @@
 import ChallengeCard from './challengeCard';
 import CreateChallengeDialog from './createChallengeDialog';
 import LoadingChallenges from './loading';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types/db';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 export default async function ChallengesPage() {
+  const sbAdmin = await createAdminClient();
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) redirect('/login');
+
+  const { data: whitelisted } = await sbAdmin
+    .from('nova_roles')
+    .select('enabled, is_admin')
+    .eq('email', user?.email as string)
+    .maybeSingle();
+
+  const isAdmin = whitelisted?.enabled && whitelisted?.is_admin;
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Prompt Engineering Challenges</h1>
-        <CreateChallengeDialog />
+        {isAdmin && <CreateChallengeDialog />}
       </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Suspense fallback={<LoadingChallenges />}>
-          <ChallengesList />
+          <ChallengesList isAdmin={isAdmin || false} />
         </Suspense>
       </div>
     </div>
   );
 }
 
-async function ChallengesList() {
+async function ChallengesList({ isAdmin }: { isAdmin: boolean }) {
   const challenges = await fetchChallenges();
 
   return challenges.length > 0 ? (
     challenges.map((challenge) => (
-      <ChallengeCard key={challenge.id} challenge={challenge} />
+      <ChallengeCard
+        isAdmin={isAdmin}
+        key={challenge.id}
+        challenge={challenge}
+      />
     ))
   ) : (
     <div className="col-span-full text-center">

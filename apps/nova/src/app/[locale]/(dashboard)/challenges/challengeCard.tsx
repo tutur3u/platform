@@ -39,10 +39,14 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 interface ChallengeCardProps {
+  isAdmin: boolean;
   challenge: NovaChallenge;
 }
 
-export default function ChallengeCard({ challenge }: ChallengeCardProps) {
+export default function ChallengeCard({
+  isAdmin,
+  challenge,
+}: ChallengeCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [session, setSession] = useState<NovaSession | null>(null);
@@ -142,38 +146,40 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
           <CardTitle className="flex">
             <span>{challenge.title}</span>
           </CardTitle>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <EditChallengeDialog
-                challenge={challenge}
-                trigger={
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                }
-              />
-              <DropdownMenuItem
-                onClick={() => setShowDeleteDialog(true)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <EditChallengeDialog
+                  challenge={challenge}
+                  trigger={
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                  }
+                />
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
           <div className="flex items-center">
             <Clock className="h-4 w-4" />
-            <span className="ml-2 text-sm text-muted-foreground">
+            <span className="text-muted-foreground ml-2 text-sm">
               Duration: {formatDuration(challenge.duration)}
             </span>
           </div>
