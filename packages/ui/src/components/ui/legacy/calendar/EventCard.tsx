@@ -207,10 +207,10 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
       // Calculate width based on level to prevent overflow
       const widthPercentage = Math.max(60, 100 - level * 5); // Decrease width as level increases
-      const width = (columnWidth * widthPercentage) / 100 - 16;
+      const width = (columnWidth * widthPercentage) / 100 - 8;
 
       cardEl.style.width = `${width}px`;
-      cardEl.style.left = `${left}px`;
+      cardEl.style.left = `${left + dateIdx * 2}px`;
       // Set z-index based on level to ensure proper stacking
       cardEl.style.zIndex = `${10 * level}`; // Higher levels (more overlaps) get lower z-index
 
@@ -688,7 +688,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       ref={cardRef}
       id={`event-${id}`}
       className={cn(
-        'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-xl border-l-2 select-none',
+        'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-lg border-l-2 select-none',
         'group hover:ring-2 focus:outline-none',
         {
           'opacity-80': isDragging || isResizing, // Lower opacity during interaction
