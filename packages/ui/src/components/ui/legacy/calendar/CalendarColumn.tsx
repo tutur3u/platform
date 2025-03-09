@@ -1,8 +1,5 @@
 import CalendarCell from './CalendarCell';
-
-// Constants for grid calculations
-const HOUR_HEIGHT = 80; // Height of one hour in pixels
-const DAY_HEIGHT = 24 * HOUR_HEIGHT; // Total height of a day (24 hours)
+import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 
 interface CalendarColumnProps {
   date: string;
@@ -13,7 +10,7 @@ const CalendarColumn = ({ date }: CalendarColumnProps) => {
 
   return (
     <div
-      className="grid border-r dark:border-zinc-800"
+      className="grid border border-r border-border/30"
       style={{
         gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)`,
         minWidth: '120px',

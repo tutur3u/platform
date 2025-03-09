@@ -16,7 +16,7 @@ const CalendarView = ({ dates }: { dates: Date[] }) => {
       }}
     >
       <CalendarMatrix dates={dates} />
-      <TimeIndicator />
+      <TimeIndicator dates={dates} />
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import type { SupportedColor } from './SupportedColors';
 
+export type EventPriority = 'low' | 'medium' | 'high';
+
 export interface CalendarEvent {
   id: string;
   title?: string;
@@ -9,6 +11,10 @@ export interface CalendarEvent {
   color?: SupportedColor;
   ws_id?: string;
   local?: boolean;
+  location?: string;
+  is_all_day?: boolean;
+  scheduling_note?: string;
+  priority?: EventPriority;
 
   // Properties for multi-day events
   _originalId?: string;

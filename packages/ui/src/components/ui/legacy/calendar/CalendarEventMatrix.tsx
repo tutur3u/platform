@@ -1,12 +1,8 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import EventCard from './EventCard';
+import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useParams } from 'next/navigation';
-
-// Constants for grid calculations
-const HOUR_HEIGHT = 80; // Height of one hour in pixels
-const DAY_HEIGHT = 24 * HOUR_HEIGHT; // Total height of a day (24 hours)
-const MAX_LEVEL = 10; // Maximum number of overlapping events
 
 const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const params = useParams();

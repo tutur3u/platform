@@ -39,7 +39,7 @@ export function Sidebar({ isAdmin, className, navItems }: SidebarProps) {
   return (
     <div
       className={cn(
-        'bg-card text-card-foreground flex flex-col border-r',
+        'flex flex-col border-r bg-card text-card-foreground',
         className
       )}
     >

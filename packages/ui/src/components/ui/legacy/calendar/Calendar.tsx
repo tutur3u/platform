@@ -3,9 +3,8 @@
 import { CalendarProvider, useCalendar } from '../../../../hooks/use-calendar';
 import CalendarHeader from './CalendarHeader';
 import CalendarViewWithTrail from './CalendarViewWithTrail';
-import { EventModal } from './EventModal';
-import { GenerateEventModal } from './GenerateEventModal';
 import MonthCalendar from './MonthCalendar';
+import { UnifiedEventModal } from './UnifiedEventModal';
 import WeekdayBar from './WeekdayBar';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
@@ -15,30 +14,15 @@ import {
 } from '@tuturuuu/ui/hooks/use-view-transition';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { PlusIcon, Sparkles } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 // Floating action button for quick event creation
 const CreateEventButton = () => {
   const { openModal } = useCalendar();
-  const [showAIModal, setShowAIModal] = useState(false);
 
   return (
     <div className="fixed right-6 bottom-6 z-10 flex gap-2">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            size="icon"
-            className="h-14 w-14 rounded-full bg-primary/90 shadow-lg"
-            onClick={() => setShowAIModal(true)}
-          >
-            <Sparkles className="h-5 w-5" />
-            <span className="sr-only">Generate event with AI</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Generate event with AI</TooltipContent>
-      </Tooltip>
-
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -52,8 +36,6 @@ const CreateEventButton = () => {
         </TooltipTrigger>
         <TooltipContent>Create new event</TooltipContent>
       </Tooltip>
-
-      <GenerateEventModal open={showAIModal} onOpenChange={setShowAIModal} />
     </div>
   );
 };
@@ -274,7 +256,7 @@ export const Calendar = ({
     >
       <div
         className={cn(
-          'grid h-[calc(100%-4rem)] w-full md:pb-4',
+          'grid h-[calc(100%-2rem-4px)] w-full',
           view === 'month'
             ? 'grid-rows-[auto_1fr]'
             : 'grid-rows-[auto_auto_1fr]'
@@ -312,7 +294,7 @@ export const Calendar = ({
 
         {disabled ? null : (
           <>
-            <EventModal />
+            <UnifiedEventModal />
             <CreateEventButton />
           </>
         )}

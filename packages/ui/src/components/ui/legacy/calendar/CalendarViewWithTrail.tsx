@@ -1,9 +1,7 @@
 import CalendarView from './CalendarView';
 import TimeTrail from './TimeTrail';
+import { HOUR_HEIGHT } from './config';
 import { useEffect, useRef, useState } from 'react';
-
-// Constants for grid calculations
-const HOUR_HEIGHT = 80; // Height of one hour in pixels
 
 const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
   const [initialized, setInitialized] = useState(false);

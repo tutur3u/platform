@@ -1,3 +1,4 @@
+import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 
@@ -15,13 +16,13 @@ const TimeTrail = () => {
   return (
     <div
       className="relative w-16 border-r border-border dark:border-zinc-800"
-      style={{ height: '1920px' }} // 24 hours * 80px = 1920px
+      style={{ height: DAY_HEIGHT }}
     >
       {hours.map((hour) => (
         <div
           key={`trail-hour-${hour}`}
           className="absolute flex h-20 w-full items-center justify-end pr-2"
-          style={{ top: `${hour * 80 - 40}px` }}
+          style={{ top: `${(hour - 0.65) * HOUR_HEIGHT}px` }}
         >
           <span
             className={cn(

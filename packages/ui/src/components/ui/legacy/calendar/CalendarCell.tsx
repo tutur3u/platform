@@ -1,4 +1,5 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -31,10 +32,13 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     <div
       id={id}
       className={cn(
-        'calendar-cell relative h-20 transition-colors',
-        hour !== 0 && 'border-t',
+        'calendar-cell relative transition-colors',
+        hour !== 0 && 'border-t border-border/30',
         isHovering ? 'bg-muted/20' : 'hover:bg-muted/10'
       )}
+      style={{
+        height: `${HOUR_HEIGHT}px`,
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
       }}

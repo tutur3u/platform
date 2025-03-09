@@ -1,9 +1,13 @@
+import { HOUR_HEIGHT } from './config';
 import { useEffect, useState } from 'react';
 
-// Constants for grid calculations
-const HOUR_HEIGHT = 80; // Height of one hour in pixels
-
-const TimeIndicatorLine = () => {
+const TimeIndicatorLine = ({
+  columnIndex,
+  columnsCount,
+}: {
+  columnIndex: number;
+  columnsCount: number;
+}) => {
   const [now, setNow] = useState(new Date());
 
   // Update the time every minute
@@ -30,14 +34,20 @@ const TimeIndicatorLine = () => {
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 top-0 z-50 h-[2px] bg-primary shadow-sm"
+      className="pointer-events-none absolute inset-x-0 top-0 z-50 h-[2px] bg-dynamic-light-red shadow-md"
       style={{
         transform: `translateY(${totalHours * HOUR_HEIGHT}px)`,
         transition: 'transform 0.3s ease-out',
+        // Position the line only in the column for today
+        left: `${(columnIndex / columnsCount) * 100}%`,
+        width: `${(1 / columnsCount) * 100}% - 2px`,
       }}
     >
-      <div className="absolute -top-[4px] -left-[4px] h-[10px] w-[10px] animate-pulse rounded-full bg-primary" />
-      <div className="absolute -top-[4px] -right-[4px] h-[10px] w-[10px] animate-pulse rounded-full bg-primary" />
+      {/* Left dot */}
+      <div className="absolute -top-[4px] -left-[4px] h-[10px] w-[10px] rounded-full bg-dynamic-light-red shadow-md" />
+
+      {/* Right dot */}
+      {/* <div className="absolute -top-[4px] -right-[4px] h-[10px] w-[10px] rounded-full bg-dynamic-light-red shadow-md" /> */}
     </div>
   );
 };

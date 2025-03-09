@@ -1,16 +1,16 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
+import {
+  GRID_SNAP,
+  HOUR_HEIGHT,
+  LEVEL_WIDTH_OFFSET,
+  MAX_HOURS,
+  MIN_EVENT_HEIGHT,
+} from './config';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { ArrowLeft, ArrowRight, Clock, Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-
-// Constants for grid calculations
-const HOUR_HEIGHT = 80; // Height of one hour in pixels
-const MIN_EVENT_HEIGHT = 20; // Minimum event height in pixels
-const GRID_SNAP = 10; // Snap to grid in pixels (for dragging/resizing)
-const MAX_HOURS = 24; // Maximum hours in a day
-const LEVEL_WIDTH_OFFSET = 8; // Width offset per level for stacking
 
 interface EventCardProps {
   dates: Date[];
@@ -184,7 +184,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     }
 
     // Update event dimensions and position
-    cardEl.style.height = `${height}px`;
+    cardEl.style.height = `${height - 4}px`;
 
     // Position based on start time
     if (_isMultiDay && _dayPosition !== 'start') {
@@ -207,12 +207,12 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
       // Calculate width based on level to prevent overflow
       const widthPercentage = Math.max(60, 100 - level * 5); // Decrease width as level increases
-      const width = (columnWidth * widthPercentage) / 100 - 4;
+      const width = (columnWidth * widthPercentage) / 100 - 16;
 
       cardEl.style.width = `${width}px`;
       cardEl.style.left = `${left}px`;
       // Set z-index based on level to ensure proper stacking
-      cardEl.style.zIndex = `${10 - level}`; // Higher levels (more overlaps) get lower z-index
+      cardEl.style.zIndex = `${10 * level}`; // Higher levels (more overlaps) get lower z-index
 
       // Store the initial position
       currentPositionRef.current = {
@@ -231,7 +231,11 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
     observer.observe(cellEl);
 
-    cardEl.style.opacity = '1';
+    // Check if the event is in the past
+    const isPastEvent = new Date(end_at) < new Date();
+
+    // Set opacity based on whether the event is in the past
+    cardEl.style.opacity = isPastEvent ? '0.5' : '1';
     cardEl.style.pointerEvents = 'all';
 
     return () => observer.disconnect();
@@ -609,52 +613,52 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     > = {
       BLUE: {
         bg: 'bg-calendar-bg-blue',
-        border: 'border-dynamic-light-blue/30',
+        border: 'border-dynamic-light-blue/80',
         text: 'text-dynamic-light-blue',
       },
       RED: {
         bg: 'bg-calendar-bg-red',
-        border: 'border-dynamic-light-red/30',
+        border: 'border-dynamic-light-red/80',
         text: 'text-dynamic-light-red',
       },
       GREEN: {
         bg: 'bg-calendar-bg-green',
-        border: 'border-dynamic-light-green/30',
+        border: 'border-dynamic-light-green/80',
         text: 'text-dynamic-light-green',
       },
       YELLOW: {
         bg: 'bg-calendar-bg-yellow',
-        border: 'border-dynamic-light-yellow/30',
+        border: 'border-dynamic-light-yellow/80',
         text: 'text-dynamic-light-yellow',
       },
       PURPLE: {
         bg: 'bg-calendar-bg-purple',
-        border: 'border-dynamic-light-purple/30',
+        border: 'border-dynamic-light-purple/80',
         text: 'text-dynamic-light-purple',
       },
       PINK: {
         bg: 'bg-calendar-bg-pink',
-        border: 'border-dynamic-light-pink/30',
+        border: 'border-dynamic-light-pink/80',
         text: 'text-dynamic-light-pink',
       },
       ORANGE: {
         bg: 'bg-calendar-bg-orange',
-        border: 'border-dynamic-light-orange/30',
+        border: 'border-dynamic-light-orange/80',
         text: 'text-dynamic-light-orange',
       },
       INDIGO: {
         bg: 'bg-calendar-bg-indigo',
-        border: 'border-dynamic-light-indigo/30',
+        border: 'border-dynamic-light-indigo/80',
         text: 'text-dynamic-light-indigo',
       },
       CYAN: {
         bg: 'bg-calendar-bg-cyan',
-        border: 'border-dynamic-light-cyan/30',
+        border: 'border-dynamic-light-cyan/80',
         text: 'text-dynamic-light-cyan',
       },
       GRAY: {
         bg: 'bg-calendar-bg-gray',
-        border: 'border-dynamic-light-gray/30',
+        border: 'border-dynamic-light-gray/80',
         text: 'text-dynamic-light-gray',
       },
     };
@@ -676,16 +680,19 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     return format(date, 'h:mm a');
   };
 
+  // Check if the event is in the past
+  const isPastEvent = new Date(end_at) < new Date();
+
   return (
     <div
       ref={cardRef}
       id={`event-${id}`}
       className={cn(
-        'pointer-events-auto absolute max-w-none overflow-hidden rounded border border-l-4 select-none',
-        'hover:ring-2 hover:ring-primary/50 focus:outline-none',
-        'group',
+        'pointer-events-auto absolute max-w-none overflow-hidden rounded-md border-l-4 select-none',
+        'group hover:ring-2 hover:ring-primary/50 focus:outline-none',
         {
           'opacity-80': isDragging || isResizing, // Lower opacity during interaction
+          'opacity-50': isPastEvent, // Lower opacity for past events
           'animate-pulse': isSyncing, // Pulse animation during sync
           'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
           'rounded-r-none border-r-4': showEndIndicator, // Special styling for continuation to next day
@@ -721,13 +728,13 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     >
       {/* Continuation indicators for multi-day events */}
       {showStartIndicator && (
-        <div className="absolute top-1/2 left-0 -translate-x-1 -translate-y-1/2">
+        <div className="absolute top-1/2 left-2 -translate-x-1 -translate-y-1/2">
           <ArrowLeft className={`h-3 w-3 ${text}`} />
         </div>
       )}
 
       {showEndIndicator && (
-        <div className="absolute top-1/2 right-0 translate-x-1 -translate-y-1/2">
+        <div className="absolute top-1/2 right-2 translate-x-1 -translate-y-1/2">
           <ArrowRight className={`h-3 w-3 ${text}`} />
         </div>
       )}
@@ -772,7 +779,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
             _isMultiDay && _dayPosition !== 'start' && 'pl-3'
           )}
         >
-          <div className="line-clamp-2 font-medium">
+          <div className="line-clamp-2 text-xs font-medium">
             {title || 'Untitled event'}
           </div>
 

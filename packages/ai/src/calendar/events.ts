@@ -26,6 +26,16 @@ export const calendarEventSchema = z.object({
     .boolean()
     .default(false)
     .describe('Whether the event is an all-day event'),
+  scheduling_note: z
+    .string()
+    .optional()
+    .describe(
+      'Note explaining smart scheduling decisions if the time was adjusted to avoid conflicts'
+    ),
+  priority: z
+    .enum(['low', 'medium', 'high'])
+    .optional()
+    .describe('Priority level of the event for smart scheduling decisions'),
   //   recurrence: z
   //     .object({
   //       frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']).optional(),

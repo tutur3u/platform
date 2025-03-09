@@ -68,7 +68,7 @@ export default function Structure({
   return (
     <>
       {/* Mobile navbar - visible only on small screens */}
-      <nav className="bg-background/70 fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden">
+      <nav className="fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-4 py-2 backdrop-blur-lg md:hidden">
         <div className="flex h-[52px] items-center gap-2">
           <span className="text-lg font-semibold">{pageTitle}</span>
         </div>
@@ -88,7 +88,7 @@ export default function Structure({
         {/* Sidebar with responsive behavior */}
         <div
           className={cn(
-            'bg-background/70 fixed inset-0 z-20 flex flex-col overflow-y-auto border-r backdrop-blur-lg transition-transform duration-300 ease-in-out md:static md:w-64 md:bg-transparent',
+            'fixed inset-0 z-20 flex flex-col overflow-y-auto border-r bg-background/70 backdrop-blur-lg transition-transform duration-300 ease-in-out md:static md:w-64 md:bg-transparent',
             isCollapsed
               ? 'translate-x-[-100%] md:translate-x-0'
               : 'translate-x-0'
@@ -111,7 +111,7 @@ export default function Structure({
         </div>
 
         {/* Main content with responsive padding */}
-        <main className="bg-background flex-1 overflow-y-auto p-4 pt-20 md:pt-4 lg:px-8">
+        <main className="flex-1 overflow-y-auto bg-background p-4 pt-20 md:pt-4 lg:px-8">
           {children}
         </main>
       </div>
