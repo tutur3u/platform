@@ -13,13 +13,21 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
-import { History } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { History, PlayCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 type HistoryEntry = {
   score: number;
   input: string;
   output: string;
+};
+
+type TestResult = {
+  score: number;
+  feedback: string;
+  suggestions: string;
 };
 
 interface Problem {
@@ -37,8 +45,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
   const [input, setInput] = useState('');
+  const [customTestCase, setCustomTestCase] = useState('');
   const [loading, setLoading] = useState(false);
+  const [testingCustom, setTestingCustom] = useState(false);
   const [error, setError] = useState('');
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [submissions, setSubmissions] = useState<HistoryEntry[]>([]);
   const [attempts, setAttempts] = useState(0);
 
@@ -74,8 +85,8 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       return;
     }
 
-    if (attempts >= 5) {
-      setError('You have reached the maximum number of attempts.');
+    if (attempts >= 3) {
+      setError('You have reached the maximum number of attempts (3).');
       return;
     }
 
@@ -88,6 +99,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     setMessages((prev) => [...prev, newUserMessage]);
     setInput('');
     setLoading(true);
+    setError('');
 
     try {
       const response = await fetch('/api/ai/chat/google', {
@@ -107,7 +119,23 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       const score = data.response.score || 0;
 
       // Add to submissions
-      await addSubmission(input, output, score, problem.id);
+      const submissionResponse = await fetch(
+        `/api/v1/problems/${problem.id}/submissions`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input,
+            output,
+            score,
+          }),
+        }
+      );
+
+      if (!submissionResponse.ok) {
+        const errorData = await submissionResponse.json();
+        throw new Error(errorData.message || 'Failed to create submission');
+      }
 
       // Refresh submissions
       const fetchedSubmissions = await fetchSubmissionsFromAPI(problem.id);
@@ -122,16 +150,16 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         sender: 'ai' as const,
       };
       setMessages((prev) => [...prev, newAiMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
       const errorMessage = {
-        text: 'Sorry, there was an error processing your request.',
+        text: `Error: ${error.message || 'Something went wrong'}`,
         sender: 'ai' as const,
       };
       setMessages((prev) => [...prev, errorMessage]);
       toast({
         title: 'Error',
-        description: 'Failed to update submissions',
+        description: error.message || 'Failed to process submission',
         variant: 'destructive',
       });
     } finally {
@@ -139,36 +167,52 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     }
   };
 
-  const addSubmission = async (
-    input: string,
-    output: string,
-    score: number,
-    problemId: string
-  ) => {
+  const handleTestCustomCase = async () => {
+    if (!input.trim()) {
+      setError('Prompt cannot be empty.');
+      return;
+    }
+
+    if (!customTestCase.trim()) {
+      setError('Custom test case cannot be empty.');
+      return;
+    }
+
+    setTestingCustom(true);
+    setError('');
+    setTestResult(null);
+
     try {
       const response = await fetch(
-        `/api/v1/problems/${problemId}/submissions`,
+        `/api/v1/problems/${problem.id}/test-prompt`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            input,
-            output,
-            score,
+            prompt: input,
+            customTestCase,
+            problemDescription: problem.description,
           }),
         }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to update submissions');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to test prompt');
       }
-    } catch (error) {
-      console.error('Error:', error);
+
+      const data = await response.json();
+      setTestResult(data.response);
+    } catch (error: any) {
+      console.error('Error testing prompt:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update submissions',
+        title: 'Error Testing Prompt',
+        description: error.message || 'Something went wrong',
         variant: 'destructive',
       });
+      setError(error.message || 'Failed to test prompt with custom test case');
+    } finally {
+      setTestingCustom(false);
     }
   };
 
@@ -199,7 +243,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       className="rounded-lg border p-4 shadow-sm"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="font-semibold text-foreground">
+                        <span className="text-foreground font-semibold">
                           Attempt {index + 1}
                         </span>
                         <span
@@ -216,25 +260,25 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       </div>
                       <Separator className="my-2" />
                       <div className="mt-2">
-                        <p className="text-sm font-medium text-muted-foreground">
+                        <p className="text-muted-foreground text-sm font-medium">
                           Your Prompt:
                         </p>
-                        <p className="mt-1 text-sm text-foreground">
+                        <p className="text-foreground mt-1 text-sm">
                           {submission.input}
                         </p>
                       </div>
                       <div className="mt-4">
-                        <p className="text-sm font-medium text-muted-foreground">
+                        <p className="text-muted-foreground text-sm font-medium">
                           Output:
                         </p>
-                        <p className="mt-1 text-sm text-foreground">
+                        <p className="text-foreground mt-1 text-sm">
                           {submission.output}
                         </p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-center text-muted-foreground">
+                  <p className="text-muted-foreground text-center">
                     No submissions yet.
                   </p>
                 )}
@@ -244,49 +288,129 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         </div>
 
         <div className="mb-4">
-          <p>You only have 5 tries for each question. [{attempts}/5]</p>
+          <p>
+            You have {3 - attempts} attempts remaining for this question. [
+            {attempts}/3]
+          </p>
         </div>
 
-        {loading && (
-          <div className="flex items-center justify-center py-10">
-            <LoadingIndicator />
-          </div>
-        )}
+        <Tabs defaultValue="submit">
+          <TabsList className="mb-4 grid w-full grid-cols-2">
+            <TabsTrigger value="submit">Submit Prompt</TabsTrigger>
+            <TabsTrigger value="test">Test Custom Case</TabsTrigger>
+          </TabsList>
 
-        {!loading && submissions.length > 0 && (
-          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border border-foreground/10 bg-foreground/10 p-6 text-foreground shadow-md">
-            <h3 className="text-2xl font-semibold">Your Last Attempt</h3>
-            <div className="w-full rounded-lg border border-foreground/5 bg-foreground/5 p-4 shadow-md">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-foreground">
-                    <strong className="font-medium">Prompt: </strong>
-                    {submissions[submissions?.length - 1]?.input}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-foreground">
-                    <strong className="font-medium">Score: </strong>
-                    {submissions[submissions?.length - 1]?.score}/10
-                  </p>
+          <TabsContent value="submit" className="space-y-4">
+            {loading && (
+              <div className="flex items-center justify-center py-10">
+                <LoadingIndicator />
+              </div>
+            )}
+
+            {!loading && submissions.length > 0 && (
+              <div className="border-foreground/10 bg-foreground/10 text-foreground mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border p-6 shadow-md">
+                <h3 className="text-2xl font-semibold">Your Last Attempt</h3>
+                <div className="border-foreground/5 bg-foreground/5 w-full rounded-lg border p-4 shadow-md">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-foreground text-sm">
+                        <strong className="font-medium">Prompt: </strong>
+                        {submissions[submissions?.length - 1]?.input}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-foreground text-sm">
+                        <strong className="font-medium">Score: </strong>
+                        {submissions[submissions?.length - 1]?.score}/10
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="test" className="space-y-4">
+            <div className="border-foreground/10 bg-foreground/10 space-y-4 rounded-lg border p-6">
+              <div>
+                <h3 className="mb-2 text-lg font-medium">Custom Test Case</h3>
+                <p className="text-muted-foreground mb-3 text-sm">
+                  Enter a custom test case to see how your prompt would perform
+                  on it. This won't count against your submission attempts.
+                </p>
+                <Textarea
+                  value={customTestCase}
+                  onChange={(e) => setCustomTestCase(e.target.value)}
+                  placeholder="Enter your custom test case here..."
+                  className="min-h-[120px]"
+                />
+                <Button
+                  onClick={handleTestCustomCase}
+                  className="mt-3 gap-2"
+                  disabled={
+                    testingCustom || !customTestCase.trim() || !input.trim()
+                  }
+                >
+                  <PlayCircle className="h-4 w-4" />
+                  {testingCustom ? 'Testing...' : 'Test This Case'}
+                </Button>
+              </div>
+
+              {testingCustom && (
+                <div className="flex items-center justify-center py-6">
+                  <LoadingIndicator />
+                </div>
+              )}
+
+              {testResult && (
+                <div className="border-foreground/10 bg-foreground/5 mt-4 rounded-lg border p-4">
+                  <h4 className="mb-2 text-lg font-medium">Test Results</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="font-semibold">Score: </span>
+                      <span
+                        className={
+                          testResult.score >= 8
+                            ? 'text-dynamic-light-green'
+                            : testResult.score >= 5
+                              ? 'text-dynamic-light-yellow'
+                              : 'text-dynamic-light-red'
+                        }
+                      >
+                        {testResult.score}/10
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold">Feedback: </span>
+                      <p className="mt-1 whitespace-pre-wrap text-sm">
+                        {testResult.feedback}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-semibold">Suggestions: </span>
+                      <p className="mt-1 whitespace-pre-wrap text-sm">
+                        {testResult.suggestions}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Chat Input */}
       <div className="flex gap-2 p-2">
         <Input
-          placeholder="Type your answer..."
+          placeholder="Type your prompt..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={loading || attempts >= 5}
+          disabled={loading || attempts >= 3}
         />
-        <Button onClick={handleSend} disabled={loading || attempts >= 5}>
-          {loading ? 'Sending...' : 'Send'}
+        <Button onClick={handleSend} disabled={loading || attempts >= 3}>
+          {loading ? 'Sending...' : 'Submit'}
         </Button>
       </div>
       {error && <p className="mt-2 text-red-500">{error}</p>}

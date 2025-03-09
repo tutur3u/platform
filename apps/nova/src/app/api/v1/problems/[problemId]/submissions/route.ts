@@ -56,6 +56,7 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+
   // Create initial submission record
   const { data: newSubmission, error } = await supabase
     .from('nova_submissions')
@@ -69,6 +70,7 @@ export async function POST(request: Request, { params }: Params) {
     .select()
     .single();
 
+    
   if (error) {
     console.error('Error creating submission:', error);
     return NextResponse.json(
