@@ -84,8 +84,6 @@
     "advanced-ai-description": "Truy cập các mô hình AI tiên tiến để có kỹ thuật nhắc nhở mạnh mẽ",
     "real-time": "Kiểm tra theo thời gian thực",
     "real-time-description": "Kiểm tra lời nhắc của bạn theo thời gian thực với phản hồi tức thì",
-    "preformance-analysis": "Phân tích hiệu suất",
-    "preformance-analysis-description": "Theo dõi và tối ưu hóa các nỗ lực kỹ thuật nhắc nhở của bạn",
     "collaborative-learning": "Học tập cộng tác",
     "collaborative-learning-description": "Học hỏi và chia sẻ với cộng đồng",
     "advanced-controls": "Kiểm soát nâng cao",
@@ -109,7 +107,9 @@
     "error-404": "Page not found",
     "error-404-description": "The page you are looking for does not exist.",
     "error-500": "Internal server error",
-    "error-500-description": "Something went wrong. Please try again later."
+    "error-500-description": "Something went wrong. Please try again later.",
+    "virtual": "Trực tuyến",
+    "onsite": "Trực tiếp"
   },
   "common": {
     "alpha": "Alpha",

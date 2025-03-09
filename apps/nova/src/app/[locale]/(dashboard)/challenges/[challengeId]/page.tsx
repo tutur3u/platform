@@ -67,7 +67,7 @@ export default function Page({ params }: Props) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const {challengeId}= await params;
+      const { challengeId } = await params;
       const challengeData = await getChallenge(challengeId);
       setChallenge(challengeData as ExtendedNovaChallenge);
       setChallengeId(challengeId);
@@ -88,7 +88,7 @@ export default function Page({ params }: Props) {
     };
 
     fetchData();
-  }, [challengeId, router]);
+  }, [challengeId, router, params]);
 
   const problems = challenge?.problems || [];
 

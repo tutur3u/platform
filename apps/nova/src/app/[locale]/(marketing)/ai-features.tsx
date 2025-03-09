@@ -68,7 +68,7 @@ export default function AiFeatures() {
             {t('ai-capabilities')}
           </Badge>
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
-            {t('ai-capabilities-subtitle:')}
+            {t('ai-capabilities-subtitle')}
           </h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             {t('ai-capabilities-description')}
