@@ -612,52 +612,52 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       { bg: string; border: string; text: string }
     > = {
       BLUE: {
-        bg: 'bg-calendar-bg-blue',
+        bg: 'bg-calendar-bg-blue hover:ring-dynamic-light-blue/80',
         border: 'border-dynamic-light-blue/80',
         text: 'text-dynamic-light-blue',
       },
       RED: {
-        bg: 'bg-calendar-bg-red',
+        bg: 'bg-calendar-bg-red hover:ring-dynamic-light-red/80',
         border: 'border-dynamic-light-red/80',
         text: 'text-dynamic-light-red',
       },
       GREEN: {
-        bg: 'bg-calendar-bg-green',
+        bg: 'bg-calendar-bg-green hover:ring-dynamic-light-green/80',
         border: 'border-dynamic-light-green/80',
         text: 'text-dynamic-light-green',
       },
       YELLOW: {
-        bg: 'bg-calendar-bg-yellow',
+        bg: 'bg-calendar-bg-yellow hover:ring-dynamic-light-yellow/80',
         border: 'border-dynamic-light-yellow/80',
         text: 'text-dynamic-light-yellow',
       },
       PURPLE: {
-        bg: 'bg-calendar-bg-purple',
+        bg: 'bg-calendar-bg-purple hover:ring-dynamic-light-purple/80',
         border: 'border-dynamic-light-purple/80',
         text: 'text-dynamic-light-purple',
       },
       PINK: {
-        bg: 'bg-calendar-bg-pink',
+        bg: 'bg-calendar-bg-pink hover:ring-dynamic-light-pink/80',
         border: 'border-dynamic-light-pink/80',
         text: 'text-dynamic-light-pink',
       },
       ORANGE: {
-        bg: 'bg-calendar-bg-orange',
+        bg: 'bg-calendar-bg-orange hover:ring-dynamic-light-orange/80',
         border: 'border-dynamic-light-orange/80',
         text: 'text-dynamic-light-orange',
       },
       INDIGO: {
-        bg: 'bg-calendar-bg-indigo',
+        bg: 'bg-calendar-bg-indigo hover:ring-dynamic-light-indigo/80',
         border: 'border-dynamic-light-indigo/80',
         text: 'text-dynamic-light-indigo',
       },
       CYAN: {
-        bg: 'bg-calendar-bg-cyan',
+        bg: 'bg-calendar-bg-cyan hover:ring-dynamic-light-cyan/80',
         border: 'border-dynamic-light-cyan/80',
         text: 'text-dynamic-light-cyan',
       },
       GRAY: {
-        bg: 'bg-calendar-bg-gray',
+        bg: 'bg-calendar-bg-gray hover:ring-dynamic-light-gray/80',
         border: 'border-dynamic-light-gray/80',
         text: 'text-dynamic-light-gray',
       },
@@ -688,8 +688,8 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       ref={cardRef}
       id={`event-${id}`}
       className={cn(
-        'pointer-events-auto absolute max-w-none overflow-hidden rounded-md border-l-4 select-none',
-        'group hover:ring-2 hover:ring-primary/50 focus:outline-none',
+        'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-xl border-l-2 select-none',
+        'group hover:ring-2 focus:outline-none',
         {
           'opacity-80': isDragging || isResizing, // Lower opacity during interaction
           'opacity-50': isPastEvent, // Lower opacity for past events
@@ -742,7 +742,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       {/* Edit button overlay */}
       <div
         className={cn(
-          'absolute top-1 right-1 rounded-full bg-background/80 p-0.5 opacity-0 shadow-sm',
+          'absolute top-2 right-2 rounded-full p-0.5 opacity-0 shadow-sm',
           'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
           { '!opacity-0': isDragging || isResizing } // Hide during interaction
         )}
