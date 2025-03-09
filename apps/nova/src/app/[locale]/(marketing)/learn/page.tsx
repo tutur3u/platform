@@ -10,31 +10,28 @@ import {
   GraduationCap,
   Sparkles,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 export default function LearnPage() {
   const t = useTranslations('nova');
-  
+
   const lessonContents = [
     {
       id: 'introduction',
       title: t('module-1'),
-      description:
-        t('module-1-description'),
+      description: t('module-1-description'),
       icon: <GraduationCap className="h-5 w-5" />,
       sections: [
         {
           title: t('what-is-prompt-engineering'),
-          content:
-            t('what-is-prompt-engineering-description'),
+          content: t('what-is-prompt-engineering-description'),
           duration: '10 min',
           isCompleted: false,
         },
         {
           title: t('why-is-prompt-engineering'),
-          content:
-            t('why-is-prompt-engineering-description'),
+          content: t('why-is-prompt-engineering-description'),
           duration: '15 min',
           isCompleted: false,
         },
@@ -48,15 +45,13 @@ export default function LearnPage() {
       sections: [
         {
           title: t('zero-shot'),
-          content:
-            t('zero-shot-description'),
+          content: t('zero-shot-description'),
           duration: '20 min',
           isCompleted: false,
         },
         {
           title: t('chain-of-thought'),
-          content:
-            t('chain-of-thought-description'),
+          content: t('chain-of-thought-description'),
           duration: '25 min',
           isCompleted: false,
         },
@@ -70,15 +65,13 @@ export default function LearnPage() {
       sections: [
         {
           title: t('iterative-refinement'),
-          content:
-            t('iterative-refinement-description'),
+          content: t('iterative-refinement-description'),
           duration: '20 min',
           isCompleted: false,
         },
         {
           title: t('Meta-prompting'),
-          content:
-            t('Meta-prompting-description'),
+          content: t('Meta-prompting-description'),
           duration: '30 min',
           isCompleted: false,
         },
@@ -92,15 +85,13 @@ export default function LearnPage() {
       sections: [
         {
           title: t('iterative-refinement'),
-          content:
-            t('iterative-refinement-description'),
+          content: t('iterative-refinement-description'),
           duration: '20 min',
           isCompleted: false,
         },
         {
           title: t('Meta-prompting'),
-          content:
-            t('Meta-prompting-description'),
+          content: t('Meta-prompting-description'),
           duration: '30 min',
           isCompleted: false,
         },

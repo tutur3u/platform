@@ -1,31 +1,40 @@
 import { cn } from '@tuturuuu/utils/format';
+import { format } from 'date-fns';
 
 const TimeTrail = () => {
+  // Only show hours (not every half hour)
   const hours = Array.from(Array(24).keys());
+
+  // Format time for display - only show hour
+  const formatTime = (hour: number) => {
+    const date = new Date();
+    date.setHours(hour, 0, 0, 0);
+    return format(date, 'h a'); // Just show hour and am/pm
+  };
+
   return (
-    <div className="grid h-fit w-14 grid-rows-[24] border-r border-border md:w-20 dark:border-zinc-800">
+    <div
+      className="relative w-16 border-r border-border dark:border-zinc-800"
+      style={{ height: '1920px' }} // 24 hours * 80px = 1920px
+    >
       {hours.map((hour) => (
         <div
           key={`trail-hour-${hour}`}
-          className="relative flex h-20 w-full min-w-fit items-center justify-end text-sm font-semibold md:text-xl"
+          className="absolute flex h-20 w-full items-center justify-end pr-2"
+          style={{ top: `${hour * 80 - 40}px` }}
         >
           <span
             className={cn(
-              'absolute top-0 right-0 px-2',
-              hour === 0 ? 'pointer-events-none opacity-0' : '-translate-y-3'
+              'text-sm font-medium text-muted-foreground',
+              hour === 0 && 'hidden'
             )}
           >
-            {hour === 0
-              ? '12:00'
-              : hour < 12
-                ? `${hour}:00`
-                : hour === 12
-                  ? '12:00'
-                  : `${hour}:00`}
+            {formatTime(hour)}
           </span>
         </div>
       ))}
     </div>
   );
 };
+
 export default TimeTrail;

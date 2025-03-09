@@ -9,4 +9,9 @@ export interface CalendarEvent {
   color?: SupportedColor;
   ws_id?: string;
   local?: boolean;
+
+  // Properties for multi-day events
+  _originalId?: string;
+  _isMultiDay?: boolean;
+  _dayPosition?: 'start' | 'middle' | 'end';
 }

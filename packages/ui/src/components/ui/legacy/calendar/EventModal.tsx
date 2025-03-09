@@ -3,6 +3,7 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
@@ -18,7 +19,15 @@ import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
+// Extended CalendarEvent type to include multi-day event properties
+interface ExtendedCalendarEvent extends CalendarEvent {
+  _originalId?: string;
+  _isMultiDay?: boolean;
+  _dayPosition?: 'start' | 'middle' | 'end';
+}
 
 // Color options aligned with SupportedColor type
 const COLOR_OPTIONS: {
@@ -26,16 +35,16 @@ const COLOR_OPTIONS: {
   name: string;
   className: string;
 }[] = [
-  { value: 'BLUE', name: 'Blue', className: 'bg-dynamic-blue/70' },
-  { value: 'RED', name: 'Red', className: 'bg-dynamic-red/70' },
-  { value: 'GREEN', name: 'Green', className: 'bg-dynamic-green/70' },
-  { value: 'YELLOW', name: 'Yellow', className: 'bg-dynamic-yellow/70' },
-  { value: 'ORANGE', name: 'Orange', className: 'bg-dynamic-orange/70' },
-  { value: 'PURPLE', name: 'Purple', className: 'bg-dynamic-purple/70' },
-  // { value: 'PINK', name: 'Pink', className: 'bg-dynamic-pink/70' },
-  // { value: 'INDIGO', name: 'Indigo', className: 'bg-dynamic-indigo/70' },
-  // { value: 'CYAN', name: 'Cyan', className: 'bg-dynamic-cyan/70' },
-  // { value: 'GRAY', name: 'Gray', className: 'bg-dynamic-gray/70' },
+  { value: 'BLUE', name: 'Blue', className: 'bg-dynamic-light-blue/70' },
+  { value: 'RED', name: 'Red', className: 'bg-dynamic-light-red/70' },
+  { value: 'GREEN', name: 'Green', className: 'bg-dynamic-light-green/70' },
+  { value: 'YELLOW', name: 'Yellow', className: 'bg-dynamic-light-yellow/70' },
+  { value: 'ORANGE', name: 'Orange', className: 'bg-dynamic-light-orange/70' },
+  { value: 'PURPLE', name: 'Purple', className: 'bg-dynamic-light-purple/70' },
+  { value: 'PINK', name: 'Pink', className: 'bg-dynamic-light-pink/70' },
+  { value: 'INDIGO', name: 'Indigo', className: 'bg-dynamic-light-indigo/70' },
+  { value: 'CYAN', name: 'Cyan', className: 'bg-dynamic-light-cyan/70' },
+  { value: 'GRAY', name: 'Gray', className: 'bg-dynamic-light-gray/70' },
 ];
 
 export function EventModal() {
@@ -57,25 +66,49 @@ export function EventModal() {
   });
 
   const [isAllDay, setIsAllDay] = useState(false);
+  const [isMultiDay, setIsMultiDay] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [dateError, setDateError] = useState<string | null>(null);
 
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
     if (activeEvent) {
+      // Handle IDs for split multi-day events (they contain a dash and date)
+      const originalId = activeEvent.id.includes('-')
+        ? activeEvent.id.split('-')[0]
+        : activeEvent.id;
+
+      // If this is a split event, we need to get the original event data
+      const extendedEvent = activeEvent as ExtendedCalendarEvent;
+      const eventData = extendedEvent._originalId
+        ? { ...extendedEvent, id: originalId }
+        : extendedEvent;
+
       setEvent({
-        ...activeEvent,
+        ...eventData,
       });
 
       // Check if this is an all-day event (no time component)
-      const start = new Date(activeEvent.start_at);
-      const end = new Date(activeEvent.end_at);
-      setIsAllDay(
+      const start = new Date(eventData.start_at);
+      const end = new Date(eventData.end_at);
+
+      const isAllDayEvent =
         start.getHours() === 0 &&
-          start.getMinutes() === 0 &&
-          end.getHours() === 23 &&
-          end.getMinutes() === 59
-      );
+        start.getMinutes() === 0 &&
+        end.getHours() === 23 &&
+        end.getMinutes() === 59;
+
+      setIsAllDay(isAllDayEvent);
+
+      // Check if this is a multi-day event
+      const startDay = new Date(start);
+      startDay.setHours(0, 0, 0, 0);
+
+      const endDay = new Date(end);
+      endDay.setHours(0, 0, 0, 0);
+
+      setIsMultiDay(startDay.getTime() !== endDay.getTime());
     } else {
       // Set default values for new event
       const now = new Date();
@@ -89,21 +122,42 @@ export function EventModal() {
         color: 'BLUE',
       });
       setIsAllDay(false);
+      setIsMultiDay(false);
     }
+
+    // Clear any error messages
+    setDateError(null);
   }, [activeEvent, isModalOpen]);
 
   const handleSave = async () => {
     if (!event.title || !event.start_at || !event.end_at) return;
 
+    // Validate dates
+    const startDate = new Date(event.start_at);
+    const endDate = new Date(event.end_at);
+
+    if (endDate <= startDate) {
+      setDateError('End date must be after start date');
+      return;
+    }
+
+    setDateError(null);
     setIsSaving(true);
+
     try {
       // Check if this is a new event or an existing one
       if (activeEvent?.id === 'new') {
         // Create a new event
         await addEvent(event as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
-        // Update existing event
-        await updateEvent(activeEvent.id, event);
+        // For split events, use the original ID
+        const originalId = activeEvent.id;
+
+        // Make sure originalId is not undefined
+        if (originalId) {
+          // Update existing event
+          await updateEvent(originalId, event);
+        }
       }
       closeModal();
     } catch (error) {
@@ -118,7 +172,13 @@ export function EventModal() {
 
     setIsDeleting(true);
     try {
-      await deleteEvent(activeEvent.id);
+      // For split events, use the original ID
+      const originalId = activeEvent.id;
+
+      // Make sure originalId is not undefined
+      if (originalId) {
+        await deleteEvent(originalId);
+      }
       closeModal();
     } catch (error) {
       console.error('Error deleting event:', error);
@@ -144,10 +204,21 @@ export function EventModal() {
 
       return newEvent;
     });
+
+    // Clear any error messages
+    setDateError(null);
   };
 
   const handleEndDateChange = (date: Date | undefined) => {
     if (!date) return;
+
+    const startDate = new Date(event.start_at || '');
+    if (date <= startDate) {
+      setDateError('End date must be after start date');
+    } else {
+      setDateError(null);
+    }
+
     setEvent((prev) => ({ ...prev, end_at: date.toISOString() }));
   };
 
@@ -160,7 +231,18 @@ export function EventModal() {
       startDate.setHours(0, 0, 0, 0);
 
       const endDate = new Date(event.end_at || '');
-      endDate.setHours(23, 59, 59, 999);
+      if (isMultiDay) {
+        // For multi-day events, keep the end date but set to end of day
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        // For single-day events, set end date to same day end
+        endDate.setFullYear(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate()
+        );
+        endDate.setHours(23, 59, 59, 999);
+      }
 
       setEvent((prev) => ({
         ...prev,
@@ -168,6 +250,56 @@ export function EventModal() {
         end_at: endDate.toISOString(),
       }));
     }
+  };
+
+  const handleMultiDayChange = (checked: boolean) => {
+    setIsMultiDay(checked);
+
+    if (checked) {
+      // If enabling multi-day, set end date to next day
+      const startDate = new Date(event.start_at || '');
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 1);
+
+      if (isAllDay) {
+        // For all-day events, set to end of day
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        // For timed events, keep the same time
+        endDate.setHours(startDate.getHours(), startDate.getMinutes());
+      }
+
+      setEvent((prev) => ({
+        ...prev,
+        end_at: endDate.toISOString(),
+      }));
+    } else {
+      // If disabling multi-day, set end date to same day
+      const startDate = new Date(event.start_at || '');
+      const endDate = new Date(event.end_at || '');
+
+      endDate.setFullYear(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      );
+
+      if (isAllDay) {
+        // For all-day events, set to end of day
+        endDate.setHours(23, 59, 59, 999);
+      } else if (endDate <= startDate) {
+        // Make sure end time is after start time
+        endDate.setHours(startDate.getHours() + 1, startDate.getMinutes());
+      }
+
+      setEvent((prev) => ({
+        ...prev,
+        end_at: endDate.toISOString(),
+      }));
+    }
+
+    // Clear any error messages
+    setDateError(null);
   };
 
   return (
@@ -211,14 +343,32 @@ export function EventModal() {
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Switch
-              id="allDay"
-              checked={isAllDay}
-              onCheckedChange={handleAllDayChange}
-            />
-            <Label htmlFor="allDay">All day</Label>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="allDay"
+                checked={isAllDay}
+                onCheckedChange={handleAllDayChange}
+              />
+              <Label htmlFor="allDay">All day</Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch
+                id="multiDay"
+                checked={isMultiDay}
+                onCheckedChange={handleMultiDayChange}
+              />
+              <Label htmlFor="multiDay">Multi-day</Label>
+            </div>
           </div>
+
+          {dateError && (
+            <Alert variant="destructive" className="py-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{dateError}</AlertDescription>
+            </Alert>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="startDate">Start</Label>
@@ -240,17 +390,17 @@ export function EventModal() {
 
           <div className="grid gap-2">
             <Label>Color</Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
               {COLOR_OPTIONS.map((colorOption) => (
                 <button
                   key={colorOption.value}
                   type="button"
                   className={cn(
-                    'h-8 w-8 rounded-md border transition-all',
+                    'h-8 w-full rounded-md border transition-all',
                     colorOption.className,
                     event.color === colorOption.value
-                      ? 'ring-2 ring-primary ring-offset-2'
-                      : 'hover:scale-110'
+                      ? 'border-3 border-primary/50'
+                      : 'hover:border-3 hover:border-primary/20'
                   )}
                   title={colorOption.name}
                   aria-label={`Select ${colorOption.name} color`}
@@ -279,7 +429,7 @@ export function EventModal() {
             <Button variant="outline" onClick={closeModal}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button onClick={handleSave} disabled={isSaving || !!dateError}>
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </div>

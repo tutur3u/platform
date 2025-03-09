@@ -86,7 +86,7 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
 
                 <div className="relative mb-4">
                   <motion.div
-                    className="from-primary/50 absolute -inset-1 rounded-full bg-gradient-to-r to-blue-500/50 opacity-75 blur-sm"
+                    className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary/50 to-blue-500/50 opacity-75 blur-sm"
                     animate={{
                       rotate: 360,
                       scale: [1, 1.05, 1],
@@ -121,13 +121,13 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
                   </Avatar>
                 </div>
                 <h3 className="mb-2 text-xl font-bold">{entry.name}</h3>
-                <p className="text-muted-foreground mb-1 text-sm">
+                <p className="mb-1 text-sm text-muted-foreground">
                   {entry.country}
                 </p>
-                <p className="text-primary text-2xl font-bold">
+                <p className="text-2xl font-bold text-primary">
                   {entry.score.toLocaleString()}
                 </p>
-                <div className="text-muted-foreground mt-4 text-sm">
+                <div className="mt-4 text-sm text-muted-foreground">
                   {entry.change > 0
                     ? `↑ +${entry.change}`
                     : entry.change < 0

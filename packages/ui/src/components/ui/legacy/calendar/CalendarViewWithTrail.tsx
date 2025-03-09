@@ -1,27 +1,57 @@
 import CalendarView from './CalendarView';
 import TimeTrail from './TimeTrail';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+// Constants for grid calculations
+const HOUR_HEIGHT = 80; // Height of one hour in pixels
 
 const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
-  // On mount, scroll to current time
+  const [initialized, setInitialized] = useState(false);
+  const calendarViewRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to current time on mount and when dates change
   useEffect(() => {
-    const component = document.getElementById('calendar-view');
-    if (!component) return;
+    const scrollToCurrentTime = () => {
+      if (initialized) return;
 
-    const now = new Date();
-    const minutes = now.getMinutes();
-    const hours = now.getHours() + minutes / 60;
+      const component = calendarViewRef.current;
+      if (!component) return;
 
-    const height = component.clientHeight;
-    const scrollPosition = hours * 80 - height / 2;
+      const now = new Date();
+      const minutes = now.getMinutes();
+      const hours = now.getHours() + minutes / 60;
 
-    component.scrollTo(0, scrollPosition);
-  }, []);
+      // Calculate scroll position to center the current time in the viewport
+      const height = component.clientHeight;
+      const scrollPosition = Math.max(0, hours * HOUR_HEIGHT - height / 2);
+
+      // Use smooth scrolling for better UX
+      component.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth',
+      });
+
+      setInitialized(true);
+    };
+
+    // Initial scroll
+    scrollToCurrentTime();
+
+    // Set up a timer to update the scroll position every minute
+    const intervalId = setInterval(scrollToCurrentTime, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [dates, initialized]);
 
   return (
     <div
+      ref={calendarViewRef}
       id="calendar-view"
-      className="scrollbar-none flex h-full overflow-x-hidden overflow-y-scroll scroll-smooth rounded-b-lg border-b border-l border-border text-center dark:border-zinc-800"
+      className="flex h-full overflow-y-auto scroll-smooth rounded-b-lg border-b border-l border-border text-center dark:border-zinc-800"
+      style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(0,0,0,0.2) transparent',
+      }}
     >
       <TimeTrail />
       <CalendarView dates={dates} />

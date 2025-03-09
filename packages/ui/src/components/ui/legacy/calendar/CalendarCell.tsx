@@ -1,5 +1,7 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { cn } from '@tuturuuu/utils/format';
+import { format } from 'date-fns';
+import { useState } from 'react';
 
 interface CalendarCellProps {
   date: string;
@@ -8,8 +10,16 @@ interface CalendarCellProps {
 
 const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const { addEmptyEvent } = useCalendar();
+  const [isHovering, setIsHovering] = useState(false);
 
   const id = `cell-${date}-${hour}`;
+
+  // Format time for display - only show when hovering
+  const formatTime = (hour: number, minute: number = 0) => {
+    const date = new Date();
+    date.setHours(hour, minute, 0, 0);
+    return format(date, 'h:mm a');
+  };
 
   const handleCreateEvent = (midHour?: boolean) => {
     const newDate = new Date(date);
@@ -21,33 +31,47 @@ const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     <div
       id={id}
       className={cn(
-        'calendar-cell relative grid h-20 border-r transition-colors hover:bg-muted/10 dark:border-zinc-800',
-        hour !== 0 && 'border-t'
+        'calendar-cell relative h-20 transition-colors',
+        hour !== 0 && 'border-t',
+        isHovering ? 'bg-muted/20' : 'hover:bg-muted/10'
       )}
       onContextMenu={(e) => {
         e.preventDefault();
       }}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
       data-hour={hour}
       data-date={date}
     >
+      {/* Full cell clickable area */}
       <button
-        className="group relative z-10 row-span-2 cursor-pointer focus:outline-none"
+        className="absolute inset-0 h-1/2 w-full cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent()}
-        title={`Create event at ${hour}:00`}
+        title={`Create event at ${formatTime(hour)}`}
       >
-        <span className="absolute top-0 left-2 text-xs font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-          {hour < 10 ? `0${hour}:00` : `${hour}:00`}
-        </span>
+        {/* Only show time on hover */}
+        {isHovering && (
+          <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
+            {formatTime(hour)}
+          </span>
+        )}
       </button>
 
+      {/* Half-hour marker */}
+      <div className="absolute top-1/2 right-0 left-0 border-t border-dashed border-border/30 dark:border-zinc-800/50" />
+
+      {/* Half-hour clickable area */}
       <button
-        className="group cursor-pointer focus:outline-none"
+        className="absolute inset-x-0 top-1/2 h-1/2 cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent(true)}
-        title={`Create event at ${hour}:30`}
+        title={`Create event at ${formatTime(hour, 30)}`}
       >
-        <span className="absolute top-10 left-2 text-xs font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-          {hour < 10 ? `0${hour}:30` : `${hour}:30`}
-        </span>
+        {/* Only show time on hover */}
+        {isHovering && (
+          <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
+            {formatTime(hour, 30)}
+          </span>
+        )}
       </button>
     </div>
   );

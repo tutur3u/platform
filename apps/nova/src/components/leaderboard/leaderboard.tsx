@@ -82,7 +82,7 @@ export function Leaderboard({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
                   className={cn(
-                    'hover:bg-muted/50 group transition-colors',
+                    'group transition-colors hover:bg-muted/50',
                     currentUserId === entry.id &&
                       'bg-primary/5 hover:bg-primary/10'
                   )}
@@ -117,7 +117,7 @@ export function Leaderboard({
                       <span
                         className={cn(
                           'font-medium',
-                          currentUserId === entry.id && 'text-primary font-bold'
+                          currentUserId === entry.id && 'font-bold text-primary'
                         )}
                       >
                         {entry.name}

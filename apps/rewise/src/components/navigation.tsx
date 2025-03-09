@@ -71,7 +71,7 @@ export function Navigation({
   }, [pathname]);
 
   return (
-    <div className="scrollbar-none mb-4 flex flex-none gap-1 overflow-x-auto font-semibold">
+    <div className="mb-4 scrollbar-none flex flex-none gap-1 overflow-x-auto font-semibold">
       {navLinks.map((link) => {
         // If the link is disabled, don't render it
         if (link?.disabled) return null;

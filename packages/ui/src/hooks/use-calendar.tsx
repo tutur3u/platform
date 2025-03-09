@@ -11,8 +11,22 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from 'react';
+
+// Utility function to round time to nearest 15-minute interval
+const roundToNearest15Minutes = (date: Date): Date => {
+  const minutes = date.getMinutes();
+  const remainder = minutes % 15;
+  const roundedMinutes =
+    remainder < 8 ? minutes - remainder : minutes + (15 - remainder);
+  const roundedDate = new Date(date);
+  roundedDate.setMinutes(roundedMinutes);
+  roundedDate.setSeconds(0);
+  roundedDate.setMilliseconds(0);
+  return roundedDate;
+};
 
 // Updated context with improved type definitions
 const CalendarContext = createContext<{
@@ -73,6 +87,12 @@ export const CalendarProvider = ({
 }) => {
   const queryClient = useQueryClient();
 
+  // Add debounce timer reference for update events
+  const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdatesRef = useRef<Map<string, Partial<CalendarEvent>>>(
+    new Map()
+  );
+
   const getDateRangeQuery = ({
     startDate,
     endDate,
@@ -83,23 +103,25 @@ export const CalendarProvider = ({
     return `?start_at=${startDate.toISOString()}&end_at=${endDate.toISOString()}`;
   };
 
-  // Extended date range to fetch events for the entire month
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
+  // Extended date range to fetch events for a wider range
+  // This ensures we get events that might start before the current month but extend into it
+  const startOfRange = new Date();
+  startOfRange.setDate(1); // First day of current month
+  startOfRange.setMonth(startOfRange.getMonth() - 1); // Go back one month
+  startOfRange.setHours(0, 0, 0, 0);
 
-  const endOfMonth = new Date();
-  endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-  endOfMonth.setDate(0);
-  endOfMonth.setHours(23, 59, 59, 999);
+  const endOfRange = new Date();
+  endOfRange.setMonth(endOfRange.getMonth() + 2); // Go forward two months
+  endOfRange.setDate(0); // Last day of that month
+  endOfRange.setHours(23, 59, 59, 999);
 
   // Define an async function to fetch the calendar events
   const fetchCalendarEvents = async () => {
     if (!ws?.id) return { data: [], count: 0 };
 
     const dateRangeQuery = getDateRangeQuery({
-      startDate: startOfMonth,
-      endDate: endOfMonth,
+      startDate: startOfRange,
+      endDate: endOfRange,
     });
 
     const response = await fetch(
@@ -118,8 +140,8 @@ export const CalendarProvider = ({
     queryKey: [
       'calendarEvents',
       ws?.id,
-      startOfMonth.toISOString(),
-      endOfMonth.toISOString(),
+      startOfRange.toISOString(),
+      endOfRange.toISOString(),
     ],
     queryFn: fetchCalendarEvents,
     enabled: !!ws?.id,
@@ -143,35 +165,44 @@ export const CalendarProvider = ({
 
   // Event getters
   const getEvent = useCallback(
-    (eventId: string) =>
-      events.find((e: Partial<CalendarEvent>) => e.id === eventId),
+    (eventId: string) => {
+      // Handle IDs for split multi-day events (they contain a dash and date)
+      const originalId = eventId.includes('-')
+        ? eventId.split('-')[0]
+        : eventId;
+      return events.find((e: Partial<CalendarEvent>) => e.id === originalId);
+    },
     [events]
   );
 
   const getCurrentEvents = useCallback(
     (date?: Date) => {
       const targetDate = date || new Date();
+      const targetDay = new Date(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate()
+      );
 
       return events.filter((e: CalendarEvent) => {
         const eventStart = new Date(e.start_at);
         const eventEnd = new Date(e.end_at);
 
-        // For all-day events or events spanning multiple days
-        if (eventStart.getHours() === 0 && eventEnd.getHours() === 23) {
-          return (
-            eventStart.getDate() <= targetDate.getDate() &&
-            eventEnd.getDate() >= targetDate.getDate() &&
-            eventStart.getMonth() === targetDate.getMonth() &&
-            eventStart.getFullYear() === targetDate.getFullYear()
-          );
-        }
-
-        // For normal events
-        return (
-          eventStart.getDate() === targetDate.getDate() &&
-          eventStart.getMonth() === targetDate.getMonth() &&
-          eventStart.getFullYear() === targetDate.getFullYear()
+        // Normalize dates to compare just the date part (ignoring time)
+        const eventStartDay = new Date(
+          eventStart.getFullYear(),
+          eventStart.getMonth(),
+          eventStart.getDate()
         );
+
+        const eventEndDay = new Date(
+          eventEnd.getFullYear(),
+          eventEnd.getMonth(),
+          eventEnd.getDate()
+        );
+
+        // Check if the target date falls within the event's date range
+        return eventStartDay <= targetDay && eventEndDay >= targetDay;
       });
     },
     [events]
@@ -198,23 +229,42 @@ export const CalendarProvider = ({
   // Event level calculation for overlapping events
   const getEventLevel = useCallback(
     (eventId: string) => {
-      const event = events.find((e: CalendarEvent) => e.id === eventId);
+      // Handle IDs for split multi-day events (they contain a dash and date)
+      const originalId = eventId.includes('-')
+        ? eventId.split('-')[0]
+        : eventId;
+      const event = events.find((e: CalendarEvent) => e.id === originalId);
       if (!event) return 0;
 
       const eventIndex = events.findIndex(
-        (e: CalendarEvent) => e.id === eventId
+        (e: CalendarEvent) => e.id === originalId
       );
       const prevEvents = events
         .slice(0, eventIndex)
         .filter((e: CalendarEvent) => {
-          if (e.id === eventId) return false;
+          if (e.id === originalId) return false;
 
           const eventStart = moment(event.start_at).toDate();
           const eventEnd = moment(event.end_at).toDate();
           const eStart = moment(e.start_at).toDate();
           const eEnd = moment(e.end_at).toDate();
 
-          if (eventStart.getDate() !== eStart.getDate()) return false;
+          // For multi-day events, we need to check if they overlap on the same day
+          const eventStartDay = new Date(
+            eventStart.getFullYear(),
+            eventStart.getMonth(),
+            eventStart.getDate()
+          );
+
+          const eStartDay = new Date(
+            eStart.getFullYear(),
+            eStart.getMonth(),
+            eStart.getDate()
+          );
+
+          if (eventStartDay.getTime() !== eStartDay.getTime()) return false;
+
+          // Check for time overlap
           return !(eEnd <= eventStart || eStart >= eventEnd);
         });
 
@@ -236,13 +286,17 @@ export const CalendarProvider = ({
       try {
         const supabase = createClient();
 
+        // Round start and end times to nearest 15-minute interval
+        const startDate = roundToNearest15Minutes(new Date(event.start_at));
+        const endDate = roundToNearest15Minutes(new Date(event.end_at));
+
         const { data, error } = await supabase
           .from('workspace_calendar_events')
           .insert({
             title: event.title || '',
             description: event.description || '',
-            start_at: event.start_at,
-            end_at: event.end_at,
+            start_at: startDate.toISOString(),
+            end_at: endDate.toISOString(),
             color: (event.color || 'BLUE') as SupportedColor,
             ws_id: ws.id,
           })
@@ -275,7 +329,8 @@ export const CalendarProvider = ({
       const selectedDate = dayjs(date);
       const correctDate = selectedDate.add(1, 'day');
 
-      const start_at = correctDate.toDate();
+      // Round to nearest 15-minute interval
+      const start_at = roundToNearest15Minutes(correctDate.toDate());
       const end_at = new Date(start_at);
       end_at.setHours(end_at.getHours() + 1);
 
@@ -306,11 +361,24 @@ export const CalendarProvider = ({
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
       if (!ws) throw new Error('No workspace selected');
 
+      // Round start and end times to nearest 15-minute interval if they exist
+      const updatedEvent = { ...eventUpdates };
+      if (updatedEvent.start_at) {
+        const startDate = roundToNearest15Minutes(
+          new Date(updatedEvent.start_at)
+        );
+        updatedEvent.start_at = startDate.toISOString();
+      }
+      if (updatedEvent.end_at) {
+        const endDate = roundToNearest15Minutes(new Date(updatedEvent.end_at));
+        updatedEvent.end_at = endDate.toISOString();
+      }
+
       // If this is a newly created event that hasn't been saved to the database yet
       if (pendingNewEvent && eventId === 'new') {
         const newEventData = {
           ...pendingNewEvent,
-          ...eventUpdates,
+          ...updatedEvent,
         };
 
         try {
@@ -325,32 +393,60 @@ export const CalendarProvider = ({
         }
       }
 
-      // Normal update flow for existing events
-      try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('workspace_calendar_events')
-          .update({
-            title: eventUpdates.title,
-            description: eventUpdates.description,
-            start_at: eventUpdates.start_at,
-            end_at: eventUpdates.end_at,
-            color: eventUpdates.color,
-          })
-          .eq('id', eventId)
-          .select()
-          .single();
+      // Store the latest update for this event
+      pendingUpdatesRef.current.set(eventId, updatedEvent);
 
-        if (error) throw error;
-
-        // Refresh the query cache after updating an event
-        refresh();
-
-        return data as CalendarEvent;
-      } catch (err) {
-        console.error(`Failed to update event ${eventId}:`, err);
-        throw err;
+      // Clear any existing timer
+      if (updateDebounceTimerRef.current) {
+        clearTimeout(updateDebounceTimerRef.current);
       }
+
+      // Create a promise that will resolve when the update is actually performed
+      return new Promise<CalendarEvent>((resolve, reject) => {
+        // Set a new timer
+        updateDebounceTimerRef.current = setTimeout(async () => {
+          try {
+            // Get the latest update for this event
+            const latestUpdate = pendingUpdatesRef.current.get(eventId);
+            if (!latestUpdate) {
+              reject(new Error(`No pending update found for event ${eventId}`));
+              return;
+            }
+
+            // Clear this event from pending updates
+            pendingUpdatesRef.current.delete(eventId);
+
+            // Perform the actual update
+            const supabase = createClient();
+            const { data, error } = await supabase
+              .from('workspace_calendar_events')
+              .update({
+                title: latestUpdate.title,
+                description: latestUpdate.description,
+                start_at: latestUpdate.start_at,
+                end_at: latestUpdate.end_at,
+                color: latestUpdate.color,
+              })
+              .eq('id', eventId)
+              .select()
+              .single();
+
+            if (error) throw error;
+
+            // Refresh the query cache after updating an event
+            refresh();
+
+            if (data) {
+              resolve(data as CalendarEvent);
+            } else {
+              reject(new Error(`Failed to update event ${eventId}`));
+            }
+          } catch (err) {
+            console.error(`Failed to update event ${eventId}:`, err);
+            reject(err);
+          }
+        }, 2000); // 2 second debounce
+      });
     },
     [ws, refresh, pendingNewEvent, addEvent]
   );
@@ -396,8 +492,9 @@ export const CalendarProvider = ({
       setPendingNewEvent(null);
     } else {
       // Creating a new event
-      const now = new Date();
-      const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+      const now = roundToNearest15Minutes(new Date());
+      const oneHourLater = new Date(now);
+      oneHourLater.setHours(oneHourLater.getHours() + 1);
 
       // Create a pending new event
       const newEvent: Omit<CalendarEvent, 'id'> = {

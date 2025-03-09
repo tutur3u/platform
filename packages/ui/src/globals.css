@@ -78,6 +78,10 @@
   --yellow: hsl(40 40% 30%);
   --orange: hsl(25 40% 30%);
   --red: hsl(0 40% 30%);
+  --pink: hsl(330 40% 30%);
+  --indigo: hsl(250 40% 30%);
+  --cyan: hsl(180 40% 30%);
+  --gray: hsl(0 0% 30%);
 
   --light-lime: hsl(90 80% 60%);
   --light-purple: hsl(240 70% 60%);
@@ -88,6 +92,32 @@
   --light-yellow: hsl(40 80% 60%);
   --light-orange: hsl(25 80% 60%);
   --light-red: hsl(0 70% 80%);
+  --light-indigo: hsl(250 70% 60%);
+  --light-cyan: hsl(180 70% 60%);
+  --light-gray: hsl(0 0% 60%);
+
+  /* Dynamic colors for calendar events */
+  --dynamic-blue: hsl(220 70% 50%);
+  --dynamic-red: hsl(0 70% 50%);
+  --dynamic-green: hsl(140 70% 50%);
+  --dynamic-yellow: hsl(40 70% 50%);
+  --dynamic-purple: hsl(270 70% 50%);
+  --dynamic-pink: hsl(330 70% 50%);
+  --dynamic-orange: hsl(25 70% 50%);
+  --dynamic-indigo: hsl(250 70% 50%);
+  --dynamic-cyan: hsl(180 70% 50%);
+  --dynamic-gray: hsl(0 0% 50%);
+
+  --calendar-bg-blue: hsl(220, 64%, 95%);
+  --calendar-bg-red: hsl(0, 64%, 95%);
+  --calendar-bg-green: hsl(140, 64%, 95%);
+  --calendar-bg-yellow: hsl(40, 64%, 95%);
+  --calendar-bg-purple: hsl(270, 64%, 95%);
+  --calendar-bg-pink: hsl(330, 64%, 95%);
+  --calendar-bg-orange: hsl(25, 64%, 95%);
+  --calendar-bg-indigo: hsl(250, 64%, 95%);
+  --calendar-bg-cyan: hsl(180, 64%, 95%);
+  --calendar-bg-gray: hsl(0, 0%, 95%);
 }
 
 .dark {
@@ -115,13 +145,13 @@
   --chart-3: hsl(30 80% 55%);
   --chart-4: hsl(280 65% 60%);
   --chart-5: hsl(340 75% 55%);
-  --sidebar-background: hsl(240 5.9% 10%);
-  --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
-  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-background: hsl(0 0% 3.9%);
+  --sidebar-foreground: hsl(0 0% 98%);
+  --sidebar-primary: hsl(0 0% 98%);
+  --sidebar-primary-foreground: hsl(0 0% 9%);
+  --sidebar-accent: hsl(0 0% 14.9%);
+  --sidebar-accent-foreground: hsl(0 0% 98%);
+  --sidebar-border: hsl(0 0% 14.9%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 
   /* Custom colors */
@@ -143,6 +173,29 @@
   --light-yellow: hsl(40 60% 75%);
   --light-orange: hsl(25 60% 75%);
   --light-red: hsl(0 60% 75%);
+
+  /* Dynamic colors for calendar events in dark mode */
+  --dynamic-blue: hsl(220 70% 60%);
+  --dynamic-red: hsl(0 70% 60%);
+  --dynamic-green: hsl(140 70% 60%);
+  --dynamic-yellow: hsl(40 70% 60%);
+  --dynamic-purple: hsl(270 70% 60%);
+  --dynamic-pink: hsl(330 70% 60%);
+  --dynamic-orange: hsl(25 70% 60%);
+  --dynamic-indigo: hsl(250 70% 60%);
+  --dynamic-cyan: hsl(180 70% 60%);
+  --dynamic-gray: hsl(0 0% 60%);
+
+  --calendar-bg-blue: hsl(220, 14%, 11%);
+  --calendar-bg-red: hsl(0, 14%, 11%);
+  --calendar-bg-green: hsl(140, 14%, 11%);
+  --calendar-bg-yellow: hsl(40, 14%, 11%);
+  --calendar-bg-purple: hsl(270, 14%, 11%);
+  --calendar-bg-pink: hsl(330, 14%, 11%);
+  --calendar-bg-orange: hsl(25, 14%, 11%);
+  --calendar-bg-indigo: hsl(250, 14%, 11%);
+  --calendar-bg-cyan: hsl(180, 14%, 11%);
+  --calendar-bg-gray: hsl(0, 0%, 11%);
 }
 
 @theme inline {
@@ -195,12 +248,16 @@
 
   --color-dynamic-lime: var(--lime);
   --color-dynamic-purple: var(--purple);
+  --color-dynamic-pink: var(--pink);
   --color-dynamic-blue: var(--blue);
   --color-dynamic-sky: var(--sky);
   --color-dynamic-green: var(--green);
   --color-dynamic-yellow: var(--yellow);
   --color-dynamic-orange: var(--orange);
   --color-dynamic-red: var(--red);
+  --color-dynamic-indigo: var(--indigo);
+  --color-dynamic-cyan: var(--cyan);
+  --color-dynamic-gray: var(--gray);
 
   --color-dynamic-light-lime: var(--light-lime);
   --color-dynamic-light-purple: var(--light-purple);
@@ -211,6 +268,20 @@
   --color-dynamic-light-yellow: var(--light-yellow);
   --color-dynamic-light-orange: var(--light-orange);
   --color-dynamic-light-red: var(--light-red);
+  --color-dynamic-light-indigo: var(--light-indigo);
+  --color-dynamic-light-cyan: var(--light-cyan);
+  --color-dynamic-light-gray: var(--light-gray);
+
+  --color-calendar-bg-blue: var(--calendar-bg-blue);
+  --color-calendar-bg-red: var(--calendar-bg-red);
+  --color-calendar-bg-green: var(--calendar-bg-green);
+  --color-calendar-bg-yellow: var(--calendar-bg-yellow);
+  --color-calendar-bg-purple: var(--calendar-bg-purple);
+  --color-calendar-bg-pink: var(--calendar-bg-pink);
+  --color-calendar-bg-orange: var(--calendar-bg-orange);
+  --color-calendar-bg-indigo: var(--calendar-bg-indigo);
+  --color-calendar-bg-cyan: var(--calendar-bg-cyan);
+  --color-calendar-bg-gray: var(--calendar-bg-gray);
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
