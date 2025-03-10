@@ -137,14 +137,14 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         throw new Error(errorData.message || 'Failed to create submission');
       }
 
-      // Refresh submissions
+
       const fetchedSubmissions = await fetchSubmissionsFromAPI(problem.id);
       if (fetchedSubmissions) {
         setSubmissions(fetchedSubmissions);
         setAttempts(fetchedSubmissions.length);
       }
 
-      // Add AI response to chat
+
       const newAiMessage = {
         text: `Score: ${score}/10\n\n${output}`,
         sender: 'ai' as const,
