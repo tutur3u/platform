@@ -15,7 +15,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { CloudCog, History, PlayCircle } from 'lucide-react';
+import { History, PlayCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 type HistoryEntry = {
@@ -340,9 +340,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                 <Button
                   onClick={handleTestCustomCase}
                   className="mt-3 gap-2"
-                  // disabled={
-                  //   testingCustom || !customTestCase.trim() || !input.trim()
-                  // }
+                  disabled={attempts <= 0}
                 >
                   <PlayCircle className="h-4 w-4" />
                   {testingCustom ? 'Testing...' : 'Test This Case'}
