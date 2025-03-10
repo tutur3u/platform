@@ -48,7 +48,6 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Validate required fields
   if (!input || !output || score === undefined) {
     return NextResponse.json(
       { message: 'Input, output, and score are required' },
@@ -56,8 +55,6 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-
-  // Create initial submission record
   const { data: newSubmission, error } = await supabase
     .from('nova_submissions')
     .insert({
@@ -70,13 +67,44 @@ export async function POST(request: Request, { params }: Params) {
     .select()
     .single();
 
-    
   if (error) {
     console.error('Error creating submission:', error);
     return NextResponse.json(
       { message: 'Error creating submission' },
       { status: 500 }
     );
+  }
+
+  const { data: problem, error: problemError } = await supabase
+    .from('nova_submission_highest_score')
+    .select('id, highest_score')
+    .eq('id', problemId)
+    .single();
+
+  if (problemError) {
+    const { error: insertError } = await supabase
+      .from('nova_submission_highest_score')
+      .insert({
+        problem_id: problemId,
+        highest_score: score,
+        user_id: user.id,
+      });
+
+    if (insertError) {
+      console.error('Error creating highest score record:', insertError);
+    }
+  } else if (problem.highest_score !== null && score > problem.highest_score) {
+    const { error: updateError } = await supabase
+      .from('nova_submission_highest_score')
+      .update({
+        highest_score: score,
+        user_id: user.id,
+      })
+      .eq('id', problemId);
+
+    if (updateError) {
+      console.error('Error updating highest score record:', updateError);
+    }
   }
 
   return NextResponse.json(newSubmission);

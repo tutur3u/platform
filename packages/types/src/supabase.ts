@@ -2149,7 +2149,6 @@ export type Database = {
           challenge_id: string;
           created_at: string;
           end_time: string;
-          highest_score: number | null;
           id: string;
           start_time: string;
           status: string;
@@ -2160,7 +2159,6 @@ export type Database = {
           challenge_id: string;
           created_at?: string;
           end_time: string;
-          highest_score?: number | null;
           id?: string;
           start_time: string;
           status: string;
@@ -2171,7 +2169,6 @@ export type Database = {
           challenge_id?: string;
           created_at?: string;
           end_time?: string;
-          highest_score?: number | null;
           id?: string;
           start_time?: string;
           status?: string;
@@ -2188,6 +2185,45 @@ export type Database = {
           },
           {
             foreignKeyName: 'nova_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_submission_highest_score: {
+        Row: {
+          created_at: string;
+          highest_score: number | null;
+          id: string;
+          problem_id: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          highest_score?: number | null;
+          id?: string;
+          problem_id?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          highest_score?: number | null;
+          id?: string;
+          problem_id?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_submission_highest_score_problem_id_fkey';
+            columns: ['problem_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_problems';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_submission_highest_score_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
