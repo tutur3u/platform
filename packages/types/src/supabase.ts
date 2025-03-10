@@ -2146,6 +2146,7 @@ export type Database = {
           challenge_id: string;
           created_at: string;
           end_time: string;
+          highest_score: number | null;
           id: string;
           start_time: string;
           status: string;
@@ -2156,6 +2157,7 @@ export type Database = {
           challenge_id: string;
           created_at?: string;
           end_time: string;
+          highest_score?: number | null;
           id?: string;
           start_time: string;
           status: string;
@@ -2166,6 +2168,7 @@ export type Database = {
           challenge_id?: string;
           created_at?: string;
           end_time?: string;
+          highest_score?: number | null;
           id?: string;
           start_time?: string;
           status?: string;

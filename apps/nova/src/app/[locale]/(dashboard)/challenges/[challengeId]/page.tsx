@@ -88,7 +88,7 @@ export default function Page({ params }: Props) {
     };
 
     fetchData();
-  }, [params]);
+  }, [challengeId, router, params]);
 
   const problems = challenge?.problems || [];
 
