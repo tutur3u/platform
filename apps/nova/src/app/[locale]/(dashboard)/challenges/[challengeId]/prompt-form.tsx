@@ -176,8 +176,6 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     setTestResult(null);
 
     try {
-      console.log('Testing custom case:', customTestCase);
-      console.log('Testing custom des:', problem.description);
       const response = await fetch(
         `/api/v1/problems/${problem.id}/custom-testcase`,
         {
