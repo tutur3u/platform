@@ -15,7 +15,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { History, PlayCircle } from 'lucide-react';
+import { CloudCog, History, PlayCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 type HistoryEntry = {
@@ -137,13 +137,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         throw new Error(errorData.message || 'Failed to create submission');
       }
 
-
       const fetchedSubmissions = await fetchSubmissionsFromAPI(problem.id);
       if (fetchedSubmissions) {
         setSubmissions(fetchedSubmissions);
         setAttempts(fetchedSubmissions.length);
       }
-
 
       const newAiMessage = {
         text: `Score: ${score}/10\n\n${output}`,
@@ -168,11 +166,6 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   };
 
   const handleTestCustomCase = async () => {
-    if (!input.trim()) {
-      setError('Prompt cannot be empty.');
-      return;
-    }
-
     if (!customTestCase.trim()) {
       setError('Custom test case cannot be empty.');
       return;
@@ -183,8 +176,10 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     setTestResult(null);
 
     try {
+      console.log('Testing custom case:', customTestCase);
+      console.log('Testing custom des:', problem.description);
       const response = await fetch(
-        `/api/v1/problems/${problem.id}/test-prompt`,
+        `/api/v1/problems/${problem.id}/custom-testcase`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -347,9 +342,9 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                 <Button
                   onClick={handleTestCustomCase}
                   className="mt-3 gap-2"
-                  disabled={
-                    testingCustom || !customTestCase.trim() || !input.trim()
-                  }
+                  // disabled={
+                  //   testingCustom || !customTestCase.trim() || !input.trim()
+                  // }
                 >
                   <PlayCircle className="h-4 w-4" />
                   {testingCustom ? 'Testing...' : 'Test This Case'}
@@ -384,12 +379,6 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       <span className="font-semibold">Feedback: </span>
                       <p className="mt-1 whitespace-pre-wrap text-sm">
                         {testResult.feedback}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="font-semibold">Suggestions: </span>
-                      <p className="mt-1 whitespace-pre-wrap text-sm">
-                        {testResult.suggestions}
                       </p>
                     </div>
                   </div>
