@@ -10,20 +10,12 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import {
-  Code,
-  Home,
-  LayoutDashboard,
-  List,
-  ShieldCheck,
-  Trophy,
-} from 'lucide-react';
+import { Code, LayoutDashboard, List, ShieldCheck, Trophy } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ReactNode, Suspense } from 'react';
 
 const navItems = [
-  { name: 'Home', href: '/', icon: <Home className="h-4 w-4" /> },
   {
     name: 'Dashboard',
     href: '/dashboard',

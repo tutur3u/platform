@@ -92,8 +92,8 @@ export function Structure({
             }}
             className={cn(
               isCollapsed
-                ? 'hidden min-w-[50px] md:flex'
-                : 'absolute inset-0 z-40 flex bg-background/70 md:static md:bg-transparent',
+                ? 'hidden min-w-[50px] md:flex md:bg-background/70'
+                : 'absolute inset-0 z-40 flex bg-background/70 md:static md:bg-background',
               'flex-col overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
@@ -106,7 +106,7 @@ export function Structure({
               >
                 <div
                   className={cn(
-                    isCollapsed ? 'px-2' : 'px-2 md:px-0',
+                    isCollapsed ? 'px-2' : '',
                     'flex w-full items-center justify-between gap-2'
                   )}
                 >

@@ -1,9 +1,12 @@
 'use client';
 
 import { Nav } from './nav';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
+import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
-import { usePathname } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
 import { ReactNode, useCallback, useState } from 'react';
 
 interface NavItem {
@@ -35,7 +38,6 @@ export default function Structure({
   userPopover,
   children,
 }: StructureProps) {
-  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   // Add debounced function for saving sidebar sizes
@@ -66,17 +68,25 @@ export default function Structure({
     []
   );
 
-  // Find current page title based on pathname
-  const currentPage = navItems.find(
-    (item) =>
-      pathname === item.href ||
-      pathname.startsWith(item.href + '/') ||
-      item.subItems?.some((subItem) => pathname === subItem.href)
-  );
-  const pageTitle = currentPage?.name || '';
-
   const sidebarHeader = (
-    <span className="text-lg font-semibold">{pageTitle}</span>
+    <Link href="/" className="flex w-full items-center gap-2">
+      <div
+        className={cn(
+          isCollapsed
+            ? 'flex w-full items-center justify-center'
+            : 'inline-block w-fit'
+        )}
+      >
+        <Image
+          src="/media/logos/transparent.png"
+          className="h-8 w-8"
+          width={32}
+          height={32}
+          alt="logo"
+        />
+      </div>
+      {isCollapsed || <LogoTitle text="Nova" />}
+    </Link>
   );
 
   const sidebarContent = (

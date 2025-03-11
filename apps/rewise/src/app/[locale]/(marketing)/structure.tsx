@@ -102,17 +102,22 @@ export function Structure({
   };
 
   const sidebarHeader = (
-    <Link
-      href="/new"
-      className="flex flex-none items-center justify-center gap-2"
-    >
-      <Image
-        src="/media/logos/transparent.png"
-        className="h-8 w-8"
-        width={32}
-        height={32}
-        alt="logo"
-      />
+    <Link href="/new" className="flex w-full items-center gap-2">
+      <div
+        className={cn(
+          isCollapsed
+            ? 'flex w-full items-center justify-center'
+            : 'inline-block w-fit'
+        )}
+      >
+        <Image
+          src="/media/logos/transparent.png"
+          className="h-8 w-8"
+          width={32}
+          height={32}
+          alt="logo"
+        />
+      </div>
       {isCollapsed || (
         <LogoTitle
           text="Rewise"
