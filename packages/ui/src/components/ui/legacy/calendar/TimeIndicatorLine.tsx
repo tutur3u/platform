@@ -38,9 +38,8 @@ const TimeIndicatorLine = ({
       style={{
         transform: `translateY(${totalHours * HOUR_HEIGHT}px)`,
         transition: 'transform 0.3s ease-out',
-        // Position the line only in the column for today
         left: `${(columnIndex / columnsCount) * 100}%`,
-        width: `${(1 / columnsCount) * 100}% - 2px`,
+        width: `calc(${(1 / columnsCount) * 100}% - 0.5rem)`,
       }}
     >
       {/* Left dot */}
