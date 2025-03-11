@@ -35,7 +35,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "ai": "^4.1.54",
     "eslint": "^9.22.0",
-    "next": "^15.2.1",
+    "next": "^15.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.24.2"
