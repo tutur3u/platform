@@ -173,6 +173,9 @@
   --light-yellow: hsl(40 60% 75%);
   --light-orange: hsl(25 60% 75%);
   --light-red: hsl(0 60% 75%);
+  --light-indigo: hsl(250 60% 75%);
+  --light-cyan: hsl(180 60% 75%);
+  --light-gray: hsl(0 0% 80%);
 
   /* Dynamic colors for calendar events in dark mode */
   --dynamic-blue: hsl(220 70% 60%);

@@ -7,7 +7,6 @@ import {
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
-  EventPriorityPicker,
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
@@ -92,6 +91,7 @@ const AIFormSchema = z.object({
 
 export function UnifiedEventModal() {
   const { toast } = useToast();
+
   const {
     activeEvent,
     isModalOpen,
@@ -279,7 +279,7 @@ export function UnifiedEventModal() {
 
   // Handle manual event save
   const handleManualSave = async () => {
-    if (!event.title || !event.start_at || !event.end_at) return;
+    if (!event.start_at || !event.end_at) return;
 
     // Validate dates
     const startDate = new Date(event.start_at);
@@ -309,13 +309,6 @@ export function UnifiedEventModal() {
         }
       }
       closeModal();
-      toast({
-        title: activeEvent?.id === 'new' ? 'Event created' : 'Event updated',
-        description:
-          activeEvent?.id === 'new'
-            ? 'Your event has been added to the calendar'
-            : 'Your event has been updated',
-      });
     } catch (error) {
       console.error('Error saving event:', error);
       toast({
@@ -347,10 +340,7 @@ export function UnifiedEventModal() {
       };
 
       await addEvent(calendarEvent);
-      toast({
-        title: 'Event created',
-        description: 'Your AI-generated event has been added to the calendar',
-      });
+
       closeModal();
     } catch (error) {
       console.error('Error saving AI event to calendar:', error);
@@ -378,10 +368,6 @@ export function UnifiedEventModal() {
         await deleteEvent(originalId);
       }
       closeModal();
-      toast({
-        title: 'Event deleted',
-        description: 'Your event has been removed from the calendar',
-      });
     } catch (error) {
       console.error('Error deleting event:', error);
       toast({
@@ -573,6 +559,7 @@ export function UnifiedEventModal() {
                     {/* Title */}
                     <EventTitleInput
                       value={event.title || ''}
+                      onEnter={handleManualSave}
                       onChange={(value) => setEvent({ ...event, title: value })}
                     />
 
@@ -656,12 +643,12 @@ export function UnifiedEventModal() {
                                   setEvent({ ...event, color: value })
                                 }
                               />
-                              <EventPriorityPicker
+                              {/* <EventPriorityPicker
                                 value={event.priority || 'medium'}
                                 onChange={(value) =>
                                   setEvent({ ...event, priority: value })
                                 }
-                              />
+                              /> */}
                             </div>
                             <div className="mt-2 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1">
