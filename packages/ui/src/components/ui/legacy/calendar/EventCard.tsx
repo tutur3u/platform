@@ -1,5 +1,16 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
+import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
@@ -8,8 +19,11 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Edit,
+  Palette,
   Pencil,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -51,7 +65,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const overlapCount = _overlapCount || 1;
   const overlapGroup = _overlapGroup || [id];
 
-  const { updateEvent, hideModal, openModal } = useCalendar();
+  const { updateEvent, hideModal, openModal, deleteEvent } = useCalendar();
 
   // Local state for immediate UI updates
   const [localEvent, setLocalEvent] = useState<CalendarEvent>(event);
@@ -921,165 +935,291 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // Check if the event is in the past
   const isPastEvent = new Date(end_at) < new Date();
 
+  // Handle color change
+  const handleColorChange = (newColor: SupportedColor) => {
+    const eventId = event._originalId || id;
+    updateEvent(eventId, { color: newColor })
+      .then(() => {
+        showStatusFeedback('success');
+      })
+      .catch((error) => {
+        console.error('Failed to update event color:', error);
+        showStatusFeedback('error');
+      });
+  };
+
+  // Handle delete
+  const handleDelete = () => {
+    const eventId = event._originalId || id;
+    deleteEvent(eventId).catch((error) => {
+      console.error('Failed to delete event:', error);
+    });
+  };
+
   return (
-    <div
-      ref={cardRef}
-      id={`event-${id}`}
-      className={cn(
-        'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 select-none',
-        'group transition-all hover:ring-1 focus:outline-none',
-        {
-          'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
-          'opacity-50': isPastEvent, // Lower opacity for past events
-          'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
-          'rounded-r-none border-r-4': showEndIndicator, // Special styling for continuation to next day
-        },
-        border,
-        text,
-        getBackgroundStyle() // Use dynamic background based on status
-      )}
-      style={{
-        transition:
-          isDragging || isResizing
-            ? 'none' // No transition during interaction
-            : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: isHovering || isDragging || isResizing ? 50 : 10 - level, // Use level for z-index
-        willChange: isDragging || isResizing ? 'transform' : 'auto', // GPU acceleration
-      }}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-      tabIndex={0}
-      onClick={(e) => {
-        // Only open modal if we haven't just finished dragging or resizing
-        if (!wasDraggedRef.current && !wasResizedRef.current) {
-          e.stopPropagation();
-          openModal(event._originalId || id);
-        }
-
-        // Reset state flags
-        wasDraggedRef.current = false;
-        wasResizedRef.current = false;
-      }}
-      role="button"
-      aria-label={`Event: ${title || 'Untitled event'}`}
-    >
-      {/* Continuation indicators for multi-day events */}
-      {showStartIndicator && (
-        <div className="absolute top-1/2 left-2 -translate-x-1 -translate-y-1/2">
-          <ArrowLeft className={`h-3 w-3 ${text}`} />
-        </div>
-      )}
-
-      {showEndIndicator && (
-        <div className="absolute top-1/2 right-2 translate-x-1 -translate-y-1/2">
-          <ArrowRight className={`h-3 w-3 ${text}`} />
-        </div>
-      )}
-
-      {/* Edit button overlay */}
-      <div
-        className={cn(
-          'absolute top-2 right-2 rounded-full p-0.5 opacity-0 shadow-sm',
-          'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
-          { '!opacity-0': isDragging || isResizing || updateStatus !== 'idle' } // Hide during interaction or status updates
-        )}
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          openModal(event._originalId || id);
-        }}
-      >
-        <Pencil className="h-3 w-3" />
-      </div>
-
-      {/* Status indicators */}
-      {updateStatus === 'syncing' && (
-        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/5">
-          {/* <div
-            className="animate-shimmer h-full w-full bg-gradient-to-r from-transparent via-background/10 to-transparent"
-            style={{ backgroundSize: '200% 100%' }}
-          /> */}
-          <div className="absolute top-2 right-2 rounded-full bg-background/30 p-1">
-            <RefreshCw className="h-3 w-3 animate-spin" />
-          </div>
-        </div>
-      )}
-
-      {updateStatus === 'success' && (
-        <div className="pointer-events-none absolute top-2 right-2 z-20">
-          <Check className="h-3 w-3 text-dynamic-light-green" />
-        </div>
-      )}
-
-      {updateStatus === 'error' && (
-        <div className="pointer-events-none absolute top-2 right-2 z-20">
-          <AlertTriangle className="h-3 w-3 text-dynamic-light-red" />
-        </div>
-      )}
-
-      <div
-        ref={contentRef}
-        className={cn(
-          'flex h-full flex-col text-left select-none',
-          duration <= 0.25 ? 'px-1 py-0' : 'p-1',
-          duration <= 0.5 ? 'text-xs' : 'text-sm',
-          _isMultiDay && 'items-start'
-        )}
-      >
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
         <div
+          ref={cardRef}
+          id={`event-${id}`}
           className={cn(
-            'w-full flex-1',
-            _isMultiDay && _dayPosition !== 'start' && 'pl-3'
+            'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 select-none',
+            'group transition-all hover:ring-1 focus:outline-none',
+            {
+              'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
+              'opacity-50': isPastEvent, // Lower opacity for past events
+              'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
+              'rounded-r-none border-r-4': showEndIndicator, // Special styling for continuation to next day
+            },
+            border,
+            text,
+            getBackgroundStyle() // Use dynamic background based on status
           )}
+          style={{
+            transition:
+              isDragging || isResizing
+                ? 'none' // No transition during interaction
+                : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: isHovering || isDragging || isResizing ? 50 : 10 - level, // Use level for z-index
+            willChange: isDragging || isResizing ? 'transform' : 'auto', // GPU acceleration
+          }}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+          tabIndex={0}
+          onClick={(e) => {
+            // Only open modal if we haven't just finished dragging or resizing
+            if (!wasDraggedRef.current && !wasResizedRef.current) {
+              e.stopPropagation();
+              openModal(event._originalId || id);
+            }
+
+            // Reset state flags
+            wasDraggedRef.current = false;
+            wasResizedRef.current = false;
+          }}
+          role="button"
+          aria-label={`Event: ${title || 'Untitled event'}`}
         >
+          {/* Continuation indicators for multi-day events */}
+          {showStartIndicator && (
+            <div className="absolute top-1/2 left-2 -translate-x-1 -translate-y-1/2">
+              <ArrowLeft className={`h-3 w-3 ${text}`} />
+            </div>
+          )}
+
+          {showEndIndicator && (
+            <div className="absolute top-1/2 right-2 translate-x-1 -translate-y-1/2">
+              <ArrowRight className={`h-3 w-3 ${text}`} />
+            </div>
+          )}
+
+          {/* Edit button overlay */}
           <div
             className={cn(
-              'text-xs font-semibold',
-              duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
+              'absolute top-2 right-2 rounded-full p-0.5 opacity-0 shadow-sm',
+              'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
+              {
+                '!opacity-0':
+                  isDragging || isResizing || updateStatus !== 'idle',
+              } // Hide during interaction or status updates
             )}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              openModal(event._originalId || id);
+            }}
           >
-            {localEvent.title || 'Untitled event'}
+            <Pencil className="h-3 w-3" />
           </div>
 
-          {/* Show time for regular events or start/end segments of multi-day events */}
-          {((!_isMultiDay && duration > 0.5) ||
-            (_isMultiDay &&
-              (_dayPosition === 'start' || _dayPosition === 'end'))) && (
-            <div className="mt-1 flex items-center text-xs opacity-80">
-              {_isMultiDay ? (
-                _dayPosition === 'start' ? (
-                  <span>Starts {formatEventTime(startDate)}</span>
-                ) : (
-                  <span>Ends {formatEventTime(endDate)}</span>
-                )
-              ) : (
-                <span>
-                  {formatEventTime(startDate)} - {formatEventTime(endDate)}
-                </span>
+          {/* Status indicators */}
+          {updateStatus === 'syncing' && (
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/5">
+              {/* <div
+                className="animate-shimmer h-full w-full bg-gradient-to-r from-transparent via-background/10 to-transparent"
+                style={{ backgroundSize: '200% 100%' }}
+              /> */}
+              <div className="absolute top-2 right-2 rounded-full bg-background/30 p-1">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+              </div>
+            </div>
+          )}
+
+          {updateStatus === 'success' && (
+            <div className="pointer-events-none absolute top-2 right-2 z-20">
+              <Check className="h-3 w-3 text-dynamic-light-green" />
+            </div>
+          )}
+
+          {updateStatus === 'error' && (
+            <div className="pointer-events-none absolute top-2 right-2 z-20">
+              <AlertTriangle className="h-3 w-3 text-dynamic-light-red" />
+            </div>
+          )}
+
+          <div
+            ref={contentRef}
+            className={cn(
+              'flex h-full flex-col text-left select-none',
+              duration <= 0.25 ? 'px-1 py-0' : 'p-1',
+              duration <= 0.5 ? 'text-xs' : 'text-sm',
+              _isMultiDay && 'items-start'
+            )}
+          >
+            <div
+              className={cn(
+                'w-full flex-1',
+                _isMultiDay && _dayPosition !== 'start' && 'pl-3'
+              )}
+            >
+              <div
+                className={cn(
+                  'text-xs font-semibold',
+                  duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
+                )}
+              >
+                {localEvent.title || 'Untitled event'}
+              </div>
+
+              {/* Show time for regular events or start/end segments of multi-day events */}
+              {((!_isMultiDay && duration > 0.5) ||
+                (_isMultiDay &&
+                  (_dayPosition === 'start' || _dayPosition === 'end'))) && (
+                <div className="mt-1 flex items-center text-xs opacity-80">
+                  {_isMultiDay ? (
+                    _dayPosition === 'start' ? (
+                      <span>Starts {formatEventTime(startDate)}</span>
+                    ) : (
+                      <span>Ends {formatEventTime(endDate)}</span>
+                    )
+                  ) : (
+                    <span>
+                      {formatEventTime(startDate)} - {formatEventTime(endDate)}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Show description if there's enough space */}
+              {(duration > 1 || _isMultiDay) && description && (
+                <div className="mt-1 line-clamp-2 text-xs opacity-80">
+                  {description}
+                </div>
               )}
             </div>
-          )}
+          </div>
 
-          {/* Show description if there's enough space */}
-          {(duration > 1 || _isMultiDay) && description && (
-            <div className="mt-1 line-clamp-2 text-xs opacity-80">
-              {description}
-            </div>
+          {/* Only show resize handle for non-multi-day events or start/end segments */}
+          {(!_isMultiDay || _dayPosition !== 'middle') && (
+            <div
+              ref={handleRef}
+              className={cn(
+                'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/20',
+                'h-2 transition-colors'
+              )}
+              aria-label="Resize event"
+            />
           )}
         </div>
-      </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem
+          onClick={() => openModal(event._originalId || id)}
+          className="flex items-center gap-2"
+        >
+          <Edit className="h-4 w-4" />
+          <span>Edit Event</span>
+        </ContextMenuItem>
 
-      {/* Only show resize handle for non-multi-day events or start/end segments */}
-      {(!_isMultiDay || _dayPosition !== 'middle') && (
-        <div
-          ref={handleRef}
-          className={cn(
-            'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/20',
-            'h-2 transition-colors'
-          )}
-          aria-label="Resize event"
-        />
-      )}
-    </div>
+        <ContextMenuSub>
+          <ContextMenuSubTrigger className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            <span className="text-foreground">Change Color</span>
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="grid w-56 grid-cols-2 gap-1 p-2">
+            <ContextMenuItem
+              onClick={() => handleColorChange('RED')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-red/80 bg-calendar-bg-red"></div>
+              <span>Red</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleColorChange('BLUE')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-blue/80 bg-calendar-bg-blue"></div>
+              <span>Blue</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleColorChange('GREEN')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-green/80 bg-calendar-bg-green"></div>
+              <span>Green</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleColorChange('YELLOW')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-yellow/80 bg-calendar-bg-yellow"></div>
+              <span>Yellow</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleColorChange('PURPLE')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-purple/80 bg-calendar-bg-purple"></div>
+              <span>Purple</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleColorChange('PINK')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-pink/80 bg-calendar-bg-pink"></div>
+              <span>Pink</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleColorChange('ORANGE')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-orange/80 bg-calendar-bg-orange"></div>
+              <span>Orange</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleColorChange('INDIGO')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-indigo/80 bg-calendar-bg-indigo"></div>
+              <span>Indigo</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleColorChange('CYAN')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-cyan/80 bg-calendar-bg-cyan"></div>
+              <span>Cyan</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => handleColorChange('GRAY')}
+              className="flex items-center gap-2"
+            >
+              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-gray/80 bg-calendar-bg-gray"></div>
+              <span>Gray</span>
+            </ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+
+        <ContextMenuSeparator />
+
+        <ContextMenuItem
+          onClick={handleDelete}
+          className="flex items-center gap-2"
+        >
+          <Trash2 className="h-4 w-4" />
+          <span>Delete Event</span>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }

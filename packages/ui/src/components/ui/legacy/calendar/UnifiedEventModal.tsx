@@ -7,7 +7,6 @@ import {
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
-  EventPriorityPicker,
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
@@ -560,6 +559,7 @@ export function UnifiedEventModal() {
                     {/* Title */}
                     <EventTitleInput
                       value={event.title || ''}
+                      onEnter={handleManualSave}
                       onChange={(value) => setEvent({ ...event, title: value })}
                     />
 
@@ -643,12 +643,12 @@ export function UnifiedEventModal() {
                                   setEvent({ ...event, color: value })
                                 }
                               />
-                              <EventPriorityPicker
+                              {/* <EventPriorityPicker
                                 value={event.priority || 'medium'}
                                 onChange={(value) =>
                                   setEvent({ ...event, priority: value })
                                 }
-                              />
+                              /> */}
                             </div>
                             <div className="mt-2 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1">
