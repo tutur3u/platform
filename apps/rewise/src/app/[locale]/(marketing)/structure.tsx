@@ -107,7 +107,8 @@ export function Structure({
         className={cn(
           isCollapsed
             ? 'flex w-full items-center justify-center'
-            : 'inline-block w-fit'
+            : 'inline-block w-fit',
+          'flex-none'
         )}
       >
         <Image

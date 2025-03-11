@@ -46,7 +46,7 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="fixed z-20 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-4 py-2 backdrop-blur-lg md:hidden"
+        className="fixed z-20 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 p-2 backdrop-blur-lg md:hidden"
       >
         <div className="flex h-[52px] items-center gap-2">{mobileHeader}</div>
         <div className="flex h-[52px] items-center gap-2">

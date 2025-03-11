@@ -133,13 +133,15 @@ export function Structure({
     <>
       {isCollapsed || (
         <Link href="/" className="flex flex-none items-center gap-2">
-          <Image
-            src="/media/logos/transparent.png"
-            className="h-8 w-8"
-            width={32}
-            height={32}
-            alt="logo"
-          />
+          <div className="flex-none">
+            <Image
+              src="/media/logos/transparent.png"
+              className="h-8 w-8"
+              width={32}
+              height={32}
+              alt="logo"
+            />
+          </div>
           <LogoTitle />
         </Link>
       )}
