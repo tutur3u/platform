@@ -46,7 +46,7 @@ export function Structure({
     <>
       <nav
         id="navbar"
-        className="bg-background/70 fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b px-4 py-2 backdrop-blur-lg md:hidden"
+        className="fixed z-20 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-4 py-2 backdrop-blur-lg md:hidden"
       >
         <div className="flex h-[52px] items-center gap-2">{mobileHeader}</div>
         <div className="flex h-[52px] items-center gap-2">
@@ -93,11 +93,11 @@ export function Structure({
             className={cn(
               isCollapsed
                 ? 'hidden min-w-[50px] md:flex'
-                : 'bg-background/70 absolute inset-0 z-40 flex md:static md:bg-transparent',
+                : 'absolute inset-0 z-40 flex bg-background/70 md:static md:bg-transparent',
               'flex-col overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
-            <div className="border-foreground/10 border-b p-2 md:p-0">
+            <div className="border-b border-foreground/10 p-2 md:p-0">
               <div
                 className={cn(
                   'flex h-[52px] items-center justify-center',
@@ -127,7 +127,7 @@ export function Structure({
             <div className="scrollbar-none flex flex-1 flex-col gap-4 overflow-auto">
               {sidebarContent}
             </div>
-            <div className="border-foreground/10 border-t p-2">
+            <div className="border-t border-foreground/10 p-2">
               {isCollapsed ? userPopover : actions}
             </div>
           </ResizablePanel>

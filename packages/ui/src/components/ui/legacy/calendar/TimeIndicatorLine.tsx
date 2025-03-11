@@ -34,7 +34,7 @@ const TimeIndicatorLine = ({
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 top-0 z-50 h-[2px] bg-dynamic-light-red shadow-md"
+      className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[2px] bg-dynamic-light-red shadow-md"
       style={{
         transform: `translateY(${totalHours * HOUR_HEIGHT}px)`,
         transition: 'transform 0.3s ease-out',
