@@ -1,11 +1,5 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
-import {
-  GRID_SNAP,
-  HOUR_HEIGHT,
-  LEVEL_WIDTH_OFFSET,
-  MAX_HOURS,
-  MIN_EVENT_HEIGHT,
-} from './config';
+import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
@@ -49,7 +43,13 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     color = 'BLUE',
     _isMultiDay,
     _dayPosition,
+    _overlapCount,
+    _overlapGroup,
   } = event;
+
+  // Default values for overlap properties if not provided
+  const overlapCount = _overlapCount || 1;
+  const overlapGroup = _overlapGroup || [id];
 
   const { updateEvent, hideModal, openModal } = useCalendar();
 
@@ -114,10 +114,21 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       clearTimeout(statusTimeoutRef.current);
     }
 
-    // Reset status after 1.5 seconds
+    // Reset status after a short delay, regardless of pending updates
+    // This ensures status indicators don't stay visible indefinitely
     statusTimeoutRef.current = setTimeout(() => {
-      setUpdateStatus('idle');
-      statusTimeoutRef.current = null;
+      // For success status, always clear after a short delay
+      if (status === 'success') {
+        setUpdateStatus('idle');
+        statusTimeoutRef.current = null;
+      } else if (status === 'error') {
+        // For errors, we might want to keep them visible a bit longer
+        // but still clear them eventually
+        setTimeout(() => {
+          setUpdateStatus('idle');
+        }, 3000);
+        statusTimeoutRef.current = null;
+      }
     }, 1500);
   };
 
@@ -268,18 +279,42 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
       const columnWidth = cellEl.offsetWidth;
 
-      // Use the provided level for horizontal positioning
-      const levelOffset = level * LEVEL_WIDTH_OFFSET;
-      const left = dateIdx * columnWidth + levelOffset;
+      // Calculate event index within its overlap group
+      // const overlapIndex = overlapGroup.indexOf(id);
 
-      // Calculate width based on level to prevent overflow
-      const widthPercentage = Math.max(60, 100 - level * 5); // Decrease width as level increases
-      const width = (columnWidth * widthPercentage) / 100 - 8;
+      // If this event has overlaps, distribute width among overlapping events
+      const hasOverlaps = overlapCount > 1;
 
-      cardEl.style.width = `${width}px`;
-      cardEl.style.left = `${left + dateIdx * 2}px`;
-      // Set z-index based on level to ensure proper stacking
-      cardEl.style.zIndex = `${10 * level}`; // Higher levels (more overlaps) get lower z-index
+      // Width calculation based on overlap count
+      let eventWidth, eventLeft;
+
+      if (hasOverlaps) {
+        // Calculate the position of this event within its overlap group
+        // Sort the overlap group by ID to ensure consistent ordering
+        const sortedGroup = [...overlapGroup].sort();
+        const positionIndex = sortedGroup.indexOf(id);
+
+        // Split width calculation - give each event an equal portion of the column
+        // Use a small gap between events for visual separation
+        const gap = 2;
+        const totalGap = gap * (overlapCount - 1);
+        const availableWidth = columnWidth - totalGap;
+        const singleWidth = availableWidth / overlapCount;
+
+        // Calculate width and position
+        eventWidth = singleWidth;
+        eventLeft = dateIdx * columnWidth + positionIndex * (singleWidth + gap);
+      } else {
+        // No overlaps - use full width (with small margin)
+        eventWidth = columnWidth - 8;
+        eventLeft = dateIdx * columnWidth + 4; // 4px margin on each side
+      }
+
+      cardEl.style.width = `${eventWidth}px`;
+      cardEl.style.left = `${eventLeft}px`;
+
+      // All events at same z-index for level ordering
+      cardEl.style.zIndex = '10';
 
       // Store the initial position
       currentPositionRef.current = {
@@ -316,6 +351,8 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _dayPosition,
     startHours,
     endHours,
+    overlapCount,
+    overlapGroup,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -382,7 +419,8 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
             : MAX_HOURS * HOUR_HEIGHT
           : MAX_HOURS * HOUR_HEIGHT;
 
-        eventCardEl.style.height = `${Math.min(newHeight, maxHeight)}px`;
+        const constrainedHeight = Math.min(newHeight, maxHeight);
+        eventCardEl.style.height = `${constrainedHeight}px`;
 
         // Calculate new end time
         let newEndAt: Date;
@@ -391,12 +429,11 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
           if (_dayPosition === 'start') {
             // For start segment, we're adjusting the end time of the first day
             newEndAt = new Date(startDate);
-            const newEndHour = Math.min(
-              23,
-              Math.floor(newHeight / HOUR_HEIGHT + startHours)
-            );
+            // Calculate hours directly from pixels for better precision
+            const newEndHours = constrainedHeight / HOUR_HEIGHT + startHours;
+            const newEndHour = Math.min(23, Math.floor(newEndHours));
             const newEndMinute = Math.round(
-              ((newHeight / HOUR_HEIGHT + startHours) % 1) * 60
+              (newEndHours - Math.floor(newEndHours)) * 60
             );
             newEndAt.setHours(newEndHour, newEndMinute);
             // Snap to 15-minute intervals
@@ -404,9 +441,11 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
           } else if (_dayPosition === 'end') {
             // For end segment, we're adjusting the end time of the last day
             newEndAt = new Date(endDate);
-            const newDuration = newHeight / HOUR_HEIGHT;
+            const newDuration = constrainedHeight / HOUR_HEIGHT;
             const newEndHour = Math.min(23, Math.floor(newDuration));
-            const newEndMinute = Math.round((newDuration % 1) * 60);
+            const newEndMinute = Math.round(
+              (newDuration - Math.floor(newDuration)) * 60
+            );
             newEndAt.setHours(newEndHour, newEndMinute);
             // Snap to 15-minute intervals
             newEndAt = roundToNearest15Minutes(newEndAt);
@@ -415,12 +454,11 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
           }
         } else {
           // Regular event
-          const newDuration = newHeight / HOUR_HEIGHT; // Convert pixels to hours
+          const newDuration = constrainedHeight / HOUR_HEIGHT; // Convert pixels to hours
+          // Calculate end time directly from start time + duration
           newEndAt = new Date(startDate);
-          const extraHours = Math.floor(newDuration);
-          const extraMinutes = Math.round((newDuration - extraHours) * 60);
-          newEndAt.setHours(startDate.getHours() + extraHours);
-          newEndAt.setMinutes(startDate.getMinutes() + extraMinutes);
+          // Use exact duration calculations
+          newEndAt.setTime(startDate.getTime() + newDuration * 60 * 60 * 1000);
 
           // Snap to 15-minute intervals
           newEndAt = roundToNearest15Minutes(newEndAt);
@@ -432,12 +470,10 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
         }
 
         // After calculating the rounded end time, adjust the visual height to match
-        if (!_isMultiDay) {
-          const durationInHours =
-            (newEndAt.getTime() - startDate.getTime()) / (1000 * 60 * 60);
-          const adjustedHeight = durationInHours * HOUR_HEIGHT;
-          eventCardEl.style.height = `${Math.max(MIN_EVENT_HEIGHT, adjustedHeight)}px`;
-        }
+        const durationInHours =
+          (newEndAt.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+        const adjustedHeight = durationInHours * HOUR_HEIGHT;
+        eventCardEl.style.height = `${Math.max(MIN_EVENT_HEIGHT, adjustedHeight)}px`;
 
         // Schedule the update
         scheduleUpdate({
@@ -613,32 +649,33 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
           // Calculate new times based on position
           const newDateIdx = Math.floor(newLeft / columnWidth);
-          const newStartHour = Math.floor(constrainedTop / HOUR_HEIGHT);
+          // Calculate hours directly from pixels - improve precision
+          const newStartHour = constrainedTop / HOUR_HEIGHT;
+          const newStartHourFloor = Math.floor(newStartHour);
           const newStartMinute = Math.round(
-            ((constrainedTop % HOUR_HEIGHT) / HOUR_HEIGHT) * 60
+            (newStartHour - newStartHourFloor) * 60
           );
 
           const newStartAt = new Date(startDate);
-          newStartAt.setHours(newStartHour);
+          newStartAt.setHours(newStartHourFloor);
           newStartAt.setMinutes(newStartMinute);
 
           // Snap start time to 15-minute intervals
           const roundedStartAt = roundToNearest15Minutes(newStartAt);
 
-          // Adjust the visual position to match the snapped time if needed
-          if (newStartAt.getTime() !== roundedStartAt.getTime()) {
-            const roundedHours =
-              roundedStartAt.getHours() + roundedStartAt.getMinutes() / 60;
-            const roundedTop = roundedHours * HOUR_HEIGHT;
+          // Adjust the visual position to match the snapped time
+          const roundedHours =
+            roundedStartAt.getHours() + roundedStartAt.getMinutes() / 60;
+          const roundedTop = roundedHours * HOUR_HEIGHT;
 
-            // Update the visual position to match the snapped time
-            eventCardEl.style.transform = `translate3d(${
-              newLeft - initialCardPosition.left
-            }px, ${roundedTop - initialCardPosition.top}px, 0)`;
+          // Update the visual position to match the snapped time
+          eventCardEl.style.transform = `translate3d(${Math.max(
+            (newLeft - initialCardPosition.left) / 60 - 4,
+            0
+          )}px, ${Math.max((roundedTop - initialCardPosition.top) / 60 - 4, 0)}px, 0)`;
 
-            // Update the current position reference
-            currentPositionRef.current = { top: roundedTop, left: newLeft };
-          }
+          // Update the current position reference
+          currentPositionRef.current = { top: roundedTop, left: newLeft };
 
           // Update date if moved to different day
           if (newDateIdx >= 0 && newDateIdx < dates.length) {
@@ -891,7 +928,6 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       className={cn(
         'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 select-none',
         'group transition-all hover:ring-1 focus:outline-none',
-        level > 0 && 'border border-l-2',
         {
           'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
           'opacity-50': isPastEvent, // Lower opacity for past events
@@ -984,8 +1020,9 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       <div
         ref={contentRef}
         className={cn(
-          'flex h-full flex-col p-1 text-left text-sm select-none',
-          duration <= 0.5 && 'text-xs',
+          'flex h-full flex-col text-left select-none',
+          duration <= 0.25 ? 'px-1 py-0' : 'p-1',
+          duration <= 0.5 ? 'text-xs' : 'text-sm',
           _isMultiDay && 'items-start'
         )}
       >
