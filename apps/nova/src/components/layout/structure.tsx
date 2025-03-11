@@ -1,11 +1,13 @@
 'use client';
 
-import { Sidebar } from '@/components/layout/sidebar';
-import { Button } from '@tuturuuu/ui/button';
+import { Nav } from './nav';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { cn } from '@tuturuuu/utils/format';
-import { Menu, X } from 'lucide-react';
-import { usePathname } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import { debounce } from 'lodash';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ReactNode, useCallback, useState } from 'react';
 
 interface NavItem {
   name: string;
@@ -16,105 +18,102 @@ interface NavItem {
 }
 
 interface StructureProps {
-  children: React.ReactNode;
   isAdmin: boolean;
+  defaultLayout?: number[];
+  defaultCollapsed: boolean;
+  navCollapsedSize: number;
   navItems: NavItem[];
+  actions: ReactNode;
+  userPopover: ReactNode;
+  children: ReactNode;
 }
 
 export default function Structure({
-  children,
   isAdmin,
+  defaultLayout = [20, 80],
+  defaultCollapsed = false,
+  navCollapsedSize,
   navItems,
+  actions,
+  userPopover,
+  children,
 }: StructureProps) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
-  // Find current page title based on pathname
-  const currentPage = navItems.find(
-    (item) =>
-      pathname === item.href ||
-      pathname.startsWith(item.href + '/') ||
-      item.subItems?.some((subItem) => pathname === subItem.href)
+  // Add debounced function for saving sidebar sizes
+  const debouncedSaveSizes = useCallback(
+    debounce(async (sizes: { sidebar: number; main: number }) => {
+      await fetch('/api/v1/infrastructure/sidebar/sizes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sizes),
+      });
+    }, 500),
+    []
   );
-  const pageTitle = currentPage?.name || 'Dashboard';
 
-  // Check if we're on mobile when component mounts
-  useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    setIsCollapsed(isMobile);
+  // Add debounced function for saving sidebar collapsed state
+  const debouncedSaveCollapsed = useCallback(
+    debounce(async (collapsed: boolean) => {
+      await fetch('/api/v1/infrastructure/sidebar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ collapsed }),
+      });
+    }, 500),
+    []
+  );
 
-    // Optional: Save and restore sidebar state from localStorage
-    const savedState = localStorage.getItem('sidebarCollapsed');
-    if (savedState) {
-      setIsCollapsed(savedState === 'true');
-    }
+  const sidebarHeader = (
+    <Link href="/" className="flex w-full items-center gap-2">
+      <div
+        className={cn(
+          isCollapsed
+            ? 'flex w-full items-center justify-center'
+            : 'inline-block w-fit'
+        )}
+      >
+        <Image
+          src="/media/logos/transparent.png"
+          className="h-8 w-8"
+          width={32}
+          height={32}
+          alt="logo"
+        />
+      </div>
+      {isCollapsed || <LogoTitle text="Nova" />}
+    </Link>
+  );
 
-    // Handle window resize events
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setIsCollapsed(true);
-      }
-    };
+  const sidebarContent = (
+    <Nav
+      isAdmin={isAdmin}
+      isCollapsed={isCollapsed}
+      navItems={navItems}
+      onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
+    />
+  );
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Save sidebar state when it changes
-  useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
-  }, [isCollapsed]);
+  const mobileHeader = <span className="font-semibold">Menu</span>;
 
   return (
-    <>
-      {/* Mobile navbar - visible only on small screens */}
-      <nav className="fixed z-10 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-4 py-2 backdrop-blur-lg md:hidden">
-        <div className="flex h-[52px] items-center gap-2">
-          <span className="text-lg font-semibold">{pageTitle}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        </div>
-      </nav>
-
-      <div className="flex h-screen overflow-hidden">
-        {/* Sidebar with responsive behavior */}
-        <div
-          className={cn(
-            'fixed inset-0 z-20 flex flex-col overflow-y-auto border-r bg-background/70 backdrop-blur-lg transition-transform duration-300 ease-in-out md:static md:w-64 md:bg-transparent',
-            isCollapsed
-              ? 'translate-x-[-100%] md:translate-x-0'
-              : 'translate-x-0'
-          )}
-        >
-          {/* Close button for mobile view */}
-          <div className="flex items-center justify-between p-4 md:hidden">
-            <span className="font-semibold">Menu</span>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-auto w-auto flex-none rounded-lg p-2"
-              onClick={() => setIsCollapsed(true)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-
-          <Sidebar isAdmin={isAdmin} className="flex-1" navItems={navItems} />
-        </div>
-
-        {/* Main content with responsive padding */}
-        <main className="flex-1 overflow-y-auto bg-background p-4 pt-20 md:pt-4 lg:px-8">
-          {children}
-        </main>
-      </div>
-    </>
+    <BaseStructure
+      defaultLayout={defaultLayout}
+      navCollapsedSize={navCollapsedSize}
+      isCollapsed={isCollapsed}
+      setIsCollapsed={setIsCollapsed}
+      debouncedSaveSizes={debouncedSaveSizes}
+      debouncedSaveCollapsed={debouncedSaveCollapsed}
+      mobileHeader={mobileHeader}
+      sidebarHeader={sidebarHeader}
+      sidebarContent={sidebarContent}
+      actions={actions}
+      userPopover={userPopover}
+      children={children}
+    />
   );
 }
