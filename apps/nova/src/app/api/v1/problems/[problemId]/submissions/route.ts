@@ -88,6 +88,7 @@ export async function POST(request: Request, { params }: Params) {
         problem_id: problemId,
         highest_score: score,
         user_id: user.id,
+        input: newSubmission.input,
       });
 
     if (insertError) {
@@ -99,6 +100,7 @@ export async function POST(request: Request, { params }: Params) {
       .update({
         highest_score: score,
         user_id: user.id,
+        input: newSubmission.input,
       })
       .eq('id', problemId);
 

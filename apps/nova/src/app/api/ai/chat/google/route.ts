@@ -108,3 +108,9 @@ export async function POST(req: Request) {
     );
   }
 }
+
+// add criteria for scoring => đi theo sessions => đi chung challenge - Tai
+// update leaderbaord realtimes - Khang
+// fix testing testcase  - Phat
+
+// horses algo để sau + background jobs cron 

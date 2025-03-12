@@ -2120,6 +2120,41 @@ export type Database = {
           },
         ];
       };
+      nova_rankings: {
+        Row: {
+          created_at: string;
+          id: string;
+          total_raw_score: number | null;
+          total_real_score: number | null;
+          updated_at: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          total_raw_score?: number | null;
+          total_real_score?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          total_raw_score?: number | null;
+          total_real_score?: number | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_rankings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_roles: {
         Row: {
           created_at: string;
@@ -2197,6 +2232,7 @@ export type Database = {
           created_at: string;
           highest_score: number | null;
           id: string;
+          input: string | null;
           problem_id: string | null;
           user_id: string | null;
         };
@@ -2204,6 +2240,7 @@ export type Database = {
           created_at?: string;
           highest_score?: number | null;
           id?: string;
+          input?: string | null;
           problem_id?: string | null;
           user_id?: string | null;
         };
@@ -2211,6 +2248,7 @@ export type Database = {
           created_at?: string;
           highest_score?: number | null;
           id?: string;
+          input?: string | null;
           problem_id?: string | null;
           user_id?: string | null;
         };
