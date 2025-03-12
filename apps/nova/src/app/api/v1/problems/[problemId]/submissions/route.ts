@@ -55,7 +55,7 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { data: newSubmission, error } = await supabase
+  const { error } = await supabase
     .from('nova_submissions')
     .insert({
       input: input,
