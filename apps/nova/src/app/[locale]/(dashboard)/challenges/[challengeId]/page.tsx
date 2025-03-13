@@ -252,7 +252,6 @@ async function getChallenge(
       return null;
     }
 
-
     const problemIds = problems.map((problem) => problem.id);
 
     const { data: testcases, error: testcaseError } = await supabase

@@ -414,7 +414,32 @@
     "error-500": "Internal server error",
     "error-500-description": "Something went wrong. Please try again later.",
     "virtual": "Virtual",
-    "onsite": "Onsite"
+    "onsite": "Onsite",
+    "dashboard": "Dashboard",
+    "problems": "Problems",
+    "roles": "Roles",
+    "prompt-engineering-challenges": "Prompt Engineering Challenges",
+    "start-challenge": "Start a Challenge",
+    "create-challenge": "Create Challenge",
+    "view-leaderboard": "View leaderboard",
+    "cards": {
+      "learn": {
+        "title": "Learn",
+        "description": "Explore comprehensive guides and tutorials on prompt engineering techniques."
+      },
+      "practice": {
+        "title": "Practice",
+        "description": "Tackle real-world challenges and improve your skills in a hands-on environment."
+      },
+      "innovate": {
+        "title": "Innovate",
+        "description": "Push the boundaries of what's possible with AI and create groundbreaking prompts."
+      },
+      "compete": {
+        "title": "Compete",
+        "description": "Join the leaderboard and see how your prompt engineering skills stack up against others."
+      }
+    }
   },
   "home": {
     "headline": "Your intelligent shortcut",

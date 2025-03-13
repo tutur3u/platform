@@ -246,7 +246,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       className="rounded-lg border p-4 shadow-sm"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-foreground font-semibold">
+                        <span className="font-semibold text-foreground">
                           Attempt {index + 1}
                         </span>
                         <span
@@ -263,25 +263,25 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       </div>
                       <Separator className="my-2" />
                       <div className="mt-2">
-                        <p className="text-muted-foreground text-sm font-medium">
+                        <p className="text-sm font-medium text-muted-foreground">
                           Your Prompt:
                         </p>
-                        <p className="text-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-foreground">
                           {submission.input}
                         </p>
                       </div>
                       <div className="mt-4">
-                        <p className="text-muted-foreground text-sm font-medium">
+                        <p className="text-sm font-medium text-muted-foreground">
                           Output:
                         </p>
-                        <p className="text-foreground mt-1 text-sm">
+                        <p className="mt-1 text-sm text-foreground">
                           {submission.output}
                         </p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-muted-foreground text-center">
+                  <p className="text-center text-muted-foreground">
                     No submissions yet.
                   </p>
                 )}
@@ -311,33 +311,34 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             )}
 
             {!loading && submissions.length > 0 && (
-              <div className="border-foreground/10 bg-foreground/10 text-foreground mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border p-6 shadow-md">
+              <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border border-foreground/10 bg-foreground/10 p-6 text-foreground shadow-md">
                 <h3 className="text-2xl font-semibold">Your Last Attempt</h3>
-                <div className="border-foreground/5 bg-foreground/5 w-full rounded-lg border p-4 shadow-md">
+                <div className="w-full rounded-lg border border-foreground/5 bg-foreground/5 p-4 shadow-md">
                   <div className="space-y-4">
                     <div>
-                      <p className="text-foreground text-sm">
+                      <p className="text-sm text-foreground">
                         <strong className="font-medium">Prompt: </strong>
                         {submissions[submissions?.length - 1]?.input}
                       </p>
                     </div>
                     <div>
-                      <p className="text-foreground text-sm">
+                      <p className="text-sm text-foreground">
                         <strong className="font-medium">Score: </strong>
                         {submissions[submissions?.length - 1]?.score}/10
                       </p>
                     </div>
                   </div>
+                  {/* <div>Test case output: {requestResults}</div> */}
                 </div>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="test" className="space-y-4">
-            <div className="border-foreground/10 bg-foreground/10 space-y-4 rounded-lg border p-6">
+            <div className="space-y-4 rounded-lg border border-foreground/10 bg-foreground/10 p-6">
               <div>
                 <h3 className="mb-2 text-lg font-medium">Custom Test Case</h3>
-                <p className="text-muted-foreground mb-3 text-sm">
+                <p className="mb-3 text-sm text-muted-foreground">
                   Enter a custom test case to see how your prompt would perform
                   on it. This won't count against your submission attempts.
                 </p>
@@ -364,7 +365,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
               )}
 
               {testResult && (
-                <div className="border-foreground/10 bg-foreground/5 mt-4 rounded-lg border p-4">
+                <div className="mt-4 rounded-lg border border-foreground/10 bg-foreground/5 p-4">
                   <h4 className="mb-2 text-lg font-medium">Test Results</h4>
                   <div className="space-y-3">
                     <div>
@@ -383,7 +384,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     </div>
                     <div>
                       <span className="font-semibold">Feedback: </span>
-                      <p className="mt-1 whitespace-pre-wrap text-sm">
+                      <p className="mt-1 text-sm whitespace-pre-wrap">
                         {testResult.feedback}
                       </p>
                     </div>
@@ -416,7 +417,6 @@ export default function PromptForm({ problem }: { problem: Problem }) {
 async function fetchSubmissionsFromAPI(problemId: string) {
   const response = await fetch(`/api/v1/problems/${problemId}/submissions`);
   const data = await response.json();
-
   if (response.ok) {
     return data;
   } else {
