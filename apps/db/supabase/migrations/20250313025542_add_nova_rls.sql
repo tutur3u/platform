@@ -6,6 +6,11 @@ add
 alter table
   "public"."nova_challenges"
 add
+  column "enabled" boolean not null;
+
+alter table
+  "public"."nova_challenges"
+add
   column "open_at" timestamp with time zone;
 
 alter table
@@ -77,7 +82,11 @@ select
             )
         )
       )
-      AND (previewable_at > now())
+      AND (enabled = true)
+      AND (
+        (previewable_at IS NOT NULL)
+        AND (previewable_at > now())
+      )
     )
   );
 

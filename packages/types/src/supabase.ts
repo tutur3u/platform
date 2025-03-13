@@ -2029,6 +2029,7 @@ export type Database = {
           created_at: string;
           description: string;
           duration: number;
+          enabled: boolean;
           id: string;
           open_at: string | null;
           previewable_at: string | null;
@@ -2039,6 +2040,7 @@ export type Database = {
           created_at?: string;
           description: string;
           duration: number;
+          enabled: boolean;
           id?: string;
           open_at?: string | null;
           previewable_at?: string | null;
@@ -2049,6 +2051,7 @@ export type Database = {
           created_at?: string;
           description?: string;
           duration?: number;
+          enabled?: boolean;
           id?: string;
           open_at?: string | null;
           previewable_at?: string | null;
