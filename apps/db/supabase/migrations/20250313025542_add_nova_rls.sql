@@ -6,7 +6,7 @@ add
 alter table
   "public"."nova_challenges"
 add
-  column "enabled" boolean not null;
+  column "enabled" boolean not null default false;
 
 alter table
   "public"."nova_challenges"
