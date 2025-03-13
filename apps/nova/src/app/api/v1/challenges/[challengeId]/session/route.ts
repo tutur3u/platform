@@ -38,7 +38,7 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const { startTime, endTime, status, totalScore } = await request.json();
+  const { startTime, endTime, status } = await request.json();
   const { challengeId } = await params;
   const supabase = await createClient();
 
@@ -80,7 +80,6 @@ export async function POST(request: Request, { params }: Params) {
       start_time: startTime,
       end_time: endTime,
       status: status,
-      total_score: totalScore,
       challenge_id: challengeId,
       user_id: user.id,
     })
