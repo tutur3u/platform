@@ -1,13 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { AlignVerticalSpaceBetween } from 'lucide-react';
 import { NextResponse } from 'next/server';
 
-// Replace this with your actual API key
 const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 
-// Initialize Google Generative AI Client
 const genAI = new GoogleGenerativeAI(API_KEY);
-
 const model = 'gemini-2.0-flash';
 
 export const runtime = 'edge';
