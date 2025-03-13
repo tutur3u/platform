@@ -2232,6 +2232,7 @@ export type Database = {
           id: string;
           start_time: string;
           status: string;
+          total_score: number | null;
           user_id: string;
         };
         Insert: {
@@ -2241,6 +2242,7 @@ export type Database = {
           id?: string;
           start_time: string;
           status: string;
+          total_score?: number | null;
           user_id: string;
         };
         Update: {
@@ -2250,6 +2252,7 @@ export type Database = {
           id?: string;
           start_time?: string;
           status?: string;
+          total_score?: number | null;
           user_id?: string;
         };
         Relationships: [
@@ -5740,6 +5743,10 @@ export type Database = {
       };
     };
     Functions: {
+      calculate_total_score: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       create_ai_chat: {
         Args: {
           title: string;
@@ -5915,6 +5922,13 @@ export type Database = {
           ws_id: string;
           amount: number;
         }[];
+      };
+      get_total_submission_score: {
+        Args: {
+          challenge_id_param: string;
+          user_id_param: string;
+        };
+        Returns: number;
       };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;

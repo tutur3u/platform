@@ -55,7 +55,8 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  // Insert the new submission into the `nova_submissions` table
+  const { error: insertError } = await supabase
     .from('nova_submissions')
     .insert({
       input: input,
@@ -67,13 +68,42 @@ export async function POST(request: Request, { params }: Params) {
     .select()
     .single();
 
-  if (error) {
-    console.error('Error creating submission:', error);
+  if (insertError) {
+    console.error('Error creating submission:', insertError);
     return NextResponse.json(
       { message: 'Error creating submission' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json('Submission created', { status: 201 });
+  const { data: challenge, error: challengeError } = await supabase
+    .from('nova_challenges')
+    .select('id')
+    .eq('id', problemId)
+    .single();
+
+  if (challengeError) {
+    console.error('Error fetching challenge:', challengeError);
+    return NextResponse.json(
+      { message: 'Error fetching challenge' },
+      { status: 500 }
+    );
+  }
+
+  const { error: rpcError } = await supabase.rpc('calculate_total_score', {
+      challenge_id_param: challenge?.id ?? '', // Assuming `problemId` corresponds to `challenge_id` here
+      user_id_param: user.id as string,
+    });
+
+  if (rpcError) {
+    console.error('Error updating total score:', rpcError);
+    return NextResponse.json(
+      { message: 'Error updating total score' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json('Submission created and total score updated', {
+    status: 201,
+  });
 }
