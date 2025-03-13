@@ -2025,24 +2025,33 @@ export type Database = {
       };
       nova_challenges: {
         Row: {
+          close_at: string | null;
           created_at: string;
           description: string;
           duration: number;
           id: string;
+          open_at: string | null;
+          previewable_at: string | null;
           title: string;
         };
         Insert: {
+          close_at?: string | null;
           created_at?: string;
           description: string;
           duration: number;
           id?: string;
+          open_at?: string | null;
+          previewable_at?: string | null;
           title: string;
         };
         Update: {
+          close_at?: string | null;
           created_at?: string;
           description?: string;
           duration?: number;
           id?: string;
+          open_at?: string | null;
+          previewable_at?: string | null;
           title?: string;
         };
         Relationships: [];
@@ -2116,41 +2125,6 @@ export type Database = {
             columns: ['challenge_id'];
             isOneToOne: false;
             referencedRelation: 'nova_challenges';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      nova_rankings: {
-        Row: {
-          created_at: string;
-          id: string;
-          total_raw_score: number | null;
-          total_real_score: number | null;
-          updated_at: string | null;
-          user_id: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          id?: string;
-          total_raw_score?: number | null;
-          total_real_score?: number | null;
-          updated_at?: string | null;
-          user_id?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          total_raw_score?: number | null;
-          total_real_score?: number | null;
-          updated_at?: string | null;
-          user_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_rankings_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
