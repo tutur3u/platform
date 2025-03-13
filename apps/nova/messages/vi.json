@@ -109,7 +109,10 @@
     "error-500": "Internal server error",
     "error-500-description": "Something went wrong. Please try again later.",
     "virtual": "Trực tuyến",
-    "onsite": "Trực tiếp"
+    "onsite": "Trực tiếp",
+    "dashboard": "Tổng Quan",
+    "problems": "Đề Bài",
+    "roles": "Vai Trò"
   },
   "common": {
     "alpha": "Alpha",

@@ -414,7 +414,10 @@
     "error-500": "Internal server error",
     "error-500-description": "Something went wrong. Please try again later.",
     "virtual": "Virtual",
-    "onsite": "Onsite"
+    "onsite": "Onsite",
+    "dashboard": "Dashboard",
+    "problems": "Problems",
+    "roles": "Roles"
   },
   "home": {
     "headline": "Your intelligent shortcut",

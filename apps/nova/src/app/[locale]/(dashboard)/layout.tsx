@@ -11,40 +11,11 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { Code, LayoutDashboard, List, ShieldCheck, Trophy } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ReactNode, Suspense } from 'react';
-
-const navItems = [
-  {
-    name: 'Dashboard',
-    href: '/dashboard',
-    icon: <LayoutDashboard className="h-4 w-4" />,
-  },
-  {
-    name: 'Challenges',
-    href: '/challenges',
-    icon: <Code className="h-4 w-4" />,
-  },
-  {
-    name: 'Problems',
-    href: '/problems',
-    icon: <List className="h-4 w-4" />,
-    requiresAdmin: true,
-  },
-  {
-    name: 'Leaderboard',
-    href: '/leaderboard',
-    icon: <Trophy className="h-4 w-4" />,
-  },
-  {
-    name: 'Roles',
-    href: '/roles',
-    subItems: [] as { name: string; href: string }[],
-    icon: <ShieldCheck className="h-4 w-4" />,
-    requiresAdmin: true,
-  },
-];
 
 export default async function RootLayout({
   children,
@@ -53,6 +24,7 @@ export default async function RootLayout({
 }) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
+  const t = await getTranslations('nova');
 
   const {
     data: { user },
@@ -80,6 +52,37 @@ export default async function RootLayout({
 
   const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
 
+  const navItems = [
+    {
+      name: t('dashboard'),
+      href: '/dashboard',
+      icon: <LayoutDashboard className="h-4 w-4" />,
+    },
+    {
+      name: t('challenges'),
+      href: '/challenges',
+      icon: <Code className="h-4 w-4" />,
+    },
+    {
+      name: t('problems'),
+      href: '/problems',
+      icon: <List className="h-4 w-4" />,
+      requiresAdmin: true,
+    },
+    {
+      name: t('leaderboard'),
+      href: '/leaderboard',
+      icon: <Trophy className="h-4 w-4" />,
+    },
+    {
+      name: t('roles'),
+      href: '/roles',
+      subItems: [] as { name: string; href: string }[],
+      icon: <ShieldCheck className="h-4 w-4" />,
+      requiresAdmin: true,
+    },
+  ];
+
   return (
     <Structure
       isAdmin={whitelisted?.is_admin || false}
@@ -90,7 +93,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
           }
         >
           <NavbarActions />
@@ -99,7 +102,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
           }
         >
           <UserNav hideMetadata />
