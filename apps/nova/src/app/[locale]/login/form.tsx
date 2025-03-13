@@ -320,9 +320,7 @@ export default function LoginForm() {
           {otpSent && DEV_MODE && (
             <div className="grid gap-2 md:grid-cols-2">
               <Link
-                href={
-                  window.location.origin.replace('7803', '8004') + '/monitor'
-                }
+                href={window.location.origin.replace('7803', '8004')}
                 target="_blank"
                 className="col-span-full"
                 aria-disabled={loading}
