@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { never } from 'zod';
 
 interface Params {
   params: Promise<{
@@ -91,9 +92,9 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const { error: rpcError } = await supabase.rpc('calculate_total_score', {
-      challenge_id_param: challenge?.id ?? '', // Assuming `problemId` corresponds to `challenge_id` here
-      user_id_param: user.id as string,
-    });
+    challenge_id_param: challenge?.id as never, // Assuming `problemId` corresponds to `challenge_id` here
+    user_id_param: user.id as never,
+  });
 
   if (rpcError) {
     console.error('Error updating total score:', rpcError);
