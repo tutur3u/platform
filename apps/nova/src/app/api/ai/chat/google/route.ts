@@ -7,7 +7,7 @@ const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 // Initialize Google Generative AI Client
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-const model = 'gemini-1.5-pro';
+const model = 'gemini-2.0-flash';
 
 export const runtime = 'edge';
 export const maxDuration = 60;

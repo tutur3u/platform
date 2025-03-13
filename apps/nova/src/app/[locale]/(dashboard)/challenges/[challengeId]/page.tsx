@@ -252,7 +252,7 @@ async function getChallenge(
       return null;
     }
 
-    // Fetch constraints and test cases for all problems in one request
+
     const problemIds = problems.map((problem) => problem.id);
 
     const { data: testcases, error: testcaseError } = await supabase

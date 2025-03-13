@@ -48,7 +48,6 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Validate required fields
   if (!input || !output || score === undefined) {
     return NextResponse.json(
       { message: 'Input, output, and score are required' },
@@ -56,8 +55,7 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  // Create initial submission record
-  const { data: newSubmission, error } = await supabase
+  const { error } = await supabase
     .from('nova_submissions')
     .insert({
       input: input,
@@ -77,5 +75,5 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(newSubmission);
+  return NextResponse.json('Submission created', { status: 201 });
 }
