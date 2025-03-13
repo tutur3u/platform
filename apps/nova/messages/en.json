@@ -417,7 +417,27 @@
     "onsite": "Onsite",
     "dashboard": "Dashboard",
     "problems": "Problems",
-    "roles": "Roles"
+    "roles": "Roles",
+    "startChallengeButton": "Start a Challenge",
+    "viewLeaderboardButton": "View Leaderboard",
+    "cards": {
+      "learn": {
+        "title": "Learn",
+        "description": "Explore comprehensive guides and tutorials on prompt engineering techniques."
+      },
+      "practice": {
+        "title": "Practice",
+        "description": "Tackle real-world challenges and improve your skills in a hands-on environment."
+      },
+      "innovate": {
+        "title": "Innovate",
+        "description": "Push the boundaries of what's possible with AI and create groundbreaking prompts."
+      },
+      "compete": {
+        "title": "Compete",
+        "description": "Join the leaderboard and see how your prompt engineering skills stack up against others."
+      }
+    }
   },
   "home": {
     "headline": "Your intelligent shortcut",
