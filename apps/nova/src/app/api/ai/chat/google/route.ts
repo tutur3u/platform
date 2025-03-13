@@ -59,11 +59,10 @@ export async function POST(req: Request) {
       1. **If the user's response is an effective prompt** that guides solving the problem (e.g., "Summarize the paragraph in just one sentence"), it should be **scored based on how well it would solve the task**.
       2. Only assign **0** if the response does not attempt to solve the problem or is irrelevant.
       3. Ensure the feedback clearly explains why the score was assigned, focusing on how well the response addresses the problem.
-      4. Only respond with the following JSON format:
-      {
-        "score": [number from 0 to 10],
-        "feedback": "[brief explanation of the score]"
-      }
+      4. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks. 
+      5. The score MUST be a single number (not an array).
+      6. The response MUST use this EXACT format:
+      {"score": 7, "feedback": "Your explanation here"}
     `;
     // Get the model
     const aiModel = genAI.getGenerativeModel({ model });
@@ -72,11 +71,42 @@ export async function POST(req: Request) {
     const result = await aiModel.generateContent(systemInstruction);
     const response = result.response.text();
 
+    console.log('Raw AI response:', response); // Debug logging
+
     let parsedResponse;
     try {
-      // First try to clean the response if it contains markdown code blocks
-      const cleanedResponse = response.replace(/```json\n|\n```/g, '').trim();
+      // More robust cleaning of the response
+      let cleanedResponse = response;
+
+      // Remove any markdown code blocks
+      cleanedResponse = cleanedResponse
+        .replace(/```json\n|\n```|```/g, '')
+        .trim();
+
+      // If the response still isn't valid JSON, try to extract just the JSON part
+      if (!cleanedResponse.startsWith('{')) {
+        const jsonMatch = cleanedResponse.match(/({[\s\S]*})/);
+        if (jsonMatch && jsonMatch[1]) {
+          cleanedResponse = jsonMatch[1];
+        }
+      }
+
+      console.log('Cleaned response:', cleanedResponse); // Debug logging
+
       parsedResponse = JSON.parse(cleanedResponse);
+
+      // Handle the case where score might be an array
+      if (Array.isArray(parsedResponse.score)) {
+        parsedResponse.score = parsedResponse.score[0];
+      }
+
+      // Ensure both required properties exist
+      if (
+        parsedResponse.score === undefined ||
+        parsedResponse.feedback === undefined
+      ) {
+        throw new Error('Missing required properties in response');
+      }
 
       // Validate the response structure
       if (
@@ -88,21 +118,26 @@ export async function POST(req: Request) {
         throw new Error('Invalid response format');
       }
     } catch (parseError) {
+      console.error('Parse error:', parseError); // Debug logging
+
       return NextResponse.json(
         {
           message:
             'Invalid response format. Expected JSON with score and feedback.',
           rawResponse: response,
+          error: (parseError as Error).message,
         },
-        { status: 422 } // Changed status to 422 Unprocessable Entity
+        { status: 422 }
       );
     }
 
     return NextResponse.json({ response: parsedResponse }, { status: 200 });
   } catch (error: any) {
+    console.error('General error:', error); // Debug logging
+
     return NextResponse.json(
       {
-        message: `Can not complete the request.\n\n${error?.stack}`,
+        message: `Can not complete the request.\n\n${error?.stack || error.message}`,
       },
       { status: 500 }
     );
