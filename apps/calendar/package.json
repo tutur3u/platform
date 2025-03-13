@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.6.0",
-    "@tanstack/react-query": "^5.67.2",
+    "@tanstack/react-query": "^5.67.3",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
@@ -23,10 +23,10 @@
     "negotiator": "^1.0.0",
     "next": "^15.2.2",
     "next-intl": "^3.26.5",
-    "next-themes": "^0.4.5",
+    "next-themes": "^0.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwindcss": "^4.0.12"
+    "tailwindcss": "^4.0.13"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",
