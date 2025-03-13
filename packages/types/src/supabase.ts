@@ -2165,7 +2165,6 @@ export type Database = {
           example_output: string;
           id: string;
           max_input_length: number;
-          scoring_criteria: string | null;
           title: string;
         };
         Insert: {
@@ -2176,7 +2175,6 @@ export type Database = {
           example_output: string;
           id?: string;
           max_input_length: number;
-          scoring_criteria?: string | null;
           title: string;
         };
         Update: {
@@ -2187,7 +2185,6 @@ export type Database = {
           example_output?: string;
           id?: string;
           max_input_length?: number;
-          scoring_criteria?: string | null;
           title?: string;
         };
         Relationships: [
