@@ -37,7 +37,6 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
- 
   const { data: submissions, error } = await supabase
     .from('nova_submissions')
     .select('score, input')

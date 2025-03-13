@@ -1,6 +1,6 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Google Generative AI Client
 const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
@@ -13,10 +13,10 @@ interface Params {
   }>;
 }
 
-export async function POST(request: Request, {  }: Params) {
+export async function POST(request: Request, {}: Params) {
   const supabase = await createClient();
   const { prompt, customTestCase, problemDescription } = await request.json();
-//   const { problemId } = await params;
+  //   const { problemId } = await params;
 
   const {
     data: { user },
@@ -29,7 +29,10 @@ export async function POST(request: Request, {  }: Params) {
   // Validate required fields
   if (!prompt || !customTestCase || !problemDescription) {
     return NextResponse.json(
-      { message: 'Prompt, custom test case, and problem description are required' },
+      {
+        message:
+          'Prompt, custom test case, and problem description are required',
+      },
       { status: 400 }
     );
   }

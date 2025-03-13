@@ -52,6 +52,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [submissions, setSubmissions] = useState<HistoryEntry[]>([]);
   const [attempts, setAttempts] = useState(0);
+  const [requestResults, setRequestResults] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -117,6 +118,9 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       const data = await response.json();
       const output = data.response.feedback || '';
       const score = data.response.score || 0;
+      const results = data.response.testCaseResults;
+      console.log('request result: ', results);
+      setRequestResults(results);
 
       // Add to submissions
       const submissionResponse = await fetch(
@@ -318,6 +322,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       </p>
                     </div>
                   </div>
+                  {/* <div>Test case output: {requestResults}</div> */}
                 </div>
               </div>
             )}
@@ -406,7 +411,6 @@ export default function PromptForm({ problem }: { problem: Problem }) {
 async function fetchSubmissionsFromAPI(problemId: string) {
   const response = await fetch(`/api/v1/problems/${problemId}/submissions`);
   const data = await response.json();
-
   if (response.ok) {
     return data;
   } else {
