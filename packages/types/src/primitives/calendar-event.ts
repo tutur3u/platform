@@ -20,4 +20,9 @@ export interface CalendarEvent {
   _originalId?: string;
   _isMultiDay?: boolean;
   _dayPosition?: 'start' | 'middle' | 'end';
+
+  // Properties for overlap calculations
+  _level?: number;
+  _overlapCount?: number;
+  _overlapGroup?: string[];
 }

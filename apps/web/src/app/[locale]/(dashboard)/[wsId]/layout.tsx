@@ -40,7 +40,7 @@ import {
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { type ReactNode, Suspense } from 'react';
+import { ReactNode, Suspense } from 'react';
 
 interface LayoutProps {
   params: Promise<{
@@ -446,43 +446,34 @@ export default async function Layout({ children, params }: LayoutProps) {
     );
 
   return (
-    <>
-      <Structure
-        wsId={wsId}
-        user={user}
-        workspace={workspace}
-        defaultLayout={defaultLayout}
-        defaultCollapsed={defaultCollapsed}
-        navCollapsedSize={4}
-        links={navLinks}
-        actions={
-          <Suspense
-            fallback={
-              <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions />
-          </Suspense>
-        }
-        userPopover={
-          <Suspense
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
-      >
-        {children}
-      </Structure>
-
-      {/* {(await verifySecret({
-        forceAdmin: true,
-        wsId,
-        name: 'ENABLE_CHAT',
-        value: 'true',
-      })) && <FleetingNavigator wsId={wsId} />} */}
-    </>
+    <Structure
+      wsId={wsId}
+      user={user}
+      workspace={workspace}
+      defaultLayout={defaultLayout}
+      defaultCollapsed={defaultCollapsed}
+      navCollapsedSize={4}
+      links={navLinks}
+      actions={
+        <Suspense
+          fallback={
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <NavbarActions />
+        </Suspense>
+      }
+      userPopover={
+        <Suspense
+          fallback={
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <UserNav hideMetadata />
+        </Suspense>
+      }
+    >
+      {children}
+    </Structure>
   );
 }

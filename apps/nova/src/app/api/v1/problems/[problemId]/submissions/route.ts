@@ -55,7 +55,7 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { data: newSubmission, error } = await supabase
+  const { error } = await supabase
     .from('nova_submissions')
     .insert({
       input: input,
@@ -75,37 +75,5 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { data: problem, error: problemError } = await supabase
-    .from('nova_submission_highest_score')
-    .select('id, highest_score')
-    .eq('id', problemId)
-    .single();
-
-  if (problemError) {
-    const { error: insertError } = await supabase
-      .from('nova_submission_highest_score')
-      .insert({
-        problem_id: problemId,
-        highest_score: score,
-        user_id: user.id,
-      });
-
-    if (insertError) {
-      console.error('Error creating highest score record:', insertError);
-    }
-  } else if (problem.highest_score !== null && score > problem.highest_score) {
-    const { error: updateError } = await supabase
-      .from('nova_submission_highest_score')
-      .update({
-        highest_score: score,
-        user_id: user.id,
-      })
-      .eq('id', problemId);
-
-    if (updateError) {
-      console.error('Error updating highest score record:', updateError);
-    }
-  }
-
-  return NextResponse.json(newSubmission);
+  return NextResponse.json('Submission created', { status: 201 });
 }

@@ -85,6 +85,7 @@ export async function POST(request: Request) {
         title: body.title,
         description: body.description,
         duration: body.duration,
+        enabled: false,
       })
       .select()
       .single();

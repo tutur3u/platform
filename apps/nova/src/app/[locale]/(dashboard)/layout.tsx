@@ -1,21 +1,21 @@
+import NavbarActions from '../(marketing)/navbar-actions';
+import { UserNav } from '../(marketing)/user-nav';
 import Structure from '@/components/layout/structure';
+import {
+  MAIN_CONTENT_SIZE_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+  SIDEBAR_SIZE_COOKIE_NAME,
+} from '@/constants/common';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import {
-  Code,
-  Home,
-  LayoutDashboard,
-  List,
-  ShieldCheck,
-  Trophy,
-} from 'lucide-react';
+import { Code, LayoutDashboard, List, ShieldCheck, Trophy } from 'lucide-react';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import React from 'react';
+import { ReactNode, Suspense } from 'react';
 
 const navItems = [
-  { name: 'Home', href: '/', icon: <Home className="h-4 w-4" /> },
   {
     name: 'Dashboard',
     href: '/dashboard',
@@ -49,7 +49,7 @@ const navItems = [
 export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
@@ -68,8 +68,44 @@ export default async function RootLayout({
 
   if (!whitelisted?.enabled) redirect('/not-whitelisted');
 
+  const sidebarSize = (await cookies()).get(SIDEBAR_SIZE_COOKIE_NAME);
+  const mainSize = (await cookies()).get(MAIN_CONTENT_SIZE_COOKIE_NAME);
+
+  const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
+
+  const defaultLayout =
+    sidebarSize !== undefined && mainSize !== undefined
+      ? [JSON.parse(sidebarSize.value), JSON.parse(mainSize.value)]
+      : undefined;
+
+  const defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : undefined;
+
   return (
-    <Structure isAdmin={whitelisted?.is_admin || false} navItems={navItems}>
+    <Structure
+      isAdmin={whitelisted?.is_admin || false}
+      defaultLayout={defaultLayout}
+      defaultCollapsed={defaultCollapsed}
+      navCollapsedSize={4}
+      navItems={navItems}
+      actions={
+        <Suspense
+          fallback={
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <NavbarActions />
+        </Suspense>
+      }
+      userPopover={
+        <Suspense
+          fallback={
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <UserNav hideMetadata />
+        </Suspense>
+      }
+    >
       {children}
     </Structure>
   );

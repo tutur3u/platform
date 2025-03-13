@@ -129,10 +129,12 @@ export const FormSection = ({
 export const EventTitleInput = ({
   value,
   onChange,
+  onEnter,
   disabled = false,
 }: {
   value: string;
   onChange: (value: string) => void;
+  onEnter?: () => void;
   disabled?: boolean;
 }) => (
   <div className="space-y-2">
@@ -146,6 +148,14 @@ export const EventTitleInput = ({
       onChange={(e) => onChange(e.target.value)}
       className="border-none bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0"
       disabled={disabled}
+      onFocus={(e) => e.target.select()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onEnter?.();
+        }
+      }}
+      autoFocus
     />
   </div>
 );
