@@ -171,6 +171,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   };
 
   const handleTestCustomCase = async () => {
+    if (!input.trim()) {
+      setError('Prompt cannot be empty when testing a custom case.');
+      return;
+    }
+
     if (!customTestCase.trim()) {
       setError('Custom test case cannot be empty.');
       return;
