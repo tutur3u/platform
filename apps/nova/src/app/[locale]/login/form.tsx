@@ -73,10 +73,7 @@ export default function LoginForm() {
 
       // if on DEV_MODE, auto-open inbucket
       if (DEV_MODE) {
-        window.open(
-          window.location.origin.replace('7805', '8004') + '/monitor',
-          '_blank'
-        );
+        window.open(window.location.origin.replace('7805', '8004'), '_blank');
       }
     }
   }, [otpSent]);
@@ -323,9 +320,7 @@ export default function LoginForm() {
           {otpSent && DEV_MODE && (
             <div className="grid gap-2 md:grid-cols-2">
               <Link
-                href={
-                  window.location.origin.replace('7803', '8004') + '/monitor'
-                }
+                href={window.location.origin.replace('7803', '8004')}
                 target="_blank"
                 className="col-span-full"
                 aria-disabled={loading}
