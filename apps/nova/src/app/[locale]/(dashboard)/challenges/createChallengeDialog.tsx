@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -19,6 +20,7 @@ export default function CreateChallengeDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const t = useTranslations('nova');
 
   const onSubmit = async (values: ChallengeFormValues) => {
     try {
@@ -63,7 +65,7 @@ export default function CreateChallengeDialog() {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          Create Challenge
+          {t('create-challenge')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">

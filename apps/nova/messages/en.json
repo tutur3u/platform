@@ -418,8 +418,10 @@
     "dashboard": "Dashboard",
     "problems": "Problems",
     "roles": "Roles",
-    "startChallengeButton": "Start a Challenge",
-    "viewLeaderboardButton": "View Leaderboard",
+    "prompt-engineering-challenges": "Prompt Engineering Challenges",
+    "start-challenge": "Start a Challenge",
+    "create-challenge": "Create Challenge",
+    "view-leaderboard": "View leaderboard",
     "cards": {
       "learn": {
         "title": "Learn",

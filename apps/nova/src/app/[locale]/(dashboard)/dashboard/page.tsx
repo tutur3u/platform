@@ -79,12 +79,12 @@ export default async function HomePage() {
       <div className="flex flex-wrap justify-center gap-4">
         <Link href="/challenges">
           <Button size="lg" className="gap-2">
-            {t('startChallengeButton')} <ArrowRight className="h-4 w-4" />
+            {t('start-challenge')} <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
         <Link href="/leaderboard">
           <Button size="lg" variant="secondary" className="gap-2">
-            {t('viewLeaderboardButton')} <Trophy className="h-4 w-4" />
+            {t('view-leaderboard')} <Trophy className="h-4 w-4" />
           </Button>
         </Link>
       </div>

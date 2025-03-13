@@ -6,12 +6,14 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types/db';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 export default async function ChallengesPage() {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
+  const t = await getTranslations('nova');
 
   const {
     data: { user },
@@ -30,7 +32,9 @@ export default async function ChallengesPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Prompt Engineering Challenges</h1>
+        <h1 className="text-3xl font-bold">
+          {t('prompt-engineering-challenges')}
+        </h1>
         {isAdmin && <CreateChallengeDialog />}
       </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

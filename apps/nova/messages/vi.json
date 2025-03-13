@@ -113,8 +113,10 @@
     "dashboard": "Tổng Quan",
     "problems": "Đề Bài",
     "roles": "Vai Trò",
-    "startChallengeButton": "Bắt đầu thử thách",
-    "viewLeaderboardButton": "Xem bảng xếp hạng",
+    "prompt-engineering-challenges": "Thử thách về Prompt Engineering",
+    "start-challenge": "Bắt đầu thử thách",
+    "create-challenge": "Tạo Thử Thách Mới",
+    "view-leaderboard": "Xem bảng xếp hạng",
     "cards": {
       "learn": {
         "title": "Học hỏi",
