@@ -144,7 +144,8 @@ export default function Page({ params }: Props) {
 
         <div className="mb-6 rounded-lg bg-primary/10 p-4">
           <p className="text-lg font-semibold">
-            Total Score: {data.total_score}
+            {/* Total Score: {data.total_score} */}
+            Total Score: To be calculated...
           </p>
         </div>
 
