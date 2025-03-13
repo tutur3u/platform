@@ -44,7 +44,7 @@
     "dayjs": "^1.11.13",
     "lodash": "^4.17.21",
     "lucide-react": "^0.477.0",
-    "mermaid": "^11.4.1",
+    "mermaid": "^11.5.0",
     "moment": "^2.30.1",
     "negotiator": "^1.0.0",
     "next": "^15.2.2",
@@ -101,5 +101,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@10.6.2"
+  "packageManager": "pnpm@10.6.3"
 }

@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.6.2",
+  "packageManager": "pnpm@10.6.3",
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "clsx": "^2.1.1",
