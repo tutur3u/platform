@@ -114,6 +114,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to process submission');
+      }
+
       const data = await response.json();
       const output = data.response.feedback || '';
       const score = data.response.score || 0;

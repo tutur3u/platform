@@ -26,7 +26,7 @@ interface Problem {
 }
 
 export default function PromptForm({ problem }: { problem: Problem }) {
-  const [_messages, setMessages] = useState<
+  const [messages, setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
   const [input, setInput] = useState('');
@@ -78,6 +78,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
           exampleOutput: problem.exampleOutput,
         }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to process submission');
+      }
 
       const data = await response.json();
       const output = data.response.feedback || '';
@@ -144,7 +149,6 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         description: error.message || 'Something went wrong',
         variant: 'destructive',
       });
-      setError(error.message || 'Failed to test prompt with custom test case');
     } finally {
       setTestingCustom(false);
     }
@@ -178,7 +182,10 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     <div>
                       <p className="text-foreground text-sm">
                         <strong className="font-medium">Prompt: </strong>
-                        {input}
+                        {messages.length > 0 &&
+                        messages[messages.length - 2]?.sender === 'user'
+                          ? messages[messages.length - 2]?.text
+                          : 'No attempts yet'}
                       </p>
                     </div>
                     <div>
