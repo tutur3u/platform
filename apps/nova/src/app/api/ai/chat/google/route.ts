@@ -125,7 +125,7 @@ export async function POST(req: Request) {
           message:
             'Invalid response format. Expected JSON with score and feedback.',
           rawResponse: response,
-          error: parseError.message,
+          error: (parseError as Error).message,
         },
         { status: 422 }
       );
