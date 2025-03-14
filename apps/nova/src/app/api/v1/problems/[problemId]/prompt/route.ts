@@ -20,7 +20,7 @@ export const preferredRegion = 'sin1';
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
 
-  const { prompt, customTestCase } = await req.json();
+  const { prompt } = await req.json();
   const { problemId } = await params;
 
   const {
@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!prompt || !customTestCase) {
+  if (!prompt) {
     return NextResponse.json(
       { message: 'Incomplete data provided.' },
       { status: 400 }
@@ -58,13 +58,29 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  const { data: testCases, error: testCasesError } = await supabase
+    .from('nova_problem_testcases')
+    .select('*')
+    .eq('problem_id', problemId);
+
+  if (testCasesError) {
+    return NextResponse.json(
+      { message: 'Error fetching test cases.' },
+      { status: 500 }
+    );
+  }
+
+  const testCaseStrings = testCases
+    .map((testCase) => testCase.input)
+    .join('\n');
+
   try {
     // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
       You are an examiner in a prompt engineering competition.
       You will be provided with:
       - A problem description
-      - One test case
+      - One or more test cases
       - An example input/output (optional)
       - A user's answer or prompt that attempts to solve the problem
 
@@ -75,7 +91,7 @@ export async function POST(req: Request, { params }: Params) {
 
       Here is the problem context:
       Problem: ${problem.description}
-      Test Case: ${customTestCase}
+      Test Cases: ${testCaseStrings}
       Example Input: ${problem.example_input ?? ''}
       Example Output: ${problem.example_output ?? ''}
       User's Prompt: ${prompt}
@@ -96,9 +112,10 @@ export async function POST(req: Request, { params }: Params) {
       6. The response MUST use this EXACT format:
       {"score": 7, "feedback": "Your explanation here"}
     `;
-
-    // Get the model and generate content
+    // Get the model
     const aiModel = genAI.getGenerativeModel({ model });
+
+    // Send the instruction to Google API
     const result = await aiModel.generateContent(systemInstruction);
     const response = result.response.text();
 
@@ -119,7 +136,8 @@ export async function POST(req: Request, { params }: Params) {
 
       return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
+      console.error('Parse error:', parseError);
+
       return NextResponse.json(
         {
           message:
@@ -129,10 +147,11 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
   } catch (error: any) {
-    console.error('Error processing request:', error);
+    console.error('General error:', error);
+
     return NextResponse.json(
       {
-        message: `Cannot complete the request: ${error?.message || 'Unknown error'}`,
+        message: `Can not complete the request.\n\n${error?.stack || error.message}`,
       },
       { status: 500 }
     );
