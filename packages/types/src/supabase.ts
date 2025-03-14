@@ -2023,31 +2023,31 @@ export type Database = {
           },
         ];
       };
-      nova_challenge_criterias: {
+      nova_challenge_criteria: {
         Row: {
           challenge_id: string;
           created_at: string;
+          description: string;
           id: string;
           name: string;
-          value: string;
         };
         Insert: {
           challenge_id: string;
           created_at?: string;
+          description: string;
           id?: string;
           name: string;
-          value: string;
         };
         Update: {
           challenge_id?: string;
           created_at?: string;
+          description?: string;
           id?: string;
           name?: string;
-          value?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'nova_challenge_criterias_challenge_id_fkey';
+            foreignKeyName: 'nova_challenge_criteria_challenge_id_fkey';
             columns: ['challenge_id'];
             isOneToOne: false;
             referencedRelation: 'nova_challenges';
@@ -2115,7 +2115,7 @@ export type Database = {
             foreignKeyName: 'nova_problem_criteria_scores_criteria_id_fkey';
             columns: ['criteria_id'];
             isOneToOne: false;
-            referencedRelation: 'nova_challenge_criterias';
+            referencedRelation: 'nova_challenge_criteria';
             referencedColumns: ['id'];
           },
           {
@@ -2164,7 +2164,7 @@ export type Database = {
           example_input: string;
           example_output: string;
           id: string;
-          max_input_length: number;
+          max_prompt_length: number;
           title: string;
         };
         Insert: {
@@ -2174,7 +2174,7 @@ export type Database = {
           example_input: string;
           example_output: string;
           id?: string;
-          max_input_length: number;
+          max_prompt_length: number;
           title: string;
         };
         Update: {
@@ -2184,7 +2184,7 @@ export type Database = {
           example_input?: string;
           example_output?: string;
           id?: string;
-          max_input_length?: number;
+          max_prompt_length?: number;
           title?: string;
         };
         Relationships: [
@@ -2266,31 +2266,60 @@ export type Database = {
           },
         ];
       };
-      nova_submissions: {
+      nova_submission_outputs: {
         Row: {
           created_at: string;
           id: number;
-          input: string;
           output: string;
+          submission_id: number;
+        };
+        Insert: {
+          created_at?: string;
+          id?: number;
+          output: string;
+          submission_id: number;
+        };
+        Update: {
+          created_at?: string;
+          id?: number;
+          output?: string;
+          submission_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_submission_outputs_submission_id_fkey';
+            columns: ['submission_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_submissions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_submissions: {
+        Row: {
+          created_at: string;
+          feedback: string;
+          id: number;
           problem_id: string;
+          prompt: string;
           score: number;
           user_id: string;
         };
         Insert: {
           created_at?: string;
+          feedback: string;
           id?: number;
-          input: string;
-          output: string;
           problem_id: string;
+          prompt: string;
           score: number;
           user_id: string;
         };
         Update: {
           created_at?: string;
+          feedback?: string;
           id?: number;
-          input?: string;
-          output?: string;
           problem_id?: string;
+          prompt?: string;
           score?: number;
           user_id?: string;
         };

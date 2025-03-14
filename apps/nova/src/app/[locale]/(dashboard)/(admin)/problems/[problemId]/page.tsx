@@ -84,7 +84,7 @@ export default function ProblemPage({ params }: Props) {
               id: problem.id,
               title: problem.title,
               description: problem.description,
-              maxInputLength: problem.max_input_length,
+              maxPromptLength: problem.max_prompt_length,
               exampleInput: problem.example_input,
               exampleOutput: problem.example_output,
             }}
@@ -97,7 +97,7 @@ export default function ProblemPage({ params }: Props) {
             id: problem.id,
             title: problem.title,
             description: problem.description,
-            maxInputLength: problem.max_input_length,
+            maxPromptLength: problem.max_prompt_length,
             exampleInput: problem.example_input,
             exampleOutput: problem.example_output,
             testcases: problem.testcases.map(

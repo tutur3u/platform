@@ -39,7 +39,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const { data: submissions, error } = await supabase
     .from('nova_submissions')
-    .select('score, input')
+    .select('prompt, score')
     .eq('problem_id', problemId)
     .eq('user_id', user.id);
 
@@ -62,7 +62,7 @@ export async function POST(req: Request, { params }: Params) {
     prev.score > current.score ? prev : current
   );
 
-  const userInput = highestScoreSubmission.input;
+  const userInput = highestScoreSubmission.prompt;
 
   try {
     // System Instruction for Evaluation with strict JSON output

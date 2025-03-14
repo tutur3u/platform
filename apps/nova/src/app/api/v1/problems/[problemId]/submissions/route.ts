@@ -37,7 +37,7 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { input, output, score } = await request.json();
+  const { prompt, feedback, score } = await request.json();
   const { problemId } = await params;
 
   const {
@@ -48,9 +48,9 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!input || !output || score === undefined) {
+  if (!prompt || !feedback || score === undefined) {
     return NextResponse.json(
-      { message: 'Input, output, and score are required' },
+      { message: 'Prompt, feedback, and score are required' },
       { status: 400 }
     );
   }
@@ -58,8 +58,8 @@ export async function POST(request: Request, { params }: Params) {
   const { error } = await supabase
     .from('nova_submissions')
     .insert({
-      input: input,
-      output: output,
+      prompt: prompt,
+      feedback: feedback,
       score: score,
       problem_id: problemId,
       user_id: user.id,

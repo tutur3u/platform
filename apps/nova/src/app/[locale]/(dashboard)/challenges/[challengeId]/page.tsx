@@ -141,7 +141,7 @@ export default function Page({ params }: Props) {
   if (!session) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-muted-foreground">
+        <p className="text-muted-foreground text-xl font-semibold">
           Loading...
         </p>
       </div>
@@ -170,8 +170,8 @@ export default function Page({ params }: Props) {
                 id: problems[currentProblemIndex]?.id || '',
                 title: problems[currentProblemIndex]?.title || '',
                 description: problems[currentProblemIndex]?.description || '',
-                maxInputLength:
-                  problems[currentProblemIndex]?.max_input_length || 0,
+                maxPromptLength:
+                  problems[currentProblemIndex]?.max_prompt_length || 0,
                 exampleInput:
                   problems[currentProblemIndex]?.example_input || '',
                 exampleOutput:
@@ -188,8 +188,8 @@ export default function Page({ params }: Props) {
               id: problems[currentProblemIndex]?.id || '',
               title: problems[currentProblemIndex]?.title || '',
               description: problems[currentProblemIndex]?.description || '',
-              maxInputLength:
-                problems[currentProblemIndex]?.max_input_length || 0,
+              maxPromptLength:
+                problems[currentProblemIndex]?.max_prompt_length || 0,
               exampleInput: problems[currentProblemIndex]?.example_input || '',
               exampleOutput:
                 problems[currentProblemIndex]?.example_output || '',
@@ -275,7 +275,7 @@ async function getChallenge(
         example_input: problem.example_input,
         example_output: problem.example_output,
         challenge_id: challenge.id,
-        max_input_length: problem.max_input_length,
+        max_prompt_length: problem.max_prompt_length,
         created_at: problem.created_at,
         testcases: problemTestcases,
       };

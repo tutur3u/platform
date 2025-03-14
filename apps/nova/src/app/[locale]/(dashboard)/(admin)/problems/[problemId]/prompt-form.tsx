@@ -19,7 +19,7 @@ interface Problem {
   id: string;
   title: string;
   description: string;
-  maxInputLength: number;
+  maxPromptLength: number;
   exampleInput: string;
   exampleOutput: string;
   testcases: string[];
@@ -50,7 +50,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       return;
     }
 
-    if (input.length > problem.maxInputLength) {
+    if (input.length > problem.maxPromptLength) {
       setError('Input length exceeds the maximum allowed length.');
       return;
     }

@@ -1375,7 +1375,7 @@ insert into
         challenge_id,
         example_input,
         example_output,
-        max_input_length
+        max_prompt_length
     )
 values
     (

@@ -16,7 +16,6 @@ interface Params {
 export async function POST(request: Request, {}: Params) {
   const supabase = await createClient();
   const { prompt, customTestCase, problemDescription } = await request.json();
-  //   const { problemId } = await params;
 
   const {
     data: { user },
