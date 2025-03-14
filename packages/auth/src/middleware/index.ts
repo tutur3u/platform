@@ -3,6 +3,10 @@ import { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+// Export token-based authentication middleware
+export * from './token-auth';
+export * from './token-param-auth';
+
 interface CentralizedAuthOptions {
   /**
    * The URL of the central authentication web app (without trailing slash)
@@ -78,7 +82,7 @@ export function createCentralizedAuthMiddleware(
       );
       response.headers.set(
         'Access-Control-Allow-Headers',
-        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url'
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url, X-Cross-App-Token'
       );
 
       return response;
@@ -100,7 +104,7 @@ export function createCentralizedAuthMiddleware(
         );
         res.headers.set(
           'Access-Control-Allow-Headers',
-          'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url'
+          'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url, X-Cross-App-Token'
         );
       }
     }
@@ -148,7 +152,7 @@ export function createCentralizedAuthMiddleware(
           );
           redirectResponse.headers.set(
             'Access-Control-Allow-Headers',
-            'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url'
+            'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url, X-Cross-App-Token'
           );
         }
       }
@@ -194,7 +198,7 @@ export function createReturnUrlHandler(
           );
           redirectResponse.headers.set(
             'Access-Control-Allow-Headers',
-            'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url'
+            'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url, X-Cross-App-Token'
           );
         }
 
