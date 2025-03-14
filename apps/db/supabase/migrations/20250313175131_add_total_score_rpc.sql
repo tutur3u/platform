@@ -14,11 +14,16 @@ BEGIN
     WHERE challenge_id = challenge_id_param
       AND user_id = user_id_param;
 
-    -- Update the total score in the nova_sessions table
-    UPDATE nova_sessions
-    SET total_score = total_score
-    WHERE challenge_id = challenge_id_param
-      AND user_id = user_id_param;
+DECLARE
+    new_total_score INTEGER;
+
+SELECT COALESCE(SUM(score), 0) INTO new_total_score;
+
+-- Update the total score in the nova_sessions table
+UPDATE nova_sessions
+SET total_score = new_total_score
+WHERE challenge_id = challenge_id_param
+  AND user_id = user_id_param;
 END;$function$
 ;
 
