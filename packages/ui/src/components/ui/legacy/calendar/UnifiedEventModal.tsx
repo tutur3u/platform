@@ -14,7 +14,7 @@ import {
   OverlapWarning,
 } from './EventFormComponents';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { calendarEventSchema } from '@tuturuuu/ai/calendar/events';
+import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
@@ -52,13 +52,13 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { format } from 'date-fns';
-import { OAuth2Client } from 'google-auth-library';
 import {
   AlertCircle,
   Brain,
   Calendar as CalendarIcon,
   Check,
   ChevronLeft,
+  ChevronRight,
   Clock,
   Cog,
   FileText,
@@ -100,51 +100,7 @@ export function UnifiedEventModal() {
     updateEvent,
     deleteEvent,
     getEvents,
-    syncWithGoogleCalendar, // Thêm hàm này từ context
   } = useCalendar();
-
-  const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
-
-  const handleGoogleAuth = async () => {
-    setIsGoogleAuthenticating(true);
-    try {
-      const response = await fetch('/api/v1/calendar/auth', {
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const { authUrl } = await response.json();
-      window.location.href = authUrl;
-    } catch (error) {
-      console.error('Error initiating Google auth:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to initiate Google authentication',
-        variant: 'destructive',
-      });
-      setIsGoogleAuthenticating(false);
-    }
-  };
-
-  const handleSyncWithGoogle = async () => {
-    if (!activeEvent) return;
-    try {
-      await syncWithGoogleCalendar(activeEvent);
-      toast({
-        title: 'Success',
-        description: 'Event synced with Google Calendar',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to sync with Google Calendar',
-        variant: 'destructive',
-      });
-    }
-  };
 
   // State for manual event creation/editing
   const [event, setEvent] = useState<Partial<CalendarEvent>>({
@@ -158,10 +114,14 @@ export function UnifiedEventModal() {
   });
 
   // State for AI event generation
-  const [generatedEvent, setGeneratedEvent] = useState<any>(null);
+  const [generatedEvents, setGeneratedEvents] = useState<any[]>([]);
+  const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [userTimezone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
+
+  // Get the current event being previewed
+  const generatedEvent = generatedEvents[currentEventIndex];
 
   // Determine if we're editing an existing event
   const isEditing = activeEvent?.id && activeEvent.id !== 'new';
@@ -195,25 +155,37 @@ export function UnifiedEventModal() {
   // AI generation
   const { object, submit, error, isLoading } = useObject({
     api: '/api/v1/calendar/events/generate',
-    schema: calendarEventSchema,
+    schema: calendarEventsSchema,
   });
 
-  // Handle AI-generated event
+  // Handle AI-generated events
   useEffect(() => {
     if (object && !isLoading) {
-      // Ensure color is uppercase to match SupportedColor type
-      const processedEvent = {
-        ...object,
-        color: object.color
-          ? (object.color.toString().toUpperCase() as SupportedColor)
-          : 'BLUE',
-      };
+      // Process the generated events
+      const processedEvents = Array.isArray(object) ? object : [object];
 
-      setGeneratedEvent(processedEvent);
+      const formattedEvents = processedEvents
+        .map((event) => {
+          if (!event) return null;
+          return {
+            ...event,
+            color:
+              event.color && typeof event.color === 'string'
+                ? (event.color.toString().toUpperCase() as SupportedColor)
+                : 'BLUE',
+          };
+        })
+        .filter((event): event is NonNullable<typeof event> => event !== null);
 
-      // Find overlapping events when a new event is generated
-      if (aiForm.getValues().smart_scheduling) {
-        checkForOverlaps(processedEvent);
+      setGeneratedEvents(formattedEvents);
+      setCurrentEventIndex(0);
+
+      // Find overlapping events for the first event
+      if (formattedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
+        const firstEvent = formattedEvents[0];
+        if (firstEvent && firstEvent.start_at && firstEvent.end_at) {
+          checkForOverlaps(firstEvent as Partial<CalendarEvent>);
+        }
       }
 
       setActiveTab('preview');
@@ -286,7 +258,7 @@ export function UnifiedEventModal() {
 
       // Reset AI form
       aiForm.reset();
-      setGeneratedEvent(null);
+      setGeneratedEvents([]);
     }
 
     // Clear any error messages
@@ -371,30 +343,40 @@ export function UnifiedEventModal() {
 
   // Handle AI event save
   const handleAISave = async () => {
-    if (!generatedEvent) return;
+    if (generatedEvents.length === 0) return;
 
     setIsSaving(true);
     try {
-      const calendarEvent: Omit<CalendarEvent, 'id'> = {
-        title: generatedEvent.title || 'New Event',
-        description: generatedEvent.description || '',
-        start_at: generatedEvent.start_at,
-        end_at: generatedEvent.end_at,
-        color: generatedEvent.color || 'BLUE',
-        location: generatedEvent.location || '',
-        is_all_day: Boolean(generatedEvent.is_all_day),
-        scheduling_note: generatedEvent.scheduling_note || '',
-        priority: generatedEvent.priority || aiForm.getValues().priority,
-      };
+      // Save all events or just the current one based on user selection
+      const eventsToSave = generatedEvents;
 
-      await addEvent(calendarEvent);
+      for (const eventData of eventsToSave) {
+        const calendarEvent: Omit<CalendarEvent, 'id'> = {
+          title: eventData.title || 'New Event',
+          description: eventData.description || '',
+          start_at: eventData.start_at,
+          end_at: eventData.end_at,
+          color: eventData.color || 'BLUE',
+          location: eventData.location || '',
+          is_all_day: Boolean(eventData.is_all_day),
+          scheduling_note: eventData.scheduling_note || '',
+          priority: eventData.priority || aiForm.getValues().priority,
+        };
+
+        await addEvent(calendarEvent);
+      }
+
+      toast({
+        title: 'Success',
+        description: `${eventsToSave.length} event${eventsToSave.length > 1 ? 's' : ''} added to your calendar`,
+      });
 
       closeModal();
     } catch (error) {
-      console.error('Error saving AI event to calendar:', error);
+      console.error('Error saving AI events to calendar:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save AI-generated event. Please try again.',
+        description: 'Failed to save AI-generated events. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -540,8 +522,8 @@ export function UnifiedEventModal() {
 
       // Generate helpful suggestions based on the prompt
       const suggestions = [
-        'Consider adding a buffer time before/after this event',
-        'This event might benefit from a reminder notification',
+        'Consider adding a buffer time before/after these events',
+        'These events might benefit from reminder notifications',
         'Based on your schedule, early morning might be better for focus',
         'Consider adding meeting agenda or preparation notes',
       ];
@@ -554,19 +536,46 @@ export function UnifiedEventModal() {
         existing_events: values.smart_scheduling ? existingEvents : undefined,
       });
     } catch (error) {
-      console.error('Error generating event:', error);
+      console.error('Error generating events:', error);
       toast({
-        title: 'Error generating event',
+        title: 'Error generating events',
         description: 'Please try again with a different prompt',
         variant: 'destructive',
       });
     }
   };
 
+  // Handle navigation between multiple events in preview
+  const goToNextEvent = () => {
+    if (currentEventIndex < generatedEvents.length - 1) {
+      const nextIndex = currentEventIndex + 1;
+      setCurrentEventIndex(nextIndex);
+      if (aiForm.getValues().smart_scheduling) {
+        const nextEvent = generatedEvents[nextIndex];
+        if (nextEvent && nextEvent.start_at && nextEvent.end_at) {
+          checkForOverlaps(nextEvent as Partial<CalendarEvent>);
+        }
+      }
+    }
+  };
+
+  const goToPreviousEvent = () => {
+    if (currentEventIndex > 0) {
+      const prevIndex = currentEventIndex - 1;
+      setCurrentEventIndex(prevIndex);
+      if (aiForm.getValues().smart_scheduling) {
+        const prevEvent = generatedEvents[prevIndex];
+        if (prevEvent && prevEvent.start_at && prevEvent.end_at) {
+          checkForOverlaps(prevEvent as Partial<CalendarEvent>);
+        }
+      }
+    }
+  };
+
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 pb-4 pt-6">
+        <DialogHeader className="border-b px-6 pt-6 pb-4">
           <DialogTitle className="text-xl font-semibold">
             {isEditing ? 'Edit Event' : 'Create Event'}
           </DialogTitle>
@@ -582,17 +591,10 @@ export function UnifiedEventModal() {
           onValueChange={(value) => setActiveTab(value as any)}
           className="flex h-[calc(90vh-140px)] flex-col"
         >
-          <TabsList className="justify-start gap-2 bg-transparent px-6 pb-0 pt-4">
-            <TabsTrigger
-              value="manual"
-              className="data-[state=active]:bg-background rounded-b-none rounded-t-md border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:shadow-sm"
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              Manual
-            </TabsTrigger>
+          <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
             <TabsTrigger
               value="ai"
-              className="data-[state=active]:bg-background rounded-b-none rounded-t-md border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:shadow-sm"
+              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               disabled={!!isEditing}
             >
               <Sparkles className="mr-2 h-4 w-4" />
@@ -611,7 +613,7 @@ export function UnifiedEventModal() {
             {/* Manual Event Creation Tab */}
             <TabsContent
               value="manual"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'manual' ? 'flex' : 'none' }}
             >
               <div className="flex flex-1 flex-col overflow-hidden">
@@ -692,8 +694,8 @@ export function UnifiedEventModal() {
                             Advanced Settings
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="pb-0 pt-2">
-                          <div className="bg-muted/30 space-y-4 rounded-lg p-4">
+                        <AccordionContent className="pt-2 pb-0">
+                          <div className="space-y-4 rounded-lg bg-muted/30 p-4">
                             <h3 className="text-sm font-medium">
                               Event Properties
                             </h3>
@@ -711,7 +713,7 @@ export function UnifiedEventModal() {
                                 }
                               /> */}
                             </div>
-                            <div className="text-muted-foreground mt-2 text-xs">
+                            <div className="mt-2 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1">
                                 <Info className="h-3 w-3" />
                                 Color and priority help organize and prioritize
@@ -768,24 +770,6 @@ export function UnifiedEventModal() {
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
-                        onClick={handleGoogleAuth}
-                        disabled={isGoogleAuthenticating}
-                      >
-                        {isGoogleAuthenticating ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          'Link Google Calendar'
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleSyncWithGoogle}
-                        disabled={!activeEvent || isSaving}
-                      >
-                        Sync with Google
-                      </Button>
-                      <Button
-                        variant="outline"
                         onClick={closeModal}
                         disabled={isSaving || isDeleting}
                         className="flex items-center gap-2"
@@ -819,7 +803,7 @@ export function UnifiedEventModal() {
             {/* AI Event Generation Tab */}
             <TabsContent
               value="ai"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
             >
               <Form {...aiForm}>
@@ -830,18 +814,19 @@ export function UnifiedEventModal() {
                   <div className="flex flex-1 flex-col overflow-hidden">
                     <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                       <div className="space-y-6 p-6">
-                        <div className="from-primary/10 via-primary/5 rounded-lg bg-gradient-to-r to-transparent p-4">
-                          <div className="mb-2 flex items-center gap-2">
-                            <Sparkles className="text-primary h-4 w-4" />
-                            <h3 className="text-base font-medium">
+                        <div className="rounded-lg bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6">
+                          <div className="mb-3 flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            <h3 className="text-lg font-medium">
                               AI Event Assistant
                             </h3>
                           </div>
-                          <p className="text-muted-foreground text-sm">
+                          <p className="mb-4 text-sm text-muted-foreground">
                             Describe your event in natural language and our AI
                             will create it for you. Include details like title,
                             date, time, duration, location, and any other
-                            relevant information.
+                            relevant information. You can also describe multiple
+                            events at once.
                           </p>
                           <div className="space-y-2">
                             <p className="text-xs font-medium text-muted-foreground">
@@ -860,6 +845,11 @@ export function UnifiedEventModal() {
                                 "Block 3 hours for focused work on the
                                 presentation every morning this week"
                               </div>
+                              <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                "Create a series of 1-hour workout sessions at
+                                the gym on Monday, Wednesday, and Friday at 7am
+                                next week"
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -875,7 +865,7 @@ export function UnifiedEventModal() {
                               <FormControl>
                                 <textarea
                                   {...field}
-                                  className="border-input bg-background focus:ring-ring min-h-[150px] w-full resize-none rounded-md border p-4 focus:outline-none focus:ring-1"
+                                  className="min-h-[150px] w-full resize-none rounded-md border border-input bg-background p-4 text-base focus:ring-1 focus:ring-ring focus:outline-none"
                                   placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour to discuss the new project roadmap with the engineering team"
                                   autoFocus
                                 />
@@ -907,211 +897,55 @@ export function UnifiedEventModal() {
                                   on your existing events
                                 </p>
                               </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="pb-0 pt-2">
-                              <div className="bg-muted/30 space-y-4 rounded-lg p-4">
-                                <div className="flex items-center justify-between space-x-2">
-                                  <div className="space-y-0.5">
-                                    <h3 className="text-sm font-medium">
-                                      Smart Scheduling
-                                    </h3>
-                                    <p className="text-muted-foreground text-xs">
-                                      Automatically find available time slots
-                                      based on your existing events
-                                    </p>
+                              <Switch
+                                id="smart-scheduling"
+                                checked={!!aiForm.watch('smart_scheduling')}
+                                onCheckedChange={(checked) =>
+                                  aiForm.setValue('smart_scheduling', checked)
+                                }
+                              />
+                            </div>
+
+                            <FormField
+                              control={aiForm.control}
+                              name="priority"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <div className="flex items-center justify-between">
+                                    <FormLabel className="text-sm font-medium">
+                                      Priority
+                                    </FormLabel>
+                                    <FormControl>
+                                      <select
+                                        {...field}
+                                        className="w-[180px] rounded-md border border-input bg-background p-2 text-sm"
+                                      >
+                                        <option value="low">
+                                          Low - Can be rescheduled
+                                        </option>
+                                        <option value="medium">
+                                          Medium - Standard
+                                        </option>
+                                        <option value="high">
+                                          High - Important
+                                        </option>
+                                      </select>
+                                    </FormControl>
                                   </div>
-                                  <Switch
-                                    id="smart-scheduling"
-                                    checked={!!aiForm.watch('smart_scheduling')}
-                                    onCheckedChange={(checked) =>
-                                      aiForm.setValue(
-                                        'smart_scheduling',
-                                        checked
-                                      )
-                                    }
-                                  />
-                                </div>
-
-                                <FormField
-                                  control={aiForm.control}
-                                  name="priority"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="text-sm font-medium">
-                                        Priority
-                                      </FormLabel>
-                                      <FormControl>
-                                        <select
-                                          {...field}
-                                          className="border-input bg-background w-full rounded-md border p-2"
-                                        >
-                                          <option value="low">
-                                            Low - Can be easily rescheduled
-                                          </option>
-                                          <option value="medium">
-                                            Medium - Standard priority
-                                          </option>
-                                          <option value="high">
-                                            High - Important, avoid rescheduling
-                                          </option>
-                                        </select>
-                                      </FormControl>
-                                      <FormDescription className="text-xs">
-                                        Set the priority level for this event
-                                      </FormDescription>
-                                    </FormItem>
-                                  )}
-                                />
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-
-                        {error && (
-                          <div className="rounded-md bg-red-50 p-3 text-sm text-red-500">
-                            <AlertCircle className="mr-1 inline h-4 w-4" />
-                            {error instanceof Error
-                              ? error.message
-                              : String(error)}
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
-
-                    <div className="mt-auto border-t p-6">
-                      <Button
-                        type="submit"
-                        className="flex w-full items-center justify-center gap-2 py-5"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                            <span>Generating your event...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Brain className="h-5 w-5" />
-                            <span>Generate Event with AI</span>
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </form>
-              </Form>
-            </TabsContent>
-
-            {/* AI Preview Tab */}
-            <TabsContent
-              value="preview"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
-              style={{ display: activeTab === 'preview' ? 'flex' : 'none' }}
-            >
-              {generatedEvent ? (
-                <>
-                  <div className="flex flex-1 flex-col overflow-hidden">
-                    <ScrollArea className="h-[calc(90vh-250px)] flex-1">
-                      <div className="space-y-6 p-6">
-                        <div className="bg-background rounded-lg border p-6">
-                          <div className="mb-6 flex items-center gap-3">
-                            <div
-                              className={cn(
-                                'h-4 w-4 rounded-full',
-                                generatedEvent.color === 'BLUE' &&
-                                  'bg-blue-500',
-                                generatedEvent.color === 'RED' && 'bg-red-500',
-                                generatedEvent.color === 'GREEN' &&
-                                  'bg-green-500',
-                                generatedEvent.color === 'YELLOW' &&
-                                  'bg-yellow-500',
-                                generatedEvent.color === 'ORANGE' &&
-                                  'bg-orange-500',
-                                generatedEvent.color === 'PURPLE' &&
-                                  'bg-purple-500',
-                                generatedEvent.color === 'PINK' &&
-                                  'bg-pink-500',
-                                generatedEvent.color === 'INDIGO' &&
-                                  'bg-indigo-500',
-                                generatedEvent.color === 'CYAN' &&
-                                  'bg-cyan-500',
-                                generatedEvent.color === 'GRAY' && 'bg-gray-500'
+                                </FormItem>
                               )}
                             />
                           </div>
                         </div>
 
-                          <div className="space-y-6">
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                              <div className="flex items-start gap-3">
-                                <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-500" />
-                                <div>
-                                  <p className="text-muted-foreground mb-1 text-sm">
-                                    Start
-                                  </p>
-                                  <p className="font-medium">
-                                    {format(
-                                      new Date(generatedEvent.start_at),
-                                      'PPP'
-                                    )}
-                                  </p>
-                                  <p className="text-sm">
-                                    {format(
-                                      new Date(generatedEvent.start_at),
-                                      'p'
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-start gap-3">
-                                <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
-                                <div>
-                                  <p className="text-muted-foreground mb-1 text-sm">
-                                    End
-                                  </p>
-                                  <p className="font-medium">
-                                    {format(
-                                      new Date(generatedEvent.end_at),
-                                      'PPP'
-                                    )}
-                                  </p>
-                                  <p className="text-sm">
-                                    {format(
-                                      new Date(generatedEvent.end_at),
-                                      'p'
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
+                        {isLoading && (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="flex flex-col items-center gap-2">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                              <p className="text-sm text-muted-foreground">
+                                Creating your event...
+                              </p>
                             </div>
-
-                            {generatedEvent.location && (
-                              <div className="flex items-start gap-3">
-                                <MapPin className="text-muted-foreground mt-0.5 h-5 w-5 flex-shrink-0" />
-                                <div>
-                                  <p className="text-muted-foreground mb-1 text-sm">
-                                    Location
-                                  </p>
-                                  <p className="font-medium">
-                                    {generatedEvent.location}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-
-                            {generatedEvent.description && (
-                              <div className="flex items-start gap-3">
-                                <FileText className="text-muted-foreground mt-0.5 h-5 w-5 flex-shrink-0" />
-                                <div>
-                                  <p className="text-muted-foreground mb-1 text-sm">
-                                    Description
-                                  </p>
-                                  <p className="whitespace-pre-wrap">
-                                    {generatedEvent.description}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         )}
 
@@ -1160,22 +994,197 @@ export function UnifiedEventModal() {
                       </div>
                     </div>
                   </div>
-                </>
-              ) : (
-                <div className="flex flex-1 items-center justify-center">
-                  <div className="p-6 text-center">
-                    <div className="bg-muted/50 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                      <Sparkles className="text-muted-foreground h-8 w-8" />
+                </form>
+              </Form>
+            </TabsContent>
+
+            {/* Preview Tab */}
+            <TabsContent
+              value="preview"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
+              style={{ display: activeTab === 'preview' ? 'flex' : 'none' }}
+            >
+              <div className="flex flex-1 flex-col overflow-hidden">
+                <ScrollArea className="h-[calc(90vh-250px)] flex-1">
+                  <div className="space-y-6 p-6">
+                    {/* AI Generated Event Preview */}
+                    <div className="rounded-lg border bg-muted/10 p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="flex items-center gap-2 text-base font-medium">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                          AI Generated Event
+                          {generatedEvents.length > 1 ? 's' : ''}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          {generatedEvents.length > 1 && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <span>{currentEventIndex + 1}</span>
+                              <span>/</span>
+                              <span>{generatedEvents.length}</span>
+                            </div>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            Preview
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {generatedEvent && (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <h4 className="text-lg font-medium">
+                              {generatedEvent.title}
+                            </h4>
+                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <CalendarIcon className="h-3.5 w-3.5" />
+                                <span>
+                                  {format(
+                                    new Date(generatedEvent.start_at),
+                                    'PPP'
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span>
+                                  {format(
+                                    new Date(generatedEvent.start_at),
+                                    'h:mm a'
+                                  )}{' '}
+                                  -{' '}
+                                  {format(
+                                    new Date(generatedEvent.end_at),
+                                    'h:mm a'
+                                  )}
+                                </span>
+                              </div>
+                              {generatedEvent.location && (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  <span>{generatedEvent.location}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {generatedEvent.description && (
+                            <div className="space-y-1">
+                              <h5 className="text-sm font-medium">
+                                Description
+                              </h5>
+                              <p className="text-sm text-muted-foreground">
+                                {generatedEvent.description}
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`h-3 w-3 rounded-full`}
+                              style={{
+                                backgroundColor: `var(--dynamic-light-${generatedEvent.color.toLowerCase()})`,
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {
+                                COLOR_OPTIONS.find(
+                                  (c) => c.value === generatedEvent.color
+                                )?.name
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Navigation buttons for multiple events */}
+                      {generatedEvents.length > 1 && (
+                        <div className="mt-4 flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={goToPreviousEvent}
+                            disabled={currentEventIndex === 0}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={goToNextEvent}
+                            disabled={
+                              currentEventIndex === generatedEvents.length - 1
+                            }
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    <h3 className="mb-2 text-lg font-medium">
-                      No event generated yet
-                    </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Go to the AI Assistant tab to create one
-                    </p>
+
+                    {/* AI Insights and Suggestions */}
+                    {aiSuggestions.length > 0 && (
+                      <div className="rounded-lg border bg-muted/10 p-4">
+                        <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
+                          <Brain className="h-4 w-4 text-primary" />
+                          AI Insights & Suggestions
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiSuggestions.map((suggestion, index) => (
+                            <li
+                              key={index}
+                              className="flex items-start gap-2 text-sm"
+                            >
+                              <div className="mt-0.5 text-primary">•</div>
+                              <span>{suggestion}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Warnings and Errors */}
+                    {showOverlapWarning && (
+                      <OverlapWarning overlappingEvents={overlappingEvents} />
+                    )}
+                  </div>
+                </ScrollArea>
+
+                {/* Action Buttons */}
+                <div className="mt-auto border-t p-6">
+                  <div className="flex justify-between">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setActiveTab('ai')}
+                        className="flex items-center gap-2"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        <span>Back</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          // Transfer AI generated event to manual form
+                          if (generatedEvent) {
+                            setEvent({
+                              ...generatedEvent,
+                              id: undefined, // Remove ID to create a new event
+                            });
+                            setActiveTab('manual');
+                          }
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span>Edit Details</span>
+                      </Button>
+                    </div>
                     <Button
                       onClick={handleAISave}
-                      disabled={isSaving || !generatedEvent}
+                      disabled={isSaving || generatedEvents.length === 0}
                       className="flex items-center gap-2"
                     >
                       {isSaving ? (
@@ -1186,7 +1195,12 @@ export function UnifiedEventModal() {
                       ) : (
                         <>
                           <Check className="h-4 w-4" />
-                          <span>Save Event</span>
+                          <span>
+                            Save{' '}
+                            {generatedEvents.length > 1
+                              ? 'All Events'
+                              : 'Event'}
+                          </span>
                         </>
                       )}
                     </Button>
