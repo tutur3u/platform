@@ -14,7 +14,7 @@ import {
   OverlapWarning,
 } from './EventFormComponents';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { calendarEventSchema } from '@tuturuuu/ai/calendar/events';
+import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
@@ -58,6 +58,7 @@ import {
   Calendar as CalendarIcon,
   Check,
   ChevronLeft,
+  ChevronRight,
   Clock,
   Cog,
   FileText,
@@ -113,10 +114,14 @@ export function UnifiedEventModal() {
   });
 
   // State for AI event generation
-  const [generatedEvent, setGeneratedEvent] = useState<any>(null);
+  const [generatedEvents, setGeneratedEvents] = useState<any[]>([]);
+  const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [userTimezone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
+
+  // Get the current event being previewed
+  const generatedEvent = generatedEvents[currentEventIndex];
 
   // Determine if we're editing an existing event
   const isEditing = activeEvent?.id && activeEvent.id !== 'new';
@@ -150,25 +155,37 @@ export function UnifiedEventModal() {
   // AI generation
   const { object, submit, error, isLoading } = useObject({
     api: '/api/v1/calendar/events/generate',
-    schema: calendarEventSchema,
+    schema: calendarEventsSchema,
   });
 
-  // Handle AI-generated event
+  // Handle AI-generated events
   useEffect(() => {
     if (object && !isLoading) {
-      // Ensure color is uppercase to match SupportedColor type
-      const processedEvent = {
-        ...object,
-        color: object.color
-          ? (object.color.toString().toUpperCase() as SupportedColor)
-          : 'BLUE',
-      };
+      // Process the generated events
+      const processedEvents = Array.isArray(object) ? object : [object];
 
-      setGeneratedEvent(processedEvent);
+      const formattedEvents = processedEvents
+        .map((event) => {
+          if (!event) return null;
+          return {
+            ...event,
+            color:
+              event.color && typeof event.color === 'string'
+                ? (event.color.toString().toUpperCase() as SupportedColor)
+                : 'BLUE',
+          };
+        })
+        .filter((event): event is NonNullable<typeof event> => event !== null);
 
-      // Find overlapping events when a new event is generated
-      if (aiForm.getValues().smart_scheduling) {
-        checkForOverlaps(processedEvent);
+      setGeneratedEvents(formattedEvents);
+      setCurrentEventIndex(0);
+
+      // Find overlapping events for the first event
+      if (formattedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
+        const firstEvent = formattedEvents[0];
+        if (firstEvent && firstEvent.start_at && firstEvent.end_at) {
+          checkForOverlaps(firstEvent as Partial<CalendarEvent>);
+        }
       }
 
       setActiveTab('preview');
@@ -241,7 +258,7 @@ export function UnifiedEventModal() {
 
       // Reset AI form
       aiForm.reset();
-      setGeneratedEvent(null);
+      setGeneratedEvents([]);
     }
 
     // Clear any error messages
@@ -326,30 +343,40 @@ export function UnifiedEventModal() {
 
   // Handle AI event save
   const handleAISave = async () => {
-    if (!generatedEvent) return;
+    if (generatedEvents.length === 0) return;
 
     setIsSaving(true);
     try {
-      const calendarEvent: Omit<CalendarEvent, 'id'> = {
-        title: generatedEvent.title || 'New Event',
-        description: generatedEvent.description || '',
-        start_at: generatedEvent.start_at,
-        end_at: generatedEvent.end_at,
-        color: generatedEvent.color || 'BLUE',
-        location: generatedEvent.location || '',
-        is_all_day: Boolean(generatedEvent.is_all_day),
-        scheduling_note: generatedEvent.scheduling_note || '',
-        priority: generatedEvent.priority || aiForm.getValues().priority,
-      };
+      // Save all events or just the current one based on user selection
+      const eventsToSave = generatedEvents;
 
-      await addEvent(calendarEvent);
+      for (const eventData of eventsToSave) {
+        const calendarEvent: Omit<CalendarEvent, 'id'> = {
+          title: eventData.title || 'New Event',
+          description: eventData.description || '',
+          start_at: eventData.start_at,
+          end_at: eventData.end_at,
+          color: eventData.color || 'BLUE',
+          location: eventData.location || '',
+          is_all_day: Boolean(eventData.is_all_day),
+          scheduling_note: eventData.scheduling_note || '',
+          priority: eventData.priority || aiForm.getValues().priority,
+        };
+
+        await addEvent(calendarEvent);
+      }
+
+      toast({
+        title: 'Success',
+        description: `${eventsToSave.length} event${eventsToSave.length > 1 ? 's' : ''} added to your calendar`,
+      });
 
       closeModal();
     } catch (error) {
-      console.error('Error saving AI event to calendar:', error);
+      console.error('Error saving AI events to calendar:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save AI-generated event. Please try again.',
+        description: 'Failed to save AI-generated events. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -495,8 +522,8 @@ export function UnifiedEventModal() {
 
       // Generate helpful suggestions based on the prompt
       const suggestions = [
-        'Consider adding a buffer time before/after this event',
-        'This event might benefit from a reminder notification',
+        'Consider adding a buffer time before/after these events',
+        'These events might benefit from reminder notifications',
         'Based on your schedule, early morning might be better for focus',
         'Consider adding meeting agenda or preparation notes',
       ];
@@ -509,12 +536,39 @@ export function UnifiedEventModal() {
         existing_events: values.smart_scheduling ? existingEvents : undefined,
       });
     } catch (error) {
-      console.error('Error generating event:', error);
+      console.error('Error generating events:', error);
       toast({
-        title: 'Error generating event',
+        title: 'Error generating events',
         description: 'Please try again with a different prompt',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Handle navigation between multiple events in preview
+  const goToNextEvent = () => {
+    if (currentEventIndex < generatedEvents.length - 1) {
+      const nextIndex = currentEventIndex + 1;
+      setCurrentEventIndex(nextIndex);
+      if (aiForm.getValues().smart_scheduling) {
+        const nextEvent = generatedEvents[nextIndex];
+        if (nextEvent && nextEvent.start_at && nextEvent.end_at) {
+          checkForOverlaps(nextEvent as Partial<CalendarEvent>);
+        }
+      }
+    }
+  };
+
+  const goToPreviousEvent = () => {
+    if (currentEventIndex > 0) {
+      const prevIndex = currentEventIndex - 1;
+      setCurrentEventIndex(prevIndex);
+      if (aiForm.getValues().smart_scheduling) {
+        const prevEvent = generatedEvents[prevIndex];
+        if (prevEvent && prevEvent.start_at && prevEvent.end_at) {
+          checkForOverlaps(prevEvent as Partial<CalendarEvent>);
+        }
+      }
     }
   };
 
@@ -771,7 +825,8 @@ export function UnifiedEventModal() {
                             Describe your event in natural language and our AI
                             will create it for you. Include details like title,
                             date, time, duration, location, and any other
-                            relevant information.
+                            relevant information. You can also describe multiple
+                            events at once.
                           </p>
                           <div className="space-y-2">
                             <p className="text-xs font-medium text-muted-foreground">
@@ -789,6 +844,11 @@ export function UnifiedEventModal() {
                               <div className="rounded-md bg-muted/50 p-2 text-xs">
                                 "Block 3 hours for focused work on the
                                 presentation every morning this week"
+                              </div>
+                              <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                "Create a series of 1-hour workout sessions at
+                                the gym on Monday, Wednesday, and Friday at 7am
+                                next week"
                               </div>
                             </div>
                           </div>
@@ -953,10 +1013,20 @@ export function UnifiedEventModal() {
                         <h3 className="flex items-center gap-2 text-base font-medium">
                           <Sparkles className="h-4 w-4 text-primary" />
                           AI Generated Event
+                          {generatedEvents.length > 1 ? 's' : ''}
                         </h3>
-                        <Badge variant="outline" className="text-xs">
-                          Preview
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {generatedEvents.length > 1 && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <span>{currentEventIndex + 1}</span>
+                              <span>/</span>
+                              <span>{generatedEvents.length}</span>
+                            </div>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            Preview
+                          </Badge>
+                        </div>
                       </div>
 
                       {generatedEvent && (
@@ -1026,6 +1096,32 @@ export function UnifiedEventModal() {
                           </div>
                         </div>
                       )}
+
+                      {/* Navigation buttons for multiple events */}
+                      {generatedEvents.length > 1 && (
+                        <div className="mt-4 flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={goToPreviousEvent}
+                            disabled={currentEventIndex === 0}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={goToNextEvent}
+                            disabled={
+                              currentEventIndex === generatedEvents.length - 1
+                            }
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
                     {/* AI Insights and Suggestions */}
@@ -1088,7 +1184,7 @@ export function UnifiedEventModal() {
                     </div>
                     <Button
                       onClick={handleAISave}
-                      disabled={isSaving || !generatedEvent}
+                      disabled={isSaving || generatedEvents.length === 0}
                       className="flex items-center gap-2"
                     >
                       {isSaving ? (
@@ -1099,7 +1195,12 @@ export function UnifiedEventModal() {
                       ) : (
                         <>
                           <Check className="h-4 w-4" />
-                          <span>Save Event</span>
+                          <span>
+                            Save{' '}
+                            {generatedEvents.length > 1
+                              ? 'All Events'
+                              : 'Event'}
+                          </span>
                         </>
                       )}
                     </Button>

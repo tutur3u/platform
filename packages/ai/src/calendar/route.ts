@@ -1,4 +1,4 @@
-import { calendarEventSchema } from './events';
+import { calendarEventsSchema } from './events';
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { streamObject } from 'ai';
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
 
   const result = streamObject({
     model: google('gemini-2.0-flash'),
-    schema: calendarEventSchema,
+    schema: calendarEventsSchema,
     prompt: promptText,
   });
 

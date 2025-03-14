@@ -2,6 +2,7 @@ import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
+import { INTERNAL_DOMAINS } from '@tuturuuu/utils/internal-domains';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
@@ -17,6 +18,7 @@ const authMiddleware = createCentralizedAuthMiddleware({
   publicPaths: PUBLIC_PATHS,
   excludeRootPath: true,
   skipApiRoutes: true,
+  allowedOrigins: INTERNAL_DOMAINS,
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
