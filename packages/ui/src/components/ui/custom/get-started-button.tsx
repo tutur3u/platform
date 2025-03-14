@@ -11,12 +11,16 @@ export function GetStartedButton({ text }: { text: string }) {
 
   return (
     <Link
-      href={`/login${pathname !== '/' ? `?nextUrl=${encodeURIComponent(pathname)}` : ''}`}
+      href={
+        hidden
+          ? '/login'
+          : `/login${pathname !== '/' ? `?nextUrl=${encodeURIComponent(pathname)}` : ''}`
+      }
     >
       <Button
         className={cn(
           hidden &&
-            'pointer-events-none text-foreground/50 opacity-50 select-none'
+            'text-foreground/50 pointer-events-none select-none bg-transparent opacity-50'
         )}
       >
         {text}
