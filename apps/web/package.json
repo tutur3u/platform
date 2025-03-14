@@ -95,6 +95,7 @@
     "@tiptap/starter-kit": "^2.11.5",
     "@tiptap/suggestion": "^2.11.5",
     "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",

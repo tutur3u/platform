@@ -4,6 +4,7 @@ import { DEV_MODE } from '@/constants/common';
 import {
   BookText,
   Building,
+  Calendar,
   Factory,
   FileText,
   Github,
@@ -45,6 +46,14 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       label: t('common.meet-together'),
       description: t('common.meet-together-description'),
       icon: <UsersRound className="h-4 w-4" />,
+    },
+    {
+      href: DEV_MODE
+        ? 'http://localhost:7001'
+        : 'https://calendar.tuturuuu.com',
+      label: t('common.calendar'),
+      description: t('common.calendar-description'),
+      icon: <Calendar className="h-4 w-4" />,
     },
     {
       href: DEV_MODE ? 'http://localhost:7804' : 'https://rewise.me',

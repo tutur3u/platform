@@ -1,27 +1,44 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? searchParams.get('nextUrl') ?? '/';
+export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
 
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      const forwardedHost = request.headers.get('x-forwarded-host'); // original origin before load balancer
-      const isLocalEnv = process.env.NODE_ENV === 'development';
-      if (isLocalEnv) {
-        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-        return NextResponse.redirect(`${origin}${next}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      } else {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
+  // Get returnUrl and nextUrl from query parameters
+  const returnUrl = requestUrl.searchParams.get('returnUrl');
+  const nextUrl = requestUrl.searchParams.get('nextUrl');
+
+  // Determine the redirect URL after authentication
+  let redirectTo: string;
+
+  if (returnUrl) {
+    try {
+      // Validate the returnUrl to ensure it's a proper URL
+      const decodedUrl = decodeURIComponent(returnUrl);
+      new URL(decodedUrl); // This will throw if invalid
+      redirectTo = decodedUrl;
+    } catch (error) {
+      console.error('Invalid returnUrl:', error);
+      // Fall back to nextUrl or default
+      redirectTo = nextUrl ? `/${nextUrl}` : '/onboarding';
     }
+  } else {
+    // Use nextUrl or fall back to default
+    redirectTo = nextUrl ? `/${nextUrl}` : '/onboarding';
   }
 
-  return NextResponse.json({ error: 'Invalid code' }, { status: 400 });
+  if (code) {
+    // Create and await the Supabase client
+    const supabase = await createClient();
+    // Exchange the code for a session
+    await supabase.auth.exchangeCodeForSession(code);
+  }
+
+  // Redirect to the determined URL
+  return NextResponse.redirect(
+    redirectTo.startsWith('http')
+      ? redirectTo
+      : new URL(redirectTo, requestUrl.origin)
+  );
 }

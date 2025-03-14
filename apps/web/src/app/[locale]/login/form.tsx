@@ -2,6 +2,7 @@
 
 import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -30,11 +31,34 @@ const FormSchema = z.object({
 });
 
 export default function LoginForm() {
+  const supabase = createClient();
+
   const t = useTranslations('login');
   const locale = useLocale();
 
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+
+  useEffect(() => {
+    async function checkUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    }
+
+    checkUser();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      const returnUrl = searchParams.get('returnUrl');
+      const nextUrl = searchParams.get('nextUrl');
+      router.push(returnUrl ?? nextUrl ?? '/');
+    }
+  }, [user]);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -123,9 +147,31 @@ export default function LoginForm() {
     });
 
     if (res.ok) {
-      const nextUrl = searchParams.get('nextUrl');
-      router.push(nextUrl ?? '/onboarding');
-      router.refresh();
+      // Check for returnUrl (for cross-app authentication)
+      const returnUrl = searchParams.get('returnUrl');
+
+      if (returnUrl) {
+        try {
+          // Validate the returnUrl to ensure it's a proper URL
+          const decodedUrl = decodeURIComponent(returnUrl);
+          new URL(decodedUrl); // This will throw if invalid
+
+          // Redirect will be handled by the middleware
+          router.refresh();
+          router.push(decodedUrl);
+        } catch (error) {
+          console.error('Invalid returnUrl:', error);
+          // Fall back to default nextUrl or onboarding
+          const nextUrl = searchParams.get('nextUrl');
+          router.push(nextUrl ?? '/onboarding');
+          router.refresh();
+        }
+      } else {
+        // Original behavior - use nextUrl or default to onboarding
+        const nextUrl = searchParams.get('nextUrl');
+        router.push(nextUrl ?? '/onboarding');
+        router.refresh();
+      }
     } else {
       setLoading(false);
 
@@ -159,10 +205,24 @@ export default function LoginForm() {
     setLoading(true);
     const supabase = createClient();
 
+    // Pass the returnUrl and/or nextUrl to the callback
+    const returnUrl = searchParams.get('returnUrl');
+    const nextUrl = searchParams.get('nextUrl');
+
+    // Build the redirect URL with query parameters
+    let redirectTo = `${window.location.origin}/api/auth/callback`;
+    const params = new URLSearchParams();
+
+    if (returnUrl) params.append('returnUrl', returnUrl);
+    if (nextUrl) params.append('nextUrl', nextUrl);
+
+    const queryString = params.toString();
+    if (queryString) redirectTo += `?${queryString}`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
+        redirectTo,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',

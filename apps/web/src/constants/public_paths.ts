@@ -21,6 +21,7 @@ export const APP_PUBLIC_PATHS = [
   '/qr-generator',
   '/documents',
   '/meet-together',
+  '/visualizations/horse-racing',
 ].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);

@@ -45,12 +45,10 @@
     "node": ">=20"
   },
   "packageManager": "pnpm@10.6.3",
-  "workspaces": {
-    "packages": [
-      "apps/*",
-      "packages/*"
-    ]
-  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "trustedDependencies": [
     "@vercel/speed-insights",
     "canvas",

@@ -102,6 +102,9 @@ enable_confirmations = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
 
+[auth.rate_limit]
+email_sent = 1000000
+
 # Use a production-ready SMTP server
 # [auth.email.smtp]
 # host = "smtp.sendgrid.net"

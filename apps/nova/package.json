@@ -94,6 +94,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
+    "@tuturuuu/auth": "workspace:*",
     "@upstash/qstash": "^2.7.22",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
