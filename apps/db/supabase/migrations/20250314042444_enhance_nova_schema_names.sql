@@ -183,4 +183,4 @@ grant truncate on table "public"."nova_submission_outputs" to "service_role";
 
 grant update on table "public"."nova_submission_outputs" to "service_role";
 
-
+alter table "public"."nova_problems" rename column "max_input_length" to "max_prompt_length";
