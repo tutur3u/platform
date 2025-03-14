@@ -461,7 +461,8 @@
     "continue_with_google": "Tiếp tục với Google",
     "continue_with_github": "Tiếp tục với GitHub",
     "continue_with_apple": "Tiếp tục với Apple",
-    "continue_with_discord": "Tiếp tục với Discord"
+    "continue_with_discord": "Tiếp tục với Discord",
+    "or_continue_with": "Hoặc tiếp tục với"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",
