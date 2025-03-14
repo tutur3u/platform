@@ -5769,10 +5769,6 @@ export type Database = {
       };
     };
     Functions: {
-      calculate_total_score: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
       create_ai_chat: {
         Args: {
           title: string;
@@ -5948,13 +5944,6 @@ export type Database = {
           ws_id: string;
           amount: number;
         }[];
-      };
-      get_total_submission_score: {
-        Args: {
-          challenge_id_param: string;
-          user_id_param: string;
-        };
-        Returns: number;
       };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
@@ -6231,6 +6220,13 @@ export type Database = {
           transaction_id_2: string;
         };
         Returns: boolean;
+      };
+      update_session_total_score: {
+        Args: {
+          challenge_id_param: string;
+          user_id_param: string;
+        };
+        Returns: number;
       };
     };
     Enums: {

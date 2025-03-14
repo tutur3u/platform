@@ -76,22 +76,22 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { data: challenge, error: challengeError } = await supabase
-    .from('nova_challenges')
-    .select('id')
+  const { data: problem, error: problemError } = await supabase
+    .from('nova_problems')
+    .select('*')
     .eq('id', problemId)
     .single();
 
-  if (challengeError) {
-    console.error('Error fetching challenge:', challengeError);
+  if (problemError) {
+    console.error('Error fetching problem:', problemError);
     return NextResponse.json(
-      { message: 'Error fetching challenge' },
+      { message: 'Error fetching problem' },
       { status: 500 }
     );
   }
 
-  const { error: rpcError } = await supabase.rpc('calculate_total_score', {
-    challenge_id_param: challenge?.id as never,
+  const { error: rpcError } = await supabase.rpc('update_session_total_score', {
+    challenge_id_param: problem?.challenge_id as never,
     user_id_param: user.id as never,
   });
 
