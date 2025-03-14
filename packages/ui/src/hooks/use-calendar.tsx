@@ -10,6 +10,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -52,6 +53,7 @@ const CalendarContext = createContext<{
   getModalStatus: (id: string) => boolean;
   getActiveEvent: () => CalendarEvent | undefined;
   isModalActive: () => boolean;
+  syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -72,6 +74,7 @@ const CalendarContext = createContext<{
   getModalStatus: () => false,
   getActiveEvent: () => undefined,
   isModalActive: () => false,
+  syncWithGoogleCalendar: () => Promise.resolve(),
 });
 
 export const CalendarProvider = ({
@@ -162,6 +165,12 @@ export const CalendarProvider = ({
   const [isModalHidden, setModalHidden] = useState(false);
   const [pendingNewEvent, setPendingNewEvent] =
     useState<Partial<CalendarEvent> | null>(null);
+
+  // Google Calendar token storage (for simplicity, using local state; in production, use a secure storage)
+  const [googleTokens, setGoogleTokens] = useState<{
+    access_token: string;
+    refresh_token?: string;
+  } | null>(null);
 
   // Event getters
   const getEvent = useCallback(
@@ -492,6 +501,47 @@ export const CalendarProvider = ({
     [ws, refresh, pendingNewEvent]
   );
 
+  // Google Calendar sync moved to API Route
+  const syncWithGoogleCalendar = useCallback(
+    async (event: CalendarEvent) => {
+      if (!googleTokens?.access_token) {
+        console.error('Google Calendar not authenticated');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/v1/calendar/auth/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event, googleTokens }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to sync with Google Calendar');
+        }
+
+        console.log('Event synced with Google Calendar');
+      } catch (error) {
+        console.error('Failed to sync with Google Calendar:', error);
+        throw error;
+      }
+    },
+    [googleTokens]
+  );
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    if (accessToken) {
+      setGoogleTokens({
+        access_token: accessToken,
+        refresh_token: refreshToken || undefined,
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   // Modal management
   const openModal = useCallback((eventId?: string) => {
     if (eventId) {
@@ -584,6 +634,9 @@ export const CalendarProvider = ({
     isEditing,
     hideModal,
     showModal,
+
+    // Google Calendar sync
+    syncWithGoogleCalendar,
   };
 
   return (

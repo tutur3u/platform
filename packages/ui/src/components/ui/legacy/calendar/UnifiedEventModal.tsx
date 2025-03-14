@@ -52,6 +52,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
+import { OAuth2Client } from 'google-auth-library';
 import {
   AlertCircle,
   Brain,
@@ -100,7 +101,51 @@ export function UnifiedEventModal() {
     updateEvent,
     deleteEvent,
     getEvents,
+    syncWithGoogleCalendar, // Thêm hàm này từ context
   } = useCalendar();
+
+  const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
+
+  const handleGoogleAuth = async () => {
+    setIsGoogleAuthenticating(true);
+    try {
+      const response = await fetch('/api/v1/calendar/auth', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const { authUrl } = await response.json();
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error initiating Google auth:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to initiate Google authentication',
+        variant: 'destructive',
+      });
+      setIsGoogleAuthenticating(false);
+    }
+  };
+
+  const handleSyncWithGoogle = async () => {
+    if (!activeEvent) return;
+    try {
+      await syncWithGoogleCalendar(activeEvent);
+      toast({
+        title: 'Success',
+        description: 'Event synced with Google Calendar',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to sync with Google Calendar',
+        variant: 'destructive',
+      });
+    }
+  };
 
   // State for manual event creation/editing
   const [event, setEvent] = useState<Partial<CalendarEvent>>({
@@ -526,7 +571,7 @@ export function UnifiedEventModal() {
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 pt-6 pb-4">
+        <DialogHeader className="border-b px-6 pb-4 pt-6">
           <DialogTitle className="text-xl font-semibold">
             {isEditing ? 'Edit Event' : 'Create Event'}
           </DialogTitle>
@@ -542,17 +587,17 @@ export function UnifiedEventModal() {
           onValueChange={(value) => setActiveTab(value as any)}
           className="flex h-[calc(90vh-140px)] flex-col"
         >
-          <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
+          <TabsList className="justify-start gap-2 bg-transparent px-6 pb-0 pt-4">
             <TabsTrigger
               value="manual"
-              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="data-[state=active]:bg-background rounded-b-none rounded-t-md border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:shadow-sm"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               Manual
             </TabsTrigger>
             <TabsTrigger
               value="ai"
-              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="data-[state=active]:bg-background rounded-b-none rounded-t-md border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:shadow-sm"
               disabled={!!isEditing}
             >
               <Sparkles className="mr-2 h-4 w-4" />
@@ -564,7 +609,7 @@ export function UnifiedEventModal() {
             {/* Manual Event Creation Tab */}
             <TabsContent
               value="manual"
-              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'manual' ? 'flex' : 'none' }}
             >
               <div className="flex flex-1 flex-col overflow-hidden">
@@ -644,8 +689,8 @@ export function UnifiedEventModal() {
                             Advanced Settings
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="pt-2 pb-0">
-                          <div className="space-y-4 rounded-lg bg-muted/30 p-4">
+                        <AccordionContent className="pb-0 pt-2">
+                          <div className="bg-muted/30 space-y-4 rounded-lg p-4">
                             <h3 className="text-sm font-medium">
                               Event Properties
                             </h3>
@@ -663,7 +708,7 @@ export function UnifiedEventModal() {
                                 }
                               />
                             </div>
-                            <div className="mt-2 text-xs text-muted-foreground">
+                            <div className="text-muted-foreground mt-2 text-xs">
                               <p className="flex items-center gap-1">
                                 <Info className="h-3 w-3" />
                                 Color and priority help organize and prioritize
@@ -720,6 +765,24 @@ export function UnifiedEventModal() {
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
+                        onClick={handleGoogleAuth}
+                        disabled={isGoogleAuthenticating}
+                      >
+                        {isGoogleAuthenticating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          'Link Google Calendar'
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleSyncWithGoogle}
+                        disabled={!activeEvent || isSaving}
+                      >
+                        Sync with Google
+                      </Button>
+                      <Button
+                        variant="outline"
                         onClick={closeModal}
                         disabled={isSaving || isDeleting}
                         className="flex items-center gap-2"
@@ -753,7 +816,7 @@ export function UnifiedEventModal() {
             {/* AI Event Generation Tab */}
             <TabsContent
               value="ai"
-              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
             >
               <Form {...aiForm}>
@@ -764,14 +827,14 @@ export function UnifiedEventModal() {
                   <div className="flex flex-1 flex-col overflow-hidden">
                     <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                       <div className="space-y-6 p-6">
-                        <div className="rounded-lg bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4">
+                        <div className="from-primary/10 via-primary/5 rounded-lg bg-gradient-to-r to-transparent p-4">
                           <div className="mb-2 flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-primary" />
+                            <Sparkles className="text-primary h-4 w-4" />
                             <h3 className="text-base font-medium">
                               AI Event Assistant
                             </h3>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             Describe your event in natural language and our AI
                             will create it for you.
                           </p>
@@ -788,7 +851,7 @@ export function UnifiedEventModal() {
                               <FormControl>
                                 <textarea
                                   {...field}
-                                  className="min-h-[150px] w-full resize-none rounded-md border border-input bg-background p-4 focus:ring-1 focus:ring-ring focus:outline-none"
+                                  className="border-input bg-background focus:ring-ring min-h-[150px] w-full resize-none rounded-md border p-4 focus:outline-none focus:ring-1"
                                   placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour to discuss the new project roadmap with the engineering team"
                                 />
                               </FormControl>
@@ -816,14 +879,14 @@ export function UnifiedEventModal() {
                                 AI Settings
                               </div>
                             </AccordionTrigger>
-                            <AccordionContent className="pt-2 pb-0">
-                              <div className="space-y-4 rounded-lg bg-muted/30 p-4">
+                            <AccordionContent className="pb-0 pt-2">
+                              <div className="bg-muted/30 space-y-4 rounded-lg p-4">
                                 <div className="flex items-center justify-between space-x-2">
                                   <div className="space-y-0.5">
                                     <h3 className="text-sm font-medium">
                                       Smart Scheduling
                                     </h3>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-muted-foreground text-xs">
                                       Automatically find available time slots
                                       based on your existing events
                                     </p>
@@ -851,7 +914,7 @@ export function UnifiedEventModal() {
                                       <FormControl>
                                         <select
                                           {...field}
-                                          className="w-full rounded-md border border-input bg-background p-2"
+                                          className="border-input bg-background w-full rounded-md border p-2"
                                         >
                                           <option value="low">
                                             Low - Can be easily rescheduled
@@ -913,7 +976,7 @@ export function UnifiedEventModal() {
             {/* AI Preview Tab */}
             <TabsContent
               value="preview"
-              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'preview' ? 'flex' : 'none' }}
             >
               {generatedEvent ? (
@@ -921,7 +984,7 @@ export function UnifiedEventModal() {
                   <div className="flex flex-1 flex-col overflow-hidden">
                     <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                       <div className="space-y-6 p-6">
-                        <div className="rounded-lg border bg-background p-6">
+                        <div className="bg-background rounded-lg border p-6">
                           <div className="mb-6 flex items-center gap-3">
                             <div
                               className={cn(
@@ -971,7 +1034,7 @@ export function UnifiedEventModal() {
                               <div className="flex items-start gap-3">
                                 <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-500" />
                                 <div>
-                                  <p className="mb-1 text-sm text-muted-foreground">
+                                  <p className="text-muted-foreground mb-1 text-sm">
                                     Start
                                   </p>
                                   <p className="font-medium">
@@ -991,7 +1054,7 @@ export function UnifiedEventModal() {
                               <div className="flex items-start gap-3">
                                 <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
                                 <div>
-                                  <p className="mb-1 text-sm text-muted-foreground">
+                                  <p className="text-muted-foreground mb-1 text-sm">
                                     End
                                   </p>
                                   <p className="font-medium">
@@ -1012,9 +1075,9 @@ export function UnifiedEventModal() {
 
                             {generatedEvent.location && (
                               <div className="flex items-start gap-3">
-                                <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                                <MapPin className="text-muted-foreground mt-0.5 h-5 w-5 flex-shrink-0" />
                                 <div>
-                                  <p className="mb-1 text-sm text-muted-foreground">
+                                  <p className="text-muted-foreground mb-1 text-sm">
                                     Location
                                   </p>
                                   <p className="font-medium">
@@ -1026,9 +1089,9 @@ export function UnifiedEventModal() {
 
                             {generatedEvent.description && (
                               <div className="flex items-start gap-3">
-                                <FileText className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                                <FileText className="text-muted-foreground mt-0.5 h-5 w-5 flex-shrink-0" />
                                 <div>
-                                  <p className="mb-1 text-sm text-muted-foreground">
+                                  <p className="text-muted-foreground mb-1 text-sm">
                                     Description
                                   </p>
                                   <p className="whitespace-pre-wrap">
@@ -1082,13 +1145,13 @@ export function UnifiedEventModal() {
               ) : (
                 <div className="flex flex-1 items-center justify-center">
                   <div className="p-6 text-center">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
-                      <Sparkles className="h-8 w-8 text-muted-foreground" />
+                    <div className="bg-muted/50 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+                      <Sparkles className="text-muted-foreground h-8 w-8" />
                     </div>
                     <h3 className="mb-2 text-lg font-medium">
                       No event generated yet
                     </h3>
-                    <p className="mb-6 text-muted-foreground">
+                    <p className="text-muted-foreground mb-6">
                       Go to the AI Assistant tab to create one
                     </p>
                     <Button
