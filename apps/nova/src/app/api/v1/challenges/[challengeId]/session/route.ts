@@ -132,6 +132,7 @@ export async function PUT(request: Request, { params }: Params) {
     );
   }
 
+ 
   const { data: updatedSession, error } = await supabase
     .from('nova_sessions')
     .update({
