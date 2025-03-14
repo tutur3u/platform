@@ -329,7 +329,7 @@ export default function LoginForm() {
             className="w-full"
             disabled={loading || (otpSent && !form.getValues('otp'))}
           >
-            {loading ? 'Loading...' : otpSent ? 'Verify' : t('continue')}
+            {loading ? t('processing') : otpSent ? t('verify') : t('continue')}
           </Button>
         </form>
       </Form>
