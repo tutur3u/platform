@@ -16,5 +16,5 @@ export function LogoTitle({
   const hasWorkspace = !!params.wsId;
 
   if (!forceShow && hasWorkspace) return null;
-  return <div className={cn('text-2xl', className)}>{text}</div>;
+  return <div className={cn('text-2xl font-bold', className)}>{text}</div>;
 }

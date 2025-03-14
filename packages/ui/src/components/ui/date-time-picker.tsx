@@ -2,6 +2,7 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
+import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
   Select,
@@ -11,8 +12,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
-import { CalendarIcon, Clock } from 'lucide-react';
+import { format, parse } from 'date-fns';
+import { CalendarIcon, Check, Clock, Edit } from 'lucide-react';
 import { useState } from 'react';
 
 interface DateTimePickerProps {
@@ -28,6 +29,10 @@ export function DateTimePicker({
 }: DateTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isManualTimeEntry, setIsManualTimeEntry] = useState(false);
+  const [manualTimeInput, setManualTimeInput] = useState(
+    date ? format(date, 'HH:mm') : ''
+  );
 
   const handleSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
@@ -43,33 +48,55 @@ export function DateTimePicker({
     setIsCalendarOpen(false);
   };
 
-  const handleHourChange = (hour: string) => {
+  const handleTimeChange = (timeString: string) => {
     if (!selectedDate) return;
 
+    // Parse the time string (format: "HH:MM")
+    const parts = timeString.split(':');
+    if (parts.length !== 2) return;
+
+    const hourStr = parts[0];
+    const minuteStr = parts[1];
+
+    if (!hourStr || !minuteStr) return;
+
+    const hours = parseInt(hourStr, 10);
+    const minutes = parseInt(minuteStr, 10);
+
+    if (isNaN(hours) || isNaN(minutes)) return;
+
     const newDate = new Date(selectedDate);
-    newDate.setHours(parseInt(hour, 10));
+    newDate.setHours(hours);
+    newDate.setMinutes(minutes);
+
     setSelectedDate(newDate);
     setDate(newDate);
   };
 
-  const handleMinuteChange = (minute: string) => {
-    if (!selectedDate) return;
-
-    const newDate = new Date(selectedDate);
-    newDate.setMinutes(parseInt(minute, 10));
-    setSelectedDate(newDate);
-    setDate(newDate);
+  const handleManualTimeSubmit = () => {
+    try {
+      // Validate time format (HH:MM)
+      if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(manualTimeInput)) {
+        handleTimeChange(manualTimeInput);
+        setIsManualTimeEntry(false);
+      }
+    } catch (error) {
+      console.error('Invalid time format', error);
+    }
   };
 
-  // Generate hour and minute options
-  const hours = Array.from({ length: 24 }, (_, i) => {
-    const hour = i.toString().padStart(2, '0');
-    return { value: hour, label: hour };
-  });
+  // Generate time options in 15-minute increments
+  const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
+    const hour = Math.floor(i / 4);
+    const minute = (i % 4) * 15;
+    const formattedHour = hour.toString().padStart(2, '0');
+    const formattedMinute = minute.toString().padStart(2, '0');
+    const value = `${formattedHour}:${formattedMinute}`;
 
-  const minutes = Array.from({ length: 12 }, (_, i) => {
-    const minute = (i * 5).toString().padStart(2, '0');
-    return { value: minute, label: minute };
+    // Format for display (12-hour format with AM/PM)
+    const display = format(parse(value, 'HH:mm', new Date()), 'h:mm a');
+
+    return { value, display };
   });
 
   return (
@@ -99,39 +126,58 @@ export function DateTimePicker({
         </Popover>
 
         {showTimeSelect && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <Select
-              value={date ? format(date, 'HH') : undefined}
-              onValueChange={handleHourChange}
-            >
-              <SelectTrigger className="w-[70px]">
-                <SelectValue placeholder="Hour" />
-              </SelectTrigger>
-              <SelectContent>
-                {hours.map((hour) => (
-                  <SelectItem key={hour.value} value={hour.value}>
-                    {hour.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <span className="text-muted-foreground">:</span>
-            <Select
-              value={date ? format(date, 'mm') : undefined}
-              onValueChange={handleMinuteChange}
-            >
-              <SelectTrigger className="w-[70px]">
-                <SelectValue placeholder="Min" />
-              </SelectTrigger>
-              <SelectContent>
-                {minutes.map((minute) => (
-                  <SelectItem key={minute.value} value={minute.value}>
-                    {minute.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+            {isManualTimeEntry ? (
+              <div className="flex items-center gap-1">
+                <Input
+                  value={manualTimeInput}
+                  onChange={(e) => setManualTimeInput(e.target.value)}
+                  placeholder="HH:MM"
+                  className="w-[90px]"
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleManualTimeSubmit}
+                  className="h-8 w-8"
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Select
+                  value={
+                    date
+                      ? `${format(date, 'HH')}:${format(date, 'mm')}`
+                      : undefined
+                  }
+                  onValueChange={handleTimeChange}
+                >
+                  <SelectTrigger className="w-[110px]">
+                    <SelectValue placeholder="Select time" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {timeOptions.map((time) => (
+                      <SelectItem key={time.value} value={time.value}>
+                        {time.display}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setIsManualTimeEntry(true)}
+                  className="h-8 w-8"
+                  title="Enter time manually"
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

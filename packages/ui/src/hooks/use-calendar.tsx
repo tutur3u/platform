@@ -77,6 +77,15 @@ const CalendarContext = createContext<{
   syncWithGoogleCalendar: () => Promise.resolve(),
 });
 
+// Add this interface before the updateEvent function
+interface PendingEventUpdate extends Partial<CalendarEvent> {
+  _updateId?: string;
+  _timestamp: number;
+  _eventId: string;
+  _resolve?: (value: CalendarEvent) => void;
+  _reject?: (reason: any) => void;
+}
+
 export const CalendarProvider = ({
   ws,
   useQuery,
@@ -92,9 +101,13 @@ export const CalendarProvider = ({
 
   // Add debounce timer reference for update events
   const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingUpdatesRef = useRef<Map<string, Partial<CalendarEvent>>>(
-    new Map()
+  const pendingUpdatesRef = useRef<Map<string, PendingEventUpdate>>(
+    new Map<string, PendingEventUpdate>()
   );
+
+  // Queue for processing updates in order
+  const updateQueueRef = useRef<PendingEventUpdate[]>([]);
+  const isProcessingQueueRef = useRef<boolean>(false);
 
   const getDateRangeQuery = ({
     startDate,
@@ -370,6 +383,87 @@ export const CalendarProvider = ({
     [ws?.id]
   );
 
+  // Process the update queue
+  const processUpdateQueue = useCallback(async () => {
+    if (isProcessingQueueRef.current || updateQueueRef.current.length === 0) {
+      return;
+    }
+
+    isProcessingQueueRef.current = true;
+
+    try {
+      // Sort the queue by timestamp to process oldest updates first
+      updateQueueRef.current.sort((a, b) => a._timestamp - b._timestamp);
+
+      // Take the first item from the queue
+      const update = updateQueueRef.current.shift();
+
+      if (!update || !update._eventId) {
+        isProcessingQueueRef.current = false;
+        return;
+      }
+
+      const eventId = update._eventId;
+      const {
+        _updateId,
+        _timestamp,
+        _eventId,
+        _resolve,
+        _reject,
+        ...updateData
+      } = update;
+
+      try {
+        // Perform the actual update
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('workspace_calendar_events')
+          .update({
+            title: updateData.title,
+            description: updateData.description,
+            start_at: updateData.start_at,
+            end_at: updateData.end_at,
+            color: updateData.color,
+            // location: updateData.location,
+            // is_all_day: updateData.is_all_day,
+            // scheduling_note: updateData.scheduling_note,
+            // priority: updateData.priority,
+          })
+          .eq('id', eventId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Refresh the query cache after updating an event
+        refresh();
+
+        if (data) {
+          // Resolve the promise for this update
+          if (_resolve) {
+            _resolve(data as CalendarEvent);
+          }
+        } else {
+          if (_reject) {
+            _reject(new Error(`Failed to update event ${eventId}`));
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to update event ${eventId}:`, err);
+        if (_reject) {
+          _reject(err);
+        }
+      }
+    } finally {
+      isProcessingQueueRef.current = false;
+
+      // Process the next item in the queue if there are any
+      if (updateQueueRef.current.length > 0) {
+        setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
+      }
+    }
+  }, [refresh]);
+
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
       if (!ws) throw new Error('No workspace selected');
@@ -406,66 +500,41 @@ export const CalendarProvider = ({
         }
       }
 
-      // Store the latest update for this event
-      pendingUpdatesRef.current.set(eventId, updatedEvent);
-
-      // Clear any existing timer
-      if (updateDebounceTimerRef.current) {
-        clearTimeout(updateDebounceTimerRef.current);
-      }
+      // Generate a unique update ID to track this specific update request
+      const updateId = `${eventId}-${Date.now()}`;
+      const timestamp = Date.now();
 
       // Create a promise that will resolve when the update is actually performed
       return new Promise<CalendarEvent>((resolve, reject) => {
-        // Set a new timer
-        updateDebounceTimerRef.current = setTimeout(async () => {
-          try {
-            // Get the latest update for this event
-            const latestUpdate = pendingUpdatesRef.current.get(eventId);
-            if (!latestUpdate) {
-              reject(new Error(`No pending update found for event ${eventId}`));
-              return;
-            }
+        // Create the update object with the promise callbacks
+        const updateObject: PendingEventUpdate = {
+          ...updatedEvent,
+          _updateId: updateId,
+          _timestamp: timestamp,
+          _eventId: eventId,
+          _resolve: resolve,
+          _reject: reject,
+        };
 
-            // Clear this event from pending updates
-            pendingUpdatesRef.current.delete(eventId);
+        // Store the latest update for this event
+        pendingUpdatesRef.current.set(eventId, updateObject);
 
-            // Perform the actual update
-            const supabase = createClient();
-            const { data, error } = await supabase
-              .from('workspace_calendar_events')
-              .update({
-                title: latestUpdate.title,
-                description: latestUpdate.description,
-                start_at: latestUpdate.start_at,
-                end_at: latestUpdate.end_at,
-                color: latestUpdate.color,
-                // location: latestUpdate.location,
-                // is_all_day: latestUpdate.is_all_day,
-                // scheduling_note: latestUpdate.scheduling_note,
-                // priority: latestUpdate.priority,
-              })
-              .eq('id', eventId)
-              .select()
-              .single();
+        // Add to the queue
+        updateQueueRef.current.push(updateObject);
 
-            if (error) throw error;
+        // Clear any existing timer
+        if (updateDebounceTimerRef.current) {
+          clearTimeout(updateDebounceTimerRef.current);
+        }
 
-            // Refresh the query cache after updating an event
-            refresh();
-
-            if (data) {
-              resolve(data as CalendarEvent);
-            } else {
-              reject(new Error(`Failed to update event ${eventId}`));
-            }
-          } catch (err) {
-            console.error(`Failed to update event ${eventId}:`, err);
-            reject(err);
-          }
-        }, 2000); // 2 second debounce
+        // Start processing the queue after a short delay
+        updateDebounceTimerRef.current = setTimeout(() => {
+          updateDebounceTimerRef.current = null;
+          processUpdateQueue();
+        }, 250); // Reduced from 2000ms to 250ms for better responsiveness
       });
     },
-    [ws, refresh, pendingNewEvent, addEvent]
+    [ws, processUpdateQueue, pendingNewEvent, addEvent]
   );
 
   const deleteEvent = useCallback(
@@ -638,6 +707,19 @@ export const CalendarProvider = ({
     // Google Calendar sync
     syncWithGoogleCalendar,
   };
+
+  // Clean up any pending updates when component unmounts
+  useEffect(() => {
+    return () => {
+      if (updateDebounceTimerRef.current) {
+        clearTimeout(updateDebounceTimerRef.current);
+      }
+
+      // Clear the update queue
+      updateQueueRef.current = [];
+      pendingUpdatesRef.current.clear();
+    };
+  }, []);
 
   return (
     <CalendarContext.Provider value={values}>

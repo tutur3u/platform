@@ -63,18 +63,22 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
             key={entry.id}
             className={cn(
               'flex justify-center',
-              index === 0 ? 'order-2' : index === 1 ? 'order-1' : 'order-3'
+              index === 0
+                ? 'sm:order-2'
+                : index === 1
+                  ? 'sm:order-1'
+                  : 'sm:order-3'
             )}
             variants={itemVariants}
           >
             <Card
               className={cn(
-                'w-64 overflow-hidden border shadow-md transition-all hover:shadow-lg',
+                'w-64 overflow-hidden border bg-gradient-to-b to-transparent shadow-md transition-all hover:shadow-lg',
                 index === 0
-                  ? 'h-80 bg-gradient-to-b from-yellow-500/10 to-transparent'
+                  ? 'from-yellow-500/10'
                   : index === 1
-                    ? 'h-80 bg-gradient-to-b from-gray-400/10 to-transparent'
-                    : 'h-80 bg-gradient-to-b from-amber-700/10 to-transparent'
+                    ? 'from-gray-400/10'
+                    : 'from-amber-700/10'
               )}
             >
               <CardContent className="flex flex-col items-center justify-center p-6">
@@ -121,19 +125,9 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
                   </Avatar>
                 </div>
                 <h3 className="mb-2 text-xl font-bold">{entry.name}</h3>
-                <p className="mb-1 text-sm text-muted-foreground">
-                  {entry.country}
-                </p>
                 <p className="text-2xl font-bold text-primary">
                   {entry.score.toLocaleString()}
                 </p>
-                <div className="mt-4 text-sm text-muted-foreground">
-                  {entry.change > 0
-                    ? `↑ +${entry.change}`
-                    : entry.change < 0
-                      ? `↓ ${entry.change}`
-                      : '―'}
-                </div>
               </CardContent>
             </Card>
           </motion.div>

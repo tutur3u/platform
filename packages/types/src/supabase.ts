@@ -2023,29 +2023,109 @@ export type Database = {
           },
         ];
       };
+      nova_challenge_criteria: {
+        Row: {
+          challenge_id: string;
+          created_at: string;
+          description: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          challenge_id: string;
+          created_at?: string;
+          description: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          challenge_id?: string;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_challenge_criteria_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_challenges: {
         Row: {
+          close_at: string | null;
           created_at: string;
           description: string;
           duration: number;
+          enabled: boolean;
           id: string;
+          open_at: string | null;
+          previewable_at: string | null;
           title: string;
         };
         Insert: {
+          close_at?: string | null;
           created_at?: string;
           description: string;
           duration: number;
+          enabled?: boolean;
           id?: string;
+          open_at?: string | null;
+          previewable_at?: string | null;
           title: string;
         };
         Update: {
+          close_at?: string | null;
           created_at?: string;
           description?: string;
           duration?: number;
+          enabled?: boolean;
           id?: string;
+          open_at?: string | null;
+          previewable_at?: string | null;
           title?: string;
         };
         Relationships: [];
+      };
+      nova_problem_criteria_scores: {
+        Row: {
+          created_at: string;
+          criteria_id: string;
+          problem_id: string;
+          score: number;
+        };
+        Insert: {
+          created_at?: string;
+          criteria_id: string;
+          problem_id: string;
+          score: number;
+        };
+        Update: {
+          created_at?: string;
+          criteria_id?: string;
+          problem_id?: string;
+          score?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_problem_criteria_scores_criteria_id_fkey';
+            columns: ['criteria_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenge_criteria';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_problem_criteria_scores_problem_id_fkey';
+            columns: ['problem_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_problems';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       nova_problem_testcases: {
         Row: {
@@ -2084,7 +2164,7 @@ export type Database = {
           example_input: string;
           example_output: string;
           id: string;
-          max_input_length: number;
+          max_prompt_length: number;
           title: string;
         };
         Insert: {
@@ -2094,7 +2174,7 @@ export type Database = {
           example_input: string;
           example_output: string;
           id?: string;
-          max_input_length: number;
+          max_prompt_length: number;
           title: string;
         };
         Update: {
@@ -2104,7 +2184,7 @@ export type Database = {
           example_input?: string;
           example_output?: string;
           id?: string;
-          max_input_length?: number;
+          max_prompt_length?: number;
           title?: string;
         };
         Relationships: [
@@ -2146,33 +2226,30 @@ export type Database = {
           challenge_id: string;
           created_at: string;
           end_time: string;
-          highest_score: number | null;
           id: string;
           start_time: string;
           status: string;
-          total_score: number;
+          total_score: number | null;
           user_id: string;
         };
         Insert: {
           challenge_id: string;
           created_at?: string;
           end_time: string;
-          highest_score?: number | null;
           id?: string;
           start_time: string;
           status: string;
-          total_score: number;
+          total_score?: number | null;
           user_id: string;
         };
         Update: {
           challenge_id?: string;
           created_at?: string;
           end_time?: string;
-          highest_score?: number | null;
           id?: string;
           start_time?: string;
           status?: string;
-          total_score?: number;
+          total_score?: number | null;
           user_id?: string;
         };
         Relationships: [
@@ -2192,31 +2269,60 @@ export type Database = {
           },
         ];
       };
-      nova_submissions: {
+      nova_submission_outputs: {
         Row: {
           created_at: string;
           id: number;
-          input: string;
           output: string;
+          submission_id: number;
+        };
+        Insert: {
+          created_at?: string;
+          id?: number;
+          output: string;
+          submission_id: number;
+        };
+        Update: {
+          created_at?: string;
+          id?: number;
+          output?: string;
+          submission_id?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_submission_outputs_submission_id_fkey';
+            columns: ['submission_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_submissions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_submissions: {
+        Row: {
+          created_at: string;
+          feedback: string;
+          id: number;
           problem_id: string;
+          prompt: string;
           score: number;
           user_id: string;
         };
         Insert: {
           created_at?: string;
+          feedback: string;
           id?: number;
-          input: string;
-          output: string;
           problem_id: string;
+          prompt: string;
           score: number;
           user_id: string;
         };
         Update: {
           created_at?: string;
+          feedback?: string;
           id?: number;
-          input?: string;
-          output?: string;
           problem_id?: string;
+          prompt?: string;
           score?: number;
           user_id?: string;
         };
@@ -5663,6 +5769,10 @@ export type Database = {
       };
     };
     Functions: {
+      calculate_total_score: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       create_ai_chat: {
         Args: {
           title: string;
@@ -5838,6 +5948,13 @@ export type Database = {
           ws_id: string;
           amount: number;
         }[];
+      };
+      get_total_submission_score: {
+        Args: {
+          challenge_id_param: string;
+          user_id_param: string;
+        };
+        Returns: number;
       };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;

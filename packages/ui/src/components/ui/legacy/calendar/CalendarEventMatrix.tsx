@@ -143,8 +143,10 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
       return aStart - bStart;
     });
 
-    // Create a map to store event levels
+    // Create maps to store event data
     const eventLevels = new Map<string, number>();
+    const eventOverlapCounts = new Map<string, number>();
+    const eventOverlapGroups = new Map<string, string[]>();
 
     // Group events by day
     const eventsByDay = new Map<string, CalendarEvent[]>();
@@ -176,7 +178,66 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
       // Track end times for each level
       const levelEndTimes: number[] = [];
 
-      // Assign levels
+      // Create a more accurate grouping of overlapping events
+      // Helper function to check if two events overlap
+      const eventsOverlap = (event1: CalendarEvent, event2: CalendarEvent) => {
+        const event1Start = new Date(event1.start_at).getTime();
+        const event1End = new Date(event1.end_at).getTime();
+        const event2Start = new Date(event2.start_at).getTime();
+        const event2End = new Date(event2.end_at).getTime();
+
+        return event1Start < event2End && event1End > event2Start;
+      };
+
+      // Create overlap groups
+      const overlapGroups: CalendarEvent[][] = [];
+
+      // Process each event to find its overlap group
+      sortedDayEvents.forEach((event) => {
+        // Find all groups this event overlaps with
+        const overlappingGroupIndices: number[] = [];
+
+        for (let i = 0; i < overlapGroups.length; i++) {
+          const group = overlapGroups[i];
+          // Check if event overlaps with any event in this group
+          if (group?.some((groupEvent) => eventsOverlap(event, groupEvent))) {
+            overlappingGroupIndices.push(i);
+          }
+        }
+
+        if (overlappingGroupIndices.length === 0) {
+          // No overlapping groups, create a new one
+          overlapGroups.push([event]);
+        } else {
+          // Merge all overlapping groups and add this event
+          const newGroup = [event];
+
+          // Sort indices in descending order to safely remove from array
+          overlappingGroupIndices.sort((a, b) => b - a);
+
+          // Merge all overlapping groups
+          overlappingGroupIndices.forEach((index) => {
+            newGroup.push(...(overlapGroups[index] ?? []));
+            overlapGroups.splice(index, 1);
+          });
+
+          // Add the merged group
+          overlapGroups.push(newGroup);
+        }
+      });
+
+      // Now assign overlap information to each event
+      overlapGroups.forEach((group) => {
+        const eventIds = group.map((event) => event.id);
+
+        // For each event in the group, store the group and count
+        group.forEach((event) => {
+          eventOverlapCounts.set(event.id, group.length);
+          eventOverlapGroups.set(event.id, eventIds);
+        });
+      });
+
+      // Assign levels (for fallback positioning) using the original algorithm
       sortedDayEvents.forEach((event) => {
         const eventStart = new Date(event.start_at).getTime();
 
@@ -203,10 +264,12 @@ const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
       });
     });
 
-    // Return events with their assigned levels
+    // Return events with assigned levels and overlap information
     return sortedEvents.map((event) => ({
       ...event,
       _level: eventLevels.get(event.id) || 0,
+      _overlapCount: eventOverlapCounts.get(event.id) || 1,
+      _overlapGroup: eventOverlapGroups.get(event.id) || [event.id],
     }));
   };
 

@@ -10,13 +10,13 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "pnpm@10.6.1",
+  "packageManager": "pnpm@10.6.3",
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.1",
     "@tuturuuu/types": "workspace:*",
     "eslint": "^9.22.0",
-    "next": "^15.2.1",
+    "next": "^15.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.24.2"
@@ -28,8 +28,8 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.13.10",
     "@types/react": "^19.0.10",
-    "@typescript-eslint/eslint-plugin": "^8.26.0",
-    "@typescript-eslint/parser": "^8.26.0",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
     "typescript": "^5.8.2",
     "vitest": "^3.0.8"
   },

@@ -83,17 +83,17 @@
   --cyan: hsl(180 40% 30%);
   --gray: hsl(0 0% 30%);
 
-  --light-lime: hsl(90 80% 60%);
-  --light-purple: hsl(240 70% 60%);
-  --light-pink: hsl(330 70% 60%);
-  --light-blue: hsl(220 80% 60%);
-  --light-sky: hsl(200 80% 60%);
-  --light-green: hsl(140 80% 60%);
-  --light-yellow: hsl(40 80% 60%);
-  --light-orange: hsl(25 80% 60%);
-  --light-red: hsl(0 70% 80%);
-  --light-indigo: hsl(250 70% 60%);
-  --light-cyan: hsl(180 70% 60%);
+  --light-lime: hsl(90 50% 40%);
+  --light-purple: hsl(240 50% 40%);
+  --light-pink: hsl(330 50% 40%);
+  --light-blue: hsl(220 50% 40%);
+  --light-sky: hsl(200 50% 40%);
+  --light-green: hsl(140 50% 40%);
+  --light-yellow: hsl(40 50% 40%);
+  --light-orange: hsl(25 50% 40%);
+  --light-red: hsl(0 50% 40%);
+  --light-indigo: hsl(250 50% 40%);
+  --light-cyan: hsl(180 50% 40%);
   --light-gray: hsl(0 0% 60%);
 
   /* Dynamic colors for calendar events */
@@ -173,6 +173,9 @@
   --light-yellow: hsl(40 60% 75%);
   --light-orange: hsl(25 60% 75%);
   --light-red: hsl(0 60% 75%);
+  --light-indigo: hsl(250 60% 75%);
+  --light-cyan: hsl(180 60% 75%);
+  --light-gray: hsl(0 0% 80%);
 
   /* Dynamic colors for calendar events in dark mode */
   --dynamic-blue: hsl(220 70% 60%);

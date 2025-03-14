@@ -17,6 +17,9 @@ export const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';
+export const SIDEBAR_COLLAPSED_COOKIE_NAME = 'NEXT_SIDEBAR_COLLAPSED';
+export const SIDEBAR_SIZE_COOKIE_NAME = 'NEXT_SIDEBAR_SIZE';
+export const MAIN_CONTENT_SIZE_COOKIE_NAME = 'NEXT_MAIN_CONTENT_SIZE';
 
 export const ENABLE_KEYBOARD_SHORTCUTS = false;
 
@@ -32,7 +35,6 @@ export const IS_PRODUCTION_DB =
   process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
 
 export const PUBLIC_PATHS = [
-  '/login',
   '/pricing',
   '/about',
   '/contact',

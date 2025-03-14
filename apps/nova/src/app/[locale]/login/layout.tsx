@@ -1,3 +1,5 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { redirect } from 'next/navigation';
 import React from 'react';
 
 interface LayoutProps {
@@ -5,6 +7,11 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children }: LayoutProps) {
+  const supabase = await createClient();
+  const { data: user } = await supabase.auth.getUser();
+
+  if (user) redirect('/dashboard');
+
   return (
     <>
       <div

@@ -17,30 +17,13 @@ export default function LeaderboardPage() {
     name: `User ${i + 1}`,
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 1}`,
     score: Math.floor(10000 / (i + 1)) * 10,
-    country: [
-      'USA',
-      'UK',
-      'Canada',
-      'Germany',
-      'Japan',
-      'Vietnam',
-      'Australia',
-      'France',
-    ][i % 8],
-    change: i % 3 === 0 ? 2 : i % 3 === 1 ? -1 : 0,
   }));
 
   // Mock current user ID - in a real app, get this from your auth system
   const currentUserId = 'user-5';
 
-  const {
-    data,
-    searchQuery,
-    setSearchQuery,
-    timeRange,
-    changeTimeRange,
-    isLoading,
-  } = useLeaderboard(initialData);
+  const { data, filteredData, searchQuery, setSearchQuery, isLoading } =
+    useLeaderboard(initialData);
 
   // Calculate stats
   const totalParticipants = data.length;
@@ -120,16 +103,13 @@ export default function LeaderboardPage() {
       <LeaderboardFilters
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        timeRange={timeRange}
-        changeTimeRange={changeTimeRange}
-        isLoading={isLoading}
       />
 
       <TopThreeCards data={data} isLoading={isLoading} />
       <Leaderboard
-        data={data}
+        data={filteredData}
         isLoading={isLoading}
-        currentUserId={currentUserId} // Pass the current user ID as a prop
+        currentUserId={currentUserId}
       />
     </div>
   );

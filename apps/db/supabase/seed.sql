@@ -1341,3 +1341,67 @@ insert into
     public.nova_roles (email, enabled, is_admin)
 values
     ('local@tuturuuu.com', true, true);
+
+insert into
+    public.nova_challenges (id, title, description, duration, enabled)
+values
+    (
+        '00000000-0000-0000-0000-000000000001',
+        'Challenge 1',
+        'Challenge Description 1',
+        1800,
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'Challenge 2',
+        'Challenge Description 2',
+        3600,
+        false
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        'Challenge 3',
+        'Challenge Description 3',
+        5400,
+        true
+    );
+
+insert into
+    public.nova_problems (
+        id,
+        title,
+        description,
+        challenge_id,
+        example_input,
+        example_output,
+        max_prompt_length
+    )
+values
+    (
+        '00000000-0000-0000-0000-000000000001',
+        'Color the fruits',
+        'Given a list of fruits, produce a list of colors for each fruit.',
+        '00000000-0000-0000-0000-000000000001',
+        'Cherry, Apple, Banana',
+        'Red, Green, Yellow',
+        300
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'Sum the numbers',
+        'Given a list of numbers, produce the sum of all numbers.',
+        '00000000-0000-0000-0000-000000000001',
+        '1, 2, 3, 4, 5',
+        '15',
+        100
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        'Find the maximum number',
+        'Given a list of numbers, produce the maximum number.',
+        '00000000-0000-0000-0000-000000000002',
+        '1, 2, 3, 4, 5',
+        '5',
+        100
+    );

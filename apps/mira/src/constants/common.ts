@@ -32,7 +32,6 @@ export const IS_PRODUCTION_DB =
   process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
 
 export const PUBLIC_PATHS = [
-  '/login',
   '/pricing',
   '/about',
   '/contact',

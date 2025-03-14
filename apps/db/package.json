@@ -16,11 +16,11 @@
     "sb:typegen": "pnpm supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts"
   },
   "devDependencies": {
-    "supabase": "^2.15.8"
+    "supabase": "^2.19.7"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@10.6.1"
+  "packageManager": "pnpm@10.6.3"
 }

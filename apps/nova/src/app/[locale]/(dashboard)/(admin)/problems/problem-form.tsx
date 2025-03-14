@@ -54,8 +54,8 @@ const formSchema = z.object({
   description: z.string().min(10, {
     message: 'Description must be at least 10 characters.',
   }),
-  maxInputLength: z.coerce.number().min(1, {
-    message: 'Max input length must be at least 1.',
+  maxPromptLength: z.coerce.number().min(1, {
+    message: 'Max prompt length must be at least 1.',
   }),
   exampleInput: z.string().min(1, {
     message: 'Example input is required.',
@@ -184,15 +184,15 @@ export default function ProblemForm({
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="maxInputLength"
+                name="maxPromptLength"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Max Input Length</FormLabel>
+                    <FormLabel>Max Prompt Length</FormLabel>
                     <FormControl>
                       <Input type="number" min={1} {...field} />
                     </FormControl>
                     <FormDescription>
-                      Maximum allowed length for input in characters.
+                      Maximum allowed length for the prompt in characters.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -313,7 +313,7 @@ export default function ProblemForm({
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No test cases added yet.
               </p>
             )}

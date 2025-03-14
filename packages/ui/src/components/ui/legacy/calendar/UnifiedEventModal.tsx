@@ -1,13 +1,14 @@
 'use client';
 
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import {
+  COLOR_OPTIONS,
   DateError,
   EventColorPicker,
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
-  EventPriorityPicker,
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
@@ -50,7 +51,6 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { OAuth2Client } from 'google-auth-library';
 import {
@@ -59,7 +59,6 @@ import {
   Calendar as CalendarIcon,
   Check,
   ChevronLeft,
-  CircleAlert,
   Clock,
   Cog,
   FileText,
@@ -74,7 +73,6 @@ import {
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
-// Extended CalendarEvent type to include multi-day event properties
 interface ExtendedCalendarEvent extends CalendarEvent {
   _originalId?: string;
   _isMultiDay?: boolean;
@@ -93,6 +91,7 @@ const AIFormSchema = z.object({
 
 export function UnifiedEventModal() {
   const { toast } = useToast();
+
   const {
     activeEvent,
     isModalOpen,
@@ -164,9 +163,12 @@ export function UnifiedEventModal() {
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
 
+  // Determine if we're editing an existing event
+  const isEditing = activeEvent?.id && activeEvent.id !== 'new';
+
   // Shared state
   const [activeTab, setActiveTab] = useState<'manual' | 'ai' | 'preview'>(
-    'manual'
+    isEditing ? 'manual' : 'ai' // Default to AI for new events
   );
   const [isAllDay, setIsAllDay] = useState(false);
   const [isMultiDay, setIsMultiDay] = useState(false);
@@ -177,6 +179,7 @@ export function UnifiedEventModal() {
     []
   );
   const [showOverlapWarning, setShowOverlapWarning] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   // AI form
   const aiForm = useForm<z.infer<typeof AIFormSchema>>({
@@ -324,7 +327,7 @@ export function UnifiedEventModal() {
 
   // Handle manual event save
   const handleManualSave = async () => {
-    if (!event.title || !event.start_at || !event.end_at) return;
+    if (!event.start_at || !event.end_at) return;
 
     // Validate dates
     const startDate = new Date(event.start_at);
@@ -354,13 +357,6 @@ export function UnifiedEventModal() {
         }
       }
       closeModal();
-      toast({
-        title: activeEvent?.id === 'new' ? 'Event created' : 'Event updated',
-        description:
-          activeEvent?.id === 'new'
-            ? 'Your event has been added to the calendar'
-            : 'Your event has been updated',
-      });
     } catch (error) {
       console.error('Error saving event:', error);
       toast({
@@ -392,10 +388,7 @@ export function UnifiedEventModal() {
       };
 
       await addEvent(calendarEvent);
-      toast({
-        title: 'Event created',
-        description: 'Your AI-generated event has been added to the calendar',
-      });
+
       closeModal();
     } catch (error) {
       console.error('Error saving AI event to calendar:', error);
@@ -423,10 +416,6 @@ export function UnifiedEventModal() {
         await deleteEvent(originalId);
       }
       closeModal();
-      toast({
-        title: 'Event deleted',
-        description: 'Your event has been removed from the calendar',
-      });
     } catch (error) {
       console.error('Error deleting event:', error);
       toast({
@@ -549,6 +538,15 @@ export function UnifiedEventModal() {
       // Get existing events for smart scheduling
       const existingEvents = values.smart_scheduling ? getEvents() : [];
 
+      // Generate helpful suggestions based on the prompt
+      const suggestions = [
+        'Consider adding a buffer time before/after this event',
+        'This event might benefit from a reminder notification',
+        'Based on your schedule, early morning might be better for focus',
+        'Consider adding meeting agenda or preparation notes',
+      ];
+      setAiSuggestions(suggestions.slice(0, 3)); // Show up to 3 relevant suggestions
+
       submit({
         prompt: promptWithPriority,
         current_time: new Date().toISOString(),
@@ -564,9 +562,6 @@ export function UnifiedEventModal() {
       });
     }
   };
-
-  // Determine if we're editing an existing event
-  const isEditing = activeEvent?.id && activeEvent.id !== 'new';
 
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
@@ -603,6 +598,13 @@ export function UnifiedEventModal() {
               <Sparkles className="mr-2 h-4 w-4" />
               AI Assistant
             </TabsTrigger>
+            <TabsTrigger
+              value="manual"
+              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              Manual
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-hidden border-t">
@@ -618,6 +620,7 @@ export function UnifiedEventModal() {
                     {/* Title */}
                     <EventTitleInput
                       value={event.title || ''}
+                      onEnter={handleManualSave}
                       onChange={(value) => setEvent({ ...event, title: value })}
                     />
 
@@ -701,12 +704,12 @@ export function UnifiedEventModal() {
                                   setEvent({ ...event, color: value })
                                 }
                               />
-                              <EventPriorityPicker
+                              {/* <EventPriorityPicker
                                 value={event.priority || 'medium'}
                                 onChange={(value) =>
                                   setEvent({ ...event, priority: value })
                                 }
-                              />
+                              /> */}
                             </div>
                             <div className="text-muted-foreground mt-2 text-xs">
                               <p className="flex items-center gap-1">
@@ -836,8 +839,29 @@ export function UnifiedEventModal() {
                           </div>
                           <p className="text-muted-foreground text-sm">
                             Describe your event in natural language and our AI
-                            will create it for you.
+                            will create it for you. Include details like title,
+                            date, time, duration, location, and any other
+                            relevant information.
                           </p>
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              Examples:
+                            </p>
+                            <div className="space-y-2">
+                              <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                "Schedule a team meeting next Monday at 2pm for
+                                1 hour to discuss the new project roadmap"
+                              </div>
+                              <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                "Lunch with Sarah at Cafe Milano tomorrow at
+                                noon, high priority"
+                              </div>
+                              <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                "Block 3 hours for focused work on the
+                                presentation every morning this week"
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         <FormField
@@ -853,30 +877,35 @@ export function UnifiedEventModal() {
                                   {...field}
                                   className="border-input bg-background focus:ring-ring min-h-[150px] w-full resize-none rounded-md border p-4 focus:outline-none focus:ring-1"
                                   placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour to discuss the new project roadmap with the engineering team"
+                                  autoFocus
                                 />
                               </FormControl>
-                              <FormDescription className="text-xs">
-                                Include details like title, date, time,
-                                duration, location, and any other relevant
-                                information
+                              <FormDescription className="flex items-center gap-1 text-xs">
+                                <Info className="h-3 w-3" />
+                                Be as specific as possible for best results
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
 
-                        <Separator />
+                        {/* AI Settings - Simplified and more prominent */}
+                        <div className="rounded-lg border bg-muted/10 p-4">
+                          <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
+                            <Cog className="h-4 w-4" />
+                            AI Settings
+                          </h3>
 
-                        {/* AI Settings */}
-                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem
-                            value="ai-settings"
-                            className="border-none"
-                          >
-                            <AccordionTrigger className="py-2 hover:no-underline">
-                              <div className="flex items-center gap-2 text-sm font-medium">
-                                <Cog className="h-4 w-4" />
-                                AI Settings
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between space-x-2">
+                              <div className="space-y-0.5">
+                                <h4 className="text-sm font-medium">
+                                  Smart Scheduling
+                                </h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Automatically find available time slots based
+                                  on your existing events
+                                </p>
                               </div>
                             </AccordionTrigger>
                             <AccordionContent className="pb-0 pt-2">
@@ -1009,25 +1038,8 @@ export function UnifiedEventModal() {
                                 generatedEvent.color === 'GRAY' && 'bg-gray-500'
                               )}
                             />
-                            <h3 className="text-xl font-medium">
-                              {generatedEvent.title || 'New Event'}
-                            </h3>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'ml-auto flex items-center gap-1',
-                                generatedEvent.priority === 'high' &&
-                                  'border-red-200 text-red-500',
-                                generatedEvent.priority === 'medium' &&
-                                  'border-green-200 text-green-500',
-                                generatedEvent.priority === 'low' &&
-                                  'border-blue-200 text-blue-500'
-                              )}
-                            >
-                              <CircleAlert className="h-3 w-3" />
-                              {generatedEvent.priority || 'medium'} priority
-                            </Badge>
                           </div>
+                        </div>
 
                           <div className="space-y-6">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -1101,40 +1113,47 @@ export function UnifiedEventModal() {
                               </div>
                             )}
                           </div>
-                        </div>
+                        )}
 
-                        {overlappingEvents.length > 0 && (
-                          <OverlapWarning
-                            overlappingEvents={overlappingEvents}
-                          />
+                        {error && (
+                          <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>
+                              {error.message ||
+                                'Failed to generate event. Please try again.'}
+                            </AlertDescription>
+                          </Alert>
                         )}
                       </div>
                     </ScrollArea>
 
+                    {/* Action Buttons */}
                     <div className="mt-auto border-t p-6">
                       <div className="flex justify-between">
                         <Button
                           variant="outline"
-                          onClick={() => setActiveTab('ai')}
+                          onClick={closeModal}
+                          disabled={isLoading}
                           className="flex items-center gap-2"
                         >
-                          <ChevronLeft className="h-4 w-4" />
-                          Back to AI Assistant
+                          <X className="h-4 w-4" />
+                          <span>Cancel</span>
                         </Button>
                         <Button
-                          onClick={handleAISave}
-                          disabled={isSaving}
-                          className="flex items-center gap-2"
+                          type="submit"
+                          disabled={isLoading || !aiForm.watch('prompt')}
+                          className="flex items-center gap-2 bg-primary"
                         >
-                          {isSaving ? (
+                          {isLoading ? (
                             <>
                               <Loader2 className="h-4 w-4 animate-spin" />
-                              Saving...
+                              <span>Creating...</span>
                             </>
                           ) : (
                             <>
-                              <CalendarIcon className="h-4 w-4" />
-                              Add to Calendar
+                              <Sparkles className="h-4 w-4" />
+                              <span>Generate Event</span>
                             </>
                           )}
                         </Button>
@@ -1155,16 +1174,25 @@ export function UnifiedEventModal() {
                       Go to the AI Assistant tab to create one
                     </p>
                     <Button
-                      variant="outline"
-                      onClick={() => setActiveTab('ai')}
-                      className="mx-auto flex items-center gap-2"
+                      onClick={handleAISave}
+                      disabled={isSaving || !generatedEvent}
+                      className="flex items-center gap-2"
                     >
-                      <Sparkles className="h-4 w-4" />
-                      Go to AI Assistant
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-4 w-4" />
+                          <span>Save Event</span>
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
-              )}
+              </div>
             </TabsContent>
           </div>
         </Tabs>
