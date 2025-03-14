@@ -1,7 +1,12 @@
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
-import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
+import {
+  createCentralizedAuthMiddleware,
+  createReturnUrlHandler,
+} from '@tuturuuu/auth/middleware';
+import { updateSession } from '@tuturuuu/supabase/next/middleware';
+import { INTERNAL_DOMAINS } from '@tuturuuu/utils/internal-domains';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
@@ -16,9 +21,54 @@ const authMiddleware = createCentralizedAuthMiddleware({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
+  allowedOrigins: INTERNAL_DOMAINS,
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
+  // Handle CORS preflight requests first
+  if (req.method === 'OPTIONS') {
+    const response = new NextResponse(null, { status: 204 });
+    const origin = req.headers.get('origin');
+
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+
+    // Only set specific origin if it's in allowed origins, otherwise use '*'
+    if (
+      origin &&
+      (INTERNAL_DOMAINS.length === 0 || INTERNAL_DOMAINS.includes(origin))
+    ) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+    }
+
+    response.headers.set(
+      'Access-Control-Allow-Methods',
+      'GET,DELETE,PATCH,POST,PUT,OPTIONS'
+    );
+    response.headers.set(
+      'Access-Control-Allow-Headers',
+      'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, rsc, RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Url'
+    );
+    response.headers.set('Access-Control-Max-Age', '86400');
+
+    return response;
+  }
+
+  // Check if we need to handle returnUrl for login page
+  if (
+    req.nextUrl.pathname === '/login' ||
+    req.nextUrl.pathname.endsWith('/login')
+  ) {
+    // Get user session
+    const { user } = await updateSession(req);
+
+    // If user is authenticated and there's a returnUrl, redirect back
+    const returnUrlHandler = createReturnUrlHandler(req, user);
+    if (returnUrlHandler) {
+      return returnUrlHandler;
+    }
+  }
+
   // First handle authentication with the centralized middleware
   const authRes = await authMiddleware(req);
 
