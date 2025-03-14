@@ -5,7 +5,7 @@ interface Problem {
   id: string;
   title: string;
   description: string;
-  maxInputLength: number;
+  maxPromptLength: number;
   exampleInput: string;
   exampleOutput: string;
   testcases: string[];
@@ -13,7 +13,7 @@ interface Problem {
 
 export default function PromptComponent({ problem }: { problem: Problem }) {
   return (
-    <Card className="h-[813px] w-1/2 overflow-y-auto bg-foreground/10 p-4 pt-10 text-foreground">
+    <Card className="bg-foreground/10 text-foreground h-[813px] w-1/2 overflow-y-auto p-4 pt-10">
       <PromptForm problem={problem} />
     </Card>
   );

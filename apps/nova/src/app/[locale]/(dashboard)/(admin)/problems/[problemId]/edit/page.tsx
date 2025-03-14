@@ -74,7 +74,7 @@ export default function EditProblemPage({ params }: Props) {
         setInitialData({
           title: problem.title,
           description: problem.description,
-          maxInputLength: problem.max_input_length,
+          maxPromptLength: problem.max_prompt_length,
           exampleInput: problem.example_input,
           exampleOutput: problem.example_output,
           challengeId: problem.challenge_id,
@@ -111,7 +111,7 @@ export default function EditProblemPage({ params }: Props) {
       const problemData: any = {
         title: values.title,
         description: values.description,
-        max_input_length: values.maxInputLength,
+        max_prompt_length: values.maxPromptLength,
         example_input: values.exampleInput,
         example_output: values.exampleOutput,
       };

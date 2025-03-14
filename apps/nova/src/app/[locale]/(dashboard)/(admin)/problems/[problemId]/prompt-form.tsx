@@ -19,7 +19,7 @@ interface Problem {
   id: string;
   title: string;
   description: string;
-  maxInputLength: number;
+  maxPromptLength: number;
   exampleInput: string;
   exampleOutput: string;
   testcases: string[];
@@ -29,7 +29,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   const [messages, setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
-  const [input, setInput] = useState('');
+  const [prompt, setPrompt] = useState('');
   const [score, setScore] = useState(0);
   const [customTestCase, setCustomTestCase] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,13 +45,13 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   };
 
   const handleSend = async () => {
-    if (!input.trim()) {
-      setError('Input cannot be empty.');
+    if (!prompt.trim()) {
+      setError('Prompt cannot be empty.');
       return;
     }
 
-    if (input.length > problem.maxInputLength) {
-      setError('Input length exceeds the maximum allowed length.');
+    if (prompt.length > problem.maxPromptLength) {
+      setError('Prompt length exceeds the maximum allowed length.');
       return;
     }
 
@@ -60,23 +60,17 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       return;
     }
 
-    const newUserMessage = { text: input, sender: 'user' as const };
+    const newUserMessage = { text: prompt, sender: 'user' as const };
     setMessages((prev) => [...prev, newUserMessage]);
-    setInput('');
+    setPrompt('');
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/ai/chat/google', {
+      const response = await fetch(`/api/v1/problems/${problem.id}/prompt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          answer: input,
-          problemDescription: problem.description,
-          testCases: problem.testcases,
-          exampleInput: problem.exampleInput,
-          exampleOutput: problem.exampleOutput,
-        }),
+        body: JSON.stringify({ prompt }),
       });
 
       if (!response.ok) {
@@ -85,12 +79,12 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       }
 
       const data = await response.json();
-      const output = data.response.feedback || '';
+      const feedback = data.response.feedback || '';
       const score = data.response.score || 0;
       setScore(score);
 
       const newAiMessage = {
-        text: `Score: ${score}/10\n\n${output}`,
+        text: `Score: ${score}/10\n\n${feedback}`,
         sender: 'ai' as const,
       };
       setMessages((prev) => [...prev, newAiMessage]);
@@ -112,7 +106,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   };
 
   const handleTestCustomCase = async () => {
-    if (!input.trim()) {
+    if (!prompt.trim()) {
       setError('Prompt cannot be empty when testing a custom case.');
       return;
     }
@@ -132,11 +126,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: input,
-            customTestCase,
-            problemDescription: problem.description,
-          }),
+          body: JSON.stringify({ prompt, customTestCase }),
         }
       );
 
@@ -161,7 +151,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 p-4">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-bold">Your Prompt</h2>
         </div>
@@ -172,7 +162,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             <TabsTrigger value="test">Test Custom Case</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="submit" className="space-y-4">
+          <TabsContent value="submit" className="space-y-4 overflow-y-auto">
             {loading && (
               <div className="flex items-center justify-center py-10">
                 <LoadingIndicator />
@@ -205,7 +195,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             )}
           </TabsContent>
 
-          <TabsContent value="test" className="space-y-4">
+          <TabsContent value="test" className="space-y-4 overflow-y-auto">
             <div className="border-foreground/10 bg-foreground/10 space-y-4 rounded-lg border p-6">
               <div>
                 <h3 className="mb-2 text-lg font-medium">Custom Test Case</h3>
@@ -267,8 +257,8 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       <div className="flex gap-2 p-2">
         <Input
           placeholder="Type your prompt..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={loading}
         />

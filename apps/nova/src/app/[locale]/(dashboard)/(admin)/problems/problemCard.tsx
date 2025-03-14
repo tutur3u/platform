@@ -65,8 +65,8 @@ export default function ProblemCard({ problem }: { problem: NovaProblem }) {
         <CardContent>
           <div className="flex flex-col gap-2">
             <div>
-              <span className="text-sm font-medium">Max Input Length:</span>
-              <span className="ml-2 text-sm">{problem.max_input_length}</span>
+              <span className="text-sm font-medium">Max Prompt Length:</span>
+              <span className="ml-2 text-sm">{problem.max_prompt_length}</span>
             </div>
             {problem.challenge_id && (
               <div>

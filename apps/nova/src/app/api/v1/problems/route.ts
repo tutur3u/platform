@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     title: string;
     challengeId: string;
     description: string;
-    maxInputLength: number;
+    maxPromptLength: number;
     exampleInput: string;
     exampleOutput: string;
   };
@@ -78,22 +78,22 @@ export async function POST(request: Request) {
       !body.title ||
       !body.challengeId ||
       !body.description ||
-      !body.maxInputLength ||
+      !body.maxPromptLength ||
       !body.exampleInput ||
       !body.exampleOutput
     ) {
       return NextResponse.json(
         {
           message:
-            'Title, challengeId, description, maxInputLength, exampleInput, and exampleOutput are required',
+            'Title, challengeId, description, maxPromptLength, exampleInput, and exampleOutput are required',
         },
         { status: 400 }
       );
     }
 
-    if (typeof body.maxInputLength !== 'number' || body.maxInputLength <= 0) {
+    if (typeof body.maxPromptLength !== 'number' || body.maxPromptLength <= 0) {
       return NextResponse.json(
-        { message: 'Max input length must be a positive number' },
+        { message: 'Max prompt length must be a positive number' },
         { status: 400 }
       );
     }
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       .insert({
         title: body.title,
         description: body.description,
-        max_input_length: body.maxInputLength,
+        max_prompt_length: body.maxPromptLength,
         example_input: body.exampleInput,
         example_output: body.exampleOutput,
         challenge_id: body.challengeId,

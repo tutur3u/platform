@@ -20,8 +20,8 @@ import React, { useEffect, useState } from 'react';
 
 type HistoryEntry = {
   score: number;
-  input: string;
-  output: string;
+  prompt: string;
+  feedback: string;
 };
 
 type TestResult = {
@@ -34,7 +34,7 @@ interface Problem {
   id: string;
   title: string;
   description: string;
-  maxInputLength: number;
+  maxPromptLength: number;
   exampleInput: string;
   exampleOutput: string;
   testcases: string[];
@@ -44,7 +44,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   const [_messages, setMessages] = useState<
     { text: string; sender: 'user' | 'ai' }[]
   >([]);
-  const [input, setInput] = useState('');
+  const [prompt, setPrompt] = useState('');
   const [customTestCase, setCustomTestCase] = useState('');
   const [loading, setLoading] = useState(false);
   const [testingCustom, setTestingCustom] = useState(false);
@@ -54,9 +54,9 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
-    const fetchSubmissions = async () => {
+    const getSubmissions = async () => {
       if (problem?.id) {
-        const fetchedSubmissions = await fetchSubmissionsFromAPI(problem.id);
+        const fetchedSubmissions = await fetchSubmissions(problem.id);
         if (fetchedSubmissions) {
           setSubmissions(fetchedSubmissions);
           setAttempts(fetchedSubmissions.length);
@@ -64,7 +64,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       }
     };
 
-    fetchSubmissions();
+    getSubmissions();
   }, [problem?.id]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -75,13 +75,13 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   };
 
   const handleSend = async () => {
-    if (!input.trim()) {
-      setError('Input cannot be empty.');
+    if (!prompt.trim()) {
+      setError('Prompt cannot be empty.');
       return;
     }
 
-    if (input.length > problem.maxInputLength) {
-      setError('Input length exceeds the maximum allowed length.');
+    if (prompt.length > problem.maxPromptLength) {
+      setError('Prompt length exceeds the maximum allowed length.');
       return;
     }
 
@@ -95,23 +95,17 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       return;
     }
 
-    const newUserMessage = { text: input, sender: 'user' as const };
+    const newUserMessage = { text: prompt, sender: 'user' as const };
     setMessages((prev) => [...prev, newUserMessage]);
-    setInput('');
+    setPrompt('');
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/ai/chat/google', {
+      const response = await fetch(`/api/v1/problems/${problem.id}/prompt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          answer: input,
-          problemDescription: problem.description,
-          testCases: problem.testcases,
-          exampleInput: problem.exampleInput,
-          exampleOutput: problem.exampleOutput,
-        }),
+        body: JSON.stringify({ prompt }),
       });
 
       if (!response.ok) {
@@ -120,7 +114,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       }
 
       const data = await response.json();
-      const output = data.response.feedback || '';
+      const feedback = data.response.feedback || '';
       const score = data.response.score || 0;
 
       // Add to submissions
@@ -130,8 +124,8 @@ export default function PromptForm({ problem }: { problem: Problem }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            input,
-            output,
+            prompt,
+            feedback,
             score,
           }),
         }
@@ -142,14 +136,14 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         throw new Error(errorData.message || 'Failed to create submission');
       }
 
-      const fetchedSubmissions = await fetchSubmissionsFromAPI(problem.id);
+      const fetchedSubmissions = await fetchSubmissions(problem.id);
       if (fetchedSubmissions) {
         setSubmissions(fetchedSubmissions);
         setAttempts(fetchedSubmissions.length);
       }
 
       const newAiMessage = {
-        text: `Score: ${score}/10\n\n${output}`,
+        text: `Score: ${score}/10\n\n${feedback}`,
         sender: 'ai' as const,
       };
       setMessages((prev) => [...prev, newAiMessage]);
@@ -171,7 +165,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   };
 
   const handleTestCustomCase = async () => {
-    if (!input.trim()) {
+    if (!prompt.trim()) {
       setError('Prompt cannot be empty when testing a custom case.');
       return;
     }
@@ -191,11 +185,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: input,
-            customTestCase,
-            problemDescription: problem.description,
-          }),
+          body: JSON.stringify({ prompt, customTestCase }),
         }
       );
 
@@ -246,7 +236,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       className="rounded-lg border p-4 shadow-sm"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="font-semibold text-foreground">
+                        <span className="text-foreground font-semibold">
                           Attempt {index + 1}
                         </span>
                         <span
@@ -263,25 +253,25 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       </div>
                       <Separator className="my-2" />
                       <div className="mt-2">
-                        <p className="text-sm font-medium text-muted-foreground">
+                        <p className="text-muted-foreground text-sm font-medium">
                           Your Prompt:
                         </p>
-                        <p className="mt-1 text-sm text-foreground">
-                          {submission.input}
+                        <p className="text-foreground mt-1 text-sm">
+                          {submission.prompt}
                         </p>
                       </div>
                       <div className="mt-4">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Output:
+                        <p className="text-muted-foreground text-sm font-medium">
+                          Feedback:
                         </p>
-                        <p className="mt-1 text-sm text-foreground">
-                          {submission.output}
+                        <p className="text-foreground mt-1 text-sm">
+                          {submission.feedback}
                         </p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-center text-muted-foreground">
+                  <p className="text-muted-foreground text-center">
                     No submissions yet.
                   </p>
                 )}
@@ -311,34 +301,33 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             )}
 
             {!loading && submissions.length > 0 && (
-              <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border border-foreground/10 bg-foreground/10 p-6 text-foreground shadow-md">
+              <div className="border-foreground/10 bg-foreground/10 text-foreground mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border p-6 shadow-md">
                 <h3 className="text-2xl font-semibold">Your Last Attempt</h3>
-                <div className="w-full rounded-lg border border-foreground/5 bg-foreground/5 p-4 shadow-md">
+                <div className="border-foreground/5 bg-foreground/5 w-full rounded-lg border p-4 shadow-md">
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-foreground">
+                      <p className="text-foreground text-sm">
                         <strong className="font-medium">Prompt: </strong>
-                        {submissions[submissions?.length - 1]?.input}
+                        {submissions[submissions?.length - 1]?.prompt}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-foreground">
+                      <p className="text-foreground text-sm">
                         <strong className="font-medium">Score: </strong>
                         {submissions[submissions?.length - 1]?.score}/10
                       </p>
                     </div>
                   </div>
-                  {/* <div>Test case output: {requestResults}</div> */}
                 </div>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="test" className="space-y-4">
-            <div className="space-y-4 rounded-lg border border-foreground/10 bg-foreground/10 p-6">
+            <div className="border-foreground/10 bg-foreground/10 space-y-4 rounded-lg border p-6">
               <div>
                 <h3 className="mb-2 text-lg font-medium">Custom Test Case</h3>
-                <p className="mb-3 text-sm text-muted-foreground">
+                <p className="text-muted-foreground mb-3 text-sm">
                   Enter a custom test case to see how your prompt would perform
                   on it. This won't count against your submission attempts.
                 </p>
@@ -351,7 +340,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                 <Button
                   onClick={handleTestCustomCase}
                   className="mt-3 gap-2"
-                  disabled={attempts <= 0}
+                  disabled={customTestCase.length === 0}
                 >
                   <PlayCircle className="h-4 w-4" />
                   {testingCustom ? 'Testing...' : 'Test This Case'}
@@ -365,7 +354,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
               )}
 
               {testResult && (
-                <div className="mt-4 rounded-lg border border-foreground/10 bg-foreground/5 p-4">
+                <div className="border-foreground/10 bg-foreground/5 mt-4 rounded-lg border p-4">
                   <h4 className="mb-2 text-lg font-medium">Test Results</h4>
                   <div className="space-y-3">
                     <div>
@@ -384,7 +373,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     </div>
                     <div>
                       <span className="font-semibold">Feedback: </span>
-                      <p className="mt-1 text-sm whitespace-pre-wrap">
+                      <p className="mt-1 whitespace-pre-wrap text-sm">
                         {testResult.feedback}
                       </p>
                     </div>
@@ -400,8 +389,8 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       <div className="flex gap-2 p-2">
         <Input
           placeholder="Type your prompt..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={loading || attempts >= 3}
         />
@@ -414,7 +403,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   );
 }
 
-async function fetchSubmissionsFromAPI(problemId: string) {
+async function fetchSubmissions(problemId: string) {
   const response = await fetch(`/api/v1/problems/${problemId}/submissions`);
   const data = await response.json();
   if (response.ok) {
