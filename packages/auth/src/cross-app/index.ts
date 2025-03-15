@@ -1,13 +1,7 @@
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import { Database } from '@tuturuuu/types/supabase';
 
-// Export components
-export * from './components';
-
-// Export hooks
 export * from './hooks';
-
-// Export navigation utilities
 export * from './navigation';
 
 /**
@@ -42,7 +36,7 @@ export async function generateCrossAppToken(
       p_origin_app: originApp,
       p_target_app: targetApp,
       p_expiry_seconds: expirySeconds,
-    } as any); // Type assertion to bypass TypeScript checking for RPC functions
+    });
 
     if (error) {
       console.error('Error generating cross-app token:', error);
@@ -73,7 +67,7 @@ export async function validateCrossAppToken(
     const { data, error } = await supabase.rpc('validate_cross_app_token', {
       p_token: token,
       p_target_app: targetApp,
-    } as any); // Type assertion to bypass TypeScript checking for RPC functions
+    });
 
     if (error) {
       console.error('Error validating cross-app token:', error);
@@ -110,7 +104,7 @@ export async function revokeAllCrossAppTokens(
     // Call the RPC function to revoke all tokens
     const { error } = await supabase.rpc('revoke_all_cross_app_tokens', {
       p_user_id: user.id,
-    } as any); // Type assertion to bypass TypeScript checking for RPC functions
+    });
 
     if (error) {
       console.error('Error revoking cross-app tokens:', error);
