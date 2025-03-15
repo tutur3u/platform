@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   NovaChallenge,
   NovaProblem,
@@ -25,26 +24,16 @@ interface Props {
 }
 
 export default function Page({ params }: Props) {
-  const supabase = createClient();
-  const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ReportData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const { challengeId } = await params;
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user?.id) {
-          router.push('/login');
-          return;
-        }
 
         const response = await fetch(
           `/api/v1/challenges/${challengeId}/report`
@@ -71,7 +60,7 @@ export default function Page({ params }: Props) {
     };
 
     fetchData();
-  }, [params, supabase.auth, router]);
+  }, [params, router]);
 
   if (loading) {
     return (
@@ -144,8 +133,7 @@ export default function Page({ params }: Props) {
 
         <div className="bg-primary/10 mb-6 rounded-lg p-4">
           <p className="text-lg font-semibold">
-            {/* Total Score: {data.total_score} */}
-            Total Score: To be calculated...
+            Total Score: {data.total_score}
           </p>
         </div>
 

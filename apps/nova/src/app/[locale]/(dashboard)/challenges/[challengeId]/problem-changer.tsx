@@ -1,25 +1,25 @@
 import { Button } from '@tuturuuu/ui/button';
 
 interface Props {
-  proNum: number;
+  problemLength: number;
   currentProblem: number;
-  onNext: () => void;
   onPrev: () => void;
+  onNext: () => void;
 }
 
 export default function ProblemChanger({
-  proNum,
-  onNext,
-  onPrev,
+  problemLength,
   currentProblem,
+  onPrev,
+  onNext,
 }: Props) {
   return (
     <div className="flex items-center gap-2">
       <Button onClick={onPrev} variant="outline" size="sm">
         {'<'}
       </Button>
-      <div className="text-sm text-black text-foreground">
-        {currentProblem} of {proNum}
+      <div className="text-foreground text-sm text-black">
+        {currentProblem} of {problemLength}
       </div>
       <Button onClick={onNext} variant="outline" size="sm">
         {'>'}
