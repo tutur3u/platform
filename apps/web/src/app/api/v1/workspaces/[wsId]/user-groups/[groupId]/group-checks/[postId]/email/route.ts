@@ -101,11 +101,14 @@ export async function POST(
   const successCount = results.filter((result) => result).length;
   const failureCount = results.filter((result) => !result).length;
 
-  return NextResponse.json({
-    message: 'Emails sent and logged',
-    successCount,
-    failureCount,
-  });
+  return NextResponse.json(
+    {
+      message: 'Emails sent and logged',
+      successCount,
+      failureCount,
+    },
+    { status: failureCount > 0 ? 500 : successCount > 0 ? 200 : 404 }
+  );
 }
 
 const sendEmail = async ({
