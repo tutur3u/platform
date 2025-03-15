@@ -18,7 +18,7 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="flex justify-center">
             <Skeleton className={cn('h-72 w-64', i === 1 ? 'h-80' : '')} />
@@ -45,7 +45,7 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
 
   return (
     <motion.div
-      className="grid grid-cols-1 gap-6 sm:grid-cols-3"
+      className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-3"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -90,7 +90,7 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
 
                 <div className="relative mb-4">
                   <motion.div
-                    className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary/50 to-blue-500/50 opacity-75 blur-sm"
+                    className="from-primary/50 absolute -inset-1 rounded-full bg-gradient-to-r to-blue-500/50 opacity-75 blur-sm"
                     animate={{
                       rotate: 360,
                       scale: [1, 1.05, 1],
@@ -125,7 +125,7 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
                   </Avatar>
                 </div>
                 <h3 className="mb-2 text-xl font-bold">{entry.name}</h3>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-primary text-2xl font-bold">
                   {entry.score.toLocaleString()}
                 </p>
               </CardContent>
