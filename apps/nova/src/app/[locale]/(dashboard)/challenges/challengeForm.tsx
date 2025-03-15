@@ -24,6 +24,9 @@ const formSchema = z
     description: z.string().min(10, {
       message: 'Description must be at least 10 characters.',
     }),
+    criteria: z.string().min(10, {
+      message: 'Criteria must be at least 10 characters.',
+    }),
     duration: z.coerce.number().min(60, {
       message: 'Duration must be at least 60 seconds.',
     }),
@@ -43,6 +46,7 @@ export default function ChallengeForm({
   defaultValues = {
     title: '',
     description: '',
+    criteria: '',
     duration: 3600, // Default to 1 hour in seconds
   },
   challengeId,
@@ -89,6 +93,25 @@ export default function ChallengeForm({
               </FormControl>
               <FormDescription>
                 Provide a short description of what this challenge is about.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="criteria"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Judging Criteria</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="List the criteria for judging submissions"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Specify the criteria that will be used to evaluate challenge submissions.
               </FormDescription>
               <FormMessage />
             </FormItem>
