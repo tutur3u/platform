@@ -213,8 +213,10 @@ export const verifyRouteToken = async ({
     const nextUrl = searchParams.get('nextUrl');
     if (nextUrl) {
       router.push(nextUrl);
+      router.refresh();
     } else {
       router.push('/');
+      router.refresh();
     }
   } else {
     const res = await fetch('/api/auth/verify-app-token', {
@@ -229,6 +231,7 @@ export const verifyRouteToken = async ({
       const data = await res.json();
       console.error('Error verifying token:', data.error);
       router.push('/');
+      router.refresh();
     }
 
     const data = await res.json();
@@ -237,8 +240,10 @@ export const verifyRouteToken = async ({
       const nextUrl = searchParams.get('nextUrl');
       if (nextUrl) {
         router.push(nextUrl);
+        router.refresh();
       } else {
         router.push('/');
+        router.refresh();
       }
     }
   }
