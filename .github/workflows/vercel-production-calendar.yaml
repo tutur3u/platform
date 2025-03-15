@@ -25,10 +25,10 @@ jobs:
       - name: Check for newer commits
         id: check_commits
         run: |
-          git fetch origin production
-          LATEST_COMMIT=$(git rev-parse origin/production)
+          git fetch origin production || { echo "Remote branch not found, continuing with build"; echo "skip_build=false" >> $GITHUB_OUTPUT; exit 0; }
+          LATEST_COMMIT=$(git rev-parse origin/production 2>/dev/null || echo "")
           CURRENT_COMMIT=${GITHUB_SHA}
-          if [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
+          if [ -n "$LATEST_COMMIT" ] && [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
             echo "Newer commit found on production branch. Skipping build."
             echo "skip_build=true" >> $GITHUB_OUTPUT
           else

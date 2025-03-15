@@ -5,6 +5,7 @@ import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
   Form,
   FormControl,
@@ -19,6 +20,7 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { Separator } from '@tuturuuu/ui/separator';
 import { Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -34,7 +36,7 @@ const FormSchema = z.object({
 export default function LoginForm() {
   const supabase = createClient();
 
-  const t = useTranslations('login');
+  const t = useTranslations();
   const locale = useLocale();
 
   const router = useRouter();
@@ -166,8 +168,8 @@ export default function LoginForm() {
     if (res.ok) {
       // Notify user
       toast({
-        title: t('success'),
-        description: t('otp_sent'),
+        title: t('login.success'),
+        description: t('login.otp_sent'),
       });
 
       // OTP has been sent
@@ -179,8 +181,8 @@ export default function LoginForm() {
       setResendCooldown(cooldown);
     } else {
       toast({
-        title: t('failed'),
-        description: t('failed_to_send'),
+        title: t('login.failed'),
+        description: t('login.failed_to_send'),
       });
     }
 
@@ -202,12 +204,12 @@ export default function LoginForm() {
     } else {
       setLoading(false);
 
-      form.setError('otp', { message: t('invalid_verification_code') });
+      form.setError('otp', { message: t('login.invalid_verification_code') });
       form.setValue('otp', '');
 
       toast({
-        title: t('failed'),
-        description: t('failed_to_verify'),
+        title: t('login.failed'),
+        description: t('login.failed_to_verify'),
       });
     }
   };
@@ -260,11 +262,18 @@ export default function LoginForm() {
     if (error) {
       setLoading(false);
       toast({
-        title: t('failed'),
+        title: t('login.failed'),
         description: error.message,
       });
     }
   };
+
+  if (!readyForAuth)
+    return (
+      <div className="mt-4 flex h-full w-full items-center justify-center">
+        <LoadingIndicator className="h-10 w-10" />
+      </div>
+    );
 
   return (
     <div className="mt-8 space-y-4">
@@ -298,7 +307,7 @@ export default function LoginForm() {
           />
           <path d="M1 1h22v22H1z" fill="none" />
         </svg>
-        {t('continue_with_google')}
+        {t('login.continue_with_google')}
       </Button>
 
       <div className="relative">
@@ -307,7 +316,7 @@ export default function LoginForm() {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            {t('or_continue_with')}
+            {t('login.or_continue_with')}
           </span>
         </div>
       </div>
@@ -322,14 +331,16 @@ export default function LoginForm() {
                 <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={t('email_placeholder')}
+                    placeholder={t('login.email_placeholder')}
                     {...field}
                     disabled={otpSent || loading || !readyForAuth}
                   />
                 </FormControl>
 
                 {otpSent || (
-                  <FormDescription>{t('email_description')}</FormDescription>
+                  <FormDescription>
+                    {t('login.email_description')}
+                  </FormDescription>
                 )}
                 <FormMessage />
               </FormItem>
@@ -341,7 +352,7 @@ export default function LoginForm() {
             name="otp"
             render={({ field }) => (
               <FormItem className={otpSent ? '' : 'hidden'}>
-                <FormLabel>{t('otp_code')}</FormLabel>
+                <FormLabel>{t('login.otp_code')}</FormLabel>
                 <FormControl>
                   <div className="flex flex-col gap-2 md:flex-row">
                     <InputOTP
@@ -377,15 +388,15 @@ export default function LoginForm() {
                       type="button"
                     >
                       {resendCooldown > 0
-                        ? `${t('resend')} (${resendCooldown})`
-                        : t('resend')}
+                        ? `${t('login.resend')} (${resendCooldown})`
+                        : t('login.resend')}
                     </Button>
                   </div>
                 </FormControl>
                 {form.formState.errors.otp && (
                   <FormMessage>{form.formState.errors.otp.message}</FormMessage>
                 )}
-                <FormDescription>{t('otp_description')}</FormDescription>
+                <FormDescription>{t('login.otp_description')}</FormDescription>
               </FormItem>
             )}
           />
@@ -405,7 +416,7 @@ export default function LoginForm() {
                   disabled={loading}
                 >
                   <Mail size={18} className="mr-1" />
-                  {t('open_inbucket')}
+                  {t('login.open_inbucket')}
                 </Button>
               </Link>
             </div>
@@ -418,10 +429,35 @@ export default function LoginForm() {
               loading || (otpSent && !form.getValues('otp')) || !readyForAuth
             }
           >
-            {loading ? t('processing') : otpSent ? t('verify') : t('continue')}
+            {loading
+              ? t('login.processing')
+              : otpSent
+                ? t('login.verify')
+                : t('login.continue')}
           </Button>
         </form>
       </Form>
+
+      <Separator className="mt-2" />
+      <div className="text-center text-sm font-semibold text-balance text-foreground/50">
+        {t('auth.notice-p1')}{' '}
+        <Link
+          href="/terms"
+          target="_blank"
+          className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
+        >
+          {t('auth.tos')}
+        </Link>{' '}
+        {t('common.and')}{' '}
+        <Link
+          href="/privacy"
+          target="_blank"
+          className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
+        >
+          {t('auth.privacy')}
+        </Link>{' '}
+        {t('auth.notice-p2')}.
+      </div>
     </div>
   );
 }

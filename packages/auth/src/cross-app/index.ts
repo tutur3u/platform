@@ -30,13 +30,35 @@ export async function generateCrossAppToken(
       return null;
     }
 
-    // Call the RPC function to generate a token
-    const { data, error } = await supabase.rpc('generate_cross_app_token', {
+    // Get the current session
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error('Error getting session:', sessionError);
+      return null;
+    }
+
+    // Extract the session tokens
+    const sessionTokens = {
+      access_token: sessionData.session?.access_token,
+      refresh_token: sessionData.session?.refresh_token,
+    };
+
+    // Create parameters object with type assertion
+    const params = {
       p_user_id: user.id,
       p_origin_app: originApp,
       p_target_app: targetApp,
       p_expiry_seconds: expirySeconds,
-    });
+      p_session_data: sessionTokens,
+    };
+
+    // Call the RPC function to generate a token with session data
+    const { data, error } = await supabase.rpc(
+      'generate_cross_app_token',
+      params
+    );
 
     if (error) {
       console.error('Error generating cross-app token:', error);
@@ -51,32 +73,65 @@ export async function generateCrossAppToken(
 }
 
 /**
- * Validates a cross-app authentication token
+ * Validates a cross-app authentication token and returns the session data
  * @param supabase The Supabase client
  * @param token The token to validate
  * @param targetApp The target app identifier
- * @returns The user ID if the token is valid, null otherwise
+ * @returns An object with userId and sessionData if valid, null otherwise
  */
-export async function validateCrossAppToken(
+export async function validateCrossAppTokenWithSession(
   supabase: SupabaseClient<Database>,
   token: string,
   targetApp: string
-): Promise<string | null> {
+): Promise<{
+  userId: string;
+  sessionData?: { access_token: string; refresh_token: string };
+} | null> {
   try {
-    // Call the RPC function to validate the token
-    const { data, error } = await supabase.rpc('validate_cross_app_token', {
-      p_token: token,
-      p_target_app: targetApp,
-    });
+    // Call the RPC function to validate the token and get session data
+    const { data, error } = await supabase.rpc(
+      'validate_cross_app_token_with_session',
+      {
+        p_token: token,
+        p_target_app: targetApp,
+      }
+    );
 
-    if (error) {
+    if (error || !data) {
       console.error('Error validating cross-app token:', error);
       return null;
     }
 
-    return data as string;
+    // Process the result
+    const result = data as unknown as {
+      user_id: string | null;
+      session_data?: {
+        access_token: string;
+        refresh_token: string;
+      };
+    };
+
+    if (!result.user_id) {
+      return null;
+    }
+
+    // If session data is available, set the session
+    if (result.session_data) {
+      await supabase.auth.setSession({
+        access_token: result.session_data.access_token,
+        refresh_token: result.session_data.refresh_token,
+      });
+    }
+
+    return {
+      userId: result.user_id,
+      sessionData: result.session_data,
+    };
   } catch (error) {
-    console.error('Unexpected error validating cross-app token:', error);
+    console.error(
+      'Unexpected error validating cross-app token with session:',
+      error
+    );
     return null;
   }
 }
@@ -158,8 +213,10 @@ export const verifyRouteToken = async ({
     const nextUrl = searchParams.get('nextUrl');
     if (nextUrl) {
       router.push(nextUrl);
+      router.refresh();
     } else {
       router.push('/');
+      router.refresh();
     }
   } else {
     const res = await fetch('/api/auth/verify-app-token', {
@@ -174,6 +231,7 @@ export const verifyRouteToken = async ({
       const data = await res.json();
       console.error('Error verifying token:', data.error);
       router.push('/');
+      router.refresh();
     }
 
     const data = await res.json();
@@ -182,8 +240,10 @@ export const verifyRouteToken = async ({
       const nextUrl = searchParams.get('nextUrl');
       if (nextUrl) {
         router.push(nextUrl);
+        router.refresh();
       } else {
         router.push('/');
+        router.refresh();
       }
     }
   }
