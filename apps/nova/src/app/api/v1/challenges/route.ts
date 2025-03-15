@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       })
       .select()
       .single();
+      
 
     if (error) {
       console.error('Database Error: ', error);
