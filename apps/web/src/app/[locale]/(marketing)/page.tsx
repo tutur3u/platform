@@ -259,7 +259,7 @@ export default function MarketingPage() {
             <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
               <GetStartedGradientButton
                 text={t('home.get-started')}
-                href="/login"
+                href="/onboarding"
               />
             </div>
 

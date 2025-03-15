@@ -128,7 +128,7 @@ export default function Page({ params }: Props) {
   if (!session) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground text-xl font-semibold">
+        <p className="text-xl font-semibold text-muted-foreground">
           Loading...
         </p>
       </div>

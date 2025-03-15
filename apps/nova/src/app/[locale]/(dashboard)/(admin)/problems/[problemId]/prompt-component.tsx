@@ -13,7 +13,7 @@ interface Problem {
 
 export default function PromptComponent({ problem }: { problem: Problem }) {
   return (
-    <Card className="bg-foreground/10 text-foreground h-[813px] w-1/2 overflow-y-auto p-4 pt-10">
+    <Card className="h-[813px] w-1/2 overflow-y-auto bg-foreground/10 p-4 pt-10 text-foreground">
       <PromptForm problem={problem} />
     </Card>
   );

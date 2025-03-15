@@ -141,12 +141,12 @@ export default function LeaderboardPage() {
         <Card>
           <CardContent className="flex items-center justify-between p-6">
             <div>
-              <p className="text-muted-foreground text-sm font-medium">
+              <p className="text-sm font-medium text-muted-foreground">
                 Your Rank
               </p>
               <h3 className="text-2xl font-bold"># {yourRank}</h3>
             </div>
-            <div className="bg-primary/10 text-primary rounded-full p-2">
+            <div className="rounded-full bg-primary/10 p-2 text-primary">
               <Trophy className="h-6 w-6" />
             </div>
           </CardContent>
@@ -155,14 +155,14 @@ export default function LeaderboardPage() {
         <Card>
           <CardContent className="flex items-center justify-between p-6">
             <div>
-              <p className="text-muted-foreground text-sm font-medium">
+              <p className="text-sm font-medium text-muted-foreground">
                 Top Score
               </p>
               <h3 className="text-2xl font-bold">
                 {topScore?.toLocaleString()}
               </h3>
             </div>
-            <div className="bg-primary/10 text-primary rounded-full p-2">
+            <div className="rounded-full bg-primary/10 p-2 text-primary">
               <Star className="h-6 w-6" />
             </div>
           </CardContent>
@@ -171,12 +171,12 @@ export default function LeaderboardPage() {
         <Card>
           <CardContent className="flex items-center justify-between p-6">
             <div>
-              <p className="text-muted-foreground text-sm font-medium">
+              <p className="text-sm font-medium text-muted-foreground">
                 Participants
               </p>
               <h3 className="text-2xl font-bold">{totalParticipants}</h3>
             </div>
-            <div className="bg-primary/10 text-primary rounded-full p-2">
+            <div className="rounded-full bg-primary/10 p-2 text-primary">
               <Users className="h-6 w-6" />
             </div>
           </CardContent>

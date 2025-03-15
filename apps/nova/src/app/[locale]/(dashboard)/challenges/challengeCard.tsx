@@ -174,10 +174,10 @@ export default function ChallengeCard({
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="text-muted-foreground mb-4">{challenge.description}</p>
+          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
           <div className="flex items-center">
             <Clock className="h-4 w-4" />
-            <span className="text-muted-foreground ml-2 text-sm">
+            <span className="ml-2 text-sm text-muted-foreground">
               Duration: {formatDuration(challenge.duration)}
             </span>
           </div>

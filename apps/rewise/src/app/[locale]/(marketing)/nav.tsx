@@ -148,7 +148,10 @@ export function Nav({
             }}
           />
         </TooltipTrigger>
-        <TooltipContent side="right" className="flex items-center gap-4">
+        <TooltipContent
+          side="right"
+          className="flex items-center gap-4 border bg-background text-foreground"
+        >
           <div>
             <div className="font-semibold">
               {configs.showChatName
@@ -223,7 +226,10 @@ export function Nav({
                 </Button>
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent
+              side="right"
+              className="flex items-center gap-4 border bg-background text-foreground"
+            >
               <div className="font-semibold">{t('ai_chat.new_chat')}</div>
             </TooltipContent>
           </Tooltip>

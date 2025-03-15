@@ -10,17 +10,11 @@ export function GetStartedButton({ text }: { text: string }) {
   const hidden = pathname === '/login';
 
   return (
-    <Link
-      href={
-        hidden
-          ? '/login'
-          : `/login${pathname !== '/' ? `?nextUrl=${encodeURIComponent(pathname)}` : ''}`
-      }
-    >
+    <Link href="/onboarding">
       <Button
         className={cn(
           hidden &&
-            'text-foreground/50 pointer-events-none select-none bg-transparent opacity-50'
+            'pointer-events-none bg-transparent text-foreground/50 opacity-50 select-none'
         )}
       >
         {text}

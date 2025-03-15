@@ -49,7 +49,7 @@ export function Nav({ isAdmin, isCollapsed, navItems, onClick }: NavProps) {
                       </TooltipTrigger>
                       <TooltipContent
                         side="right"
-                        className="flex items-center gap-4"
+                        className="flex items-center gap-4 border bg-background text-foreground"
                       >
                         {item.name}
                       </TooltipContent>
@@ -91,7 +91,7 @@ export function Nav({ isAdmin, isCollapsed, navItems, onClick }: NavProps) {
                         </TooltipTrigger>
                         <TooltipContent
                           side="right"
-                          className="flex items-center gap-4"
+                          className="flex items-center gap-4 border bg-background text-foreground"
                         >
                           {subItem.name}
                         </TooltipContent>
@@ -136,7 +136,7 @@ export function Nav({ isAdmin, isCollapsed, navItems, onClick }: NavProps) {
                 </TooltipTrigger>
                 <TooltipContent
                   side="right"
-                  className="flex items-center gap-4"
+                  className="flex items-center gap-4 border bg-background text-foreground"
                 >
                   {item.name}
                 </TooltipContent>
