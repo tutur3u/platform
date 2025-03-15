@@ -802,6 +802,7 @@ export type Database = {
           id: string;
           is_revoked: boolean;
           origin_app: string;
+          session_data: Json | null;
           target_app: string;
           token: string;
           used_at: string | null;
@@ -813,6 +814,7 @@ export type Database = {
           id?: string;
           is_revoked?: boolean;
           origin_app: string;
+          session_data?: Json | null;
           target_app: string;
           token: string;
           used_at?: string | null;
@@ -824,6 +826,7 @@ export type Database = {
           id?: string;
           is_revoked?: boolean;
           origin_app?: string;
+          session_data?: Json | null;
           target_app?: string;
           token?: string;
           used_at?: string | null;
@@ -5829,15 +5832,26 @@ export type Database = {
         };
         Returns: string;
       };
-      generate_cross_app_token: {
-        Args: {
-          p_user_id: string;
-          p_origin_app: string;
-          p_target_app: string;
-          p_expiry_seconds?: number;
-        };
-        Returns: string;
-      };
+      generate_cross_app_token:
+        | {
+            Args: {
+              p_user_id: string;
+              p_origin_app: string;
+              p_target_app: string;
+              p_expiry_seconds?: number;
+            };
+            Returns: string;
+          }
+        | {
+            Args: {
+              p_user_id: string;
+              p_origin_app: string;
+              p_target_app: string;
+              p_expiry_seconds?: number;
+              p_session_data?: Json;
+            };
+            Returns: string;
+          };
       get_daily_income_expense: {
         Args: {
           _ws_id: string;
@@ -6301,6 +6315,16 @@ export type Database = {
           p_target_app: string;
         };
         Returns: string;
+      };
+      validate_cross_app_token_with_session: {
+        Args: {
+          p_token: string;
+          p_target_app: string;
+        };
+        Returns: {
+          user_id: string;
+          session_data: Json;
+        }[];
       };
     };
     Enums: {
