@@ -1,4 +1,4 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import { Database } from '@tuturuuu/types/supabase';
 import { useCallback } from 'react';
 
