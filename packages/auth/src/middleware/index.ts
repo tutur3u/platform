@@ -3,10 +3,6 @@ import { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-// Export token-based authentication middleware
-export * from './token-auth';
-export * from './token-param-auth';
-
 interface CentralizedAuthOptions {
   /**
    * The URL of the central authentication web app (without trailing slash)
