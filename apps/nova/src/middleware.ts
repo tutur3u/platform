@@ -2,7 +2,6 @@ import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
-import { INTERNAL_DOMAINS } from '@tuturuuu/utils/internal-domains';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
@@ -13,15 +12,15 @@ const WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : 'http://localhost:7803';
 
+// Create the centralized auth middleware
 const authMiddleware = createCentralizedAuthMiddleware({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
-  allowedOrigins: INTERNAL_DOMAINS,
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  // First handle authentication with the centralized middleware
+  // If token auth didn't handle it, try centralized auth
   const authRes = await authMiddleware(req);
 
   // If the auth middleware returned a redirect response, return it
@@ -64,7 +63,9 @@ export const config = {
 };
 
 const getSupportedLocale = (locale: string): Locale | null => {
-  return supportedLocales.includes(locale as any) ? (locale as Locale) : null;
+  return supportedLocales.includes(locale as Locale)
+    ? (locale as Locale)
+    : null;
 };
 
 const getExistingLocale = (

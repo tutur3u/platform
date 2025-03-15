@@ -1,6 +1,7 @@
 'use client';
 
 import { DEV_MODE } from '@/constants/common';
+import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
@@ -22,7 +23,7 @@ import { Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
 
 const FormSchema = z.object({
@@ -39,6 +40,8 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [initialized, setInitialized] = useState(false);
+  const [readyForAuth, setReadyForAuth] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
 
   useEffect(() => {
@@ -47,18 +50,65 @@ export default function LoginForm() {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+      setInitialized(true);
     }
 
     checkUser();
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      const returnUrl = searchParams.get('returnUrl');
-      const nextUrl = searchParams.get('nextUrl');
-      router.push(returnUrl ?? nextUrl ?? '/');
+  const processNextUrl = useCallback(async () => {
+    const returnUrl = searchParams.get('returnUrl');
+
+    if (returnUrl) {
+      const returnApp = mapUrlToApp(returnUrl);
+      console.log(returnApp);
+      if (!returnApp) throw new Error('Invalid returnUrl');
+
+      const token = await generateCrossAppToken(supabase, returnApp, 'web');
+
+      console.log('Cross App Token', token);
+      if (!token) {
+        console.error('Failed to generate token');
+        return;
+      }
+
+      // construct nextUrl with searchParams
+      const nextUrl = new URL(returnUrl);
+      nextUrl.searchParams.set('token', token);
+      nextUrl.searchParams.set('originApp', 'web');
+      nextUrl.searchParams.set('targetApp', returnApp);
+      nextUrl.searchParams.set('locale', locale);
+
+      // Redirect to the nextUrl
+      router.push(nextUrl.toString());
+      router.refresh();
+      return;
     }
-  }, [user]);
+
+    const nextUrl = searchParams.get('nextUrl');
+
+    if (nextUrl) {
+      router.push(nextUrl);
+    } else {
+      router.push('/');
+    }
+
+    router.refresh();
+  }, [searchParams, router]);
+
+  useEffect(() => {
+    const processUrl = async () => {
+      // Check if the user is logged in
+      if (user) await processNextUrl();
+      else {
+        setReadyForAuth(true);
+      }
+    };
+
+    if (initialized) {
+      processUrl();
+    }
+  }, [user, initialized]);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -147,31 +197,8 @@ export default function LoginForm() {
     });
 
     if (res.ok) {
-      // Check for returnUrl (for cross-app authentication)
-      const returnUrl = searchParams.get('returnUrl');
-
-      if (returnUrl) {
-        try {
-          // Validate the returnUrl to ensure it's a proper URL
-          const decodedUrl = decodeURIComponent(returnUrl);
-          new URL(decodedUrl); // This will throw if invalid
-
-          // Redirect will be handled by the middleware
-          router.refresh();
-          router.push(decodedUrl);
-        } catch (error) {
-          console.error('Invalid returnUrl:', error);
-          // Fall back to default nextUrl or onboarding
-          const nextUrl = searchParams.get('nextUrl');
-          router.push(nextUrl ?? '/onboarding');
-          router.refresh();
-        }
-      } else {
-        // Original behavior - use nextUrl or default to onboarding
-        const nextUrl = searchParams.get('nextUrl');
-        router.push(nextUrl ?? '/onboarding');
-        router.refresh();
-      }
+      // reload the page
+      window.location.reload();
     } else {
       setLoading(false);
 
@@ -243,7 +270,7 @@ export default function LoginForm() {
     <div className="mt-8 space-y-4">
       <Button
         onClick={handleGoogleLogin}
-        disabled={loading}
+        disabled={loading || !readyForAuth}
         className="w-full"
         variant="outline"
         type="button"
@@ -279,7 +306,7 @@ export default function LoginForm() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background text-muted-foreground px-2">
+          <span className="bg-background px-2 text-muted-foreground">
             {t('or_continue_with')}
           </span>
         </div>
@@ -297,7 +324,7 @@ export default function LoginForm() {
                   <Input
                     placeholder={t('email_placeholder')}
                     {...field}
-                    disabled={otpSent || loading}
+                    disabled={otpSent || loading || !readyForAuth}
                   />
                 </FormControl>
 
@@ -325,7 +352,7 @@ export default function LoginForm() {
                         if (value.length === maxOTPLength)
                           form.handleSubmit(onSubmit)();
                       }}
-                      disabled={loading}
+                      disabled={loading || !readyForAuth}
                     >
                       <InputOTPGroup className="w-full justify-center">
                         {Array.from({ length: maxOTPLength }).map(
@@ -344,7 +371,7 @@ export default function LoginForm() {
                       onClick={() =>
                         sendOtp({ email: form.getValues('email') })
                       }
-                      disabled={loading || resendCooldown > 0}
+                      disabled={loading || resendCooldown > 0 || !readyForAuth}
                       className="md:w-full"
                       variant="secondary"
                       type="button"
@@ -387,7 +414,9 @@ export default function LoginForm() {
           <Button
             type="submit"
             className="w-full"
-            disabled={loading || (otpSent && !form.getValues('otp'))}
+            disabled={
+              loading || (otpSent && !form.getValues('otp')) || !readyForAuth
+            }
           >
             {loading ? t('processing') : otpSent ? t('verify') : t('continue')}
           </Button>
