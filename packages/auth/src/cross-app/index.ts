@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import { Database } from '@tuturuuu/types/supabase';
+import { APP_DOMAIN_MAP } from '@tuturuuu/utils/internal-domains';
 
 export * from './hooks';
 export * from './navigation';
@@ -117,3 +118,74 @@ export async function revokeAllCrossAppTokens(
     return false;
   }
 }
+
+/**
+ * Maps the provided URL to the corresponding app identifier
+ * @param url The URL to map
+ * @returns The app identifier or null if not found
+ */
+export function mapUrlToApp(url: string): string | null {
+  const decodedUrl = decodeURIComponent(url);
+
+  try {
+    new URL(decodedUrl);
+  } catch {
+    console.error('Invalid URL format:', decodedUrl);
+    return null;
+  }
+
+  const noTrailingSlash = decodedUrl.replace(/\/$/, '');
+  const appIdentifier = APP_DOMAIN_MAP.find((domain) =>
+    noTrailingSlash.startsWith(domain.url)
+  )?.name;
+
+  if (!appIdentifier) {
+    console.warn('No app identifier found for URL:', noTrailingSlash);
+  }
+
+  return appIdentifier || null;
+}
+
+export const verifyRouteToken = async ({
+  searchParams,
+  token,
+  router,
+}: {
+  searchParams: URLSearchParams;
+  token: string | null;
+  router: any;
+}) => {
+  if (!token) {
+    const nextUrl = searchParams.get('nextUrl');
+    if (nextUrl) {
+      router.push(nextUrl);
+    } else {
+      router.push('/');
+    }
+  } else {
+    const res = await fetch('/api/auth/verify-app-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      console.error('Error verifying token:', data.error);
+      router.push('/');
+    }
+
+    const data = await res.json();
+    if (data.userId) {
+      // Token is valid, redirect to next url
+      const nextUrl = searchParams.get('nextUrl');
+      if (nextUrl) {
+        router.push(nextUrl);
+      } else {
+        router.push('/');
+      }
+    }
+  }
+};

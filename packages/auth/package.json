@@ -6,7 +6,8 @@
     "types": "./src/index.ts",
     "exports": {
         "./middleware": "./src/middleware/index.ts",
-        "./cross-app": "./src/cross-app/index.ts"
+        "./cross-app": "./src/cross-app/index.ts",
+        "./cross-app/server": "./src/cross-app/server.ts"
     },
     "license": "MIT",
     "scripts": {
@@ -14,6 +15,7 @@
     },
     "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "next": "^15.2.2"
     },

@@ -679,6 +679,7 @@
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
         "next": "^15.2.2",
       },
       "devDependencies": {

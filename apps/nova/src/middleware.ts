@@ -1,11 +1,7 @@
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
-import {
-  createCentralizedAuthMiddleware,
-  createTokenParamAuthMiddleware,
-} from '@tuturuuu/auth/middleware';
-import { INTERNAL_DOMAINS } from '@tuturuuu/utils/internal-domains';
+import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
@@ -21,29 +17,9 @@ const authMiddleware = createCentralizedAuthMiddleware({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
-  allowedOrigins: INTERNAL_DOMAINS,
-});
-
-// Create the token-based auth middleware
-const tokenAuthMiddleware = createTokenParamAuthMiddleware({
-  appId: 'nova',
-  publicPaths: PUBLIC_PATHS,
-  skipApiRoutes: true,
-  allowedOrigins: INTERNAL_DOMAINS,
-  tokenParamName: 'token',
-  tokenCookieName: 'nova-token',
-  tokenCookieExpiry: 3600, // 1 hour
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  // First try token-based authentication
-  const tokenAuthRes = await tokenAuthMiddleware(req);
-
-  // If the token auth middleware returned a redirect response, return it
-  if (tokenAuthRes.headers.has('Location')) {
-    return tokenAuthRes;
-  }
-
   // If token auth didn't handle it, try centralized auth
   const authRes = await authMiddleware(req);
 
