@@ -313,19 +313,34 @@ export default function MarketingPage() {
                   </motion.div>
                 </div>
 
-                {/* Enhanced CTA Button */}
-                <motion.div
-                  className="mt-12 text-center"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button size="lg" disabled>
-                    <span className="relative z-10 flex items-center gap-2">
-                      {t('register')}
-                      <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </span>
-                  </Button>
-                </motion.div>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <motion.div
+                    className="mt-12 text-center"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button size="lg" disabled>
+                      <span className="relative z-10 flex items-center gap-2">
+                        {t('register')}
+                        <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </Button>
+                  </motion.div>
+                  <motion.div
+                    className="mt-12 text-center"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link href="/competitions/neo-league/prompt-the-future/about">
+                      <Button size="lg" variant="outline">
+                        <span className="relative z-10 flex items-center gap-2">
+                          {t('learn_more')}
+                          <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </Button>
+                    </Link>
+                  </motion.div>
+                </div>
               </div>
             </motion.section>
           </div>
