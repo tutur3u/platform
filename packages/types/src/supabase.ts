@@ -6303,7 +6303,7 @@ export type Database = {
           challenge_id_param: string;
           user_id_param: string;
         };
-        Returns: number;
+        Returns: undefined;
       };
       validate_cross_app_token: {
         Args: {

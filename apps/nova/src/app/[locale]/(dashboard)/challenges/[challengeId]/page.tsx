@@ -43,7 +43,6 @@ export default function Page({ params }: Props) {
   );
   const [session, setSession] = useState<NovaSession | null>(null);
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
-  const [challengeId, setChallengeId] = useState('');
   const [showEndDialog, setShowEndDialog] = useState(false);
 
   const router = useRouter();
@@ -69,18 +68,19 @@ export default function Page({ params }: Props) {
     const fetchData = async () => {
       const { challengeId } = await params;
       const challengeData = await getChallenge(challengeId);
-      setChallenge(challengeData as ExtendedNovaChallenge);
-      setChallengeId(challengeId);
+      setChallenge(challengeData);
 
       // Fetch challenge session
       const response = await fetch(`/api/v1/challenges/${challengeId}/session`);
+
       if (response.ok) {
         const sessionData = await response.json();
-        setSession(sessionData);
 
         // If challenge is ended, redirect to report page
         if (sessionData?.status === 'ENDED') {
-          router.push(`/challenges/${challengeId}/results`);
+          router.replace(`/challenges/${challengeId}/results`);
+        } else {
+          setSession(sessionData);
         }
       } else {
         router.push(`/challenges`);
@@ -88,7 +88,7 @@ export default function Page({ params }: Props) {
     };
 
     fetchData();
-  }, [challengeId, router, params]);
+  }, []);
 
   const problems = challenge?.problems || [];
 
@@ -103,32 +103,19 @@ export default function Page({ params }: Props) {
   };
 
   const handleEndChallenge = async () => {
-    const problemSubmissions = await Promise.all(
-      problems.map(async (problem) => {
-        const response = await fetch(
-          `/api/v1/problems/${problem.id}/submissions`
-        );
-        const data = await response.json();
-        return data.sort((a: any, b: any) => b.score - a.score);
-      })
+    const response = await fetch(
+      `/api/v1/challenges/${challenge?.id}/session`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'ENDED',
+        }),
+      }
     );
-
-    const totalScore = problemSubmissions.reduce(
-      (acc, curr) => acc + (curr[0]?.score || 0),
-      0
-    );
-
-    const response = await fetch(`/api/v1/challenges/${challengeId}/session`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        status: 'ENDED',
-        totalScore: totalScore,
-      }),
-    });
 
     if (response.ok) {
-      router.push(`/challenges/${challengeId}/results`);
+      router.push(`/challenges/${challenge?.id}/results`);
     } else {
       toast({
         title: 'Error',
@@ -152,15 +139,13 @@ export default function Page({ params }: Props) {
     <>
       <div className="relative">
         <CustomizedHeader
-          proNum={problems.length}
+          problemLength={problems.length}
           currentProblem={currentProblemIndex + 1}
-          challengeId={challengeId}
-          onNext={nextProblem}
-          onPrev={prevProblem}
-          onEnd={() => setShowEndDialog(true)}
-          startTime={session.start_time}
           endTime={session.end_time}
-          duration={challenge?.duration || 0}
+          onPrev={prevProblem}
+          onNext={nextProblem}
+          onEnd={() => setShowEndDialog(true)}
+          onAutoEnd={handleEndChallenge}
         />
 
         <div className="flex gap-4 p-6 pt-20">

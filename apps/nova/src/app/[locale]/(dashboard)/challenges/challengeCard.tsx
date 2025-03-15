@@ -81,9 +81,7 @@ export default function ChallengeCard({
     }
 
     const startTime = new Date();
-    const endTime = new Date(
-      startTime.getTime() + (challenge.duration || 0) * 1000
-    );
+    const endTime = new Date(startTime.getTime() + challenge.duration * 1000);
 
     const response = await fetch(`/api/v1/challenges/${challenge.id}/session`, {
       method: 'POST',
@@ -176,10 +174,10 @@ export default function ChallengeCard({
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
           <div className="flex items-center">
             <Clock className="h-4 w-4" />
-            <span className="ml-2 text-sm text-muted-foreground">
+            <span className="text-muted-foreground ml-2 text-sm">
               Duration: {formatDuration(challenge.duration)}
             </span>
           </div>
