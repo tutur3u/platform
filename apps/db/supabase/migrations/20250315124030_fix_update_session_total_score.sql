@@ -1,5 +1,7 @@
 set check_function_bodies = off;
 
+DROP FUNCTION IF EXISTS public.update_session_total_score(uuid, uuid);
+
 CREATE OR REPLACE FUNCTION public.update_session_total_score(challenge_id_param uuid, user_id_param uuid)
  RETURNS void
  LANGUAGE plpgsql
