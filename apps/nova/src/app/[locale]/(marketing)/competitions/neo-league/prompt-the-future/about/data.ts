@@ -15,7 +15,7 @@ export interface TeamMember {
 
 export interface Sponsor {
   name: string;
-  tier: 'platinum' | 'gold' | 'silver' | 'bronze';
+  tier: 'host' | 'platinum' | 'gold' | 'silver' | 'bronze';
   logo: string;
   website: string;
   description: string;
@@ -29,170 +29,110 @@ export interface Contributor {
 
 export const organizers: TeamMember[] = [
   {
-    name: 'Jane Smith',
-    role: 'Program Director',
-    image: '/media/logos/transparent.png',
-    bio: 'Jane leads the NEO League initiative with over 10 years of experience in AI education and prompt engineering competitions.',
+    name: 'Cao Nguyễn Việt Quang',
+    role: 'Project Leader / External Affairs Leader',
+    image: '/media/featured/competitions/neo-league/cao-nguyen-viet-quang.jpg',
+    bio: 'Supervise the project and ensure the competition is run smoothly.',
     organization: 'RMIT SGS Neo Culture Tech',
-    links: {
-      twitter: 'https://twitter.com/janesmith',
-      linkedin: 'https://linkedin.com/in/janesmith',
-      email: 'jane@example.com',
-    },
   },
   {
-    name: 'Michael Chen',
-    role: 'Technical Lead',
-    image: '/media/logos/transparent.png',
-    bio: 'Michael oversees all technical aspects of the competition and platform development, ensuring a seamless experience for all participants.',
+    name: 'Đào Ngọc Khanh',
+    role: 'Project Co-leader / Marketing and Communications Leader',
+    image: '/media/featured/competitions/neo-league/dao-ngoc-khanh.jpg',
+    bio: 'Promote the competition and build the community.',
     organization: 'RMIT SGS Neo Culture Tech',
-    links: {
-      github: 'https://github.com/michaelchen',
-      linkedin: 'https://linkedin.com/in/michaelchen',
-      website: 'https://michaelchen.dev',
-    },
   },
   {
-    name: 'Sarah Johnson',
-    role: 'Education Director',
-    image: '/media/logos/transparent.png',
-    bio: 'Sarah designs the educational curriculum and learning resources for participants, specializing in prompt engineering techniques and best practices.',
+    name: 'Võ Hoàng Phúc',
+    role: 'Technical Leader',
+    image: '/media/featured/competitions/neo-league/vo-hoang-phuc.jpg',
+    bio: 'Build the platform and ensure the competition is run smoothly, with a focus on the technical aspects.',
     organization: 'Tuturuuu',
-    links: {
-      twitter: 'https://twitter.com/sarahjohnson',
-      linkedin: 'https://linkedin.com/in/sarahjohnson',
-      email: 'sarah@example.com',
-    },
   },
   {
-    name: 'David Kim',
-    role: 'Community Manager',
-    image: '/media/logos/transparent.png',
-    bio: 'David builds and nurtures our community of prompt engineers and AI enthusiasts, creating an engaging environment for collaboration and growth.',
+    name: 'Ngô Văn Tài',
+    role: 'Program Leader',
+    image: '/media/featured/competitions/neo-league/ngo-van-tai.jpg',
+    bio: 'Handle everything related to the program, including the competition and the community.',
     organization: 'RMIT SGS Neo Culture Tech',
-    links: {
-      twitter: 'https://twitter.com/davidkim',
-      linkedin: 'https://linkedin.com/in/davidkim',
-      github: 'https://github.com/davidkim',
-    },
+  },
+  {
+    name: 'Huỳnh Tấn Phát',
+    role: 'Logistic and Finance Leader',
+    image: '/media/featured/competitions/neo-league/huynh-tan-phat.jpg',
+    bio: 'Handle the logistics and finance of the competition.',
+    organization: 'RMIT SGS Neo Culture Tech',
+  },
+  {
+    name: 'Huỳnh Hoàng Đức',
+    role: 'Internal Affairs Leader',
+    image: '/media/featured/competitions/neo-league/huynh-hoang-duc.jpg',
+    bio: 'Handle the internal affairs of the competition.',
+    organization: 'RMIT SGS Neo Culture Tech',
+  },
+  {
+    name: 'Nguyễn Võ Phương Quỳnh',
+    role: 'Creative Leader',
+    image: '/media/featured/competitions/neo-league/nguyen-vo-phuong-quynh.jpg',
+    bio: 'Handle the creative aspects of the competition.',
+    organization: 'RMIT SGS Neo Culture Tech',
   },
 ];
 
 export const platformBuilders: TeamMember[] = [
   {
-    name: 'Alex Rivera',
+    name: 'Võ Hoàng Phúc',
     role: 'Lead Developer',
-    image: '/media/logos/transparent.png',
-    bio: 'Alex architected and built the core platform infrastructure for the Neo League competition, focusing on scalability and performance.',
+    image: '/media/featured/competitions/neo-league/vo-hoang-phuc.jpg',
+    bio: 'Core maintainer of Tuturuuu and Nova, with a passion for building tools that help people be more productive and creative.',
     organization: 'Tuturuuu',
-    links: {
-      github: 'https://github.com/alexrivera',
-      linkedin: 'https://linkedin.com/in/alexrivera',
-      website: 'https://alexrivera.dev',
-    },
   },
   {
-    name: 'Priya Patel',
+    name: 'Huỳnh Tấn Phát',
+    role: 'Fullstack Engineer',
+    image: '/media/featured/competitions/neo-league/huynh-tan-phat.jpg',
+    bio: 'Build the foundation of the Neo League platform, with a focus on scalability and performance.',
+    organization: 'RMIT SGS Neo Culture Tech',
+  },
+  {
+    name: 'Nguyễn Gia Khang',
+    role: 'Fullstack Engineer',
+    image: '/media/featured/competitions/neo-league/nguyen-gia-khang.jpg',
+    bio: 'Enhance the user experience of the Neo League platform, with a focus on usability and accessibility.',
+    organization: 'RMIT SGS Neo Culture Tech',
+  },
+  {
+    name: 'Ngô Văn Tài',
+    role: 'Fullstack Engineer',
+    image: '/media/featured/competitions/neo-league/ngo-van-tai.jpg',
+    bio: 'Ensure translation of the Neo League platform to Vietnamese, with a focus on readability and accessibility.',
+    organization: 'RMIT SGS Neo Culture Tech',
+  },
+  {
+    name: 'Huỳnh Thái Dương',
     role: 'Frontend Engineer',
-    image: '/media/logos/transparent.png',
-    bio: 'Priya designed and implemented the user interface and experience, creating an intuitive and engaging platform for prompt engineering challenges.',
-    organization: 'Tuturuuu',
-    links: {
-      github: 'https://github.com/priyapatel',
-      twitter: 'https://twitter.com/priyapatel',
-      linkedin: 'https://linkedin.com/in/priyapatel',
-    },
-  },
-  {
-    name: 'Marcus Wong',
-    role: 'Backend Engineer',
-    image: '/media/logos/transparent.png',
-    bio: 'Marcus developed the API and database architecture for the platform, ensuring reliable performance during high-traffic competition periods.',
-    organization: 'Tuturuuu',
-    links: {
-      github: 'https://github.com/marcuswong',
-      linkedin: 'https://linkedin.com/in/marcuswong',
-      email: 'marcus@example.com',
-    },
-  },
-  {
-    name: 'Elena Petrova',
-    role: 'AI Systems Engineer',
-    image: '/media/logos/transparent.png',
-    bio: 'Elena integrated and optimized the AI evaluation systems for the competition, developing sophisticated metrics to assess prompt engineering skills.',
-    organization: 'Tuturuuu',
-    links: {
-      github: 'https://github.com/elenapetrova',
-      linkedin: 'https://linkedin.com/in/elenapetrova',
-      twitter: 'https://twitter.com/elenapetrova',
-    },
+    image: '/media/featured/competitions/neo-league/huynh-thai-duong.jpg',
+    bio: 'Ensure the frontend of the Neo League platform is responsive and user-friendly.',
+    organization: 'RMIT SGS Neo Culture Tech',
   },
 ];
 
 export const sponsors: Sponsor[] = [
   {
     name: 'Tuturuuu',
-    tier: 'platinum',
-    logo: '/media/logos/transparent.png',
+    tier: 'host',
+    logo: '/media/logos/light.png',
     website: 'https://tuturuuu.com',
     description:
       'Pioneer in AI and smart productivity tools, providing technical and platform support for the Neo League competition. Tuturuuu Nova is revolutionizing how we interact with AI through advanced prompt engineering.',
   },
   {
     name: 'RMIT SGS Neo Culture Tech',
-    tier: 'platinum',
-    logo: '/media/logos/transparent.png',
-    website: 'https://rmit-sgs-neotech.org',
+    tier: 'host',
+    logo: '/media/featured/competitions/neo-league/nct.jpg',
+    website: 'https://rmitnct.club',
     description:
       'Host of the Neo League - Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students.',
-  },
-  {
-    name: 'TechCorp',
-    tier: 'gold',
-    logo: '/media/logos/transparent.png',
-    website: 'https://techcorp.example.com',
-    description:
-      'Leading AI research and development company supporting the next generation of prompt engineers through the Neo League initiative.',
-  },
-  {
-    name: 'DataSystems',
-    tier: 'gold',
-    logo: '/media/logos/transparent.png',
-    website: 'https://datasystems.example.com',
-    description:
-      'Cloud infrastructure provider offering computing resources for the competition, enabling participants to test and deploy sophisticated prompt engineering solutions.',
-  },
-  {
-    name: 'AIVentures',
-    tier: 'silver',
-    logo: '/media/logos/transparent.png',
-    website: 'https://aiventures.example.com',
-    description:
-      'Venture capital firm focused on AI startups and innovation, providing mentorship and potential funding opportunities for top performers.',
-  },
-  {
-    name: 'PromptLabs',
-    tier: 'silver',
-    logo: '/media/logos/transparent.png',
-    website: 'https://promptlabs.example.com',
-    description:
-      'Specialized prompt engineering tools and resources for professionals, offering premium access to Neo League participants.',
-  },
-  {
-    name: 'EduTech',
-    tier: 'bronze',
-    logo: '/media/logos/transparent.png',
-    website: 'https://edutech.example.com',
-    description:
-      'Educational technology company providing learning resources and certification opportunities for prompt engineering skills.',
-  },
-  {
-    name: 'InnovateAI',
-    tier: 'bronze',
-    logo: '/media/logos/transparent.png',
-    website: 'https://innovateai.example.com',
-    description:
-      'AI innovation hub supporting emerging technologies and connecting Neo League participants with industry opportunities.',
   },
 ];
 
@@ -244,36 +184,22 @@ export const academicMentors: TeamMember[] = [
   {
     name: 'Dr. Linh Tran',
     role: 'Lecturer',
-    image: '/media/logos/transparent.png',
-    bio: 'Dr. Zhang specializes in natural language processing and has pioneered research in prompt engineering methodologies for large language models.',
+    image: '/media/featured/competitions/neo-league/tran-duc-linh.png',
+    bio: 'As a passionate educator and experienced researcher, his recent work explores the applications of advanced technologies, particularly AI and generative AI, in education to make learning more inclusive and effective.',
     organization: 'RMIT University',
-    links: {
-      linkedin: 'https://linkedin.com/in/emilyzhang',
-      website: 'https://emilyzhang.ai',
-      twitter: 'https://twitter.com/emilyzhang_ai',
-    },
   },
   {
     name: 'Dr. Thanh Pham',
     role: 'Lecturer',
-    image: '/media/logos/transparent.png',
-    bio: 'Professor Wilson has contributed groundbreaking research on the intersection of linguistics and AI, helping develop the theoretical foundations of prompt engineering.',
+    image: '/media/featured/competitions/neo-league/pham-chi-thanh.jpeg',
+    bio: 'Research in electronics, AI, data science, robotics, and engineering education. Broad engineering and computer science expertise.',
     organization: 'RMIT University',
-    links: {
-      linkedin: 'https://linkedin.com/in/jameswilson',
-      website: 'https://stanford.edu/~jwilson',
-    },
   },
   {
     name: 'Dr. Tom Huynh',
     role: 'Lecturer',
-    image: '/media/logos/transparent.png',
-    bio: 'Dr. Nguyen focuses on optimizing human-AI collaboration through effective prompt design, with special emphasis on educational applications.',
+    image: '/media/featured/competitions/neo-league/tom-huynh.jpeg',
+    bio: 'IT/Software Engineering lecturer at RMIT Vietnam with expertise in programming, web/mobile development, and machine learning. Extensive industry experience in both academia and tech companies.',
     organization: 'RMIT University',
-    links: {
-      linkedin: 'https://linkedin.com/in/sophianguyen',
-      twitter: 'https://twitter.com/sophia_ai_hci',
-      github: 'https://github.com/sophianguyen',
-    },
   },
 ];

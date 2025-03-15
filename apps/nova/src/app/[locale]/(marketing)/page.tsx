@@ -213,28 +213,28 @@ export default function MarketingPage() {
                 <AnimatedTimeline
                   events={[
                     {
-                      date: '05 April 2025',
+                      date: '19 April 2025',
                       title: t('open-cere'),
                       type: t('virtual'),
                       icon: <CalendarDays className="h-5 w-5" />,
                       description: t('open-cere-description'),
                     },
                     {
-                      date: '12 April 2025',
+                      date: '26 April 2025',
                       title: t('top-50-selection'),
                       type: t('virtual'),
                       icon: <Trophy className="h-5 w-5" />,
                       description: t('top-50-selection-description'),
                     },
                     {
-                      date: '19 April 2025',
+                      date: '10 May 2025',
                       title: t('top-30-selection'),
                       type: t('virtual'),
                       icon: <Star className="h-5 w-5" />,
                       description: t('top-30-selection-description'),
                     },
                     {
-                      date: '26 April 2025',
+                      date: '31 May 2025',
                       title: t('final-competition'),
                       type: t('onsite'),
                       icon: <Trophy className="h-5 w-5" />,

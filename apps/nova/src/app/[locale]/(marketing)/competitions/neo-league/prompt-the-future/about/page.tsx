@@ -21,7 +21,6 @@ import {
   ArrowRight,
   Building,
   Code,
-  ExternalLink,
   Github,
   Globe,
   GraduationCap,
@@ -94,7 +93,7 @@ export default function AboutUsPage() {
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
       className="group"
     >
-      <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-lg group-hover:shadow-primary/5">
+      <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 text-center transition-all duration-300 group-hover:border-primary/30 group-hover:bg-foreground/10 group-hover:shadow-lg group-hover:shadow-primary/5">
         <div className="relative p-6">
           {/* Animated gradient border on hover */}
           <motion.div
@@ -108,8 +107,8 @@ export default function AboutUsPage() {
             transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
           />
 
-          <div className="mb-4 flex items-center gap-4">
-            <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-primary/20 bg-foreground/10">
+          <div className="mb-4 flex flex-col items-center justify-center gap-4">
+            <div className="relative h-32 w-32 overflow-hidden rounded-full border-2 border-primary/20 bg-foreground/10">
               <Image
                 src={member.image}
                 alt={member.name}
@@ -126,7 +125,7 @@ export default function AboutUsPage() {
                 transition={{ duration: 0.3 }}
               />
             </div>
-            <div>
+            <div className="flex flex-col items-center justify-center gap-2 text-center">
               <motion.h3
                 className="text-xl font-bold transition-colors duration-300 group-hover:text-primary"
                 whileHover={{ scale: 1.02 }}
@@ -143,7 +142,7 @@ export default function AboutUsPage() {
           </div>
           <p className="mb-4 text-sm text-muted-foreground">{member.bio}</p>
           {member.links && (
-            <div className="flex gap-2">
+            <div className="flex justify-center gap-2">
               {member.links.twitter && (
                 <Link
                   href={member.links.twitter}
@@ -227,6 +226,7 @@ export default function AboutUsPage() {
   // Render sponsor card with enhanced design
   const renderSponsor = (sponsor: Sponsor) => {
     const tierColors = {
+      host: 'from-[#E5E4E2] to-[#B9B8B5]',
       platinum: 'from-[#E5E4E2] to-[#B9B8B5]',
       gold: 'from-[#FFD700] to-[#FFC000]',
       silver: 'from-[#C0C0C0] to-[#A9A9A9]',
@@ -234,6 +234,7 @@ export default function AboutUsPage() {
     };
 
     const tierGlows = {
+      host: 'group-hover:shadow-[0_0_15px_rgba(229,228,226,0.3)]',
       platinum: 'group-hover:shadow-[0_0_15px_rgba(229,228,226,0.3)]',
       gold: 'group-hover:shadow-[0_0_15px_rgba(255,215,0,0.3)]',
       silver: 'group-hover:shadow-[0_0_15px_rgba(192,192,192,0.3)]',
@@ -272,9 +273,9 @@ export default function AboutUsPage() {
               )}
             />
             <div className="p-6">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-col items-center justify-between">
                 <motion.div
-                  className="relative h-12 w-32 overflow-hidden"
+                  className="relative h-24 w-24 overflow-hidden rounded-lg"
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: 'spring', stiffness: 300 }}
                 >
@@ -288,7 +289,7 @@ export default function AboutUsPage() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    'bg-gradient-to-r bg-clip-text text-transparent',
+                    'mt-2 mb-4 bg-gradient-to-r bg-clip-text text-transparent',
                     tierColors[sponsor.tier]
                   )}
                 >
@@ -316,7 +317,7 @@ export default function AboutUsPage() {
               <p className="mb-4 text-sm text-muted-foreground">
                 {sponsor.description}
               </p>
-              <Link
+              {/* <Link
                 href={sponsor.website}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -325,11 +326,12 @@ export default function AboutUsPage() {
                 <motion.span
                   whileHover={{ x: 3 }}
                   transition={{ type: 'spring', stiffness: 300 }}
+                  className="flex items-center gap-1"
                 >
                   Visit website
                   <ExternalLink className="ml-1 h-3 w-3" />
                 </motion.span>
-              </Link>
+              </Link> */}
             </div>
           </div>
         </Card>
@@ -343,16 +345,6 @@ export default function AboutUsPage() {
       <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 hover:border-primary/30 hover:bg-foreground/10 hover:shadow-md hover:shadow-primary/5">
         <div className="p-4">
           <div className="mb-2 flex items-center gap-3">
-            {contributor.image && (
-              <div className="relative h-10 w-10 overflow-hidden rounded-full border border-primary/20">
-                <Image
-                  src={contributor.image}
-                  alt={contributor.name}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
             <div>
               <h3 className="font-semibold">{contributor.name}</h3>
               <p className="text-xs text-muted-foreground">
@@ -514,16 +506,20 @@ export default function AboutUsPage() {
             <div className="flex flex-col items-center">
               <div className="relative overflow-hidden rounded-full">
                 <Image
-                  src="/media/logos/nct.jpg"
+                  src="/media/featured/competitions/neo-league/nct.jpg"
                   alt="RMIT SGS Neo Culture Tech"
-                  className="rounded-full object-contain"
+                  className="hidden rounded-full object-contain md:block"
                   width={192}
                   height={192}
                 />
+                <Image
+                  src="/media/featured/competitions/neo-league/nct.jpg"
+                  alt="RMIT SGS Neo Culture Tech"
+                  className="rounded-full object-contain md:hidden"
+                  width={80}
+                  height={80}
+                />
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Host Organization
-              </p>
             </div>
 
             <div className="text-2xl font-light text-primary">×</div>
@@ -533,14 +529,18 @@ export default function AboutUsPage() {
                 <Image
                   src="/media/logos/transparent.png"
                   alt="Tuturuuu"
-                  className="object-contain"
+                  className="hidden object-contain md:block"
                   width={160}
                   height={160}
                 />
+                <Image
+                  src="/media/logos/transparent.png"
+                  alt="Tuturuuu"
+                  className="object-contain md:hidden"
+                  width={80}
+                  height={80}
+                />
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Technical Partner
-              </p>
             </div>
           </motion.div>
         </motion.div>
@@ -686,23 +686,6 @@ export default function AboutUsPage() {
                     Be part of the first-ever prompt engineering competition
                     that's shaping the future of AI interaction
                   </motion.p>
-
-                  <motion.div
-                    className="mt-4"
-                    initial={{ y: 10, opacity: 0 }}
-                    whileInView={{ y: 0, opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.4 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link href="/competitions/neo-league/prompt-the-future/register">
-                      <Button className="group bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-600">
-                        Register Now
-                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                      </Button>
-                    </Link>
-                  </motion.div>
                 </div>
               </div>
             </motion.div>
@@ -1206,7 +1189,7 @@ export default function AboutUsPage() {
                       >
                         <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-primary/20">
                           <Image
-                            src="/media/logos/transparent.png"
+                            src="/media/featured/competitions/neo-league/nct.jpg"
                             alt="RMIT SGS Neo Culture Tech"
                             fill
                             className="object-contain"
@@ -1228,7 +1211,7 @@ export default function AboutUsPage() {
                       >
                         <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-primary/20">
                           <Image
-                            src="/media/logos/transparent.png"
+                            src="/media/logos/light.png"
                             alt="Tuturuuu"
                             fill
                             className="object-contain"
@@ -1284,7 +1267,7 @@ export default function AboutUsPage() {
       <section className="w-full py-16">
         <div className="mx-auto max-w-6xl px-4">
           <Tabs defaultValue="organizers" className="w-full">
-            <TabsList className="mb-8 grid w-full grid-cols-2 md:grid-cols-4">
+            <TabsList className="mb-8 grid h-full w-full grid-cols-2 gap-1 md:grid-cols-4">
               <TabsTrigger value="organizers" className="gap-2">
                 <Users className="h-4 w-4" />
                 <span>Organizers</span>
@@ -1321,7 +1304,7 @@ export default function AboutUsPage() {
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+                className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
               >
                 {organizers.map((member, index) => (
                   <React.Fragment key={index}>
@@ -1350,7 +1333,7 @@ export default function AboutUsPage() {
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+                className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
               >
                 {platformBuilders.map((member, index) => (
                   <React.Fragment key={index}>
@@ -1391,7 +1374,7 @@ export default function AboutUsPage() {
                 <h3 className="mb-4 text-xl font-semibold">
                   Interested in sponsoring NEO League?
                 </h3>
-                <Link href="/contact">
+                <Link href="mailto:contact@tuturuuu.com">
                   <Button className="group">
                     Contact Us
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -1453,268 +1436,188 @@ export default function AboutUsPage() {
         </div>
       </section>
 
-      {/* Enhanced Join Us CTA */}
-      <section className="relative w-full py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
+      {/* Tuturuuu Contribution Disclaimer Section */}
+      <section className="relative w-full bg-foreground/5 py-16">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
-        {/* Enhanced animated background with multiple layers */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Animated gradient background */}
+        {/* Animated particles */}
+        {[...Array(20)].map((_, i) => (
           <motion.div
-            className="absolute inset-0 opacity-20"
-            animate={{
-              background: [
-                'radial-gradient(circle at 20% 50%, rgba(var(--primary-rgb), 0.4), transparent 70%)',
-                'radial-gradient(circle at 80% 50%, rgba(var(--primary-rgb), 0.4), transparent 70%)',
-                'radial-gradient(circle at 50% 20%, rgba(var(--primary-rgb), 0.4), transparent 70%)',
-                'radial-gradient(circle at 50% 80%, rgba(var(--primary-rgb), 0.4), transparent 70%)',
-                'radial-gradient(circle at 20% 50%, rgba(var(--primary-rgb), 0.4), transparent 70%)',
-              ],
+            key={`particle-${i}`}
+            className="absolute h-1 w-1 rounded-full bg-primary/30"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              filter: `blur(${Math.random() > 0.8 ? '1px' : '0px'})`,
             }}
-            transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+            animate={{
+              y: [0, -50],
+              x: [0, Math.random() * 30 - 15],
+              opacity: [0, Math.random() * 0.5 + 0.3, 0],
+            }}
+            transition={{
+              duration: 5 + Math.random() * 5,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+            }}
           />
+        ))}
 
-          {/* Enhanced animated particles */}
-          {[...Array(30)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute h-1.5 w-1.5 rounded-full"
-              style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                background: `rgba(var(--primary-rgb), ${Math.random() * 0.5 + 0.3})`,
-                filter: `blur(${Math.random() > 0.8 ? '1px' : '0px'})`,
-              }}
-              animate={{
-                y: [0, -100],
-                x: [0, Math.random() * 20 - 10],
-                opacity: [0, 1, 0],
-                scale: [Math.random() * 0.5 + 0.5, Math.random() * 1 + 1],
-              }}
-              transition={{
-                duration: 5 + Math.random() * 5,
-                repeat: Infinity,
-                delay: Math.random() * 5,
-              }}
-            />
-          ))}
-
-          {/* Animated glowing orbs */}
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={`orb-${i}`}
-              className="absolute rounded-full bg-primary/10 blur-xl"
-              style={{
-                height: `${Math.random() * 100 + 100}px`,
-                width: `${Math.random() * 100 + 100}px`,
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.1, 0.3, 0.1],
-                x: [0, Math.random() * 50 - 25],
-                y: [0, Math.random() * 50 - 25],
-              }}
-              transition={{
-                duration: 8 + Math.random() * 7,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: Math.random() * 5,
-              }}
-            />
-          ))}
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative mx-auto max-w-4xl px-4 text-center"
-        >
+        <div className="mx-auto max-w-6xl px-4">
           <motion.div
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-          >
-            <Badge variant="outline" className="mb-4 backdrop-blur-sm">
-              <motion.div
-                animate={{
-                  boxShadow: [
-                    '0 0 0 0 rgba(var(--primary-rgb), 0)',
-                    '0 0 0 8px rgba(var(--primary-rgb), 0.2)',
-                    '0 0 0 0 rgba(var(--primary-rgb), 0)',
-                  ],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="mr-2 flex h-4 w-4 items-center justify-center rounded-full"
-              >
-                <Sparkles className="h-4 w-4" />
-              </motion.div>
-              <span>Join Our Team</span>
-            </Badge>
-          </motion.div>
-
-          <h2 className="mb-4 bg-gradient-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
-            Want to be part of NEO League?
-          </h2>
-
-          <p className="mb-8 text-muted-foreground">
-            We're always looking for passionate individuals to join our team or
-            contribute to the platform. Be part of the first-ever prompt
-            engineering competition!
-          </p>
-
-          <motion.div
-            className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+            className="relative rounded-2xl border border-primary/20 bg-background/80 p-8 backdrop-blur-md"
           >
-            <Link href="/contact">
+            <div className="flex flex-col items-center gap-8 md:flex-row">
               <motion.div
+                className="relative flex-shrink-0"
                 whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: 'spring', stiffness: 400 }}
+                transition={{ type: 'spring', stiffness: 300 }}
               >
-                <Button
-                  size="lg"
-                  className="group relative overflow-hidden bg-transparent"
-                >
-                  {/* Animated gradient background */}
+                <div className="relative h-32 w-32 overflow-hidden rounded-xl border-2 border-primary/30">
+                  <Image
+                    src="/media/logos/transparent.png"
+                    alt="Tuturuuu"
+                    fill
+                    className="object-contain p-2"
+                  />
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-primary to-purple-500"
+                    className="absolute inset-0"
                     animate={{
-                      background: [
-                        'linear-gradient(to right, rgba(var(--primary-rgb), 1), rgba(168, 85, 247, 1))',
-                        'linear-gradient(to right, rgba(168, 85, 247, 1), rgba(var(--primary-rgb), 1))',
-                        'linear-gradient(to right, rgba(var(--primary-rgb), 1), rgba(168, 85, 247, 1))',
+                      boxShadow: [
+                        'inset 0 0 0 0 rgba(var(--primary-rgb), 0)',
+                        'inset 0 0 20px 0 rgba(var(--primary-rgb), 0.3)',
+                        'inset 0 0 0 0 rgba(var(--primary-rgb), 0)',
                       ],
                     }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
+                    transition={{ duration: 3, repeat: Infinity }}
                   />
-
-                  {/* Animated shine effect */}
-                  <motion.div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100"
-                    animate={{
-                      background: [
-                        'linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 45%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 55%, rgba(255,255,255,0) 100%)',
-                        'linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 45%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 55%, rgba(255,255,255,0) 100%)',
-                      ],
-                      backgroundPosition: ['200% 0%', '-200% 0%'],
-                      backgroundSize: '300% 100%',
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
-                  />
-
-                  <span className="relative z-10 flex items-center">
-                    Get in Touch
-                    <motion.div
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }}
-                    >
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </motion.div>
-                  </span>
-                </Button>
-              </motion.div>
-            </Link>
-
-            <Link href="/learn">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: 'spring', stiffness: 400 }}
-              >
-                <Button
-                  variant="outline"
-                  className="group relative overflow-hidden border-primary/20 hover:border-primary/50"
-                >
-                  {/* Subtle gradient on hover */}
-                  <motion.div
-                    className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                    animate={{
-                      background: [
-                        'linear-gradient(45deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--primary-rgb), 0.05) 25%, rgba(var(--primary-rgb), 0) 50%, rgba(var(--primary-rgb), 0.05) 75%, rgba(var(--primary-rgb), 0.1) 100%)',
-                        'linear-gradient(45deg, rgba(var(--primary-rgb), 0.1) 100%, rgba(var(--primary-rgb), 0.05) 0%, rgba(var(--primary-rgb), 0) 25%, rgba(var(--primary-rgb), 0.05) 50%, rgba(var(--primary-rgb), 0.1) 75%)',
-                      ],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
-                  />
-
-                  <span className="relative z-10 flex items-center">
-                    Learn More About Us
-                    <motion.div
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                        delay: 0.5,
-                      }}
-                    >
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </motion.div>
-                  </span>
-                </Button>
-              </motion.div>
-            </Link>
-          </motion.div>
-
-          {/* Floating badges */}
-          <div className="relative mt-16 h-20">
-            {['AI', 'Prompts', 'Future', 'Innovation', 'Community'].map(
-              (text, i) => (
+                </div>
                 <motion.div
-                  key={`badge-${i}`}
-                  className="absolute top-1/2 left-1/2"
-                  initial={{
-                    x: (i - 2) * 80,
-                    y: Math.random() * 20 - 10,
-                    opacity: 0.7,
-                  }}
-                  animate={{
-                    y: [
-                      Math.random() * 10 - 5,
-                      Math.random() * -10 + 5,
-                      Math.random() * 10 - 5,
-                    ],
-                    opacity: [0.7, 1, 0.7],
-                  }}
-                  transition={{
-                    duration: 3 + i,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
+                  className="absolute -right-3 -bottom-3 rounded-full border border-primary/20 bg-primary/10 p-2 backdrop-blur-sm"
+                  animate={{ rotate: [0, 10, 0, -10, 0] }}
+                  transition={{ duration: 5, repeat: Infinity }}
                 >
-                  <Badge
-                    variant="outline"
-                    className="bg-foreground/5 backdrop-blur-sm"
-                  >
-                    {text}
-                  </Badge>
+                  <Code className="h-5 w-5 text-primary" />
                 </motion.div>
-              )
-            )}
-          </div>
-        </motion.div>
+              </motion.div>
+
+              <div>
+                <h2 className="mb-4 text-3xl font-bold">
+                  Powered by{' '}
+                  <span className="bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+                    Tuturuuu
+                  </span>
+                </h2>
+                <motion.p
+                  className="mb-4 text-muted-foreground"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 }}
+                >
+                  The Tuturuuu team has been instrumental in making the Neo
+                  League competition a reality. Beyond just providing the Nova
+                  platform, Tuturuuu's contributions span across multiple
+                  aspects of the competition:
+                </motion.p>
+
+                <motion.div
+                  className="grid gap-4 sm:grid-cols-2"
+                  variants={containerVariants}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                >
+                  <motion.div
+                    variants={itemVariants}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <Code className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Technical Infrastructure</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Developing and maintaining the entire competition
+                        platform, including the prompt evaluation system.
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    variants={itemVariants}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <Target className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Challenge Design</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Creating technically sound and educationally valuable
+                        prompt engineering challenges.
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    variants={itemVariants}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <GraduationCap className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Educational Resources</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Developing learning materials and documentation to help
+                        participants master prompt engineering.
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    variants={itemVariants}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="mt-1 rounded-full bg-primary/10 p-1.5">
+                      <Users className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Mentorship & Support</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Providing technical guidance and mentorship to
+                        participants throughout the competition.
+                      </p>
+                    </div>
+                  </motion.div>
+                </motion.div>
+
+                <motion.div
+                  className="mt-6 border-t border-primary/10 pt-4 text-sm text-muted-foreground"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.6 }}
+                >
+                  <p className="italic">
+                    "This competition represents our commitment to advancing
+                    prompt engineering as a discipline and empowering the next
+                    generation of AI practitioners. We're proud to collaborate
+                    with RMIT SGS Neo Culture Tech to make this vision a
+                    reality."
+                  </p>
+                  <p className="mt-2 font-medium text-foreground">
+                    — The Tuturuuu Team
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </section>
     </div>
   );
