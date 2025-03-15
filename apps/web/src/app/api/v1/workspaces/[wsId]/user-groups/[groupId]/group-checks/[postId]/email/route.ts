@@ -17,14 +17,6 @@ const domainBlacklist = [
   'easy.com',
 ];
 
-const sesClient = new SESClient({
-  region: (process.env.AWS_REGION || 'ap-southeast-1') as string,
-  credentials: {
-    accessKeyId: (process.env.AWS_ACCESS_KEY_ID || '') as string,
-    secretAccessKey: (process.env.AWS_SECRET_ACCESS_KEY || '') as string,
-  },
-});
-
 export async function POST(
   req: NextRequest,
   {
@@ -85,10 +77,43 @@ export async function POST(
     );
   }
 
+  const { data: credentials, error: credentialsError } = await sbAdmin
+    .from('workspace_email_credentials')
+    .select('*')
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (credentialsError) {
+    console.error('Error fetching credentials:', credentialsError);
+    return NextResponse.json(
+      { message: 'Error fetching credentials' },
+      { status: 500 }
+    );
+  }
+
+  if (!credentials) {
+    console.log('No credentials found');
+    return NextResponse.json(
+      { message: 'No credentials found' },
+      { status: 400 }
+    );
+  }
+
+  const sesClient = new SESClient({
+    region: credentials.region,
+    credentials: {
+      accessKeyId: credentials.access_id,
+      secretAccessKey: credentials.access_key,
+    },
+  });
+
   const results = await Promise.all(
     data.users.map(async (user) => {
       const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(data.date).format('DD/MM/YYYY')} của ${user.username}`;
       return sendEmail({
+        client: sesClient,
+        sourceName: credentials.source_name,
+        sourceEmail: credentials.source_email,
         receiverId: user.id,
         recipient: user.email,
         subject,
@@ -112,12 +137,18 @@ export async function POST(
 }
 
 const sendEmail = async ({
+  client,
+  sourceName,
+  sourceEmail,
   receiverId,
   recipient,
   subject,
   content,
   postId,
 }: {
+  client: SESClient;
+  sourceName: string;
+  sourceEmail: string;
   receiverId: string;
   recipient: string;
   subject: string;
@@ -142,7 +173,7 @@ const sendEmail = async ({
     const inlinedHtmlContent = juice(content);
 
     const params = {
-      Source: `${process.env.SOURCE_NAME} <${process.env.SOURCE_EMAIL}>`,
+      Source: `${sourceName} <${sourceEmail}>`,
       Destination: {
         ToAddresses: [recipient],
       },
@@ -160,7 +191,7 @@ const sendEmail = async ({
     ) {
       console.log('Sending email:', params);
       const command = new SendEmailCommand(params);
-      const sesResponse = await sesClient.send(command);
+      const sesResponse = await client.send(command);
       console.log('Email sent:', params);
 
       if (sesResponse.$metadata.httpStatusCode !== 200) {
@@ -179,7 +210,7 @@ const sendEmail = async ({
       return false;
     }
 
-    if (!process.env.SOURCE_NAME || !process.env.SOURCE_EMAIL) {
+    if (!sourceName || !sourceEmail) {
       return false;
     }
 
@@ -192,8 +223,8 @@ const sendEmail = async ({
         email: recipient,
         subject,
         content: inlinedHtmlContent,
-        source_name: process.env.SOURCE_NAME,
-        source_email: process.env.SOURCE_EMAIL,
+        source_name: sourceName,
+        source_email: sourceEmail,
       })
       .select('id')
       .single();

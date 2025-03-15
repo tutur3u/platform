@@ -4329,6 +4329,47 @@ export type Database = {
           },
         ];
       };
+      workspace_email_credentials: {
+        Row: {
+          access_id: string;
+          access_key: string;
+          created_at: string;
+          id: string;
+          region: string;
+          source_email: string;
+          source_name: string;
+          ws_id: string;
+        };
+        Insert: {
+          access_id: string;
+          access_key: string;
+          created_at?: string;
+          id?: string;
+          region?: string;
+          source_email?: string;
+          source_name?: string;
+          ws_id: string;
+        };
+        Update: {
+          access_id?: string;
+          access_key?: string;
+          created_at?: string;
+          id?: string;
+          region?: string;
+          source_email?: string;
+          source_name?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_email_credentials_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_email_invites: {
         Row: {
           created_at: string;
