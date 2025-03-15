@@ -24,9 +24,11 @@ const formSchema = z
     description: z.string().min(10, {
       message: 'Description must be at least 10 characters.',
     }),
-    criteria: z.string().min(10, {
-      message: 'Criteria must be at least 10 characters.',
-    }),
+    criteria: z.array(z.object({
+      name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+      description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
+      score: z.coerce.number().min(1, { message: 'Score must be at least 1.' }).max(100, { message: 'Score cannot exceed 100.' }),
+    })).min(1, { message: 'At least one criteria is required' }),
     duration: z.coerce.number().min(60, {
       message: 'Duration must be at least 60 seconds.',
     }),
@@ -46,7 +48,7 @@ export default function ChallengeForm({
   defaultValues = {
     title: '',
     description: '',
-    criteria: '',
+    criteria: [{ name: '', description: '', score: 10 }],
     duration: 3600, // Default to 1 hour in seconds
   },
   challengeId,
@@ -98,25 +100,101 @@ export default function ChallengeForm({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="criteria"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Judging Criteria</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="List the criteria for judging submissions"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Specify the criteria that will be used to evaluate challenge submissions.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-medium">Judging Criteria</h3>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const currentCriteria = form.getValues('criteria') || [];
+                form.setValue('criteria', [
+                  ...currentCriteria,
+                  { name: '', description: '', score: 10 },
+                ]);
+              }}
+            >
+              Add Criteria
+            </Button>
+          </div>
+
+          {form.watch('criteria')?.map((_, index) => (
+            <div key={index} className="flex items-center gap-2 rounded-lg border p-2">
+              <FormField
+                control={form.control}
+                name={`criteria.${index}.name`}
+                render={({ field }) => (
+                  <FormItem className="w-[120px] space-y-0">
+                    <FormControl>
+                      <Input 
+                        className="h-8" 
+                        placeholder="Name" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={`criteria.${index}.description`}
+                render={({ field }) => (
+                  <FormItem className="flex-1 space-y-0">
+                    <FormControl>
+                      <Input 
+                        className="h-8" 
+                        placeholder="Description" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={`criteria.${index}.score`}
+                render={({ field }) => (
+                  <FormItem className="w-[80px] space-y-0">
+                    <FormControl>
+                      <Input 
+                        className="h-8" 
+                        type="number" 
+                        min="1" 
+                        max="100" 
+                        placeholder="Score"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )}
+              />
+
+              {index > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => {
+                    const currentCriteria = form.getValues('criteria');
+                    form.setValue(
+                      'criteria',
+                      currentCriteria.filter((_, i) => i !== index)
+                    );
+                  }}
+                >
+                  ×
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
         <FormField
           control={form.control}
           name="duration"
