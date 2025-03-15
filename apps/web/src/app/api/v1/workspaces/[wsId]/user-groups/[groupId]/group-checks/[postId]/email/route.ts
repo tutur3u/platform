@@ -160,8 +160,15 @@ const sendEmail = async ({
     ) {
       console.log('Sending email:', params);
       const command = new SendEmailCommand(params);
-      await sesClient.send(command);
+      const sesResponse = await sesClient.send(command);
       console.log('Email sent:', params);
+
+      if (sesResponse.$metadata.httpStatusCode !== 200) {
+        console.error('Error sending email:', sesResponse);
+        return false;
+      }
+
+      console.log('Email sent successfully:', params);
     }
 
     const {
