@@ -213,28 +213,28 @@ export default function MarketingPage() {
                 <AnimatedTimeline
                   events={[
                     {
-                      date: '05 April 2025',
+                      date: '19 April 2025',
                       title: t('open-cere'),
                       type: t('virtual'),
                       icon: <CalendarDays className="h-5 w-5" />,
                       description: t('open-cere-description'),
                     },
                     {
-                      date: '12 April 2025',
+                      date: '26 April 2025',
                       title: t('top-50-selection'),
                       type: t('virtual'),
                       icon: <Trophy className="h-5 w-5" />,
                       description: t('top-50-selection-description'),
                     },
                     {
-                      date: '19 April 2025',
+                      date: '10 May 2025',
                       title: t('top-30-selection'),
                       type: t('virtual'),
                       icon: <Star className="h-5 w-5" />,
                       description: t('top-30-selection-description'),
                     },
                     {
-                      date: '26 April 2025',
+                      date: '31 May 2025',
                       title: t('final-competition'),
                       type: t('onsite'),
                       icon: <Trophy className="h-5 w-5" />,
@@ -313,19 +313,34 @@ export default function MarketingPage() {
                   </motion.div>
                 </div>
 
-                {/* Enhanced CTA Button */}
-                <motion.div
-                  className="mt-12 text-center"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button size="lg" disabled>
-                    <span className="relative z-10 flex items-center gap-2">
-                      {t('register')}
-                      <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </span>
-                  </Button>
-                </motion.div>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <motion.div
+                    className="mt-12 text-center"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button size="lg" disabled>
+                      <span className="relative z-10 flex items-center gap-2">
+                        {t('register')}
+                        <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </Button>
+                  </motion.div>
+                  <motion.div
+                    className="mt-12 text-center"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link href="/competitions/neo-league/prompt-the-future/about">
+                      <Button size="lg" variant="outline">
+                        <span className="relative z-10 flex items-center gap-2">
+                          {t('learn_more')}
+                          <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </Button>
+                    </Link>
+                  </motion.div>
+                </div>
               </div>
             </motion.section>
           </div>

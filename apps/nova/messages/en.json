@@ -439,7 +439,8 @@
         "title": "Compete",
         "description": "Join the leaderboard and see how your prompt engineering skills stack up against others."
       }
-    }
+    },
+    "learn_more": "Learn More"
   },
   "home": {
     "headline": "Your intelligent shortcut",
