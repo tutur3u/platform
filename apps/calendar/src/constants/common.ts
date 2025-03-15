@@ -31,7 +31,7 @@ export const HIDE_TAILWIND_INDICATOR =
 export const IS_PRODUCTION_DB =
   process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
 
-export const PUBLIC_PATHS = [].reduce((acc: string[], path) => {
+export const PUBLIC_PATHS = ['/verify-token'].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);
 

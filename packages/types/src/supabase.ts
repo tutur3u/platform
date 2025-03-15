@@ -795,6 +795,50 @@ export type Database = {
           },
         ];
       };
+      cross_app_tokens: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          is_revoked: boolean;
+          origin_app: string;
+          target_app: string;
+          token: string;
+          used_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          is_revoked?: boolean;
+          origin_app: string;
+          target_app: string;
+          token: string;
+          used_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          is_revoked?: boolean;
+          origin_app?: string;
+          target_app?: string;
+          token?: string;
+          used_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cross_app_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       currencies: {
         Row: {
           code: string;
@@ -5769,11 +5813,24 @@ export type Database = {
       };
     };
     Functions: {
+      cleanup_expired_cross_app_tokens: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       create_ai_chat: {
         Args: {
           title: string;
           message: string;
           model: string;
+        };
+        Returns: string;
+      };
+      generate_cross_app_token: {
+        Args: {
+          p_user_id: string;
+          p_origin_app: string;
+          p_target_app: string;
+          p_expiry_seconds?: number;
         };
         Returns: string;
       };
@@ -6177,6 +6234,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      revoke_all_cross_app_tokens: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
       search_users_by_name: {
         Args: {
           search_query: string;
@@ -6227,6 +6290,13 @@ export type Database = {
           user_id_param: string;
         };
         Returns: number;
+      };
+      validate_cross_app_token: {
+        Args: {
+          p_token: string;
+          p_target_app: string;
+        };
+        Returns: string;
       };
     };
     Enums: {

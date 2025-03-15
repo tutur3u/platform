@@ -3,7 +3,7 @@ import { ProductionIndicator } from '@/components/production-indicator';
 import { Providers } from '@/components/providers';
 import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { siteConfig } from '@/constants/configs';
-import { routing, supportedLocales } from '@/i18n/routing';
+import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/toaster';
@@ -104,7 +104,7 @@ export function generateStaticParams() {
 
 export default async function RootLayout({ children, params }: Props) {
   // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes((await params).locale as any)) {
+  if (!routing.locales.includes((await params).locale as Locale)) {
     notFound();
   }
 
