@@ -64,7 +64,9 @@ export const config = {
 };
 
 const getSupportedLocale = (locale: string): Locale | null => {
-  return supportedLocales.includes(locale as any) ? (locale as Locale) : null;
+  return supportedLocales.includes(locale as Locale)
+    ? (locale as Locale)
+    : null;
 };
 
 const getExistingLocale = (
