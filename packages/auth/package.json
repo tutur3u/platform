@@ -7,7 +7,8 @@
     "exports": {
         "./middleware": "./src/middleware/index.ts",
         "./cross-app": "./src/cross-app/index.ts",
-        "./cross-app/server": "./src/cross-app/server.ts"
+        "./cross-app/server": "./src/cross-app/server.ts",
+        "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx"
     },
     "license": "MIT",
     "scripts": {
@@ -15,6 +16,7 @@
     },
     "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "next": "^15.2.2"

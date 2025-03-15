@@ -1,10 +1,11 @@
 'use client';
 
-import { verifyRouteToken } from '@tuturuuu/auth/cross-app';
+import { verifyRouteToken } from '.';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
-export default function TokenVerifier() {
+export function TokenVerifierCore() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const router = useRouter();
@@ -13,5 +14,9 @@ export default function TokenVerifier() {
     verifyRouteToken({ searchParams, token, router });
   }, [token, router, searchParams]);
 
-  return null;
+  return (
+    <div className="mt-4 flex h-fit w-full items-center justify-center">
+      <LoadingIndicator className="h-10 w-10" />
+    </div>
+  );
 }

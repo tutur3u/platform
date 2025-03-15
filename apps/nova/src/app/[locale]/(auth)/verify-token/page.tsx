@@ -1,10 +1,5 @@
-import TokenVerifier from './client';
-import { Suspense } from 'react';
+import { TokenVerifier } from '@tuturuuu/auth/cross-app/token-verifier';
 
 export default function VerifyTokenPage() {
-  return (
-    <Suspense>
-      <TokenVerifier />
-    </Suspense>
-  );
+  return <TokenVerifier />;
 }
