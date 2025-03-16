@@ -52,6 +52,7 @@ export const PUBLIC_PATHS = [
   '/qr-generator',
   '/documents',
   '/meet-together',
+  '/competitions/neo-league/prompt-the-future/about',
 ].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);
