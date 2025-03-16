@@ -27,9 +27,11 @@ export async function GET(_: Request, { params }: Params) {
       *,
       challenge:nova_challenges(
         *,
+        criteria:nova_challenge_criteria(*),
         problems:nova_problems(
           *,
-          submissions:nova_submissions(*)
+          submissions:nova_submissions(*),
+          criteria_scores:nova_problem_criteria_scores(*)
         )
       )
     `

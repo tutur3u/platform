@@ -125,7 +125,7 @@ export default function ProblemForm({
         });
         return;
       }
-      setChallenges(data || []);
+      setChallenges(data as NovaChallenge[]);
     };
 
     fetchChallenges();

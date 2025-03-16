@@ -46,6 +46,7 @@ export async function POST(request: Request) {
   let body: {
     title: string;
     description: string;
+    criteria: Array<{ name: string; description: string }>;
     duration: number;
   };
   try {
@@ -79,7 +80,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    // Begin a transaction by using the Supabase client
+    // First create the challenge
+    const { data: challengeData, error: challengeError } = await supabase
       .from('nova_challenges')
       .insert({
         title: body.title,
@@ -90,15 +93,40 @@ export async function POST(request: Request) {
       .select()
       .single();
 
-    if (error) {
-      console.error('Database Error: ', error);
+    if (challengeError) {
+      console.error('Database Error when creating challenge:', challengeError);
       return NextResponse.json(
         { message: 'Error creating challenge' },
         { status: 500 }
       );
     }
+    // console.log(body)
+    if (
+      body.criteria &&
+      Array.isArray(body.criteria) &&
+      body.criteria.length > 0
+    ) {
+      const criteriaToInsert = body.criteria.map((criterion) => ({
+        challenge_id: challengeData.id,
+        name: criterion.name,
+        description: criterion.description,
+      }));
 
-    return NextResponse.json(data, { status: 201 });
+      const { error: criteriaError } = await supabase
+        .from('nova_challenge_criteria')
+        .insert(criteriaToInsert)
+        .select();
+
+      if (criteriaError) {
+        console.error('Database Error when creating criteria:', criteriaError);
+        return NextResponse.json(
+          { message: 'Error creating criteria', error: criteriaError },
+          { status: 500 }
+        );
+      }
+    }
+
+    return NextResponse.json(challengeData, { status: 201 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(

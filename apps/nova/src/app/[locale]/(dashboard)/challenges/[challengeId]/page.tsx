@@ -21,7 +21,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -137,7 +139,7 @@ export default function Page({ params }: Props) {
 
   return (
     <>
-      <div className="relative">
+      <div className="relative h-screen overflow-hidden">
         <CustomizedHeader
           problemLength={problems.length}
           currentProblem={currentProblemIndex + 1}
@@ -146,11 +148,50 @@ export default function Page({ params }: Props) {
           onNext={nextProblem}
           onEnd={() => setShowEndDialog(true)}
           onAutoEnd={handleEndChallenge}
+          className="flex-none"
         />
 
-        <div className="flex gap-4 p-6 pt-20">
-          <div className="flex w-1/2 flex-col">
-            <ProblemComponent
+        <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-6 md:grid-cols-2">
+          <div className="flex h-full w-full flex-col gap-4 overflow-hidden">
+            <Card className="h-full overflow-y-auto border-foreground/10 bg-foreground/5">
+              <CardContent className="p-0">
+                <Tabs defaultValue="problem" className="w-full">
+                  <TabsList className="w-full rounded-t-lg rounded-b-none bg-foreground/10">
+                    <TabsTrigger value="problem" className="flex-1">
+                      Problem
+                    </TabsTrigger>
+                    <TabsTrigger value="testcases" className="flex-1">
+                      Test Cases
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="problem" className="m-0 p-4">
+                    <ProblemComponent
+                      problem={{
+                        id: problems[currentProblemIndex]?.id || '',
+                        title: problems[currentProblemIndex]?.title || '',
+                        description:
+                          problems[currentProblemIndex]?.description || '',
+                        maxPromptLength:
+                          problems[currentProblemIndex]?.max_prompt_length || 0,
+                        exampleInput:
+                          problems[currentProblemIndex]?.example_input || '',
+                        exampleOutput:
+                          problems[currentProblemIndex]?.example_output || '',
+                      }}
+                    />
+                  </TabsContent>
+                  <TabsContent value="testcases" className="m-0 p-4">
+                    <TestCaseComponent
+                      testcases={problems[currentProblemIndex]?.testcases || []}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="relative flex h-full w-full flex-col gap-4 overflow-hidden">
+            <PromptComponent
               problem={{
                 id: problems[currentProblemIndex]?.id || '',
                 title: problems[currentProblemIndex]?.title || '',
@@ -161,29 +202,13 @@ export default function Page({ params }: Props) {
                   problems[currentProblemIndex]?.example_input || '',
                 exampleOutput:
                   problems[currentProblemIndex]?.example_output || '',
+                testcases:
+                  problems[currentProblemIndex]?.testcases?.map(
+                    (testCase) => testCase.input || ''
+                  ) || [],
               }}
             />
-            <TestCaseComponent
-              testcases={problems[currentProblemIndex]?.testcases || []}
-            />
           </div>
-
-          <PromptComponent
-            problem={{
-              id: problems[currentProblemIndex]?.id || '',
-              title: problems[currentProblemIndex]?.title || '',
-              description: problems[currentProblemIndex]?.description || '',
-              maxPromptLength:
-                problems[currentProblemIndex]?.max_prompt_length || 0,
-              exampleInput: problems[currentProblemIndex]?.example_input || '',
-              exampleOutput:
-                problems[currentProblemIndex]?.example_output || '',
-              testcases:
-                problems[currentProblemIndex]?.testcases?.map(
-                  (testCase) => testCase.input || ''
-                ) || [],
-            }}
-          />
         </div>
       </div>
 

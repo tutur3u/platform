@@ -19,6 +19,34 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  // Get the problem to find the challenge_id
+  const { data: problem, error: problemError } = await supabase
+    .from('nova_problems')
+    .select('challenge_id')
+    .eq('id', problemId)
+    .single();
+
+  if (problemError) {
+    return NextResponse.json(
+      { message: 'Error fetching problem' },
+      { status: 500 }
+    );
+  }
+
+  // Get the criteria for the challenge
+  const { data: criteria, error: criteriaError } = await supabase
+    .from('nova_challenge_criteria')
+    .select('*')
+    .eq('challenge_id', problem.challenge_id);
+
+  if (criteriaError) {
+    return NextResponse.json(
+      { message: 'Error fetching criteria' },
+      { status: 500 }
+    );
+  }
+
+  // Get submissions with criteria scores
   const { data: submissions, error } = await supabase
     .from('nova_submissions')
     .select('*')
@@ -32,12 +60,41 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(submissions);
+  // Get criteria scores for each submission
+  const submissionsWithScores = await Promise.all(
+    submissions.map(async (submission) => {
+      const { data: criteriaScores, error: scoresError } = await supabase
+        .from('nova_problem_criteria_scores')
+        .select('*')
+        .eq('problem_id', problemId);
+
+      if (scoresError) {
+        console.error('Error fetching criteria scores:', scoresError);
+        return submission;
+      }
+
+      // Map criteria details to scores
+      const criteriaScoresWithDetails = criteriaScores.map((score) => {
+        const criteriaDetail = criteria.find((c) => c.id === score.criteria_id);
+        return {
+          ...score,
+          criteria: criteriaDetail,
+        };
+      });
+
+      return {
+        ...submission,
+        criteria_scores: criteriaScoresWithDetails,
+      };
+    })
+  );
+
+  return NextResponse.json(submissionsWithScores);
 }
 
 export async function POST(request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { prompt, feedback, score } = await request.json();
+  const { prompt, feedback, score, criteriaScores } = await request.json();
   const { problemId } = await params;
 
   const {
@@ -64,9 +121,7 @@ export async function POST(request: Request, { params }: Params) {
       score: score,
       problem_id: problemId,
       user_id: user.id,
-    })
-    .select()
-    .single();
+    });
 
   if (insertError) {
     console.error('Error creating submission:', insertError);
@@ -74,6 +129,28 @@ export async function POST(request: Request, { params }: Params) {
       { message: 'Error creating submission' },
       { status: 500 }
     );
+  }
+
+  // If criteria scores are provided, insert them
+  if (
+    criteriaScores &&
+    Array.isArray(criteriaScores) &&
+    criteriaScores.length > 0
+  ) {
+    const criteriaScoresToInsert = criteriaScores.map((cs) => ({
+      problem_id: problemId,
+      criteria_id: cs.criteria_id,
+      score: cs.score,
+    }));
+
+    const { error: criteriaScoresError } = await supabase
+      .from('nova_problem_criteria_scores')
+      .insert(criteriaScoresToInsert);
+
+    if (criteriaScoresError) {
+      console.error('Error inserting criteria scores:', criteriaScoresError);
+      // Continue anyway, as the main submission was successful
+    }
   }
 
   const { data: problem, error: problemError } = await supabase
