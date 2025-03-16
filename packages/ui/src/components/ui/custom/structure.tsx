@@ -24,6 +24,7 @@ interface StructureProps {
   sidebarContent?: ReactNode;
   actions?: ReactNode;
   userPopover?: ReactNode;
+  className?: string;
   children: ReactNode;
 }
 
@@ -40,13 +41,14 @@ export function Structure({
   sidebarContent,
   actions,
   userPopover,
+  className,
   children,
 }: StructureProps) {
   return (
     <>
       <nav
         id="navbar"
-        className="fixed z-20 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 p-2 backdrop-blur-lg md:hidden"
+        className="fixed z-20 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-6 py-2 backdrop-blur-lg md:hidden"
       >
         <div className="flex h-[52px] items-center gap-2">{mobileHeader}</div>
         <div className="flex h-[52px] items-center gap-2">
@@ -97,11 +99,16 @@ export function Structure({
               'flex-col overflow-hidden backdrop-blur-lg transition-all duration-300 ease-in-out'
             )}
           >
-            <div className="border-b border-foreground/10 p-2 md:p-0">
+            <div
+              className={cn(
+                'items-center border-b border-foreground/10 p-2 md:flex md:h-16 md:p-0',
+                isCollapsed ? 'justify-center' : ''
+              )}
+            >
               <div
                 className={cn(
                   'flex h-[52px] items-center justify-center',
-                  isCollapsed ? 'h-[52px]' : 'px-2'
+                  isCollapsed ? 'h-[52px]' : 'px-4'
                 )}
               >
                 <div
@@ -135,9 +142,12 @@ export function Structure({
           <ResizablePanel defaultSize={defaultLayout[1]}>
             <main
               id="main-content"
-              className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 md:pt-4"
+              className={cn(
+                'relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 md:pt-4',
+                className
+              )}
             >
-              <div className="mb-4 hidden md:block">{header}</div>
+              {header && <div className="mb-4 hidden md:block">{header}</div>}
               {children}
             </main>
           </ResizablePanel>

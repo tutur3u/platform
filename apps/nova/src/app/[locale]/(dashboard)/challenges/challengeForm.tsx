@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -17,6 +18,12 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import {
   InfoIcon,
   ListChecks,
@@ -149,7 +156,13 @@ export default function ChallengeForm({
             <TabsContent value="criteria" className="mt-0">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle>Judging Criteria</CardTitle>
+                  <div>
+                    <CardTitle>Judging Criteria</CardTitle>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Define how submissions will be evaluated. Each criterion
+                      will be scored separately.
+                    </p>
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
@@ -173,9 +186,31 @@ export default function ChallengeForm({
                       <Card key={index} className="border-dashed">
                         <CardContent className="p-4">
                           <div className="mb-3 flex items-center justify-between">
-                            <h4 className="text-sm font-medium">
-                              Criteria {index + 1}
-                            </h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-sm font-medium">
+                                Criteria {index + 1}
+                              </h4>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Badge
+                                      variant="outline"
+                                      className="cursor-help"
+                                    >
+                                      {form.watch(`criteria.${index}.name`) ||
+                                        'Unnamed'}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="max-w-xs">
+                                      {form.watch(
+                                        `criteria.${index}.description`
+                                      ) || 'No description yet'}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                             {index > 0 && (
                               <Button
                                 type="button"
@@ -209,7 +244,7 @@ export default function ChallengeForm({
                                   </FormLabel>
                                   <FormControl>
                                     <Input
-                                      placeholder="Criteria name"
+                                      placeholder="Criteria name (e.g., Clarity, Efficiency)"
                                       {...field}
                                     />
                                   </FormControl>
@@ -229,7 +264,7 @@ export default function ChallengeForm({
                                   <FormControl>
                                     <Textarea
                                       className="min-h-24 resize-none"
-                                      placeholder="Explain how this criteria will be judged"
+                                      placeholder="Explain how this criteria will be judged (e.g., 'How clear and unambiguous is the prompt?')"
                                       {...field}
                                     />
                                   </FormControl>

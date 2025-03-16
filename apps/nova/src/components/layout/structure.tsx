@@ -115,6 +115,7 @@ export default function Structure({
       actions={actions}
       userPopover={userPopover}
       children={children}
+      className="p-0 md:pt-0"
     />
   );
 }

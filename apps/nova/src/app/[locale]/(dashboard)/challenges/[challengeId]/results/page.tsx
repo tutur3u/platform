@@ -2,6 +2,7 @@
 
 import {
   NovaChallenge,
+  NovaChallengeCriteria,
   NovaProblem,
   NovaSession,
   NovaSubmission,
@@ -13,8 +14,15 @@ import { useEffect, useState } from 'react';
 
 type ReportData = NovaSession & {
   challenge: NovaChallenge & {
+    criteria: NovaChallengeCriteria[];
     problems: (NovaProblem & {
       submissions: NovaSubmission[];
+      criteria_scores: {
+        criteria_id: string;
+        problem_id: string;
+        score: number;
+        created_at: string;
+      }[];
     })[];
   };
 };
@@ -171,6 +179,64 @@ export default function Page({ params }: Props) {
             </tbody>
           </table>
         </div>
+
+        {data.challenge.criteria.length > 0 && (
+          <div className="mt-8">
+            <h2 className="mb-4 text-2xl font-bold">Criteria Scores</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full rounded-lg border">
+                <thead>
+                  <tr className="bg-muted">
+                    <th className="border px-4 py-2 text-left">Problem</th>
+                    {data.challenge.criteria.map((criteria) => (
+                      <th
+                        key={criteria.id}
+                        className="border px-4 py-2 text-center"
+                      >
+                        {criteria.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.challenge.problems.map((problem, index) => (
+                    <tr key={index} className="hover:bg-muted/50">
+                      <td className="border px-4 py-2">Problem {index + 1}</td>
+                      {data.challenge.criteria.map((criteria) => {
+                        const criteriaScore = problem.criteria_scores.find(
+                          (score) => score.criteria_id === criteria.id
+                        );
+                        return (
+                          <td
+                            key={criteria.id}
+                            className="border px-4 py-2 text-center"
+                          >
+                            <div className="flex flex-col items-center">
+                              <span
+                                className={`font-medium ${
+                                  (criteriaScore?.score || 0) >= 8
+                                    ? 'text-green-600'
+                                    : (criteriaScore?.score || 0) >= 5
+                                      ? 'text-yellow-600'
+                                      : 'text-red-600'
+                                }`}
+                              >
+                                {criteriaScore?.score || 0}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {criteria.description}
+                              </span>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 flex justify-center">
           <Button
