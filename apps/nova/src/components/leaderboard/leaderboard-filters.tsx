@@ -10,22 +10,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import { Filter, GamepadIcon, Search, Sparkles, Trophy, X } from 'lucide-react';
+import { Filter, Search, Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface LeaderboardFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  selectedChallenge: string;
+  setSelectedChallenge: (challengeId: string) => void;
+  challenges?: { id: string; title: string }[];
 }
 
 export function LeaderboardFilters({
   searchQuery,
   setSearchQuery,
+  selectedChallenge,
+  setSelectedChallenge,
+  challenges = [],
 }: LeaderboardFiltersProps) {
-  const [activeTab, setActiveTab] = useState<string>('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   return (
@@ -33,8 +37,27 @@ export function LeaderboardFilters({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="mb-6 space-y-4"
+      className="relative mb-6 space-y-4"
     >
+      {/* Animated background glow */}
+      <div className="absolute -inset-4 -z-10 rounded-xl opacity-5 blur-xl dark:opacity-10">
+        <motion.div
+          className="absolute inset-0 rounded-xl"
+          style={{
+            background: 'linear-gradient(45deg, #3B82F6, #8B5CF6, #EC4899)',
+          }}
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            repeatType: 'reverse',
+            ease: 'easeInOut',
+          }}
+        />
+      </div>
+
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full md:w-96">
           <div className="absolute top-0 left-0 -z-10 h-full w-full rounded-md bg-blue-100/50 dark:bg-blue-500/5"></div>
@@ -68,8 +91,55 @@ export function LeaderboardFilters({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Tabs
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Challenge selector */}
+          {challenges.length > 0 && (
+            <div className="relative">
+              {selectedChallenge !== 'all' && (
+                <motion.div
+                  className="absolute -inset-1 -z-10 rounded-md opacity-0 blur-sm"
+                  style={{
+                    background: 'linear-gradient(to right, #8B5CF6, #6366F1)',
+                  }}
+                  animate={{ opacity: 0.2 }}
+                  transition={{ duration: 0.3 }}
+                />
+              )}
+              <Select
+                value={selectedChallenge}
+                onValueChange={setSelectedChallenge}
+              >
+                <SelectTrigger
+                  className={cn(
+                    'h-9 w-[180px] border-gray-200 bg-white text-sm text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:ring-offset-slate-900',
+                    selectedChallenge !== 'all' &&
+                      'border-purple-300 bg-purple-50/50 text-purple-700 dark:border-purple-500/30 dark:bg-purple-900/20 dark:text-purple-300'
+                  )}
+                >
+                  <SelectValue
+                    placeholder="All Challenges"
+                    className="line-clamp-1"
+                  />
+                </SelectTrigger>
+                <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                  <SelectItem value="all" className="text-sm">
+                    All Challenges
+                  </SelectItem>
+                  {challenges.map((challenge) => (
+                    <SelectItem
+                      key={challenge.id}
+                      value={challenge.id}
+                      className="line-clamp-1 text-sm"
+                    >
+                      <span className="line-clamp-1">{challenge.title}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/*<Tabs
             defaultValue="all"
             value={activeTab}
             onValueChange={setActiveTab}
@@ -78,32 +148,32 @@ export function LeaderboardFilters({
             <TabsList className="border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900/60">
               <TabsTrigger
                 value="all"
-                className="text-xs data-[state=active]:bg-gray-100 data-[state=active]:text-blue-600 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-blue-400"
+                className="text-xs transition-all duration-200 data-[state=active]:bg-gray-100 data-[state=active]:text-blue-600 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-blue-400"
               >
                 All Players
               </TabsTrigger>
               <TabsTrigger
                 value="top10"
-                className="text-xs data-[state=active]:bg-gray-100 data-[state=active]:text-yellow-600 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-yellow-400"
+                className="text-xs transition-all duration-200 data-[state=active]:bg-gray-100 data-[state=active]:text-yellow-600 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-yellow-400"
               >
                 <Trophy className="mr-1 h-3 w-3" />
                 Top 10
               </TabsTrigger>
               <TabsTrigger
                 value="friends"
-                className="text-xs data-[state=active]:bg-gray-100 data-[state=active]:text-green-600 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-green-400"
+                className="text-xs transition-all duration-200 data-[state=active]:bg-gray-100 data-[state=active]:text-green-600 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-green-400"
               >
                 <GamepadIcon className="mr-1 h-3 w-3" />
                 Friends
               </TabsTrigger>
             </TabsList>
-          </Tabs>
+          </Tabs>*/}
 
           <Button
             variant="outline"
             size="sm"
             className={cn(
-              'gap-1.5 border-gray-200 bg-white text-xs text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100',
+              'gap-1.5 border-gray-200 bg-white text-xs text-gray-700 transition-all duration-200 hover:bg-gray-50 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100',
               showAdvancedFilters &&
                 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/50 dark:bg-blue-950/40 dark:text-blue-400'
             )}
@@ -153,7 +223,7 @@ export function LeaderboardFilters({
                   Score Range
                 </label>
                 <Select defaultValue="all">
-                  <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                  <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                     <SelectValue placeholder="All scores" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -170,7 +240,7 @@ export function LeaderboardFilters({
                   Time Period
                 </label>
                 <Select defaultValue="allTime">
-                  <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                  <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                     <SelectValue placeholder="All time" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -187,7 +257,7 @@ export function LeaderboardFilters({
                   Status
                 </label>
                 <Select defaultValue="all">
-                  <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                  <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                     <SelectValue placeholder="All users" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -203,7 +273,7 @@ export function LeaderboardFilters({
                   Region
                 </label>
                 <Select defaultValue="global">
-                  <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                  <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                     <SelectValue placeholder="Global" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">

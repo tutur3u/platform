@@ -20,7 +20,14 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowDownUp, Crown, Medal, Star, TrendingUp } from 'lucide-react';
+import {
+  ArrowDownUp,
+  Crown,
+  Medal,
+  Sparkles,
+  Star,
+  TrendingUp,
+} from 'lucide-react';
 import { useState } from 'react';
 
 export type LeaderboardEntry = {
@@ -29,18 +36,23 @@ export type LeaderboardEntry = {
   name: string;
   avatar: string;
   score: number;
+  challenge_scores?: Record<string, number>;
 };
 
 interface LeaderboardProps {
   data: LeaderboardEntry[];
   isLoading?: boolean;
   currentUserId?: string;
+  challenges?: { id: string; title: string }[];
+  selectedChallenge?: string;
 }
 
 export function Leaderboard({
   data,
   isLoading = false,
   currentUserId,
+  challenges = [],
+  selectedChallenge = 'all',
 }: LeaderboardProps) {
   const prefersReducedMotion = useReducedMotion();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -66,6 +78,28 @@ export function Leaderboard({
     return sortOrder === 'desc' ? b.score - a.score : a.score - b.score;
   });
 
+  // Find the best challenge for each user (when viewing all challenges)
+  const getBestChallengeForUser = (entry: LeaderboardEntry) => {
+    if (!entry.challenge_scores || selectedChallenge !== 'all') return null;
+
+    let bestChallengeId = '';
+    let bestScore = 0;
+
+    Object.entries(entry.challenge_scores).forEach(([challengeId, score]) => {
+      if (score > bestScore) {
+        bestScore = score;
+        bestChallengeId = challengeId;
+      }
+    });
+
+    if (!bestChallengeId) return null;
+
+    const challenge = challenges.find((c) => c.id === bestChallengeId);
+    return challenge
+      ? { id: challenge.id, title: challenge.title, score: bestScore }
+      : null;
+  };
+
   return (
     <motion.div
       initial={prefersReducedMotion ? {} : { opacity: 0, y: 10 }}
@@ -73,7 +107,25 @@ export function Leaderboard({
       transition={{ duration: 0.5 }}
       className="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_0_25px_rgba(0,0,0,0.3)]"
     >
-      <div className="absolute -inset-[1px] -z-10 rounded-xl bg-gradient-to-r from-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px"></div>
+      {/* Enhanced gradient border effect */}
+      <div className="absolute -inset-[1px] -z-10 rounded-xl bg-gradient-to-r from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
+        <motion.div
+          className="absolute inset-0 rounded-xl opacity-0 dark:opacity-30"
+          style={{
+            background: 'linear-gradient(45deg, #3B82F6, #8B5CF6, #EC4899)',
+            backgroundSize: '200% 200%',
+          }}
+          animate={{
+            backgroundPosition: ['0% 0%', '100% 100%'],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            repeatType: 'reverse',
+            ease: 'easeInOut',
+          }}
+        />
+      </div>
 
       <div className="flex items-center justify-between bg-gray-50 px-4 py-2 dark:bg-slate-800/30">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
@@ -86,7 +138,7 @@ export function Leaderboard({
                 variant="ghost"
                 size="sm"
                 onClick={toggleSortOrder}
-                className="h-8 gap-1 text-xs text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
+                className="h-8 gap-1 text-xs text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
               >
                 <ArrowDownUp className="h-3.5 w-3.5" />
                 {sortOrder === 'desc' ? 'Highest First' : 'Lowest First'}
@@ -159,7 +211,7 @@ export function Leaderboard({
                     <div className="flex items-center gap-2">
                       <div
                         className={cn(
-                          'relative flex h-10 w-10 items-center justify-center',
+                          'relative flex h-10 w-10 items-center justify-center transition-transform duration-300 group-hover:scale-110',
                           entry.rank === 1
                             ? 'text-black dark:text-black'
                             : entry.rank === 2
@@ -212,6 +264,7 @@ export function Leaderboard({
                             delay: index * 0.2,
                           }}
                           className={cn(
+                            'transition-all duration-300 group-hover:scale-125',
                             entry.rank === 1
                               ? 'text-yellow-500'
                               : entry.rank === 2
@@ -256,7 +309,7 @@ export function Leaderboard({
                           )}
 
                         {/* Hexagonal avatar for all players */}
-                        <div className="relative h-10 w-10 overflow-hidden">
+                        <div className="relative h-10 w-10 overflow-hidden transition-transform duration-300 group-hover:scale-110">
                           <Avatar className="h-10 w-10 ring-offset-white dark:ring-offset-slate-900">
                             <AvatarImage
                               src={entry.avatar}
@@ -270,10 +323,10 @@ export function Leaderboard({
                         </div>
                       </div>
 
-                      <div className="flex flex-col">
-                        <span
+                      <div>
+                        <div
                           className={cn(
-                            'font-medium text-gray-800 dark:text-slate-200',
+                            'font-medium text-gray-800 transition-all duration-300 group-hover:translate-x-1 dark:text-slate-200',
                             currentUserId === entry.id &&
                               'font-bold text-blue-600 dark:text-blue-400',
                             entry.rank <= 3 && 'font-bold',
@@ -286,7 +339,7 @@ export function Leaderboard({
                           )}
                         >
                           {entry.name}
-                        </span>
+                        </div>
                         {currentUserId === entry.id && (
                           <Badge
                             variant="outline"
@@ -295,6 +348,18 @@ export function Leaderboard({
                             You
                           </Badge>
                         )}
+                        {selectedChallenge === 'all' &&
+                          getBestChallengeForUser(entry) && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <Badge
+                                variant="outline"
+                                className="h-5 border-purple-200 bg-purple-50 px-1.5 py-0 text-[10px] font-normal text-purple-700 transition-all duration-300 group-hover:bg-purple-100 dark:border-purple-900/30 dark:bg-purple-900/20 dark:text-purple-400 dark:group-hover:bg-purple-900/30"
+                              >
+                                <Sparkles className="mr-1 h-2.5 w-2.5" />
+                                Best in: {getBestChallengeForUser(entry)?.title}
+                              </Badge>
+                            </div>
+                          )}
                       </div>
                     </div>
                   </TableCell>
@@ -316,7 +381,7 @@ export function Leaderboard({
                     <div className="flex items-center justify-end">
                       <div
                         className={cn(
-                          'rounded px-3 py-0.5',
+                          'rounded px-3 py-0.5 transition-all duration-300 group-hover:scale-110',
                           entry.rank === 1
                             ? 'bg-yellow-50 dark:bg-yellow-500/10'
                             : entry.rank === 2

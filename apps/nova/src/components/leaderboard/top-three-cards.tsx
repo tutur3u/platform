@@ -18,6 +18,7 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
   const topThree = data.slice(0, 3);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
+  // const { firePreset } = useConfetti();
 
   if (isLoading) {
     return (
@@ -74,6 +75,8 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
         badgeClass: 'text-amber-700 dark:text-amber-300',
         scoreClass: 'text-amber-700 dark:text-amber-300',
         hexBorderClass: 'border-amber-500/50',
+        particleColors: ['#FBBF24', '#F59E0B', '#D97706'],
+        gradientClass: 'from-amber-500/20 via-amber-400/10 to-amber-300/5',
       };
     } else if (index === 1) {
       return {
@@ -87,6 +90,8 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
         badgeClass: 'text-gray-600 dark:text-gray-300',
         scoreClass: 'text-gray-600 dark:text-gray-300',
         hexBorderClass: 'border-gray-400/50',
+        particleColors: ['#E5E7EB', '#9CA3AF', '#6B7280'],
+        gradientClass: 'from-gray-500/20 via-gray-400/10 to-gray-300/5',
       };
     } else {
       return {
@@ -100,7 +105,23 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
         badgeClass: 'text-amber-800 dark:text-amber-400',
         scoreClass: 'text-amber-800 dark:text-amber-400',
         hexBorderClass: 'border-amber-700/50',
+        particleColors: ['#FB923C', '#F97316', '#C2410C'],
+        gradientClass: 'from-amber-700/20 via-amber-600/10 to-amber-500/5',
       };
+    }
+  };
+
+  const handleCardHover = (index: number) => {
+    setHoveredCard(index);
+
+    if (!prefersReducedMotion) {
+      if (index === 0) {
+        // firePreset('celebration');
+      } else if (index === 1) {
+        // firePreset('levelUp');
+      } else if (index === 2) {
+        // firePreset('achievement');
+      }
     }
   };
 
@@ -126,7 +147,7 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
                   : 'sm:order-3'
             )}
             variants={prefersReducedMotion ? {} : itemVariants}
-            onHoverStart={() => setHoveredCard(index)}
+            onHoverStart={() => handleCardHover(index)}
             onHoverEnd={() => setHoveredCard(null)}
           >
             <div
@@ -147,14 +168,71 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
               <div className="absolute inset-0 -z-10 bg-gradient-to-b from-gray-50 to-white opacity-100 dark:opacity-0"></div>
               <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-900 to-slate-950 opacity-0 dark:opacity-100"></div>
 
-              {/* Prize ribbon */}
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 -z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+                <motion.div
+                  className={cn(
+                    'absolute inset-0 bg-gradient-to-br opacity-20 dark:opacity-30',
+                    styles.gradientClass
+                  )}
+                  animate={{
+                    backgroundPosition: ['0% 0%', '100% 100%'],
+                  }}
+                  transition={{
+                    duration: 8,
+                    repeat: Infinity,
+                    repeatType: 'reverse',
+                    ease: 'easeInOut',
+                  }}
+                />
+              </div>
+
+              {/* Floating particles */}
+              {!prefersReducedMotion && (
+                <>
+                  {[...Array(6)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-70"
+                      style={{
+                        width: Math.random() * 6 + 2,
+                        height: Math.random() * 6 + 2,
+                        background:
+                          styles.particleColors[
+                            i % styles.particleColors.length
+                          ],
+                        left: `${Math.random() * 100}%`,
+                        top: `${Math.random() * 100}%`,
+                      }}
+                      animate={{
+                        y: [0, -20, 0],
+                        x: [0, Math.random() * 10 - 5, 0],
+                        scale: [1, Math.random() * 0.5 + 0.8, 1],
+                      }}
+                      transition={{
+                        duration: Math.random() * 3 + 2,
+                        repeat: Infinity,
+                        delay: Math.random() * 2,
+                        ease: 'easeInOut',
+                      }}
+                    />
+                  ))}
+                </>
+              )}
+
+              {/* Prize ribbon with enhanced animation */}
               <div
                 className={cn(
-                  'absolute top-5 -right-8 rotate-45 bg-blue-50 px-10 py-1 text-center text-xs font-semibold shadow-lg dark:bg-blue-950/80',
+                  'absolute top-5 -right-8 rotate-45 bg-blue-50 px-10 py-1 text-center text-xs font-semibold shadow-lg transition-all duration-300 group-hover:shadow-xl dark:bg-blue-950/80',
                   styles.badgeClass
                 )}
               >
-                {styles.prize}
+                <motion.span
+                  animate={hoveredCard === index ? { scale: [1, 1.1, 1] } : {}}
+                  transition={{ duration: 0.5 }}
+                >
+                  {styles.prize}
+                </motion.span>
               </div>
 
               {/* Share button */}
