@@ -49,7 +49,6 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { format } from 'date-fns';
 import {
@@ -60,7 +59,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Cog,
   FileText,
   Info,
   Loader2,
@@ -100,6 +98,7 @@ export function UnifiedEventModal() {
     updateEvent,
     deleteEvent,
     getEvents,
+    settings,
   } = useCalendar();
 
   // State for manual event creation/editing
@@ -167,12 +166,13 @@ export function UnifiedEventModal() {
       const formattedEvents = processedEvents
         .map((event) => {
           if (!event) return null;
+
+          const categoryColors = settings?.categoryColors?.categories || [];
+          const defaultColor = categoryColors[0]?.color || 'BLUE';
+
           return {
             ...event,
-            color:
-              event.color && typeof event.color === 'string'
-                ? (event.color.toString().toUpperCase() as SupportedColor)
-                : 'BLUE',
+            color: defaultColor,
           };
         })
         .filter((event): event is NonNullable<typeof event> => event !== null);
@@ -190,7 +190,7 @@ export function UnifiedEventModal() {
 
       setActiveTab('preview');
     }
-  }, [object, isLoading]);
+  }, [object, isLoading, settings?.categoryColors?.categories]);
 
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
@@ -351,12 +351,16 @@ export function UnifiedEventModal() {
       const eventsToSave = generatedEvents;
 
       for (const eventData of eventsToSave) {
+        // Determine the best color based on the event title and category settings
+        const categoryColors = settings?.categoryColors?.categories || [];
+        const defaultColor = categoryColors[0]?.color || 'BLUE';
+
         const calendarEvent: Omit<CalendarEvent, 'id'> = {
           title: eventData.title || 'New Event',
           description: eventData.description || '',
           start_at: eventData.start_at,
           end_at: eventData.end_at,
-          color: eventData.color || 'BLUE',
+          color: defaultColor,
           location: eventData.location || '',
           is_all_day: Boolean(eventData.is_all_day),
           scheduling_note: eventData.scheduling_note || '',
@@ -527,6 +531,17 @@ export function UnifiedEventModal() {
         'Based on your schedule, early morning might be better for focus',
         'Consider adding meeting agenda or preparation notes',
       ];
+
+      // Add category-based suggestions
+      if (settings?.categoryColors?.categories.length > 0) {
+        const categoryNames = settings.categoryColors.categories
+          .map((cat) => cat.name)
+          .join(', ');
+        suggestions.push(
+          `You have categories set up: ${categoryNames}. Events will be colored based on these categories.`
+        );
+      }
+
       setAiSuggestions(suggestions.slice(0, 3)); // Show up to 3 relevant suggestions
 
       submit({
@@ -814,46 +829,6 @@ export function UnifiedEventModal() {
                   <div className="flex flex-1 flex-col overflow-hidden">
                     <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                       <div className="space-y-6 p-6">
-                        <div className="rounded-lg bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6">
-                          <div className="mb-3 flex items-center gap-2">
-                            <Sparkles className="h-5 w-5 text-primary" />
-                            <h3 className="text-lg font-medium">
-                              AI Event Assistant
-                            </h3>
-                          </div>
-                          <p className="mb-4 text-sm text-muted-foreground">
-                            Describe your event in natural language and our AI
-                            will create it for you. Include details like title,
-                            date, time, duration, location, and any other
-                            relevant information. You can also describe multiple
-                            events at once.
-                          </p>
-                          <div className="space-y-2">
-                            <p className="text-xs font-medium text-muted-foreground">
-                              Examples:
-                            </p>
-                            <div className="space-y-2">
-                              <div className="rounded-md bg-muted/50 p-2 text-xs">
-                                "Schedule a team meeting next Monday at 2pm for
-                                1 hour to discuss the new project roadmap"
-                              </div>
-                              <div className="rounded-md bg-muted/50 p-2 text-xs">
-                                "Lunch with Sarah at Cafe Milano tomorrow at
-                                noon, high priority"
-                              </div>
-                              <div className="rounded-md bg-muted/50 p-2 text-xs">
-                                "Block 3 hours for focused work on the
-                                presentation every morning this week"
-                              </div>
-                              <div className="rounded-md bg-muted/50 p-2 text-xs">
-                                "Create a series of 1-hour workout sessions at
-                                the gym on Monday, Wednesday, and Friday at 7am
-                                next week"
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
                         <FormField
                           control={aiForm.control}
                           name="prompt"
@@ -878,65 +853,6 @@ export function UnifiedEventModal() {
                             </FormItem>
                           )}
                         />
-
-                        {/* AI Settings - Simplified and more prominent */}
-                        <div className="rounded-lg border bg-muted/10 p-4">
-                          <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
-                            <Cog className="h-4 w-4" />
-                            AI Settings
-                          </h3>
-
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between space-x-2">
-                              <div className="space-y-0.5">
-                                <h4 className="text-sm font-medium">
-                                  Smart Scheduling
-                                </h4>
-                                <p className="text-xs text-muted-foreground">
-                                  Automatically find available time slots based
-                                  on your existing events
-                                </p>
-                              </div>
-                              <Switch
-                                id="smart-scheduling"
-                                checked={!!aiForm.watch('smart_scheduling')}
-                                onCheckedChange={(checked) =>
-                                  aiForm.setValue('smart_scheduling', checked)
-                                }
-                              />
-                            </div>
-
-                            <FormField
-                              control={aiForm.control}
-                              name="priority"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <div className="flex items-center justify-between">
-                                    <FormLabel className="text-sm font-medium">
-                                      Priority
-                                    </FormLabel>
-                                    <FormControl>
-                                      <select
-                                        {...field}
-                                        className="w-[180px] rounded-md border border-input bg-background p-2 text-sm"
-                                      >
-                                        <option value="low">
-                                          Low - Can be rescheduled
-                                        </option>
-                                        <option value="medium">
-                                          Medium - Standard
-                                        </option>
-                                        <option value="high">
-                                          High - Important
-                                        </option>
-                                      </select>
-                                    </FormControl>
-                                  </div>
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        </div>
 
                         {isLoading && (
                           <div className="flex items-center justify-center py-8">
@@ -1087,11 +1003,15 @@ export function UnifiedEventModal() {
                               }}
                             />
                             <span className="text-xs text-muted-foreground">
-                              {
-                                COLOR_OPTIONS.find(
-                                  (c) => c.value === generatedEvent.color
-                                )?.name
-                              }
+                              {COLOR_OPTIONS.find(
+                                (c) => c.value === generatedEvent.color
+                              )?.name || 'Default'}
+                              {generatedEvent._matchedCategory && (
+                                <span className="ml-1">
+                                  (Matched category:{' '}
+                                  {generatedEvent._matchedCategory})
+                                </span>
+                              )}
                             </span>
                           </div>
                         </div>

@@ -929,7 +929,10 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Format time for display
   const formatEventTime = (date: Date) => {
-    return format(date, 'h:mm a');
+    const { settings } = useCalendar();
+    const timeFormat = settings.appearance.timeFormat;
+
+    return format(date, timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
   };
 
   // Check if the event is in the past

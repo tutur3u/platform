@@ -20,7 +20,7 @@ import {
   startOfMonth,
 } from 'date-fns';
 import { Clock, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface MonthCalendarProps {
   date: Date;
@@ -28,7 +28,7 @@ interface MonthCalendarProps {
 }
 
 const MonthCalendar = ({ date }: MonthCalendarProps) => {
-  const { getCurrentEvents, addEmptyEvent } = useCalendar();
+  const { getCurrentEvents, addEmptyEvent, settings } = useCalendar();
   const [currDate, setCurrDate] = useState(date);
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
 
@@ -37,14 +37,39 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
     setCurrDate(date);
   }, [date]);
 
+  // Get first day of week from settings
+  const firstDayOfWeek = useMemo(() => {
+    const settingValue = settings?.appearance?.firstDayOfWeek;
+    console.log('Month calendar first day setting:', settingValue);
+    return settingValue === 'sunday' ? 0 : settingValue === 'saturday' ? 6 : 1; // 0 = Sunday, 1 = Monday, 6 = Saturday
+  }, [settings?.appearance?.firstDayOfWeek]);
+
+  // Get weekday labels based on first day of week
+  const weekdayLabels = useMemo(() => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const reorderedDays = [...days];
+
+    console.log('Reordering days with first day:', firstDayOfWeek);
+
+    // Reorder days based on first day of week
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      reorderedDays.push(reorderedDays.shift()!);
+    }
+
+    console.log('Reordered days:', reorderedDays);
+
+    return reorderedDays;
+  }, [firstDayOfWeek]);
+
   // Get days in month
   const monthStart = startOfMonth(currDate);
   const monthEnd = endOfMonth(currDate);
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   // Calculate days needed to fill the calendar grid (weeks)
-  const startDay = getDay(monthStart);
-  const endDay = 6 - getDay(monthEnd);
+  // Adjust startDay calculation based on first day of week
+  const startDay = (getDay(monthStart) - firstDayOfWeek + 7) % 7;
+  const endDay = 6 - ((getDay(monthEnd) - firstDayOfWeek + 7) % 7);
 
   // Get days from previous month to fill first week
   const prevMonthDays = [];
@@ -144,10 +169,16 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
   return (
     <div className="flex-1 overflow-auto rounded-md border bg-background shadow-sm">
       <div className="grid grid-cols-7 divide-x divide-y border-b text-center">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+        {weekdayLabels.map((day) => (
           <div
             key={day}
-            className="py-2 text-sm font-medium text-muted-foreground"
+            className={cn(
+              'py-2 text-sm font-medium',
+              (day === 'Sun' || day === 'Sat') &&
+                !settings.appearance.showWeekends
+                ? 'text-muted-foreground/50'
+                : 'text-muted-foreground'
+            )}
           >
             {day}
           </div>
@@ -159,6 +190,8 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
           const events = getCurrentEvents(day);
           const isCurrentMonth = isSameMonth(day, currDate);
           const isTodayDate = isToday(day);
+          const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+          const isHidden = isWeekend && !settings.appearance.showWeekends;
           const isHovered =
             hoveredDay &&
             hoveredDay.getDate() === day.getDate() &&
@@ -172,7 +205,8 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
                 'group relative min-h-[120px] p-1.5 transition-colors',
                 !isCurrentMonth && 'bg-muted/50',
                 isTodayDate && 'bg-primary/5',
-                isHovered && 'bg-muted/30'
+                isHovered && 'bg-muted/30',
+                isHidden && 'bg-muted/10'
               )}
               onMouseEnter={() => setHoveredDay(day)}
               onMouseLeave={() => setHoveredDay(null)}
@@ -183,7 +217,8 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
                     'flex h-7 w-7 items-center justify-center text-sm',
                     isTodayDate &&
                       'rounded-full bg-primary font-medium text-primary-foreground',
-                    !isCurrentMonth && 'text-muted-foreground'
+                    !isCurrentMonth && 'text-muted-foreground',
+                    isHidden && 'text-muted-foreground/50'
                   )}
                 >
                   {format(day, 'd')}
@@ -193,8 +228,12 @@ const MonthCalendar = ({ date }: MonthCalendarProps) => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:opacity-100 focus:opacity-100"
+                      className={cn(
+                        'h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:opacity-100 focus:opacity-100',
+                        isHidden && 'opacity-0 group-hover:opacity-50'
+                      )}
                       onClick={() => handleAddEvent(day)}
+                      disabled={isHidden}
                     >
                       <Plus className="h-3 w-3" />
                     </Button>
