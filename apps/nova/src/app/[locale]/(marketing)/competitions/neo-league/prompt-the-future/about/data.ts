@@ -84,6 +84,27 @@ export const organizers: TeamMember[] = [
     bio: 'Handle the creative aspects of the competition.',
     organization: 'RMIT SGS Neo Culture Tech',
   },
+  {
+    name: 'Dr. Trần Đức Linh',
+    role: 'Academic Mentor',
+    image: '/media/featured/competitions/neo-league/tran-duc-linh.png',
+    bio: 'Provide guidance and compile challenges for the competition.',
+    organization: 'RMIT University',
+  },
+  {
+    name: 'Dr. Phạm Chí Thanh',
+    role: 'Academic Mentor',
+    image: '/media/featured/competitions/neo-league/pham-chi-thanh.jpeg',
+    bio: 'Provide guidance and compile challenges for the competition.',
+    organization: 'RMIT University',
+  },
+  {
+    name: 'Dr. Tom Huynh',
+    role: 'Academic Mentor',
+    image: '/media/featured/competitions/neo-league/tom-huynh.jpeg',
+    bio: 'Provide guidance and compile challenges for the competition.',
+    organization: 'RMIT University',
+  },
 ];
 
 export const platformBuilders: TeamMember[] = [
@@ -184,29 +205,5 @@ export const contributors: Contributor[] = [
     name: 'Media Partners',
     contribution: 'Coverage and promotion of the Neo League competition',
     image: '/media/logos/transparent.png',
-  },
-];
-
-export const academicMentors: TeamMember[] = [
-  {
-    name: 'Dr. Linh Tran',
-    role: 'Lecturer',
-    image: '/media/featured/competitions/neo-league/tran-duc-linh.png',
-    bio: 'As a passionate educator and experienced researcher, his recent work explores the applications of advanced technologies, particularly AI and generative AI, in education to make learning more inclusive and effective.',
-    organization: 'RMIT University',
-  },
-  {
-    name: 'Dr. Thanh Pham',
-    role: 'Lecturer',
-    image: '/media/featured/competitions/neo-league/pham-chi-thanh.jpeg',
-    bio: 'Research in electronics, AI, data science, robotics, and engineering education. Broad engineering and computer science expertise.',
-    organization: 'RMIT University',
-  },
-  {
-    name: 'Dr. Tom Huynh',
-    role: 'Lecturer',
-    image: '/media/featured/competitions/neo-league/tom-huynh.jpeg',
-    bio: 'IT/Software Engineering lecturer at RMIT Vietnam with expertise in programming, web/mobile development, and machine learning. Extensive industry experience in both academia and tech companies.',
-    organization: 'RMIT University',
   },
 ];

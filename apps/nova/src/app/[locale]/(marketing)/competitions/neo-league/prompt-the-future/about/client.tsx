@@ -5,7 +5,6 @@ import {
   Contributor,
   type Sponsor,
   type TeamMember,
-  academicMentors,
   contributors,
   organizers,
   platformBuilders,
@@ -1227,39 +1226,6 @@ export function AboutUsPage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Academic Mentors Section */}
-      <section className="w-full py-16">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="mb-8">
-            <h2 className="mb-2 text-2xl font-bold">
-              <span className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-primary" />
-                Academic Mentors
-              </span>
-            </h2>
-            <p className="text-muted-foreground">
-              Distinguished academics who have contributed their expertise to
-              the NEO League competition, advising on prompt engineering
-              challenges and educational content.
-            </p>
-          </div>
-
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {academicMentors.map((mentor, index) => (
-              <React.Fragment key={index}>
-                {renderTeamMember(mentor)}
-              </React.Fragment>
-            ))}
-          </motion.div>
         </div>
       </section>
 
