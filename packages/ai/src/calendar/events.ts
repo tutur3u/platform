@@ -78,6 +78,8 @@ export const calendarEventSchema = z.object({
   //   created_by: z.string().optional().describe('User ID of the creator'),
 });
 
+export const calendarEventsSchema = z.array(calendarEventSchema);
+
 export type CalendarEvent = z.infer<typeof calendarEventSchema>;
 
 // This schema is for notifications related to calendar events

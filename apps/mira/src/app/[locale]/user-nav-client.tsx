@@ -115,7 +115,7 @@ export default function UserNavClient({
           <DropdownMenuGroup>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Palette className="mr-2 h-4 w-4" />
+                <Palette className="h-4 w-4" />
                 <span>{t('common.theme')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
@@ -126,7 +126,7 @@ export default function UserNavClient({
             </DropdownMenuSub>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Globe className="mr-2 h-4 w-4" />
+                <Globe className="h-4 w-4" />
                 <span>{t('common.language')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>

@@ -4,7 +4,7 @@ interface Problem {
   id: string;
   title: string;
   description: string;
-  maxInputLength: number;
+  maxPromptLength: number;
   exampleInput: string;
   exampleOutput: string;
 }
@@ -17,19 +17,19 @@ export default function ProblemComponent({ problem }: { problem: Problem }) {
         <p className="mt-2">{problem.description}</p>
 
         <div className="mt-2">
-          <h3 className="mt-3 font-semibold">Max Input Length:</h3>
-          <p className="mt-2">{problem.maxInputLength}</p>
+          <h3 className="mt-3 font-semibold">Max Prompt Length:</h3>
+          <p className="mt-2">{problem.maxPromptLength}</p>
         </div>
 
         <div className="mt-2">
-          <h3 className="mt-3 font-semibold">Input:</h3>
+          <h3 className="mt-3 font-semibold">Example Input:</h3>
           <pre className="overflow-y-auto rounded-md bg-foreground/10 p-2 whitespace-pre-wrap">
             {problem.exampleInput}
           </pre>
         </div>
 
         <div className="mt-2">
-          <h3 className="mt-3 font-semibold">Output:</h3>
+          <h3 className="mt-3 font-semibold">Example Output:</h3>
           <pre className="overflow-y-auto rounded-md bg-foreground/10 p-2 whitespace-pre-wrap">
             {problem.exampleOutput}
           </pre>

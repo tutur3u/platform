@@ -21,7 +21,7 @@ export default function NewProblemPage() {
       const problemData: any = {
         title: values.title,
         description: values.description,
-        max_input_length: values.maxInputLength,
+        max_prompt_length: values.maxPromptLength,
         example_input: values.exampleInput,
         example_output: values.exampleOutput,
       };

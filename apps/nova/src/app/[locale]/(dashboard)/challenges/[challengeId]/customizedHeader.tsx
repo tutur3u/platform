@@ -6,27 +6,23 @@ import { cn } from '@tuturuuu/utils/format';
 import { Suspense } from 'react';
 
 interface Props {
-  proNum: number;
+  problemLength: number;
   currentProblem: number;
-  challengeId: string;
-  onNext: () => void;
+  endTime: string;
   onPrev: () => void;
+  onNext: () => void;
   onEnd: () => void;
-  startTime: string | null;
-  endTime: string | null;
-  duration: number;
+  onAutoEnd: () => void;
 }
 
 export default function CustomizedHeader({
-  proNum,
+  problemLength,
   currentProblem,
-  challengeId,
-  onNext,
-  onPrev,
-  onEnd,
-  startTime,
   endTime,
-  duration,
+  onPrev,
+  onNext,
+  onEnd,
+  onAutoEnd,
 }: Props) {
   return (
     <nav
@@ -37,10 +33,10 @@ export default function CustomizedHeader({
         <div className="flex items-center justify-between">
           <div className="flex flex-1 items-center justify-center">
             <ProblemChanger
+              problemLength={problemLength}
+              currentProblem={currentProblem}
               onPrev={onPrev}
               onNext={onNext}
-              currentProblem={currentProblem}
-              proNum={proNum}
             />
           </div>
 
@@ -50,12 +46,7 @@ export default function CustomizedHeader({
                 <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
               }
             >
-              <CountdownTimer
-                challengeId={challengeId}
-                startTime={startTime}
-                endTime={endTime}
-                duration={duration}
-              />
+              <CountdownTimer endTime={endTime} onAutoEnd={onAutoEnd} />
               <Button className="bg-red-500 hover:bg-red-700" onClick={onEnd}>
                 End Test
               </Button>

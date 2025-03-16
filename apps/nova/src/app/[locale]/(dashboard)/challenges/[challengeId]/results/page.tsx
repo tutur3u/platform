@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   NovaChallenge,
   NovaProblem,
@@ -25,26 +24,16 @@ interface Props {
 }
 
 export default function Page({ params }: Props) {
-  const supabase = createClient();
-  const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ReportData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const { challengeId } = await params;
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user?.id) {
-          router.push('/login');
-          return;
-        }
 
         const response = await fetch(
           `/api/v1/challenges/${challengeId}/report`
@@ -71,7 +60,7 @@ export default function Page({ params }: Props) {
     };
 
     fetchData();
-  }, [params, supabase.auth, router]);
+  }, [params, router]);
 
   if (loading) {
     return (
@@ -144,8 +133,7 @@ export default function Page({ params }: Props) {
 
         <div className="mb-6 rounded-lg bg-primary/10 p-4">
           <p className="text-lg font-semibold">
-            {/* Total Score: {data.total_score} */}
-            Total Score: To be calculated...
+            Total Score: {data.total_score}
           </p>
         </div>
 
@@ -169,13 +157,13 @@ export default function Page({ params }: Props) {
                   <tr key={index} className="hover:bg-muted/50">
                     <td className="border px-4 py-2">Problem {index + 1}</td>
                     <td className="border px-4 py-2">
-                      {bestSubmission?.input || 'Not attempted'}
+                      {bestSubmission?.prompt || 'Not attempted'}
                     </td>
                     <td className="border px-4 py-2 text-center">
                       {`${bestSubmission?.score || 0}/10`}
                     </td>
                     <td className="border px-4 py-2">
-                      {bestSubmission?.output || '-'}
+                      {bestSubmission?.feedback || '-'}
                     </td>
                   </tr>
                 );

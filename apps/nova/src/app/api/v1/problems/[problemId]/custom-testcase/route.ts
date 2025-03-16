@@ -19,15 +19,9 @@ export const preferredRegion = 'sin1';
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const { problemId } = await params;
 
-  const {
-    problem,
-    customTestCase,
-  }: {
-    problem: string;
-    customTestCase: string;
-  } = await req.json();
+  const { prompt, customTestCase } = await req.json();
+  const { problemId } = await params;
 
   const {
     data: { user },
@@ -37,58 +31,70 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: submissions, error } = await supabase
-    .from('nova_submissions')
-    .select('score, input')
-    .eq('problem_id', problemId)
-    .eq('user_id', user.id);
-
-  if (error) {
+  if (!prompt || !customTestCase) {
     return NextResponse.json(
-      { message: 'Error fetching submissions' },
+      { message: 'Incomplete data provided.' },
+      { status: 400 }
+    );
+  }
+
+  const { data: problem, error: problemError } = await supabase
+    .from('nova_problems')
+    .select('*')
+    .eq('id', problemId)
+    .single();
+
+  if (problemError) {
+    return NextResponse.json(
+      { message: 'Error fetching problem.' },
       { status: 500 }
     );
   }
 
-  if (!submissions || submissions.length === 0) {
+  if (prompt.length > problem.max_prompt_length) {
     return NextResponse.json(
-      { message: 'No submissions found for this problem' },
-      { status: 404 }
+      { message: 'Prompt is too long.' },
+      { status: 400 }
     );
   }
-
-  // Find the submission with the highest score
-  const highestScoreSubmission = submissions.reduce((prev, current) =>
-    prev.score > current.score ? prev : current
-  );
-
-  const userInput = highestScoreSubmission.input;
 
   try {
     // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
-      You are an AI assistant evaluating a user's prompt or solution to a given problem.
+      You are an examiner in a prompt engineering competition.
+      You will be provided with:
+      - A problem description
+      - One test case
+      - An example input/output (optional)
+      - A user's answer or prompt that attempts to solve the problem
 
-      Problem: ${problem}
+      Your role is to:
+      1. **Evaluate** how effectively the user's response addresses the problem.
+      2. **Attempt** to apply the user's response to each provided test case (if the response is executable or can be logically applied). 
+      3. **Return** both your evaluation and the results for each test case in a specific JSON format.
+
+      Here is the problem context:
+      Problem: ${problem.description}
       Test Case: ${customTestCase}
-      User's Input: ${userInput}
+      Example Input: ${problem.example_input ?? ''}
+      Example Output: ${problem.example_output ?? ''}
+      User's Prompt: ${prompt}
 
       Scoring Criteria:
-      - **10**: Perfect solution or prompt that completely addresses the problem.
-      - **7-9**: Very good solution with minor issues or inefficiencies.
-      - **4-6**: Partial solution with notable issues or gaps.
-      - **1-3**: Attempted solution but mostly incorrect or incomplete.
-      - **0**: Irrelevant or completely misses the problem.
+      - **10**: The user's response perfectly solves the problem or provides a clear and effective prompt that would solve the problem.
+      - **7-9**: The response mostly solves the problem or gives a good prompt but with minor inefficiencies or missing details.
+      - **4-6**: The response shows some understanding but has notable errors, incomplete results, or inefficient approaches.
+      - **1-3**: The response attempts to address the problem but is mostly incorrect, irrelevant, or incomplete.
+      - **0**: The response is entirely irrelevant or simply repeats the problem description without guiding towards a solution.
 
       Important Notes:
-      1. If the user's input is a prompt (rather than code), evaluate how well the prompt would guide an AI to solve the problem.
-      2. Test the user's input against the provided test case.
-      3. Be specific in your feedback about what works and what doesn't.
-      4. Only respond with the following JSON format:
-      {
-        "score": [number from 0 to 10],
-        "feedback": "[detailed explanation of the score, including test results]"
-      }
+      1. **If the user's response is an effective prompt** that guides solving the problem (e.g., "Summarize the paragraph in just one sentence"), it should be **scored based on how well it would solve the task**.
+      2. Only assign **0** if the response does not attempt to solve the problem or is irrelevant.
+      3. Ensure the feedback clearly explains why the score was assigned, focusing on how well the response addresses the problem.
+      4. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks. 
+      5. The score MUST be a single number (not an array).
+      6. The response MUST use this EXACT format:
+      {"score": 7, "feedback": "Your explanation here"}
     `;
 
     // Get the model and generate content
@@ -96,11 +102,10 @@ export async function POST(req: Request, { params }: Params) {
     const result = await aiModel.generateContent(systemInstruction);
     const response = result.response.text();
 
-    let parsedResponse;
     try {
-      // Clean the response if it contains markdown code blocks
-      const cleanedResponse = response.replace(/```json\n|\n```/g, '').trim();
-      parsedResponse = JSON.parse(cleanedResponse);
+      const parsedResponse = JSON.parse(
+        response.replace(/```json\n|\n```/g, '').trim()
+      );
 
       // Validate the response structure
       if (
@@ -112,23 +117,13 @@ export async function POST(req: Request, { params }: Params) {
         throw new Error('Invalid response format');
       }
 
-      return NextResponse.json(
-        {
-          submission: {
-            input: userInput,
-            originalScore: highestScoreSubmission.score,
-          },
-          response: parsedResponse,
-        },
-        { status: 200 }
-      );
+      return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
       return NextResponse.json(
         {
           message:
             'Invalid response format. Expected JSON with score and feedback.',
-          rawResponse: response,
         },
         { status: 422 }
       );

@@ -115,20 +115,20 @@ export default function UserNavClient({
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <Link href="/dashboard">
-              <DropdownMenuItem className="cursor-pointer">
-                <ActivitySquare className="mr-2 h-4 w-4" />
+              <DropdownMenuItem className="flex cursor-pointer gap-4">
+                <ActivitySquare className="h-4 w-4" />
                 <span>{t('common.dashboard')}</span>
               </DropdownMenuItem>
             </Link>
             <Link href="/challenges">
-              <DropdownMenuItem className="cursor-pointer">
-                <Trophy className="mr-2 h-4 w-4" />
+              <DropdownMenuItem className="flex cursor-pointer gap-4">
+                <Trophy className="h-4 w-4" />
                 <span>{t('nova.challenges')}</span>
               </DropdownMenuItem>
             </Link>
             <Link href="/leaderboard">
-              <DropdownMenuItem className="cursor-pointer">
-                <Medal className="mr-2 h-4 w-4" />
+              <DropdownMenuItem className="flex cursor-pointer gap-4">
+                <Medal className="h-4 w-4" />
                 <span>{t('nova.leaderboard')}</span>
               </DropdownMenuItem>
             </Link>
@@ -137,8 +137,8 @@ export default function UserNavClient({
           <DropdownMenuGroup>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Palette className="mr-4 h-4 w-4 text-muted-foreground" />
-                <span>{t('common.theme')}</span>
+                <Palette className="h-4 w-4" />
+                <span className="text-foreground">{t('common.theme')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent sideOffset={4}>
@@ -148,8 +148,8 @@ export default function UserNavClient({
             </DropdownMenuSub>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Globe className="mr-4 h-4 w-4 text-muted-foreground" />
-                <span>{t('common.language')}</span>
+                <Globe className="h-4 w-4" />
+                <span className="text-foreground">{t('common.language')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent sideOffset={4}>

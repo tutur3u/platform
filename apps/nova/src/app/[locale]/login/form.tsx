@@ -194,7 +194,7 @@ export default function LoginForm() {
               <Link
                 href="https://tuturuuu.com/terms"
                 target="_blank"
-                className="hover:text-foreground font-semibold underline"
+                className="font-semibold underline hover:text-foreground"
               >
                 {t('auth.tos')}
               </Link>{' '}
@@ -202,7 +202,7 @@ export default function LoginForm() {
               <Link
                 href="https://tuturuuu.com/privacy"
                 target="_blank"
-                className="hover:text-foreground font-semibold underline"
+                className="font-semibold underline hover:text-foreground"
               >
                 {t('auth.privacy')}
               </Link>
@@ -210,7 +210,7 @@ export default function LoginForm() {
               <br />
               <br />
               {t('auth.your_email')}{' '}
-              <span className="text-foreground font-semibold">
+              <span className="font-semibold text-foreground">
                 "{emailForConsent}"
               </span>{' '}
               {t('auth.will_be_sent')}

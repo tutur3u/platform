@@ -1,25 +1,39 @@
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
-import { updateSession } from '@tuturuuu/supabase/next/middleware';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+const WEB_APP_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://tuturuuu.com'
+    : 'http://localhost:7803';
+
+const authMiddleware = createCentralizedAuthMiddleware({
+  webAppUrl: WEB_APP_URL,
+  publicPaths: PUBLIC_PATHS,
+  skipApiRoutes: true,
+});
+
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  // Make sure user session is always refreshed
-  const { res, user } = await updateSession(req);
+  // First handle authentication with the centralized middleware
+  const authRes = await authMiddleware(req);
 
-  // If current path starts with /api, return without redirecting
-  if (req.nextUrl.pathname.startsWith('/api')) return res;
+  // If the auth middleware returned a redirect response, return it
+  if (authRes.headers.has('Location')) {
+    return authRes;
+  }
 
-  // Handle special cases for public paths
-  const { res: nextRes, redirect } = handleRedirect({ req, res, user });
-  if (redirect) return nextRes;
+  // Skip locale handling for API routes
+  if (req.nextUrl.pathname.startsWith('/api')) {
+    return authRes;
+  }
 
-  return handleLocale({ req, res: nextRes });
+  // Continue with locale handling
+  return handleLocale({ req, res: authRes });
 }
 
 export const config = {
@@ -47,47 +61,10 @@ export const config = {
   ],
 };
 
-const handleRedirect = ({
-  req,
-  res,
-  user,
-}: {
-  req: NextRequest;
-  res: NextResponse;
-  user: SupabaseUser | null;
-}): {
-  res: NextResponse;
-  redirect: boolean;
-} => {
-  // If current path ends with /login and user is logged in, redirect to onboarding page
-  if (req.nextUrl.pathname.endsWith('/login') && user) {
-    const nextRes = NextResponse.redirect(
-      req.nextUrl.href.replace('/login', '/onboarding')
-    );
-
-    return { res: nextRes, redirect: true };
-  }
-
-  // If current path ends with /onboarding and user is not logged in, redirect to login page
-  if (
-    req.nextUrl.pathname !== '/' &&
-    !req.nextUrl.pathname.endsWith('/login') &&
-    !PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path)) &&
-    !user
-  ) {
-    const nextRes = NextResponse.redirect(
-      req.nextUrl.href.replace(req.nextUrl.pathname, '/login') +
-        `?nextUrl=${req.nextUrl.pathname}`
-    );
-
-    return { res: nextRes, redirect: true };
-  }
-
-  return { res, redirect: false };
-};
-
 const getSupportedLocale = (locale: string): Locale | null => {
-  return supportedLocales.includes(locale as any) ? (locale as Locale) : null;
+  return supportedLocales.includes(locale as Locale)
+    ? (locale as Locale)
+    : null;
 };
 
 const getExistingLocale = (

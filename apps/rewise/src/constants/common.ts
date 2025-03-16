@@ -28,7 +28,7 @@ export const THEME_COOKIE_NAME = 'NEXT_THEME';
 export const SHOW_TAILWIND_INDICATOR =
   process.env.SHOW_TAILWIND_INDICATOR === 'true';
 
-export const PUBLIC_PATHS = ['/login'].reduce((acc: string[], path) => {
+export const PUBLIC_PATHS = ['/verify-token'].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);
 

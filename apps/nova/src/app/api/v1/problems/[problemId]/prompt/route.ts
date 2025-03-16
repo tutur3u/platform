@@ -1,52 +1,100 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
-// Replace this with your actual API key
+interface Params {
+  params: Promise<{
+    problemId: string;
+  }>;
+}
+
 const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 
-// Initialize Google Generative AI Client
 const genAI = new GoogleGenerativeAI(API_KEY);
-
 const model = 'gemini-2.0-flash';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-export async function POST(req: Request) {
+export async function POST(req: Request, { params }: Params) {
+  const supabase = await createClient();
+
+  const { prompt } = await req.json();
+  const { problemId } = await params;
+
   const {
-    answer,
-    problemDescription,
-    testCases,
-    exampleInput,
-    exampleOutput,
-  }: {
-    answer?: string;
-    problemDescription?: string;
-    testCases?: string[];
-    exampleInput?: string;
-    exampleOutput?: string;
-  } = await req.json();
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!prompt) {
+    return NextResponse.json(
+      { message: 'Incomplete data provided.' },
+      { status: 400 }
+    );
+  }
+
+  const { data: problem, error: problemError } = await supabase
+    .from('nova_problems')
+    .select('*')
+    .eq('id', problemId)
+    .single();
+
+  if (problemError) {
+    return NextResponse.json(
+      { message: 'Error fetching problem.' },
+      { status: 500 }
+    );
+  }
+
+  if (prompt.length > problem.max_prompt_length) {
+    return NextResponse.json(
+      { message: 'Prompt is too long.' },
+      { status: 400 }
+    );
+  }
+
+  const { data: testCases, error: testCasesError } = await supabase
+    .from('nova_problem_testcases')
+    .select('*')
+    .eq('problem_id', problemId);
+
+  if (testCasesError) {
+    return NextResponse.json(
+      { message: 'Error fetching test cases.' },
+      { status: 500 }
+    );
+  }
+
+  const testCaseStrings = testCases
+    .map((testCase) => testCase.input)
+    .join('\n');
 
   try {
-    if (!answer || !problemDescription || !testCases) {
-      return NextResponse.json(
-        { message: 'Incomplete data provided.' },
-        { status: 400 }
-      );
-    }
-
     // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
       You are an examiner in a prompt engineering competition.
-      You will be provided with a problem description and a test case. The user will input a prompt or an answer designed to solve the problem.
-      Your role is to evaluate the user's response based on how effectively it guides or solves the problem.
+      You will be provided with:
+      - A problem description
+      - One or more test cases
+      - An example input/output (optional)
+      - A user's answer or prompt that attempts to solve the problem
 
-      Problem: ${problemDescription}
-      Test Case: ${testCases ? testCases.join('\n') : ''}
-      Example Input: ${exampleInput ?? ''}
-      Example Output: ${exampleOutput ?? ''}
-      User's Answer: ${answer ?? ''}
+      Your role is to:
+      1. **Evaluate** how effectively the user's response addresses the problem.
+      2. **Attempt** to apply the user's response to each provided test case (if the response is executable or can be logically applied). 
+      3. **Return** both your evaluation and the results for each test case in a specific JSON format.
+
+      Here is the problem context:
+      Problem: ${problem.description}
+      Test Cases: ${testCaseStrings}
+      Example Input: ${problem.example_input ?? ''}
+      Example Output: ${problem.example_output ?? ''}
+      User's Prompt: ${prompt}
 
       Scoring Criteria:
       - **10**: The user's response perfectly solves the problem or provides a clear and effective prompt that would solve the problem.
@@ -71,42 +119,10 @@ export async function POST(req: Request) {
     const result = await aiModel.generateContent(systemInstruction);
     const response = result.response.text();
 
-    console.log('Raw AI response:', response); // Debug logging
-
-    let parsedResponse;
     try {
-      // More robust cleaning of the response
-      let cleanedResponse = response;
-
-      // Remove any markdown code blocks
-      cleanedResponse = cleanedResponse
-        .replace(/```json\n|\n```|```/g, '')
-        .trim();
-
-      // If the response still isn't valid JSON, try to extract just the JSON part
-      if (!cleanedResponse.startsWith('{')) {
-        const jsonMatch = cleanedResponse.match(/({[\s\S]*})/);
-        if (jsonMatch && jsonMatch[1]) {
-          cleanedResponse = jsonMatch[1];
-        }
-      }
-
-      console.log('Cleaned response:', cleanedResponse); // Debug logging
-
-      parsedResponse = JSON.parse(cleanedResponse);
-
-      // Handle the case where score might be an array
-      if (Array.isArray(parsedResponse.score)) {
-        parsedResponse.score = parsedResponse.score[0];
-      }
-
-      // Ensure both required properties exist
-      if (
-        parsedResponse.score === undefined ||
-        parsedResponse.feedback === undefined
-      ) {
-        throw new Error('Missing required properties in response');
-      }
+      const parsedResponse = JSON.parse(
+        response.replace(/```json\n|\n```/g, '').trim()
+      );
 
       // Validate the response structure
       if (
@@ -117,23 +133,21 @@ export async function POST(req: Request) {
       ) {
         throw new Error('Invalid response format');
       }
+
+      return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {
-      console.error('Parse error:', parseError); // Debug logging
+      console.error('Parse error:', parseError);
 
       return NextResponse.json(
         {
           message:
             'Invalid response format. Expected JSON with score and feedback.',
-          rawResponse: response,
-          error: (parseError as Error).message,
         },
         { status: 422 }
       );
     }
-
-    return NextResponse.json({ response: parsedResponse }, { status: 200 });
   } catch (error: any) {
-    console.error('General error:', error); // Debug logging
+    console.error('General error:', error);
 
     return NextResponse.json(
       {

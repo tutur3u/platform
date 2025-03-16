@@ -27,7 +27,7 @@
     "@ai-sdk/luma": "^0.0.11",
     "@ai-sdk/mistral": "^1.1.17",
     "@ai-sdk/openai": "^1.2.5",
-    "@ai-sdk/perplexity": "^1.0.6",
+    "@ai-sdk/perplexity": "^1.0.7",
     "@ai-sdk/react": "^1.1.23",
     "@ai-sdk/togetherai": "^0.1.16",
     "@ai-sdk/xai": "^1.1.15",

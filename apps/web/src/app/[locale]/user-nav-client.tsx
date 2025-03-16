@@ -115,8 +115,8 @@ export default function UserNavClient({
           <DropdownMenuGroup>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Palette className="mr-4 h-4 w-4 text-muted-foreground" />
-                <span>{t('common.theme')}</span>
+                <Palette className="h-4 w-4 text-muted-foreground" />
+                <span className="text-foreground">{t('common.theme')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent sideOffset={4}>
@@ -126,8 +126,8 @@ export default function UserNavClient({
             </DropdownMenuSub>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Globe className="mr-4 h-4 w-4 text-muted-foreground" />
-                <span>{t('common.language')}</span>
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <span className="text-foreground">{t('common.language')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent sideOffset={4}>

@@ -1,63 +1,38 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface CountdownTimerProps {
-  challengeId: string;
-  startTime: string | null;
-  endTime: string | null;
-  duration: number; // duration in seconds
+  endTime: string;
+  onAutoEnd: () => void;
 }
 
 export default function CountdownTimer({
-  challengeId,
-  startTime,
   endTime,
-  duration,
+  onAutoEnd,
 }: CountdownTimerProps) {
-  const router = useRouter();
-  const [timeLeft, setTimeLeft] = useState(duration); // duration is already in seconds
+  const [timeLeft, setTimeLeft] = useState(0); // duration is already in seconds
 
   useEffect(() => {
-    if (!startTime || !endTime || !duration) return;
-
-    const start = new Date(startTime).getTime();
-    const end = start + duration * 1000; // convert seconds to milliseconds
-
-    const updateTimer = async () => {
+    const updateTimer = () => {
       const now = new Date().getTime();
-      const remaining = Math.max(0, Math.floor((end - now) / 1000));
-      setTimeLeft(remaining);
+      const end = new Date(endTime).getTime();
 
-      if (remaining === 0) {
-        try {
-          const response = await fetch(
-            `/api/v1/challenges/${challengeId}/session`,
-            {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                status: 'ENDED',
-                total_score: 0,
-              }),
-            }
-          );
-          if (!response.ok) {
-            throw new Error('Failed to end test');
-          }
-          router.push(`/challenges/${challengeId}/results`);
-        } catch (error) {
-          console.error('Error ending test: ', error);
-        }
+      if (now >= end) {
+        setTimeLeft(0);
+        onAutoEnd();
+        return;
       }
+
+      const remaining = Math.floor((end - now) / 1000);
+      setTimeLeft(remaining);
     };
 
-    const interval = setInterval(updateTimer, 1000);
     updateTimer();
 
+    const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [challengeId, duration, router, startTime, endTime]);
+  }, [endTime, onAutoEnd]);
 
   const hours = Math.floor(timeLeft / 3600);
   const minutes = Math.floor((timeLeft % 3600) / 60);

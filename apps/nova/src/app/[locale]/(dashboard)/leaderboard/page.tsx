@@ -1,116 +1,215 @@
-'use client';
+import LeaderboardPage from './client';
+import type { LeaderboardEntry } from '@/components/leaderboard/leaderboard';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
-import { Leaderboard } from '@/components/leaderboard/leaderboard';
-import { LeaderboardFilters } from '@/components/leaderboard/leaderboard-filters';
-import { TopThreeCards } from '@/components/leaderboard/top-three-cards';
-import { useLeaderboard } from '@/hooks/use-leaderboard';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-import { motion } from 'framer-motion';
-import { Star, Trophy, Users } from 'lucide-react';
+/**
+ * Generates a consistent fun name from a user ID
+ */
+function generateFunName(userId: string): string {
+  // List of adjectives and animals for fun names
+  const adjectives = [
+    'Happy',
+    'Silly',
+    'Clever',
+    'Brave',
+    'Curious',
+    'Playful',
+    'Friendly',
+    'Gentle',
+    'Jolly',
+    'Witty',
+    'Mighty',
+    'Dazzling',
+    'Adventurous',
+    'Bouncy',
+    'Cheerful',
+    'Daring',
+    'Energetic',
+    'Fuzzy',
+    'Goofy',
+    'Hilarious',
+    'Intelligent',
+    'Jumpy',
+    'Kind',
+    'Lively',
+    'Magical',
+    'Noble',
+    'Optimistic',
+    'Quirky',
+    'Radiant',
+    'Sassy',
+    'Talented',
+    'Unique',
+    'Vibrant',
+    'Whimsical',
+    'Zealous',
+    'Adorable',
+  ];
 
-export default function LeaderboardPage() {
-  // We'll simulate initial data since we're not using server components in this example
-  const initialData = Array.from({ length: 50 }).map((_, i) => ({
-    id: `user-${i + 1}`,
-    rank: i + 1,
-    name: `User ${i + 1}`,
-    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 1}`,
-    score: Math.floor(10000 / (i + 1)) * 10,
+  const animals = [
+    'Octopus',
+    'Cat',
+    'Penguin',
+    'Fox',
+    'Panda',
+    'Dolphin',
+    'Koala',
+    'Owl',
+    'Tiger',
+    'Rabbit',
+    'Monkey',
+    'Wolf',
+    'Alligator',
+    'Beaver',
+    'Chameleon',
+    'Duck',
+    'Elephant',
+    'Flamingo',
+    'Giraffe',
+    'Hedgehog',
+    'Iguana',
+    'Jellyfish',
+    'Kangaroo',
+    'Lion',
+    'Meerkat',
+    'Narwhal',
+    'Otter',
+    'Peacock',
+    'Quokka',
+    'Raccoon',
+    'Sloth',
+    'Turtle',
+    'Unicorn',
+    'Vulture',
+    'Walrus',
+    'Yak',
+    'Zebra',
+    'Badger',
+    'Cheetah',
+    'Dingo',
+    'Ferret',
+    'Gorilla',
+  ];
+
+  // Matching emojis for each animal
+  const animalEmojis: Record<string, string> = {
+    Octopus: '🐙',
+    Cat: '🐱',
+    Penguin: '🐧',
+    Fox: '🦊',
+    Panda: '🐼',
+    Dolphin: '🐬',
+    Koala: '🐨',
+    Owl: '🦉',
+    Tiger: '🐯',
+    Rabbit: '🐰',
+    Monkey: '🐵',
+    Wolf: '🐺',
+    Alligator: '🐊',
+    Beaver: '🦫',
+    Chameleon: '🦎',
+    Duck: '🦆',
+    Elephant: '🐘',
+    Flamingo: '🦩',
+    Giraffe: '🦒',
+    Hedgehog: '🦔',
+    Iguana: '🦎',
+    Jellyfish: '🪼',
+    Kangaroo: '🦘',
+    Lion: '🦁',
+    Meerkat: '🦝',
+    Narwhal: '🦭',
+    Otter: '🦦',
+    Peacock: '🦚',
+    Quokka: '🦘',
+    Raccoon: '🦝',
+    Sloth: '🦥',
+    Turtle: '🐢',
+    Unicorn: '🦄',
+    Vulture: '🦅',
+    Walrus: '🦭',
+    Yak: '🐃',
+    Zebra: '🦓',
+    Badger: '🦡',
+    Cheetah: '🐆',
+    Dingo: '🐕',
+    Ferret: '🦡',
+    Gorilla: '🦍',
+  };
+
+  // Improved hash function for more randomness
+  const hash = (str: string): number => {
+    let h1 = 0xdeadbeef;
+    let h2 = 0x41c6ce57;
+
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ char, 2654435761);
+      h2 = Math.imul(h2 ^ char, 1597334677);
+    }
+
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+    h1 = Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+    h2 = Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  };
+
+  // Generate consistent indices
+  const combinedHash = hash(userId);
+  const adjIndex = combinedHash % adjectives.length;
+  const animalIndex = (combinedHash * 31) % animals.length;
+
+  const animal = animals[animalIndex] || 'Mysterious';
+  const emoji = animal in animalEmojis ? animalEmojis[animal] : '❓';
+
+  return `${adjectives[adjIndex]} ${animal} ${emoji}`;
+}
+
+export default async function Page() {
+  const sbAdmin = await createAdminClient();
+
+  const { data: leaderboardData, error } = await sbAdmin.from('nova_sessions')
+    .select(`
+        user_id,
+        total_score,
+        users!inner(
+          display_name,
+          avatar_url
+        )
+      `);
+
+  if (error) throw error;
+
+  const groupedData = leaderboardData.reduce(
+    (acc, curr) => {
+      const existingUser = acc.find((item) => item.user_id === curr.user_id);
+      if (existingUser) {
+        existingUser.total_score =
+          (existingUser.total_score ?? 0) + (curr.total_score ?? 0);
+      } else {
+        acc.push({
+          user_id: curr.user_id,
+          total_score: curr.total_score ?? 0,
+          users: curr.users,
+        });
+      }
+      return acc;
+    },
+    [] as typeof leaderboardData
+  );
+
+  groupedData.sort((a, b) => (b.total_score ?? 0) - (a.total_score ?? 0));
+
+  const formattedData: LeaderboardEntry[] = groupedData.map((entry, index) => ({
+    id: entry.user_id,
+    rank: index + 1,
+    name: entry.users.display_name || generateFunName(entry.user_id),
+    avatar: entry.users.avatar_url ?? '',
+    score: entry.total_score ?? 0,
   }));
 
-  // Mock current user ID - in a real app, get this from your auth system
-  const currentUserId = 'user-5';
-
-  const { data, filteredData, searchQuery, setSearchQuery, isLoading } =
-    useLeaderboard(initialData);
-
-  // Calculate stats
-  const totalParticipants = data.length;
-  const topScore = data.length > 0 ? data[0]?.score : 0;
-  const yourRank = data.findIndex((entry) => entry.id === currentUserId) + 1;
-
-  return (
-    <div className="container mx-auto p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
-        <div className="mb-2 flex items-center gap-2">
-          <Badge variant="outline" className="bg-muted/50">
-            <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
-            Competition
-          </Badge>
-        </div>
-        <h1 className="mb-3 text-4xl font-bold">
-          Prompt Engineering Leaderboard
-        </h1>
-        <p className="text-muted-foreground">
-          Track your ranking and see how you compare to other prompt engineers
-          in the competition
-        </p>
-      </motion.div>
-
-      {/* Stats cards */}
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="flex items-center justify-between p-6">
-            <div>
-              <p className="text-muted-foreground text-sm font-medium">
-                Your Rank
-              </p>
-              <h3 className="text-2xl font-bold"># {yourRank}</h3>
-            </div>
-            <div className="bg-primary/10 text-primary rounded-full p-2">
-              <Trophy className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex items-center justify-between p-6">
-            <div>
-              <p className="text-muted-foreground text-sm font-medium">
-                Top Score
-              </p>
-              <h3 className="text-2xl font-bold">
-                {topScore?.toLocaleString()}
-              </h3>
-            </div>
-            <div className="bg-primary/10 text-primary rounded-full p-2">
-              <Star className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex items-center justify-between p-6">
-            <div>
-              <p className="text-muted-foreground text-sm font-medium">
-                Participants
-              </p>
-              <h3 className="text-2xl font-bold">{totalParticipants}</h3>
-            </div>
-            <div className="bg-primary/10 text-primary rounded-full p-2">
-              <Users className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <LeaderboardFilters
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-
-      <TopThreeCards data={data} isLoading={isLoading} />
-      <Leaderboard
-        data={filteredData}
-        isLoading={isLoading}
-        currentUserId={currentUserId}
-      />
-    </div>
-  );
+  return <LeaderboardPage data={formattedData} />;
 }

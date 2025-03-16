@@ -38,7 +38,7 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const { startTime, endTime, status } = await request.json();
+  const { startTime, endTime, status, totalScore } = await request.json();
   const { challengeId } = await params;
   const supabase = await createClient();
 
@@ -80,6 +80,7 @@ export async function POST(request: Request, { params }: Params) {
       start_time: startTime,
       end_time: endTime,
       status: status,
+      total_score: totalScore,
       challenge_id: challengeId,
       user_id: user.id,
     })
@@ -99,7 +100,7 @@ export async function POST(request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { status, totalScore } = await request.json();
+  const { status } = await request.json();
   const { challengeId } = await params;
 
   const {
@@ -110,34 +111,16 @@ export async function PUT(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!status || status !== 'ENDED') {
+  if (status !== 'ENDED') {
     return NextResponse.json(
       { message: 'Invalid status. Only ENDED is allowed.' },
       { status: 400 }
     );
   }
 
-  const { data: existingSession } = await supabase
-    .from('nova_sessions')
-    .select('*')
-    .eq('status', 'IN_PROGRESS')
-    .eq('challenge_id', challengeId)
-    .eq('user_id', user.id)
-    .single();
-
-  if (!existingSession) {
-    return NextResponse.json(
-      { message: 'Can not end challenge that is not in progress' },
-      { status: 404 }
-    );
-  }
-
   const { data: updatedSession, error } = await supabase
     .from('nova_sessions')
-    .update({
-      status: status,
-      total_score: totalScore,
-    })
+    .update({ status })
     .eq('challenge_id', challengeId)
     .eq('user_id', user.id)
     .select()

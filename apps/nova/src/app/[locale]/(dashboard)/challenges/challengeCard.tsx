@@ -81,9 +81,7 @@ export default function ChallengeCard({
     }
 
     const startTime = new Date();
-    const endTime = new Date(
-      startTime.getTime() + (challenge.duration || 0) * 1000
-    );
+    const endTime = new Date(startTime.getTime() + challenge.duration * 1000);
 
     const response = await fetch(`/api/v1/challenges/${challenge.id}/session`, {
       method: 'POST',

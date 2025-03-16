@@ -35,7 +35,7 @@ export const IS_PRODUCTION_DB =
   process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
 
 export const PUBLIC_PATHS = [
-  '/login',
+  '/verify-token',
   '/pricing',
   '/about',
   '/contact',
@@ -52,6 +52,7 @@ export const PUBLIC_PATHS = [
   '/qr-generator',
   '/documents',
   '/meet-together',
+  '/competitions/neo-league/prompt-the-future/about',
 ].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);

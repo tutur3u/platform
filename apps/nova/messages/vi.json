@@ -109,7 +109,33 @@
     "error-500": "Internal server error",
     "error-500-description": "Something went wrong. Please try again later.",
     "virtual": "Trực tuyến",
-    "onsite": "Trực tiếp"
+    "onsite": "Trực tiếp",
+    "dashboard": "Tổng Quan",
+    "problems": "Đề Bài",
+    "roles": "Vai Trò",
+    "prompt-engineering-challenges": "Thử thách về Prompt Engineering",
+    "start-challenge": "Bắt đầu thử thách",
+    "create-challenge": "Tạo Thử Thách Mới",
+    "view-leaderboard": "Xem bảng xếp hạng",
+    "cards": {
+      "learn": {
+        "title": "Học hỏi",
+        "description": "Khám phá hướng dẫn và tài liệu toàn diện về các kỹ thuật thiết kế prompt."
+      },
+      "practice": {
+        "title": "Thực hành",
+        "description": "Đối mặt với những thử thách thực tế và nâng cao kỹ năng của bạn trong môi trường thực hành."
+      },
+      "innovate": {
+        "title": "Đổi mới",
+        "description": "Thúc đẩy giới hạn của những gì có thể với AI và tạo ra những prompt mang tính đột phá."
+      },
+      "compete": {
+        "title": "Cạnh tranh",
+        "description": "Tham gia bảng xếp hạng và so sánh kỹ năng thiết kế prompt của bạn với người khác."
+      }
+    },
+    "learn_more": "Tìm hiểu thêm"
   },
   "common": {
     "alpha": "Alpha",

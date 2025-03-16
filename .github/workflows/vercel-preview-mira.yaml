@@ -23,14 +23,14 @@ jobs:
         id: check_commits
         run: |
           CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
-          git fetch origin $CURRENT_BRANCH
-          LATEST_COMMIT=$(git rev-parse origin/$CURRENT_BRANCH)
+          git fetch origin $CURRENT_BRANCH || { echo "Remote branch not found, continuing with build"; echo "skip_build=false" >> $GITHUB_OUTPUT; exit 0; }
+          LATEST_COMMIT=$(git rev-parse origin/$CURRENT_BRANCH 2>/dev/null || echo "")
           CURRENT_COMMIT=${GITHUB_SHA}
-          if [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
+          if [ -n "$LATEST_COMMIT" ] && [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
             echo "Newer commit found on $CURRENT_BRANCH branch. Skipping build."
             echo "skip_build=true" >> $GITHUB_OUTPUT
           else
-            echo "This is the latest commit. Proceeding with build."
+            echo "This is the latest commit or new branch. Proceeding with build."
             echo "skip_build=false" >> $GITHUB_OUTPUT
           fi
 

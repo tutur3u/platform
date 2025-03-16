@@ -8,7 +8,7 @@ export default async function OnboardingPage() {
   const t = await getTranslations('onboarding');
 
   return (
-    <div className="inset-0 flex h-full items-center justify-center p-4 lg:px-32">
+    <div className="inset-0 flex h-screen items-center justify-center overflow-scroll p-4 lg:px-32">
       <div className="flex max-h-full w-full max-w-2xl flex-col items-center gap-4 rounded-xl border border-foreground/20 p-4 backdrop-blur-2xl md:p-8">
         <Suspense
           fallback={
