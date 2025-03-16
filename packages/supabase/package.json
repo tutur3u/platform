@@ -12,7 +12,7 @@
   },
   "packageManager": "pnpm@10.6.3",
   "dependencies": {
-    "@supabase/ssr": "^0.6.0",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.1",
     "@tuturuuu/types": "workspace:*",
     "eslint": "^9.22.0",
