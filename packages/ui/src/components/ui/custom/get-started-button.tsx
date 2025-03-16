@@ -5,12 +5,18 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export function GetStartedButton({ text }: { text: string }) {
+export function GetStartedButton({
+  text,
+  href,
+}: {
+  text: string;
+  href: string;
+}) {
   const pathname = usePathname();
   const hidden = pathname === '/login';
 
   return (
-    <Link href="/onboarding">
+    <Link href={href}>
       <Button
         className={cn(
           hidden &&

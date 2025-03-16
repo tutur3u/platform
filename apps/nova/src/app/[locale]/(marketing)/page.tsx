@@ -145,7 +145,7 @@ export default function MarketingPage() {
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: 'spring', stiffness: 400 }}
               >
-                <GetStartedButton text={t('get-started')} />
+                <GetStartedButton text={t('get-started')} href="/dashboard" />
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -496,7 +496,7 @@ export default function MarketingPage() {
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
             >
-              <GetStartedButton text={t('get-started')} />
+              <GetStartedButton text={t('get-started')} href="/dashboard" />
               <Link href="/learn">
                 <Button variant="outline" className="group">
                   Browse Learning Resources
