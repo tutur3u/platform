@@ -27,7 +27,7 @@ export default function EditChallengeDialog({
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = async (values: ChallengeFormValues) => {
+  const onSubmit = async (data: ChallengeFormValues) => {
     try {
       setIsSubmitting(true);
 
@@ -39,10 +39,7 @@ export default function EditChallengeDialog({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...values,
-          created_at: challenge.created_at,
-        }),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
@@ -80,11 +77,7 @@ export default function EditChallengeDialog({
         </DialogHeader>
         <ChallengeForm
           challengeId={challenge.id}
-          defaultValues={{
-            title: challenge.title,
-            description: challenge.description,
-            duration: challenge.duration,
-          }}
+          defaultValues={challenge}
           onSubmit={onSubmit}
           isSubmitting={isSubmitting}
         />
