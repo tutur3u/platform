@@ -50,6 +50,13 @@ export const organizers: TeamMember[] = [
     organization: 'Tuturuuu',
   },
   {
+    name: 'Đoàn Hữu Quốc',
+    role: 'Quality Assurance Leader',
+    image: '/media/featured/competitions/neo-league/doan-huu-quoc.jpg',
+    bio: 'Ensure the platform is of high quality and intuitive, with a focus on the user experience.',
+    organization: 'Zenbright',
+  },
+  {
     name: 'Ngô Văn Tài',
     role: 'Program Leader',
     image: '/media/featured/competitions/neo-league/ngo-van-tai.jpg',
