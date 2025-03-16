@@ -46,6 +46,7 @@ export async function POST(request: Request) {
   let body: {
     title: string;
     description: string;
+    criteria: any;
     duration: number;
   };
   try {
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
-
+  console.log(body);
   try {
     const {
       data: { user },
@@ -89,7 +90,6 @@ export async function POST(request: Request) {
       })
       .select()
       .single();
-      
 
     if (error) {
       console.error('Database Error: ', error);
