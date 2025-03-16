@@ -109,11 +109,11 @@ export async function POST(request: Request) {
       const criteriaToInsert = body.criteria.map((criterion) => ({
         challenge_id: challengeData.id,
         name: criterion.name,
-        value: criterion.description,
+        description: criterion.description,
       }));
-      console.log(criteriaToInsert);
+
       const { error: criteriaError } = await supabase
-        .from('nova_challenge_criterias')
+        .from('nova_challenge_criteria')
         .insert(criteriaToInsert)
         .select();
 
