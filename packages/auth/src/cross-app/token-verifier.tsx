@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 
 export function TokenVerifier() {
   return (
-    <div className="fixed inset-0 flex h-full w-full max-w-md flex-col items-center justify-center gap-2">
+    <div className="fixed inset-0 flex h-screen w-screen flex-col items-center justify-center gap-2">
       <div className="flex items-center justify-center">
         <h1 className="relative flex w-fit items-center gap-2">
           <Image

@@ -1,4 +1,7 @@
-import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
+import {
+  type SupabaseClient,
+  createClient,
+} from '@tuturuuu/supabase/next/client';
 import { Database } from '@tuturuuu/types/supabase';
 import { APP_DOMAIN_MAP } from '@tuturuuu/utils/internal-domains';
 
@@ -209,6 +212,12 @@ export const verifyRouteToken = async ({
   token: string | null;
   router: any;
 }) => {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!token) {
     const nextUrl = searchParams.get('nextUrl');
     if (nextUrl) {
@@ -219,23 +228,29 @@ export const verifyRouteToken = async ({
       router.refresh();
     }
   } else {
-    const res = await fetch('/api/auth/verify-app-token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token }),
-    });
+    let userId = user?.id;
 
-    if (!res.ok) {
+    if (!userId) {
+      const res = await fetch('/api/auth/verify-app-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        console.error('Error verifying token:', data.error);
+        router.push('/');
+        router.refresh();
+      }
+
       const data = await res.json();
-      console.error('Error verifying token:', data.error);
-      router.push('/');
-      router.refresh();
+      userId = data.userId;
     }
 
-    const data = await res.json();
-    if (data.userId) {
+    if (userId) {
       // Token is valid, redirect to next url
       const nextUrl = searchParams.get('nextUrl');
       if (nextUrl) {
