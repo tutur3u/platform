@@ -1,5 +1,4 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { CloudCog } from 'lucide-react';
 import { NextResponse } from 'next/server';
 
 export async function GET(_: Request) {
