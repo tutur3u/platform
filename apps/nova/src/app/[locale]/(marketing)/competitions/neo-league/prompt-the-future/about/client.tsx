@@ -526,14 +526,14 @@ export function AboutUsPage() {
             <div className="flex flex-col items-center">
               <div className="relative overflow-hidden">
                 <Image
-                  src="/media/logos/transparent.png"
+                  src="/media/logos/nova-transparent.png"
                   alt="Tuturuuu"
                   className="hidden object-contain md:block"
                   width={160}
                   height={160}
                 />
                 <Image
-                  src="/media/logos/transparent.png"
+                  src="/media/logos/nova-transparent.png"
                   alt="Tuturuuu"
                   className="object-contain md:hidden"
                   width={80}
@@ -1403,7 +1403,7 @@ export function AboutUsPage() {
       </section>
 
       {/* Tuturuuu Contribution Disclaimer Section */}
-      <section className="relative w-full bg-foreground/5 py-16">
+      <section className="relative w-full py-16">
         <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
         {/* Animated particles */}
@@ -1434,7 +1434,7 @@ export function AboutUsPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative rounded-2xl border border-primary/20 bg-background/80 p-8 backdrop-blur-md"
+            className="relative rounded-2xl border p-8 backdrop-blur-md"
           >
             <div className="flex flex-col items-center gap-8 md:flex-row">
               <motion.div
@@ -1444,7 +1444,7 @@ export function AboutUsPage() {
               >
                 <div className="relative h-32 w-32 overflow-hidden rounded-xl border-2 border-primary/30">
                   <Image
-                    src="/media/logos/transparent.png"
+                    src="/media/logos/nova-transparent.png"
                     alt="Tuturuuu"
                     fill
                     className="object-contain p-2"
