@@ -16,6 +16,7 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import {
@@ -56,6 +57,7 @@ const formSchema = z
     duration: z.coerce.number().min(60, {
       message: 'Duration must be at least 60 seconds.',
     }),
+    enabled: z.boolean().default(false),
   })
   .required();
 
@@ -74,6 +76,7 @@ export default function ChallengeForm({
     description: '',
     criteria: [{ name: '', description: '' }],
     duration: 3600,
+    enabled: false,
   },
   challengeId,
   onSubmit,
@@ -144,6 +147,25 @@ export default function ChallengeForm({
                         <FormDescription>
                           Provide a short description of what this challenge is
                           about.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="enabled"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Enabled</FormLabel>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Whether this challenge is currently active.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
