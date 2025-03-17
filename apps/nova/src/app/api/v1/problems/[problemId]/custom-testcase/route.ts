@@ -59,73 +59,55 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   try {
-    // System Instruction for Evaluation with strict JSON output
+
     const systemInstruction = `
-      You are an examiner in a prompt engineering competition.
-      You will be provided with:
-      - A problem description
-      - One test case
-      - An example input/output (optional)
-      - A user's answer or prompt that attempts to solve the problem
-
-      Your role is to:
-      1. **Evaluate** how effectively the user's response addresses the problem.
-      2. **Attempt** to apply the user's response to each provided test case (if the response is executable or can be logically applied). 
-      3. **Return** both your evaluation and the results for each test case in a specific JSON format.
-
-      Here is the problem context:
-      Problem: ${problem.description}
-      Test Case: ${customTestCase}
-      Example Input: ${problem.example_input ?? ''}
-      Example Output: ${problem.example_output ?? ''}
-      User's Prompt: ${prompt}
-
-      Scoring Criteria:
-      - **10**: The user's response perfectly solves the problem or provides a clear and effective prompt that would solve the problem.
-      - **7-9**: The response mostly solves the problem or gives a good prompt but with minor inefficiencies or missing details.
-      - **4-6**: The response shows some understanding but has notable errors, incomplete results, or inefficient approaches.
-      - **1-3**: The response attempts to address the problem but is mostly incorrect, irrelevant, or incomplete.
-      - **0**: The response is entirely irrelevant or simply repeats the problem description without guiding towards a solution.
-
-      Important Notes:
-      1. **If the user's response is an effective prompt** that guides solving the problem (e.g., "Summarize the paragraph in just one sentence"), it should be **scored based on how well it would solve the task**.
-      2. Only assign **0** if the response does not attempt to solve the problem or is irrelevant.
-      3. Ensure the feedback clearly explains why the score was assigned, focusing on how well the response addresses the problem.
-      4. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks. 
-      5. The score MUST be a single number (not an array).
-      6. The response MUST use this EXACT format:
-      {"score": 7, "feedback": "Your explanation here"}
+      You are an AI assistant that applies a given prompt instruction to process user input.
+      
+      For context, this is part of a prompt engineering competition with the following problem:
+      "${problem.description}"
+      
+      Example input: "${problem.example_input ?? 'N/A'}"
+      Example output: "${problem.example_output ?? 'N/A'}"
+      
+      But your task is NOT to evaluate. Your task is simply to:
+      
+      1. Apply this specific prompt instruction:
+      "${prompt}"
+      
+      2. To this specific input:
+      "${customTestCase}"
+      
+      3. Return ONLY a JSON object with this format:
+      {"output": "Your response here"}
+      
+      Your response must be valid JSON. Do not include explanations or commentary in the output.
+      Don't include markdown formatting like \`\`\`json or \`\`\`.
+      Just process the input according to the prompt and return the JSON object.
     `;
 
     // Get the model and generate content
     const aiModel = genAI.getGenerativeModel({ model });
     const result = await aiModel.generateContent(systemInstruction);
     const response = result.response.text();
-
+    console.log('AI response:', response);
     try {
-      const parsedResponse = JSON.parse(
-        response.replace(/```json\n|\n```/g, '').trim()
-      );
+      // Clean and parse the JSON response
+      const cleanResponse = response.replace(/```json\n|\n```|```/g, '').trim();
+      const parsedResponse = JSON.parse(cleanResponse);
 
-      // Validate the response structure
-      if (
-        typeof parsedResponse.score !== 'number' ||
-        typeof parsedResponse.feedback !== 'string' ||
-        parsedResponse.score < 0 ||
-        parsedResponse.score > 10
-      ) {
-        throw new Error('Invalid response format');
-      }
-
+ 
       return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
+
+      // If parsing fails, wrap the raw response in our own JSON structure
       return NextResponse.json(
         {
-          message:
-            'Invalid response format. Expected JSON with score and feedback.',
+          response: {
+            output: response.trim(),
+          },
         },
-        { status: 422 }
+        { status: 200 }
       );
     }
   } catch (error: any) {
