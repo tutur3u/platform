@@ -28,9 +28,7 @@ type HistoryEntry = {
 };
 
 type TestResult = {
-  score: number;
-  feedback: string;
-  suggestions: string;
+  output: string;
 };
 
 interface Problem {
@@ -398,23 +396,9 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     <h4 className="mb-2 text-lg font-medium">Test Results</h4>
                     <div className="space-y-3">
                       <div>
-                        <span className="font-semibold">Score: </span>
-                        <Badge
-                          variant={
-                            testResult.score >= 8
-                              ? 'success'
-                              : testResult.score >= 5
-                                ? 'warning'
-                                : 'destructive'
-                          }
-                        >
-                          {testResult.score}/10
-                        </Badge>
-                      </div>
-                      <div>
-                        <span className="font-semibold">Feedback: </span>
+                        <span className="font-semibold">Output: </span>
                         <p className="mt-1 whitespace-pre-wrap text-sm">
-                          {testResult.feedback}
+                          {testResult.output}
                         </p>
                       </div>
                     </div>
