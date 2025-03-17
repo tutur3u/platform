@@ -72,6 +72,9 @@ export async function POST(request: Request) {
       description: validatedData.description,
       duration: validatedData.duration,
       enabled: validatedData.enabled,
+      previewable_at: validatedData.previewable_at,
+      open_at: validatedData.open_at,
+      close_at: validatedData.close_at,
     };
 
     const { data: challenge, error: challengeError } = await supabase

@@ -24,8 +24,19 @@ export default function EditChallengeDialog({
   trigger,
 }: EditChallengeDialogProps) {
   const router = useRouter();
+
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Convert string dates to Date objects for the form
+  const formattedDefaultValues = {
+    ...challenge,
+    open_at: challenge.open_at ? new Date(challenge.open_at) : null,
+    close_at: challenge.close_at ? new Date(challenge.close_at) : null,
+    previewable_at: challenge.previewable_at
+      ? new Date(challenge.previewable_at)
+      : null,
+  };
 
   const onSubmit = async (data: ChallengeFormValues) => {
     try {
@@ -74,7 +85,7 @@ export default function EditChallengeDialog({
         </DialogHeader>
         <ChallengeForm
           challengeId={challenge.id}
-          defaultValues={challenge}
+          defaultValues={formattedDefaultValues}
           onSubmit={onSubmit}
           isSubmitting={isSubmitting}
         />

@@ -1,4 +1,4 @@
-import ChallengeCard from './challengeCard';
+import ChallengesList from './components/ChallengesList';
 import CreateChallengeDialog from './createChallengeDialog';
 import LoadingChallenges from './loading';
 import {
@@ -27,39 +27,22 @@ export default async function Page() {
     .eq('email', user?.email as string)
     .maybeSingle();
 
-  const isAdmin = whitelisted?.enabled && whitelisted?.is_admin;
+  const isAdmin = Boolean(whitelisted?.enabled && whitelisted?.is_admin);
+
+  const challenges = await fetchChallenges();
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <h1 className="text-3xl font-bold">
           {t('prompt-engineering-challenges')}
         </h1>
         {isAdmin && <CreateChallengeDialog />}
       </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Suspense fallback={<LoadingChallenges />}>
-          <ChallengesList isAdmin={isAdmin || false} />
-        </Suspense>
-      </div>
-    </div>
-  );
-}
 
-async function ChallengesList({ isAdmin }: { isAdmin: boolean }) {
-  const challenges = await fetchChallenges();
-
-  return challenges.length > 0 ? (
-    challenges.map((challenge) => (
-      <ChallengeCard
-        isAdmin={isAdmin}
-        key={challenge.id}
-        challenge={challenge}
-      />
-    ))
-  ) : (
-    <div className="col-span-full text-center">
-      <p className="text-gray-500">No challenges available.</p>
+      <Suspense fallback={<LoadingChallenges />}>
+        <ChallengesList initialChallenges={challenges} isAdmin={isAdmin} />
+      </Suspense>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 'use client';
 
+import { DateTimePicker } from './components/DateTimePicker';
+import { DurationDisplay } from './components/DurationDisplay';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -26,6 +28,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import {
+  CalendarIcon,
   InfoIcon,
   ListChecks,
   PlusCircle,
@@ -42,22 +45,23 @@ const formSchema = z
     description: z.string().min(10, {
       message: 'Description must be at least 10 characters.',
     }),
-    criteria: z
-      .array(
-        z.object({
-          name: z
-            .string()
-            .min(2, { message: 'Name must be at least 2 characters.' }),
-          description: z.string().min(10, {
-            message: 'Description must be at least 10 characters.',
-          }),
-        })
-      )
-      .min(1, { message: 'At least one criteria is required' }),
+    criteria: z.array(
+      z.object({
+        name: z
+          .string()
+          .min(2, { message: 'Name must be at least 2 characters.' }),
+        description: z.string().min(10, {
+          message: 'Description must be at least 10 characters.',
+        }),
+      })
+    ),
     duration: z.coerce.number().min(60, {
       message: 'Duration must be at least 60 seconds.',
     }),
     enabled: z.boolean().default(false),
+    open_at: z.date().nullable().optional(),
+    close_at: z.date().nullable().optional(),
+    previewable_at: z.date().nullable().optional(),
   })
   .required();
 
@@ -77,6 +81,9 @@ export default function ChallengeForm({
     criteria: [{ name: '', description: '' }],
     duration: 3600,
     enabled: false,
+    open_at: null,
+    close_at: null,
+    previewable_at: null,
   },
   challengeId,
   onSubmit,
@@ -105,6 +112,10 @@ export default function ChallengeForm({
             <TabsTrigger value="duration">
               <TimerIcon className="h-4 w-4" />
               <span>Duration</span>
+            </TabsTrigger>
+            <TabsTrigger value="schedule">
+              <CalendarIcon className="h-4 w-4" />
+              <span>Schedule</span>
             </TabsTrigger>
           </TabsList>
 
@@ -306,7 +317,11 @@ export default function ChallengeForm({
             <TabsContent value="duration" className="mt-0">
               <Card>
                 <CardHeader>
-                  <CardTitle>Duration</CardTitle>
+                  <CardTitle>Challenge Duration</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Set how long participants have to complete the challenge
+                    once they start.
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -315,20 +330,172 @@ export default function ChallengeForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Duration (seconds)</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          How long users have to complete this challenge (in
-                          seconds).
-                          <div className="mt-1 text-xs text-muted-foreground">
-                            Examples: 3600 = 1 hour, 1800 = 30 minutes
+                        <div className="flex flex-col gap-4">
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+
+                          <div className="flex flex-col gap-2">
+                            <div className="text-sm font-medium">
+                              Common durations:
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => form.setValue('duration', 1800)}
+                              >
+                                30 minutes
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => form.setValue('duration', 3600)}
+                              >
+                                1 hour
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => form.setValue('duration', 7200)}
+                              >
+                                2 hours
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => form.setValue('duration', 14400)}
+                              >
+                                4 hours
+                              </Button>
+                            </div>
                           </div>
+                        </div>
+
+                        {field.value && (
+                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
+                            <DurationDisplay seconds={field.value} />
+                          </div>
+                        )}
+
+                        <FormDescription>
+                          How long users have to complete this challenge once
+                          they start it.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="schedule" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Challenge Schedule</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Set when your challenge is available to participants.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-6 rounded-md border border-dashed p-4">
+                    <div className="mb-2 flex items-center">
+                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <h3 className="text-sm font-medium">
+                        Timeline Recommendation
+                      </h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      For best results, set dates in this order: Preview Date ➝
+                      Open Date ➝ Close Date. This allows admins to preview
+                      challenges before they open to participants.
+                    </p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="previewable_at"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Preview Available</FormLabel>
+                          <FormControl>
+                            <DateTimePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="When admins can preview (optional)"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            When admins can preview this challenge before it
+                            opens to participants.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="relative">
+                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
+                      <FormField
+                        control={form.control}
+                        name="open_at"
+                        render={({ field }) => (
+                          <FormItem className="ml-8">
+                            <FormLabel>Opens At</FormLabel>
+                            <FormControl>
+                              <DateTimePicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="When challenge becomes available"
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              When the challenge becomes available to
+                              participants.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
+                      <FormField
+                        control={form.control}
+                        name="close_at"
+                        render={({ field }) => (
+                          <FormItem className="ml-8">
+                            <FormLabel>Closes At</FormLabel>
+                            <FormControl>
+                              <DateTimePicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="When challenge ends (optional)"
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              When the challenge will no longer be available to
+                              start.
+                              {field.value && form.watch('open_at') && (
+                                <span className="mt-1 block text-xs">
+                                  Challenge will be available from opening until
+                                  closing.
+                                </span>
+                              )}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

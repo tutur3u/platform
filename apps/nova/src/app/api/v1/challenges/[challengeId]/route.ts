@@ -83,9 +83,11 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const updateData: any = {};
-    if (body.title) updateData.title = body.title;
-    if (body.description) updateData.description = body.description;
-    if (body.duration) {
+
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.description !== undefined)
+      updateData.description = body.description;
+    if (body.duration !== undefined) {
       if (body.duration <= 0) {
         return NextResponse.json(
           { message: 'Duration must be a positive number' },
@@ -94,7 +96,11 @@ export async function PUT(request: Request, { params }: Params) {
       }
       updateData.duration = body.duration;
     }
-    if (body.enabled) updateData.enabled = body.enabled;
+    if (body.enabled !== undefined) updateData.enabled = body.enabled;
+    if (body.previewable_at !== undefined)
+      updateData.previewable_at = body.previewable_at;
+    if (body.open_at !== undefined) updateData.open_at = body.open_at;
+    if (body.close_at !== undefined) updateData.close_at = body.close_at;
 
     const { data: updatedChallenge, error: updateError } = await supabase
       .from('nova_challenges')

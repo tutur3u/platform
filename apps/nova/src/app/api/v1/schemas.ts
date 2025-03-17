@@ -18,6 +18,9 @@ export const createChallengeSchema = z.object({
     )
     .min(1, { message: 'At least one criteria is required' }),
   enabled: z.boolean(),
+  previewable_at: z.string(),
+  open_at: z.string(),
+  close_at: z.string(),
 });
 
 // Criteria
