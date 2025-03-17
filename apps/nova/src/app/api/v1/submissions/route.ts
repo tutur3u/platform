@@ -1,4 +1,4 @@
-import { createTestcaseSchema } from '../schemas';
+import { createSubmissionSchema } from '../schemas';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
@@ -18,22 +18,22 @@ export async function GET(request: Request) {
   }
 
   try {
-    let query = supabase.from('nova_problem_testcases').select('*');
+    let query = supabase.from('nova_submissions').select('*');
     if (problemId) {
       query = query.eq('problem_id', problemId);
     }
 
-    const { data: testcases, error } = await query;
+    const { data: submissions, error } = await query;
 
     if (error) {
       console.error('Database Error: ', error);
       return NextResponse.json(
-        { message: 'Error fetching testcases' },
+        { message: 'Error fetching submissions' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(testcases, { status: 200 });
+    return NextResponse.json(submissions, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -65,28 +65,31 @@ export async function POST(request: Request) {
 
   try {
     // Validate request body with Zod
-    const validatedData = createTestcaseSchema.parse(body);
+    const validatedData = createSubmissionSchema.parse(body);
 
-    const testcaseData = {
+    const submissionData = {
+      prompt: validatedData.prompt,
+      feedback: validatedData.feedback,
+      score: validatedData.score,
       problem_id: validatedData.problemId,
-      input: validatedData.input,
+      user_id: user.id,
     };
 
-    const { data: testcase, error: testcaseError } = await supabase
-      .from('nova_problem_testcases')
-      .insert(testcaseData)
+    const { data: submission, error: submissionError } = await supabase
+      .from('nova_submissions')
+      .insert(submissionData)
       .select()
       .single();
 
-    if (testcaseError) {
-      console.error('Database Error: ', testcaseError);
+    if (submissionError) {
+      console.error('Database Error: ', submissionError);
       return NextResponse.json(
-        { message: 'Error creating testcase' },
+        { message: 'Error creating submission' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(testcase, { status: 201 });
+    return NextResponse.json(submission, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
       // Zod validation error

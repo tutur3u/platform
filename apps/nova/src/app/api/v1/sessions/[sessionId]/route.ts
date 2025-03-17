@@ -3,13 +3,13 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
-    problemId: string;
+    sessionId: string;
   }>;
 }
 
 export async function GET(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { problemId } = await params;
+  const { sessionId } = await params;
 
   const {
     data: { user },
@@ -21,27 +21,27 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   try {
-    const { data: problem, error } = await supabase
-      .from('nova_problems')
+    const { data: session, error } = await supabase
+      .from('nova_sessions')
       .select('*')
-      .eq('id', problemId)
+      .eq('id', sessionId)
       .single();
 
     if (error) {
       console.error('Database Error: ', error);
       if (error.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Problem not found' },
+          { message: 'Session not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error fetching problem' },
+        { message: 'Error fetching session' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(problem, { status: 200 });
+    return NextResponse.json(session, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -53,7 +53,7 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { problemId } = await params;
+  const { sessionId } = await params;
 
   const {
     data: { user },
@@ -65,11 +65,10 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   let body: {
-    title?: string;
-    description?: string;
-    maxPromptLength?: number;
-    exampleInput?: string;
-    exampleOutput?: string;
+    startTime?: string;
+    endTime?: string;
+    status?: string;
+    totalScore?: number;
     challengeId?: string;
   };
 
@@ -89,25 +88,17 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const updateData: any = {};
-    if (body.title) updateData.title = body.title;
-    if (body.description) updateData.description = body.description;
-    if (body.maxPromptLength) {
-      if (body.maxPromptLength <= 0) {
-        return NextResponse.json(
-          { message: 'Max prompt length must be a positive number' },
-          { status: 400 }
-        );
-      }
-      updateData.max_prompt_length = body.maxPromptLength;
-    }
-    if (body.exampleInput) updateData.example_input = body.exampleInput;
-    if (body.exampleOutput) updateData.example_output = body.exampleOutput;
+    if (body.startTime) updateData.start_time = body.startTime;
+    if (body.endTime) updateData.end_time = body.endTime;
+    if (body.status) updateData.status = body.status;
+    if (body.totalScore) updateData.total_score = body.totalScore;
     if (body.challengeId) updateData.challenge_id = body.challengeId;
+    updateData.user_id = user.id;
 
-    const { data: updatedProblem, error: updateError } = await supabase
-      .from('nova_problems')
+    const { data: updatedSession, error: updateError } = await supabase
+      .from('nova_sessions')
       .update(updateData)
-      .eq('id', problemId)
+      .eq('id', sessionId)
       .select()
       .single();
 
@@ -115,17 +106,17 @@ export async function PUT(request: Request, { params }: Params) {
       console.error('Database Error: ', updateError);
       if (updateError.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Problem not found' },
+          { message: 'Session not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error updating problem' },
+        { message: 'Error updating session' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(updatedProblem, { status: 200 });
+    return NextResponse.json(updatedSession, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -137,7 +128,7 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { problemId } = await params;
+  const { sessionId } = await params;
 
   const {
     data: { user },
@@ -150,20 +141,20 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     const { error: deleteError } = await supabase
-      .from('nova_problems')
+      .from('nova_sessions')
       .delete()
-      .eq('id', problemId);
+      .eq('id', sessionId);
 
     if (deleteError) {
       console.error('Database Error: ', deleteError);
       return NextResponse.json(
-        { message: 'Error deleting problem' },
+        { message: 'Error deleting session' },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { message: 'Problem deleted successfully' },
+      { message: 'Session deleted successfully' },
       { status: 200 }
     );
   } catch (error) {

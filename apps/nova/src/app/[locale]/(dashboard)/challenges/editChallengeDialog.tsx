@@ -24,18 +24,26 @@ export default function EditChallengeDialog({
   trigger,
 }: EditChallengeDialogProps) {
   const router = useRouter();
+
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Convert string dates to Date objects for the form
+  const formattedDefaultValues = {
+    ...challenge,
+    open_at: challenge.open_at ? new Date(challenge.open_at) : null,
+    close_at: challenge.close_at ? new Date(challenge.close_at) : null,
+    previewable_at: challenge.previewable_at
+      ? new Date(challenge.previewable_at)
+      : null,
+  };
 
   const onSubmit = async (data: ChallengeFormValues) => {
     try {
       setIsSubmitting(true);
 
-      const url = `/api/v1/challenges/${challenge.id}`;
-      const method = 'PUT';
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(`/api/v1/challenges/${challenge.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -77,7 +85,7 @@ export default function EditChallengeDialog({
         </DialogHeader>
         <ChallengeForm
           challengeId={challenge.id}
-          defaultValues={challenge}
+          defaultValues={formattedDefaultValues}
           onSubmit={onSubmit}
           isSubmitting={isSubmitting}
         />

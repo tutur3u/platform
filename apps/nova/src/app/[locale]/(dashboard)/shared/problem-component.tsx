@@ -2,7 +2,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { BookOpen, Code, FileText, Info } from 'lucide-react';
 
-interface Problem {
+export interface Problem {
   id: string;
   title: string;
   description: string;
@@ -11,9 +11,17 @@ interface Problem {
   exampleOutput: string;
 }
 
-export default function ProblemComponent({ problem }: { problem: Problem }) {
+export interface ProblemComponentProps {
+  problem: Problem;
+  className?: string;
+}
+
+export default function ProblemComponent({
+  problem,
+  className,
+}: ProblemComponentProps) {
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-primary" />

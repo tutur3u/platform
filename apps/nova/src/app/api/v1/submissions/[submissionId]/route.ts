@@ -3,13 +3,13 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
-    problemId: string;
+    submissionId: string;
   }>;
 }
 
 export async function GET(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { problemId } = await params;
+  const { submissionId } = await params;
 
   const {
     data: { user },
@@ -21,27 +21,27 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   try {
-    const { data: problem, error } = await supabase
-      .from('nova_problems')
+    const { data: submission, error } = await supabase
+      .from('nova_submissions')
       .select('*')
-      .eq('id', problemId)
+      .eq('id', Number(submissionId))
       .single();
 
     if (error) {
       console.error('Database Error: ', error);
       if (error.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Problem not found' },
+          { message: 'Submission not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error fetching problem' },
+        { message: 'Error fetching submission' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(problem, { status: 200 });
+    return NextResponse.json(submission, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -53,7 +53,7 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { problemId } = await params;
+  const { submissionId } = await params;
 
   const {
     data: { user },
@@ -65,12 +65,10 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   let body: {
-    title?: string;
-    description?: string;
-    maxPromptLength?: number;
-    exampleInput?: string;
-    exampleOutput?: string;
-    challengeId?: string;
+    prompt?: string;
+    feedback?: string;
+    score?: number;
+    problemId?: string;
   };
 
   try {
@@ -89,25 +87,16 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const updateData: any = {};
-    if (body.title) updateData.title = body.title;
-    if (body.description) updateData.description = body.description;
-    if (body.maxPromptLength) {
-      if (body.maxPromptLength <= 0) {
-        return NextResponse.json(
-          { message: 'Max prompt length must be a positive number' },
-          { status: 400 }
-        );
-      }
-      updateData.max_prompt_length = body.maxPromptLength;
-    }
-    if (body.exampleInput) updateData.example_input = body.exampleInput;
-    if (body.exampleOutput) updateData.example_output = body.exampleOutput;
-    if (body.challengeId) updateData.challenge_id = body.challengeId;
+    if (body.prompt) updateData.prompt = body.prompt;
+    if (body.feedback) updateData.feedback = body.feedback;
+    if (body.score) updateData.score = body.score;
+    if (body.problemId) updateData.problem_id = body.problemId;
+    updateData.user_id = user.id;
 
-    const { data: updatedProblem, error: updateError } = await supabase
-      .from('nova_problems')
+    const { data: updatedSubmission, error: updateError } = await supabase
+      .from('nova_submissions')
       .update(updateData)
-      .eq('id', problemId)
+      .eq('id', Number(submissionId))
       .select()
       .single();
 
@@ -115,17 +104,17 @@ export async function PUT(request: Request, { params }: Params) {
       console.error('Database Error: ', updateError);
       if (updateError.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Problem not found' },
+          { message: 'Submission not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error updating problem' },
+        { message: 'Error updating submission' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(updatedProblem, { status: 200 });
+    return NextResponse.json(updatedSubmission, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -137,7 +126,7 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { problemId } = await params;
+  const { submissionId } = await params;
 
   const {
     data: { user },
@@ -150,20 +139,20 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     const { error: deleteError } = await supabase
-      .from('nova_problems')
+      .from('nova_submissions')
       .delete()
-      .eq('id', problemId);
+      .eq('id', Number(submissionId));
 
     if (deleteError) {
       console.error('Database Error: ', deleteError);
       return NextResponse.json(
-        { message: 'Error deleting problem' },
+        { message: 'Error deleting submission' },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { message: 'Problem deleted successfully' },
+      { message: 'Submission deleted successfully' },
       { status: 200 }
     );
   } catch (error) {

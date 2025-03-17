@@ -1,12 +1,15 @@
 'use client';
 
 // Import the components we need for the problem page
-import ProblemComponent from './problem-component';
-import PromptComponent from './prompt-component';
-import TestCaseComponent from './test-case-component';
+import ProblemComponent from '../../../shared/problem-component';
+import PromptComponent from '../../../shared/prompt-component';
+import TestCaseComponent from '../../../shared/test-case-component';
+import PromptForm from './prompt-form';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -48,7 +51,9 @@ export default function ProblemPage({ params }: Props) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold">Loading...</p>
+        <p className="text-xl font-semibold text-muted-foreground">
+          Loading...
+        </p>
       </div>
     );
   }
@@ -65,46 +70,66 @@ export default function ProblemPage({ params }: Props) {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="my-6">
-        <div className="flex items-center gap-4">
-          <Link href="/problems">
-            <Button variant="outline" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h1 className="text-3xl font-bold">{problem.title}</h1>
-        </div>
+    <div className="relative h-screen overflow-hidden">
+      <div className="flex h-16 items-center gap-4 border-b p-4">
+        <Link href="/problems">
+          <Button variant="outline" size="icon">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <h1 className="text-xl font-bold">{problem.title}</h1>
       </div>
 
-      <div className="flex gap-4">
-        <div className="flex w-1/2 flex-col">
-          <ProblemComponent
-            problem={{
-              id: problem.id,
-              title: problem.title,
-              description: problem.description,
-              maxPromptLength: problem.max_prompt_length,
-              exampleInput: problem.example_input,
-              exampleOutput: problem.example_output,
-            }}
-          />
-          <TestCaseComponent testcases={problem.testcases} />
+      <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-6 md:grid-cols-2">
+        <div className="flex h-full w-full flex-col gap-4 overflow-hidden">
+          <Card className="h-full overflow-y-auto border-foreground/10 bg-foreground/5">
+            <CardContent className="p-0">
+              <Tabs defaultValue="problem" className="w-full">
+                <TabsList className="w-full rounded-t-lg rounded-b-none bg-foreground/10">
+                  <TabsTrigger value="problem" className="flex-1">
+                    Problem
+                  </TabsTrigger>
+                  <TabsTrigger value="testcases" className="flex-1">
+                    Test Cases
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="problem" className="m-0 p-4">
+                  <ProblemComponent
+                    problem={{
+                      id: problem.id,
+                      title: problem.title,
+                      description: problem.description,
+                      maxPromptLength: problem.max_prompt_length,
+                      exampleInput: problem.example_input,
+                      exampleOutput: problem.example_output,
+                    }}
+                  />
+                </TabsContent>
+                <TabsContent value="testcases" className="m-0 p-4">
+                  <TestCaseComponent testcases={problem.testcases} />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
 
-        <PromptComponent
-          problem={{
-            id: problem.id,
-            title: problem.title,
-            description: problem.description,
-            maxPromptLength: problem.max_prompt_length,
-            exampleInput: problem.example_input,
-            exampleOutput: problem.example_output,
-            testcases: problem.testcases.map(
-              (testCase) => testCase.input || ''
-            ),
-          }}
-        />
+        <div className="relative flex h-full w-full flex-col gap-4 overflow-hidden">
+          <PromptComponent>
+            <PromptForm
+              problem={{
+                id: problem.id,
+                title: problem.title,
+                description: problem.description,
+                maxPromptLength: problem.max_prompt_length,
+                exampleInput: problem.example_input,
+                exampleOutput: problem.example_output,
+                testcases: problem.testcases.map(
+                  (testCase) => testCase.input || ''
+                ),
+              }}
+            />
+          </PromptComponent>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { createTestcaseSchema } from '../schemas';
+import { createCriterionSchema } from '../schemas';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
@@ -6,7 +6,7 @@ import { ZodError } from 'zod';
 export async function GET(request: Request) {
   const supabase = await createClient();
   const { searchParams } = new URL(request.url);
-  const problemId = searchParams.get('problemId');
+  const challengeId = searchParams.get('challengeId');
 
   const {
     data: { user },
@@ -18,22 +18,22 @@ export async function GET(request: Request) {
   }
 
   try {
-    let query = supabase.from('nova_problem_testcases').select('*');
-    if (problemId) {
-      query = query.eq('problem_id', problemId);
+    let query = supabase.from('nova_challenge_criteria').select('*');
+    if (challengeId) {
+      query = query.eq('challenge_id', challengeId);
     }
 
-    const { data: testcases, error } = await query;
+    const { data: criteria, error } = await query;
 
     if (error) {
       console.error('Database Error: ', error);
       return NextResponse.json(
-        { message: 'Error fetching testcases' },
+        { message: 'Error fetching criteria' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(testcases, { status: 200 });
+    return NextResponse.json(criteria, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -65,28 +65,29 @@ export async function POST(request: Request) {
 
   try {
     // Validate request body with Zod
-    const validatedData = createTestcaseSchema.parse(body);
+    const validatedData = createCriterionSchema.parse(body);
 
-    const testcaseData = {
-      problem_id: validatedData.problemId,
-      input: validatedData.input,
+    const criterionData = {
+      challenge_id: validatedData.challengeId,
+      name: validatedData.name,
+      description: validatedData.description,
     };
 
-    const { data: testcase, error: testcaseError } = await supabase
-      .from('nova_problem_testcases')
-      .insert(testcaseData)
+    const { data: criterion, error: criterionError } = await supabase
+      .from('nova_challenge_criteria')
+      .insert(criterionData)
       .select()
       .single();
 
-    if (testcaseError) {
-      console.error('Database Error: ', testcaseError);
+    if (criterionError) {
+      console.error('Database Error: ', criterionError);
       return NextResponse.json(
-        { message: 'Error creating testcase' },
+        { message: 'Error creating criterion' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(testcase, { status: 201 });
+    return NextResponse.json(criterion, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
       // Zod validation error
