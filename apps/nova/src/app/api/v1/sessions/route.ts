@@ -21,7 +21,6 @@ export async function GET(request: Request) {
     if (challengeId) {
       query = query.eq('challenge_id', challengeId);
     }
-    query = query.eq('user_id', user.id);
 
     const { data: sessions, error } = await query;
 
