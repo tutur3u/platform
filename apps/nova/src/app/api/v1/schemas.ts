@@ -5,6 +5,18 @@ export const createChallengeSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   duration: z.number().positive('Duration must be a positive number'),
+  criteria: z
+    .array(
+      z.object({
+        name: z
+          .string()
+          .min(2, { message: 'Name must be at least 2 characters.' }),
+        description: z.string().min(10, {
+          message: 'Description must be at least 10 characters.',
+        }),
+      })
+    )
+    .min(1, { message: 'At least one criteria is required' }),
   enabled: z.boolean(),
 });
 

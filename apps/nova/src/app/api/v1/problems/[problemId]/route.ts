@@ -15,6 +15,7 @@ export async function GET(_request: Request, { params }: Params) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
+
   if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -58,6 +59,7 @@ export async function PUT(request: Request, { params }: Params) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
+
   if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -141,6 +143,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
+
   if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }

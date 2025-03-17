@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
+
   if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -49,11 +50,13 @@ export async function POST(request: Request) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
+
   if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   let body;
+
   try {
     body = await request.json();
   } catch (error) {
@@ -81,6 +84,23 @@ export async function POST(request: Request) {
       console.error('Database Error when creating challenge:', challengeError);
       return NextResponse.json(
         { message: 'Error creating challenge' },
+        { status: 500 }
+      );
+    }
+
+    const { error: criteriaError } = await supabase
+      .from('nova_challenge_criteria')
+      .insert(
+        validatedData.criteria.map((criterion) => ({
+          ...criterion,
+          challenge_id: challenge.id,
+        }))
+      );
+
+    if (criteriaError) {
+      console.error('Database Error when creating criteria:', criteriaError);
+      return NextResponse.json(
+        { message: 'Error creating criteria' },
         { status: 500 }
       );
     }
