@@ -43,22 +43,10 @@ export async function POST(req: Request, { params }: Params) {
     .select('*')
     .eq('id', problemId)
     .single();
-  // console.log(problem);
+
   if (problemError) {
     return NextResponse.json(
       { message: 'Error fetching problem.' },
-      { status: 500 }
-    );
-  }
-
-  const { data: criteria, error: criteriaError } = await supabase
-    .from('nova_challenge_criteria')
-    .select('name,description')
-    .eq('challenge_id', problem.challenge_id);
-
-  if (criteriaError) {
-    return NextResponse.json(
-      { message: 'Error fetching evaluation criteria.' },
       { status: 500 }
     );
   }
@@ -87,12 +75,6 @@ export async function POST(req: Request, { params }: Params) {
     .join('\n');
 
   try {
-    // Format criteria for the system instruction
-    const criteriaText =
-      criteria && criteria.length > 0
-        ? criteria.map((c) => `- **${c.name}**: ${c.description}`).join('\n')
-        : 'No specific criteria available.';
-
     // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
       You are an examiner in a prompt engineering competition.
@@ -114,9 +96,6 @@ export async function POST(req: Request, { params }: Params) {
       Example Output: ${problem.example_output ?? ''}
       User's Prompt: ${prompt}
 
-      Evaluation Criteria:
-${criteriaText}
-
       Scoring Criteria:
       - **10**: The user's response perfectly solves the problem or provides a clear and effective prompt that would solve the problem.
       - **7-9**: The response mostly solves the problem or gives a good prompt but with minor inefficiencies or missing details.
@@ -128,11 +107,10 @@ ${criteriaText}
       1. **If the user's response is an effective prompt** that guides solving the problem (e.g., "Summarize the paragraph in just one sentence"), it should be **scored based on how well it would solve the task**.
       2. Only assign **0** if the response does not attempt to solve the problem or is irrelevant.
       3. Ensure the feedback clearly explains why the score was assigned, focusing on how well the response addresses the problem.
-      4. Your evaluation MUST address each criterion listed above specifically and explain how the prompt performs against each one.
-      5. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks. 
-      6. The score MUST be a single number (not an array).
-      7. The response MUST use this EXACT format:
-      {"score": 7, "feedback": "Your explanation here", "criteriaEvaluation": {"criterion1": "evaluation1", "criterion2": "evaluation2"}}
+      4. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks. 
+      5. The score MUST be a single number (not an array).
+      6. The response MUST use this EXACT format:
+      {"score": 7, "feedback": "Your explanation here"}
     `;
     // Get the model
     const aiModel = genAI.getGenerativeModel({ model });
@@ -146,13 +124,12 @@ ${criteriaText}
         response.replace(/```json\n|\n```/g, '').trim()
       );
 
-      // Update validation to account for the new criteriaEvaluation field
+      // Validate the response structure
       if (
         typeof parsedResponse.score !== 'number' ||
         typeof parsedResponse.feedback !== 'string' ||
         parsedResponse.score < 0 ||
-        parsedResponse.score > 10 ||
-        !parsedResponse.criteriaEvaluation
+        parsedResponse.score > 10
       ) {
         throw new Error('Invalid response format');
       }
