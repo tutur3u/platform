@@ -176,41 +176,33 @@ export const contributors: Contributor[] = [
     name: 'RMIT University',
     contribution:
       'Academic support and venue hosting for the final competition',
-    image: '/media/logos/transparent.png',
   },
   {
     name: 'AI Research Community',
     contribution: 'Challenge design and technical advisory',
-    image: '/media/logos/transparent.png',
   },
   {
     name: 'Volunteer Mentors',
     contribution: 'Providing guidance and support to Neo League participants',
-    image: '/media/logos/transparent.png',
   },
   {
     name: 'Industry Experts',
     contribution: 'Judging panel and masterclass sessions',
-    image: '/media/logos/transparent.png',
   },
   {
     name: 'Student Ambassadors',
     contribution: 'Campus outreach and participant support',
-    image: '/media/logos/transparent.png',
   },
   {
     name: 'Open Source Community',
     contribution: 'Various libraries and tools used in the platform',
-    image: '/media/logos/transparent.png',
   },
   {
     name: 'Beta Testers',
     contribution: 'Platform testing and feedback before launch',
-    image: '/media/logos/transparent.png',
   },
   {
     name: 'Media Partners',
     contribution: 'Coverage and promotion of the Neo League competition',
-    image: '/media/logos/transparent.png',
   },
 ];

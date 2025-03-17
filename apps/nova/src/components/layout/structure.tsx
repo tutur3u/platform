@@ -79,7 +79,7 @@ export default function Structure({
         )}
       >
         <Image
-          src="/media/logos/transparent.png"
+          src="/media/logos/nova-transparent.png"
           className="h-8 w-8"
           width={32}
           height={32}
