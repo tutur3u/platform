@@ -30,8 +30,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
-  // console.log('Prompt:', prompt);
-  // console.log('Custom test case:', customTestCase);
+
   if (!prompt || !customTestCase) {
     return NextResponse.json(
       { message: 'Incomplete data provided.' },
@@ -60,7 +59,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   try {
-    // System Instruction - Provide context but focus on applying prompt to input
+
     const systemInstruction = `
       You are an AI assistant that applies a given prompt instruction to process user input.
       
@@ -96,7 +95,7 @@ export async function POST(req: Request, { params }: Params) {
       const cleanResponse = response.replace(/```json\n|\n```|```/g, '').trim();
       const parsedResponse = JSON.parse(cleanResponse);
 
-      // Return the parsed response
+ 
       return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
