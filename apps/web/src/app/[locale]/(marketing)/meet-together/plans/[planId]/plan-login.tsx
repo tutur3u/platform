@@ -2,6 +2,7 @@
 
 import AvailabilityPlanner from './availability-planner';
 import { useTimeBlocking } from './time-blocking-provider';
+import { BASE_URL } from '@/constants/common';
 import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { User } from '@tuturuuu/types/primitives/User';
@@ -228,7 +229,9 @@ export default function PlanLogin({
                 if (!plan.id) return;
 
                 if (!platformUser) {
-                  router.push(`/login?nextUrl=${encodeURIComponent(pathname)}`);
+                  router.push(
+                    `${BASE_URL}/login?nextUrl=${encodeURIComponent(pathname)}`
+                  );
                   return;
                 }
 
