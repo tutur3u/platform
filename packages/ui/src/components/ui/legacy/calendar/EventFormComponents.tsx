@@ -1,5 +1,6 @@
 'use client';
 
+import { ColorPicker, colorMap } from './settings/ColorPicker';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -25,58 +26,11 @@ export const COLOR_OPTIONS: {
   value: SupportedColor;
   name: string;
   className: string;
-}[] = [
-  {
-    value: 'BLUE',
-    name: 'Blue',
-    className: 'bg-dynamic-light-blue/20 hover:bg-dynamic-light-blue/50',
-  },
-  {
-    value: 'RED',
-    name: 'Red',
-    className: 'bg-dynamic-light-red/20 hover:bg-dynamic-light-red/50',
-  },
-  {
-    value: 'GREEN',
-    name: 'Green',
-    className: 'bg-dynamic-light-green/20 hover:bg-dynamic-light-green/50',
-  },
-  {
-    value: 'YELLOW',
-    name: 'Yellow',
-    className: 'bg-dynamic-light-yellow/20 hover:bg-dynamic-light-yellow/50',
-  },
-  {
-    value: 'ORANGE',
-    name: 'Orange',
-    className: 'bg-dynamic-light-orange/20 hover:bg-dynamic-light-orange/50',
-  },
-  {
-    value: 'PURPLE',
-    name: 'Purple',
-    className: 'bg-dynamic-light-purple/20 hover:bg-dynamic-light-purple/50',
-  },
-  {
-    value: 'PINK',
-    name: 'Pink',
-    className: 'bg-dynamic-light-pink/20 hover:bg-dynamic-light-pink/50',
-  },
-  {
-    value: 'INDIGO',
-    name: 'Indigo',
-    className: 'bg-dynamic-light-indigo/20 hover:bg-dynamic-light-indigo/50',
-  },
-  {
-    value: 'CYAN',
-    name: 'Cyan',
-    className: 'bg-dynamic-light-cyan/20 hover:bg-dynamic-light-cyan/50',
-  },
-  {
-    value: 'GRAY',
-    name: 'Gray',
-    className: 'bg-dynamic-light-gray/20 hover:bg-dynamic-light-gray/50',
-  },
-];
+}[] = Object.entries(colorMap).map(([key, value]) => ({
+  value: key as SupportedColor,
+  name: value.name,
+  className: `bg-dynamic-light-${key.toLowerCase()}/20 hover:bg-dynamic-light-${key.toLowerCase()}/50`,
+}));
 
 // Priority options
 export const PRIORITY_OPTIONS: {
@@ -249,38 +203,29 @@ export const EventColorPicker = ({
   onChange: (value: SupportedColor) => void;
   disabled?: boolean;
 }) => (
-  <div className="space-y-2">
-    <Label htmlFor="color" className="text-sm font-medium">
-      Color
-    </Label>
-    <Select
-      value={value}
-      onValueChange={(val) => onChange(val as SupportedColor)}
-      disabled={disabled}
-    >
-      <SelectTrigger
-        id="color"
-        className={cn(
-          'border-none bg-muted/50 focus:ring-0',
-          COLOR_OPTIONS.find((c) => c.value === value)?.className
-        )}
-      >
-        <SelectValue placeholder="Select a color" />
-      </SelectTrigger>
-      <SelectContent>
-        <div className="grid grid-cols-2 gap-1">
-          {COLOR_OPTIONS.map((color) => (
-            <SelectItem
-              key={color.value}
-              value={color.value}
-              className={cn('cursor-pointer', color.className)}
-            >
-              {color.name}
-            </SelectItem>
-          ))}
+  <div className="space-y-3">
+    <Label className="text-sm font-medium">Color</Label>
+    <div className={cn(disabled ? 'pointer-events-none opacity-50' : '')}>
+      <div className="flex flex-col space-y-3">
+        <ColorPicker
+          value={value}
+          onChange={onChange}
+          size="md"
+          showTooltips={true}
+        />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div
+            className={cn(
+              'h-3 w-3 rounded-full',
+              `bg-dynamic-light-${value.toLowerCase()}`
+            )}
+          />
+          <span>
+            {COLOR_OPTIONS.find((c) => c.value === value)?.name || 'Blue'}
+          </span>
         </div>
-      </SelectContent>
-    </Select>
+      </div>
+    </div>
   </div>
 );
 

@@ -17,6 +17,7 @@ import {
   Medal,
   Rocket,
   Share,
+  Sparkles,
   Star,
   Trophy,
   Users,
@@ -26,11 +27,14 @@ import { useEffect, useState } from 'react';
 
 export default function LeaderboardPage({
   data,
+  challenges,
 }: {
   data: LeaderboardEntry[];
+  challenges: { id: string; title: string }[];
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedChallenge, setSelectedChallenge] = useState<string>('all');
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(
     undefined
   );
@@ -48,55 +52,57 @@ export default function LeaderboardPage({
     getUserId();
   }, [supabase]);
 
-  // Filter by search query
+  // Filter by search query and challenge
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredData(data);
-      return;
+    let filtered = [...data];
+
+    // Filter by challenge
+    if (selectedChallenge !== 'all') {
+      filtered = filtered
+        .map((entry) => {
+          // Create a copy with updated score based on the selected challenge
+          const challengeScore =
+            entry.challenge_scores?.[selectedChallenge] || 0;
+          return {
+            ...entry,
+            score: challengeScore,
+          };
+        })
+        .filter((entry) => entry.score > 0); // Only show users who participated in this challenge
+
+      // Re-rank the filtered entries
+      filtered.sort((a, b) => b.score - a.score);
+      filtered = filtered.map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+      }));
     }
 
-    const filtered = data.filter((entry) =>
-      entry.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Filter by search query
+    if (searchQuery.trim()) {
+      filtered = filtered.filter((entry) =>
+        entry.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
     setFilteredData(filtered);
-  }, [searchQuery, data]);
+  }, [searchQuery, selectedChallenge, data]);
 
   // Calculate stats
-  const yourRank = data.findIndex((entry) => entry.id === currentUserId) + 1;
-  const topScore = data.length > 0 ? data[0]?.score : 0;
-  const totalParticipants = data.length;
+  const yourRank =
+    filteredData.findIndex((entry) => entry.id === currentUserId) + 1;
+  const topScore = filteredData.length > 0 ? filteredData[0]?.score : 0;
+  const totalParticipants = filteredData.length;
+
+  // Get the selected challenge title
+  const selectedChallengeTitle =
+    selectedChallenge !== 'all'
+      ? challenges.find((c) => c.id === selectedChallenge)?.title ||
+        'Selected Challenge'
+      : 'All Challenges';
 
   return (
     <div className="min-h-screen">
-      {/* Decorative background elements */}
-      <div className="fixed inset-0 -z-10 overflow-hidden opacity-0 dark:opacity-100">
-        <motion.div
-          className="absolute -top-[30%] -right-[10%] h-[500px] w-[500px] rounded-full blur-3xl"
-          animate={{
-            y: [0, 50, 0],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute top-[50%] -left-[10%] h-[300px] w-[300px] rounded-full bg-indigo-500/5 blur-3xl"
-          animate={{
-            y: [0, -30, 0],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <div className="bg-grid-slate-900/[0.03] absolute inset-0 bg-[size:30px_30px]"></div>
-      </div>
-
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -113,6 +119,16 @@ export default function LeaderboardPage({
                 <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
                 Competition
               </Badge>
+
+              {selectedChallenge !== 'all' && (
+                <Badge
+                  variant="outline"
+                  className="border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {selectedChallengeTitle}
+                </Badge>
+              )}
 
               <Badge
                 variant="outline"
@@ -150,34 +166,38 @@ export default function LeaderboardPage({
                 transition={{ delay: 0.3, duration: 0.5 }}
                 className="flex-shrink-0"
               >
-                <Card className="border-blue-200 bg-white shadow-md dark:border-blue-500/20 dark:bg-slate-900/80 dark:shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-                  <CardContent className="flex items-center gap-4 p-4">
-                    <div className="relative flex h-14 w-14 items-center justify-center">
-                      <div className="hex-shape absolute inset-0 h-full w-full bg-blue-100 dark:bg-blue-500/10" />
-                      <Crown className="relative z-10 h-6 w-6 text-blue-600 dark:text-blue-400" />
-                      <motion.div
-                        className="hex-shape-outline absolute -inset-1 z-0 border-blue-300 dark:border-blue-500/30"
-                        animate={{
-                          opacity: [0.5, 1, 0.5],
-                          scale: [1, 1.05, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                        Your Current Rank
-                      </p>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        #{yourRank}{' '}
-                        <span className="text-sm font-normal text-gray-400 dark:text-slate-500">
-                          of {totalParticipants}
-                        </span>
-                      </p>
+                <Card className="overflow-hidden border-blue-200 bg-white shadow-md dark:border-blue-500/20 dark:bg-slate-900/80 dark:shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="relative flex h-14 w-14 items-center justify-center">
+                        <div className="hex-shape absolute inset-0 h-full w-full bg-blue-100 dark:bg-blue-500/10" />
+                        <Crown className="relative z-10 h-6 w-6 text-blue-600 dark:text-blue-400" />
+                        <motion.div
+                          className="hex-shape-outline absolute -inset-1 z-0 border-blue-300 dark:border-blue-500/30"
+                          animate={{
+                            opacity: [0.5, 1, 0.5],
+                            scale: [1, 1.05, 1],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
+                            Your Current Rank
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          #{yourRank}{' '}
+                          <span className="text-sm font-normal text-gray-400 dark:text-slate-500">
+                            of {totalParticipants}
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -225,8 +245,8 @@ export default function LeaderboardPage({
                   {topScore?.toLocaleString()}
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-slate-500">
-                  {data.length > 0
-                    ? `Achieved by ${data[0]?.name}`
+                  {filteredData.length > 0
+                    ? `Achieved by ${filteredData[0]?.name}`
                     : 'No participants yet'}
                 </p>
               </div>
@@ -270,20 +290,130 @@ export default function LeaderboardPage({
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Medal className="h-5 w-5 text-yellow-400" />
-              <h2 className="text-xl font-bold">Top Performers</h2>
+              <div className="relative">
+                <Medal className="h-5 w-5 text-yellow-400" />
+                <motion.div
+                  className="absolute -inset-1 -z-10 rounded-full opacity-0 blur-sm"
+                  style={{
+                    background: 'linear-gradient(to right, #F59E0B, #EF4444)',
+                  }}
+                  animate={{ opacity: [0.2, 0.5, 0.2] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              </div>
+              <h2 className="bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500 bg-clip-text text-xl font-bold text-transparent dark:from-yellow-400 dark:via-amber-400 dark:to-orange-400">
+                Top Performers
+              </h2>
+              {selectedChallenge !== 'all' && (
+                <Badge
+                  variant="outline"
+                  className="ml-2 border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                >
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  {selectedChallengeTitle}
+                </Badge>
+              )}
             </div>
 
             <Button
               variant="outline"
               size="sm"
-              className="flex gap-1.5 border-slate-700 bg-slate-800/60 text-xs text-slate-300 hover:bg-slate-700 hover:text-slate-100"
+              className="flex gap-1.5 border-slate-700 bg-slate-800/60 text-xs text-slate-300 transition-all duration-200 hover:scale-105 hover:bg-slate-700 hover:text-slate-100"
             >
               <Share className="h-3.5 w-3.5" /> Share
             </Button>
           </div>
-          <TopThreeCards data={data} isLoading={false} />
+          <TopThreeCards data={filteredData} isLoading={false} />
+
+          {/* Add animated divider */}
+          <div className="relative my-8 h-px w-full overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
+            <motion.div
+              className="absolute inset-0 h-px w-1/3 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+              animate={{ x: ['-100%', '400%'] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </div>
         </div>
+
+        {selectedChallenge !== 'all' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="my-6"
+          >
+            <Card className="overflow-hidden border-purple-200 bg-white shadow-md dark:border-purple-500/20 dark:bg-slate-900/80">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+                      <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      <motion.div
+                        className="absolute -inset-1 rounded-full opacity-0 blur-sm"
+                        style={{
+                          background:
+                            'linear-gradient(to right, #8B5CF6, #6366F1)',
+                        }}
+                        animate={{ opacity: [0.2, 0.4, 0.2] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">
+                        {selectedChallengeTitle}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-slate-400">
+                        Showing leaderboard rankings for this specific challenge
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 border-gray-200 bg-white text-xs text-gray-700 transition-all duration-200 hover:scale-105 hover:bg-gray-50 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                      onClick={() => setSelectedChallenge('all')}
+                    >
+                      View All Challenges
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="rounded-lg bg-purple-50 p-4 transition-all duration-200 hover:bg-purple-100/50 hover:shadow-md dark:bg-purple-900/10 dark:hover:bg-purple-900/20">
+                    <h4 className="text-sm font-medium text-purple-700 dark:text-purple-400">
+                      Total Participants
+                    </h4>
+                    <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">
+                      {totalParticipants}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg bg-blue-50 p-4 transition-all duration-200 hover:bg-blue-100/50 hover:shadow-md dark:bg-blue-900/10 dark:hover:bg-blue-900/20">
+                    <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                      Highest Score
+                    </h4>
+                    <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">
+                      {(topScore || 0).toLocaleString()}
+                    </p>
+                  </div>
+
+                  {yourRank > 0 && (
+                    <div className="rounded-lg bg-green-50 p-4 transition-all duration-200 hover:bg-green-100/50 hover:shadow-md dark:bg-green-900/10 dark:hover:bg-green-900/20">
+                      <h4 className="text-sm font-medium text-green-700 dark:text-green-400">
+                        Your Rank
+                      </h4>
+                      <p className="text-2xl font-bold text-green-800 dark:text-green-300">
+                        #{yourRank}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         <div className="flex flex-col gap-6 md:flex-row md:items-start">
           <div className="flex w-full flex-grow flex-col gap-6">
@@ -295,6 +425,9 @@ export default function LeaderboardPage({
               <LeaderboardFilters
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
+                selectedChallenge={selectedChallenge}
+                setSelectedChallenge={setSelectedChallenge}
+                challenges={challenges}
               />
             </motion.div>
 
@@ -307,6 +440,8 @@ export default function LeaderboardPage({
                 data={filteredData}
                 isLoading={false}
                 currentUserId={currentUserId}
+                challenges={challenges}
+                selectedChallenge={selectedChallenge}
               />
             </motion.div>
           </div>
@@ -319,7 +454,6 @@ export default function LeaderboardPage({
             >
               <div className="relative space-y-6">
                 <Card className="overflow-hidden border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-900/80">
-                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-400 to-indigo-600" />
                   <CardContent className="p-6">
                     <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
                       How to Play
@@ -424,50 +558,6 @@ export default function LeaderboardPage({
           <p>Last updated: {new Date().toLocaleDateString()}</p>
         </div>
       </div>
-
-      {/* Add custom CSS for hexagonal shapes if not already added in leaderboard component */}
-      <style jsx global>{`
-        .hex-shape {
-          -webkit-clip-path: polygon(
-            50% 0%,
-            95% 25%,
-            95% 75%,
-            50% 100%,
-            5% 75%,
-            5% 25%
-          );
-          clip-path: polygon(
-            50% 0%,
-            95% 25%,
-            95% 75%,
-            50% 100%,
-            5% 75%,
-            5% 25%
-          );
-        }
-        .hex-shape-outline {
-          border: 2px solid;
-          -webkit-clip-path: polygon(
-            50% 0%,
-            95% 25%,
-            95% 75%,
-            50% 100%,
-            5% 75%,
-            5% 25%
-          );
-          clip-path: polygon(
-            50% 0%,
-            95% 25%,
-            95% 75%,
-            50% 100%,
-            5% 75%,
-            5% 25%
-          );
-        }
-        .bg-grid-slate-900 {
-          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(15 23 42 / 0.04)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
-        }
-      `}</style>
     </div>
   );
 }

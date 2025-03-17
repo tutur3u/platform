@@ -29,6 +29,27 @@ export interface Contributor {
 
 export const organizers: TeamMember[] = [
   {
+    name: 'Võ Hoàng Phúc',
+    role: 'Nova Supervisor & Technical Leader',
+    image: '/media/featured/competitions/neo-league/vo-hoang-phuc.jpg',
+    bio: 'Build the platform and ensure the competition is run smoothly, with a focus on the technical aspects.',
+    organization: 'Tuturuuu',
+  },
+  {
+    name: 'Nguyễn Yến Ngọc',
+    role: 'External Affairs Leader',
+    image: '/media/featured/competitions/neo-league/nguyen-yen-ngoc.jpeg',
+    bio: 'Work with external organizations and stakeholders to ensure the competition is successful.',
+    organization: 'Tuturuuu',
+  },
+  {
+    name: 'Đoàn Hữu Quốc',
+    role: 'Quality Assurance Leader',
+    image: '/media/featured/competitions/neo-league/doan-huu-quoc.jpg',
+    bio: 'Ensure the platform is of high quality and intuitive, with a focus on the user experience.',
+    organization: 'Zenbright',
+  },
+  {
     name: 'Cao Nguyễn Việt Quang',
     role: 'Project Leader / External Affairs Leader',
     image: '/media/featured/competitions/neo-league/cao-nguyen-viet-quang.jpg',
@@ -41,20 +62,6 @@ export const organizers: TeamMember[] = [
     image: '/media/featured/competitions/neo-league/dao-ngoc-khanh.jpg',
     bio: 'Promote the competition and build the community.',
     organization: 'RMIT SGS Neo Culture Tech',
-  },
-  {
-    name: 'Võ Hoàng Phúc',
-    role: 'Technical Leader',
-    image: '/media/featured/competitions/neo-league/vo-hoang-phuc.jpg',
-    bio: 'Build the platform and ensure the competition is run smoothly, with a focus on the technical aspects.',
-    organization: 'Tuturuuu',
-  },
-  {
-    name: 'Đoàn Hữu Quốc',
-    role: 'Quality Assurance Leader',
-    image: '/media/featured/competitions/neo-league/doan-huu-quoc.jpg',
-    bio: 'Ensure the platform is of high quality and intuitive, with a focus on the user experience.',
-    organization: 'Zenbright',
   },
   {
     name: 'Ngô Văn Tài',

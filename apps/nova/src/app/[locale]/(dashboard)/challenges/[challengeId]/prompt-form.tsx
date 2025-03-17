@@ -28,8 +28,7 @@ type HistoryEntry = {
 };
 
 type TestResult = {
-  score: number;
-  feedback: string;
+  output: string;
 };
 
 interface Problem {
@@ -57,7 +56,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
 
   useEffect(() => {
     const getSubmissions = async () => {
-      if (problem.id) {
+      if (problem?.id) {
         const fetchedSubmissions = await fetchSubmissions(problem.id);
         if (fetchedSubmissions) {
           setSubmissions(fetchedSubmissions);
@@ -165,13 +164,13 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   };
 
   const handleTestCustomCase = async () => {
-    if (!prompt.trim()) {
-      setError('Prompt cannot be empty when testing a custom case.');
+    if (!customTestCase.trim()) {
+      setError('Custom test case cannot be empty.');
       return;
     }
 
-    if (!customTestCase.trim()) {
-      setError('Custom test case cannot be empty.');
+    if (submissions.length === 0) {
+      setError('You need to submit at least one prompt first.');
       return;
     }
 
@@ -179,13 +178,19 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     setError('');
     setTestResult(null);
 
+    // Get the last submission's prompt
+    const lastSubmission = submissions[submissions.length - 1];
+
     try {
       const response = await fetch(
         `/api/v1/problems/${problem.id}/custom-testcase`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, customTestCase }),
+          body: JSON.stringify({
+            prompt: lastSubmission?.prompt, // Send the last submission's prompt
+            customTestCase,
+          }),
         }
       );
 
@@ -359,7 +364,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     className="mt-3 gap-2"
                     disabled={
                       customTestCase.length === 0 ||
-                      prompt.length === 0 ||
+                      submissions.length === 0 ||
                       testingCustom
                     }
                   >
@@ -379,23 +384,9 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     <h4 className="mb-2 text-lg font-medium">Test Results</h4>
                     <div className="space-y-3">
                       <div>
-                        <span className="font-semibold">Score: </span>
-                        <Badge
-                          variant={
-                            testResult.score >= 8
-                              ? 'success'
-                              : testResult.score >= 5
-                                ? 'warning'
-                                : 'destructive'
-                          }
-                        >
-                          {testResult.score}/10
-                        </Badge>
-                      </div>
-                      <div>
-                        <span className="font-semibold">Feedback: </span>
+                        <span className="font-semibold">Output: </span>
                         <p className="mt-1 whitespace-pre-wrap text-sm">
-                          {testResult.feedback}
+                          {testResult.output}
                         </p>
                       </div>
                     </div>
@@ -567,10 +558,12 @@ export default function PromptForm({ problem }: { problem: Problem }) {
 }
 
 async function fetchSubmissions(problemId: string) {
-  const response = await fetch(`/api/v1/submissions?problemId=${problemId}`);
-  if (!response.ok) {
-    console.error('Error fetching submissions');
+  const response = await fetch(`/api/v1/problems/${problemId}/submissions`);
+  const data = await response.json();
+  if (response.ok) {
+    return data;
+  } else {
+    console.log('Error fetching data');
     return null;
   }
-  return response.json();
 }

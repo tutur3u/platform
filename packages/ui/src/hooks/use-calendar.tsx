@@ -1,3 +1,7 @@
+import {
+  CalendarSettings,
+  defaultCalendarSettings,
+} from '../components/ui/legacy/calendar/settings/CalendarSettingsContext';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
@@ -53,6 +57,8 @@ const CalendarContext = createContext<{
   getModalStatus: (id: string) => boolean;
   getActiveEvent: () => CalendarEvent | undefined;
   isModalActive: () => boolean;
+  settings: CalendarSettings;
+  updateSettings: (settings: Partial<CalendarSettings>) => void;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -73,6 +79,8 @@ const CalendarContext = createContext<{
   getModalStatus: () => false,
   getActiveEvent: () => undefined,
   isModalActive: () => false,
+  settings: defaultCalendarSettings,
+  updateSettings: () => undefined,
 });
 
 // Add this interface before the updateEvent function
@@ -89,11 +97,13 @@ export const CalendarProvider = ({
   useQuery,
   useQueryClient,
   children,
+  initialSettings,
 }: {
   ws?: Workspace;
   useQuery: any;
   useQueryClient: any;
   children: ReactNode;
+  initialSettings?: Partial<CalendarSettings>;
 }) => {
   const queryClient = useQueryClient();
 
@@ -106,6 +116,54 @@ export const CalendarProvider = ({
   // Queue for processing updates in order
   const updateQueueRef = useRef<PendingEventUpdate[]>([]);
   const isProcessingQueueRef = useRef<boolean>(false);
+
+  // Load settings from localStorage if available
+  const loadSettingsFromStorage = useCallback(() => {
+    try {
+      const storedSettings = localStorage.getItem('calendarSettings');
+      if (storedSettings) {
+        return JSON.parse(storedSettings) as CalendarSettings;
+      }
+    } catch (error) {
+      console.error(
+        'Failed to load calendar settings from localStorage:',
+        error
+      );
+    }
+    return null;
+  }, []);
+
+  // Calendar settings state
+  const [settings, setSettings] = useState<CalendarSettings>(() => {
+    const storedSettings = loadSettingsFromStorage();
+    return {
+      ...defaultCalendarSettings,
+      ...(storedSettings || {}),
+      ...initialSettings,
+    };
+  });
+
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('calendarSettings', JSON.stringify(settings));
+      console.log('Saved settings to localStorage:', settings);
+    } catch (error) {
+      console.error('Failed to save calendar settings to localStorage:', error);
+    }
+  }, [settings]);
+
+  // Update settings function
+  const updateSettings = useCallback(
+    (newSettings: Partial<CalendarSettings>) => {
+      console.log('Updating settings:', newSettings);
+      setSettings((prev) => ({
+        ...prev,
+        ...newSettings,
+      }));
+    },
+    []
+  );
 
   const getDateRangeQuery = ({
     startDate,
@@ -304,6 +362,19 @@ export const CalendarProvider = ({
         const startDate = roundToNearest15Minutes(new Date(event.start_at));
         const endDate = roundToNearest15Minutes(new Date(event.end_at));
 
+        // Use category color from settings if available
+        let eventColor = event.color || 'BLUE';
+        if (settings.categoryColors.categories.length > 0) {
+          // Try to match event title with a category
+          const matchingCategory = settings.categoryColors.categories.find(
+            (category) =>
+              event.title?.toLowerCase().includes(category.name.toLowerCase())
+          );
+          if (matchingCategory) {
+            eventColor = matchingCategory.color;
+          }
+        }
+
         const { data, error } = await supabase
           .from('workspace_calendar_events')
           .insert({
@@ -311,7 +382,7 @@ export const CalendarProvider = ({
             description: event.description || '',
             start_at: startDate.toISOString(),
             end_at: endDate.toISOString(),
-            color: (event.color || 'BLUE') as SupportedColor,
+            color: eventColor as SupportedColor,
             // location: event.location || '',
             // is_all_day: event.is_all_day || false,
             // scheduling_note: event.scheduling_note || '',
@@ -338,7 +409,7 @@ export const CalendarProvider = ({
         throw err;
       }
     },
-    [ws, refresh]
+    [ws, refresh, settings.categoryColors]
   );
 
   const addEmptyEvent = useCallback(
@@ -350,15 +421,23 @@ export const CalendarProvider = ({
       // Round to nearest 15-minute interval
       const start_at = roundToNearest15Minutes(correctDate.toDate());
       const end_at = new Date(start_at);
-      end_at.setHours(end_at.getHours() + 1);
+
+      // Use default task duration from settings if available
+      const defaultDuration = settings.taskSettings.defaultTaskDuration || 60;
+      end_at.setMinutes(end_at.getMinutes() + defaultDuration);
+
+      // Use default color from settings
+      const defaultColor =
+        settings.categoryColors.categories[0]?.color || 'BLUE';
 
       // Create a new event with default values
-      const newEvent: Omit<CalendarEvent, 'id'> = {
+      const newEvent: CalendarEvent = {
+        id: 'new',
         title: '',
         description: '',
         start_at: start_at.toISOString(),
         end_at: end_at.toISOString(),
-        color: 'BLUE',
+        color: defaultColor,
         ws_id: ws?.id || '',
       };
 
@@ -372,7 +451,7 @@ export const CalendarProvider = ({
       // Return the pending event object
       return newEvent as CalendarEvent;
     },
-    [ws?.id]
+    [ws?.id, settings.taskSettings, settings.categoryColors]
   );
 
   // Process the update queue
@@ -654,6 +733,10 @@ export const CalendarProvider = ({
     isEditing,
     hideModal,
     showModal,
+
+    // Settings API
+    settings,
+    updateSettings,
   };
 
   // Clean up any pending updates when component unmounts
