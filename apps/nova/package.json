@@ -151,6 +151,7 @@
     "@testing-library/react": "^16.2.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/eslint": "^9.6.1",
     "@types/file-saver": "^2.0.7",
     "@types/js-cookie": "^3.0.6",
