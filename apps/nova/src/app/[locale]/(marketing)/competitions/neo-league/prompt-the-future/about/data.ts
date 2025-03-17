@@ -47,7 +47,7 @@ export const organizers: TeamMember[] = [
     role: 'Quality Assurance Leader',
     image: '/media/featured/competitions/neo-league/doan-huu-quoc.jpg',
     bio: 'Ensure the platform is of high quality and intuitive, with a focus on the user experience.',
-    organization: 'Zenbright',
+    organization: 'ZenBright',
   },
   {
     name: 'Cao Nguyễn Việt Quang',
