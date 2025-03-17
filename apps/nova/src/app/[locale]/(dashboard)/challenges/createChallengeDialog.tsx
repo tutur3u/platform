@@ -26,11 +26,8 @@ export default function CreateChallengeDialog() {
     try {
       setIsSubmitting(true);
 
-      const url = '/api/v1/challenges';
-      const method = 'POST';
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch('/api/v1/challenges', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },

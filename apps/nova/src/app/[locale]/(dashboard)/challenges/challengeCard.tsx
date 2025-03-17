@@ -83,7 +83,7 @@ export default function ChallengeCard({
     const startTime = new Date();
     const endTime = new Date(startTime.getTime() + challenge.duration * 1000);
 
-    const response = await fetch(`/api/v1/challenges/${challenge.id}/session`, {
+    const response = await fetch(`/api/v1/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -91,6 +91,7 @@ export default function ChallengeCard({
         endTime: endTime.toISOString(),
         status: 'IN_PROGRESS',
         totalScore: 0,
+        challengeId: challenge.id,
       }),
     });
 
@@ -174,10 +175,10 @@ export default function ChallengeCard({
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
           <div className="flex items-center">
             <Clock className="h-4 w-4" />
-            <span className="ml-2 text-sm text-muted-foreground">
+            <span className="text-muted-foreground ml-2 text-sm">
               Duration: {formatDuration(challenge.duration)}
             </span>
           </div>
@@ -241,9 +242,10 @@ export default function ChallengeCard({
 }
 
 async function fetchChallengeSession(challengeId: string) {
-  const response = await fetch(`/api/v1/challenges/${challengeId}/session`);
+  const response = await fetch(`/api/v1/sessions?challengeId=${challengeId}`);
   if (!response.ok) return null;
-  return response.json();
+  const data = await response.json();
+  return data[0];
 }
 
 async function fetchChallengeProblems(challengeId: string) {

@@ -10,7 +10,7 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
-export default async function ChallengesPage() {
+export default async function Page() {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
   const t = await getTranslations('nova');

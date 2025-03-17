@@ -2276,7 +2276,7 @@ export type Database = {
           id: string;
           start_time: string;
           status: string;
-          total_score: number | null;
+          total_score: number;
           user_id: string;
         };
         Insert: {
@@ -2286,7 +2286,7 @@ export type Database = {
           id?: string;
           start_time: string;
           status: string;
-          total_score?: number | null;
+          total_score: number;
           user_id: string;
         };
         Update: {
@@ -2296,7 +2296,7 @@ export type Database = {
           id?: string;
           start_time?: string;
           status?: string;
-          total_score?: number | null;
+          total_score?: number;
           user_id?: string;
         };
         Relationships: [

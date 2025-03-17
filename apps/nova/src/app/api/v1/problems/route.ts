@@ -1,21 +1,22 @@
+import { createProblemSchema } from '../schemas';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-
   const { searchParams } = new URL(request.url);
   const challengeId = searchParams.get('challengeId');
 
-  try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
+  try {
     let query = supabase.from('nova_problems').select('*');
     if (challengeId) {
       query = query.eq('challenge_id', challengeId);
@@ -31,13 +32,6 @@ export async function GET(request: Request) {
       );
     }
 
-    if (!problems?.length) {
-      return NextResponse.json(
-        { message: 'No problems found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(problems, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
@@ -50,64 +44,38 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  let body: {
-    title: string;
-    challengeId: string;
-    description: string;
-    maxPromptLength: number;
-    exampleInput: string;
-    exampleOutput: string;
-  };
+  let body;
+
   try {
     body = await request.json();
   } catch (error) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    // Validate request body with Zod
+    const validatedData = createProblemSchema.parse(body);
 
-    // Validate required fields
-    if (
-      !body.title ||
-      !body.challengeId ||
-      !body.description ||
-      !body.maxPromptLength ||
-      !body.exampleInput ||
-      !body.exampleOutput
-    ) {
-      return NextResponse.json(
-        {
-          message:
-            'Title, challengeId, description, maxPromptLength, exampleInput, and exampleOutput are required',
-        },
-        { status: 400 }
-      );
-    }
-
-    if (typeof body.maxPromptLength !== 'number' || body.maxPromptLength <= 0) {
-      return NextResponse.json(
-        { message: 'Max prompt length must be a positive number' },
-        { status: 400 }
-      );
-    }
+    const problemData = {
+      title: validatedData.title,
+      description: validatedData.description,
+      max_prompt_length: validatedData.maxPromptLength,
+      example_input: validatedData.exampleInput,
+      example_output: validatedData.exampleOutput,
+      challenge_id: validatedData.challengeId,
+    };
 
     const { data: problem, error: problemError } = await supabase
       .from('nova_problems')
-      .insert({
-        title: body.title,
-        description: body.description,
-        max_prompt_length: body.maxPromptLength,
-        example_input: body.exampleInput,
-        example_output: body.exampleOutput,
-        challenge_id: body.challengeId,
-      })
+      .insert(problemData)
       .select()
       .single();
 
@@ -121,6 +89,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json(problem, { status: 201 });
   } catch (error) {
+    if (error instanceof ZodError) {
+      // Zod validation error
+      return NextResponse.json(
+        { message: 'Validation error', errors: error.errors },
+        { status: 400 }
+      );
+    }
+
     console.error('Unexpected Error:', error);
     return NextResponse.json(
       { message: 'Internal Server Error' },

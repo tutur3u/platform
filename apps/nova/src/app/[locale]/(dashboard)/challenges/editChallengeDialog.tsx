@@ -31,11 +31,8 @@ export default function EditChallengeDialog({
     try {
       setIsSubmitting(true);
 
-      const url = `/api/v1/challenges/${challenge.id}`;
-      const method = 'PUT';
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(`/api/v1/challenges/${challenge.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },

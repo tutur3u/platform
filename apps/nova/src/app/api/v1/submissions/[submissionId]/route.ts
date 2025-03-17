@@ -3,13 +3,13 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
-    testcaseId: string;
+    submissionId: string;
   }>;
 }
 
 export async function GET(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { testcaseId } = await params;
+  const { submissionId } = await params;
 
   const {
     data: { user },
@@ -20,27 +20,27 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   try {
-    const { data: testcase, error } = await supabase
-      .from('nova_problem_testcases')
+    const { data: submission, error } = await supabase
+      .from('nova_submissions')
       .select('*')
-      .eq('id', testcaseId)
+      .eq('id', Number(submissionId))
       .single();
 
     if (error) {
       console.error('Database Error: ', error);
       if (error.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Testcase not found' },
+          { message: 'Submission not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error fetching testcase' },
+        { message: 'Error fetching submission' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(testcase, { status: 200 });
+    return NextResponse.json(submission, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -52,7 +52,7 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { testcaseId } = await params;
+  const { submissionId } = await params;
 
   const {
     data: { user },
@@ -63,7 +63,9 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   let body: {
-    input?: string;
+    prompt?: string;
+    feedback?: string;
+    score?: number;
     problemId?: string;
   };
 
@@ -83,13 +85,16 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const updateData: any = {};
-    if (body.input) updateData.input = body.input;
+    if (body.prompt) updateData.prompt = body.prompt;
+    if (body.feedback) updateData.feedback = body.feedback;
+    if (body.score) updateData.score = body.score;
     if (body.problemId) updateData.problem_id = body.problemId;
+    updateData.user_id = user.id;
 
-    const { data: updatedTestcase, error: updateError } = await supabase
-      .from('nova_problem_testcases')
+    const { data: updatedSubmission, error: updateError } = await supabase
+      .from('nova_submissions')
       .update(updateData)
-      .eq('id', testcaseId)
+      .eq('id', Number(submissionId))
       .select()
       .single();
 
@@ -97,17 +102,17 @@ export async function PUT(request: Request, { params }: Params) {
       console.error('Database Error: ', updateError);
       if (updateError.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Testcase not found' },
+          { message: 'Submission not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error updating testcase' },
+        { message: 'Error updating submission' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(updatedTestcase, { status: 200 });
+    return NextResponse.json(updatedSubmission, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -119,7 +124,7 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { testcaseId } = await params;
+  const { submissionId } = await params;
 
   const {
     data: { user },
@@ -131,20 +136,20 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     const { error: deleteError } = await supabase
-      .from('nova_problem_testcases')
+      .from('nova_submissions')
       .delete()
-      .eq('id', testcaseId);
+      .eq('id', Number(submissionId));
 
     if (deleteError) {
       console.error('Database Error: ', deleteError);
       return NextResponse.json(
-        { message: 'Error deleting testcase' },
+        { message: 'Error deleting submission' },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { message: 'Testcase deleted successfully' },
+      { message: 'Submission deleted successfully' },
       { status: 200 }
     );
   } catch (error) {

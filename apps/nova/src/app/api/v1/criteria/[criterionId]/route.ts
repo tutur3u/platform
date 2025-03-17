@@ -3,13 +3,13 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
-    testcaseId: string;
+    criterionId: string;
   }>;
 }
 
 export async function GET(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { testcaseId } = await params;
+  const { criterionId } = await params;
 
   const {
     data: { user },
@@ -20,27 +20,27 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   try {
-    const { data: testcase, error } = await supabase
-      .from('nova_problem_testcases')
+    const { data: criterion, error } = await supabase
+      .from('nova_challenge_criteria')
       .select('*')
-      .eq('id', testcaseId)
+      .eq('id', criterionId)
       .single();
 
     if (error) {
       console.error('Database Error: ', error);
       if (error.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Testcase not found' },
+          { message: 'Criterion not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error fetching testcase' },
+        { message: 'Error fetching criterion' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(testcase, { status: 200 });
+    return NextResponse.json(criterion, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -52,7 +52,7 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { testcaseId } = await params;
+  const { criterionId } = await params;
 
   const {
     data: { user },
@@ -63,17 +63,14 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   let body: {
-    input?: string;
-    problemId?: string;
+    name?: string;
+    description?: string;
+    challengeId?: string;
   };
 
   try {
     body = await request.json();
-  } catch (error) {
-    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
-  }
 
-  try {
     // Check if any update data was provided
     if (Object.keys(body).length === 0) {
       return NextResponse.json(
@@ -81,15 +78,20 @@ export async function PUT(request: Request, { params }: Params) {
         { status: 400 }
       );
     }
+  } catch (error) {
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
 
+  try {
     const updateData: any = {};
-    if (body.input) updateData.input = body.input;
-    if (body.problemId) updateData.problem_id = body.problemId;
+    if (body.name) updateData.name = body.name;
+    if (body.description) updateData.description = body.description;
+    if (body.challengeId) updateData.challenge_id = body.challengeId;
 
-    const { data: updatedTestcase, error: updateError } = await supabase
-      .from('nova_problem_testcases')
+    const { data: updatedCriterion, error: updateError } = await supabase
+      .from('nova_challenge_criteria')
       .update(updateData)
-      .eq('id', testcaseId)
+      .eq('id', criterionId)
       .select()
       .single();
 
@@ -97,17 +99,17 @@ export async function PUT(request: Request, { params }: Params) {
       console.error('Database Error: ', updateError);
       if (updateError.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Testcase not found' },
+          { message: 'Criterion not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error updating testcase' },
+        { message: 'Error updating criterion' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(updatedTestcase, { status: 200 });
+    return NextResponse.json(updatedCriterion, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -119,7 +121,7 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { testcaseId } = await params;
+  const { criterionId } = await params;
 
   const {
     data: { user },
@@ -131,20 +133,20 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     const { error: deleteError } = await supabase
-      .from('nova_problem_testcases')
+      .from('nova_challenge_criteria')
       .delete()
-      .eq('id', testcaseId);
+      .eq('id', criterionId);
 
     if (deleteError) {
       console.error('Database Error: ', deleteError);
       return NextResponse.json(
-        { message: 'Error deleting testcase' },
+        { message: 'Error deleting criterion' },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { message: 'Testcase deleted successfully' },
+      { message: 'Criterion deleted successfully' },
       { status: 200 }
     );
   } catch (error) {

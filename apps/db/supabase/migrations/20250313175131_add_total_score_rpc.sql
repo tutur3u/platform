@@ -1,4 +1,4 @@
-alter table "public"."nova_sessions" add column "total_score" integer;
+alter table "public"."nova_sessions" add column "total_score" integer not null;
 
 set check_function_bodies = off;
 
