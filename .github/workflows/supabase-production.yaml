@@ -20,9 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: Deploy migrations to production
         run: |
           cd apps/db
           supabase link --project-ref ${{ env.PRODUCTION_PROJECT_ID }}
-          supabase db push --db-url ${{ env.PRODUCTION_DB_URL }}
+          supabase db push
