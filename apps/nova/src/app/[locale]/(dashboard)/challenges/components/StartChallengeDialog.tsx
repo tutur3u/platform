@@ -23,14 +23,12 @@ interface StartChallengeDialogProps {
   challenge: NovaChallenge;
   variant?: 'default' | 'outline' | 'secondary';
   disabled?: boolean;
-  onSessionStart?: () => void;
 }
 
 export function StartChallengeDialog({
   challenge,
   variant = 'default',
   disabled = false,
-  onSessionStart,
 }: StartChallengeDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -72,7 +70,6 @@ export function StartChallengeDialog({
       });
 
       if (response.ok) {
-        onSessionStart?.();
         router.push(`/challenges/${challenge.id}`);
       } else {
         toast({
@@ -108,13 +105,13 @@ export function StartChallengeDialog({
           <AlertDialogDescription>
             Are you sure you want to start this challenge?
           </AlertDialogDescription>
-          <div className="mt-4 rounded-md bg-muted p-3 text-sm">
+          <div className="bg-muted mt-4 rounded-md p-3 text-sm">
             <div className="font-medium">Challenge Details:</div>
             <div className="mt-2 flex items-center">
-              <Clock className="mr-2 h-4 w-4 text-primary" />
+              <Clock className="text-primary mr-2 h-4 w-4" />
               <span>Duration: {formatDuration(challenge.duration)}</span>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="text-muted-foreground mt-1 text-xs">
               Once started, the timer cannot be paused and will continue until
               completed.
             </div>

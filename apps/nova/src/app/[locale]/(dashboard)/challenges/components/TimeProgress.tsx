@@ -20,46 +20,47 @@ export function TimeProgress({
   useEffect(() => {
     const calculateProgress = () => {
       const now = new Date();
-      const start = startDate.getTime();
-      const end = endDate.getTime();
       const current = now.getTime();
 
+      const start = startDate.getTime();
+      const end = endDate.getTime();
+
       // If we've passed the end date
-      if (current >= end) {
-        setProgress(100);
+      if (current > end) {
+        setProgress(0);
         setIsClosed(true);
         return;
       }
 
       // If we're before the start date
       if (current < start) {
-        setProgress(0);
+        setProgress(100);
         return;
       }
 
       // Calculate percentage
       const totalDuration = end - start;
-      const elapsed = current - start;
+      const elapsed = end - current;
       const percentage = (elapsed / totalDuration) * 100;
-      setProgress(Math.min(100, Math.max(0, percentage)));
+      setProgress(percentage);
     };
 
     // Initial calculation
     calculateProgress();
 
     // Update every second
-    const timer = setInterval(calculateProgress, 1000);
+    const interval = setInterval(calculateProgress, 1000);
 
-    return () => clearInterval(timer);
+    return () => clearInterval(interval);
   }, [startDate, endDate]);
 
   // Determine color based on progress
   const getProgressColor = () => {
     if (isClosed) return 'bg-gray-500';
-    if (progress > 75) return 'bg-red-500';
-    if (progress > 50) return 'bg-orange-500';
-    if (progress > 25) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (progress > 75) return 'bg-green-500';
+    if (progress > 50) return 'bg-yellow-500';
+    if (progress > 25) return 'bg-orange-500';
+    return 'bg-red-500';
   };
 
   return (
@@ -73,14 +74,11 @@ export function TimeProgress({
           style={{ width: `${progress}%` }}
         />
       </div>
-      <div className="text-muted-foreground mt-1 flex justify-between text-xs">
-        <span>
-          {new Date().getTime() < startDate.getTime()
-            ? 'Not started'
-            : `${Math.round(progress)}% elapsed`}
-        </span>
-        <span>{isClosed ? 'Closed' : ''}</span>
-      </div>
+      {isClosed && (
+        <div className="text-muted-foreground mt-1 flex justify-between text-xs">
+          <span>Closed</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -39,17 +39,11 @@ export default function ChallengesList({
       const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
 
       if (filter === 'all') return true;
-      if (!challenge.enabled) {
-        return filter === 'disabled';
-      } else if (previewableAt && now < previewableAt) {
-        return filter === 'upcoming';
-      } else if (openAt && now < openAt) {
-        return filter === 'preview';
-      } else if (!closeAt || (closeAt && now < closeAt)) {
-        return filter === 'active';
-      } else {
-        return filter === 'closed';
-      }
+      if (!challenge.enabled) return filter === 'disabled';
+      if (previewableAt && now < previewableAt) return filter === 'upcoming';
+      if (openAt && now < openAt) return filter === 'preview';
+      if (!closeAt || (closeAt && now < closeAt)) return filter === 'active';
+      return filter === 'closed';
     });
 
     // Apply search query
