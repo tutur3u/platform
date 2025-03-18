@@ -15,7 +15,7 @@ export function TimeProgress({
   className,
 }: TimeProgressProps) {
   const [progress, setProgress] = useState(0);
-  const [isExpired, setIsExpired] = useState(false);
+  const [isClosed, setIsClosed] = useState(false);
 
   useEffect(() => {
     const calculateProgress = () => {
@@ -27,7 +27,7 @@ export function TimeProgress({
       // If we've passed the end date
       if (current >= end) {
         setProgress(100);
-        setIsExpired(true);
+        setIsClosed(true);
         return;
       }
 
@@ -55,7 +55,7 @@ export function TimeProgress({
 
   // Determine color based on progress
   const getProgressColor = () => {
-    if (isExpired) return 'bg-gray-500';
+    if (isClosed) return 'bg-gray-500';
     if (progress > 75) return 'bg-red-500';
     if (progress > 50) return 'bg-orange-500';
     if (progress > 25) return 'bg-yellow-500';
@@ -73,13 +73,13 @@ export function TimeProgress({
           style={{ width: `${progress}%` }}
         />
       </div>
-      <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+      <div className="text-muted-foreground mt-1 flex justify-between text-xs">
         <span>
           {new Date().getTime() < startDate.getTime()
             ? 'Not started'
             : `${Math.round(progress)}% elapsed`}
         </span>
-        <span>{isExpired ? 'Expired' : ''}</span>
+        <span>{isClosed ? 'Closed' : ''}</span>
       </div>
     </div>
   );
