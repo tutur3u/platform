@@ -94,8 +94,27 @@ export function StartChallengeDialog({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant={variant} disabled={disabled} className="w-full gap-2">
-          Start Challenge <ArrowRight className="h-4 w-4" />
+        <Button
+          variant={disabled ? 'secondary' : variant}
+          className="w-full gap-2"
+          disabled={
+            // Challenge is disabled
+            disabled ||
+            // Challenge is not open yet
+            (!!challenge.open_at && new Date() < new Date(challenge.open_at)) ||
+            // Challenge is already closed
+            (!!challenge.close_at && new Date() > new Date(challenge.close_at))
+          }
+        >
+          {!challenge.open_at ||
+          (challenge.open_at && new Date() < new Date(challenge.open_at)) ? (
+            <span className="text-muted-foreground">Available Soon</span>
+          ) : (
+            <>
+              <span>Start Challenge</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </Button>
       </AlertDialogTrigger>
 
@@ -105,13 +124,13 @@ export function StartChallengeDialog({
           <AlertDialogDescription>
             Are you sure you want to start this challenge?
           </AlertDialogDescription>
-          <div className="bg-muted mt-4 rounded-md p-3 text-sm">
+          <div className="mt-4 rounded-md bg-muted p-3 text-sm">
             <div className="font-medium">Challenge Details:</div>
             <div className="mt-2 flex items-center">
-              <Clock className="text-primary mr-2 h-4 w-4" />
+              <Clock className="mr-2 h-4 w-4 text-primary" />
               <span>Duration: {formatDuration(challenge.duration)}</span>
             </div>
-            <div className="text-muted-foreground mt-1 text-xs">
+            <div className="mt-1 text-xs text-muted-foreground">
               Once started, the timer cannot be paused and will continue until
               completed.
             </div>
