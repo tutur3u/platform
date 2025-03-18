@@ -16,7 +16,7 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
       STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
-
+      STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
@@ -25,4 +25,4 @@ jobs:
         run: |
           cd apps/db
           supabase link --project-ref ${{ env.STAGING_PROJECT_ID }}
-          supabase db push
+          supabase db push --db-url ${{ env.STAGING_DB_URL }}
