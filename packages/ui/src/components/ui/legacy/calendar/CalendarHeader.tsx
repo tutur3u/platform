@@ -1,4 +1,5 @@
 import { Button } from '@tuturuuu/ui/button';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import {
   Select,
   SelectContent,
@@ -32,6 +33,7 @@ export default function CalendarHeader({
   availableViews: { value: string; label: string; disabled?: boolean }[];
   onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
 }) {
+  const { googleTokens } = useCalendar();
   const views = availableViews.filter((view) => view?.disabled !== true);
 
   const title = dayjs(date)
@@ -70,6 +72,7 @@ export default function CalendarHeader({
 
   return (
     <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      {JSON.stringify(googleTokens)}
       <div className="flex items-center gap-2">
         <CalendarIcon className="text-muted-foreground h-5 w-5" />
         <h2 className="text-xl font-semibold tracking-tight">{title}</h2>

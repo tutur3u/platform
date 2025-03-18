@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
   try {
     const { tokens } = await auth.getToken(code);
-    const redirectUrl = `/calendar?access_token=${tokens.access_token}&refresh_token=${tokens.refresh_token}`;
+    const redirectUrl = `/calendar/google/login?access_token=${tokens.access_token}&refresh_token=${tokens.refresh_token}`;
     return NextResponse.redirect(new URL(redirectUrl, request.url), 302);
   } catch (error) {
     console.error('Error during OAuth callback:', error);

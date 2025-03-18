@@ -1,3 +1,5 @@
+'use client';
+
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
@@ -5,6 +7,7 @@ import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
+import { useSearchParams } from 'next/navigation';
 import {
   ReactNode,
   createContext,
@@ -53,6 +56,7 @@ const CalendarContext = createContext<{
   getModalStatus: (id: string) => boolean;
   getActiveEvent: () => CalendarEvent | undefined;
   isModalActive: () => boolean;
+  googleTokens: { access_token: string; refresh_token?: string } | null;
   syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
 }>({
   getEvent: () => undefined,
@@ -74,6 +78,7 @@ const CalendarContext = createContext<{
   getModalStatus: () => false,
   getActiveEvent: () => undefined,
   isModalActive: () => false,
+  googleTokens: { access_token: '' },
   syncWithGoogleCalendar: () => Promise.resolve(),
 });
 
@@ -98,6 +103,7 @@ export const CalendarProvider = ({
   children: ReactNode;
 }) => {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
 
   // Add debounce timer reference for update events
   const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -184,6 +190,31 @@ export const CalendarProvider = ({
     access_token: string;
     refresh_token?: string;
   } | null>(null);
+
+  useEffect(() => {
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
+
+    if (accessToken) {
+      const tokens = {
+        access_token: accessToken,
+        refresh_token: refreshToken || undefined,
+      };
+      console.log('Tokens from URL:', tokens);
+      setGoogleTokens(tokens);
+      localStorage.setItem('googleTokens', JSON.stringify(tokens));
+      // Remove params from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      const storedTokens = localStorage.getItem('googleTokens');
+      if (storedTokens) {
+        console.log('Tokens from localStorage:', JSON.parse(storedTokens));
+        setGoogleTokens(JSON.parse(storedTokens));
+      } else {
+        console.log('No tokens found in URL or localStorage');
+      }
+    }
+  }, [searchParams]);
 
   // Event getters
   const getEvent = useCallback(
@@ -595,21 +626,9 @@ export const CalendarProvider = ({
         throw error;
       }
     },
+
     [googleTokens]
   );
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessToken = urlParams.get('access_token');
-    const refreshToken = urlParams.get('refresh_token');
-    if (accessToken) {
-      setGoogleTokens({
-        access_token: accessToken,
-        refresh_token: refreshToken || undefined,
-      });
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
 
   // Modal management
   const openModal = useCallback((eventId?: string) => {
@@ -705,6 +724,7 @@ export const CalendarProvider = ({
     showModal,
 
     // Google Calendar sync
+    googleTokens,
     syncWithGoogleCalendar,
   };
 

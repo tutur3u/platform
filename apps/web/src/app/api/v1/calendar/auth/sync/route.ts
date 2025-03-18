@@ -1,7 +1,6 @@
-import { calendar_v3 } from '@googleapis/calendar';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextResponse } from 'next/server';
 
 const getGoogleAuthClient = (tokens: {
   access_token: string;
@@ -16,7 +15,7 @@ const getGoogleAuthClient = (tokens: {
   return oauth2Client;
 };
 
-const getGoogleColorId = (color: string): string => {
+const getGoogleColorId = (color?: string): string => {
   const colorMap: Record<string, string> = {
     BLUE: '11',
     RED: '1',
@@ -32,25 +31,22 @@ const getGoogleColorId = (color: string): string => {
   return color && colorMap[color] ? colorMap[color] : '11';
 };
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { event, googleTokens } = req.body;
+export async function POST(request: Request) {
+  const body = await request.json();
+  const { googleTokens, event } = body;
 
   if (!googleTokens?.access_token) {
-    return res.status(401).json({ error: 'Google Calendar not authenticated' });
+    return NextResponse.json(
+      { error: 'Google Calendar not authenticated' },
+      { status: 401 }
+    );
   }
 
   try {
     const auth = getGoogleAuthClient(googleTokens);
     const calendar = google.calendar({ version: 'v3', auth });
 
-    const googleEvent: calendar_v3.Schema$Event = {
+    const googleEvent = {
       summary: event.title,
       description: event.description,
       start: {
@@ -69,9 +65,15 @@ export default async function handler(
       requestBody: googleEvent,
     });
 
-    res.status(200).json({ googleEventId: response.data.id });
+    return NextResponse.json(
+      { googleEventId: response.data.id },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Failed to sync with Google Calendar:', error);
-    res.status(500).json({ error: 'Failed to sync event' });
+    return NextResponse.json(
+      { error: 'Failed to sync event' },
+      { status: 500 }
+    );
   }
 }

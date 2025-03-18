@@ -22,7 +22,7 @@ const CreateEventButton = () => {
   const { openModal } = useCalendar();
 
   return (
-    <div className="fixed right-6 bottom-6 z-10 flex gap-2">
+    <div className="fixed bottom-6 right-6 z-10 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -55,6 +55,7 @@ export const Calendar = ({
   workspace?: Workspace;
   disabled?: boolean;
 }) => {
+  const { googleTokens } = useCalendar();
   const { transition } = useViewTransition();
 
   const [initialized, setInitialized] = useState(false);
@@ -284,7 +285,7 @@ export const Calendar = ({
           <WeekdayBar locale={locale} view={view} dates={dates} />
         )}
 
-        <div className="relative scrollbar-none flex-1 overflow-hidden">
+        <div className="scrollbar-none relative flex-1 overflow-hidden">
           {view === 'month' && dates?.[0] ? (
             <MonthCalendar date={dates[0]} workspace={workspace} />
           ) : (

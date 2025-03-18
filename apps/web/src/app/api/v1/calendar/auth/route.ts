@@ -10,6 +10,7 @@ export async function GET() {
 
   const authUrl = auth.generateAuthUrl({
     scope: ['https://www.googleapis.com/auth/calendar.events'],
+    prompt: 'consent',
     access_type: 'offline',
   });
 
