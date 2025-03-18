@@ -7,12 +7,15 @@ export async function POST(req: Request) {
   const context = (await req.json()) as {
     prompt: string;
     current_time: string;
-    smart_scheduling?: boolean;
     existing_events?: Array<{
       start_at: string;
       end_at: string;
       title?: string;
       priority?: string;
+    }>;
+    categories?: Array<{
+      name: string;
+      color: string;
     }>;
   };
 
@@ -38,43 +41,20 @@ export async function POST(req: Request) {
     `Use local time in the user's timezone (${userTimezone}). ` +
     `Set the priority field to "${priority}" for this event. `;
 
-  // Add smart scheduling context if enabled
-  if (
-    context.smart_scheduling &&
-    context.existing_events &&
-    context.existing_events.length > 0
-  ) {
-    promptText +=
-      `\nIMPORTANT: This is a smart scheduling request. You need to schedule this event so it doesn't overlap with any existing events. ` +
-      `Here are the existing events (in ISO format):\n`;
-
-    // Sort events by start time for better analysis
-    const sortedEvents = [...context.existing_events].sort(
-      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-    );
-
-    sortedEvents.forEach((event, index) => {
-      const startDate = new Date(event.start_at);
-      const endDate = new Date(event.end_at);
-      promptText +=
-        `Event ${index + 1}: ${event.title || 'Untitled'}, ` +
-        `Start: ${startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: userTimezone })} ` +
-        `on ${startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: userTimezone })}, ` +
-        `End: ${endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: userTimezone })}` +
-        `${event.priority ? `, Priority: ${event.priority}` : ''}\n`;
+  // Add category color information if available
+  if (context.categories && context.categories.length > 0) {
+    promptText += `\nIMPORTANT: The user has defined the following event categories and associated colors:\n`;
+    context.categories.forEach((category, index) => {
+      promptText += `${index + 1}. ${category.name}: ${category.color}\n`;
     });
-
-    promptText +=
-      `\nPlease analyze these existing events and schedule the new event at a time that doesn't conflict with any of them. ` +
-      `Follow these guidelines for smart scheduling:\n` +
-      `1. If the requested time in the prompt would cause an overlap, find the nearest available time slot that fits the event duration.\n` +
-      `2. Prefer to schedule events during normal working hours (9am-5pm) when possible, unless specifically requested otherwise.\n` +
-      `3. For meetings, prefer to schedule them at common meeting start times (on the hour or half-hour).\n` +
-      `4. If the event needs to be moved to a different day, try to keep it as close as possible to the originally requested day.\n` +
-      `5. In your scheduling_note field, explain clearly why you chose this time slot if it differs from what was requested in the prompt.\n` +
-      `6. If multiple time slots are available, choose the one that's most convenient based on the existing schedule (e.g., adjacent to other events to minimize fragmentation).\n` +
-      `7. Consider the priority of this event (${priority}) when scheduling. Higher priority events should be scheduled closer to the requested time, even if it means suggesting a shorter duration.\n` +
-      `8. If this is a high priority event and there's a conflict with a lower priority event, suggest rescheduling the lower priority event instead.\n`;
+    promptText += `\nIt is CRITICAL that you analyze the event content and assign the MOST RELEVANT color based on the event category. DO NOT default to blue unless it truly matches.
+    
+For example:
+- If creating a "Team Meeting" event and "Work" category is blue, use "blue"
+- If creating a "Doctor Appointment" event and "Health" category is red, use "red"
+- If creating a "Family Dinner" event and "Family" category is purple, use "purple"
+- If creating a "Gym" event and "Personal" category is green, use "green"
+`;
   }
 
   promptText += `\nContext: ${context.prompt}`;

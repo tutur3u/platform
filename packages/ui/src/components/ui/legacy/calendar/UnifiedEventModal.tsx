@@ -2,6 +2,7 @@
 
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
+import { AutosizeTextarea } from '../../custom/autosize-textarea';
 import {
   COLOR_OPTIONS,
   DateError,
@@ -50,6 +51,7 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { format } from 'date-fns';
 import {
   AlertCircle,
@@ -166,26 +168,12 @@ export function UnifiedEventModal() {
       // Process the generated events
       const processedEvents = Array.isArray(object) ? object : [object];
 
-      const formattedEvents = processedEvents
-        .map((event) => {
-          if (!event) return null;
-
-          const categoryColors = settings?.categoryColors?.categories || [];
-          const defaultColor = categoryColors[0]?.color || 'BLUE';
-
-          return {
-            ...event,
-            color: defaultColor,
-          };
-        })
-        .filter((event): event is NonNullable<typeof event> => event !== null);
-
-      setGeneratedEvents(formattedEvents);
+      setGeneratedEvents(processedEvents);
       setCurrentEventIndex(0);
 
       // Find overlapping events for the first event
-      if (formattedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
-        const firstEvent = formattedEvents[0];
+      if (processedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
+        const firstEvent = processedEvents[0];
         if (firstEvent && firstEvent.start_at && firstEvent.end_at) {
           checkForOverlaps(firstEvent as Partial<CalendarEvent>);
         }
@@ -345,6 +333,60 @@ export function UnifiedEventModal() {
     }
   };
 
+  // Handle AI event generation
+  const handleGenerateEvent = async (values: z.infer<typeof AIFormSchema>) => {
+    try {
+      // Include timezone in the prompt for accurate time conversion
+      const promptWithTimezone = `${values.prompt}\n\nUser timezone: ${values.timezone}`;
+
+      // Get existing events for smart scheduling
+      const existingEvents = values.smart_scheduling ? getEvents() : [];
+
+      // Generate helpful suggestions based on the prompt
+      const suggestions = [
+        'Consider adding a buffer time before/after these events',
+        'These events might benefit from reminder notifications',
+        'Based on your schedule, early morning might be better for focus',
+        'Consider adding meeting agenda or preparation notes',
+      ];
+
+      // Add category-based suggestions
+      if (settings?.categoryColors?.categories.length > 0) {
+        const categoryNames = settings.categoryColors.categories
+          .map((cat) => cat.name)
+          .join(', ');
+        suggestions.push(
+          `You have categories set up: ${categoryNames}. Events will be colored based on these categories.`
+        );
+      }
+
+      setAiSuggestions(suggestions.slice(0, 3)); // Show up to 3 relevant suggestions
+
+      // Format categories for the AI request
+      const formattedCategories = settings?.categoryColors?.categories.map(
+        (category) => ({
+          name: category.name,
+          color: category.color.toLowerCase(),
+        })
+      );
+
+      submit({
+        prompt: promptWithTimezone,
+        current_time: new Date().toISOString(),
+        smart_scheduling: values.smart_scheduling,
+        existing_events: values.smart_scheduling ? existingEvents : undefined,
+        categories: formattedCategories,
+      });
+    } catch (error) {
+      console.error('Error generating events:', error);
+      toast({
+        title: 'Error generating events',
+        description: 'Please try again with a different prompt',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Handle AI event save
   const handleAISave = async () => {
     if (generatedEvents.length === 0) return;
@@ -355,16 +397,13 @@ export function UnifiedEventModal() {
       const eventsToSave = generatedEvents;
 
       for (const eventData of eventsToSave) {
-        // Determine the best color based on the event title and category settings
-        const categoryColors = settings?.categoryColors?.categories || [];
-        const defaultColor = categoryColors[0]?.color || 'BLUE';
-
         const calendarEvent: Omit<CalendarEvent, 'id'> = {
           title: eventData.title || 'New Event',
           description: eventData.description || '',
           start_at: eventData.start_at,
           end_at: eventData.end_at,
-          color: defaultColor,
+          color: eventData.color || 'BLUE',
+          // location: eventData.location,
           locked: false, // Default to unlocked for AI-generated events
         };
 
@@ -511,54 +550,6 @@ export function UnifiedEventModal() {
         end_at: endDate.toISOString(),
       };
     });
-  };
-
-  // Handle AI event generation
-  const handleGenerateEvent = async (values: z.infer<typeof AIFormSchema>) => {
-    try {
-      // Include timezone in the prompt for accurate time conversion
-      const promptWithTimezone = `${values.prompt} (User timezone: ${values.timezone})`;
-
-      // Add priority information to the prompt
-      const promptWithPriority = `${promptWithTimezone} (Priority: ${values.priority})`;
-
-      // Get existing events for smart scheduling
-      const existingEvents = values.smart_scheduling ? getEvents() : [];
-
-      // Generate helpful suggestions based on the prompt
-      const suggestions = [
-        'Consider adding a buffer time before/after these events',
-        'These events might benefit from reminder notifications',
-        'Based on your schedule, early morning might be better for focus',
-        'Consider adding meeting agenda or preparation notes',
-      ];
-
-      // Add category-based suggestions
-      if (settings?.categoryColors?.categories.length > 0) {
-        const categoryNames = settings.categoryColors.categories
-          .map((cat) => cat.name)
-          .join(', ');
-        suggestions.push(
-          `You have categories set up: ${categoryNames}. Events will be colored based on these categories.`
-        );
-      }
-
-      setAiSuggestions(suggestions.slice(0, 3)); // Show up to 3 relevant suggestions
-
-      submit({
-        prompt: promptWithPriority,
-        current_time: new Date().toISOString(),
-        smart_scheduling: values.smart_scheduling,
-        existing_events: values.smart_scheduling ? existingEvents : undefined,
-      });
-    } catch (error) {
-      console.error('Error generating events:', error);
-      toast({
-        title: 'Error generating events',
-        description: 'Please try again with a different prompt',
-        variant: 'destructive',
-      });
-    }
   };
 
   // Handle navigation between multiple events in preview
@@ -885,9 +876,8 @@ export function UnifiedEventModal() {
                                 Describe your event
                               </FormLabel>
                               <FormControl>
-                                <textarea
+                                <AutosizeTextarea
                                   {...field}
-                                  className="min-h-[150px] w-full resize-none rounded-md border border-input bg-background p-4 text-base focus:ring-1 focus:ring-ring focus:outline-none"
                                   placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour to discuss the new project roadmap with the engineering team"
                                   autoFocus
                                 />
@@ -994,79 +984,91 @@ export function UnifiedEventModal() {
 
                       {generatedEvent && (
                         <div className="space-y-4">
-                          <div className="space-y-2">
-                            <h4 className="text-lg font-medium">
-                              {generatedEvent.title}
-                            </h4>
-                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <CalendarIcon className="h-3.5 w-3.5" />
-                                <span>
-                                  {format(
-                                    new Date(generatedEvent.start_at),
-                                    'PPP'
-                                  )}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>
-                                  {format(
-                                    new Date(generatedEvent.start_at),
-                                    'h:mm a'
-                                  )}{' '}
-                                  -{' '}
-                                  {format(
-                                    new Date(generatedEvent.end_at),
-                                    'h:mm a'
-                                  )}
-                                </span>
-                              </div>
-                              {generatedEvent.location && (
+                          <div className="mt-3 space-y-3 rounded-md border p-3">
+                            <div className="space-y-2">
+                              <h4 className="text-lg font-medium">
+                                {generatedEvent.title}
+                              </h4>
+                              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
-                                  <MapPin className="h-3.5 w-3.5" />
-                                  <span>{generatedEvent.location}</span>
+                                  <CalendarIcon className="h-3.5 w-3.5" />
+                                  <span>
+                                    {format(
+                                      new Date(generatedEvent.start_at),
+                                      'PPP'
+                                    )}
+                                  </span>
                                 </div>
-                              )}
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  <span>
+                                    {format(
+                                      new Date(generatedEvent.start_at),
+                                      'h:mm a'
+                                    )}{' '}
+                                    -{' '}
+                                    {format(
+                                      new Date(generatedEvent.end_at),
+                                      'h:mm a'
+                                    )}
+                                  </span>
+                                </div>
+                                {generatedEvent.location && (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3.5 w-3.5" />
+                                    <span>{generatedEvent.location}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
 
-                          {generatedEvent.description && (
-                            <div className="space-y-1">
-                              <h5 className="text-sm font-medium">
-                                Description
-                              </h5>
-                              <p className="text-sm text-muted-foreground">
-                                {generatedEvent.description}
-                              </p>
+                            {generatedEvent.description && (
+                              <div className="space-y-1">
+                                <h5 className="text-sm font-medium">
+                                  Description
+                                </h5>
+                                <p className="text-sm text-muted-foreground">
+                                  {generatedEvent.description}
+                                </p>
+                              </div>
+                            )}
+
+                            <Separator />
+
+                            {/* Color indicator and category */}
+                            <div className="flex items-center gap-2">
+                              {generatedEvent.color &&
+                                (() => {
+                                  const { bg, border, text } = getEventStyles(
+                                    generatedEvent.color
+                                  );
+                                  return (
+                                    <div
+                                      className={`flex items-center gap-2 rounded-full border px-2 py-1 text-center ${bg} ${border}`}
+                                    >
+                                      <span
+                                        className={`text-xs font-medium ${text}`}
+                                      >
+                                        {COLOR_OPTIONS.find(
+                                          (c) =>
+                                            c.value ===
+                                            (generatedEvent.color
+                                              ? generatedEvent.color.toUpperCase()
+                                              : 'BLUE')
+                                        )?.name || 'Default'}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                             </div>
-                          )}
 
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`h-3 w-3 rounded-full`}
-                              style={{
-                                backgroundColor: `var(--dynamic-light-${generatedEvent.color.toLowerCase()})`,
-                              }}
-                            />
-                            <span className="text-xs text-muted-foreground">
-                              {COLOR_OPTIONS.find(
-                                (c) => c.value === generatedEvent.color
-                              )?.name || 'Default'}
-                              {generatedEvent._matchedCategory && (
-                                <span className="ml-1">
-                                  (Matched category:{' '}
-                                  {generatedEvent._matchedCategory})
-                                </span>
-                              )}
-                            </span>
-                          </div>
-
-                          <div className="mt-2 flex items-center gap-2">
-                            <Unlock className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">
-                              Event will be created unlocked
-                            </span>
+                            {/* Event protection status */}
+                            <div className="flex items-center gap-2">
+                              <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
+                                Event will be created unlocked
+                              </span>
+                            </div>
                           </div>
                         </div>
                       )}
