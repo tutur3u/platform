@@ -48,7 +48,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface ChallengeCardProps {
   isAdmin: boolean;
@@ -64,52 +64,61 @@ export default function ChallengeCard({
   const [session, setSession] = useState<NovaSession | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [status, setStatus] = useState<
-    'preview' | 'upcoming' | 'active' | 'expired' | 'disabled'
+    'disabled' | 'upcoming' | 'preview' | 'active' | 'closed'
   >('disabled');
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  useEffect(() => {
-    const fetchSession = async () => {
-      const challengeSession = await fetchChallengeSession(challenge.id);
-      setSession(challengeSession);
-    };
-    fetchSession();
-  }, [challenge.id, refreshTrigger]);
+  const fetchSession = useCallback(async () => {
+    const response = await fetch(
+      `/api/v1/sessions?challengeId=${challenge.id}`
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    setSession(data[0]);
+  }, [challenge.id]);
 
-  useEffect(() => {
+  const updateStatus = useCallback(() => {
     // Determine challenge status
-    const updateStatus = () => {
-      const now = new Date();
-      const openAt = challenge.open_at ? new Date(challenge.open_at) : null;
-      const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
-      const previewableAt = challenge.previewable_at
-        ? new Date(challenge.previewable_at)
-        : null;
+    const now = new Date();
+    const previewableAt = challenge.previewable_at
+      ? new Date(challenge.previewable_at)
+      : null;
+    const openAt = challenge.open_at ? new Date(challenge.open_at) : null;
+    const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
 
-      if (!challenge.enabled) {
-        setStatus('disabled');
-      } else if (closeAt && now > closeAt) {
-        setStatus('expired');
-      } else if (openAt && now >= openAt) {
-        setStatus('active');
-      } else if (previewableAt && now >= previewableAt && isAdmin) {
-        setStatus('preview');
-      } else if (openAt) {
-        setStatus('upcoming');
-      }
-    };
+    if (!challenge.enabled) {
+      setStatus('disabled');
+      return;
+    }
 
-    updateStatus();
-    const interval = setInterval(updateStatus, 60000); // Check every minute
+    if (previewableAt && now < previewableAt) {
+      setStatus('upcoming');
+      return;
+    }
 
+    if (openAt && now < openAt) {
+      setStatus('preview');
+      return;
+    }
+
+    if (!closeAt || (closeAt && now < closeAt)) {
+      setStatus('active');
+      return;
+    }
+
+    setStatus('closed');
+  }, [challenge]);
+
+  useEffect(() => {
+    fetchSession();
+    const interval = setInterval(fetchSession, 60000);
     return () => clearInterval(interval);
-  }, [
-    challenge.enabled,
-    challenge.open_at,
-    challenge.close_at,
-    challenge.previewable_at,
-    isAdmin,
-  ]);
+  }, [fetchSession]);
+
+  useEffect(() => {
+    updateStatus();
+    const interval = setInterval(updateStatus, 60000);
+    return () => clearInterval(interval);
+  }, [updateStatus]);
 
   const handleResumeChallenge = async () => {
     router.push(`/challenges/${challenge.id}`);
@@ -143,59 +152,70 @@ export default function ChallengeCard({
     }
   };
 
-  const handleSessionStart = () => {
-    setRefreshTrigger((prev) => prev + 1);
-  };
-
-  const calculateTimeProgress = (current: Date, target: Date) => {
+  const calculatePercentage = (current: Date, target: Date) => {
     // For upcoming events, calculate how close we are to the target date
     // This is used for progress bar visualization
     const now = current.getTime();
     const targetTime = target.getTime();
     const difference = targetTime - now;
 
-    // If target date is past, return 100%
-    if (difference <= 0) return 100;
+    // If target date is past, return 0%
+    if (difference < 0) return 0;
 
-    // If target date is more than 7 days away, show minimal progress
+    // If target date is more than 7 days away, return 100%
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    if (difference > sevenDays) return 5;
+    if (difference > sevenDays) return 100;
 
     // Otherwise, calculate percentage of time elapsed
-    const percentage = 100 - (difference / sevenDays) * 100;
+    const percentage = (difference / sevenDays) * 100;
     return percentage;
   };
 
   const renderStatusBadge = () => {
     switch (status) {
-      case 'preview':
+      case 'disabled':
         return (
-          <Badge variant="outline" className="bg-amber-100 text-amber-800">
-            <Eye className="mr-1 h-3 w-3" /> Preview
+          <Badge
+            variant="outline"
+            className="bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400"
+          >
+            <AlertCircle className="mr-1 h-3 w-3" /> Disabled
           </Badge>
         );
       case 'upcoming':
         return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800">
+          <Badge
+            variant="outline"
+            className="bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400"
+          >
             <Calendar className="mr-1 h-3 w-3" /> Upcoming
+          </Badge>
+        );
+      case 'preview':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400"
+          >
+            <Eye className="mr-1 h-3 w-3" /> Preview
           </Badge>
         );
       case 'active':
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800">
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400"
+          >
             <CheckCircle className="mr-1 h-3 w-3" /> Active
           </Badge>
         );
-      case 'expired':
+      case 'closed':
         return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800">
-            <TimerOff className="mr-1 h-3 w-3" /> Expired
-          </Badge>
-        );
-      case 'disabled':
-        return (
-          <Badge variant="outline" className="bg-red-100 text-red-800">
-            <AlertCircle className="mr-1 h-3 w-3" /> Disabled
+          <Badge
+            variant="outline"
+            className="bg-gray-100 text-gray-800 dark:bg-gray-950/30 dark:text-gray-400"
+          >
+            <TimerOff className="mr-1 h-3 w-3" /> Closed
           </Badge>
         );
       default:
@@ -212,51 +232,6 @@ export default function ChallengeCard({
 
     if (!startTime || !endTime) return null;
 
-    if (session.status === 'IN_PROGRESS') {
-      const isExpired = now > endTime;
-
-      return (
-        <div className="mt-4 rounded-md border border-dashed p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-medium">Your Session</h3>
-            <Badge
-              variant={isExpired ? 'destructive' : 'outline'}
-              className="text-xs"
-            >
-              {isExpired ? "Time's up" : 'In Progress'}
-            </Badge>
-          </div>
-
-          {!isExpired && now >= startTime && (
-            <>
-              <div className="mb-2">
-                <TimeProgress startDate={startTime} endDate={endTime} />
-              </div>
-              <div className="flex items-center justify-center">
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Clock className="mr-1 h-3 w-3" /> Time remaining:
-                </div>
-                <Countdown
-                  targetDate={endTime}
-                  onComplete={handleSessionStart}
-                  className="ml-2"
-                />
-              </div>
-            </>
-          )}
-
-          <div className="mt-2 text-xs text-muted-foreground">
-            <div className="flex items-center">
-              <span>Started: {format(startTime, 'PPp')}</span>
-            </div>
-            <div className="flex items-center">
-              <span>Ends: {format(endTime, 'PPp')}</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     if (session.status === 'ENDED') {
       return (
         <div className="mt-4 rounded-md border border-dashed p-3">
@@ -266,15 +241,133 @@ export default function ChallengeCard({
               Completed
             </Badge>
           </div>
-          <div className="text-xs text-muted-foreground">
-            <div>Completed on {format(new Date(session.end_time), 'PPp')}</div>
-            {session.total_score !== null && (
-              <div className="mt-1 font-medium">
-                Score: {session.total_score}
-              </div>
-            )}
+
+          <div className="mt-2 text-xs text-muted-foreground">
+            <div className="flex items-center">
+              <span>Started: {format(startTime, 'PPpp')}</span>
+            </div>
+            <div className="flex items-center">
+              <span>Ends: {format(endTime, 'PPpp')}</span>
+            </div>
           </div>
         </div>
+      );
+    }
+
+    if (session.status === 'IN_PROGRESS') {
+      return (
+        <div className="mt-4 rounded-md border border-dashed p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-medium">Your Session</h3>
+            <Badge variant="outline" className="text-xs">
+              In Progress
+            </Badge>
+          </div>
+
+          {now >= startTime && (
+            <>
+              <div className="flex flex-col items-center justify-center">
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <Clock className="mr-1 h-3 w-3" /> Time remaining:
+                </div>
+                <Countdown
+                  targetDate={endTime}
+                  onComplete={() => {
+                    fetchSession();
+                    updateStatus();
+                  }}
+                  className="mb-2"
+                />
+              </div>
+              <div className="mb-2">
+                <TimeProgress startDate={startTime} endDate={endTime} />
+              </div>
+            </>
+          )}
+
+          <div className="mt-2 text-xs text-muted-foreground">
+            <div className="flex items-center">
+              <span>Started: {format(startTime, 'PPpp')}</span>
+            </div>
+            <div className="flex items-center">
+              <span>Ends: {format(endTime, 'PPpp')}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const renderActionButton = () => {
+    if (isAdmin || status === 'active') {
+      if (session?.status === 'ENDED') {
+        return (
+          <Button
+            onClick={handleViewResults}
+            className="w-full gap-2"
+            variant="secondary"
+          >
+            View Results <ArrowRight className="h-4 w-4" />
+          </Button>
+        );
+      }
+
+      if (session?.status === 'IN_PROGRESS') {
+        return (
+          <Button onClick={handleResumeChallenge} className="w-full gap-2">
+            Resume Challenge <ArrowRight className="h-4 w-4" />
+          </Button>
+        );
+      }
+
+      return (
+        <StartChallengeDialog
+          challenge={challenge}
+          disabled={
+            // Challenge is closed
+            status === 'closed' ||
+            // Challenge open at is not set
+            !challenge.open_at ||
+            // Challenge is not open yet
+            (!!challenge.open_at && new Date() < new Date(challenge.open_at)) ||
+            // Challenge is already closed
+            (!!challenge.close_at && new Date() > new Date(challenge.close_at))
+          }
+        />
+      );
+    }
+
+    if (status === 'disabled') {
+      return (
+        <Button disabled className="w-full gap-2">
+          Not Available
+        </Button>
+      );
+    }
+
+    if (status === 'upcoming') {
+      return (
+        <Button disabled className="w-full gap-2">
+          Available Soon
+        </Button>
+      );
+    }
+
+    if (status === 'preview') {
+      return (
+        <Button disabled className="w-full gap-2">
+          Not Yet Opened
+        </Button>
+      );
+    }
+
+    if (status === 'closed') {
+      return (
+        <Button disabled className="w-full gap-2">
+          Closed
+        </Button>
       );
     }
 
@@ -284,12 +377,12 @@ export default function ChallengeCard({
   return (
     <>
       <Card key={challenge.id} className="flex flex-col overflow-hidden">
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-          <div className="flex flex-col">
+        <CardHeader className="flex flex-row justify-between pb-2">
+          <div className="flex flex-col gap-2">
             <CardTitle className="flex">
               <span>{challenge.title}</span>
             </CardTitle>
-            <div className="mt-1">{renderStatusBadge()}</div>
+            {renderStatusBadge()}
           </div>
           {isAdmin && (
             <DropdownMenu>
@@ -330,7 +423,7 @@ export default function ChallengeCard({
               </span>
             </div>
 
-            {challenge.previewable_at && isAdmin && (
+            {status === 'upcoming' && challenge.previewable_at && isAdmin && (
               <div className="flex items-center">
                 <Eye className="h-4 w-4 text-amber-500" />
                 <span className="ml-2 text-sm text-muted-foreground">
@@ -344,30 +437,36 @@ export default function ChallengeCard({
               </div>
             )}
 
-            {status === 'upcoming' && challenge.open_at && (
-              <div className="rounded-md border border-blue-100 bg-blue-50 p-3">
+            {status === 'preview' && challenge.open_at && (
+              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <CalendarCheck className="h-4 w-4 text-blue-500" />
-                    <span className="ml-2 text-sm font-medium text-blue-700">
+                    <CalendarCheck className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                    <span className="ml-2 text-sm font-medium text-blue-700 dark:text-blue-300">
                       Opens in:
                     </span>
                   </div>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  <Badge
+                    variant="outline"
+                    className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                  >
                     {format(new Date(challenge.open_at), 'MMM d, yyyy')}
                   </Badge>
                 </div>
                 <div className="mt-2 flex items-center justify-center">
                   <Countdown
                     targetDate={new Date(challenge.open_at)}
-                    onComplete={handleSessionStart}
+                    onComplete={() => {
+                      fetchSession();
+                      updateStatus();
+                    }}
                   />
                 </div>
-                <div className="mt-2 h-1 w-full rounded-full bg-blue-100">
+                <div className="mt-2 h-1 w-full rounded-full bg-blue-100 dark:bg-blue-800">
                   <div
-                    className="h-full rounded-full bg-blue-500"
+                    className="h-full rounded-full bg-blue-500 dark:bg-blue-400"
                     style={{
-                      width: `${Math.min(100, Math.max(5, calculateTimeProgress(new Date(), new Date(challenge.open_at))))}%`,
+                      width: `${calculatePercentage(new Date(), new Date(challenge.open_at))}%`,
                     }}
                   />
                 </div>
@@ -375,17 +474,17 @@ export default function ChallengeCard({
             )}
 
             {status === 'active' && challenge.close_at && (
-              <div className="rounded-md border border-amber-100 bg-amber-50 p-3">
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <CalendarX className="h-4 w-4 text-amber-500" />
-                    <span className="ml-2 text-sm font-medium text-amber-700">
+                    <CalendarX className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                    <span className="ml-2 text-sm font-medium text-amber-700 dark:text-amber-300">
                       Closes in:
                     </span>
                   </div>
                   <Badge
                     variant="outline"
-                    className="bg-amber-50 text-amber-700"
+                    className="bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
                   >
                     {format(new Date(challenge.close_at), 'MMM d, yyyy')}
                   </Badge>
@@ -393,14 +492,17 @@ export default function ChallengeCard({
                 <div className="mt-2 flex items-center justify-center">
                   <Countdown
                     targetDate={new Date(challenge.close_at)}
-                    onComplete={handleSessionStart}
+                    onComplete={() => {
+                      fetchSession();
+                      updateStatus();
+                    }}
                   />
                 </div>
-                <div className="mt-2 h-1 w-full rounded-full bg-amber-100">
+                <div className="mt-2 h-1 w-full rounded-full bg-amber-100 dark:bg-amber-800">
                   <div
-                    className="h-full rounded-full bg-amber-500"
+                    className="h-full rounded-full bg-amber-500 dark:bg-amber-400"
                     style={{
-                      width: `${Math.min(100, Math.max(5, 100 - calculateTimeProgress(new Date(), new Date(challenge.close_at))))}%`,
+                      width: `${calculatePercentage(new Date(), new Date(challenge.close_at))}%`,
                     }}
                   />
                 </div>
@@ -410,34 +512,7 @@ export default function ChallengeCard({
 
           {renderSessionStatus()}
         </CardContent>
-        <CardFooter>
-          {session?.status === 'IN_PROGRESS' ? (
-            <Button onClick={handleResumeChallenge} className="w-full gap-2">
-              Resume Challenge <ArrowRight className="h-4 w-4" />
-            </Button>
-          ) : session?.status === 'ENDED' ? (
-            <Button
-              onClick={handleViewResults}
-              className="w-full gap-2"
-              variant="secondary"
-            >
-              View Results <ArrowRight className="h-4 w-4" />
-            </Button>
-          ) : status === 'active' || (isAdmin && status === 'preview') ? (
-            <StartChallengeDialog
-              challenge={challenge}
-              onSessionStart={handleSessionStart}
-            />
-          ) : status === 'upcoming' ? (
-            <Button disabled className="w-full gap-2">
-              Available Soon
-            </Button>
-          ) : (
-            <Button disabled className="w-full gap-2">
-              Not Available
-            </Button>
-          )}
-        </CardFooter>
+        <CardFooter>{renderActionButton()}</CardFooter>
       </Card>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -459,11 +534,4 @@ export default function ChallengeCard({
       </AlertDialog>
     </>
   );
-}
-
-async function fetchChallengeSession(challengeId: string) {
-  const response = await fetch(`/api/v1/sessions?challengeId=${challengeId}`);
-  if (!response.ok) return null;
-  const data = await response.json();
-  return data[0];
 }

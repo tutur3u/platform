@@ -23,14 +23,12 @@ interface StartChallengeDialogProps {
   challenge: NovaChallenge;
   variant?: 'default' | 'outline' | 'secondary';
   disabled?: boolean;
-  onSessionStart?: () => void;
 }
 
 export function StartChallengeDialog({
   challenge,
   variant = 'default',
   disabled = false,
-  onSessionStart,
 }: StartChallengeDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -72,7 +70,6 @@ export function StartChallengeDialog({
       });
 
       if (response.ok) {
-        onSessionStart?.();
         router.push(`/challenges/${challenge.id}`);
       } else {
         toast({
@@ -97,8 +94,27 @@ export function StartChallengeDialog({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant={variant} disabled={disabled} className="w-full gap-2">
-          Start Challenge <ArrowRight className="h-4 w-4" />
+        <Button
+          variant={disabled ? 'secondary' : variant}
+          className="w-full gap-2"
+          disabled={
+            // Challenge is disabled
+            disabled ||
+            // Challenge is not open yet
+            (!!challenge.open_at && new Date() < new Date(challenge.open_at)) ||
+            // Challenge is already closed
+            (!!challenge.close_at && new Date() > new Date(challenge.close_at))
+          }
+        >
+          {!challenge.open_at ||
+          (challenge.open_at && new Date() < new Date(challenge.open_at)) ? (
+            <span className="text-muted-foreground">Available Soon</span>
+          ) : (
+            <>
+              <span>Start Challenge</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </Button>
       </AlertDialogTrigger>
 

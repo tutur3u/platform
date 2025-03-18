@@ -47,6 +47,16 @@ export default function Page({ params }: Props) {
             getProblems(challengeId),
           ]);
 
+        if (!sessionRes) {
+          router.push(`/challenges`);
+          return;
+        }
+
+        if (sessionRes.status === 'IN_PROGRESS') {
+          router.push(`/challenges/${challengeId}`);
+          return;
+        }
+
         const result: ReportData = {
           ...sessionRes,
           challenge: {
@@ -56,10 +66,10 @@ export default function Page({ params }: Props) {
           },
         };
         setData(result);
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('There was an error fetching the data.');
-      } finally {
         setLoading(false);
       }
     };
@@ -248,15 +258,14 @@ export default function Page({ params }: Props) {
   );
 }
 
-async function getSession(challengeId: string): Promise<NovaSession> {
+async function getSession(challengeId: string) {
   const response = await fetch(`/api/v1/sessions?challengeId=${challengeId}`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch session`);
-  }
-  return response.json();
+  if (!response.ok) return null;
+  const data = await response.json();
+  return data[0];
 }
 
-async function getChallenge(challengeId: string): Promise<NovaChallenge> {
+async function getChallenge(challengeId: string) {
   const response = await fetch(`/api/v1/challenges/${challengeId}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch challenge`);
@@ -264,9 +273,7 @@ async function getChallenge(challengeId: string): Promise<NovaChallenge> {
   return response.json();
 }
 
-async function getCriteria(
-  challengeId: string
-): Promise<NovaChallengeCriteria[]> {
+async function getCriteria(challengeId: string) {
   const response = await fetch(`/api/v1/criteria?challengeId=${challengeId}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch criteria`);
@@ -274,12 +281,7 @@ async function getCriteria(
   return response.json();
 }
 
-async function getProblems(challengeId: string): Promise<
-  (NovaProblem & {
-    criteria_scores: NovaProblemCriteriaScore[];
-    submissions: NovaSubmission[];
-  })[]
-> {
+async function getProblems(challengeId: string) {
   const response = await fetch(`/api/v1/problems?challengeId=${challengeId}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch problems`);
