@@ -131,7 +131,7 @@ export function AboutUsPage() {
               >
                 {member.name}
               </motion.h3>
-              <p className="text-sm text-primary">{member.role}</p>
+              <p className="text-sm text-balance text-primary">{member.role}</p>
               {member.organization && (
                 <Badge variant="outline" className="mt-1 bg-primary/5 text-xs">
                   {member.organization}
@@ -139,7 +139,9 @@ export function AboutUsPage() {
               )}
             </div>
           </div>
-          <p className="mb-4 text-sm text-muted-foreground">{member.bio}</p>
+          <p className="mb-4 text-sm text-balance text-muted-foreground">
+            {member.bio}
+          </p>
           {member.links && (
             <div className="flex justify-center gap-2">
               {member.links.twitter && (
@@ -271,7 +273,7 @@ export function AboutUsPage() {
                 tierColors[sponsor.tier]
               )}
             />
-            <div className="p-6">
+            <div className="p-6 text-center">
               <div className="mb-4 flex flex-col items-center justify-between">
                 <motion.div
                   className="relative h-24 w-24 overflow-hidden rounded-lg"
@@ -288,7 +290,7 @@ export function AboutUsPage() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    'mt-2 mb-4 bg-gradient-to-r bg-clip-text text-transparent',
+                    'mt-2 bg-gradient-to-r bg-clip-text text-transparent',
                     tierColors[sponsor.tier]
                   )}
                 >
@@ -308,12 +310,12 @@ export function AboutUsPage() {
                 </Badge>
               </div>
               <motion.h3
-                className="mb-2 text-xl font-bold transition-colors duration-300 group-hover:text-primary"
+                className="mb-2 text-xl font-bold text-balance transition-colors duration-300 group-hover:text-primary"
                 whileHover={{ scale: 1.02 }}
               >
                 {sponsor.name}
               </motion.h3>
-              <p className="mb-4 text-sm text-muted-foreground">
+              <p className="mb-4 text-sm text-balance text-muted-foreground">
                 {sponsor.description}
               </p>
               {/* <Link
@@ -343,13 +345,11 @@ export function AboutUsPage() {
     <motion.div variants={itemVariants}>
       <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 hover:border-primary/30 hover:bg-foreground/10 hover:shadow-md hover:shadow-primary/5">
         <div className="p-4">
-          <div className="mb-2 flex items-center gap-3">
-            <div>
-              <h3 className="font-semibold">{contributor.name}</h3>
-              <p className="text-xs text-muted-foreground">
-                {contributor.contribution}
-              </p>
-            </div>
+          <div className="mb-2 flex flex-col items-center justify-center gap-3 text-center">
+            <h3 className="font-semibold text-balance">{contributor.name}</h3>
+            <p className="text-xs text-balance text-muted-foreground">
+              {contributor.contribution}
+            </p>
           </div>
         </div>
       </Card>
