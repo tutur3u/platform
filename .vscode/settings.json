@@ -14,20 +14,21 @@
     "**/app/**/route.ts": "${dirname} - API Route",
     "**/components/**/index.tsx": "${dirname} - Component"
   },
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
-  },
+  "tailwindCSS.experimental.configFile": "packages/ui/src/globals.css",
   "i18n-ally.enabledFrameworks": ["next-intl"],
   "i18n-ally.localesPaths": ["apps/web/messages"],
   "i18n-ally.keystyle": "nested",
-  "codeQL.githubDatabase.update": "never",
-  "codeQL.githubDatabase.download": "never",
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"
   },
-  "IDX.aI.enableInlineCompletion": true,
-  "IDX.aI.enableCodebaseIndexing": true,
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "codeQL.githubDatabase.update": "never",
+  "codeQL.githubDatabase.download": "never",
+  "IDX.aI.enableInlineCompletion": true,
+  "IDX.aI.enableCodebaseIndexing": true
 }

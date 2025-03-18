@@ -17,6 +17,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin } from 'lucide-react';
 import { ReactNode } from 'react';
@@ -202,32 +203,31 @@ export const EventColorPicker = ({
   value: SupportedColor;
   onChange: (value: SupportedColor) => void;
   disabled?: boolean;
-}) => (
-  <div className="space-y-3">
-    <Label className="text-sm font-medium">Color</Label>
-    <div className={cn(disabled ? 'pointer-events-none opacity-50' : '')}>
-      <div className="flex flex-col space-y-3">
-        <ColorPicker
-          value={value}
-          onChange={onChange}
-          size="md"
-          showTooltips={true}
-        />
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div
-            className={cn(
-              'h-3 w-3 rounded-full',
-              `bg-dynamic-light-${value.toLowerCase()}`
-            )}
+}) => {
+  const { text } = getEventStyles(value);
+
+  return (
+    <div className="space-y-3">
+      <Label className="text-sm font-medium">Color</Label>
+      <div className={cn(disabled ? 'pointer-events-none opacity-50' : '')}>
+        <div className="flex flex-col space-y-3">
+          <ColorPicker
+            value={value}
+            onChange={onChange}
+            size="md"
+            showTooltips={true}
           />
-          <span>
-            {COLOR_OPTIONS.find((c) => c.value === value)?.name || 'Blue'}
-          </span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className={cn('h-3 w-3 rounded-full', text)} />
+            <span>
+              {COLOR_OPTIONS.find((c) => c.value === value)?.name || 'Blue'}
+            </span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Priority picker component
 export const EventPriorityPicker = ({

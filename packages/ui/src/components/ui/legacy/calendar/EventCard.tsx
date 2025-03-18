@@ -12,6 +12,7 @@ import {
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import {
@@ -20,10 +21,12 @@ import {
   ArrowRight,
   Check,
   Edit,
+  Lock,
   Palette,
   Pencil,
   RefreshCw,
   Trash2,
+  Unlock,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -55,6 +58,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     // start_at,
     end_at,
     color = 'BLUE',
+    locked = false,
     _isMultiDay,
     _dayPosition,
     _overlapCount,
@@ -371,8 +375,8 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
   useEffect(() => {
-    // Disable resizing for middle segments of multi-day events
-    if (_isMultiDay && _dayPosition === 'middle') return;
+    // Disable resizing for middle segments of multi-day events or locked events
+    if ((_isMultiDay && _dayPosition === 'middle') || locked) return;
 
     const handleEl = handleRef.current;
     const eventCardEl = document.getElementById(`event-${id}`);
@@ -385,6 +389,9 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const handleMouseDown = (e: MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
+
+      // Don't allow interaction with locked events
+      if (locked) return;
 
       // Don't allow multiple operations
       if (isDraggingRef.current || isResizingRef.current) return;
@@ -547,12 +554,13 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _dayPosition,
     event._originalId,
     startHours,
+    locked,
   ]);
 
   // Event dragging - only enable for non-multi-day events
   useEffect(() => {
-    // Disable dragging for multi-day events
-    if (_isMultiDay) return;
+    // Disable dragging for multi-day events or locked events
+    if (_isMultiDay || locked) return;
 
     const contentEl = contentRef.current;
     const eventCardEl = document.getElementById(`event-${id}`);
@@ -569,6 +577,9 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const handleMouseDown = (e: MouseEvent) => {
       // Only handle primary mouse button (left click)
       if (e.button !== 0) return;
+
+      // Don't allow interaction with locked events
+      if (locked) return;
 
       e.stopPropagation();
 
@@ -793,123 +804,13 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     openModal,
     _isMultiDay,
     event._originalId,
+    locked,
   ]);
 
-  // Normalize color to match SupportedColor type (uppercase)
-  const normalizedColor =
-    typeof color === 'string' ? color.toUpperCase() : 'BLUE';
-
   // Color styles based on event color
-  const getEventStyles = () => {
-    const colorStyles: Record<
-      string,
-      {
-        bg: string;
-        border: string;
-        text: string;
-        dragBg: string;
-        syncingBg: string;
-        successBg: string;
-        errorBg: string;
-      }
-    > = {
-      BLUE: {
-        bg: 'bg-calendar-bg-blue hover:ring-dynamic-light-blue/80',
-        border: 'border-dynamic-light-blue/80',
-        text: 'text-dynamic-light-blue',
-        dragBg: 'bg-calendar-bg-blue/70',
-        syncingBg: 'bg-calendar-bg-blue',
-        successBg: 'bg-calendar-bg-blue/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-      RED: {
-        bg: 'bg-calendar-bg-red hover:ring-dynamic-light-red/80',
-        border: 'border-dynamic-light-red/80',
-        text: 'text-dynamic-light-red',
-        dragBg: 'bg-calendar-bg-red/70',
-        syncingBg: 'bg-calendar-bg-red',
-        successBg: 'bg-calendar-bg-red/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-      GREEN: {
-        bg: 'bg-calendar-bg-green hover:ring-dynamic-light-green/80',
-        border: 'border-dynamic-light-green/80',
-        text: 'text-dynamic-light-green',
-        dragBg: 'bg-calendar-bg-green/70',
-        syncingBg: 'bg-calendar-bg-green',
-        successBg: 'bg-calendar-bg-green/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-      YELLOW: {
-        bg: 'bg-calendar-bg-yellow hover:ring-dynamic-light-yellow/80',
-        border: 'border-dynamic-light-yellow/80',
-        text: 'text-dynamic-light-yellow',
-        dragBg: 'bg-calendar-bg-yellow/70',
-        syncingBg: 'bg-calendar-bg-yellow',
-        successBg: 'bg-calendar-bg-yellow/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-      PURPLE: {
-        bg: 'bg-calendar-bg-purple hover:ring-dynamic-light-purple/80',
-        border: 'border-dynamic-light-purple/80',
-        text: 'text-dynamic-light-purple',
-        dragBg: 'bg-calendar-bg-purple/70',
-        syncingBg: 'bg-calendar-bg-purple',
-        successBg: 'bg-calendar-bg-purple/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-      PINK: {
-        bg: 'bg-calendar-bg-pink hover:ring-dynamic-light-pink/80',
-        border: 'border-dynamic-light-pink/80',
-        text: 'text-dynamic-light-pink',
-        dragBg: 'bg-calendar-bg-pink/70',
-        syncingBg: 'bg-calendar-bg-pink',
-        successBg: 'bg-calendar-bg-pink/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-      ORANGE: {
-        bg: 'bg-calendar-bg-orange hover:ring-dynamic-light-orange/80',
-        border: 'border-dynamic-light-orange/80',
-        text: 'text-dynamic-light-orange',
-        dragBg: 'bg-calendar-bg-orange/70',
-        syncingBg: 'bg-calendar-bg-orange',
-        successBg: 'bg-calendar-bg-orange/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-      INDIGO: {
-        bg: 'bg-calendar-bg-indigo hover:ring-dynamic-light-indigo/80',
-        border: 'border-dynamic-light-indigo/80',
-        text: 'text-dynamic-light-indigo',
-        dragBg: 'bg-calendar-bg-indigo/70',
-        syncingBg: 'bg-calendar-bg-indigo',
-        successBg: 'bg-calendar-bg-indigo/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-      CYAN: {
-        bg: 'bg-calendar-bg-cyan hover:ring-dynamic-light-cyan/80',
-        border: 'border-dynamic-light-cyan/80',
-        text: 'text-dynamic-light-cyan',
-        dragBg: 'bg-calendar-bg-cyan/70',
-        syncingBg: 'bg-calendar-bg-cyan',
-        successBg: 'bg-calendar-bg-cyan/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-      GRAY: {
-        bg: 'bg-calendar-bg-gray hover:ring-dynamic-light-gray/80',
-        border: 'border-dynamic-light-gray/80',
-        text: 'text-dynamic-light-gray',
-        dragBg: 'bg-calendar-bg-gray/70',
-        syncingBg: 'bg-calendar-bg-gray',
-        successBg: 'bg-calendar-bg-gray/90 transition-colors duration-300',
-        errorBg: 'bg-red-100 transition-colors duration-300',
-      },
-    };
-
-    return colorStyles[normalizedColor] || colorStyles.BLUE;
-  };
 
   const { bg, border, text, dragBg, syncingBg, successBg, errorBg } =
-    getEventStyles()!;
+    getEventStyles(color);
 
   // Get the appropriate background based on event state
   const getBackgroundStyle = () => {
@@ -959,6 +860,31 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     });
   };
 
+  // Handle lock/unlock
+  const handleLockToggle = () => {
+    const eventId = event._originalId || id;
+    const newLockedState = !locked;
+
+    console.log(
+      `Toggling lock status for event ${eventId} from ${locked} to ${newLockedState}`
+    );
+
+    updateEvent(eventId, { locked: newLockedState })
+      .then(() => {
+        console.log(`Successfully updated lock status to ${newLockedState}`);
+        // Update local state immediately for better UX
+        setLocalEvent((prev) => ({
+          ...prev,
+          locked: newLockedState,
+        }));
+        showStatusFeedback('success');
+      })
+      .catch((error) => {
+        console.error('Failed to update event lock status:', error);
+        showStatusFeedback('error');
+      });
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -993,6 +919,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
             // Only open modal if we haven't just finished dragging or resizing
             if (!wasDraggedRef.current && !wasResizedRef.current) {
               e.stopPropagation();
+              // Open the modal with the event, it will be read-only if locked
               openModal(event._originalId || id);
             }
 
@@ -1077,11 +1004,19 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
             >
               <div
                 className={cn(
-                  'text-xs font-semibold',
+                  'space-x-1 text-xs font-semibold',
                   duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
                 )}
               >
-                {localEvent.title || 'Untitled event'}
+                {locked && (
+                  <Lock
+                    className="mt-0.5 inline-block h-3 w-3 flex-shrink-0 -translate-y-0.5 opacity-70"
+                    aria-label="Event locked"
+                  />
+                )}
+                <span className="min-w-0 overflow-hidden text-ellipsis">
+                  {localEvent.title || 'Untitled event'}
+                </span>
               </div>
 
               {/* Show time for regular events or start/end segments of multi-day events */}
@@ -1128,14 +1063,39 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       <ContextMenuContent className="w-48">
         <ContextMenuItem
           onClick={() => openModal(event._originalId || id)}
-          className="flex items-center gap-2"
+          className={cn('flex items-center gap-2', {
+            'cursor-not-allowed opacity-50': locked,
+          })}
+          disabled={locked}
         >
           <Edit className="h-4 w-4" />
-          <span>Edit Event</span>
+          <span>{locked ? 'View Event' : 'Edit Event'}</span>
+        </ContextMenuItem>
+
+        <ContextMenuItem
+          onClick={handleLockToggle}
+          className="flex items-center gap-2"
+        >
+          {locked ? (
+            <>
+              <Unlock className="h-4 w-4" />
+              <span>Unlock Event</span>
+            </>
+          ) : (
+            <>
+              <Lock className="h-4 w-4" />
+              <span>Lock Event</span>
+            </>
+          )}
         </ContextMenuItem>
 
         <ContextMenuSub>
-          <ContextMenuSubTrigger className="flex items-center gap-2">
+          <ContextMenuSubTrigger
+            className={cn('flex items-center gap-2', {
+              'cursor-not-allowed opacity-50': locked,
+            })}
+            disabled={locked}
+          >
             <Palette className="h-4 w-4" />
             <span className="text-foreground">Change Color</span>
           </ContextMenuSubTrigger>
@@ -1217,7 +1177,10 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
         <ContextMenuItem
           onClick={handleDelete}
-          className="flex items-center gap-2"
+          className={cn('flex items-center gap-2', {
+            'cursor-not-allowed opacity-50': locked,
+          })}
+          disabled={locked}
         >
           <Trash2 className="h-4 w-4" />
           <span>Delete Event</span>

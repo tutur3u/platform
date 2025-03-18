@@ -362,18 +362,7 @@ export const CalendarProvider = ({
         const startDate = roundToNearest15Minutes(new Date(event.start_at));
         const endDate = roundToNearest15Minutes(new Date(event.end_at));
 
-        // Use category color from settings if available
         let eventColor = event.color || 'BLUE';
-        if (settings.categoryColors.categories.length > 0) {
-          // Try to match event title with a category
-          const matchingCategory = settings.categoryColors.categories.find(
-            (category) =>
-              event.title?.toLowerCase().includes(category.name.toLowerCase())
-          );
-          if (matchingCategory) {
-            eventColor = matchingCategory.color;
-          }
-        }
 
         const { data, error } = await supabase
           .from('workspace_calendar_events')
@@ -384,10 +373,8 @@ export const CalendarProvider = ({
             end_at: endDate.toISOString(),
             color: eventColor as SupportedColor,
             // location: event.location || '',
-            // is_all_day: event.is_all_day || false,
-            // scheduling_note: event.scheduling_note || '',
-            // priority: event.priority || 'medium',
             ws_id: ws.id,
+            locked: false,
           })
           .select()
           .single();
@@ -495,10 +482,7 @@ export const CalendarProvider = ({
             start_at: updateData.start_at,
             end_at: updateData.end_at,
             color: updateData.color,
-            // location: updateData.location,
-            // is_all_day: updateData.is_all_day,
-            // scheduling_note: updateData.scheduling_note,
-            // priority: updateData.priority,
+            locked: updateData.locked,
           })
           .eq('id', eventId)
           .select()
