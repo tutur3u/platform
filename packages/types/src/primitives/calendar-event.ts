@@ -15,6 +15,7 @@ export interface CalendarEvent {
   is_all_day?: boolean;
   scheduling_note?: string;
   priority?: EventPriority;
+  locked?: boolean;
 
   // Properties for multi-day events
   _originalId?: string;

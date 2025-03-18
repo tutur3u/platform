@@ -20,10 +20,12 @@ import {
   ArrowRight,
   Check,
   Edit,
+  Lock,
   Palette,
   Pencil,
   RefreshCw,
   Trash2,
+  Unlock,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -55,6 +57,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     // start_at,
     end_at,
     color = 'BLUE',
+    locked = false,
     _isMultiDay,
     _dayPosition,
     _overlapCount,
@@ -371,8 +374,8 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
   useEffect(() => {
-    // Disable resizing for middle segments of multi-day events
-    if (_isMultiDay && _dayPosition === 'middle') return;
+    // Disable resizing for middle segments of multi-day events or locked events
+    if ((_isMultiDay && _dayPosition === 'middle') || locked) return;
 
     const handleEl = handleRef.current;
     const eventCardEl = document.getElementById(`event-${id}`);
@@ -385,6 +388,9 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const handleMouseDown = (e: MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
+
+      // Don't allow interaction with locked events
+      if (locked) return;
 
       // Don't allow multiple operations
       if (isDraggingRef.current || isResizingRef.current) return;
@@ -547,12 +553,13 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _dayPosition,
     event._originalId,
     startHours,
+    locked,
   ]);
 
   // Event dragging - only enable for non-multi-day events
   useEffect(() => {
-    // Disable dragging for multi-day events
-    if (_isMultiDay) return;
+    // Disable dragging for multi-day events or locked events
+    if (_isMultiDay || locked) return;
 
     const contentEl = contentRef.current;
     const eventCardEl = document.getElementById(`event-${id}`);
@@ -569,6 +576,9 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const handleMouseDown = (e: MouseEvent) => {
       // Only handle primary mouse button (left click)
       if (e.button !== 0) return;
+
+      // Don't allow interaction with locked events
+      if (locked) return;
 
       e.stopPropagation();
 
@@ -793,6 +803,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     openModal,
     _isMultiDay,
     event._originalId,
+    locked,
   ]);
 
   // Normalize color to match SupportedColor type (uppercase)
@@ -959,6 +970,31 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
     });
   };
 
+  // Handle lock/unlock
+  const handleLockToggle = () => {
+    const eventId = event._originalId || id;
+    const newLockedState = !locked;
+
+    console.log(
+      `Toggling lock status for event ${eventId} from ${locked} to ${newLockedState}`
+    );
+
+    updateEvent(eventId, { locked: newLockedState })
+      .then(() => {
+        console.log(`Successfully updated lock status to ${newLockedState}`);
+        // Update local state immediately for better UX
+        setLocalEvent((prev) => ({
+          ...prev,
+          locked: newLockedState,
+        }));
+        showStatusFeedback('success');
+      })
+      .catch((error) => {
+        console.error('Failed to update event lock status:', error);
+        showStatusFeedback('error');
+      });
+  };
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -993,6 +1029,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
             // Only open modal if we haven't just finished dragging or resizing
             if (!wasDraggedRef.current && !wasResizedRef.current) {
               e.stopPropagation();
+              // Open the modal with the event, it will be read-only if locked
               openModal(event._originalId || id);
             }
 
@@ -1077,11 +1114,19 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
             >
               <div
                 className={cn(
-                  'text-xs font-semibold',
+                  'space-x-1 text-xs font-semibold',
                   duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
                 )}
               >
-                {localEvent.title || 'Untitled event'}
+                {locked && (
+                  <Lock
+                    className="mt-0.5 inline-block h-3 w-3 flex-shrink-0 -translate-y-0.5 opacity-70"
+                    aria-label="Event locked"
+                  />
+                )}
+                <span className="min-w-0 overflow-hidden text-ellipsis">
+                  {localEvent.title || 'Untitled event'}
+                </span>
               </div>
 
               {/* Show time for regular events or start/end segments of multi-day events */}
@@ -1128,14 +1173,39 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       <ContextMenuContent className="w-48">
         <ContextMenuItem
           onClick={() => openModal(event._originalId || id)}
-          className="flex items-center gap-2"
+          className={cn('flex items-center gap-2', {
+            'cursor-not-allowed opacity-50': locked,
+          })}
+          disabled={locked}
         >
           <Edit className="h-4 w-4" />
-          <span>Edit Event</span>
+          <span>{locked ? 'View Event' : 'Edit Event'}</span>
+        </ContextMenuItem>
+
+        <ContextMenuItem
+          onClick={handleLockToggle}
+          className="flex items-center gap-2"
+        >
+          {locked ? (
+            <>
+              <Unlock className="h-4 w-4" />
+              <span>Unlock Event</span>
+            </>
+          ) : (
+            <>
+              <Lock className="h-4 w-4" />
+              <span>Lock Event</span>
+            </>
+          )}
         </ContextMenuItem>
 
         <ContextMenuSub>
-          <ContextMenuSubTrigger className="flex items-center gap-2">
+          <ContextMenuSubTrigger
+            className={cn('flex items-center gap-2', {
+              'cursor-not-allowed opacity-50': locked,
+            })}
+            disabled={locked}
+          >
             <Palette className="h-4 w-4" />
             <span className="text-foreground">Change Color</span>
           </ContextMenuSubTrigger>
@@ -1217,7 +1287,10 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
         <ContextMenuItem
           onClick={handleDelete}
-          className="flex items-center gap-2"
+          className={cn('flex items-center gap-2', {
+            'cursor-not-allowed opacity-50': locked,
+          })}
+          disabled={locked}
         >
           <Trash2 className="h-4 w-4" />
           <span>Delete Event</span>

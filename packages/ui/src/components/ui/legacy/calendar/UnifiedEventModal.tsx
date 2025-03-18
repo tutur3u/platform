@@ -62,10 +62,12 @@ import {
   FileText,
   Info,
   Loader2,
+  Lock,
   MapPin,
   Settings,
   Sparkles,
   Trash2,
+  Unlock,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -110,6 +112,7 @@ export function UnifiedEventModal() {
     color: 'BLUE',
     location: '',
     priority: 'medium',
+    locked: false,
   });
 
   // State for AI event generation
@@ -250,6 +253,7 @@ export function UnifiedEventModal() {
         color: 'BLUE' as SupportedColor,
         location: '',
         priority: 'medium' as EventPriority,
+        locked: false,
       };
 
       setEvent(newEvent);
@@ -361,10 +365,7 @@ export function UnifiedEventModal() {
           start_at: eventData.start_at,
           end_at: eventData.end_at,
           color: defaultColor,
-          location: eventData.location || '',
-          is_all_day: Boolean(eventData.is_all_day),
-          scheduling_note: eventData.scheduling_note || '',
-          priority: eventData.priority || aiForm.getValues().priority,
+          locked: false, // Default to unlocked for AI-generated events
         };
 
         await addEvent(calendarEvent);
@@ -634,11 +635,26 @@ export function UnifiedEventModal() {
               <div className="flex flex-1 flex-col overflow-hidden">
                 <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                   <div className="space-y-6 p-6">
+                    {/* Locked Event Indicator */}
+                    {event.locked && (
+                      <div className="mb-4 flex items-center gap-2 rounded-md border border-dynamic-light-yellow/30 bg-dynamic-light-yellow/10 p-3 text-dynamic-light-yellow">
+                        <div>
+                          <h3 className="font-semibold">Event is Locked</h3>
+                          <p className="text-sm">
+                            This event is locked and can't be modified. Unlock
+                            it from the Advanced Settings section to make
+                            changes.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Title */}
                     <EventTitleInput
                       value={event.title || ''}
                       onEnter={handleManualSave}
                       onChange={(value) => setEvent({ ...event, title: value })}
+                      disabled={event.locked}
                     />
 
                     {/* Date and Time Selection */}
@@ -651,12 +667,14 @@ export function UnifiedEventModal() {
                             label="All Day"
                             checked={isAllDay}
                             onChange={handleAllDayChange}
+                            disabled={event.locked}
                           />
                           <EventToggleSwitch
                             id="multi-day"
                             label="Multi-Day"
                             checked={isMultiDay}
                             onChange={handleMultiDayChange}
+                            disabled={event.locked}
                           />
                         </div>
                       </div>
@@ -666,13 +684,13 @@ export function UnifiedEventModal() {
                           label="Start"
                           value={new Date(event.start_at || new Date())}
                           onChange={handleStartDateChange}
-                          //   icon={<Clock className="h-3.5 w-3.5 text-blue-500" />}
+                          disabled={event.locked}
                         />
                         <EventDateTimePicker
                           label="End"
                           value={new Date(event.end_at || new Date())}
                           onChange={handleEndDateChange}
-                          //   icon={<Clock className="h-3.5 w-3.5 text-red-500" />}
+                          disabled={event.locked}
                         />
                       </div>
                     </div>
@@ -686,12 +704,14 @@ export function UnifiedEventModal() {
                         onChange={(value) =>
                           setEvent({ ...event, location: value })
                         }
+                        disabled={event.locked}
                       />
                       <EventDescriptionInput
                         value={event.description || ''}
                         onChange={(value) =>
                           setEvent({ ...event, description: value })
                         }
+                        disabled={event.locked}
                       />
                     </div>
 
@@ -720,19 +740,40 @@ export function UnifiedEventModal() {
                                 onChange={(value) =>
                                   setEvent({ ...event, color: value })
                                 }
+                                disabled={event.locked}
                               />
-                              {/* <EventPriorityPicker
-                                value={event.priority || 'medium'}
-                                onChange={(value) =>
-                                  setEvent({ ...event, priority: value })
-                                }
-                              /> */}
+                              <div className="flex flex-col space-y-3">
+                                <label className="text-sm font-medium">
+                                  Event Protection
+                                </label>
+                                <EventToggleSwitch
+                                  id="locked"
+                                  label="Lock Event"
+                                  description="Locked events cannot be modified accidentally"
+                                  checked={event.locked || false}
+                                  onChange={(checked) =>
+                                    setEvent({ ...event, locked: checked })
+                                  }
+                                />
+                                <div className="mt-1 flex items-center gap-2">
+                                  {event.locked ? (
+                                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                                  ) : (
+                                    <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
+                                  )}
+                                  <p className="text-xs text-muted-foreground">
+                                    {event.locked
+                                      ? 'Event is locked'
+                                      : 'Event is unlocked'}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                             <div className="mt-2 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1">
                                 <Info className="h-3 w-3" />
-                                Color and priority help organize and prioritize
-                                your events
+                                Color and protection settings help organize and
+                                secure your events
                               </p>
                             </div>
                           </div>
@@ -794,7 +835,7 @@ export function UnifiedEventModal() {
                       </Button>
                       <Button
                         onClick={handleManualSave}
-                        disabled={isSaving || isDeleting}
+                        disabled={isSaving || isDeleting || event.locked}
                         className="flex items-center gap-2"
                       >
                         {isSaving ? (
@@ -805,7 +846,13 @@ export function UnifiedEventModal() {
                         ) : (
                           <>
                             <Check className="h-4 w-4" />
-                            <span>{isEditing ? 'Update' : 'Create'}</span>
+                            <span>
+                              {isEditing
+                                ? event.locked
+                                  ? 'Locked'
+                                  : 'Update'
+                                : 'Create'}
+                            </span>
                           </>
                         )}
                       </Button>
@@ -1012,6 +1059,13 @@ export function UnifiedEventModal() {
                                   {generatedEvent._matchedCategory})
                                 </span>
                               )}
+                            </span>
+                          </div>
+
+                          <div className="mt-2 flex items-center gap-2">
+                            <Unlock className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              Event will be created unlocked
                             </span>
                           </div>
                         </div>

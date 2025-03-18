@@ -48,10 +48,7 @@ export async function PUT(request: Request, { params }: Params) {
         start_at: updates.start_at,
         end_at: updates.end_at,
         color: updates.color,
-        // location: updates.location,
-        // is_all_day: updates.is_all_day,
-        // scheduling_note: updates.scheduling_note,
-        // priority: updates.priority,
+        locked: updates.locked,
       })
       .eq('id', eventId)
       .eq('ws_id', wsId)

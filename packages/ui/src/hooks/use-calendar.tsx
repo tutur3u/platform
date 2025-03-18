@@ -383,10 +383,6 @@ export const CalendarProvider = ({
             start_at: startDate.toISOString(),
             end_at: endDate.toISOString(),
             color: eventColor as SupportedColor,
-            // location: event.location || '',
-            // is_all_day: event.is_all_day || false,
-            // scheduling_note: event.scheduling_note || '',
-            // priority: event.priority || 'medium',
             ws_id: ws.id,
           })
           .select()
@@ -495,10 +491,7 @@ export const CalendarProvider = ({
             start_at: updateData.start_at,
             end_at: updateData.end_at,
             color: updateData.color,
-            // location: updateData.location,
-            // is_all_day: updateData.is_all_day,
-            // scheduling_note: updateData.scheduling_note,
-            // priority: updateData.priority,
+            locked: updateData.locked,
           })
           .eq('id', eventId)
           .select()
