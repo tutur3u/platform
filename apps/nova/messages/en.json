@@ -278,7 +278,9 @@
     "error_deleting": "Error deleting document",
     "domain_added": "Domain added",
     "error_adding_domain": "Failed to add domain",
-    "is_admin": "Administrator"
+    "is_admin": "Is Admin",
+    "allow_challenge_management": "Allow Challenge Management",
+    "allow_role_management": "Allow Role Management"
   },
   "date_helper": {
     "time-unit": "Time unit",

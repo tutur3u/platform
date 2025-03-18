@@ -23,11 +23,13 @@ export default async function Page() {
 
   const { data: whitelisted } = await sbAdmin
     .from('nova_roles')
-    .select('enabled, is_admin')
+    .select('enabled, allow_challenge_management')
     .eq('email', user?.email as string)
     .maybeSingle();
 
-  const isAdmin = Boolean(whitelisted?.enabled && whitelisted?.is_admin);
+  const isAdmin = Boolean(
+    whitelisted?.enabled && whitelisted?.allow_challenge_management
+  );
 
   const challenges = await fetchChallenges();
 

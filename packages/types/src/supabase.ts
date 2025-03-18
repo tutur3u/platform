@@ -2246,25 +2246,28 @@ export type Database = {
       };
       nova_roles: {
         Row: {
+          allow_challenge_management: boolean | null;
+          allow_role_management: boolean | null;
           created_at: string;
           email: string | null;
           enabled: boolean | null;
           id: string;
-          is_admin: boolean | null;
         };
         Insert: {
+          allow_challenge_management?: boolean | null;
+          allow_role_management?: boolean | null;
           created_at?: string;
           email?: string | null;
           enabled?: boolean | null;
           id?: string;
-          is_admin?: boolean | null;
         };
         Update: {
+          allow_challenge_management?: boolean | null;
+          allow_role_management?: boolean | null;
           created_at?: string;
           email?: string | null;
           enabled?: boolean | null;
           id?: string;
-          is_admin?: boolean | null;
         };
         Relationships: [];
       };
