@@ -22,35 +22,35 @@ export default function ChallengesList({
     useState<NovaChallenge[]>(initialChallenges);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<
-    'all' | 'upcoming' | 'preview' | 'active' | 'closed' | 'disabled'
+    'disabled' | 'upcoming' | 'preview' | 'active' | 'closed' | 'all'
   >('all');
 
   useEffect(() => {
     // Apply filtering and search
     let result = [...challenges];
 
-    // Apply status filter
-    if (filter !== 'all') {
+    result = result.filter((challenge) => {
+      // Apply status filter
       const now = new Date();
+      const previewableAt = challenge.previewable_at
+        ? new Date(challenge.previewable_at)
+        : null;
+      const openAt = challenge.open_at ? new Date(challenge.open_at) : null;
+      const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
 
-      result = result.filter((challenge) => {
-        const previewableAt = challenge.previewable_at
-          ? new Date(challenge.previewable_at)
-          : null;
-        const openAt = challenge.open_at ? new Date(challenge.open_at) : null;
-        const closeAt = challenge.close_at
-          ? new Date(challenge.close_at)
-          : null;
-
-        if (filter === 'disabled') return !challenge.enabled;
-        if (filter === 'closed') return closeAt && now >= closeAt;
-        if (filter === 'active')
-          return openAt && now >= openAt && (!closeAt || now < closeAt);
-        if (filter === 'preview') return previewableAt && now >= previewableAt;
-        if (filter === 'upcoming') return previewableAt && now < previewableAt;
-        if (filter === 'all') return true;
-      });
-    }
+      if (filter === 'all') return true;
+      if (!challenge.enabled) {
+        return filter === 'disabled';
+      } else if (previewableAt && now < previewableAt) {
+        return filter === 'upcoming';
+      } else if (openAt && now < openAt) {
+        return filter === 'preview';
+      } else if (!closeAt || (closeAt && now < closeAt)) {
+        return filter === 'active';
+      } else {
+        return filter === 'closed';
+      }
+    });
 
     // Apply search query
     const query = searchQuery.trim().toLowerCase();
@@ -87,14 +87,14 @@ export default function ChallengesList({
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
                 {isAdmin && (
+                  <TabsTrigger value="disabled">Disabled</TabsTrigger>
+                )}
+                {isAdmin && (
                   <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
                 )}
                 <TabsTrigger value="preview">Preview</TabsTrigger>
                 <TabsTrigger value="active">Active</TabsTrigger>
                 <TabsTrigger value="closed">Closed</TabsTrigger>
-                {isAdmin && (
-                  <TabsTrigger value="disabled">Disabled</TabsTrigger>
-                )}
               </TabsList>
             </Tabs>
           </div>

@@ -64,7 +64,7 @@ export default function ChallengeCard({
   const [session, setSession] = useState<NovaSession | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [status, setStatus] = useState<
-    'upcoming' | 'preview' | 'active' | 'closed' | 'disabled'
+    'disabled' | 'upcoming' | 'preview' | 'active' | 'closed'
   >('disabled');
 
   useEffect(() => {
@@ -75,22 +75,22 @@ export default function ChallengeCard({
     // Determine challenge status
     const updateStatus = () => {
       const now = new Date();
-      const openAt = challenge.open_at ? new Date(challenge.open_at) : null;
-      const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
       const previewableAt = challenge.previewable_at
         ? new Date(challenge.previewable_at)
         : null;
+      const openAt = challenge.open_at ? new Date(challenge.open_at) : null;
+      const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
 
       if (!challenge.enabled) {
         setStatus('disabled');
-      } else if (closeAt && now >= closeAt) {
-        setStatus('closed');
-      } else if (openAt && now >= openAt) {
-        setStatus('active');
-      } else if (previewableAt && now >= previewableAt) {
-        setStatus('preview');
-      } else {
+      } else if (previewableAt && now < previewableAt) {
         setStatus('upcoming');
+      } else if (openAt && now < openAt) {
+        setStatus('preview');
+      } else if (!closeAt || (closeAt && now < closeAt)) {
+        setStatus('active');
+      } else {
+        setStatus('closed');
       }
     };
 
@@ -162,32 +162,47 @@ export default function ChallengeCard({
     switch (status) {
       case 'disabled':
         return (
-          <Badge variant="outline" className="bg-red-100 text-red-800">
+          <Badge
+            variant="outline"
+            className="bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400"
+          >
             <AlertCircle className="mr-1 h-3 w-3" /> Disabled
-          </Badge>
-        );
-      case 'closed':
-        return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800">
-            <TimerOff className="mr-1 h-3 w-3" /> Closed
-          </Badge>
-        );
-      case 'active':
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800">
-            <CheckCircle className="mr-1 h-3 w-3" /> Active
-          </Badge>
-        );
-      case 'preview':
-        return (
-          <Badge variant="outline" className="bg-amber-100 text-amber-800">
-            <Eye className="mr-1 h-3 w-3" /> Preview
           </Badge>
         );
       case 'upcoming':
         return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800">
+          <Badge
+            variant="outline"
+            className="bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400"
+          >
             <Calendar className="mr-1 h-3 w-3" /> Upcoming
+          </Badge>
+        );
+      case 'preview':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400"
+          >
+            <Eye className="mr-1 h-3 w-3" /> Preview
+          </Badge>
+        );
+      case 'active':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400"
+          >
+            <CheckCircle className="mr-1 h-3 w-3" /> Active
+          </Badge>
+        );
+      case 'closed':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-gray-100 text-gray-800 dark:bg-gray-950/30 dark:text-gray-400"
+          >
+            <TimerOff className="mr-1 h-3 w-3" /> Closed
           </Badge>
         );
       default:
@@ -303,6 +318,30 @@ export default function ChallengeCard({
       );
     }
 
+    if (status === 'disabled') {
+      return (
+        <Button disabled className="w-full gap-2">
+          Not Available
+        </Button>
+      );
+    }
+
+    if (status === 'upcoming') {
+      return (
+        <Button disabled className="w-full gap-2">
+          Available Soon
+        </Button>
+      );
+    }
+
+    if (status === 'preview') {
+      return (
+        <Button disabled className="w-full gap-2">
+          Not Yet Opened
+        </Button>
+      );
+    }
+
     if (status === 'closed') {
       return (
         <Button disabled className="w-full gap-2">
@@ -311,19 +350,7 @@ export default function ChallengeCard({
       );
     }
 
-    if (status === 'preview') {
-      return (
-        <Button disabled className="w-full gap-2">
-          Available Soon
-        </Button>
-      );
-    }
-
-    return (
-      <Button disabled className="w-full gap-2">
-        Not Available
-      </Button>
-    );
+    return null;
   };
 
   return (
@@ -390,15 +417,18 @@ export default function ChallengeCard({
             )}
 
             {status === 'preview' && challenge.open_at && (
-              <div className="rounded-md border border-blue-100 bg-blue-50 p-3">
+              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <CalendarCheck className="h-4 w-4 text-blue-500" />
-                    <span className="ml-2 text-sm font-medium text-blue-700">
+                    <CalendarCheck className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                    <span className="ml-2 text-sm font-medium text-blue-700 dark:text-blue-300">
                       Opens in:
                     </span>
                   </div>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  <Badge
+                    variant="outline"
+                    className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                  >
                     {format(new Date(challenge.open_at), 'MMM d, yyyy')}
                   </Badge>
                 </div>
@@ -408,9 +438,9 @@ export default function ChallengeCard({
                     onComplete={() => fetchSession(challenge.id)}
                   />
                 </div>
-                <div className="mt-2 h-1 w-full rounded-full bg-blue-100">
+                <div className="mt-2 h-1 w-full rounded-full bg-blue-100 dark:bg-blue-800">
                   <div
-                    className="h-full rounded-full bg-blue-500"
+                    className="h-full rounded-full bg-blue-500 dark:bg-blue-400"
                     style={{
                       width: `${calculatePercentage(new Date(), new Date(challenge.open_at))}%`,
                     }}
@@ -420,17 +450,17 @@ export default function ChallengeCard({
             )}
 
             {status === 'active' && challenge.close_at && (
-              <div className="rounded-md border border-amber-100 bg-amber-50 p-3">
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <CalendarX className="h-4 w-4 text-amber-500" />
-                    <span className="ml-2 text-sm font-medium text-amber-700">
+                    <CalendarX className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                    <span className="ml-2 text-sm font-medium text-amber-700 dark:text-amber-300">
                       Closes in:
                     </span>
                   </div>
                   <Badge
                     variant="outline"
-                    className="bg-amber-50 text-amber-700"
+                    className="bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
                   >
                     {format(new Date(challenge.close_at), 'MMM d, yyyy')}
                   </Badge>
@@ -441,9 +471,9 @@ export default function ChallengeCard({
                     onComplete={() => fetchSession(challenge.id)}
                   />
                 </div>
-                <div className="mt-2 h-1 w-full rounded-full bg-amber-100">
+                <div className="mt-2 h-1 w-full rounded-full bg-amber-100 dark:bg-amber-800">
                   <div
-                    className="h-full rounded-full bg-amber-500"
+                    className="h-full rounded-full bg-amber-500 dark:bg-amber-400"
                     style={{
                       width: `${calculatePercentage(new Date(), new Date(challenge.close_at))}%`,
                     }}
