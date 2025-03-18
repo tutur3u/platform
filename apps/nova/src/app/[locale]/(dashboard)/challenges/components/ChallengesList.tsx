@@ -53,14 +53,12 @@ export default function ChallengesList({
     }
 
     // Apply search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (challenge) =>
-          challenge.title.toLowerCase().includes(query) ||
-          challenge.description.toLowerCase().includes(query)
-      );
-    }
+    const query = searchQuery.trim().toLowerCase();
+    result = result.filter(
+      (challenge) =>
+        challenge.title.toLowerCase().includes(query) ||
+        challenge.description.toLowerCase().includes(query)
+    );
 
     setFilteredChallenges(result);
   }, [challenges, filter, searchQuery]);
