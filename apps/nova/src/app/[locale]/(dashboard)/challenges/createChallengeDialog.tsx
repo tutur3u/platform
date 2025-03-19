@@ -1,7 +1,6 @@
 'use client';
 
 import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,16 +10,19 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Plus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export default function CreateChallengeDialog() {
+interface CreateChallengeDialogProps {
+  trigger: React.ReactNode;
+}
+
+export default function CreateChallengeDialog({
+  trigger,
+}: CreateChallengeDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const t = useTranslations('nova');
 
   const onSubmit = async (values: ChallengeFormValues) => {
     try {
@@ -59,13 +61,8 @@ export default function CreateChallengeDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          {t('create-challenge')}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create New Challenge</DialogTitle>
           <DialogDescription>

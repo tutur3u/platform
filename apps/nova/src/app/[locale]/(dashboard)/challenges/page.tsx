@@ -6,6 +6,8 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -39,7 +41,16 @@ export default async function Page() {
         <h1 className="text-3xl font-bold">
           {t('prompt-engineering-challenges')}
         </h1>
-        {isAdmin && <CreateChallengeDialog />}
+        {isAdmin && (
+          <CreateChallengeDialog
+            trigger={
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t('create-challenge')}
+              </Button>
+            }
+          />
+        )}
       </div>
 
       <Suspense fallback={<LoadingChallenges />}>
