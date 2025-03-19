@@ -582,7 +582,7 @@ const startRecording = async () => {
 
   mediaRecorder.current.onstop = async () => {
     if (audioChunks.current.length === 0) {
-      console.error("❌ Không có dữ liệu ghi âm!");
+      console.error("No recording data!");
       setIsRecording(false);
       return;
     }
@@ -595,7 +595,7 @@ const startRecording = async () => {
       const base64Audio = reader.result?.toString().split(",")[1];
 
       if (!base64Audio) {
-        console.error("❌ Lỗi chuyển đổi audio sang Base64");
+        console.error("Error when change audio to base64");
         return;
       }
 
@@ -631,19 +631,19 @@ const startRecording = async () => {
         );
 
         const result = await response.json();
-        console.log("📢 Gemini Response:", result);
+        console.log(" Gemini Response:", result);
 
         if (result.candidates && result.candidates.length > 0) {
           const transcript = result.candidates[0]?.content?.parts?.[0]?.text || "";
-          console.log("✅ Văn bản từ audio:", transcript);
+          console.log("✅ text from audio:", transcript);
 
-          // Gán vào prompt mà không gửi lại Gemini
+          // Paste to prompt and not responding to Gemini
           aiForm.setValue("prompt", transcript);
         } else {
-          console.error("❌ API không trả về văn bản:", result);
+          console.error(" API dont give a text:", result);
         }
       } catch (error) {
-        console.error("❌ Lỗi khi gọi API Gemini:", error);
+        console.error("❌ Error when call an API:", error);
       }
     };
 
@@ -659,7 +659,7 @@ const stopRecording = () => {
   mediaRecorder.current?.stop();
 };
 
-  // Handle navigation between multiple events in preview
+// Handle navigation between multiple events in preview
   const goToNextEvent = () => {
     if (currentEventIndex < generatedEvents.length - 1) {
       const nextIndex = currentEventIndex + 1;
@@ -945,7 +945,7 @@ const stopRecording = () => {
                                     className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 text-base focus:ring-1 focus:ring-ring focus:outline-none"
                                   />
 
-                                  {/* Nút thu âm */}
+                                  {/* record button */}
                                   <button
                                     type="button"
                                     onClick={isRecording ? stopRecording : startRecording}
