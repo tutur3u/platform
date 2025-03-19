@@ -2110,6 +2110,8 @@ export type Database = {
           duration: number;
           enabled: boolean;
           id: string;
+          max_attempts: number;
+          max_daily_attempts: number;
           open_at: string | null;
           previewable_at: string | null;
           title: string;
@@ -2121,6 +2123,8 @@ export type Database = {
           duration: number;
           enabled?: boolean;
           id?: string;
+          max_attempts?: number;
+          max_daily_attempts?: number;
           open_at?: string | null;
           previewable_at?: string | null;
           title: string;
@@ -2132,6 +2136,8 @@ export type Database = {
           duration?: number;
           enabled?: boolean;
           id?: string;
+          max_attempts?: number;
+          max_daily_attempts?: number;
           open_at?: string | null;
           previewable_at?: string | null;
           title?: string;
@@ -5863,6 +5869,13 @@ export type Database = {
       };
     };
     Functions: {
+      check_challenge_attempt_limits: {
+        Args: {
+          _challenge_id: string;
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
       cleanup_expired_cross_app_tokens: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
