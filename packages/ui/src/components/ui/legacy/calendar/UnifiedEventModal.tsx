@@ -70,6 +70,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import { useRef } from "react";
 
 interface ExtendedCalendarEvent extends CalendarEvent {
   _originalId?: string;
@@ -558,7 +559,102 @@ export function UnifiedEventModal() {
         variant: 'destructive',
       });
     }
+};
+
+// Voice Recognition wiith Gemini 2.0 Flash
+const [isRecording, setIsRecording] = useState(false);
+const mediaRecorder = useRef<MediaRecorder | null>(null);
+const audioChunks = useRef<Blob[]>([]);
+
+const startRecording = async () => {
+  setIsRecording(true);
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder.current = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+  mediaRecorder.current.ondataavailable = (event) => {
+    if (event.data.size > 0) {
+      audioChunks.current.push(event.data);
+    }
   };
+
+  mediaRecorder.current.onstop = async () => {
+    if (audioChunks.current.length === 0) {
+      console.error("❌ Không có dữ liệu ghi âm!");
+      setIsRecording(false);
+      return;
+    }
+
+    const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
+    const reader = new FileReader();
+    
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = async () => {
+      const base64Audio = reader.result?.toString().split(",")[1];
+
+      if (!base64Audio) {
+        console.error("❌ Lỗi chuyển đổi audio sang Base64");
+        return;
+      }
+
+      console.log("📤 Base64 Audio:", base64Audio);
+
+      try {
+        const response = await fetch(
+          "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" + process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    {
+                      text: "Please convert this audio into correct text:",
+                    },
+                    {
+                      inline_data: {
+                        mime_type: "audio/webm",
+                        data: base64Audio,
+                      },
+                    },
+                  ],
+                },
+              ],
+            }),
+          }
+        );
+
+        const result = await response.json();
+        console.log("📢 Gemini Response:", result);
+
+        if (result.candidates && result.candidates.length > 0) {
+          const transcript = result.candidates[0]?.content?.parts?.[0]?.text || "";
+          console.log("✅ Văn bản từ audio:", transcript);
+
+          // Gán vào prompt mà không gửi lại Gemini
+          aiForm.setValue("prompt", transcript);
+        } else {
+          console.error("❌ API không trả về văn bản:", result);
+        }
+      } catch (error) {
+        console.error("❌ Lỗi khi gọi API Gemini:", error);
+      }
+    };
+
+    setIsRecording(false);
+    audioChunks.current = [];
+  };
+
+  mediaRecorder.current.start();
+};
+
+const stopRecording = () => {
+  setIsRecording(false);
+  mediaRecorder.current?.stop();
+};
 
   // Handle navigation between multiple events in preview
   const goToNextEvent = () => {
@@ -829,7 +925,7 @@ export function UnifiedEventModal() {
                   <div className="flex flex-1 flex-col overflow-hidden">
                     <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                       <div className="space-y-6 p-6">
-                        <FormField
+                      <FormField
                           control={aiForm.control}
                           name="prompt"
                           render={({ field }) => (
@@ -838,12 +934,26 @@ export function UnifiedEventModal() {
                                 Describe your event
                               </FormLabel>
                               <FormControl>
-                                <textarea
-                                  {...field}
-                                  className="min-h-[150px] w-full resize-none rounded-md border border-input bg-background p-4 text-base focus:ring-1 focus:ring-ring focus:outline-none"
-                                  placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour to discuss the new project roadmap with the engineering team"
-                                  autoFocus
-                                />
+                                <div className="flex items-center gap-2">
+                                  <AutosizeTextarea
+                                    {...field}
+                                    placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
+                                    autoFocus
+                                    className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 text-base focus:ring-1 focus:ring-ring focus:outline-none"
+                                  />
+
+                                  {/* Nút thu âm */}
+                                  <button
+                                    type="button"
+                                    onClick={isRecording ? stopRecording : startRecording}
+                                    className={`mt-2 flex items-center gap-1.5 px-2 py-1.5 rounded-md ${
+                                      isRecording ? "bg-red-500 text-white" : "bg-blue-500 text-white"
+                                    }`}
+                                  >
+                                    {isRecording ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                    {isRecording ? "Stop" : "🎤 Record"}
+                                  </button>
+                                </div>
                               </FormControl>
                               <FormDescription className="flex items-center gap-1 text-xs">
                                 <Info className="h-3 w-3" />
