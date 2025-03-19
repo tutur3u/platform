@@ -2,6 +2,7 @@
 
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
+import { AutosizeTextarea } from '../../custom/autosize-textarea';
 import {
   COLOR_OPTIONS,
   DateError,
@@ -70,6 +71,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+// Import libraries for Voice Recoginiton
+import { Mic, StopCircle } from "lucide-react";
 import { useRef } from "react";
 
 interface ExtendedCalendarEvent extends CalendarEvent {
