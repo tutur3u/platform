@@ -74,6 +74,8 @@ import { z } from 'zod';
 // Import libraries for Voice Recoginiton
 import { Mic, StopCircle } from "lucide-react";
 import { useRef } from "react";
+// Import lirabries for Image Recognition
+import { Image as ImageIcon } from "lucide-react";
 
 interface ExtendedCalendarEvent extends CalendarEvent {
   _originalId?: string;
@@ -635,7 +637,7 @@ const startRecording = async () => {
 
         if (result.candidates && result.candidates.length > 0) {
           const transcript = result.candidates[0]?.content?.parts?.[0]?.text || "";
-          console.log("✅ text from audio:", transcript);
+          console.log("text from audio:", transcript);
 
           // Paste to prompt and not responding to Gemini
           aiForm.setValue("prompt", transcript);
@@ -643,7 +645,7 @@ const startRecording = async () => {
           console.error(" API dont give a text:", result);
         }
       } catch (error) {
-        console.error("❌ Error when call an API:", error);
+        console.error("Error when call an API:", error);
       }
     };
 
@@ -657,6 +659,76 @@ const startRecording = async () => {
 const stopRecording = () => {
   setIsRecording(false);
   mediaRecorder.current?.stop();
+};
+
+// Image Recognition by Gemini 2.0
+const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0]; // Lấy file ảnh
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onloadend = async () => {
+    const base64Image = reader.result?.toString().split(",")[1]; // Chuyển ảnh sang Base64
+    if (!base64Image) {
+      console.error("Error when change image to base64");
+      return;
+    }
+
+    console.log("📤 Base64 Image:", base64Image);
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: `Dưới đây là hình ảnh chứa lịch trình hoạt động hàng ngày.Nếu hình ảnh chỉ chứa 1 sự kiện đơn lẻ thì viết thẳng sự kiện đó ra lun. Nếu nhiều sự kiện được viết trong đó thì bạn nên kể ra như 1 đoạn văn ngắn theo trình tự ngày. Hãy trích xuất và diễn giải nó thành một đoạn văn liên tục, liệt kê các sự kiện theo từng ngày trong tuần mà không thêm nội dung thừa. Nếu hình ảnh không chứa lịch trình hoặc thông tin không rõ ràng, hãy phản hồi: Không phát hiện thấy lịch trình trong ảnh.
+    
+                              Ví dụ về cách diễn giải:                             
+                              thứ hai: 7h ăn sáng, 8h30 ngủ, 9h ngủ tiếp đến 10h30.
+                              thứ ba: 7h ăn sáng, 8h30 ngủ, 9h ngủ tiếp đến 10h30.
+                              thứ 4: 7h ăn sáng, 8h30 ngủ, 9h ngủ tiếp đến 10h30.
+                              
+                              Hãy áp dụng cách diễn giải tương tự cho lịch trình trong ảnh.`
+                  },
+                  {
+                    inline_data: {
+                      mime_type: "image/jpeg", // Đổi thành "image/png" nếu cần
+                      data: base64Image, // Dữ liệu ảnh dưới dạng base64
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+
+      const result = await response.json();
+      console.log(" Gemini Response:", result);
+
+      if (result.candidates && result.candidates.length > 0) {
+        const description = result.candidates[0]?.content?.parts?.[0]?.text || "";
+        console.log("Description of Image", description);
+
+        // Paste to prompt and not responding to Gemini
+        aiForm.setValue("prompt", description);
+      } else {
+        console.error("API don't send the text:", result);
+      }
+    } catch (error) {
+      console.error("Error when calling API Gemini:", error);
+    }
+  };
 };
 
 // Handle navigation between multiple events in preview
@@ -916,116 +988,128 @@ const stopRecording = () => {
 
             {/* AI Event Generation Tab */}
             <TabsContent
-              value="ai"
-              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
-              style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
-            >
-              <Form {...aiForm}>
-                <form
-                  onSubmit={aiForm.handleSubmit(handleGenerateEvent)}
-                  className="flex h-full flex-1 flex-col"
-                >
-                  <div className="flex flex-1 flex-col overflow-hidden">
-                    <ScrollArea className="h-[calc(90vh-250px)] flex-1">
-                      <div className="space-y-6 p-6">
-                      <FormField
-                          control={aiForm.control}
-                          name="prompt"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-base font-medium">
-                                Describe your event
-                              </FormLabel>
-                              <FormControl>
-                                <div className="flex items-center gap-2">
-                                  <AutosizeTextarea
-                                    {...field}
-                                    placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
-                                    autoFocus
-                                    className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 text-base focus:ring-1 focus:ring-ring focus:outline-none"
-                                  />
+                value="ai"
+                className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
+                style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
+              >
+                <Form {...aiForm}>
+                  <form
+                    onSubmit={aiForm.handleSubmit(handleGenerateEvent)}
+                    className="flex h-full flex-1 flex-col"
+                  >
+                    <div className="flex flex-1 flex-col overflow-hidden">
+                      <ScrollArea className="h-[calc(90vh-250px)] flex-1">
+                        <div className="space-y-6 p-6">
+                          <FormField
+                            control={aiForm.control}
+                            name="prompt"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-base font-medium">
+                                  Describe your event
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="relative w-full">
+                                    <AutosizeTextarea
+                                      {...field}
+                                      placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
+                                      autoFocus
+                                      className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 text-base pr-20 focus:ring-1 focus:ring-ring focus:outline-none"
+                                    />
+                                    
+                                    {/* Record Button */}
+                                    <button
+                                      type="button"
+                                      onClick={isRecording ? stopRecording : startRecording}
+                                      className={`absolute right-12 bottom-3 flex items-center gap-1.5 px-2 py-1 rounded-md ${
+                                        isRecording ? "bg-red-500 text-white" : "bg-blue-500 text-white"
+                                      }`}
+                                    >
+                                      {isRecording ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                    </button>
 
-                                  {/* record button */}
-                                  <button
-                                    type="button"
-                                    onClick={isRecording ? stopRecording : startRecording}
-                                    className={`mt-2 flex items-center gap-1.5 px-2 py-1.5 rounded-md ${
-                                      isRecording ? "bg-red-500 text-white" : "bg-blue-500 text-white"
-                                    }`}
-                                  >
-                                    {isRecording ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                                    {isRecording ? "Stop" : "🎤 Record"}
-                                  </button>
-                                </div>
-                              </FormControl>
-                              <FormDescription className="flex items-center gap-1 text-xs">
-                                <Info className="h-3 w-3" />
-                                Be as specific as possible for best results
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        {isLoading && (
-                          <div className="flex items-center justify-center py-8">
-                            <div className="flex flex-col items-center gap-2">
-                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                              <p className="text-sm text-muted-foreground">
-                                Creating your event...
-                              </p>
+                                    {/* 📸 Image button */}
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={handleUploadImage}
+                                      className="hidden"
+                                      id="uploadImage"
+                                    />
+                                    <label
+                                      htmlFor="uploadImage"
+                                      className="absolute right-3 bottom-3 flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500 text-white cursor-pointer"
+                                    >
+                                      <ImageIcon className="h-4 w-4" />
+                                    </label>
+                                  </div>
+                                </FormControl>
+                                <FormDescription className="flex items-center gap-1 text-xs">
+                                  <Info className="h-3 w-3" />
+                                  Be as specific as possible for best results
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          {isLoading && (
+                            <div className="flex items-center justify-center py-8">
+                              <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <p className="text-sm text-muted-foreground">
+                                  Creating your event...
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        )}
-
-                        {error && (
-                          <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>
-                              {error.message ||
-                                'Failed to generate event. Please try again.'}
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                      </div>
-                    </ScrollArea>
-
-                    {/* Action Buttons */}
-                    <div className="mt-auto border-t p-6">
-                      <div className="flex justify-between">
-                        <Button
-                          variant="outline"
-                          onClick={closeModal}
-                          disabled={isLoading}
-                          className="flex items-center gap-2"
-                        >
-                          <X className="h-4 w-4" />
-                          <span>Cancel</span>
-                        </Button>
-                        <Button
-                          type="submit"
-                          disabled={isLoading || !aiForm.watch('prompt')}
-                          className="flex items-center gap-2 bg-primary"
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span>Creating...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-4 w-4" />
-                              <span>Generate Event</span>
-                            </>
                           )}
-                        </Button>
+                          {error && (
+                            <Alert variant="destructive">
+                              <AlertCircle className="h-4 w-4" />
+                              <AlertTitle>Error</AlertTitle>
+                              <AlertDescription>
+                                {error.message ||
+                                  'Failed to generate event. Please try again.'}
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                        </div>
+                      </ScrollArea>
+
+                      {/* Action Buttons */}
+                      <div className="mt-auto border-t p-6">
+                        <div className="flex justify-between">
+                          <Button
+                            variant="outline"
+                            onClick={closeModal}
+                            disabled={isLoading}
+                            className="flex items-center gap-2"
+                          >
+                            <X className="h-4 w-4" />
+                            <span>Cancel</span>
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={isLoading || !aiForm.watch('prompt')}
+                            className="flex items-center gap-2 bg-primary"
+                          >
+                            {isLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Creating...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-4 w-4" />
+                                <span>Generate Event</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </form>
-              </Form>
-            </TabsContent>
+                  </form>
+                </Form>
+              </TabsContent>
 
             {/* Preview Tab */}
             <TabsContent
