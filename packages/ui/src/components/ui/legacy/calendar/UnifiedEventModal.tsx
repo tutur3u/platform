@@ -663,13 +663,13 @@ const stopRecording = () => {
 
 // Image Recognition by Gemini 2.0
 const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0]; // Lấy file ảnh
+  const file = event.target.files?.[0]; // image fime
   if (!file) return;
 
   const reader = new FileReader();
   reader.readAsDataURL(file);
   reader.onloadend = async () => {
-    const base64Image = reader.result?.toString().split(",")[1]; // Chuyển ảnh sang Base64
+    const base64Image = reader.result?.toString().split(",")[1]; // convert image to base64
     if (!base64Image) {
       console.error("Error when change image to base64");
       return;
@@ -691,19 +691,12 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
                 role: "user",
                 parts: [
                   {
-                    text: `Dưới đây là hình ảnh chứa lịch trình hoạt động hàng ngày.Nếu hình ảnh chỉ chứa 1 sự kiện đơn lẻ thì viết thẳng sự kiện đó ra lun. Nếu nhiều sự kiện được viết trong đó thì bạn nên kể ra như 1 đoạn văn ngắn theo trình tự ngày. Hãy trích xuất và diễn giải nó thành một đoạn văn liên tục, liệt kê các sự kiện theo từng ngày trong tuần mà không thêm nội dung thừa. Nếu hình ảnh không chứa lịch trình hoặc thông tin không rõ ràng, hãy phản hồi: Không phát hiện thấy lịch trình trong ảnh.
-    
-                              Ví dụ về cách diễn giải:                             
-                              thứ hai: 7h ăn sáng, 8h30 ngủ, 9h ngủ tiếp đến 10h30.
-                              thứ ba: 7h ăn sáng, 8h30 ngủ, 9h ngủ tiếp đến 10h30.
-                              thứ 4: 7h ăn sáng, 8h30 ngủ, 9h ngủ tiếp đến 10h30.
-                              
-                              Hãy áp dụng cách diễn giải tương tự cho lịch trình trong ảnh.`
+                    text: ' Extract all events, times and locations from the image, arrange them in chronological order. Display only this information in a well-structured list.'
                   },
                   {
                     inline_data: {
-                      mime_type: "image/jpeg", // Đổi thành "image/png" nếu cần
-                      data: base64Image, // Dữ liệu ảnh dưới dạng base64
+                      mime_type: "image/jpeg", 
+                      data: base64Image,
                     },
                   },
                 ],
