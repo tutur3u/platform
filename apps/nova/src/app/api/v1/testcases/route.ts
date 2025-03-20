@@ -165,7 +165,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { data: testcases, error: testcasesError } = await supabase
+    const { error: testcasesError } = await supabase
       .from('nova_problem_testcases')
       .delete()
       .eq('problem_id', problemId);

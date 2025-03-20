@@ -71,6 +71,10 @@ export async function PUT(request: Request, { params }: Params) {
     exampleInput?: string;
     exampleOutput?: string;
     challengeId?: string;
+    testcases?: {
+      input: string;
+      output: string;
+    }[];
   };
 
   try {
