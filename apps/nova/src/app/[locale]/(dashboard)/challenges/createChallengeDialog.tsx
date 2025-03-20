@@ -1,6 +1,7 @@
 'use client';
 
 import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ export default function CreateChallengeDialog({
   trigger,
 }: CreateChallengeDialogProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,6 +46,9 @@ export default function CreateChallengeDialog({
         title: 'Challenge created successfully',
         variant: 'default',
       });
+
+      // Invalidate challenges query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ['challenges'] });
 
       setOpen(false);
       router.refresh();

@@ -17,11 +17,13 @@ import { useState } from 'react';
 interface EditChallengeDialogProps {
   challenge: NovaChallenge;
   trigger: React.ReactNode;
+  onSuccessfulEdit?: () => void;
 }
 
 export default function EditChallengeDialog({
   challenge,
   trigger,
+  onSuccessfulEdit,
 }: EditChallengeDialogProps) {
   const router = useRouter();
 
@@ -60,6 +62,12 @@ export default function EditChallengeDialog({
       });
 
       setOpen(false);
+
+      // Call the onSuccessfulEdit callback if provided
+      if (onSuccessfulEdit) {
+        onSuccessfulEdit();
+      }
+
       router.refresh();
     } catch (error) {
       console.error('Error saving challenge:', error);

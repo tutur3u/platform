@@ -4,6 +4,7 @@ import { Countdown } from './components/Countdown';
 import { StartChallengeDialog } from './components/StartChallengeDialog';
 import { TimeProgress } from './components/TimeProgress';
 import EditChallengeDialog from './editChallengeDialog';
+import { useQueryClient } from '@tanstack/react-query';
 import type { NovaChallenge, NovaSession } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -61,6 +62,7 @@ export default function ChallengeCard({
 }: ChallengeCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<NovaSession | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [status, setStatus] = useState<
@@ -74,7 +76,12 @@ export default function ChallengeCard({
     if (!response.ok) return null;
     const data = await response.json();
     setSession(data[0]);
-  }, [challenge.id]);
+
+    // If session state changes, invalidate challenges query
+    if (data[0]?.status !== session?.status) {
+      queryClient.invalidateQueries({ queryKey: ['challenges'] });
+    }
+  }, [challenge.id, queryClient, session?.status]);
 
   const updateStatus = useCallback(() => {
     // Determine challenge status
@@ -135,6 +142,7 @@ export default function ChallengeCard({
       });
 
       if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ['challenges'] });
         router.refresh();
       } else {
         toast({
@@ -395,6 +403,9 @@ export default function ChallengeCard({
               <DropdownMenuContent align="end">
                 <EditChallengeDialog
                   challenge={challenge}
+                  onSuccessfulEdit={() => {
+                    queryClient.invalidateQueries({ queryKey: ['challenges'] });
+                  }}
                   trigger={
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                       <Pencil className="mr-2 h-4 w-4" />
