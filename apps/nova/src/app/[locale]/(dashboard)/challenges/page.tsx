@@ -6,9 +6,32 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+
+async function fetchChallenges(): Promise<NovaChallenge[]> {
+  const supabase = await createClient();
+
+  try {
+    const { data: challenges, error } = await supabase
+      .from('nova_challenges')
+      .select('*, criteria:nova_challenge_criteria(*)')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching challenges:', error.message);
+      return [];
+    }
+
+    return challenges;
+  } catch (error) {
+    console.error('Unexpected error fetching challenges:', error);
+    return [];
+  }
+}
 
 export default async function Page() {
   const sbAdmin = await createAdminClient();
@@ -31,7 +54,8 @@ export default async function Page() {
     whitelisted?.enabled && whitelisted?.allow_challenge_management
   );
 
-  const challenges = await fetchChallenges();
+  // Fetch initial challenges for SSR (will be replaced by client fetch later)
+  const initialChallenges = await fetchChallenges();
 
   return (
     <div className="container mx-auto p-6">
@@ -39,33 +63,24 @@ export default async function Page() {
         <h1 className="text-3xl font-bold">
           {t('prompt-engineering-challenges')}
         </h1>
-        {isAdmin && <CreateChallengeDialog />}
+        {isAdmin && (
+          <CreateChallengeDialog
+            trigger={
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t('create-challenge')}
+              </Button>
+            }
+          />
+        )}
       </div>
 
       <Suspense fallback={<LoadingChallenges />}>
-        <ChallengesList initialChallenges={challenges} isAdmin={isAdmin} />
+        <ChallengesList
+          initialChallenges={initialChallenges}
+          isAdmin={isAdmin}
+        />
       </Suspense>
     </div>
   );
-}
-
-async function fetchChallenges(): Promise<NovaChallenge[]> {
-  const supabase = await createClient();
-
-  try {
-    const { data: challenges, error } = await supabase
-      .from('nova_challenges')
-      .select('*, criteria:nova_challenge_criteria(*)')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching challenges:', error.message);
-      return [];
-    }
-
-    return challenges;
-  } catch (error) {
-    console.error('Unexpected error fetching challenges:', error);
-    return [];
-  }
 }

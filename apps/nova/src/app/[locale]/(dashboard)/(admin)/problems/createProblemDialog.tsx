@@ -1,7 +1,6 @@
 'use client';
 
-import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
-import { useQueryClient } from '@tanstack/react-query';
+import ProblemForm, { type ProblemFormValues } from './problem-form';
 import {
   Dialog,
   DialogContent,
@@ -14,23 +13,22 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface CreateChallengeDialogProps {
+interface CreateProblemDialogProps {
   trigger: React.ReactNode;
 }
 
-export default function CreateChallengeDialog({
+export default function CreateProblemDialog({
   trigger,
-}: CreateChallengeDialogProps) {
+}: CreateProblemDialogProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = async (values: ChallengeFormValues) => {
+  const onSubmit = async (values: ProblemFormValues) => {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch('/api/v1/challenges', {
+      const response = await fetch('/api/v1/problems', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,24 +37,37 @@ export default function CreateChallengeDialog({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save challenge');
+        throw new Error('Failed to save problem');
+      }
+
+      const problem = await response.json();
+
+      if (problem?.id) {
+        Promise.allSettled(
+          values.testcases.map((tc) =>
+            fetch('/api/v1/testcases', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ problemId: problem.id, input: tc.input }),
+            })
+          )
+        );
       }
 
       toast({
-        title: 'Challenge created successfully',
-        variant: 'default',
+        title: 'Success',
+        description: 'Problem created successfully',
       });
-
-      // Invalidate challenges query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: ['challenges'] });
 
       setOpen(false);
       router.refresh();
     } catch (error) {
-      console.error('Error saving challenge:', error);
       toast({
-        title: 'Failed to save challenge',
-        description: error instanceof Error ? error.message : 'Unknown error',
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
     } finally {
@@ -69,13 +80,12 @@ export default function CreateChallengeDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Challenge</DialogTitle>
+          <DialogTitle>Create New Problem</DialogTitle>
           <DialogDescription>
-            Create a new prompt engineering challenge for users to practice
-            with.
+            Create a new prompt engineering problem for users to practice with.
           </DialogDescription>
         </DialogHeader>
-        <ChallengeForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
+        <ProblemForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
       </DialogContent>
     </Dialog>
   );

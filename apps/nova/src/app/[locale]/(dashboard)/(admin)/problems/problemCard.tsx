@@ -1,5 +1,6 @@
 'use client';
 
+import EditProblemDialog from './editProblemDialog';
 import { NovaProblem } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -81,11 +82,14 @@ export default function ProblemCard({ problem }: { problem: NovaProblem }) {
             <Button variant="default">View</Button>
           </Link>
           <div className="flex gap-2">
-            <Link href={`/problems/${problem.id}/edit`}>
-              <Button variant="outline" size="icon">
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </Link>
+            <EditProblemDialog
+              problem={problem}
+              trigger={
+                <Button variant="outline" size="icon">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              }
+            />
             <Button
               variant="destructive"
               size="icon"
