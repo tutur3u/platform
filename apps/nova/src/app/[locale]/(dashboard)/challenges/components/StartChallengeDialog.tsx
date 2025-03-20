@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { NovaChallenge } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -32,6 +33,7 @@ export function StartChallengeDialog({
 }: StartChallengeDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
 
@@ -70,6 +72,8 @@ export function StartChallengeDialog({
       });
 
       if (response.ok) {
+        // Invalidate challenges query to update the UI with the new session
+        queryClient.invalidateQueries({ queryKey: ['challenges'] });
         router.push(`/challenges/${challenge.id}`);
       } else {
         toast({

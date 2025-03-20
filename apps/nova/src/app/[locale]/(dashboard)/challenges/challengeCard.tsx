@@ -4,6 +4,7 @@ import { Countdown } from './components/Countdown';
 import { StartChallengeDialog } from './components/StartChallengeDialog';
 import { TimeProgress } from './components/TimeProgress';
 import EditChallengeDialog from './editChallengeDialog';
+import { useQueryClient } from '@tanstack/react-query';
 import type { NovaChallenge, NovaSession } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -61,6 +62,7 @@ export default function ChallengeCard({
 }: ChallengeCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<NovaSession | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [status, setStatus] = useState<
@@ -74,10 +76,20 @@ export default function ChallengeCard({
     if (!response.ok) return null;
     const data = await response.json();
     setSession(data[0]);
-  }, [challenge.id]);
+
+    // If session state changes, invalidate challenges query
+    if (data[0]?.status !== session?.status) {
+      queryClient.invalidateQueries({ queryKey: ['challenges'] });
+    }
+  }, [challenge.id, queryClient, session?.status]);
 
   const updateStatus = useCallback(() => {
     // Determine challenge status
+    if (!challenge.enabled) {
+      setStatus('disabled');
+      return;
+    }
+
     const now = new Date();
     const previewableAt = challenge.previewable_at
       ? new Date(challenge.previewable_at)
@@ -85,27 +97,75 @@ export default function ChallengeCard({
     const openAt = challenge.open_at ? new Date(challenge.open_at) : null;
     const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
 
-    if (!challenge.enabled) {
-      setStatus('disabled');
-      return;
-    }
-
-    if (previewableAt && now < previewableAt) {
-      setStatus('upcoming');
-      return;
-    }
-
-    if (openAt && now < openAt) {
-      setStatus('preview');
-      return;
-    }
-
-    if (!closeAt || (closeAt && now < closeAt)) {
+    if (!previewableAt && !openAt && !closeAt) {
       setStatus('active');
-      return;
     }
 
-    setStatus('closed');
+    if (previewableAt && !openAt && !closeAt) {
+      if (now < previewableAt) {
+        setStatus('upcoming');
+      } else {
+        setStatus('preview');
+      }
+    }
+
+    if (!previewableAt && openAt && !closeAt) {
+      if (now < openAt) {
+        setStatus('preview');
+      } else {
+        setStatus('active');
+      }
+    }
+
+    if (!previewableAt && !openAt && closeAt) {
+      if (now < closeAt) {
+        setStatus('upcoming');
+      } else {
+        setStatus('closed');
+      }
+    }
+
+    if (previewableAt && openAt && !closeAt) {
+      if (now < previewableAt) {
+        setStatus('upcoming');
+      } else if (now < openAt) {
+        setStatus('preview');
+      } else {
+        setStatus('active');
+      }
+    }
+
+    if (previewableAt && !openAt && closeAt) {
+      if (now < previewableAt) {
+        setStatus('upcoming');
+      } else if (now < closeAt) {
+        setStatus('preview');
+      } else {
+        setStatus('closed');
+      }
+    }
+
+    if (!previewableAt && openAt && closeAt) {
+      if (now < openAt) {
+        setStatus('preview');
+      } else if (now < closeAt) {
+        setStatus('active');
+      } else {
+        setStatus('closed');
+      }
+    }
+
+    if (previewableAt && openAt && closeAt) {
+      if (now < previewableAt) {
+        setStatus('upcoming');
+      } else if (now < openAt) {
+        setStatus('preview');
+      } else if (now < closeAt) {
+        setStatus('active');
+      } else {
+        setStatus('closed');
+      }
+    }
   }, [challenge]);
 
   useEffect(() => {
@@ -135,6 +195,7 @@ export default function ChallengeCard({
       });
 
       if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ['challenges'] });
         router.refresh();
       } else {
         toast({
@@ -226,7 +287,6 @@ export default function ChallengeCard({
   const renderSessionStatus = () => {
     if (!session) return null;
 
-    const now = new Date();
     const startTime = session.start_time ? new Date(session.start_time) : null;
     const endTime = session.end_time ? new Date(session.end_time) : null;
 
@@ -242,7 +302,7 @@ export default function ChallengeCard({
             </Badge>
           </div>
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
               <span>Started: {format(startTime, 'PPpp')}</span>
             </div>
@@ -264,28 +324,24 @@ export default function ChallengeCard({
             </Badge>
           </div>
 
-          {now >= startTime && (
-            <>
-              <div className="flex flex-col items-center justify-center">
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Clock className="mr-1 h-3 w-3" /> Time remaining:
-                </div>
-                <Countdown
-                  targetDate={endTime}
-                  onComplete={() => {
-                    fetchSession();
-                    updateStatus();
-                  }}
-                  className="mb-2"
-                />
-              </div>
-              <div className="mb-2">
-                <TimeProgress startDate={startTime} endDate={endTime} />
-              </div>
-            </>
-          )}
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-muted-foreground flex items-center text-xs">
+              <Clock className="mr-1 h-3 w-3" /> Time remaining:
+            </div>
+            <Countdown
+              targetDate={endTime}
+              onComplete={() => {
+                fetchSession();
+                updateStatus();
+              }}
+              className="mb-2"
+            />
+          </div>
+          <div className="mb-2">
+            <TimeProgress startDate={startTime} endDate={endTime} />
+          </div>
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
               <span>Started: {format(startTime, 'PPpp')}</span>
             </div>
@@ -322,21 +378,7 @@ export default function ChallengeCard({
         );
       }
 
-      return (
-        <StartChallengeDialog
-          challenge={challenge}
-          disabled={
-            // Challenge is closed
-            status === 'closed' ||
-            // Challenge open at is not set
-            !challenge.open_at ||
-            // Challenge is not open yet
-            (!!challenge.open_at && new Date() < new Date(challenge.open_at)) ||
-            // Challenge is already closed
-            (!!challenge.close_at && new Date() > new Date(challenge.close_at))
-          }
-        />
-      );
+      return <StartChallengeDialog challenge={challenge} />;
     }
 
     if (status === 'disabled') {
@@ -395,6 +437,9 @@ export default function ChallengeCard({
               <DropdownMenuContent align="end">
                 <EditChallengeDialog
                   challenge={challenge}
+                  onSuccessfulEdit={() => {
+                    queryClient.invalidateQueries({ queryKey: ['challenges'] });
+                  }}
                   trigger={
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                       <Pencil className="mr-2 h-4 w-4" />
@@ -414,25 +459,23 @@ export default function ChallengeCard({
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
           <div className="flex flex-col gap-2">
             <div className="flex items-center">
-              <Clock className="h-4 w-4 text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">
+              <Clock className="text-primary h-4 w-4" />
+              <span className="text-muted-foreground ml-2 text-sm">
                 Duration: {formatDuration(challenge.duration)}
               </span>
             </div>
 
-            {status === 'upcoming' && challenge.previewable_at && isAdmin && (
+            {status === 'upcoming' && challenge.previewable_at && (
               <div className="flex items-center">
                 <Eye className="h-4 w-4 text-amber-500" />
-                <span className="ml-2 text-sm text-muted-foreground">
+                <span className="text-muted-foreground ml-2 text-sm">
                   Preview available:{' '}
-                  {new Date() >= new Date(challenge.previewable_at)
-                    ? 'Now'
-                    : formatDistanceToNow(new Date(challenge.previewable_at), {
-                        addSuffix: true,
-                      })}
+                  {formatDistanceToNow(new Date(challenge.previewable_at), {
+                    addSuffix: true,
+                  })}
                 </span>
               </div>
             )}

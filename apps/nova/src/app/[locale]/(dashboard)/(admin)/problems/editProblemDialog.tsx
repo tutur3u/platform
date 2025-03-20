@@ -1,7 +1,7 @@
 'use client';
 
-import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
-import { type NovaChallenge } from '@tuturuuu/types/db';
+import ProblemForm, { type ProblemFormValues } from './problem-form';
+import { type NovaProblem } from '@tuturuuu/types/db';
 import {
   Dialog,
   DialogContent,
@@ -14,17 +14,15 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface EditChallengeDialogProps {
-  challenge: NovaChallenge;
+interface EditProblemDialogProps {
+  problem: NovaProblem;
   trigger: React.ReactNode;
-  onSuccessfulEdit?: () => void;
 }
 
-export default function EditChallengeDialog({
-  challenge,
+export default function EditProblemDialog({
+  problem,
   trigger,
-  onSuccessfulEdit,
-}: EditChallengeDialogProps) {
+}: EditProblemDialogProps) {
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
@@ -32,19 +30,14 @@ export default function EditChallengeDialog({
 
   // Convert string dates to Date objects for the form
   const formattedDefaultValues = {
-    ...challenge,
-    open_at: challenge.open_at ? new Date(challenge.open_at) : null,
-    close_at: challenge.close_at ? new Date(challenge.close_at) : null,
-    previewable_at: challenge.previewable_at
-      ? new Date(challenge.previewable_at)
-      : null,
+    ...problem,
   };
 
-  const onSubmit = async (values: ChallengeFormValues) => {
+  const onSubmit = async (values: ProblemFormValues) => {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch(`/api/v1/challenges/${challenge.id}`, {
+      const response = await fetch(`/api/v1/problems/${problem.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -53,26 +46,38 @@ export default function EditChallengeDialog({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save challenge');
+        throw new Error('Failed to save problem');
       }
 
+      // Delete all testcases with the same problem_id
+      await fetch(`/api/v1/testcases?problemId=${problem.id}`, {
+        method: 'DELETE',
+      });
+
+      // Create new testcases
+      Promise.allSettled(
+        values.testcases.map((tc) =>
+          fetch(`/api/v1/testcases?problemId=${problem.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ input: tc.input }),
+          })
+        )
+      );
+
       toast({
-        title: 'Challenge updated successfully',
+        title: 'Problem updated successfully',
         variant: 'default',
       });
 
       setOpen(false);
-
-      // Call the onSuccessfulEdit callback if provided
-      if (onSuccessfulEdit) {
-        onSuccessfulEdit();
-      }
-
       router.refresh();
     } catch (error) {
-      console.error('Error saving challenge:', error);
+      console.error('Error saving problem:', error);
       toast({
-        title: 'Failed to save challenge',
+        title: 'Failed to save problem',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
@@ -86,13 +91,13 @@ export default function EditChallengeDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Challenge</DialogTitle>
+          <DialogTitle>Edit Problem</DialogTitle>
           <DialogDescription>
-            Make changes to the challenge details.
+            Make changes to the problem details.
           </DialogDescription>
         </DialogHeader>
-        <ChallengeForm
-          challengeId={challenge.id}
+        <ProblemForm
+          problemId={problem.id}
           defaultValues={formattedDefaultValues}
           onSubmit={onSubmit}
           isSubmitting={isSubmitting}
