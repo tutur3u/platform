@@ -19,7 +19,7 @@ export default async function ProblemsPage() {
           trigger={
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              {t('create-challenge')}
+              {t('create-problem')}
             </Button>
           }
         />
@@ -52,7 +52,7 @@ async function fetchProblems(): Promise<NovaProblem[]> {
   try {
     const { data: problems, error } = await database
       .from('nova_problems')
-      .select('*');
+      .select('*, testcases:nova_problem_testcases(*)');
 
     if (error) {
       console.error('Error fetching problems:', error.message);

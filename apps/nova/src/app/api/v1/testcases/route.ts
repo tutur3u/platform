@@ -103,3 +103,87 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PUT(request: Request) {
+  const supabase = await createClient();
+  const { searchParams } = new URL(request.url);
+  const problemId = searchParams.get('problemId');
+
+  if (!problemId) {
+    return NextResponse.json(
+      { message: 'Problem ID is required' },
+      { status: 400 }
+    );
+  }
+
+  let body;
+
+  try {
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
+  }
+
+  try {
+    const { data: testcase, error: testcaseError } = await supabase
+      .from('nova_problem_testcases')
+      .upsert({
+        ...body,
+        problem_id: problemId,
+      })
+      .select('id')
+      .single();
+
+    if (testcaseError) {
+      console.error('Database Error: ', testcaseError);
+      return NextResponse.json(
+        { message: 'Error updating testcase' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(testcase, { status: 200 });
+  } catch (error) {
+    console.error('Unexpected Error:', error);
+    return NextResponse.json(
+      { message: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  const supabase = await createClient();
+  const { searchParams } = new URL(request.url);
+  const problemId = searchParams.get('problemId');
+
+  if (!problemId) {
+    return NextResponse.json(
+      { message: 'Problem ID is required' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const { data: testcases, error: testcasesError } = await supabase
+      .from('nova_problem_testcases')
+      .delete()
+      .eq('problem_id', problemId);
+
+    if (testcasesError) {
+      console.error('Database Error: ', testcasesError);
+      return NextResponse.json(
+        { message: 'Error deleting testcases' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ message: 'Testcases deleted' }, { status: 200 });
+  } catch (error) {
+    console.error('Unexpected Error:', error);
+    return NextResponse.json(
+      { message: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}

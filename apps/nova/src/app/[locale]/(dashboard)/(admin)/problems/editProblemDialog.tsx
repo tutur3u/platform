@@ -49,6 +49,12 @@ export default function EditProblemDialog({
         throw new Error('Failed to save problem');
       }
 
+      // Delete all testcases with the same problem_id
+      await fetch(`/api/v1/testcases?problemId=${problem.id}`, {
+        method: 'DELETE',
+      });
+
+      // Create new testcases
       Promise.allSettled(
         values.testcases.map((tc) =>
           fetch(`/api/v1/testcases?problemId=${problem.id}`, {

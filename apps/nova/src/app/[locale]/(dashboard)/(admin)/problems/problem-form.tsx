@@ -49,16 +49,19 @@ const formSchema = z.object({
   description: z.string().min(10, {
     message: 'Description must be at least 10 characters.',
   }),
-  maxPromptLength: z.coerce.number().min(1, {
-    message: 'Max prompt length must be at least 1.',
-  }),
-  exampleInput: z.string().min(1, {
+  max_prompt_length: z.coerce
+    .number()
+    .min(1, {
+      message: 'Max prompt length must be at least 1.',
+    })
+    .default(1000),
+  example_input: z.string().min(1, {
     message: 'Example input is required.',
   }),
-  exampleOutput: z.string().min(1, {
+  example_output: z.string().min(1, {
     message: 'Example output is required.',
   }),
-  challengeId: z.string().nonempty('Challenge is required'),
+  challenge_id: z.string().nonempty('Challenge is required'),
   testcases: z
     .array(testCaseSchema)
     .min(1, 'At least one test case is required'),
@@ -184,7 +187,7 @@ export default function ProblemForm({
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="maxPromptLength"
+                      name="max_prompt_length"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Max Prompt Length</FormLabel>
@@ -201,7 +204,7 @@ export default function ProblemForm({
 
                     <FormField
                       control={form.control}
-                      name="challengeId"
+                      name="challenge_id"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Challenge</FormLabel>
@@ -238,7 +241,7 @@ export default function ProblemForm({
 
                   <FormField
                     control={form.control}
-                    name="exampleInput"
+                    name="example_input"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Example Input</FormLabel>
@@ -259,7 +262,7 @@ export default function ProblemForm({
 
                   <FormField
                     control={form.control}
-                    name="exampleOutput"
+                    name="example_output"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Example Output</FormLabel>
@@ -326,7 +329,7 @@ export default function ProblemForm({
                       </div>
                     ))
                   ) : (
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       No test cases added yet.
                     </p>
                   )}
