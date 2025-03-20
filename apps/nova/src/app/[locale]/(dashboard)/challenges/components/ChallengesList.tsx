@@ -31,6 +31,8 @@ export default function ChallengesList({
 
     result = result.filter((challenge) => {
       // Apply status filter
+      if (filter === 'all') return true;
+
       const now = new Date();
       const previewableAt = challenge.previewable_at
         ? new Date(challenge.previewable_at)
@@ -38,12 +40,75 @@ export default function ChallengesList({
       const openAt = challenge.open_at ? new Date(challenge.open_at) : null;
       const closeAt = challenge.close_at ? new Date(challenge.close_at) : null;
 
-      if (filter === 'all') return true;
-      if (!challenge.enabled) return filter === 'disabled';
-      if (previewableAt && now < previewableAt) return filter === 'upcoming';
-      if (openAt && now < openAt) return filter === 'preview';
-      if (!closeAt || (closeAt && now < closeAt)) return filter === 'active';
-      return filter === 'closed';
+      if (!previewableAt && !openAt && !closeAt) {
+        return filter == 'active';
+      }
+
+      if (previewableAt && !openAt && !closeAt) {
+        if (now < previewableAt) {
+          return filter == 'upcoming';
+        } else {
+          return filter == 'preview';
+        }
+      }
+
+      if (!previewableAt && openAt && !closeAt) {
+        if (now < openAt) {
+          return filter == 'preview';
+        } else {
+          return filter == 'active';
+        }
+      }
+
+      if (!previewableAt && !openAt && closeAt) {
+        if (now < closeAt) {
+          return filter == 'upcoming';
+        } else {
+          return filter == 'closed';
+        }
+      }
+
+      if (previewableAt && openAt && !closeAt) {
+        if (now < previewableAt) {
+          return filter == 'upcoming';
+        } else if (now < openAt) {
+          return filter == 'preview';
+        } else {
+          return filter == 'active';
+        }
+      }
+
+      if (previewableAt && !openAt && closeAt) {
+        if (now < previewableAt) {
+          return filter == 'upcoming';
+        } else if (now < closeAt) {
+          return filter == 'preview';
+        } else {
+          return filter == 'closed';
+        }
+      }
+
+      if (!previewableAt && openAt && closeAt) {
+        if (now < openAt) {
+          return filter == 'preview';
+        } else if (now < closeAt) {
+          return filter == 'active';
+        } else {
+          return filter == 'closed';
+        }
+      }
+
+      if (previewableAt && openAt && closeAt) {
+        if (now < previewableAt) {
+          return filter == 'upcoming';
+        } else if (now < openAt) {
+          return filter == 'preview';
+        } else if (now < closeAt) {
+          return filter == 'active';
+        } else {
+          return filter == 'closed';
+        }
+      }
     });
 
     // Apply search query

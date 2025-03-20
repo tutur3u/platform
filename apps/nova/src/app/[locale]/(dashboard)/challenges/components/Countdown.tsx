@@ -24,7 +24,7 @@ export function Countdown({
     const calculateTimeLeft = () => {
       const difference = targetDate.getTime() - new Date().getTime();
 
-      if (difference < 0) {
+      if (difference <= 0) {
         onComplete?.();
         return;
       }
