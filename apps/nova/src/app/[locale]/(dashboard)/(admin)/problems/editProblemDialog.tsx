@@ -109,9 +109,9 @@ export default function EditProblemDialog({
       setOpen(false);
       router.refresh();
     } catch (error) {
-      console.error('Error saving problem:', error);
+      console.error('Error:', error);
       toast({
-        title: 'Failed to save problem',
+        title: 'An error occurred',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });

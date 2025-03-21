@@ -135,9 +135,9 @@ export default function EditChallengeDialog({
 
       router.refresh();
     } catch (error) {
-      console.error('Error saving challenge:', error);
+      console.error('Error:', error);
       toast({
-        title: 'Failed to save challenge',
+        title: 'An error occurred',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
