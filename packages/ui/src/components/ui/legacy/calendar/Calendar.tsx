@@ -153,7 +153,6 @@ const CalendarContent = ({
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
-  const { googleTokens } = useCalendar();
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
 
