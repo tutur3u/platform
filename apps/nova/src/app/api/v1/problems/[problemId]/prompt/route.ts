@@ -110,7 +110,10 @@ export async function POST(req: Request, { params }: Params) {
       4. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks. 
       5. The score MUST be a single number (not an array).
       6. The response MUST use this EXACT format:
-      {"score": 7, "feedback": "Your explanation here"}
+      {
+        "score": 7,
+        "feedback": "Your explanation here"
+      }
     `;
     // Get the model
     const aiModel = genAI.getGenerativeModel({ model });

@@ -11,12 +11,12 @@ export default function PromptComponent({
 }: PromptComponentProps) {
   return (
     <Card
-      className={`h-full w-full overflow-hidden bg-foreground/10 text-foreground ${className}`}
+      className={`bg-foreground/10 text-foreground flex h-full flex-col overflow-y-auto ${className}`}
     >
       <CardHeader>
         <CardTitle className="text-xl">Prompt Engineering Challenge</CardTitle>
       </CardHeader>
-      <CardContent className="h-full">{children}</CardContent>
+      <CardContent className="flex-1">{children}</CardContent>
     </Card>
   );
 }
