@@ -62,23 +62,21 @@ import {
   ChevronRight,
   Clock,
   FileText,
+  Image as ImageIcon,
   Info,
   Loader2,
   Lock,
   MapPin,
+  Mic,
   Settings,
   Sparkles,
+  StopCircle,
   Trash2,
   Unlock,
   X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
-// Import libraries for Voice Recoginiton
-import { Mic, StopCircle } from "lucide-react";
-import { useRef } from "react";
-// Import lirabries for Image Recognition
-import { Image as ImageIcon } from "lucide-react";
 
 interface ExtendedCalendarEvent extends CalendarEvent {
   _originalId?: string;
@@ -86,7 +84,6 @@ interface ExtendedCalendarEvent extends CalendarEvent {
   _dayPosition?: 'start' | 'middle' | 'end';
 }
 
-// Form schema for AI event generation
 const AIFormSchema = z.object({
   prompt: z.string().min(1, 'Please enter a prompt to generate an event'),
   timezone: z
@@ -436,9 +433,9 @@ export function UnifiedEventModal() {
   // Handle event deletion
   const handleDelete = async () => {
     if (isRecording) {
-      console.log("🛑 Hủy ghi âm do sự kiện bị xóa");
-      stopRecording(); // Ngắt ghi âm nếu đang thu
-  }
+      console.log('🛑 Cancel recording due to event deletion');
+      stopRecording();
+    }
     if (!activeEvent?.id) return;
 
     setIsDeleting(true);
@@ -561,162 +558,122 @@ export function UnifiedEventModal() {
     });
   };
 
-  // Handle AI event generation
-  const handleGenerateEvent = async (values: z.infer<typeof AIFormSchema>) => {
-    try {
-      // Include timezone in the prompt for accurate time conversion
-      const promptWithTimezone = `${values.prompt} (User timezone: ${values.timezone})`;
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-      // Add priority information to the prompt
-      const promptWithPriority = `${promptWithTimezone} (Priority: ${values.priority})`;
+  const startRecording = async () => {
+    setIsRecording(true);
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder.current = new MediaRecorder(stream, {
+      mimeType: 'audio/webm',
+    });
 
-      // Get existing events for smart scheduling
-      const existingEvents = values.smart_scheduling ? getEvents() : [];
-
-      // Generate helpful suggestions based on the prompt
-      const suggestions = [
-        'Consider adding a buffer time before/after these events',
-        'These events might benefit from reminder notifications',
-        'Based on your schedule, early morning might be better for focus',
-        'Consider adding meeting agenda or preparation notes',
-      ];
-
-      // Add category-based suggestions
-      if (settings?.categoryColors?.categories.length > 0) {
-        const categoryNames = settings.categoryColors.categories
-          .map((cat) => cat.name)
-          .join(', ');
-        suggestions.push(
-          `You have categories set up: ${categoryNames}. Events will be colored based on these categories.`
-        );
+    mediaRecorder.current.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunks.current.push(event.data);
       }
+    };
 
-      setAiSuggestions(suggestions.slice(0, 3)); // Show up to 3 relevant suggestions
-
-      submit({
-        prompt: promptWithPriority,
-        current_time: new Date().toISOString(),
-        smart_scheduling: values.smart_scheduling,
-        existing_events: values.smart_scheduling ? existingEvents : undefined,
-      });
-    } catch (error) {
-      console.error('Error generating events:', error);
-      toast({
-        title: 'Error generating events',
-        description: 'Please try again with a different prompt',
-        variant: 'destructive',
-      });
-    }
-};
-
-// Voice Recognition wiith Gemini 2.0 Flash
-const [isRecording, setIsRecording] = useState(false);
-const mediaRecorder = useRef<MediaRecorder | null>(null);
-const audioChunks = useRef<Blob[]>([]);
-
-const startRecording = async () => {
-  setIsRecording(true);
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder.current = new MediaRecorder(stream, { mimeType: "audio/webm" });
-
-  mediaRecorder.current.ondataavailable = (event) => {
-    if (event.data.size > 0) {
-      audioChunks.current.push(event.data);
-    }
-  };
-
-  mediaRecorder.current.onstop = async () => {
-    if (audioChunks.current.length === 0) {
-      console.error("No recording data!");
-      setIsRecording(false);
-      return;
-    }
-
-    const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
-    const reader = new FileReader();
-    
-    reader.readAsDataURL(audioBlob);
-    reader.onloadend = async () => {
-      const base64Audio = reader.result?.toString().split(",")[1];
-
-      if (!base64Audio) {
-        console.error("Error when converting audio to base64");
+    mediaRecorder.current.onstop = async () => {
+      if (audioChunks.current.length === 0) {
+        console.error('No recording data!');
+        setIsRecording(false);
         return;
       }
 
-      console.log("Sending Base64 Audio to server...");
-      sendAudioToServer(base64Audio);
+      const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+      const reader = new FileReader();
+
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64Audio = reader.result?.toString().split(',')[1];
+
+        if (!base64Audio) {
+          console.error('Error when converting audio to base64');
+          return;
+        }
+
+        console.log('Sending Base64 Audio to server...');
+        sendAudioToServer(base64Audio);
+      };
+
+      setIsRecording(false);
+      audioChunks.current = [];
     };
 
-    setIsRecording(false);
-    audioChunks.current = [];
+    mediaRecorder.current.start();
   };
 
-  mediaRecorder.current.start();
-};
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
 
-const stopRecording = () => {
-  setIsRecording(false);
-  mediaRecorder.current?.stop();
-};
+  const stopRecording = () => {
+    setIsRecording(false);
+    mediaRecorder.current?.stop();
+  };
 
-const sendAudioToServer = async (base64Audio: string) => {
-  try {
-    const response = await fetch("/api/v1/calendar/audio", { 
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ base64Audio }),
-    });
-
-    const result = await response.json();
-    if (result.text) {
-      console.log("Transcribed text:", result.text);
-      aiForm.setValue("prompt", result.text);
-    } else {
-      console.error("Failed to transcribe audio:", result.error);
-    }
-  } catch (error) {
-    console.error("Error calling API:", error);
-  }
-};
-
-// Image Recognition by Gemini 2.0
-const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0]; // image file from input
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
-  reader.onloadend = async () => {
-    const base64Image = reader.result?.toString().split(",")[1]; // convert to base64
-    if (!base64Image) {
-      console.error("Error when changing image to base64");
-      return;
-    }
-
-    console.log("Uploading Base64 Image to server...");
-
+  const sendAudioToServer = async (base64Audio: string) => {
     try {
-      const response = await fetch("/api/v1/calendar/image", { // send to API
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ base64Image }),
+      const response = await fetch('/api/v1/calendar/audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Audio }),
       });
 
       const result = await response.json();
       if (result.text) {
-        console.log("Extracted text from image:", result.text);
-        aiForm.setValue("prompt", result.text);
+        console.log('Transcribed text:', result.text);
+        aiForm.setValue('prompt', result.text);
       } else {
-        console.error("Failed to extract text from image:", result.error);
+        console.error('Failed to transcribe audio:', result.error);
       }
     } catch (error) {
-      console.error("Error when sending image to server:", error);
+      console.error('Error calling API:', error);
     }
   };
-};
 
-// Handle navigation between multiple events in preview
+  const handleUploadImage = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0]; // image file from input
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = async () => {
+      const base64Image = reader.result?.toString().split(',')[1]; // convert to base64
+      if (!base64Image) {
+        console.error('Error when changing image to base64');
+        return;
+      }
+
+      console.log('Uploading Base64 Image to server...');
+
+      try {
+        const response = await fetch('/api/v1/calendar/image', {
+          // send to API
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64Image }),
+        });
+
+        const result = await response.json();
+        if (result.text) {
+          console.log('Extracted text from image:', result.text);
+          aiForm.setValue('prompt', result.text);
+        } else {
+          console.error('Failed to extract text from image:', result.error);
+        }
+      } catch (error) {
+        console.error('Error when sending image to server:', error);
+      }
+    };
+  };
+
+  // Handle navigation between multiple events in preview
   const goToNextEvent = () => {
     if (currentEventIndex < generatedEvents.length - 1) {
       const nextIndex = currentEventIndex + 1;
@@ -1019,128 +976,144 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
 
             {/* AI Event Generation Tab */}
             <TabsContent
-                value="ai"
-                className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
-                style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
-              >
-                <Form {...aiForm}>
-                  <form
-                    onSubmit={aiForm.handleSubmit(handleGenerateEvent)}
-                    className="flex h-full flex-1 flex-col"
-                  >
-                    <div className="flex flex-1 flex-col overflow-hidden">
-                      <ScrollArea className="h-[calc(90vh-250px)] flex-1">
-                        <div className="space-y-6 p-6">
-                          <FormField
-                            control={aiForm.control}
-                            name="prompt"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-base font-medium">
-                                  Describe your event
-                                </FormLabel>
-                                <FormControl>
-                                  <div className="relative w-full">
-                                    <AutosizeTextarea
-                                      {...field}
-                                      placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
-                                      autoFocus
-                                      className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 text-base pr-20 focus:ring-1 focus:ring-ring focus:outline-none"
-                                    />
-                                    
-                                    {/* Record Button */}
-                                    <button
+              value="ai"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
+              style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
+            >
+              <Form {...aiForm}>
+                <form
+                  onSubmit={aiForm.handleSubmit(handleGenerateEvent)}
+                  className="flex h-full flex-1 flex-col"
+                >
+                  <div className="flex flex-1 flex-col overflow-hidden">
+                    <ScrollArea className="h-[calc(90vh-250px)] flex-1">
+                      <div className="space-y-6 p-6">
+                        <FormField
+                          control={aiForm.control}
+                          name="prompt"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">
+                                Describe your event
+                              </FormLabel>
+                              <FormControl>
+                                <div className="relative w-full">
+                                  <AutosizeTextarea
+                                    {...field}
+                                    autoFocus
+                                    placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
+                                    className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:ring-1 focus:ring-ring focus:outline-none"
+                                    disabled={isLoading || isRecording}
+                                  />
+
+                                  {/* Record Button */}
+                                  <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                                    <Button
+                                      size="xs"
                                       type="button"
-                                      onClick={isRecording ? stopRecording : startRecording}
-                                      className={`absolute right-12 bottom-3 flex items-center gap-1.5 px-2 py-1 rounded-md ${
-                                        isRecording ? "bg-red-500 text-white" : "bg-blue-500 text-white"
-                                      }`}
+                                      variant={
+                                        isRecording ? 'destructive' : 'default'
+                                      }
+                                      onClick={
+                                        isRecording
+                                          ? stopRecording
+                                          : startRecording
+                                      }
+                                      className="flex items-center rounded-md"
                                     >
-                                      {isRecording ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                                    </button>
+                                      {isRecording ? (
+                                        <StopCircle className="h-4 w-4" />
+                                      ) : (
+                                        <Mic className="h-4 w-4" />
+                                      )}
+                                    </Button>
 
                                     {/* 📸 Image button */}
+                                    <Button
+                                      size="xs"
+                                      type="button"
+                                      variant="default"
+                                      onClick={triggerImageUpload}
+                                      className="flex items-center rounded-md"
+                                    >
+                                      <ImageIcon className="h-4 w-4" />
+                                    </Button>
                                     <input
                                       type="file"
+                                      ref={fileInputRef}
                                       accept="image/*"
                                       onChange={handleUploadImage}
                                       className="hidden"
-                                      id="uploadImage"
                                     />
-                                    <label
-                                      htmlFor="uploadImage"
-                                      className="absolute right-3 bottom-3 flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500 text-white cursor-pointer"
-                                    >
-                                      <ImageIcon className="h-4 w-4" />
-                                    </label>
                                   </div>
-                                </FormControl>
-                                <FormDescription className="flex items-center gap-1 text-xs">
-                                  <Info className="h-3 w-3" />
-                                  Be as specific as possible for best results
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          {isLoading && (
-                            <div className="flex items-center justify-center py-8">
-                              <div className="flex flex-col items-center gap-2">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <p className="text-sm text-muted-foreground">
-                                  Creating your event...
-                                </p>
-                              </div>
+                                </div>
+                              </FormControl>
+                              <FormDescription className="flex items-center gap-1 text-xs">
+                                <Info className="h-3 w-3" />
+                                Be as specific as possible for best results
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {isLoading && (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="flex flex-col items-center gap-2">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                              <p className="text-sm text-muted-foreground">
+                                Creating your event...
+                              </p>
                             </div>
-                          )}
-                          {error && (
-                            <Alert variant="destructive">
-                              <AlertCircle className="h-4 w-4" />
-                              <AlertTitle>Error</AlertTitle>
-                              <AlertDescription>
-                                {error.message ||
-                                  'Failed to generate event. Please try again.'}
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                        </div>
-                      </ScrollArea>
+                          </div>
+                        )}
+                        {error && (
+                          <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>
+                              {error.message ||
+                                'Failed to generate event. Please try again.'}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    </ScrollArea>
 
-                      {/* Action Buttons */}
-                      <div className="mt-auto border-t p-6">
-                        <div className="flex justify-between">
-                          <Button
-                            variant="outline"
-                            onClick={closeModal}
-                            disabled={isLoading}
-                            className="flex items-center gap-2"
-                          >
-                            <X className="h-4 w-4" />
-                            <span>Cancel</span>
-                          </Button>
-                          <Button
-                            type="submit"
-                            disabled={isLoading || !aiForm.watch('prompt')}
-                            className="flex items-center gap-2 bg-primary"
-                          >
-                            {isLoading ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                <span>Creating...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="h-4 w-4" />
-                                <span>Generate Event</span>
-                              </>
-                            )}
-                          </Button>
-                        </div>
+                    {/* Action Buttons */}
+                    <div className="mt-auto border-t p-6">
+                      <div className="flex justify-between">
+                        <Button
+                          variant="outline"
+                          onClick={closeModal}
+                          disabled={isLoading}
+                          className="flex items-center gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          <span>Cancel</span>
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={isLoading || !aiForm.watch('prompt')}
+                          className="flex items-center gap-2 bg-primary"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span>Creating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4" />
+                              <span>Generate Event</span>
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
-                  </form>
-                </Form>
-              </TabsContent>
+                  </div>
+                </form>
+              </Form>
+            </TabsContent>
 
             {/* Preview Tab */}
             <TabsContent
