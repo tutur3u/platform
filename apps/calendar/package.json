@@ -21,6 +21,7 @@
     "@tuturuuu/utils": "workspace:*",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
+    "lucide-react": "^0.483.0",
     "negotiator": "^1.0.0",
     "next": "^15.2.3",
     "next-intl": "^3.26.5",

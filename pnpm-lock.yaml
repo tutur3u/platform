@@ -83,6 +83,9 @@ importers:
       '@vercel/speed-insights':
         specifier: ^1.2.0
         version: 1.2.0(next@15.2.3(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+      lucide-react:
+        specifier: ^0.483.0
+        version: 0.483.0(react@19.0.0)
       negotiator:
         specifier: ^1.0.0
         version: 1.0.0
@@ -2324,6 +2327,9 @@ importers:
       '@tuturuuu/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config
+      '@tuturuuu/types':
+        specifier: workspace:*
+        version: link:../types
       '@tuturuuu/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
