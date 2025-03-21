@@ -396,6 +396,10 @@ export function UnifiedEventModal() {
 
   // Handle event deletion
   const handleDelete = async () => {
+    if (isRecording) {
+      console.log("🛑 Hủy ghi âm do sự kiện bị xóa");
+      stopRecording(); // Ngắt ghi âm nếu đang thu
+  }
     if (!activeEvent?.id) return;
 
     setIsDeleting(true);
@@ -597,56 +601,12 @@ const startRecording = async () => {
       const base64Audio = reader.result?.toString().split(",")[1];
 
       if (!base64Audio) {
-        console.error("Error when change audio to base64");
+        console.error("Error when converting audio to base64");
         return;
       }
 
-      console.log("📤 Base64 Audio:", base64Audio);
-
-      try {
-        const response = await fetch(
-          "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" + process.env.NEXT_PUBLIC_GEMINI_API_KEY,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: "user",
-                  parts: [
-                    {
-                      text: "Please convert this audio into correct text:",
-                    },
-                    {
-                      inline_data: {
-                        mime_type: "audio/webm",
-                        data: base64Audio,
-                      },
-                    },
-                  ],
-                },
-              ],
-            }),
-          }
-        );
-
-        const result = await response.json();
-        console.log(" Gemini Response:", result);
-
-        if (result.candidates && result.candidates.length > 0) {
-          const transcript = result.candidates[0]?.content?.parts?.[0]?.text || "";
-          console.log("text from audio:", transcript);
-
-          // Paste to prompt and not responding to Gemini
-          aiForm.setValue("prompt", transcript);
-        } else {
-          console.error(" API dont give a text:", result);
-        }
-      } catch (error) {
-        console.error("Error when call an API:", error);
-      }
+      console.log("Sending Base64 Audio to server...");
+      sendAudioToServer(base64Audio);
     };
 
     setIsRecording(false);
@@ -661,65 +621,58 @@ const stopRecording = () => {
   mediaRecorder.current?.stop();
 };
 
+const sendAudioToServer = async (base64Audio: string) => {
+  try {
+    const response = await fetch("/api/v1/calendar/audio", { 
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ base64Audio }),
+    });
+
+    const result = await response.json();
+    if (result.text) {
+      console.log("Transcribed text:", result.text);
+      aiForm.setValue("prompt", result.text);
+    } else {
+      console.error("Failed to transcribe audio:", result.error);
+    }
+  } catch (error) {
+    console.error("Error calling API:", error);
+  }
+};
+
 // Image Recognition by Gemini 2.0
 const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0]; // image fime
+  const file = event.target.files?.[0]; // image file from input
   if (!file) return;
 
   const reader = new FileReader();
   reader.readAsDataURL(file);
   reader.onloadend = async () => {
-    const base64Image = reader.result?.toString().split(",")[1]; // convert image to base64
+    const base64Image = reader.result?.toString().split(",")[1]; // convert to base64
     if (!base64Image) {
-      console.error("Error when change image to base64");
+      console.error("Error when changing image to base64");
       return;
     }
 
-    console.log("📤 Base64 Image:", base64Image);
+    console.log("Uploading Base64 Image to server...");
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  {
-                    text: ' Extract all events, times and locations from the image, arrange them in chronological order. Display only this information in a well-structured list.'
-                  },
-                  {
-                    inline_data: {
-                      mime_type: "image/jpeg", 
-                      data: base64Image,
-                    },
-                  },
-                ],
-              },
-            ],
-          }),
-        }
-      );
+      const response = await fetch("/api/v1/calendar/image", { // send to API
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64Image }),
+      });
 
       const result = await response.json();
-      console.log(" Gemini Response:", result);
-
-      if (result.candidates && result.candidates.length > 0) {
-        const description = result.candidates[0]?.content?.parts?.[0]?.text || "";
-        console.log("Description of Image", description);
-
-        // Paste to prompt and not responding to Gemini
-        aiForm.setValue("prompt", description);
+      if (result.text) {
+        console.log("Extracted text from image:", result.text);
+        aiForm.setValue("prompt", result.text);
       } else {
-        console.error("API don't send the text:", result);
+        console.error("Failed to extract text from image:", result.error);
       }
     } catch (error) {
-      console.error("Error when calling API Gemini:", error);
+      console.error("Error when sending image to server:", error);
     }
   };
 };
