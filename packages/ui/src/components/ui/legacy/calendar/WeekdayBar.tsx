@@ -1,3 +1,4 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
 import DayTitle from './DayTitle';
 import { cn } from '@tuturuuu/utils/format';
 import { Clock } from 'lucide-react';
@@ -11,6 +12,17 @@ const WeekdayBar = ({
   view: 'day' | '4-days' | 'week' | 'month';
   dates: Date[];
 }) => {
+  const { settings } = useCalendar();
+  const showWeekends = settings.appearance.showWeekends;
+
+  // Filter out weekend days if showWeekends is false
+  const visibleDates = showWeekends
+    ? dates
+    : dates.filter((date) => {
+        const day = date.getDay();
+        return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
+      });
+
   return (
     <div className="flex">
       {/* Time column header */}
@@ -22,11 +34,11 @@ const WeekdayBar = ({
       <div
         className={cn('grid flex-1 rounded-tr-lg border-t border-r')}
         style={{
-          gridTemplateColumns: `repeat(${dates.length}, minmax(0, 1fr))`,
-          minWidth: `${dates.length * 120}px`, // Match column width
+          gridTemplateColumns: `repeat(${visibleDates.length}, minmax(0, 1fr))`,
+          minWidth: `${visibleDates.length * 120}px`, // Match column width
         }}
       >
-        {dates.map((weekday) => (
+        {visibleDates.map((weekday) => (
           <div
             key={`date-${weekday.toLocaleString(locale, { weekday: 'short' })}-${weekday.getDate()}`}
             className="group transition-colors last:border-r-0 hover:bg-muted/20"

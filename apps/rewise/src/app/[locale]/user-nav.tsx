@@ -90,8 +90,8 @@ export async function UserNav({
         <DropdownMenuGroup>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <Palette className="mr-2 h-4 w-4" />
-              <span>{t('common.theme')}</span>
+              <Palette className="h-4 w-4" />
+              <span className="text-foreground">{t('common.theme')}</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
@@ -101,8 +101,8 @@ export async function UserNav({
           </DropdownMenuSub>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <Globe className="mr-2 h-4 w-4" />
-              <span>{t('common.language')}</span>
+              <Globe className="h-4 w-4" />
+              <span className="text-foreground">{t('common.language')}</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>

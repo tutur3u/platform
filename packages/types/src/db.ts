@@ -78,9 +78,12 @@ export type AuroraForecast = {
   ml_forecast: AuroraMLForecast[];
 };
 
+export type NovaChallengeCriteria = Tables<'nova_challenge_criteria'>;
 export type NovaChallenge = Tables<'nova_challenges'>;
+export type NovaProblemCriteriaScore = Tables<'nova_problem_criteria_scores'>;
 export type NovaProblemTestCase = Tables<'nova_problem_testcases'>;
 export type NovaProblem = Tables<'nova_problems'>;
-export type NovaSession = Tables<'nova_sessions'>;
-export type NovaSubmission = Tables<'nova_submissions'>;
 export type NovaRole = Tables<'nova_roles'>;
+export type NovaSession = Tables<'nova_sessions'>;
+export type NovaSubmissionOutput = Tables<'nova_submission_outputs'>;
+export type NovaSubmission = Tables<'nova_submissions'>;

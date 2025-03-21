@@ -2,6 +2,7 @@
 
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
+import { AutosizeTextarea } from '../../custom/autosize-textarea';
 import {
   COLOR_OPTIONS,
   DateError,
@@ -50,8 +51,8 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { format } from 'date-fns';
 import { OAuth2Client } from 'google-auth-library';
 import {
@@ -62,17 +63,21 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Cog,
   FileText,
+  Image as ImageIcon,
   Info,
   Loader2,
+  Lock,
   MapPin,
+  Mic,
   Settings,
   Sparkles,
+  StopCircle,
   Trash2,
+  Unlock,
   X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
 interface ExtendedCalendarEvent extends CalendarEvent {
@@ -81,7 +86,6 @@ interface ExtendedCalendarEvent extends CalendarEvent {
   _dayPosition?: 'start' | 'middle' | 'end';
 }
 
-// Form schema for AI event generation
 const AIFormSchema = z.object({
   prompt: z.string().min(1, 'Please enter a prompt to generate an event'),
   timezone: z
@@ -103,6 +107,7 @@ export function UnifiedEventModal() {
     deleteEvent,
     getEvents,
     syncWithGoogleCalendar,
+    settings,
   } = useCalendar();
 
   const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
@@ -157,6 +162,7 @@ export function UnifiedEventModal() {
     color: 'BLUE',
     location: '',
     priority: 'medium',
+    locked: false,
   });
 
   // State for AI event generation
@@ -210,25 +216,12 @@ export function UnifiedEventModal() {
       // Process the generated events
       const processedEvents = Array.isArray(object) ? object : [object];
 
-      const formattedEvents = processedEvents
-        .map((event) => {
-          if (!event) return null;
-          return {
-            ...event,
-            color:
-              event.color && typeof event.color === 'string'
-                ? (event.color.toString().toUpperCase() as SupportedColor)
-                : 'BLUE',
-          };
-        })
-        .filter((event): event is NonNullable<typeof event> => event !== null);
-
-      setGeneratedEvents(formattedEvents);
+      setGeneratedEvents(processedEvents);
       setCurrentEventIndex(0);
 
       // Find overlapping events for the first event
-      if (formattedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
-        const firstEvent = formattedEvents[0];
+      if (processedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
+        const firstEvent = processedEvents[0];
         if (firstEvent && firstEvent.start_at && firstEvent.end_at) {
           checkForOverlaps(firstEvent as Partial<CalendarEvent>);
         }
@@ -236,7 +229,7 @@ export function UnifiedEventModal() {
 
       setActiveTab('preview');
     }
-  }, [object, isLoading]);
+  }, [object, isLoading, settings?.categoryColors?.categories]);
 
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
@@ -296,6 +289,7 @@ export function UnifiedEventModal() {
         color: 'BLUE' as SupportedColor,
         location: '',
         priority: 'medium' as EventPriority,
+        locked: false,
       };
 
       setEvent(newEvent);
@@ -392,6 +386,60 @@ export function UnifiedEventModal() {
     }
   };
 
+  // Handle AI event generation
+  const handleGenerateEvent = async (values: z.infer<typeof AIFormSchema>) => {
+    try {
+      // Include timezone in the prompt for accurate time conversion
+      const promptWithTimezone = `${values.prompt}\n\nUser timezone: ${values.timezone}`;
+
+      // Get existing events for smart scheduling
+      const existingEvents = values.smart_scheduling ? getEvents() : [];
+
+      // Generate helpful suggestions based on the prompt
+      const suggestions = [
+        'Consider adding a buffer time before/after these events',
+        'These events might benefit from reminder notifications',
+        'Based on your schedule, early morning might be better for focus',
+        'Consider adding meeting agenda or preparation notes',
+      ];
+
+      // Add category-based suggestions
+      if (settings?.categoryColors?.categories.length > 0) {
+        const categoryNames = settings.categoryColors.categories
+          .map((cat) => cat.name)
+          .join(', ');
+        suggestions.push(
+          `You have categories set up: ${categoryNames}. Events will be colored based on these categories.`
+        );
+      }
+
+      setAiSuggestions(suggestions.slice(0, 3)); // Show up to 3 relevant suggestions
+
+      // Format categories for the AI request
+      const formattedCategories = settings?.categoryColors?.categories.map(
+        (category) => ({
+          name: category.name,
+          color: category.color.toLowerCase(),
+        })
+      );
+
+      submit({
+        prompt: promptWithTimezone,
+        current_time: new Date().toISOString(),
+        smart_scheduling: values.smart_scheduling,
+        existing_events: values.smart_scheduling ? existingEvents : undefined,
+        categories: formattedCategories,
+      });
+    } catch (error) {
+      console.error('Error generating events:', error);
+      toast({
+        title: 'Error generating events',
+        description: 'Please try again with a different prompt',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Handle AI event save
   const handleAISave = async () => {
     if (generatedEvents.length === 0) return;
@@ -408,10 +456,8 @@ export function UnifiedEventModal() {
           start_at: eventData.start_at,
           end_at: eventData.end_at,
           color: eventData.color || 'BLUE',
-          location: eventData.location || '',
-          is_all_day: Boolean(eventData.is_all_day),
-          scheduling_note: eventData.scheduling_note || '',
-          priority: eventData.priority || aiForm.getValues().priority,
+          // location: eventData.location,
+          locked: false, // Default to unlocked for AI-generated events
         };
 
         const savedEvent = await addEvent(calendarEvent);
@@ -439,6 +485,10 @@ export function UnifiedEventModal() {
 
   // Handle event deletion
   const handleDelete = async () => {
+    if (isRecording) {
+      console.log('🛑 Cancel recording due to event deletion');
+      stopRecording();
+    }
     if (!activeEvent?.id) return;
 
     setIsDeleting(true);
@@ -561,41 +611,175 @@ export function UnifiedEventModal() {
     });
   };
 
-  // Handle AI event generation
-  const handleGenerateEvent = async (values: z.infer<typeof AIFormSchema>) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const mediaStream = useRef<MediaStream | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const startRecording = async () => {
+    setIsRecording(true);
     try {
-      // Include timezone in the prompt for accurate time conversion
-      const promptWithTimezone = `${values.prompt} (User timezone: ${values.timezone})`;
-
-      // Add priority information to the prompt
-      const promptWithPriority = `${promptWithTimezone} (Priority: ${values.priority})`;
-
-      // Get existing events for smart scheduling
-      const existingEvents = values.smart_scheduling ? getEvents() : [];
-
-      // Generate helpful suggestions based on the prompt
-      const suggestions = [
-        'Consider adding a buffer time before/after these events',
-        'These events might benefit from reminder notifications',
-        'Based on your schedule, early morning might be better for focus',
-        'Consider adding meeting agenda or preparation notes',
-      ];
-      setAiSuggestions(suggestions.slice(0, 3)); // Show up to 3 relevant suggestions
-
-      submit({
-        prompt: promptWithPriority,
-        current_time: new Date().toISOString(),
-        smart_scheduling: values.smart_scheduling,
-        existing_events: values.smart_scheduling ? existingEvents : undefined,
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStream.current = stream;
+      mediaRecorder.current = new MediaRecorder(stream, {
+        mimeType: 'audio/webm',
       });
+
+      mediaRecorder.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.current.onstop = async () => {
+        if (audioChunks.current.length === 0) {
+          console.error('No recording data!');
+          setIsRecording(false);
+          setIsProcessingAudio(false);
+          return;
+        }
+
+        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result?.toString().split(',')[1];
+
+          if (!base64Audio) {
+            console.error('Error when converting audio to base64');
+            setIsProcessingAudio(false);
+            return;
+          }
+
+          console.log('Sending Base64 Audio to server...');
+          sendAudioToServer(base64Audio);
+        };
+
+        // Cleanup
+        revokeMediaPermissions();
+        audioChunks.current = [];
+      };
+
+      mediaRecorder.current.start();
     } catch (error) {
-      console.error('Error generating events:', error);
+      console.error('Error accessing microphone:', error);
+      setIsRecording(false);
+    }
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const stopRecording = () => {
+    setIsRecording(false);
+    setIsProcessingAudio(true);
+    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+      mediaRecorder.current.stop();
+    } else {
+      revokeMediaPermissions();
+      setIsProcessingAudio(false);
+    }
+  };
+
+  const revokeMediaPermissions = () => {
+    if (mediaStream.current) {
+      mediaStream.current.getTracks().forEach((track) => {
+        track.stop();
+      });
+      mediaStream.current = null;
+    }
+  };
+
+  const sendAudioToServer = async (base64Audio: string) => {
+    try {
+      const response = await fetch('/api/v1/calendar/audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Audio }),
+      });
+
+      const result = await response.json();
+      if (result.text) {
+        console.log('Transcribed text:', result.text);
+        aiForm.setValue('prompt', result.text);
+      } else {
+        console.error('Failed to transcribe audio:', result.error);
+        toast({
+          title: 'Transcription Error',
+          description: result.error || 'Failed to transcribe audio',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error calling API:', error);
       toast({
-        title: 'Error generating events',
-        description: 'Please try again with a different prompt',
+        title: 'API Error',
+        description: 'Failed to process audio recording',
         variant: 'destructive',
       });
+    } finally {
+      setIsProcessingAudio(false);
     }
+  };
+
+  const handleUploadImage = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0]; // image file from input
+    if (!file) return;
+
+    setIsProcessingImage(true);
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = async () => {
+      const base64Image = reader.result?.toString().split(',')[1]; // convert to base64
+      if (!base64Image) {
+        console.error('Error when changing image to base64');
+        setIsProcessingImage(false);
+        return;
+      }
+
+      console.log('Uploading Base64 Image to server...');
+
+      try {
+        const response = await fetch('/api/v1/calendar/image', {
+          // send to API
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64Image }),
+        });
+
+        const result = await response.json();
+        if (result.text) {
+          console.log('Extracted text from image:', result.text);
+          aiForm.setValue('prompt', result.text);
+        } else {
+          console.error('Failed to extract text from image:', result.error);
+          toast({
+            title: 'Image Processing Error',
+            description: result.error || 'Failed to extract text from image',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
+        console.error('Error when sending image to server:', error);
+        toast({
+          title: 'API Error',
+          description: 'Failed to process uploaded image',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsProcessingImage(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
   };
 
   // Handle navigation between multiple events in preview
@@ -672,11 +856,26 @@ export function UnifiedEventModal() {
               <div className="flex flex-1 flex-col overflow-hidden">
                 <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                   <div className="space-y-6 p-6">
+                    {/* Locked Event Indicator */}
+                    {event.locked && (
+                      <div className="border-dynamic-light-yellow/30 bg-dynamic-light-yellow/10 text-dynamic-light-yellow mb-4 flex items-center gap-2 rounded-md border p-3">
+                        <div>
+                          <h3 className="font-semibold">Event is Locked</h3>
+                          <p className="text-sm">
+                            This event is locked and can't be modified. Unlock
+                            it from the Advanced Settings section to make
+                            changes.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Title */}
                     <EventTitleInput
                       value={event.title || ''}
                       onEnter={handleManualSave}
                       onChange={(value) => setEvent({ ...event, title: value })}
+                      disabled={event.locked}
                     />
 
                     {/* Date and Time Selection */}
@@ -689,12 +888,14 @@ export function UnifiedEventModal() {
                             label="All Day"
                             checked={isAllDay}
                             onChange={handleAllDayChange}
+                            disabled={event.locked}
                           />
                           <EventToggleSwitch
                             id="multi-day"
                             label="Multi-Day"
                             checked={isMultiDay}
                             onChange={handleMultiDayChange}
+                            disabled={event.locked}
                           />
                         </div>
                       </div>
@@ -704,13 +905,13 @@ export function UnifiedEventModal() {
                           label="Start"
                           value={new Date(event.start_at || new Date())}
                           onChange={handleStartDateChange}
-                          //   icon={<Clock className="h-3.5 w-3.5 text-blue-500" />}
+                          disabled={event.locked}
                         />
                         <EventDateTimePicker
                           label="End"
                           value={new Date(event.end_at || new Date())}
                           onChange={handleEndDateChange}
-                          //   icon={<Clock className="h-3.5 w-3.5 text-red-500" />}
+                          disabled={event.locked}
                         />
                       </div>
                     </div>
@@ -724,12 +925,14 @@ export function UnifiedEventModal() {
                         onChange={(value) =>
                           setEvent({ ...event, location: value })
                         }
+                        disabled={event.locked}
                       />
                       <EventDescriptionInput
                         value={event.description || ''}
                         onChange={(value) =>
                           setEvent({ ...event, description: value })
                         }
+                        disabled={event.locked}
                       />
                     </div>
 
@@ -758,19 +961,40 @@ export function UnifiedEventModal() {
                                 onChange={(value) =>
                                   setEvent({ ...event, color: value })
                                 }
+                                disabled={event.locked}
                               />
-                              {/* <EventPriorityPicker
-                                value={event.priority || 'medium'}
-                                onChange={(value) =>
-                                  setEvent({ ...event, priority: value })
-                                }
-                              /> */}
+                              <div className="flex flex-col space-y-3">
+                                <label className="text-sm font-medium">
+                                  Event Protection
+                                </label>
+                                <EventToggleSwitch
+                                  id="locked"
+                                  label="Lock Event"
+                                  description="Locked events cannot be modified accidentally"
+                                  checked={event.locked || false}
+                                  onChange={(checked) =>
+                                    setEvent({ ...event, locked: checked })
+                                  }
+                                />
+                                <div className="mt-1 flex items-center gap-2">
+                                  {event.locked ? (
+                                    <Lock className="text-muted-foreground h-3.5 w-3.5" />
+                                  ) : (
+                                    <Unlock className="text-muted-foreground h-3.5 w-3.5" />
+                                  )}
+                                  <p className="text-muted-foreground text-xs">
+                                    {event.locked
+                                      ? 'Event is locked'
+                                      : 'Event is unlocked'}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                             <div className="text-muted-foreground mt-2 text-xs">
                               <p className="flex items-center gap-1">
                                 <Info className="h-3 w-3" />
-                                Color and priority help organize and prioritize
-                                your events
+                                Color and protection settings help organize and
+                                secure your events
                               </p>
                             </div>
                           </div>
@@ -850,7 +1074,7 @@ export function UnifiedEventModal() {
                       </Button>
                       <Button
                         onClick={handleManualSave}
-                        disabled={isSaving || isDeleting}
+                        disabled={isSaving || isDeleting || event.locked}
                         className="flex items-center gap-2"
                       >
                         {isSaving ? (
@@ -861,7 +1085,13 @@ export function UnifiedEventModal() {
                         ) : (
                           <>
                             <Check className="h-4 w-4" />
-                            <span>{isEditing ? 'Update' : 'Create'}</span>
+                            <span>
+                              {isEditing
+                                ? event.locked
+                                  ? 'Locked'
+                                  : 'Update'
+                                : 'Create'}
+                            </span>
                           </>
                         )}
                       </Button>
@@ -885,46 +1115,6 @@ export function UnifiedEventModal() {
                   <div className="flex flex-1 flex-col overflow-hidden">
                     <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                       <div className="space-y-6 p-6">
-                        <div className="from-primary/20 via-primary/10 rounded-lg bg-gradient-to-r to-transparent p-6">
-                          <div className="mb-3 flex items-center gap-2">
-                            <Sparkles className="text-primary h-5 w-5" />
-                            <h3 className="text-lg font-medium">
-                              AI Event Assistant
-                            </h3>
-                          </div>
-                          <p className="text-muted-foreground mb-4 text-sm">
-                            Describe your event in natural language and our AI
-                            will create it for you. Include details like title,
-                            date, time, duration, location, and any other
-                            relevant information. You can also describe multiple
-                            events at once.
-                          </p>
-                          <div className="space-y-2">
-                            <p className="text-muted-foreground text-xs font-medium">
-                              Examples:
-                            </p>
-                            <div className="space-y-2">
-                              <div className="bg-muted/50 rounded-md p-2 text-xs">
-                                "Schedule a team meeting next Monday at 2pm for
-                                1 hour to discuss the new project roadmap"
-                              </div>
-                              <div className="bg-muted/50 rounded-md p-2 text-xs">
-                                "Lunch with Sarah at Cafe Milano tomorrow at
-                                noon, high priority"
-                              </div>
-                              <div className="bg-muted/50 rounded-md p-2 text-xs">
-                                "Block 3 hours for focused work on the
-                                presentation every morning this week"
-                              </div>
-                              <div className="bg-muted/50 rounded-md p-2 text-xs">
-                                "Create a series of 1-hour workout sessions at
-                                the gym on Monday, Wednesday, and Friday at 7am
-                                next week"
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
                         <FormField
                           control={aiForm.control}
                           name="prompt"
@@ -934,12 +1124,78 @@ export function UnifiedEventModal() {
                                 Describe your event
                               </FormLabel>
                               <FormControl>
-                                <textarea
-                                  {...field}
-                                  className="border-input bg-background focus:ring-ring min-h-[150px] w-full resize-none rounded-md border p-4 text-base focus:outline-none focus:ring-1"
-                                  placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour to discuss the new project roadmap with the engineering team"
-                                  autoFocus
-                                />
+                                <div className="relative w-full">
+                                  <AutosizeTextarea
+                                    {...field}
+                                    autoFocus
+                                    placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
+                                    className="border-input bg-background focus:ring-ring min-h-[200px] w-full resize-none rounded-md border p-4 pr-20 text-base focus:outline-none focus:ring-1"
+                                    disabled={
+                                      isLoading ||
+                                      isRecording ||
+                                      isProcessingAudio ||
+                                      isProcessingImage
+                                    }
+                                  />
+
+                                  {/* Record Button */}
+                                  <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                                    <Button
+                                      size="xs"
+                                      type="button"
+                                      variant={
+                                        isRecording ? 'destructive' : 'default'
+                                      }
+                                      onClick={
+                                        isRecording
+                                          ? stopRecording
+                                          : startRecording
+                                      }
+                                      disabled={
+                                        isProcessingAudio ||
+                                        isProcessingImage ||
+                                        isLoading
+                                      }
+                                      className="flex items-center rounded-md"
+                                    >
+                                      {isRecording ? (
+                                        <StopCircle className="h-4 w-4" />
+                                      ) : isProcessingAudio ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Mic className="h-4 w-4" />
+                                      )}
+                                    </Button>
+
+                                    {/* 📸 Image button */}
+                                    <Button
+                                      size="xs"
+                                      type="button"
+                                      variant="default"
+                                      onClick={triggerImageUpload}
+                                      disabled={
+                                        isRecording ||
+                                        isProcessingAudio ||
+                                        isProcessingImage ||
+                                        isLoading
+                                      }
+                                      className="flex items-center rounded-md"
+                                    >
+                                      {isProcessingImage ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <ImageIcon className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                    <input
+                                      type="file"
+                                      ref={fileInputRef}
+                                      accept="image/*"
+                                      onChange={handleUploadImage}
+                                      className="hidden"
+                                    />
+                                  </div>
+                                </div>
                               </FormControl>
                               <FormDescription className="flex items-center gap-1 text-xs">
                                 <Info className="h-3 w-3" />
@@ -949,66 +1205,6 @@ export function UnifiedEventModal() {
                             </FormItem>
                           )}
                         />
-
-                        {/* AI Settings - Simplified and more prominent */}
-                        <div className="bg-muted/10 rounded-lg border p-4">
-                          <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
-                            <Cog className="h-4 w-4" />
-                            AI Settings
-                          </h3>
-
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between space-x-2">
-                              <div className="space-y-0.5">
-                                <h4 className="text-sm font-medium">
-                                  Smart Scheduling
-                                </h4>
-                                <p className="text-muted-foreground text-xs">
-                                  Automatically find available time slots based
-                                  on your existing events
-                                </p>
-                              </div>
-                              <Switch
-                                id="smart-scheduling"
-                                checked={!!aiForm.watch('smart_scheduling')}
-                                onCheckedChange={(checked) =>
-                                  aiForm.setValue('smart_scheduling', checked)
-                                }
-                              />
-                            </div>
-
-                            <FormField
-                              control={aiForm.control}
-                              name="priority"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <div className="flex items-center justify-between">
-                                    <FormLabel className="text-sm font-medium">
-                                      Priority
-                                    </FormLabel>
-                                    <FormControl>
-                                      <select
-                                        {...field}
-                                        className="border-input bg-background w-[180px] rounded-md border p-2 text-sm"
-                                      >
-                                        <option value="low">
-                                          Low - Can be rescheduled
-                                        </option>
-                                        <option value="medium">
-                                          Medium - Standard
-                                        </option>
-                                        <option value="high">
-                                          High - Important
-                                        </option>
-                                      </select>
-                                    </FormControl>
-                                  </div>
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        </div>
-
                         {isLoading && (
                           <div className="flex items-center justify-center py-8">
                             <div className="flex flex-col items-center gap-2">
@@ -1019,7 +1215,6 @@ export function UnifiedEventModal() {
                             </div>
                           </div>
                         )}
-
                         {error && (
                           <Alert variant="destructive">
                             <AlertCircle className="h-4 w-4" />
@@ -1102,68 +1297,91 @@ export function UnifiedEventModal() {
 
                       {generatedEvent && (
                         <div className="space-y-4">
-                          <div className="space-y-2">
-                            <h4 className="text-lg font-medium">
-                              {generatedEvent.title}
-                            </h4>
-                            <div className="text-muted-foreground flex flex-wrap gap-2 text-sm">
-                              <div className="flex items-center gap-1">
-                                <CalendarIcon className="h-3.5 w-3.5" />
-                                <span>
-                                  {format(
-                                    new Date(generatedEvent.start_at),
-                                    'PPP'
-                                  )}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>
-                                  {format(
-                                    new Date(generatedEvent.start_at),
-                                    'h:mm a'
-                                  )}{' '}
-                                  -{' '}
-                                  {format(
-                                    new Date(generatedEvent.end_at),
-                                    'h:mm a'
-                                  )}
-                                </span>
-                              </div>
-                              {generatedEvent.location && (
+                          <div className="mt-3 space-y-3 rounded-md border p-3">
+                            <div className="space-y-2">
+                              <h4 className="text-lg font-medium">
+                                {generatedEvent.title}
+                              </h4>
+                              <div className="text-muted-foreground flex flex-wrap gap-2 text-sm">
                                 <div className="flex items-center gap-1">
-                                  <MapPin className="h-3.5 w-3.5" />
-                                  <span>{generatedEvent.location}</span>
+                                  <CalendarIcon className="h-3.5 w-3.5" />
+                                  <span>
+                                    {format(
+                                      new Date(generatedEvent.start_at),
+                                      'PPP'
+                                    )}
+                                  </span>
                                 </div>
-                              )}
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  <span>
+                                    {format(
+                                      new Date(generatedEvent.start_at),
+                                      'h:mm a'
+                                    )}{' '}
+                                    -{' '}
+                                    {format(
+                                      new Date(generatedEvent.end_at),
+                                      'h:mm a'
+                                    )}
+                                  </span>
+                                </div>
+                                {generatedEvent.location && (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3.5 w-3.5" />
+                                    <span>{generatedEvent.location}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
 
-                          {generatedEvent.description && (
-                            <div className="space-y-1">
-                              <h5 className="text-sm font-medium">
-                                Description
-                              </h5>
-                              <p className="text-muted-foreground text-sm">
-                                {generatedEvent.description}
-                              </p>
+                            {generatedEvent.description && (
+                              <div className="space-y-1">
+                                <h5 className="text-sm font-medium">
+                                  Description
+                                </h5>
+                                <p className="text-muted-foreground text-sm">
+                                  {generatedEvent.description}
+                                </p>
+                              </div>
+                            )}
+
+                            <Separator />
+
+                            {/* Color indicator and category */}
+                            <div className="flex items-center gap-2">
+                              {generatedEvent.color &&
+                                (() => {
+                                  const { bg, border, text } = getEventStyles(
+                                    generatedEvent.color
+                                  );
+                                  return (
+                                    <div
+                                      className={`flex items-center gap-2 rounded-full border px-2 py-1 text-center ${bg} ${border}`}
+                                    >
+                                      <span
+                                        className={`text-xs font-medium ${text}`}
+                                      >
+                                        {COLOR_OPTIONS.find(
+                                          (c) =>
+                                            c.value ===
+                                            (generatedEvent.color
+                                              ? generatedEvent.color.toUpperCase()
+                                              : 'BLUE')
+                                        )?.name || 'Default'}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                             </div>
-                          )}
 
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`h-3 w-3 rounded-full`}
-                              style={{
-                                backgroundColor: `var(--dynamic-light-${generatedEvent.color.toLowerCase()})`,
-                              }}
-                            />
-                            <span className="text-muted-foreground text-xs">
-                              {
-                                COLOR_OPTIONS.find(
-                                  (c) => c.value === generatedEvent.color
-                                )?.name
-                              }
-                            </span>
+                            {/* Event protection status */}
+                            <div className="flex items-center gap-2">
+                              <Unlock className="text-muted-foreground h-3.5 w-3.5" />
+                              <span className="text-muted-foreground text-xs">
+                                Event will be created unlocked
+                              </span>
+                            </div>
                           </div>
                         </div>
                       )}

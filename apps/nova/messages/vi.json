@@ -116,6 +116,7 @@
     "prompt-engineering-challenges": "Thử thách về Prompt Engineering",
     "start-challenge": "Bắt đầu thử thách",
     "create-challenge": "Tạo Thử Thách Mới",
+    "create-problem": "Tạo Đề Bài Mới",
     "view-leaderboard": "Xem bảng xếp hạng",
     "cards": {
       "learn": {
@@ -134,7 +135,8 @@
         "title": "Cạnh tranh",
         "description": "Tham gia bảng xếp hạng và so sánh kỹ năng thiết kế prompt của bạn với người khác."
       }
-    }
+    },
+    "learn_more": "Tìm hiểu thêm"
   },
   "common": {
     "alpha": "Alpha",
@@ -415,7 +417,9 @@
     "error_deleting": "Lỗi khi xoá tài liệu",
     "domain_added": "Tên miền được thêm vào",
     "error_adding_domain": "Không thể thêm miền",
-    "is_admin": "Quản trị viên"
+    "is_admin": "Quản trị viên",
+    "allow_challenge_management": "Quản lý thử thách",
+    "allow_role_management": "Quản lý vai trò"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

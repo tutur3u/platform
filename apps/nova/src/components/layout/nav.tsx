@@ -16,24 +16,38 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ReactNode;
-  requiresAdmin?: boolean;
+  requiresChallengeManagement?: boolean;
+  requiresRoleManagement?: boolean;
   subItems?: { name: string; href: string }[];
 }
 
 interface NavProps {
-  isAdmin: boolean;
+  allowChallengeManagement: boolean;
+  allowRoleManagement: boolean;
   isCollapsed: boolean;
   navItems: NavItem[];
   onClick?: () => void;
 }
 
-export function Nav({ isAdmin, isCollapsed, navItems, onClick }: NavProps) {
+export function Nav({
+  allowChallengeManagement,
+  allowRoleManagement,
+  isCollapsed,
+  navItems,
+  onClick,
+}: NavProps) {
   const pathname = usePathname();
 
   return (
     <nav className={cn('grid gap-1 p-2', isCollapsed && 'justify-center')}>
       {navItems
-        .filter((item) => (isAdmin ? item : !item.requiresAdmin))
+        .filter(
+          (item) =>
+            (item.requiresChallengeManagement
+              ? allowChallengeManagement
+              : true) &&
+            (item.requiresRoleManagement ? allowRoleManagement : true)
+        )
         .map((item) => (
           <div key={item.href}>
             {item.subItems && item.subItems.length ? (
@@ -49,7 +63,7 @@ export function Nav({ isAdmin, isCollapsed, navItems, onClick }: NavProps) {
                       </TooltipTrigger>
                       <TooltipContent
                         side="right"
-                        className="flex items-center gap-4"
+                        className="flex items-center gap-4 border bg-background text-foreground"
                       >
                         {item.name}
                       </TooltipContent>
@@ -91,7 +105,7 @@ export function Nav({ isAdmin, isCollapsed, navItems, onClick }: NavProps) {
                         </TooltipTrigger>
                         <TooltipContent
                           side="right"
-                          className="flex items-center gap-4"
+                          className="flex items-center gap-4 border bg-background text-foreground"
                         >
                           {subItem.name}
                         </TooltipContent>
@@ -136,7 +150,7 @@ export function Nav({ isAdmin, isCollapsed, navItems, onClick }: NavProps) {
                 </TooltipTrigger>
                 <TooltipContent
                   side="right"
-                  className="flex items-center gap-4"
+                  className="flex items-center gap-4 border bg-background text-foreground"
                 >
                   {item.name}
                 </TooltipContent>

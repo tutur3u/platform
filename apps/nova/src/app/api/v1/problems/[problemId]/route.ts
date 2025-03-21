@@ -7,19 +7,20 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(_request: Request, { params }: Params) {
   const supabase = await createClient();
   const { problemId } = await params;
 
-  try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
     const { data: problem, error } = await supabase
       .from('nova_problems')
       .select('*')
@@ -28,16 +29,15 @@ export async function GET(_: Request, { params }: Params) {
 
     if (error) {
       console.error('Database Error: ', error);
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { message: 'Problem not found' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
         { message: 'Error fetching problem' },
         { status: 500 }
-      );
-    }
-
-    if (!problem) {
-      return NextResponse.json(
-        { message: 'Problem not found' },
-        { status: 404 }
       );
     }
 
@@ -55,14 +55,24 @@ export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
   const { problemId } = await params;
 
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   let body: {
-    title: string;
-    description: string;
-    maxInputLength: number;
-    exampleInput: string;
-    exampleOutput: string;
-    challengeId: string;
+    title?: string;
+    description?: string;
+    maxPromptLength?: number;
+    exampleInput?: string;
+    exampleOutput?: string;
+    challengeId?: string;
   };
+
   try {
     body = await request.json();
   } catch (error) {
@@ -70,52 +80,52 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Validate required fields
-    if (!body.title || !body.challengeId) {
+    // Check if any update data was provided
+    if (Object.keys(body).length === 0) {
       return NextResponse.json(
-        { message: 'Title and challengeId are required' },
+        { message: 'No update data provided' },
         { status: 400 }
       );
     }
 
-    if (typeof body.maxInputLength !== 'number' || body.maxInputLength <= 0) {
-      return NextResponse.json(
-        { message: 'Max input length must be a positive number' },
-        { status: 400 }
-      );
+    const updateData: any = {};
+    if (body.title) updateData.title = body.title;
+    if (body.description) updateData.description = body.description;
+    if (body.maxPromptLength) {
+      if (body.maxPromptLength <= 0) {
+        return NextResponse.json(
+          { message: 'Max prompt length must be a positive number' },
+          { status: 400 }
+        );
+      }
+      updateData.max_prompt_length = body.maxPromptLength;
     }
+    if (body.exampleInput) updateData.example_input = body.exampleInput;
+    if (body.exampleOutput) updateData.example_output = body.exampleOutput;
+    if (body.challengeId) updateData.challenge_id = body.challengeId;
 
-    const { data: problem, error } = await supabase
+    const { data: updatedProblem, error: updateError } = await supabase
       .from('nova_problems')
-      .update({
-        title: body.title,
-        description: body.description,
-        max_input_length: body.maxInputLength,
-        example_input: body.exampleInput,
-        example_output: body.exampleOutput,
-        challenge_id: body.challengeId,
-      })
+      .update(updateData)
       .eq('id', problemId)
       .select()
       .single();
 
-    if (error) {
-      console.error('Database Error: ', error);
+    if (updateError) {
+      console.error('Database Error: ', updateError);
+      if (updateError.code === 'PGRST116') {
+        return NextResponse.json(
+          { message: 'Problem not found' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
         { message: 'Error updating problem' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(problem, { status: 200 });
+    return NextResponse.json(updatedProblem, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -125,26 +135,27 @@ export async function PUT(request: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_: Request, { params }: Params) {
+export async function DELETE(_request: Request, { params }: Params) {
   const supabase = await createClient();
   const { problemId } = await params;
 
-  try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-    const { error } = await supabase
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { error: deleteError } = await supabase
       .from('nova_problems')
       .delete()
       .eq('id', problemId);
 
-    if (error) {
-      console.error('Database Error: ', error);
+    if (deleteError) {
+      console.error('Database Error: ', deleteError);
       return NextResponse.json(
         { message: 'Error deleting problem' },
         { status: 500 }

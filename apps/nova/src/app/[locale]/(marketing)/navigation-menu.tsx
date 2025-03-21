@@ -22,6 +22,7 @@ export function MainNavigationMenu() {
   const t = useTranslations();
   const { categories } = useNavigation(t);
 
+  const main = categories.find((cat) => cat.title === 'main')?.items || [];
   const resources =
     categories.find((cat) => cat.title === 'resources')?.items || [];
   const company =
@@ -30,8 +31,23 @@ export function MainNavigationMenu() {
   return (
     <NavigationMenu className="flex w-full max-w-none">
       <NavigationMenuList className="flex w-full justify-between">
+        {main.map((item) => (
+          <NavigationMenuItem key={item.href}>
+            <Link href={item.href} legacyBehavior passHref>
+              <NavigationMenuLink
+                className={cn(
+                  navigationMenuTriggerStyle(),
+                  'bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:bg-background/30'
+                )}
+              >
+                {item.label}
+              </NavigationMenuLink>
+            </Link>
+          </NavigationMenuItem>
+        ))}
+
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="group bg-gradient-to-r font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5">
+          <NavigationMenuTrigger className="group bg-gradient-to-r font-semibold transition-all duration-300 hover:bg-background/30">
             {t('common.resources')}
           </NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -62,7 +78,7 @@ export function MainNavigationMenu() {
               <NavigationMenuLink
                 className={cn(
                   navigationMenuTriggerStyle(),
-                  'bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:from-primary/10 hover:to-primary/5'
+                  'bg-gradient-to-r px-6 font-semibold transition-all duration-300 hover:bg-background/30'
                 )}
               >
                 <span className="flex items-center gap-2">{item.label}</span>

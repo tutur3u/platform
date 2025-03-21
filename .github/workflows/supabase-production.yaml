@@ -1,9 +1,9 @@
 name: Supabase CI
 
 on:
-  push:
-    branches:
-      - production
+  # push:
+  #   branches:
+  #     - production
   workflow_dispatch:
 
 jobs:
@@ -16,10 +16,12 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
       PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
-
+      PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: Deploy migrations to production
         run: |

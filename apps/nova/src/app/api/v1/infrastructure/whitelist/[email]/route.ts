@@ -5,7 +5,8 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(req: NextRequest) {
-  const { email, enabled, is_admin } = await req.json();
+  const { email, enabled, allow_challenge_management, allow_role_management } =
+    await req.json();
 
   if (!email) {
     return NextResponse.json({ message: 'Email is required' }, { status: 400 });
@@ -25,9 +26,16 @@ export async function PUT(req: NextRequest) {
 
   const sbAdmin = await createAdminClient();
 
+  const updateData = {
+    email,
+    enabled,
+    allow_challenge_management: allow_challenge_management ?? false,
+    allow_role_management: allow_role_management ?? false,
+  };
+
   const { error } = await sbAdmin
     .from('nova_roles')
-    .update({ email, enabled, is_admin })
+    .update(updateData)
     .eq('email', email);
 
   if (error) {

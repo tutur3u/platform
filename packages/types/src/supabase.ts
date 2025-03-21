@@ -795,6 +795,53 @@ export type Database = {
           },
         ];
       };
+      cross_app_tokens: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          is_revoked: boolean;
+          origin_app: string;
+          session_data: Json | null;
+          target_app: string;
+          token: string;
+          used_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          is_revoked?: boolean;
+          origin_app: string;
+          session_data?: Json | null;
+          target_app: string;
+          token: string;
+          used_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          is_revoked?: boolean;
+          origin_app?: string;
+          session_data?: Json | null;
+          target_app?: string;
+          token?: string;
+          used_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cross_app_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       currencies: {
         Row: {
           code: string;
@@ -2063,6 +2110,8 @@ export type Database = {
           duration: number;
           enabled: boolean;
           id: string;
+          max_attempts: number;
+          max_daily_attempts: number;
           open_at: string | null;
           previewable_at: string | null;
           title: string;
@@ -2074,6 +2123,8 @@ export type Database = {
           duration: number;
           enabled?: boolean;
           id?: string;
+          max_attempts?: number;
+          max_daily_attempts?: number;
           open_at?: string | null;
           previewable_at?: string | null;
           title: string;
@@ -2085,6 +2136,8 @@ export type Database = {
           duration?: number;
           enabled?: boolean;
           id?: string;
+          max_attempts?: number;
+          max_daily_attempts?: number;
           open_at?: string | null;
           previewable_at?: string | null;
           title?: string;
@@ -2199,25 +2252,28 @@ export type Database = {
       };
       nova_roles: {
         Row: {
+          allow_challenge_management: boolean | null;
+          allow_role_management: boolean | null;
           created_at: string;
           email: string | null;
           enabled: boolean | null;
           id: string;
-          is_admin: boolean | null;
         };
         Insert: {
+          allow_challenge_management?: boolean | null;
+          allow_role_management?: boolean | null;
           created_at?: string;
           email?: string | null;
           enabled?: boolean | null;
           id?: string;
-          is_admin?: boolean | null;
         };
         Update: {
+          allow_challenge_management?: boolean | null;
+          allow_role_management?: boolean | null;
           created_at?: string;
           email?: string | null;
           enabled?: boolean | null;
           id?: string;
-          is_admin?: boolean | null;
         };
         Relationships: [];
       };
@@ -2229,7 +2285,7 @@ export type Database = {
           id: string;
           start_time: string;
           status: string;
-          total_score: number | null;
+          total_score: number;
           user_id: string;
         };
         Insert: {
@@ -2239,7 +2295,7 @@ export type Database = {
           id?: string;
           start_time: string;
           status: string;
-          total_score?: number | null;
+          total_score: number;
           user_id: string;
         };
         Update: {
@@ -2249,7 +2305,7 @@ export type Database = {
           id?: string;
           start_time?: string;
           status?: string;
-          total_score?: number | null;
+          total_score?: number;
           user_id?: string;
         };
         Relationships: [
@@ -3810,6 +3866,7 @@ export type Database = {
           description: string;
           end_at: string;
           id: string;
+          locked: boolean;
           start_at: string;
           title: string;
           ws_id: string;
@@ -3820,6 +3877,7 @@ export type Database = {
           description?: string;
           end_at: string;
           id?: string;
+          locked?: boolean;
           start_at: string;
           title?: string;
           ws_id: string;
@@ -3830,6 +3888,7 @@ export type Database = {
           description?: string;
           end_at?: string;
           id?: string;
+          locked?: boolean;
           start_at?: string;
           title?: string;
           ws_id?: string;
@@ -4275,6 +4334,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'workspace_documents_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_email_credentials: {
+        Row: {
+          access_id: string;
+          access_key: string;
+          created_at: string;
+          id: string;
+          region: string;
+          source_email: string;
+          source_name: string;
+          ws_id: string;
+        };
+        Insert: {
+          access_id: string;
+          access_key: string;
+          created_at?: string;
+          id?: string;
+          region?: string;
+          source_email?: string;
+          source_name?: string;
+          ws_id: string;
+        };
+        Update: {
+          access_id?: string;
+          access_key?: string;
+          created_at?: string;
+          id?: string;
+          region?: string;
+          source_email?: string;
+          source_name?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_email_credentials_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -5769,7 +5869,14 @@ export type Database = {
       };
     };
     Functions: {
-      calculate_total_score: {
+      check_challenge_attempt_limits: {
+        Args: {
+          _challenge_id: string;
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
+      cleanup_expired_cross_app_tokens: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
@@ -5781,6 +5888,26 @@ export type Database = {
         };
         Returns: string;
       };
+      generate_cross_app_token:
+        | {
+            Args: {
+              p_user_id: string;
+              p_origin_app: string;
+              p_target_app: string;
+              p_expiry_seconds?: number;
+            };
+            Returns: string;
+          }
+        | {
+            Args: {
+              p_user_id: string;
+              p_origin_app: string;
+              p_target_app: string;
+              p_expiry_seconds?: number;
+              p_session_data?: Json;
+            };
+            Returns: string;
+          };
       get_daily_income_expense: {
         Args: {
           _ws_id: string;
@@ -5948,13 +6075,6 @@ export type Database = {
           ws_id: string;
           amount: number;
         }[];
-      };
-      get_total_submission_score: {
-        Args: {
-          challenge_id_param: string;
-          user_id_param: string;
-        };
-        Returns: number;
       };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
@@ -6188,6 +6308,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      revoke_all_cross_app_tokens: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
       search_users_by_name: {
         Args: {
           search_query: string;
@@ -6231,6 +6357,30 @@ export type Database = {
           transaction_id_2: string;
         };
         Returns: boolean;
+      };
+      update_session_total_score: {
+        Args: {
+          challenge_id_param: string;
+          user_id_param: string;
+        };
+        Returns: undefined;
+      };
+      validate_cross_app_token: {
+        Args: {
+          p_token: string;
+          p_target_app: string;
+        };
+        Returns: string;
+      };
+      validate_cross_app_token_with_session: {
+        Args: {
+          p_token: string;
+          p_target_app: string;
+        };
+        Returns: {
+          user_id: string;
+          session_data: Json;
+        }[];
       };
     };
     Enums: {

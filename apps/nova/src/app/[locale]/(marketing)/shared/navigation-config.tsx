@@ -74,7 +74,15 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
 
   return {
     categories: [
-      { title: 'main', items: [{ href: '/', label: t('common.home') }] },
+      {
+        title: 'main',
+        items: [
+          {
+            href: '/competitions/neo-league/prompt-the-future/about',
+            label: 'Neo League',
+          },
+        ],
+      },
       { title: 'resources', items: resources },
       { title: 'company', items: company },
     ],

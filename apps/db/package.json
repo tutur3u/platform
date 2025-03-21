@@ -9,7 +9,7 @@
     "sb:start": "pnpm supabase start",
     "sb:stop": "pnpm supabase stop",
     "sb:sync": "pnpm supabase db pull",
-    "sb:reset": "pnpm supabase db reset",
+    "sb:reset": "pnpm supabase db reset && pnpm supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && prettier --write ../../packages/types/src/supabase.ts",
     "sb:diff": "pnpm supabase db diff -f new_migration",
     "sb:new": "pnpm supabase migration new new_migration",
     "sb:up": "pnpm supabase migration up",
@@ -22,5 +22,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@10.6.3"
+  "packageManager": "pnpm@10.6.5"
 }

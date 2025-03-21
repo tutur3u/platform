@@ -1,8 +1,12 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
 import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 
 const TimeTrail = () => {
+  // Get settings from context
+  const { settings } = useCalendar();
+
   // Only show hours (not every half hour)
   const hours = Array.from(Array(24).keys());
 
@@ -10,7 +14,11 @@ const TimeTrail = () => {
   const formatTime = (hour: number) => {
     const date = new Date();
     date.setHours(hour, 0, 0, 0);
-    return format(date, 'h a'); // Just show hour and am/pm
+
+    // Use 24-hour format if specified in settings
+    const timeFormat =
+      settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h a';
+    return format(date, timeFormat);
   };
 
   return (

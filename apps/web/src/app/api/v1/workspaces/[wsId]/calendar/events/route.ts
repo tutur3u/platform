@@ -59,10 +59,7 @@ export async function POST(request: Request, { params }: Params) {
         start_at: event.start_at,
         end_at: event.end_at,
         color: event.color || 'blue',
-        // location: event.location || '',
-        // is_all_day: event.is_all_day || false,
-        // scheduling_note: event.scheduling_note || '',
-        // priority: event.priority || 'medium',
+        locked: event.locked || false,
         ws_id: wsId,
       })
       .select()

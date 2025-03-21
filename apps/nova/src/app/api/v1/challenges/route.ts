@@ -1,19 +1,29 @@
+import { createChallengeSchema } from '../schemas';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 
-export async function GET(_: Request) {
+export async function GET(request: Request) {
   const supabase = await createClient();
+  const { searchParams } = new URL(request.url);
+  const enabled = searchParams.get('enabled');
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    let query = supabase.from('nova_challenges').select('*');
+    if (enabled) {
+      query = query.eq('enabled', enabled === 'true');
     }
 
-    const { data, error } = await supabase.from('nova_challenges').select('*');
+    const { data: challenges, error } = await query;
 
     if (error) {
       console.error('Database Error: ', error);
@@ -23,14 +33,7 @@ export async function GET(_: Request) {
       );
     }
 
-    if (!data?.length) {
-      return NextResponse.json(
-        { message: 'No challenges found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(data, { status: 200 });
+    return NextResponse.json(challenges, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -43,11 +46,17 @@ export async function GET(_: Request) {
 export async function POST(request: Request) {
   const supabase = await createClient();
 
-  let body: {
-    title: string;
-    description: string;
-    duration: number;
-  };
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  let body;
+
   try {
     body = await request.json();
   } catch (error) {
@@ -55,51 +64,60 @@ export async function POST(request: Request) {
   }
 
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Validate request body with Zod
+    const validatedData = createChallengeSchema.parse(body);
 
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const challengeData = {
+      title: validatedData.title,
+      description: validatedData.description,
+      duration: validatedData.duration,
+      enabled: validatedData.enabled,
+      previewable_at: validatedData.previewable_at,
+      open_at: validatedData.open_at,
+      close_at: validatedData.close_at,
+    };
 
-    // Validate required fields
-    if (!body.title || !body.description || body.duration === undefined) {
-      return NextResponse.json(
-        { message: 'Title, description, and duration are required' },
-        { status: 400 }
-      );
-    }
-
-    if (typeof body.duration !== 'number' || body.duration <= 0) {
-      return NextResponse.json(
-        { message: 'Duration must be a positive number' },
-        { status: 400 }
-      );
-    }
-
-    const { data, error } = await supabase
+    const { data: challenge, error: challengeError } = await supabase
       .from('nova_challenges')
-      .insert({
-        title: body.title,
-        description: body.description,
-        duration: body.duration,
-        enabled: false,
-      })
+      .insert(challengeData)
       .select()
       .single();
 
-    if (error) {
-      console.error('Database Error: ', error);
+    if (challengeError) {
+      console.error('Database Error when creating challenge:', challengeError);
       return NextResponse.json(
         { message: 'Error creating challenge' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(data, { status: 201 });
+    const { error: criteriaError } = await supabase
+      .from('nova_challenge_criteria')
+      .insert(
+        validatedData.criteria.map((criterion) => ({
+          ...criterion,
+          challenge_id: challenge.id,
+        }))
+      );
+
+    if (criteriaError) {
+      console.error('Database Error when creating criteria:', criteriaError);
+      return NextResponse.json(
+        { message: 'Error creating criteria' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(challenge, { status: 201 });
   } catch (error) {
+    if (error instanceof ZodError) {
+      // Zod validation error
+      return NextResponse.json(
+        { message: 'Validation error', errors: error.errors },
+        { status: 400 }
+      );
+    }
+
     console.error('Unexpected Error:', error);
     return NextResponse.json(
       { message: 'Internal Server Error' },
