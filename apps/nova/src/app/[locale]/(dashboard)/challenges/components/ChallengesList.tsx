@@ -2,19 +2,23 @@
 
 import ChallengeCard from '../challengeCard';
 import { useQuery } from '@tanstack/react-query';
-import type { NovaChallenge } from '@tuturuuu/types/db';
+import type { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Clock, Filter, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+type ExtendedNovaChallenge = NovaChallenge & {
+  criteria: NovaChallengeCriteria[];
+};
+
 interface ChallengesListProps {
-  initialChallenges: NovaChallenge[];
+  initialChallenges: ExtendedNovaChallenge[];
   isAdmin: boolean;
 }
 
-async function fetchChallenges(): Promise<NovaChallenge[]> {
+async function fetchChallenges() {
   try {
     const response = await fetch('/api/v1/challenges', {
       method: 'GET',
@@ -28,7 +32,25 @@ async function fetchChallenges(): Promise<NovaChallenge[]> {
     }
 
     const challenges = await response.json();
-    return challenges;
+
+    const criteria = await Promise.all(
+      challenges.map(async (challenge: NovaChallenge) => {
+        const response = await fetch(
+          `/api/v1/criteria?challengeId=${challenge.id}`
+        );
+        const data = await response.json();
+        return {
+          challengeId: challenge.id,
+          criteria: data,
+        };
+      })
+    );
+
+    return challenges.map((challenge: NovaChallenge) => ({
+      ...challenge,
+      criteria:
+        criteria.find((c) => c.challengeId === challenge.id)?.criteria || [],
+    }));
   } catch (error) {
     console.error('Error fetching challenges:', error);
     return [];
@@ -54,7 +76,7 @@ export default function ChallengesList({
   });
 
   const [filteredChallenges, setFilteredChallenges] =
-    useState<NovaChallenge[]>(challenges);
+    useState<ExtendedNovaChallenge[]>(challenges);
 
   useEffect(() => {
     // Apply filtering and search

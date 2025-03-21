@@ -1,7 +1,7 @@
 'use client';
 
 import EditProblemDialog from './editProblemDialog';
-import { NovaProblem } from '@tuturuuu/types/db';
+import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +27,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export default function ProblemCard({ problem }: { problem: NovaProblem }) {
+type ExtendedNovaProblem = NovaProblem & {
+  testcases: NovaProblemTestCase[];
+};
+
+interface ProblemCardProps {
+  problem: ExtendedNovaProblem;
+}
+
+export default function ProblemCard({ problem }: ProblemCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const router = useRouter();
 

@@ -15,10 +15,14 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
+
+type ExtendedNovaChallenge = NovaChallenge & {
+  criteria: NovaChallengeCriteria[];
+};
 
 interface EditChallengeDialogProps {
-  challenge: NovaChallenge;
+  challenge: ExtendedNovaChallenge;
   trigger: React.ReactNode;
   onSuccessfulEdit?: () => void;
 }
@@ -32,52 +36,26 @@ export default function EditChallengeDialog({
 
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [criteria, setCriteria] = useState<NovaChallengeCriteria[]>([]);
-
-  // Fetch criteria when dialog opens
-  useEffect(() => {
-    const fetchCriteria = async () => {
-      try {
-        const response = await fetch(
-          `/api/v1/criteria?challengeId=${challenge.id}`
-        );
-        if (!response.ok) {
-          throw new Error('Failed to fetch criteria');
-        }
-        const data = await response.json();
-        setCriteria(data);
-      } catch (error) {
-        console.error('Error fetching criteria:', error);
-        toast({
-          title: 'Failed to fetch criteria',
-          description: error instanceof Error ? error.message : 'Unknown error',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    if (open) {
-      fetchCriteria();
-    }
-  }, [open, challenge.id]);
 
   // Convert string dates to Date objects for the form
-  const formattedDefaultValues = {
-    title: challenge.title,
-    description: challenge.description,
-    criteria: criteria.map((c) => ({
-      id: c.id,
-      name: c.name,
-      description: c.description,
-    })),
-    duration: challenge.duration,
-    enabled: challenge.enabled,
-    openAt: challenge.open_at ? new Date(challenge.open_at) : null,
-    closeAt: challenge.close_at ? new Date(challenge.close_at) : null,
-    previewableAt: challenge.previewable_at
-      ? new Date(challenge.previewable_at)
-      : null,
-  };
+  const formattedDefaultValues = useMemo(() => {
+    return {
+      title: challenge.title,
+      description: challenge.description,
+      criteria: challenge.criteria.map((c) => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+      })),
+      duration: challenge.duration,
+      enabled: challenge.enabled,
+      openAt: challenge.open_at ? new Date(challenge.open_at) : null,
+      closeAt: challenge.close_at ? new Date(challenge.close_at) : null,
+      previewableAt: challenge.previewable_at
+        ? new Date(challenge.previewable_at)
+        : null,
+    };
+  }, [challenge]);
 
   const onSubmit = async (values: ChallengeFormValues) => {
     try {
@@ -110,7 +88,7 @@ export default function EditChallengeDialog({
       const criteriaToUpdate = values.criteria.filter((c) => c.id);
 
       // Criteria to delete (IDs that exist in old but not in new)
-      const criteriaToDelete = criteria.filter(
+      const criteriaToDelete = challenge.criteria.filter(
         (c) => !newCriteriaIds.has(c.id)
       );
 

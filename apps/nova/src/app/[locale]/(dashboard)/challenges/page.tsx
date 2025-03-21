@@ -17,7 +17,7 @@ async function fetchChallenges() {
   try {
     const { data: challenges, error } = await supabase
       .from('nova_challenges')
-      .select('*')
+      .select('*, criteria:nova_challenge_criteria(*)')
       .order('created_at', { ascending: false });
 
     if (error) {

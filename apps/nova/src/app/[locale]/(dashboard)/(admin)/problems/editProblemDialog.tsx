@@ -12,10 +12,14 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
+
+type ExtendedNovaProblem = NovaProblem & {
+  testcases: NovaProblemTestCase[];
+};
 
 interface EditProblemDialogProps {
-  problem: NovaProblem;
+  problem: ExtendedNovaProblem;
   trigger: React.ReactNode;
 }
 
@@ -27,45 +31,22 @@ export default function EditProblemDialog({
 
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [testcases, setTestcases] = useState<NovaProblemTestCase[]>([]);
-
-  useEffect(() => {
-    const fetchTestcases = async () => {
-      try {
-        const response = await fetch(
-          `/api/v1/testcases?problemId=${problem.id}`
-        );
-        if (!response.ok) {
-          throw new Error('Failed to fetch testcases');
-        }
-        const data = await response.json();
-        setTestcases(data);
-      } catch (error) {
-        console.error('Error fetching testcases:', error);
-        toast({
-          title: 'Failed to fetch testcases',
-          description: error instanceof Error ? error.message : 'Unknown error',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    fetchTestcases();
-  }, [problem.id]);
 
   // Convert string dates to Date objects for the form
-  const formattedDefaultValues = {
-    title: problem.title,
-    description: problem.description,
-    maxPromptLength: problem.max_prompt_length,
-    exampleInput: problem.example_input,
-    exampleOutput: problem.example_output,
-    challengeId: problem.challenge_id,
-    testcases: testcases.map((tc) => ({
-      id: tc.id,
-      input: tc.input,
-    })),
-  };
+  const formattedDefaultValues = useMemo(() => {
+    return {
+      title: problem.title,
+      description: problem.description,
+      maxPromptLength: problem.max_prompt_length,
+      exampleInput: problem.example_input,
+      exampleOutput: problem.example_output,
+      challengeId: problem.challenge_id,
+      testcases: problem.testcases.map((tc) => ({
+        id: tc.id,
+        input: tc.input,
+      })),
+    };
+  }, [problem]);
 
   const onSubmit = async (values: ProblemFormValues) => {
     try {
@@ -84,6 +65,7 @@ export default function EditProblemDialog({
         title: 'Problem updated successfully',
         variant: 'default',
       });
+
       // Find testcases to create, update, and delete
       const newTestcaseIds = new Set(values.testcases.map((tc) => tc.id));
       // Testcases to create (those without IDs)
@@ -91,9 +73,10 @@ export default function EditProblemDialog({
       // Testcases to update (those with existing IDs)
       const testcasesToUpdate = values.testcases.filter((tc) => tc.id);
       // Testcases to delete (IDs that exist in old but not in new)
-      const testcasesToDelete = testcases.filter(
+      const testcasesToDelete = problem.testcases.filter(
         (tc) => !newTestcaseIds.has(tc.id)
       );
+
       // Handle all testcase operations
       await Promise.allSettled([
         // Create new testcases

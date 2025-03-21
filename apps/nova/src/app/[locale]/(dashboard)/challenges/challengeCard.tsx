@@ -5,7 +5,11 @@ import { StartChallengeDialog } from './components/StartChallengeDialog';
 import { TimeProgress } from './components/TimeProgress';
 import EditChallengeDialog from './editChallengeDialog';
 import { useQueryClient } from '@tanstack/react-query';
-import type { NovaChallenge, NovaSession } from '@tuturuuu/types/db';
+import type {
+  NovaChallenge,
+  NovaChallengeCriteria,
+  NovaSession,
+} from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,9 +55,13 @@ import {
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+type ExtendedNovaChallenge = NovaChallenge & {
+  criteria: NovaChallengeCriteria[];
+};
+
 interface ChallengeCardProps {
   isAdmin: boolean;
-  challenge: NovaChallenge;
+  challenge: ExtendedNovaChallenge;
 }
 
 export default function ChallengeCard({

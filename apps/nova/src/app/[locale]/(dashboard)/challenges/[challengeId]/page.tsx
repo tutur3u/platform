@@ -139,7 +139,7 @@ export default function Page({ params }: Props) {
   if (!session) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-muted-foreground">
+        <p className="text-muted-foreground text-xl font-semibold">
           Loading...
         </p>
       </div>
@@ -167,10 +167,10 @@ export default function Page({ params }: Props) {
 
         <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-4 md:grid-cols-2">
           <div className="flex h-full w-full flex-col gap-4 overflow-hidden">
-            <Card className="h-full overflow-y-auto border-foreground/10 bg-foreground/5">
+            <Card className="border-foreground/10 bg-foreground/5 h-full overflow-y-auto">
               <CardContent className="p-0">
                 <Tabs defaultValue="problem" className="w-full">
-                  <TabsList className="w-full rounded-t-lg rounded-b-none bg-foreground/10">
+                  <TabsList className="bg-foreground/10 w-full rounded-b-none rounded-t-lg">
                     <TabsTrigger value="problem" className="flex-1">
                       Problem
                     </TabsTrigger>
@@ -249,9 +249,7 @@ export default function Page({ params }: Props) {
 }
 
 // Fetch Challenge from Supabase
-async function getChallenge(
-  challengeId: string
-): Promise<ExtendedNovaChallenge | null> {
+async function getChallenge(challengeId: string) {
   const supabase = createClient();
 
   try {
@@ -291,19 +289,9 @@ async function getChallenge(
     // Map problems with test cases
     const formattedProblems = problems.map((problem) => {
       // Get testcases for this specific problem
-      const problemTestcases =
-        testcases?.filter((t) => t.problem_id === problem.id) || [];
-
       return {
-        id: problem.id,
-        title: problem.title,
-        description: problem.description,
-        example_input: problem.example_input,
-        example_output: problem.example_output,
-        challenge_id: challenge.id,
-        max_prompt_length: problem.max_prompt_length,
-        created_at: problem.created_at,
-        testcases: problemTestcases,
+        ...problem,
+        testcases: testcases?.filter((t) => t.problem_id === problem.id) || [],
       };
     });
 
