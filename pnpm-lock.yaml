@@ -1776,11 +1776,11 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0(zod@3.24.2)
       '@ai-sdk/google':
-        specifier: ^1.2.0
-        version: 1.2.0(zod@3.24.2)
+        specifier: ^1.2.1
+        version: 1.2.1(zod@3.24.2)
       '@ai-sdk/google-vertex':
-        specifier: ^2.2.0
-        version: 2.2.0(zod@3.24.2)
+        specifier: ^2.2.1
+        version: 2.2.1(zod@3.24.2)
       '@ai-sdk/groq':
         specifier: ^1.2.0
         version: 1.2.0(zod@3.24.2)
@@ -2396,14 +2396,14 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/google-vertex@2.2.0':
-    resolution: {integrity: sha512-nIM/ZdlvUI/kPlT8Qr2pW1sU11entgXw2wP6RlAMxUaz/13VwXt8BLGFS9GmHipi6CRvrmKIy9IN1ukrkI8NGg==}
+  '@ai-sdk/google-vertex@2.2.1':
+    resolution: {integrity: sha512-5I8R3isk3ohWX7we+3bPatyZ7+bg3CmZbHQaczSZTIFTcvdX4/Oxwg1kptp3ECWtoPiiz5JzbU84zfq3BiqH8Q==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/google@1.2.0':
-    resolution: {integrity: sha512-e/sDYsjOc9YdzhnobCt16bkHsEkDEFHs7ZCAOQ1A06zJhRYVll3hyAmWDEgXf25Zdk1R20gu+JEvnIpZ9qgT5w==}
+  '@ai-sdk/google@1.2.1':
+    resolution: {integrity: sha512-kT3o8pEbks5JJDTIkUdL7OHCNcxrnWYu2s+DQUBdyJt7BTgCBLtqZAwTeDuO8lDAW2fRtVSs7Gk6OVU2yiutiQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -9939,10 +9939,10 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.0(zod@3.24.2)
       zod: 3.24.2
 
-  '@ai-sdk/google-vertex@2.2.0(zod@3.24.2)':
+  '@ai-sdk/google-vertex@2.2.1(zod@3.24.2)':
     dependencies:
       '@ai-sdk/anthropic': 1.2.0(zod@3.24.2)
-      '@ai-sdk/google': 1.2.0(zod@3.24.2)
+      '@ai-sdk/google': 1.2.1(zod@3.24.2)
       '@ai-sdk/provider': 1.1.0
       '@ai-sdk/provider-utils': 2.2.0(zod@3.24.2)
       google-auth-library: 9.15.1
@@ -9951,7 +9951,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@ai-sdk/google@1.2.0(zod@3.24.2)':
+  '@ai-sdk/google@1.2.1(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
       '@ai-sdk/provider-utils': 2.2.0(zod@3.24.2)
