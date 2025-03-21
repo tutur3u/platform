@@ -37,7 +37,7 @@ async function ProblemsList() {
   const problems = await fetchProblems();
 
   return problems.length > 0 ? (
-    problems.map((problem: NovaProblem) => (
+    problems.map((problem) => (
       <ProblemCard key={problem.id} problem={problem} />
     ))
   ) : (
@@ -52,7 +52,7 @@ async function fetchProblems(): Promise<NovaProblem[]> {
   try {
     const { data: problems, error } = await database
       .from('nova_problems')
-      .select('*, testcases:nova_problem_testcases(*)');
+      .select('*');
 
     if (error) {
       console.error('Error fetching problems:', error.message);

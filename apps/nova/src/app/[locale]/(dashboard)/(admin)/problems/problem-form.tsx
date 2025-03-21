@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { NovaChallenge } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -39,33 +38,36 @@ import * as z from 'zod';
 
 // Define the form schema with Zod
 const testCaseSchema = z.object({
+  id: z.string().optional(),
   input: z.string().min(1, 'Input is required'),
 });
 
-const formSchema = z.object({
-  title: z.string().min(3, {
-    message: 'Title must be at least 3 characters.',
-  }),
-  description: z.string().min(10, {
-    message: 'Description must be at least 10 characters.',
-  }),
-  max_prompt_length: z.coerce
-    .number()
-    .min(1, {
-      message: 'Max prompt length must be at least 1.',
-    })
-    .default(1000),
-  example_input: z.string().min(1, {
-    message: 'Example input is required.',
-  }),
-  example_output: z.string().min(1, {
-    message: 'Example output is required.',
-  }),
-  challenge_id: z.string().nonempty('Challenge is required'),
-  testcases: z
-    .array(testCaseSchema)
-    .min(1, 'At least one test case is required'),
-});
+const formSchema = z
+  .object({
+    title: z.string().min(3, {
+      message: 'Title must be at least 3 characters.',
+    }),
+    description: z.string().min(10, {
+      message: 'Description must be at least 10 characters.',
+    }),
+    maxPromptLength: z.coerce
+      .number()
+      .min(1, {
+        message: 'Max prompt length must be at least 1.',
+      })
+      .default(1000),
+    exampleInput: z.string().min(1, {
+      message: 'Example input is required.',
+    }),
+    exampleOutput: z.string().min(1, {
+      message: 'Example output is required.',
+    }),
+    challengeId: z.string().nonempty('Challenge is required'),
+    testcases: z
+      .array(testCaseSchema)
+      .min(1, 'At least one test case is required'),
+  })
+  .required();
 
 export type ProblemFormValues = z.infer<typeof formSchema>;
 
@@ -84,7 +86,6 @@ export default function ProblemForm({
 }: ProblemFormProps) {
   const isEditing = !!problemId;
 
-  const supabase = createClient();
   const [challenges, setChallenges] = useState<NovaChallenge[]>([]);
 
   // Initialize form with default values
@@ -95,25 +96,22 @@ export default function ProblemForm({
 
   // Add a new test case
   const addTestCase = () => {
-    const currentTestcases = form.getValues('testcases') || [];
+    const currentTestcases = form.getValues('testcases');
     form.setValue('testcases', [...currentTestcases, { input: '' }]);
   };
 
   // Remove a test case
   const removeTestCase = (index: number) => {
-    const currentTestcases = form.getValues('testcases') || [];
-    const updatedTestcases = [...currentTestcases];
-    updatedTestcases.splice(index, 1);
+    const currentTestcases = form.getValues('testcases');
+    const updatedTestcases = currentTestcases.filter((_, i) => i !== index);
     form.setValue('testcases', updatedTestcases);
   };
 
   useEffect(() => {
     // Fetch available challenges
     const fetchChallenges = async () => {
-      const { data, error } = await supabase
-        .from('nova_challenges')
-        .select('*');
-      if (error) {
+      const response = await fetch('/api/v1/challenges');
+      if (!response.ok) {
         toast({
           title: 'Error',
           description: 'Failed to load challenges',
@@ -121,7 +119,9 @@ export default function ProblemForm({
         });
         return;
       }
-      setChallenges(data as NovaChallenge[]);
+
+      const data = await response.json();
+      setChallenges(data);
     };
 
     fetchChallenges();
@@ -187,12 +187,12 @@ export default function ProblemForm({
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="max_prompt_length"
+                      name="maxPromptLength"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Max Prompt Length</FormLabel>
                           <FormControl>
-                            <Input type="number" min={1} {...field} />
+                            <Input type="number" {...field} />
                           </FormControl>
                           <FormDescription>
                             Maximum allowed length for the prompt in characters.
@@ -204,7 +204,7 @@ export default function ProblemForm({
 
                     <FormField
                       control={form.control}
-                      name="challenge_id"
+                      name="challengeId"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Challenge</FormLabel>
@@ -241,7 +241,7 @@ export default function ProblemForm({
 
                   <FormField
                     control={form.control}
-                    name="example_input"
+                    name="exampleInput"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Example Input</FormLabel>
@@ -262,7 +262,7 @@ export default function ProblemForm({
 
                   <FormField
                     control={form.control}
-                    name="example_output"
+                    name="exampleOutput"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Example Output</FormLabel>
@@ -292,10 +292,10 @@ export default function ProblemForm({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {form.watch('testcases')?.length > 0 ? (
-                    form.watch('testcases').map((_, index) => (
+                  {form.watch('testcases').length > 0 ? (
+                    form.watch('testcases').map((testCase, index) => (
                       <div
-                        key={index}
+                        key={testCase.id || index}
                         className="space-y-4 rounded-md border p-4"
                       >
                         <div className="flex items-center justify-between">
@@ -329,7 +329,7 @@ export default function ProblemForm({
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       No test cases added yet.
                     </p>
                   )}

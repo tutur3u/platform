@@ -1,7 +1,7 @@
 'use client';
 
 import ProblemForm, { type ProblemFormValues } from './problem-form';
-import { type NovaProblem } from '@tuturuuu/types/db';
+import { type NovaProblem, type NovaProblemTestCase } from '@tuturuuu/types/db';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface EditProblemDialogProps {
   problem: NovaProblem;
@@ -27,16 +27,49 @@ export default function EditProblemDialog({
 
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [testcases, setTestcases] = useState<NovaProblemTestCase[]>([]);
+
+  useEffect(() => {
+    const fetchTestcases = async () => {
+      try {
+        const response = await fetch(
+          `/api/v1/testcases?problemId=${problem.id}`
+        );
+        if (!response.ok) {
+          throw new Error('Failed to fetch testcases');
+        }
+        const data = await response.json();
+        setTestcases(data);
+      } catch (error) {
+        console.error('Error fetching testcases:', error);
+        toast({
+          title: 'Failed to fetch testcases',
+          description: error instanceof Error ? error.message : 'Unknown error',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    fetchTestcases();
+  }, [problem.id]);
 
   // Convert string dates to Date objects for the form
   const formattedDefaultValues = {
-    ...problem,
+    title: problem.title,
+    description: problem.description,
+    maxPromptLength: problem.max_prompt_length,
+    exampleInput: problem.example_input,
+    exampleOutput: problem.example_output,
+    challengeId: problem.challenge_id,
+    testcases: testcases.map((tc) => ({
+      id: tc.id,
+      input: tc.input,
+    })),
   };
 
   const onSubmit = async (values: ProblemFormValues) => {
     try {
       setIsSubmitting(true);
-
       const response = await fetch(`/api/v1/problems/${problem.id}`, {
         method: 'PUT',
         headers: {
@@ -44,34 +77,52 @@ export default function EditProblemDialog({
         },
         body: JSON.stringify(values),
       });
-
       if (!response.ok) {
         throw new Error('Failed to save problem');
       }
-
-      // Delete all testcases with the same problem_id
-      await fetch(`/api/v1/testcases?problemId=${problem.id}`, {
-        method: 'DELETE',
+      toast({
+        title: 'Problem updated successfully',
+        variant: 'default',
       });
-
-      // Create new testcases
-      Promise.allSettled(
-        values.testcases.map((tc) =>
-          fetch(`/api/v1/testcases?problemId=${problem.id}`, {
+      // Find testcases to create, update, and delete
+      const newTestcaseIds = new Set(values.testcases.map((tc) => tc.id));
+      // Testcases to create (those without IDs)
+      const testcasesToCreate = values.testcases.filter((tc) => !tc.id);
+      // Testcases to update (those with existing IDs)
+      const testcasesToUpdate = values.testcases.filter((tc) => tc.id);
+      // Testcases to delete (IDs that exist in old but not in new)
+      const testcasesToDelete = testcases.filter(
+        (tc) => !newTestcaseIds.has(tc.id)
+      );
+      // Handle all testcase operations
+      await Promise.allSettled([
+        // Create new testcases
+        ...testcasesToCreate.map((tc) =>
+          fetch(`/api/v1/testcases`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ input: tc.input, problemId: problem.id }),
+          })
+        ),
+        // Update existing testcases
+        ...testcasesToUpdate.map((tc) =>
+          fetch(`/api/v1/testcases/${tc.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ input: tc.input }),
           })
-        )
-      );
-
-      toast({
-        title: 'Problem updated successfully',
-        variant: 'default',
-      });
-
+        ),
+        // Delete removed testcases
+        ...testcasesToDelete.map((tc) =>
+          fetch(`/api/v1/testcases/${tc.id}`, {
+            method: 'DELETE',
+          })
+        ),
+      ]);
       setOpen(false);
       router.refresh();
     } catch (error) {

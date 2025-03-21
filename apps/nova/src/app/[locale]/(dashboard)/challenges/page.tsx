@@ -5,20 +5,19 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { NovaChallenge } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
-async function fetchChallenges(): Promise<NovaChallenge[]> {
+async function fetchChallenges() {
   const supabase = await createClient();
 
   try {
     const { data: challenges, error } = await supabase
       .from('nova_challenges')
-      .select('*, criteria:nova_challenge_criteria(*)')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {

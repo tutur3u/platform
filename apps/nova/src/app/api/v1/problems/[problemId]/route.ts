@@ -71,10 +71,6 @@ export async function PUT(request: Request, { params }: Params) {
     exampleInput?: string;
     exampleOutput?: string;
     challengeId?: string;
-    testcases?: {
-      input: string;
-      output: string;
-    }[];
   };
 
   try {
@@ -92,11 +88,25 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    delete body.testcases;
+    const updateData: any = {};
+    if (body.title) updateData.title = body.title;
+    if (body.description) updateData.description = body.description;
+    if (body.maxPromptLength) {
+      if (body.maxPromptLength <= 0) {
+        return NextResponse.json(
+          { message: 'Max prompt length must be a positive number' },
+          { status: 400 }
+        );
+      }
+      updateData.max_prompt_length = body.maxPromptLength;
+    }
+    if (body.exampleInput) updateData.example_input = body.exampleInput;
+    if (body.exampleOutput) updateData.example_output = body.exampleOutput;
+    if (body.challengeId) updateData.challenge_id = body.challengeId;
 
     const { data: updatedProblem, error: updateError } = await supabase
       .from('nova_problems')
-      .update(body)
+      .update(updateData)
       .eq('id', problemId)
       .select()
       .single();

@@ -79,9 +79,7 @@ export type AuroraForecast = {
 };
 
 export type NovaChallengeCriteria = Tables<'nova_challenge_criteria'>;
-export type NovaChallenge = Tables<'nova_challenges'> & {
-  criteria?: NovaChallengeCriteria[];
-};
+export type NovaChallenge = Tables<'nova_challenges'>;
 export type NovaProblemCriteriaScore = Tables<'nova_problem_criteria_scores'>;
 export type NovaProblemTestCase = Tables<'nova_problem_testcases'>;
 export type NovaProblem = Tables<'nova_problems'>;
