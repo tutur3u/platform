@@ -1,7 +1,7 @@
 'use client';
 
-import { DateTimePicker } from './components/DateTimePicker';
-import { DurationDisplay } from './components/DurationDisplay';
+import { DateTimePicker } from './DateTimePicker';
+import { DurationDisplay } from './DurationDisplay';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

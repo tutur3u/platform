@@ -1,4 +1,4 @@
-import ChallengesList from './components/ChallengesList';
+import ChallengesList from './ChallengesList';
 import CreateChallengeDialog from './createChallengeDialog';
 import LoadingChallenges from './loading';
 import {

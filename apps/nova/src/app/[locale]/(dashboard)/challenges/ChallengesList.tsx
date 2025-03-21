@@ -1,6 +1,6 @@
 'use client';
 
-import ChallengeCard from '../challengeCard';
+import ChallengeCard from './challengeCard';
 import { useQuery } from '@tanstack/react-query';
 import type { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';

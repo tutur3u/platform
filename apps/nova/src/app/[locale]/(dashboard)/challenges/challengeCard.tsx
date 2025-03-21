@@ -1,8 +1,8 @@
 'use client';
 
-import { Countdown } from './components/Countdown';
-import { StartChallengeDialog } from './components/StartChallengeDialog';
-import { TimeProgress } from './components/TimeProgress';
+import { Countdown } from './Countdown';
+import { StartChallengeDialog } from './StartChallengeDialog';
+import { TimeProgress } from './TimeProgress';
 import EditChallengeDialog from './editChallengeDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import type {
