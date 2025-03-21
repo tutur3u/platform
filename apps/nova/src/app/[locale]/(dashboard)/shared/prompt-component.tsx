@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { cn } from '@tuturuuu/utils/format';
 
 export interface PromptComponentProps {
   className?: string;
@@ -11,7 +12,10 @@ export default function PromptComponent({
 }: PromptComponentProps) {
   return (
     <Card
-      className={`bg-foreground/10 text-foreground flex h-full flex-col overflow-y-auto ${className}`}
+      className={cn(
+        'flex h-full flex-col overflow-y-auto bg-foreground/10 text-foreground',
+        className
+      )}
     >
       <CardHeader>
         <CardTitle className="text-xl">Prompt Engineering Challenge</CardTitle>
