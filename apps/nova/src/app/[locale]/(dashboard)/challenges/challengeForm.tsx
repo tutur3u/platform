@@ -1,7 +1,7 @@
 'use client';
 
-import { DateTimePicker } from './components/DateTimePicker';
-import { DurationDisplay } from './components/DurationDisplay';
+import { DateTimePicker } from './DateTimePicker';
+import { DurationDisplay } from './DurationDisplay';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -37,6 +37,14 @@ import {
 } from 'lucide-react';
 import * as z from 'zod';
 
+const criteriaSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+  description: z.string().min(10, {
+    message: 'Description must be at least 10 characters.',
+  }),
+});
+
 const formSchema = z
   .object({
     title: z.string().min(3, {
@@ -45,23 +53,14 @@ const formSchema = z
     description: z.string().min(10, {
       message: 'Description must be at least 10 characters.',
     }),
-    criteria: z.array(
-      z.object({
-        name: z
-          .string()
-          .min(2, { message: 'Name must be at least 2 characters.' }),
-        description: z.string().min(10, {
-          message: 'Description must be at least 10 characters.',
-        }),
-      })
-    ),
+    criteria: z.array(criteriaSchema),
     duration: z.coerce.number().min(60, {
       message: 'Duration must be at least 60 seconds.',
     }),
     enabled: z.boolean().default(false),
-    open_at: z.date().nullable().optional(),
-    close_at: z.date().nullable().optional(),
-    previewable_at: z.date().nullable().optional(),
+    openAt: z.date().nullable().optional(),
+    closeAt: z.date().nullable().optional(),
+    previewableAt: z.date().nullable().optional(),
   })
   .required();
 
@@ -75,16 +74,7 @@ interface ChallengeFormProps {
 }
 
 export default function ChallengeForm({
-  defaultValues = {
-    title: '',
-    description: '',
-    criteria: [{ name: '', description: '' }],
-    duration: 3600,
-    enabled: false,
-    open_at: null,
-    close_at: null,
-    previewable_at: null,
-  },
+  defaultValues,
   challengeId,
   onSubmit,
   isSubmitting,
@@ -95,6 +85,20 @@ export default function ChallengeForm({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
+
+  const addCriteria = () => {
+    const currentCriteria = form.getValues('criteria');
+    form.setValue('criteria', [
+      ...currentCriteria,
+      { name: '', description: '' },
+    ]);
+  };
+
+  const removeCriteria = (index: number) => {
+    const currentCriteria = form.getValues('criteria');
+    const updatedCriteria = currentCriteria.filter((_, i) => i !== index);
+    form.setValue('criteria', updatedCriteria);
+  };
 
   return (
     <Form {...form}>
@@ -191,7 +195,7 @@ export default function ChallengeForm({
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div>
                     <CardTitle>Judging Criteria</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-sm">
                       Define how submissions will be evaluated. Each criterion
                       will be scored separately.
                     </p>
@@ -200,13 +204,7 @@ export default function ChallengeForm({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      const currentCriteria = form.getValues('criteria') || [];
-                      form.setValue('criteria', [
-                        ...currentCriteria,
-                        { name: '', description: '' },
-                      ]);
-                    }}
+                    onClick={() => addCriteria()}
                     className="h-8 gap-1"
                   >
                     <PlusCircle className="h-4 w-4" />
@@ -215,8 +213,11 @@ export default function ChallengeForm({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {form.watch('criteria')?.map((_, index) => (
-                      <Card key={index} className="border-dashed">
+                    {form.watch('criteria')?.map((criterion, index) => (
+                      <Card
+                        key={criterion.id || index}
+                        className="border-dashed"
+                      >
                         <CardContent className="p-4">
                           <div className="mb-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -244,27 +245,16 @@ export default function ChallengeForm({
                                 </Tooltip>
                               </TooltipProvider>
                             </div>
-                            {index > 0 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
-                                onClick={() => {
-                                  const currentCriteria =
-                                    form.getValues('criteria');
-                                  form.setValue(
-                                    'criteria',
-                                    currentCriteria.filter(
-                                      (_, i) => i !== index
-                                    )
-                                  );
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Remove</span>
-                              </Button>
-                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive/80 h-8 w-8 p-0"
+                              onClick={() => removeCriteria(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Remove</span>
+                            </Button>
                           </div>
                           <div className="space-y-3">
                             <FormField
@@ -318,7 +308,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Duration</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Set how long participants have to complete the challenge
                     once they start.
                   </p>
@@ -377,7 +367,7 @@ export default function ChallengeForm({
                         </div>
 
                         {field.value && (
-                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
+                          <div className="bg-muted/30 mt-4 rounded-md border p-3">
                             <DurationDisplay seconds={field.value} />
                           </div>
                         )}
@@ -398,19 +388,19 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Schedule</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Set when your challenge is available to participants.
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6 rounded-md border border-dashed p-4">
                     <div className="mb-2 flex items-center">
-                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
                       <h3 className="text-sm font-medium">
                         Timeline Recommendation
                       </h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       For best results, set dates in this order: Preview Date ➝
                       Open Date ➝ Close Date. This allows admins to preview
                       challenges before they open to participants.
@@ -420,7 +410,7 @@ export default function ChallengeForm({
                   <div className="space-y-6">
                     <FormField
                       control={form.control}
-                      name="previewable_at"
+                      name="previewableAt"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Preview Available</FormLabel>
@@ -441,10 +431,10 @@ export default function ChallengeForm({
                     />
 
                     <div className="relative">
-                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
+                      <div className="bg-muted-foreground/20 absolute -top-3 left-4 h-full w-px"></div>
                       <FormField
                         control={form.control}
-                        name="open_at"
+                        name="openAt"
                         render={({ field }) => (
                           <FormItem className="ml-8">
                             <FormLabel>Opens At</FormLabel>
@@ -466,10 +456,10 @@ export default function ChallengeForm({
                     </div>
 
                     <div className="relative">
-                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
+                      <div className="bg-muted-foreground/20 absolute -top-3 left-4 h-full w-px"></div>
                       <FormField
                         control={form.control}
-                        name="close_at"
+                        name="closeAt"
                         render={({ field }) => (
                           <FormItem className="ml-8">
                             <FormLabel>Closes At</FormLabel>
@@ -483,7 +473,7 @@ export default function ChallengeForm({
                             <FormDescription>
                               When the challenge will no longer be available to
                               start.
-                              {field.value && form.watch('open_at') && (
+                              {field.value && form.watch('openAt') && (
                                 <span className="mt-1 block text-xs">
                                   Challenge will be available from opening until
                                   closing.

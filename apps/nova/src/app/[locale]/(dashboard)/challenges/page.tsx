@@ -1,18 +1,17 @@
-import ChallengesList from './components/ChallengesList';
+import ChallengesList from './ChallengesList';
 import CreateChallengeDialog from './createChallengeDialog';
 import LoadingChallenges from './loading';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { NovaChallenge } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
-async function fetchChallenges(): Promise<NovaChallenge[]> {
+async function fetchChallenges() {
   const supabase = await createClient();
 
   try {

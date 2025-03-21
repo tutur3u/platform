@@ -40,6 +40,11 @@ export default function CreateProblemDialog({
         throw new Error('Failed to save problem');
       }
 
+      toast({
+        title: 'Success',
+        description: 'Problem created successfully',
+      });
+
       const problem = await response.json();
 
       if (problem?.id) {
@@ -55,11 +60,6 @@ export default function CreateProblemDialog({
           )
         );
       }
-
-      toast({
-        title: 'Success',
-        description: 'Problem created successfully',
-      });
 
       setOpen(false);
       router.refresh();

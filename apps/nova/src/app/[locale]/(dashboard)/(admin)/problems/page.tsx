@@ -2,7 +2,6 @@ import CreateProblemDialog from './createProblemDialog';
 import LoadingProblems from './loading';
 import ProblemCard from './problemCard';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NovaProblem } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
@@ -37,7 +36,7 @@ async function ProblemsList() {
   const problems = await fetchProblems();
 
   return problems.length > 0 ? (
-    problems.map((problem: NovaProblem) => (
+    problems.map((problem) => (
       <ProblemCard key={problem.id} problem={problem} />
     ))
   ) : (
@@ -47,21 +46,16 @@ async function ProblemsList() {
   );
 }
 
-async function fetchProblems(): Promise<NovaProblem[]> {
+async function fetchProblems() {
   const database = await createClient();
-  try {
-    const { data: problems, error } = await database
-      .from('nova_problems')
-      .select('*, testcases:nova_problem_testcases(*)');
+  const { data: problems, error } = await database
+    .from('nova_problems')
+    .select('*, testcases:nova_problem_testcases(*)');
 
-    if (error) {
-      console.error('Error fetching problems:', error.message);
-      return [];
-    }
-
-    return problems;
-  } catch (error) {
-    console.error('Unexpected error fetching problems:', error);
+  if (error) {
+    console.error('Error fetching problems:', error.message);
     return [];
   }
+
+  return problems;
 }

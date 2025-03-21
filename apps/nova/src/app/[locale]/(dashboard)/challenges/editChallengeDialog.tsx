@@ -1,7 +1,10 @@
 'use client';
 
 import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
-import { type NovaChallenge } from '@tuturuuu/types/db';
+import {
+  type NovaChallenge,
+  type NovaChallengeCriteria,
+} from '@tuturuuu/types/db';
 import {
   Dialog,
   DialogContent,
@@ -12,10 +15,14 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+
+type ExtendedNovaChallenge = NovaChallenge & {
+  criteria: NovaChallengeCriteria[];
+};
 
 interface EditChallengeDialogProps {
-  challenge: NovaChallenge;
+  challenge: ExtendedNovaChallenge;
   trigger: React.ReactNode;
   onSuccessfulEdit?: () => void;
 }
@@ -31,14 +38,24 @@ export default function EditChallengeDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Convert string dates to Date objects for the form
-  const formattedDefaultValues = {
-    ...challenge,
-    open_at: challenge.open_at ? new Date(challenge.open_at) : null,
-    close_at: challenge.close_at ? new Date(challenge.close_at) : null,
-    previewable_at: challenge.previewable_at
-      ? new Date(challenge.previewable_at)
-      : null,
-  };
+  const formattedDefaultValues = useMemo(() => {
+    return {
+      title: challenge.title,
+      description: challenge.description,
+      criteria: challenge.criteria.map((c) => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+      })),
+      duration: challenge.duration,
+      enabled: challenge.enabled,
+      openAt: challenge.open_at ? new Date(challenge.open_at) : null,
+      closeAt: challenge.close_at ? new Date(challenge.close_at) : null,
+      previewableAt: challenge.previewable_at
+        ? new Date(challenge.previewable_at)
+        : null,
+    };
+  }, [challenge]);
 
   const onSubmit = async (values: ChallengeFormValues) => {
     try {
@@ -61,6 +78,54 @@ export default function EditChallengeDialog({
         variant: 'default',
       });
 
+      // Find criteria to create, update, and delete
+      const newCriteriaIds = new Set(values.criteria.map((c) => c.id));
+
+      // Criteria to create (those without IDs)
+      const criteriaToCreate = values.criteria.filter((c) => !c.id);
+
+      // Criteria to update (those with existing IDs)
+      const criteriaToUpdate = values.criteria.filter((c) => c.id);
+
+      // Criteria to delete (IDs that exist in old but not in new)
+      const criteriaToDelete = challenge.criteria.filter(
+        (c) => !newCriteriaIds.has(c.id)
+      );
+
+      // Handle all criteria operations
+      await Promise.allSettled([
+        // Create new criteria
+        ...criteriaToCreate.map((c) =>
+          fetch(`/api/v1/criteria`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: c.name,
+              description: c.description,
+              challengeId: challenge.id,
+            }),
+          })
+        ),
+        // Update existing criteria
+        ...criteriaToUpdate.map((c) =>
+          fetch(`/api/v1/criteria/${c.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: c.name, description: c.description }),
+          })
+        ),
+        // Delete removed criteria
+        ...criteriaToDelete.map((c) =>
+          fetch(`/api/v1/criteria/${c.id}`, {
+            method: 'DELETE',
+          })
+        ),
+      ]);
+
       setOpen(false);
 
       // Call the onSuccessfulEdit callback if provided
@@ -70,9 +135,9 @@ export default function EditChallengeDialog({
 
       router.refresh();
     } catch (error) {
-      console.error('Error saving challenge:', error);
+      console.error('Error:', error);
       toast({
-        title: 'Failed to save challenge',
+        title: 'An error occurred',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });

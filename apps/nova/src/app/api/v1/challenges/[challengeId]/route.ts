@@ -1,5 +1,4 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -121,38 +120,6 @@ export async function PUT(request: Request, { params }: Params) {
         { message: 'Error updating challenge' },
         { status: 500 }
       );
-    }
-
-    if (body.criteria) {
-      const { error: updateCriteriaError } = await supabase
-        .from('nova_challenge_criteria')
-        .delete()
-        .eq('challenge_id', challengeId);
-
-      if (updateCriteriaError) {
-        console.error('Database Error: ', updateCriteriaError);
-        return NextResponse.json(
-          { message: 'Error updating challenge criteria' },
-          { status: 500 }
-        );
-      }
-
-      const { error: newCriteriaError } = await supabase
-        .from('nova_challenge_criteria')
-        .insert(
-          body.criteria.map((criterion: NovaChallengeCriteria) => ({
-            ...criterion,
-            challenge_id: challengeId,
-          }))
-        );
-
-      if (newCriteriaError) {
-        console.error('Database Error: ', newCriteriaError);
-        return NextResponse.json(
-          { message: 'Error creating challenge criteria' },
-          { status: 500 }
-        );
-      }
     }
 
     return NextResponse.json(updatedChallenge, { status: 200 });
