@@ -3,7 +3,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { ChevronLeft, ChevronRight, Clock, LogOut } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface CustomizedHeaderProps {
   problemLength: number;
@@ -14,6 +14,8 @@ interface CustomizedHeaderProps {
   onNext: () => void;
   onEnd: () => void;
   onAutoEnd: () => void;
+  challengeCloseAt?: string; // Optional challenge close_at time
+  sessionStartTime?: string; // Optional session start_time
 }
 
 export default function CustomizedHeader({
@@ -25,14 +27,22 @@ export default function CustomizedHeader({
   onNext,
   onEnd,
   onAutoEnd,
+  challengeCloseAt,
+  sessionStartTime,
 }: CustomizedHeaderProps) {
-  const [timeLeft, setTimeLeft] = useState<{
-    hours: number;
-    minutes: number;
-    seconds: number;
-    totalSeconds: number;
-    percentage: number;
-  }>({
+  // Static timer ID to ensure we don't create multiple timers
+  const timerId = useRef<NodeJS.Timeout | null>(null);
+
+  // Store the timer configuration in a ref to prevent resets on re-renders
+  const timerConfig = useRef({
+    endTime: new Date(endTime),
+    startTime: sessionStartTime ? new Date(sessionStartTime) : new Date(),
+    closeAt: challengeCloseAt ? new Date(challengeCloseAt) : null,
+    initialized: false,
+  });
+
+  // State for displaying the timer
+  const [timeLeft, setTimeLeft] = useState({
     hours: 0,
     minutes: 0,
     seconds: 0,
@@ -40,15 +50,57 @@ export default function CustomizedHeader({
     percentage: 100,
   });
 
+  // Initialize the timer once and handle cleanup
   useEffect(() => {
-    const endTimeDate = new Date(endTime);
-    const totalDuration = 3600; // Assuming 1 hour challenge duration, adjust as needed
+    // Only initialize once to prevent timer resets
+    if (!timerConfig.current.initialized) {
+      // Validate dates
+      const isEndTimeValid = !isNaN(timerConfig.current.endTime.getTime());
+      const isStartTimeValid = !isNaN(timerConfig.current.startTime.getTime());
+      const isCloseAtValid =
+        timerConfig.current.closeAt &&
+        !isNaN(timerConfig.current.closeAt.getTime());
 
+      // Use defaults if invalid
+      if (!isEndTimeValid) {
+        timerConfig.current.endTime = new Date(Date.now() + 3600 * 1000);
+      }
+
+      if (!isStartTimeValid) {
+        timerConfig.current.startTime = new Date();
+      }
+
+      // If closeAt is valid and earlier than endTime, use it instead
+      if (
+        isCloseAtValid &&
+        timerConfig.current.closeAt &&
+        timerConfig.current.closeAt < timerConfig.current.endTime
+      ) {
+        timerConfig.current.endTime = timerConfig.current.closeAt;
+      }
+
+      // Mark as initialized
+      timerConfig.current.initialized = true;
+    }
+
+    // Calculate total duration in seconds
+    const totalDuration = Math.max(
+      1,
+      Math.floor(
+        (timerConfig.current.endTime.getTime() -
+          timerConfig.current.startTime.getTime()) /
+          1000
+      )
+    );
+
+    // Timer update function
     const updateTimer = () => {
       const now = new Date();
       const diff = Math.max(
         0,
-        Math.floor((endTimeDate.getTime() - now.getTime()) / 1000)
+        Math.floor(
+          (timerConfig.current.endTime.getTime() - now.getTime()) / 1000
+        )
       );
 
       const hours = Math.floor(diff / 3600);
@@ -67,16 +119,31 @@ export default function CustomizedHeader({
         percentage,
       });
 
-      if (diff <= 0) {
+      // Auto-end when time is up
+      if (diff <= 0 && onAutoEnd) {
         onAutoEnd();
       }
     };
 
+    // Run immediately
     updateTimer();
-    const interval = setInterval(updateTimer, 1000);
 
-    return () => clearInterval(interval);
-  }, [endTime, onAutoEnd]);
+    // Clear any existing interval
+    if (timerId.current) {
+      clearInterval(timerId.current);
+    }
+
+    // Set up the interval
+    timerId.current = setInterval(updateTimer, 1000);
+
+    // Cleanup on unmount
+    return () => {
+      if (timerId.current) {
+        clearInterval(timerId.current);
+        timerId.current = null;
+      }
+    };
+  }, []); // Empty dependency array to ensure this only runs once
 
   const getTimeColor = () => {
     if (timeLeft.totalSeconds < 300) return 'text-red-500'; // Less than 5 minutes

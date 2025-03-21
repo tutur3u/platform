@@ -7,19 +7,20 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(_request: Request, { params }: Params) {
   const supabase = await createClient();
   const { testcaseId } = await params;
 
-  try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
     const { data: testcase, error } = await supabase
       .from('nova_problem_testcases')
       .select('*')
@@ -28,16 +29,15 @@ export async function GET(_: Request, { params }: Params) {
 
     if (error) {
       console.error('Database Error: ', error);
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { message: 'Testcase not found' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
         { message: 'Error fetching testcase' },
         { status: 500 }
-      );
-    }
-
-    if (!testcase) {
-      return NextResponse.json(
-        { message: 'Testcase not found' },
-        { status: 404 }
       );
     }
 
@@ -55,10 +55,20 @@ export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
   const { testcaseId } = await params;
 
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   let body: {
-    problemId: string;
-    input: string;
+    input?: string;
+    problemId?: string;
   };
+
   try {
     body = await request.json();
   } catch (error) {
@@ -66,40 +76,40 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Validate required fields
-    if (!body.problemId || !body.input) {
+    // Check if any update data was provided
+    if (Object.keys(body).length === 0) {
       return NextResponse.json(
-        { message: 'problemId and input are required' },
+        { message: 'No update data provided' },
         { status: 400 }
       );
     }
 
-    const { data, error } = await supabase
+    const updateData: any = {};
+    if (body.input) updateData.input = body.input;
+    if (body.problemId) updateData.problem_id = body.problemId;
+
+    const { data: updatedTestcase, error: updateError } = await supabase
       .from('nova_problem_testcases')
-      .update({
-        problem_id: body.problemId,
-        input: body.input,
-      })
+      .update(updateData)
       .eq('id', testcaseId)
       .select()
       .single();
 
-    if (error) {
-      console.error('Database Error: ', error);
+    if (updateError) {
+      console.error('Database Error: ', updateError);
+      if (updateError.code === 'PGRST116') {
+        return NextResponse.json(
+          { message: 'Testcase not found' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
         { message: 'Error updating testcase' },
         { status: 500 }
       );
     }
-    return NextResponse.json(data, { status: 200 });
+
+    return NextResponse.json(updatedTestcase, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -109,26 +119,27 @@ export async function PUT(request: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_: Request, { params }: Params) {
+export async function DELETE(_request: Request, { params }: Params) {
   const supabase = await createClient();
   const { testcaseId } = await params;
 
-  try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-    const { error } = await supabase
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { error: deleteError } = await supabase
       .from('nova_problem_testcases')
       .delete()
       .eq('id', testcaseId);
 
-    if (error) {
-      console.error('Database Error: ', error);
+    if (deleteError) {
+      console.error('Database Error: ', deleteError);
       return NextResponse.json(
         { message: 'Error deleting testcase' },
         { status: 500 }

@@ -18,7 +18,8 @@ interface NavItem {
 }
 
 interface StructureProps {
-  isAdmin: boolean;
+  allowChallengeManagement: boolean;
+  allowRoleManagement: boolean;
   defaultLayout?: number[];
   defaultCollapsed: boolean;
   navCollapsedSize: number;
@@ -29,7 +30,8 @@ interface StructureProps {
 }
 
 export default function Structure({
-  isAdmin,
+  allowChallengeManagement,
+  allowRoleManagement,
   defaultLayout = [20, 80],
   defaultCollapsed = false,
   navCollapsedSize,
@@ -79,7 +81,7 @@ export default function Structure({
         )}
       >
         <Image
-          src="/media/logos/transparent.png"
+          src="/media/logos/nova-transparent.png"
           className="h-8 w-8"
           width={32}
           height={32}
@@ -92,7 +94,8 @@ export default function Structure({
 
   const sidebarContent = (
     <Nav
-      isAdmin={isAdmin}
+      allowChallengeManagement={allowChallengeManagement}
+      allowRoleManagement={allowRoleManagement}
       isCollapsed={isCollapsed}
       navItems={navItems}
       onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}

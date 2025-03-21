@@ -131,7 +131,7 @@ export function AboutUsPage() {
               >
                 {member.name}
               </motion.h3>
-              <p className="text-sm text-primary">{member.role}</p>
+              <p className="text-sm text-balance text-primary">{member.role}</p>
               {member.organization && (
                 <Badge variant="outline" className="mt-1 bg-primary/5 text-xs">
                   {member.organization}
@@ -139,7 +139,9 @@ export function AboutUsPage() {
               )}
             </div>
           </div>
-          <p className="mb-4 text-sm text-muted-foreground">{member.bio}</p>
+          <p className="mb-4 text-sm text-balance text-muted-foreground">
+            {member.bio}
+          </p>
           {member.links && (
             <div className="flex justify-center gap-2">
               {member.links.twitter && (
@@ -271,7 +273,7 @@ export function AboutUsPage() {
                 tierColors[sponsor.tier]
               )}
             />
-            <div className="p-6">
+            <div className="p-6 text-center">
               <div className="mb-4 flex flex-col items-center justify-between">
                 <motion.div
                   className="relative h-24 w-24 overflow-hidden rounded-lg"
@@ -288,7 +290,7 @@ export function AboutUsPage() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    'mt-2 mb-4 bg-gradient-to-r bg-clip-text text-transparent',
+                    'mt-2 bg-gradient-to-r bg-clip-text text-transparent',
                     tierColors[sponsor.tier]
                   )}
                 >
@@ -308,12 +310,12 @@ export function AboutUsPage() {
                 </Badge>
               </div>
               <motion.h3
-                className="mb-2 text-xl font-bold transition-colors duration-300 group-hover:text-primary"
+                className="mb-2 text-xl font-bold text-balance transition-colors duration-300 group-hover:text-primary"
                 whileHover={{ scale: 1.02 }}
               >
                 {sponsor.name}
               </motion.h3>
-              <p className="mb-4 text-sm text-muted-foreground">
+              <p className="mb-4 text-sm text-balance text-muted-foreground">
                 {sponsor.description}
               </p>
               {/* <Link
@@ -343,13 +345,11 @@ export function AboutUsPage() {
     <motion.div variants={itemVariants}>
       <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 hover:border-primary/30 hover:bg-foreground/10 hover:shadow-md hover:shadow-primary/5">
         <div className="p-4">
-          <div className="mb-2 flex items-center gap-3">
-            <div>
-              <h3 className="font-semibold">{contributor.name}</h3>
-              <p className="text-xs text-muted-foreground">
-                {contributor.contribution}
-              </p>
-            </div>
+          <div className="mb-2 flex flex-col items-center justify-center gap-3 text-center">
+            <h3 className="font-semibold text-balance">{contributor.name}</h3>
+            <p className="text-xs text-balance text-muted-foreground">
+              {contributor.contribution}
+            </p>
           </div>
         </div>
       </Card>
@@ -526,14 +526,14 @@ export function AboutUsPage() {
             <div className="flex flex-col items-center">
               <div className="relative overflow-hidden">
                 <Image
-                  src="/media/logos/transparent.png"
+                  src="/media/logos/nova-transparent.png"
                   alt="Tuturuuu"
                   className="hidden object-contain md:block"
                   width={160}
                   height={160}
                 />
                 <Image
-                  src="/media/logos/transparent.png"
+                  src="/media/logos/nova-transparent.png"
                   alt="Tuturuuu"
                   className="object-contain md:hidden"
                   width={80}
@@ -1403,7 +1403,7 @@ export function AboutUsPage() {
       </section>
 
       {/* Tuturuuu Contribution Disclaimer Section */}
-      <section className="relative w-full bg-foreground/5 py-16">
+      <section className="relative w-full py-16">
         <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
         {/* Animated particles */}
@@ -1434,7 +1434,7 @@ export function AboutUsPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative rounded-2xl border border-primary/20 bg-background/80 p-8 backdrop-blur-md"
+            className="relative rounded-2xl border p-8 backdrop-blur-md"
           >
             <div className="flex flex-col items-center gap-8 md:flex-row">
               <motion.div
@@ -1444,7 +1444,7 @@ export function AboutUsPage() {
               >
                 <div className="relative h-32 w-32 overflow-hidden rounded-xl border-2 border-primary/30">
                   <Image
-                    src="/media/logos/transparent.png"
+                    src="/media/logos/nova-transparent.png"
                     alt="Tuturuuu"
                     fill
                     className="object-contain p-2"

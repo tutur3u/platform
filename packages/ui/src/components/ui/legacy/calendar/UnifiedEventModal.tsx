@@ -51,6 +51,7 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { format } from 'date-fns';
 import {
   AlertCircle,
@@ -63,10 +64,12 @@ import {
   FileText,
   Info,
   Loader2,
+  Lock,
   MapPin,
   Settings,
   Sparkles,
   Trash2,
+  Unlock,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -116,6 +119,7 @@ export function UnifiedEventModal() {
     color: 'BLUE',
     location: '',
     priority: 'medium',
+    locked: false,
   });
 
   // State for AI event generation
@@ -169,26 +173,12 @@ export function UnifiedEventModal() {
       // Process the generated events
       const processedEvents = Array.isArray(object) ? object : [object];
 
-      const formattedEvents = processedEvents
-        .map((event) => {
-          if (!event) return null;
-
-          const categoryColors = settings?.categoryColors?.categories || [];
-          const defaultColor = categoryColors[0]?.color || 'BLUE';
-
-          return {
-            ...event,
-            color: defaultColor,
-          };
-        })
-        .filter((event): event is NonNullable<typeof event> => event !== null);
-
-      setGeneratedEvents(formattedEvents);
+      setGeneratedEvents(processedEvents);
       setCurrentEventIndex(0);
 
       // Find overlapping events for the first event
-      if (formattedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
-        const firstEvent = formattedEvents[0];
+      if (processedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
+        const firstEvent = processedEvents[0];
         if (firstEvent && firstEvent.start_at && firstEvent.end_at) {
           checkForOverlaps(firstEvent as Partial<CalendarEvent>);
         }
@@ -256,6 +246,7 @@ export function UnifiedEventModal() {
         color: 'BLUE' as SupportedColor,
         location: '',
         priority: 'medium' as EventPriority,
+        locked: false,
       };
 
       setEvent(newEvent);
@@ -347,6 +338,60 @@ export function UnifiedEventModal() {
     }
   };
 
+  // Handle AI event generation
+  const handleGenerateEvent = async (values: z.infer<typeof AIFormSchema>) => {
+    try {
+      // Include timezone in the prompt for accurate time conversion
+      const promptWithTimezone = `${values.prompt}\n\nUser timezone: ${values.timezone}`;
+
+      // Get existing events for smart scheduling
+      const existingEvents = values.smart_scheduling ? getEvents() : [];
+
+      // Generate helpful suggestions based on the prompt
+      const suggestions = [
+        'Consider adding a buffer time before/after these events',
+        'These events might benefit from reminder notifications',
+        'Based on your schedule, early morning might be better for focus',
+        'Consider adding meeting agenda or preparation notes',
+      ];
+
+      // Add category-based suggestions
+      if (settings?.categoryColors?.categories.length > 0) {
+        const categoryNames = settings.categoryColors.categories
+          .map((cat) => cat.name)
+          .join(', ');
+        suggestions.push(
+          `You have categories set up: ${categoryNames}. Events will be colored based on these categories.`
+        );
+      }
+
+      setAiSuggestions(suggestions.slice(0, 3)); // Show up to 3 relevant suggestions
+
+      // Format categories for the AI request
+      const formattedCategories = settings?.categoryColors?.categories.map(
+        (category) => ({
+          name: category.name,
+          color: category.color.toLowerCase(),
+        })
+      );
+
+      submit({
+        prompt: promptWithTimezone,
+        current_time: new Date().toISOString(),
+        smart_scheduling: values.smart_scheduling,
+        existing_events: values.smart_scheduling ? existingEvents : undefined,
+        categories: formattedCategories,
+      });
+    } catch (error) {
+      console.error('Error generating events:', error);
+      toast({
+        title: 'Error generating events',
+        description: 'Please try again with a different prompt',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Handle AI event save
   const handleAISave = async () => {
     if (generatedEvents.length === 0) return;
@@ -357,20 +402,14 @@ export function UnifiedEventModal() {
       const eventsToSave = generatedEvents;
 
       for (const eventData of eventsToSave) {
-        // Determine the best color based on the event title and category settings
-        const categoryColors = settings?.categoryColors?.categories || [];
-        const defaultColor = categoryColors[0]?.color || 'BLUE';
-
         const calendarEvent: Omit<CalendarEvent, 'id'> = {
           title: eventData.title || 'New Event',
           description: eventData.description || '',
           start_at: eventData.start_at,
           end_at: eventData.end_at,
-          color: defaultColor,
-          location: eventData.location || '',
-          is_all_day: Boolean(eventData.is_all_day),
-          scheduling_note: eventData.scheduling_note || '',
-          priority: eventData.priority || aiForm.getValues().priority,
+          color: eventData.color || 'BLUE',
+          // location: eventData.location,
+          locked: false, // Default to unlocked for AI-generated events
         };
 
         await addEvent(calendarEvent);
@@ -751,11 +790,26 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
               <div className="flex flex-1 flex-col overflow-hidden">
                 <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                   <div className="space-y-6 p-6">
+                    {/* Locked Event Indicator */}
+                    {event.locked && (
+                      <div className="mb-4 flex items-center gap-2 rounded-md border border-dynamic-light-yellow/30 bg-dynamic-light-yellow/10 p-3 text-dynamic-light-yellow">
+                        <div>
+                          <h3 className="font-semibold">Event is Locked</h3>
+                          <p className="text-sm">
+                            This event is locked and can't be modified. Unlock
+                            it from the Advanced Settings section to make
+                            changes.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Title */}
                     <EventTitleInput
                       value={event.title || ''}
                       onEnter={handleManualSave}
                       onChange={(value) => setEvent({ ...event, title: value })}
+                      disabled={event.locked}
                     />
 
                     {/* Date and Time Selection */}
@@ -768,12 +822,14 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
                             label="All Day"
                             checked={isAllDay}
                             onChange={handleAllDayChange}
+                            disabled={event.locked}
                           />
                           <EventToggleSwitch
                             id="multi-day"
                             label="Multi-Day"
                             checked={isMultiDay}
                             onChange={handleMultiDayChange}
+                            disabled={event.locked}
                           />
                         </div>
                       </div>
@@ -783,13 +839,13 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
                           label="Start"
                           value={new Date(event.start_at || new Date())}
                           onChange={handleStartDateChange}
-                          //   icon={<Clock className="h-3.5 w-3.5 text-blue-500" />}
+                          disabled={event.locked}
                         />
                         <EventDateTimePicker
                           label="End"
                           value={new Date(event.end_at || new Date())}
                           onChange={handleEndDateChange}
-                          //   icon={<Clock className="h-3.5 w-3.5 text-red-500" />}
+                          disabled={event.locked}
                         />
                       </div>
                     </div>
@@ -803,12 +859,14 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
                         onChange={(value) =>
                           setEvent({ ...event, location: value })
                         }
+                        disabled={event.locked}
                       />
                       <EventDescriptionInput
                         value={event.description || ''}
                         onChange={(value) =>
                           setEvent({ ...event, description: value })
                         }
+                        disabled={event.locked}
                       />
                     </div>
 
@@ -837,19 +895,40 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
                                 onChange={(value) =>
                                   setEvent({ ...event, color: value })
                                 }
+                                disabled={event.locked}
                               />
-                              {/* <EventPriorityPicker
-                                value={event.priority || 'medium'}
-                                onChange={(value) =>
-                                  setEvent({ ...event, priority: value })
-                                }
-                              /> */}
+                              <div className="flex flex-col space-y-3">
+                                <label className="text-sm font-medium">
+                                  Event Protection
+                                </label>
+                                <EventToggleSwitch
+                                  id="locked"
+                                  label="Lock Event"
+                                  description="Locked events cannot be modified accidentally"
+                                  checked={event.locked || false}
+                                  onChange={(checked) =>
+                                    setEvent({ ...event, locked: checked })
+                                  }
+                                />
+                                <div className="mt-1 flex items-center gap-2">
+                                  {event.locked ? (
+                                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                                  ) : (
+                                    <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
+                                  )}
+                                  <p className="text-xs text-muted-foreground">
+                                    {event.locked
+                                      ? 'Event is locked'
+                                      : 'Event is unlocked'}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                             <div className="mt-2 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1">
                                 <Info className="h-3 w-3" />
-                                Color and priority help organize and prioritize
-                                your events
+                                Color and protection settings help organize and
+                                secure your events
                               </p>
                             </div>
                           </div>
@@ -911,7 +990,7 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
                       </Button>
                       <Button
                         onClick={handleManualSave}
-                        disabled={isSaving || isDeleting}
+                        disabled={isSaving || isDeleting || event.locked}
                         className="flex items-center gap-2"
                       >
                         {isSaving ? (
@@ -922,7 +1001,13 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
                         ) : (
                           <>
                             <Check className="h-4 w-4" />
-                            <span>{isEditing ? 'Update' : 'Create'}</span>
+                            <span>
+                              {isEditing
+                                ? event.locked
+                                  ? 'Locked'
+                                  : 'Update'
+                                : 'Create'}
+                            </span>
                           </>
                         )}
                       </Button>
@@ -1090,72 +1175,91 @@ const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => 
 
                       {generatedEvent && (
                         <div className="space-y-4">
-                          <div className="space-y-2">
-                            <h4 className="text-lg font-medium">
-                              {generatedEvent.title}
-                            </h4>
-                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <CalendarIcon className="h-3.5 w-3.5" />
-                                <span>
-                                  {format(
-                                    new Date(generatedEvent.start_at),
-                                    'PPP'
-                                  )}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>
-                                  {format(
-                                    new Date(generatedEvent.start_at),
-                                    'h:mm a'
-                                  )}{' '}
-                                  -{' '}
-                                  {format(
-                                    new Date(generatedEvent.end_at),
-                                    'h:mm a'
-                                  )}
-                                </span>
-                              </div>
-                              {generatedEvent.location && (
+                          <div className="mt-3 space-y-3 rounded-md border p-3">
+                            <div className="space-y-2">
+                              <h4 className="text-lg font-medium">
+                                {generatedEvent.title}
+                              </h4>
+                              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
-                                  <MapPin className="h-3.5 w-3.5" />
-                                  <span>{generatedEvent.location}</span>
+                                  <CalendarIcon className="h-3.5 w-3.5" />
+                                  <span>
+                                    {format(
+                                      new Date(generatedEvent.start_at),
+                                      'PPP'
+                                    )}
+                                  </span>
                                 </div>
-                              )}
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  <span>
+                                    {format(
+                                      new Date(generatedEvent.start_at),
+                                      'h:mm a'
+                                    )}{' '}
+                                    -{' '}
+                                    {format(
+                                      new Date(generatedEvent.end_at),
+                                      'h:mm a'
+                                    )}
+                                  </span>
+                                </div>
+                                {generatedEvent.location && (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3.5 w-3.5" />
+                                    <span>{generatedEvent.location}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
 
-                          {generatedEvent.description && (
-                            <div className="space-y-1">
-                              <h5 className="text-sm font-medium">
-                                Description
-                              </h5>
-                              <p className="text-sm text-muted-foreground">
-                                {generatedEvent.description}
-                              </p>
+                            {generatedEvent.description && (
+                              <div className="space-y-1">
+                                <h5 className="text-sm font-medium">
+                                  Description
+                                </h5>
+                                <p className="text-sm text-muted-foreground">
+                                  {generatedEvent.description}
+                                </p>
+                              </div>
+                            )}
+
+                            <Separator />
+
+                            {/* Color indicator and category */}
+                            <div className="flex items-center gap-2">
+                              {generatedEvent.color &&
+                                (() => {
+                                  const { bg, border, text } = getEventStyles(
+                                    generatedEvent.color
+                                  );
+                                  return (
+                                    <div
+                                      className={`flex items-center gap-2 rounded-full border px-2 py-1 text-center ${bg} ${border}`}
+                                    >
+                                      <span
+                                        className={`text-xs font-medium ${text}`}
+                                      >
+                                        {COLOR_OPTIONS.find(
+                                          (c) =>
+                                            c.value ===
+                                            (generatedEvent.color
+                                              ? generatedEvent.color.toUpperCase()
+                                              : 'BLUE')
+                                        )?.name || 'Default'}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                             </div>
-                          )}
 
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`h-3 w-3 rounded-full`}
-                              style={{
-                                backgroundColor: `var(--dynamic-light-${generatedEvent.color.toLowerCase()})`,
-                              }}
-                            />
-                            <span className="text-xs text-muted-foreground">
-                              {COLOR_OPTIONS.find(
-                                (c) => c.value === generatedEvent.color
-                              )?.name || 'Default'}
-                              {generatedEvent._matchedCategory && (
-                                <span className="ml-1">
-                                  (Matched category:{' '}
-                                  {generatedEvent._matchedCategory})
-                                </span>
-                              )}
-                            </span>
+                            {/* Event protection status */}
+                            <div className="flex items-center gap-2">
+                              <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
+                                Event will be created unlocked
+                              </span>
+                            </div>
                           </div>
                         </div>
                       )}

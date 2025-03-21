@@ -1,6 +1,7 @@
 'use client';
 
-import { NovaProblem } from '@tuturuuu/types/db';
+import EditProblemDialog from './editProblemDialog';
+import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +27,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export default function ProblemCard({ problem }: { problem: NovaProblem }) {
+type ExtendedNovaProblem = NovaProblem & {
+  testcases: NovaProblemTestCase[];
+};
+
+interface ProblemCardProps {
+  problem: ExtendedNovaProblem;
+}
+
+export default function ProblemCard({ problem }: ProblemCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const router = useRouter();
 
@@ -81,11 +90,14 @@ export default function ProblemCard({ problem }: { problem: NovaProblem }) {
             <Button variant="default">View</Button>
           </Link>
           <div className="flex gap-2">
-            <Link href={`/problems/${problem.id}/edit`}>
-              <Button variant="outline" size="icon">
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </Link>
+            <EditProblemDialog
+              problem={problem}
+              trigger={
+                <Button variant="outline" size="icon">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              }
+            />
             <Button
               variant="destructive"
               size="icon"

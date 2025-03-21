@@ -4,6 +4,7 @@ import {
   NovaChallenge,
   NovaChallengeCriteria,
   NovaProblem,
+  NovaProblemCriteriaScore,
   NovaSession,
   NovaSubmission,
 } from '@tuturuuu/types/db';
@@ -16,13 +17,8 @@ type ReportData = NovaSession & {
   challenge: NovaChallenge & {
     criteria: NovaChallengeCriteria[];
     problems: (NovaProblem & {
+      criteria_scores: NovaProblemCriteriaScore[];
       submissions: NovaSubmission[];
-      criteria_scores: {
-        criteria_id: string;
-        problem_id: string;
-        score: number;
-        created_at: string;
-      }[];
     })[];
   };
 };
@@ -43,26 +39,37 @@ export default function Page({ params }: Props) {
       try {
         const { challengeId } = await params;
 
-        const response = await fetch(
-          `/api/v1/challenges/${challengeId}/report`
-        );
+        const [sessionRes, challengeRes, criteriaRes, problemsRes] =
+          await Promise.all([
+            getSession(challengeId),
+            getChallenge(challengeId),
+            getCriteria(challengeId),
+            getProblems(challengeId),
+          ]);
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch report data');
+        if (!sessionRes) {
+          router.push(`/challenges`);
+          return;
         }
 
-        const result = await response.json();
-
-        if (result.status !== 'ENDED') {
+        if (sessionRes.status === 'IN_PROGRESS') {
           router.push(`/challenges/${challengeId}`);
           return;
         }
 
+        const result: ReportData = {
+          ...sessionRes,
+          challenge: {
+            ...challengeRes,
+            criteria: criteriaRes,
+            problems: problemsRes,
+          },
+        };
         setData(result);
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('There was an error fetching the data.');
-      } finally {
         setLoading(false);
       }
     };
@@ -72,7 +79,7 @@ export default function Page({ params }: Props) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="text-center">
           <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin" />
           <p className="text-xl font-semibold">Loading your results...</p>
@@ -83,12 +90,12 @@ export default function Page({ params }: Props) {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="mx-auto max-w-md rounded-xl bg-background p-8 shadow-xl">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/20 text-destructive">
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="bg-background mx-auto max-w-md rounded-xl p-8 shadow-xl">
+          <div className="bg-destructive/20 text-destructive mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <X className="h-10 w-10" />
           </div>
-          <p className="text-center text-xl font-semibold text-destructive">
+          <p className="text-destructive text-center text-xl font-semibold">
             {error}
           </p>
           <Button
@@ -105,13 +112,13 @@ export default function Page({ params }: Props) {
 
   if (!data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="mx-auto max-w-md rounded-xl bg-background p-8 text-center shadow-xl">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="bg-background mx-auto max-w-md rounded-xl p-8 text-center shadow-xl">
+          <div className="bg-muted text-muted-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <BookOpen className="h-10 w-10" />
           </div>
           <p className="text-xl font-semibold">No data available</p>
-          <p className="mt-2 text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             We couldn't find any results for this challenge.
           </p>
           <Button
@@ -126,7 +133,7 @@ export default function Page({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12 sm:px-6">
+    <div className="bg-background min-h-screen px-4 py-12 sm:px-6">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center">
           <Button
@@ -139,7 +146,7 @@ export default function Page({ params }: Props) {
           <h1 className="text-3xl font-bold">Challenge Results</h1>
         </div>
 
-        <div className="mb-6 rounded-lg bg-primary/10 p-4">
+        <div className="bg-primary/10 mb-6 rounded-lg p-4">
           <p className="text-lg font-semibold">
             Total Score: {data.total_score}
           </p>
@@ -223,7 +230,7 @@ export default function Page({ params }: Props) {
                               >
                                 {criteriaScore?.score || 0}
                               </span>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-muted-foreground text-xs">
                                 {criteria.description}
                               </span>
                             </div>
@@ -249,4 +256,65 @@ export default function Page({ params }: Props) {
       </div>
     </div>
   );
+}
+
+async function getSession(challengeId: string) {
+  const response = await fetch(`/api/v1/sessions?challengeId=${challengeId}`);
+  if (!response.ok) return null;
+  const data = await response.json();
+  return data[0];
+}
+
+async function getChallenge(challengeId: string) {
+  const response = await fetch(`/api/v1/challenges/${challengeId}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch challenge`);
+  }
+  return response.json();
+}
+
+async function getCriteria(challengeId: string) {
+  const response = await fetch(`/api/v1/criteria?challengeId=${challengeId}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch criteria`);
+  }
+  return response.json();
+}
+
+async function getProblems(challengeId: string) {
+  const response = await fetch(`/api/v1/problems?challengeId=${challengeId}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch problems`);
+  }
+  const problems = await response.json();
+
+  // Fetch criteria scores and submissions for each problem
+  const problemsWithDetails = await Promise.all(
+    problems.map(async (problem: NovaProblem) => {
+      const [criteriaScoresRes, submissionsRes] = await Promise.all([
+        fetch(`/api/v1/problems/${problem.id}/scores`),
+        fetch(`/api/v1/submissions?problemId=${problem.id}`),
+      ]);
+
+      if (!criteriaScoresRes.ok) {
+        throw new Error(`Failed to fetch criteria scores`);
+      }
+      if (!submissionsRes.ok) {
+        throw new Error(`Failed to fetch submissions`);
+      }
+
+      const [criteriaScores, submissions] = await Promise.all([
+        criteriaScoresRes.json(),
+        submissionsRes.json(),
+      ]);
+
+      return {
+        ...problem,
+        criteria_scores: criteriaScores,
+        submissions: submissions,
+      };
+    })
+  );
+
+  return problemsWithDetails;
 }

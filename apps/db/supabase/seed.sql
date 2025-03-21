@@ -1338,33 +1338,48 @@ values
     ('local@tuturuuu.com', true);
 
 insert into
-    public.nova_roles (email, enabled, is_admin)
+    public.nova_roles (email, enabled, allow_challenge_management, allow_role_management)
 values
-    ('local@tuturuuu.com', true, true);
+    ('local@tuturuuu.com', true, true, true);
 
 insert into
-    public.nova_challenges (id, title, description, duration, enabled)
+    public.nova_challenges (id, title, description, duration, enabled, previewable_at, open_at, close_at, max_attempts, max_daily_attempts)
 values
     (
         '00000000-0000-0000-0000-000000000001',
         'Challenge 1',
         'Challenge Description 1',
         1800,
-        true
+        true,
+        now(),
+        now(),
+        now() + interval '7 days',
+        10,
+        10
     ),
     (
         '00000000-0000-0000-0000-000000000002',
         'Challenge 2',
         'Challenge Description 2',
         3600,
-        false
+        false,
+        now(),
+        now(),
+        now() + interval '7 days',
+        10,
+        10
     ),
     (
         '00000000-0000-0000-0000-000000000003',
         'Challenge 3',
         'Challenge Description 3',
         5400,
-        true
+        true,
+        now(),
+        now(),
+        now() + interval '7 days',
+        10,
+        10
     );
 
 insert into

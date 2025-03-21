@@ -3,7 +3,6 @@
 [![Vercel Platform Production Deployment](https://github.com/tutur3u/platform/actions/workflows/vercel-production-platform.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/vercel-production-platform.yaml)
 [![CodeQL](https://github.com/tutur3u/platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/codeql.yml)
 [![Test](https://github.com/tutur3u/platform/actions/workflows/turbo-unit-tests.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/turbo-unit-tests.yaml)
-[![Supabase CI](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/supabase-production.yaml)
 
 ![Tuturuuu Cover](/public/cover.png)
 

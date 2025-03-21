@@ -2110,6 +2110,8 @@ export type Database = {
           duration: number;
           enabled: boolean;
           id: string;
+          max_attempts: number;
+          max_daily_attempts: number;
           open_at: string | null;
           previewable_at: string | null;
           title: string;
@@ -2121,6 +2123,8 @@ export type Database = {
           duration: number;
           enabled?: boolean;
           id?: string;
+          max_attempts?: number;
+          max_daily_attempts?: number;
           open_at?: string | null;
           previewable_at?: string | null;
           title: string;
@@ -2132,6 +2136,8 @@ export type Database = {
           duration?: number;
           enabled?: boolean;
           id?: string;
+          max_attempts?: number;
+          max_daily_attempts?: number;
           open_at?: string | null;
           previewable_at?: string | null;
           title?: string;
@@ -2246,25 +2252,28 @@ export type Database = {
       };
       nova_roles: {
         Row: {
+          allow_challenge_management: boolean | null;
+          allow_role_management: boolean | null;
           created_at: string;
           email: string | null;
           enabled: boolean | null;
           id: string;
-          is_admin: boolean | null;
         };
         Insert: {
+          allow_challenge_management?: boolean | null;
+          allow_role_management?: boolean | null;
           created_at?: string;
           email?: string | null;
           enabled?: boolean | null;
           id?: string;
-          is_admin?: boolean | null;
         };
         Update: {
+          allow_challenge_management?: boolean | null;
+          allow_role_management?: boolean | null;
           created_at?: string;
           email?: string | null;
           enabled?: boolean | null;
           id?: string;
-          is_admin?: boolean | null;
         };
         Relationships: [];
       };
@@ -2276,7 +2285,7 @@ export type Database = {
           id: string;
           start_time: string;
           status: string;
-          total_score: number | null;
+          total_score: number;
           user_id: string;
         };
         Insert: {
@@ -2286,7 +2295,7 @@ export type Database = {
           id?: string;
           start_time: string;
           status: string;
-          total_score?: number | null;
+          total_score: number;
           user_id: string;
         };
         Update: {
@@ -2296,7 +2305,7 @@ export type Database = {
           id?: string;
           start_time?: string;
           status?: string;
-          total_score?: number | null;
+          total_score?: number;
           user_id?: string;
         };
         Relationships: [
@@ -3857,6 +3866,7 @@ export type Database = {
           description: string;
           end_at: string;
           id: string;
+          locked: boolean;
           start_at: string;
           title: string;
           ws_id: string;
@@ -3867,6 +3877,7 @@ export type Database = {
           description?: string;
           end_at: string;
           id?: string;
+          locked?: boolean;
           start_at: string;
           title?: string;
           ws_id: string;
@@ -3877,6 +3888,7 @@ export type Database = {
           description?: string;
           end_at?: string;
           id?: string;
+          locked?: boolean;
           start_at?: string;
           title?: string;
           ws_id?: string;
@@ -5857,6 +5869,13 @@ export type Database = {
       };
     };
     Functions: {
+      check_challenge_attempt_limits: {
+        Args: {
+          _challenge_id: string;
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
       cleanup_expired_cross_app_tokens: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;

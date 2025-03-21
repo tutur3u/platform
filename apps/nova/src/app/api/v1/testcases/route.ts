@@ -1,44 +1,39 @@
+import { createTestcaseSchema } from '../schemas';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-
   const { searchParams } = new URL(request.url);
   const problemId = searchParams.get('problemId');
 
-  try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
     let query = supabase.from('nova_problem_testcases').select('*');
     if (problemId) {
       query = query.eq('problem_id', problemId);
     }
 
-    const { data: problemTestcases, error } = await query;
+    const { data: testcases, error } = await query;
 
     if (error) {
       console.error('Database Error: ', error);
       return NextResponse.json(
-        { message: 'Error fetching problem testcases' },
+        { message: 'Error fetching testcases' },
         { status: 500 }
       );
     }
 
-    if (!problemTestcases?.length) {
-      return NextResponse.json(
-        { message: 'No problem testcases found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(problemTestcases, { status: 200 });
+    return NextResponse.json(testcases, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -50,10 +45,18 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  let body: {
-    problemId: string;
-    input: string;
-  };
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  let body;
+
   try {
     body = await request.json();
   } catch (error) {
@@ -61,43 +64,38 @@ export async function POST(request: Request) {
   }
 
   try {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    // Validate request body with Zod
+    const validatedData = createTestcaseSchema.parse(body);
 
-    // Validate required fields
-    if (!body.problemId || !body.input) {
+    const testcaseData = {
+      problem_id: validatedData.problemId,
+      input: validatedData.input,
+    };
+
+    const { data: testcase, error: testcaseError } = await supabase
+      .from('nova_problem_testcases')
+      .insert(testcaseData)
+      .select()
+      .single();
+
+    if (testcaseError) {
+      console.error('Database Error: ', testcaseError);
       return NextResponse.json(
-        { message: 'problemId and input are required' },
-        { status: 400 }
-      );
-    }
-
-    // Create the problem testcase
-    const { data: problemTestcase, error: problemTestcaseError } =
-      await supabase
-        .from('nova_problem_testcases')
-        .insert({
-          problem_id: body.problemId,
-          input: body.input,
-        })
-        .select()
-        .single();
-
-    if (problemTestcaseError) {
-      console.error('Database Error: ', problemTestcaseError);
-      return NextResponse.json(
-        { message: 'Error creating problem testcase' },
+        { message: 'Error creating testcase' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(problemTestcase, { status: 201 });
+    return NextResponse.json(testcase, { status: 201 });
   } catch (error) {
+    if (error instanceof ZodError) {
+      // Zod validation error
+      return NextResponse.json(
+        { message: 'Validation error', errors: error.errors },
+        { status: 400 }
+      );
+    }
+
     console.error('Unexpected Error:', error);
     return NextResponse.json(
       { message: 'Internal Server Error' },

@@ -23,15 +23,22 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
     mutationFn: async ({
       email,
       enabled,
-      is_admin,
+      allow_challenge_management,
+      allow_role_management,
     }: {
       email: string;
       enabled: boolean;
-      is_admin: boolean;
+      allow_challenge_management: boolean;
+      allow_role_management: boolean;
     }) => {
       const res = await fetch(`/api/v1/infrastructure/whitelist/${email}`, {
         method: 'PUT',
-        body: JSON.stringify({ email, enabled, is_admin }),
+        body: JSON.stringify({
+          email,
+          enabled,
+          allow_challenge_management,
+          allow_role_management,
+        }),
       });
 
       if (!res.ok) {
@@ -95,7 +102,12 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
       cell: ({ row }) => {
         const email = row.getValue('email') as string;
         const enabled = row.getValue('enabled') as boolean;
-        const isAdmin = row.getValue('is_admin') as boolean;
+        const allowChallengeManagement = row.getValue(
+          'allow_challenge_management'
+        ) as boolean;
+        const allowRoleManagement = row.getValue(
+          'allow_role_management'
+        ) as boolean;
 
         const isLoading =
           (toggleMutation.isPending &&
@@ -111,7 +123,8 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
                 toggleMutation.mutate({
                   email,
                   enabled: checked,
-                  is_admin: isAdmin,
+                  allow_challenge_management: allowChallengeManagement,
+                  allow_role_management: allowRoleManagement,
                 })
               }
               disabled={isLoading}
@@ -122,18 +135,23 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
       },
     },
     {
-      accessorKey: 'is_admin',
+      accessorKey: 'allow_challenge_management',
       header: ({ column }) => (
         <DataTableColumnHeader
           t={t}
           column={column}
-          title={t(`common.is_admin`)}
+          title={t(`common.allow_challenge_management`)}
         />
       ),
       cell: ({ row }) => {
         const email = row.getValue('email') as string;
         const enabled = row.getValue('enabled') as boolean;
-        const isAdmin = row.getValue('is_admin') as boolean;
+        const allowChallengeManagement = row.getValue(
+          'allow_challenge_management'
+        ) as boolean;
+        const allowRoleManagement = row.getValue(
+          'allow_role_management'
+        ) as boolean;
 
         const isLoading =
           (toggleMutation.isPending &&
@@ -143,10 +161,59 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
         return (
           <div className="flex items-center gap-2">
             <Switch
-              id="is_admin"
-              checked={isAdmin}
+              id="allow_challenge_management"
+              checked={allowChallengeManagement}
               onCheckedChange={(checked) =>
-                toggleMutation.mutate({ email, enabled, is_admin: checked })
+                toggleMutation.mutate({
+                  email,
+                  enabled,
+                  allow_challenge_management: checked,
+                  allow_role_management: allowRoleManagement,
+                })
+              }
+              disabled={isLoading}
+            />
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'allow_role_management',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`common.allow_role_management`)}
+        />
+      ),
+      cell: ({ row }) => {
+        const email = row.getValue('email') as string;
+        const enabled = row.getValue('enabled') as boolean;
+        const allowChallengeManagement = row.getValue(
+          'allow_challenge_management'
+        ) as boolean;
+        const allowRoleManagement = row.getValue(
+          'allow_role_management'
+        ) as boolean;
+
+        const isLoading =
+          (toggleMutation.isPending &&
+            toggleMutation.variables?.email === email) ||
+          (isFetching > 0 && toggleMutation.variables?.email === email);
+
+        return (
+          <div className="flex items-center gap-2">
+            <Switch
+              id="allow_role_management"
+              checked={allowRoleManagement}
+              onCheckedChange={(checked) =>
+                toggleMutation.mutate({
+                  email,
+                  enabled,
+                  allow_challenge_management: allowChallengeManagement,
+                  allow_role_management: checked,
+                })
               }
               disabled={isLoading}
             />

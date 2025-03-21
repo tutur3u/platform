@@ -33,7 +33,7 @@ export default async function RootLayout({
 
   const { data: whitelisted } = await sbAdmin
     .from('nova_roles')
-    .select('enabled, is_admin')
+    .select('enabled, allow_challenge_management, allow_role_management')
     .eq('email', user?.email as string)
     .maybeSingle();
 
@@ -66,7 +66,7 @@ export default async function RootLayout({
       name: t('problems'),
       href: '/problems',
       icon: <List className="h-4 w-4" />,
-      requiresAdmin: true,
+      requiresChallengeManagement: true,
     },
     {
       name: t('leaderboard'),
@@ -78,13 +78,16 @@ export default async function RootLayout({
       href: '/roles',
       subItems: [] as { name: string; href: string }[],
       icon: <ShieldCheck className="h-4 w-4" />,
-      requiresAdmin: true,
+      requiresRoleManagement: true,
     },
   ];
 
   return (
     <Structure
-      isAdmin={whitelisted?.is_admin || false}
+      allowChallengeManagement={
+        whitelisted?.allow_challenge_management || false
+      }
+      allowRoleManagement={whitelisted?.allow_role_management || false}
       defaultLayout={defaultLayout}
       defaultCollapsed={defaultCollapsed}
       navCollapsedSize={4}
