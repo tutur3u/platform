@@ -1,7 +1,7 @@
 import Chat from './chat';
 import { getChats } from './helper';
-import { getCurrentUser } from '@/lib/user-helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 
 interface Props {

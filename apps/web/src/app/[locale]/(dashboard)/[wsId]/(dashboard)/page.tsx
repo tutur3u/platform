@@ -22,7 +22,6 @@ import {
   WarehousesStatistics,
 } from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { getCurrentSupabaseUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getWorkspace,
@@ -32,6 +31,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';

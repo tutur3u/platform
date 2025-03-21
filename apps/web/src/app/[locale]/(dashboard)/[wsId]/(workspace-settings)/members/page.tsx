@@ -1,7 +1,6 @@
 import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
-import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getWorkspace,
@@ -13,6 +12,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { User } from '@tuturuuu/types/primitives/User';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

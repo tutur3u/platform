@@ -9,12 +9,13 @@ export default function Home() {
   const locale = useLocale();
 
   return (
-    <div className="relative flex h-screen flex-col overflow-y-auto p-4 md:p-8 lg:p-16 lg:pb-8">
+    <div className="relative flex h-screen flex-col overflow-y-auto p-4 pt-16 md:p-8 md:pt-20 md:pb-4 lg:p-16 lg:pt-20 lg:pb-4">
       <Calendar
         t={t}
         locale={locale}
         useQuery={useQuery}
         useQueryClient={useQueryClient}
+        enableHeader={false}
         disabled
       />
     </div>

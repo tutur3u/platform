@@ -1,7 +1,6 @@
 'use client';
 
 import { DatePicker } from '../../../../../../components/row-actions/users/date-picker';
-import { generateRandomUUID } from '@/utils/uuid-helper';
 import { Row } from '@tanstack/react-table';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -37,6 +36,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
 import { Ellipsis, Eye, Loader2, UserIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

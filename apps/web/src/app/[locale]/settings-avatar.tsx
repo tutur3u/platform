@@ -1,6 +1,5 @@
 'use client';
 
-import { generateRandomUUID } from '@/utils/uuid-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -20,6 +19,7 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { Loader2, Settings, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

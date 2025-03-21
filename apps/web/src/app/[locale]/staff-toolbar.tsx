@@ -1,4 +1,4 @@
-// import { getCurrentSupabaseUser } from '@/lib/user-helper';
+// import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 // import { VercelToolbar } from '@vercel/toolbar/next';
 import { Suspense } from 'react';
 

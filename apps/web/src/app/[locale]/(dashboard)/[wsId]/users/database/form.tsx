@@ -1,7 +1,6 @@
 'use client';
 
 import { DatePicker } from '@/components/row-actions/users/date-picker';
-import { generateRandomUUID } from '@/utils/uuid-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -23,6 +22,7 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
 import { Loader2, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';

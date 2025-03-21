@@ -1,5 +1,5 @@
-import { getCurrentUser } from '@/lib/user-helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

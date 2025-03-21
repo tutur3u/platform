@@ -1,7 +1,6 @@
 'use client';
 
 import { joinPath } from '@/utils/path-helper';
-import { generateRandomUUID } from '@/utils/uuid-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
@@ -18,6 +17,7 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { Check, Trash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

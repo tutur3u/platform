@@ -1,9 +1,9 @@
-import SettingItemTab from '../../../../../components/settings/SettingItemTab';
 import UserAvatar from '../../../settings-avatar';
 import DisplayNameInput from '../../../settings-display-name-input';
 import EmailInput from '../../../settings-email-input';
-import { getCurrentUser } from '@/lib/user-helper';
+import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 

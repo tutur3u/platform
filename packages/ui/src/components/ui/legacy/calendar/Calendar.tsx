@@ -107,6 +107,7 @@ export const Calendar = ({
   workspace,
   disabled,
   initialSettings,
+  enableHeader = true,
   onSaveSettings,
 }: {
   t: any;
@@ -116,6 +117,7 @@ export const Calendar = ({
   workspace?: Workspace;
   disabled?: boolean;
   initialSettings?: Partial<CalendarSettings>;
+  enableHeader?: boolean;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
   return (
@@ -131,6 +133,7 @@ export const Calendar = ({
         disabled={disabled}
         workspace={workspace}
         initialSettings={initialSettings}
+        enableHeader={enableHeader}
         onSaveSettings={onSaveSettings}
       />
     </CalendarProvider>
@@ -144,6 +147,7 @@ const CalendarContent = ({
   disabled,
   workspace,
   initialSettings,
+  enableHeader = true,
   onSaveSettings,
 }: {
   t: any;
@@ -151,6 +155,7 @@ const CalendarContent = ({
   disabled?: boolean;
   workspace?: Workspace;
   initialSettings?: Partial<CalendarSettings>;
+  enableHeader?: boolean;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
   const { transition } = useViewTransition();
@@ -413,23 +418,25 @@ const CalendarContent = ({
         view === 'month' ? 'grid-rows-[auto_1fr]' : 'grid-rows-[auto_auto_1fr]'
       )}
     >
-      <CalendarHeader
-        t={t}
-        locale={locale}
-        availableViews={availableViews}
-        date={date}
-        setDate={setDate}
-        view={view}
-        offset={
-          view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
-        }
-        onViewChange={(newView) => {
-          if (newView === 'day') enableDayView();
-          else if (newView === '4-days') enable4DayView();
-          else if (newView === 'week') enableWeekView();
-          else if (newView === 'month') enableMonthView();
-        }}
-      />
+      {enableHeader && (
+        <CalendarHeader
+          t={t}
+          locale={locale}
+          availableViews={availableViews}
+          date={date}
+          setDate={setDate}
+          view={view}
+          offset={
+            view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
+          }
+          onViewChange={(newView) => {
+            if (newView === 'day') enableDayView();
+            else if (newView === '4-days') enable4DayView();
+            else if (newView === 'week') enableWeekView();
+            else if (newView === 'month') enableMonthView();
+          }}
+        />
+      )}
 
       {view !== 'month' && (
         <WeekdayBar locale={locale} view={view} dates={dates} />

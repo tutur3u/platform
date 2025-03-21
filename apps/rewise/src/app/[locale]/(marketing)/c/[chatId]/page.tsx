@@ -1,12 +1,12 @@
 import Chat from '../../chat';
 import { getChats } from '../../helper';
-import { getCurrentUser } from '@/lib/user-helper';
 import { type Message } from '@tuturuuu/ai/types';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { AIChat } from '@tuturuuu/types/db';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
