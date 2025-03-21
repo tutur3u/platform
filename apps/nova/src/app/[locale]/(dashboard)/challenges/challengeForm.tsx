@@ -195,7 +195,7 @@ export default function ChallengeForm({
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div>
                     <CardTitle>Judging Criteria</CardTitle>
-                    <p className="text-muted-foreground mt-1 text-sm">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       Define how submissions will be evaluated. Each criterion
                       will be scored separately.
                     </p>
@@ -249,7 +249,7 @@ export default function ChallengeForm({
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="text-destructive hover:text-destructive/80 h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
                               onClick={() => removeCriteria(index)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -308,7 +308,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Duration</CardTitle>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Set how long participants have to complete the challenge
                     once they start.
                   </p>
@@ -367,7 +367,7 @@ export default function ChallengeForm({
                         </div>
 
                         {field.value && (
-                          <div className="bg-muted/30 mt-4 rounded-md border p-3">
+                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
                             <DurationDisplay seconds={field.value} />
                           </div>
                         )}
@@ -388,19 +388,19 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Schedule</CardTitle>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Set when your challenge is available to participants.
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6 rounded-md border border-dashed p-4">
                     <div className="mb-2 flex items-center">
-                      <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                       <h3 className="text-sm font-medium">
                         Timeline Recommendation
                       </h3>
                     </div>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       For best results, set dates in this order: Preview Date ➝
                       Open Date ➝ Close Date. This allows admins to preview
                       challenges before they open to participants.
@@ -431,7 +431,7 @@ export default function ChallengeForm({
                     />
 
                     <div className="relative">
-                      <div className="bg-muted-foreground/20 absolute -top-3 left-4 h-full w-px"></div>
+                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
                       <FormField
                         control={form.control}
                         name="openAt"
@@ -456,7 +456,7 @@ export default function ChallengeForm({
                     </div>
 
                     <div className="relative">
-                      <div className="bg-muted-foreground/20 absolute -top-3 left-4 h-full w-px"></div>
+                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
                       <FormField
                         control={form.control}
                         name="closeAt"

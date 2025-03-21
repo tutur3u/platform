@@ -62,17 +62,20 @@ import {
   ChevronRight,
   Clock,
   FileText,
+  Image as ImageIcon,
   Info,
   Loader2,
   Lock,
   MapPin,
+  Mic,
   Settings,
   Sparkles,
+  StopCircle,
   Trash2,
   Unlock,
   X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
 interface ExtendedCalendarEvent extends CalendarEvent {
@@ -81,7 +84,6 @@ interface ExtendedCalendarEvent extends CalendarEvent {
   _dayPosition?: 'start' | 'middle' | 'end';
 }
 
-// Form schema for AI event generation
 const AIFormSchema = z.object({
   prompt: z.string().min(1, 'Please enter a prompt to generate an event'),
   timezone: z
@@ -430,6 +432,10 @@ export function UnifiedEventModal() {
 
   // Handle event deletion
   const handleDelete = async () => {
+    if (isRecording) {
+      console.log('🛑 Cancel recording due to event deletion');
+      stopRecording();
+    }
     if (!activeEvent?.id) return;
 
     setIsDeleting(true);
@@ -550,6 +556,121 @@ export function UnifiedEventModal() {
         end_at: endDate.toISOString(),
       };
     });
+  };
+
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const startRecording = async () => {
+    setIsRecording(true);
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder.current = new MediaRecorder(stream, {
+      mimeType: 'audio/webm',
+    });
+
+    mediaRecorder.current.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunks.current.push(event.data);
+      }
+    };
+
+    mediaRecorder.current.onstop = async () => {
+      if (audioChunks.current.length === 0) {
+        console.error('No recording data!');
+        setIsRecording(false);
+        return;
+      }
+
+      const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+      const reader = new FileReader();
+
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64Audio = reader.result?.toString().split(',')[1];
+
+        if (!base64Audio) {
+          console.error('Error when converting audio to base64');
+          return;
+        }
+
+        console.log('Sending Base64 Audio to server...');
+        sendAudioToServer(base64Audio);
+      };
+
+      setIsRecording(false);
+      audioChunks.current = [];
+    };
+
+    mediaRecorder.current.start();
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const stopRecording = () => {
+    setIsRecording(false);
+    mediaRecorder.current?.stop();
+  };
+
+  const sendAudioToServer = async (base64Audio: string) => {
+    try {
+      const response = await fetch('/api/v1/calendar/audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64Audio }),
+      });
+
+      const result = await response.json();
+      if (result.text) {
+        console.log('Transcribed text:', result.text);
+        aiForm.setValue('prompt', result.text);
+      } else {
+        console.error('Failed to transcribe audio:', result.error);
+      }
+    } catch (error) {
+      console.error('Error calling API:', error);
+    }
+  };
+
+  const handleUploadImage = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0]; // image file from input
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = async () => {
+      const base64Image = reader.result?.toString().split(',')[1]; // convert to base64
+      if (!base64Image) {
+        console.error('Error when changing image to base64');
+        return;
+      }
+
+      console.log('Uploading Base64 Image to server...');
+
+      try {
+        const response = await fetch('/api/v1/calendar/image', {
+          // send to API
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64Image }),
+        });
+
+        const result = await response.json();
+        if (result.text) {
+          console.log('Extracted text from image:', result.text);
+          aiForm.setValue('prompt', result.text);
+        } else {
+          console.error('Failed to extract text from image:', result.error);
+        }
+      } catch (error) {
+        console.error('Error when sending image to server:', error);
+      }
+    };
   };
 
   // Handle navigation between multiple events in preview
@@ -876,11 +997,56 @@ export function UnifiedEventModal() {
                                 Describe your event
                               </FormLabel>
                               <FormControl>
-                                <AutosizeTextarea
-                                  {...field}
-                                  placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour to discuss the new project roadmap with the engineering team"
-                                  autoFocus
-                                />
+                                <div className="relative w-full">
+                                  <AutosizeTextarea
+                                    {...field}
+                                    autoFocus
+                                    placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
+                                    className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:ring-1 focus:ring-ring focus:outline-none"
+                                    disabled={isLoading || isRecording}
+                                  />
+
+                                  {/* Record Button */}
+                                  <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                                    <Button
+                                      size="xs"
+                                      type="button"
+                                      variant={
+                                        isRecording ? 'destructive' : 'default'
+                                      }
+                                      onClick={
+                                        isRecording
+                                          ? stopRecording
+                                          : startRecording
+                                      }
+                                      className="flex items-center rounded-md"
+                                    >
+                                      {isRecording ? (
+                                        <StopCircle className="h-4 w-4" />
+                                      ) : (
+                                        <Mic className="h-4 w-4" />
+                                      )}
+                                    </Button>
+
+                                    {/* 📸 Image button */}
+                                    <Button
+                                      size="xs"
+                                      type="button"
+                                      variant="default"
+                                      onClick={triggerImageUpload}
+                                      className="flex items-center rounded-md"
+                                    >
+                                      <ImageIcon className="h-4 w-4" />
+                                    </Button>
+                                    <input
+                                      type="file"
+                                      ref={fileInputRef}
+                                      accept="image/*"
+                                      onChange={handleUploadImage}
+                                      className="hidden"
+                                    />
+                                  </div>
+                                </div>
                               </FormControl>
                               <FormDescription className="flex items-center gap-1 text-xs">
                                 <Info className="h-3 w-3" />
@@ -890,7 +1056,6 @@ export function UnifiedEventModal() {
                             </FormItem>
                           )}
                         />
-
                         {isLoading && (
                           <div className="flex items-center justify-center py-8">
                             <div className="flex flex-col items-center gap-2">
@@ -901,7 +1066,6 @@ export function UnifiedEventModal() {
                             </div>
                           </div>
                         )}
-
                         {error && (
                           <Alert variant="destructive">
                             <AlertCircle className="h-4 w-4" />
