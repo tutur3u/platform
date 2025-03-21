@@ -26,6 +26,7 @@ type HistoryEntry = {
 };
 
 type TestResult = {
+  input: string;
   output: string;
 };
 
@@ -44,10 +45,9 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   const [customTestCase, setCustomTestCase] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
-  const [testResults, setTestResults] = useState<Record<string, TestResult>>(
-    {}
-  );
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [allTestResults, setAllTestResults] = useState<TestResult[]>([]);
+  const [submissions, setSubmissions] = useState<HistoryEntry[]>([]);
   const [activeTab, setActiveTab] = useState('write');
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     const getSubmissions = async () => {
       try {
         const submissions = await fetchSubmissions(problem.id);
-        setHistory(submissions);
+        setSubmissions(submissions);
       } catch (error) {
         console.error('Failed to fetch submissions:', error);
       }
@@ -77,24 +77,39 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/v1/submissions', {
+      const response = await fetch(`/api/v1/problems/${problem.id}/prompt`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          problemId: problem.id,
-          prompt,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to submit prompt');
+        throw new Error('Failed to process prompt');
+      }
+
+      const data = await response.json();
+      const feedback = data.response.feedback || '';
+      const score = data.response.score || 0;
+
+      // Add to submissions
+      const submissionResponse = await fetch(`/api/v1/submissions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          feedback,
+          score,
+          problemId: problem.id,
+        }),
+      });
+
+      if (!submissionResponse.ok) {
+        throw new Error('Failed to create submission');
       }
 
       // Add to history
       const submissions = await fetchSubmissions(problem.id);
-      setHistory(submissions);
+      setSubmissions(submissions);
 
       // Reset prompt
       setPrompt('');
@@ -122,26 +137,29 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     setIsTesting(true);
 
     try {
-      const response = await fetch('/api/v1/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt,
-          input: customTestCase,
-        }),
-      });
+      const response = await fetch(
+        `/api/v1/problems/${problem.id}/custom-testcase`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt,
+            input: customTestCase,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to test prompt');
       }
 
       const result = await response.json();
-      setTestResults((prev) => ({
-        ...prev,
-        custom: { output: result.output },
-      }));
+      setTestResult({
+        input: customTestCase,
+        output: result.output,
+      });
     } catch (error) {
       console.error('Error testing prompt:', error);
       toast({
@@ -158,32 +176,42 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     if (!prompt.trim() || isTesting) return;
 
     setIsTesting(true);
-    const newResults: Record<string, TestResult> = {};
 
     try {
-      for (let i = 0; i < problem.testcases.length; i++) {
-        const testcase = problem.testcases[i];
+      const testPromises = problem.testcases.map(async (testcase, index) => {
+        if (!testcase) return null;
 
-        const response = await fetch('/api/v1/test', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prompt,
-            input: testcase,
-          }),
-        });
+        const response = await fetch(
+          `/api/v1/problems/${problem.id}/custom-testcase`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              prompt,
+              customTestCase: testcase,
+            }),
+          }
+        );
 
         if (!response.ok) {
-          throw new Error(`Failed to test case ${i + 1}`);
+          throw new Error(`Failed to test case ${index + 1}`);
         }
 
-        const result = await response.json();
-        newResults[`test-${i}`] = { output: result.output };
-      }
+        const data = await response.json();
+        return {
+          input: data.response.input,
+          output: data.response.output,
+        };
+      });
 
-      setTestResults(newResults);
+      const results = (await Promise.all(testPromises)).filter(
+        (result) => result !== null
+      );
+
+      setAllTestResults(results);
+
       toast({
         title: 'Test completed',
         description: 'All test cases have been processed.',
@@ -201,76 +229,107 @@ export default function PromptForm({ problem }: { problem: Problem }) {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="flex h-full flex-col"
-      >
-        <TabsList className="mb-4 grid w-full grid-cols-3">
-          <TabsTrigger value="write">Write</TabsTrigger>
-          <TabsTrigger value="test">Test</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-        </TabsList>
+    <Tabs
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="flex h-full flex-col"
+    >
+      <TabsList className="mb-4 grid w-full grid-cols-3">
+        <TabsTrigger value="write">Write</TabsTrigger>
+        <TabsTrigger value="test">Test</TabsTrigger>
+        <TabsTrigger value="history">History</TabsTrigger>
+      </TabsList>
 
-        <TabsContent value="write" className="flex-1 overflow-hidden">
-          <div className="flex h-full flex-col">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Characters: {prompt.length} / {problem.maxPromptLength}
-              </div>
-              <Progress
-                value={(prompt.length / problem.maxPromptLength) * 100}
-                className="h-1 w-24"
-              />
+      <TabsContent value="write" className="flex-1 overflow-hidden">
+        <div className="flex h-full flex-col">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-muted-foreground text-sm">
+              Characters: {prompt.length} / {problem.maxPromptLength}
             </div>
-
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Write your prompt here..."
-              className="flex-1 resize-none"
-              maxLength={problem.maxPromptLength}
+            <Progress
+              value={(prompt.length / problem.maxPromptLength) * 100}
+              className="h-1 w-24"
             />
-
-            <div className="mt-4 flex justify-end">
-              <Button
-                onClick={handleSend}
-                disabled={!prompt.trim() || isSubmitting}
-                className="gap-2"
-              >
-                {isSubmitting ? (
-                  <LoadingIndicator className="h-4 w-4" />
-                ) : (
-                  <PlayCircle className="h-4 w-4" />
-                )}
-                Submit
-              </Button>
-            </div>
           </div>
-        </TabsContent>
 
-        <TabsContent value="test" className="flex-1 overflow-auto">
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Custom Test Case</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  value={customTestCase}
-                  onChange={(e) => setCustomTestCase(e.target.value)}
-                  placeholder="Enter your test case input here..."
-                  className="h-24 resize-none"
-                />
+          <Textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Write your prompt here..."
+            className="flex-1 resize-none"
+            maxLength={problem.maxPromptLength}
+          />
 
+          <div className="mt-4 flex justify-end">
+            <Button
+              onClick={handleSend}
+              disabled={!prompt.trim() || isSubmitting}
+              className="gap-2"
+            >
+              {isSubmitting ? (
+                <LoadingIndicator className="h-4 w-4" />
+              ) : (
+                <PlayCircle className="h-4 w-4" />
+              )}
+              Submit
+            </Button>
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="test" className="flex-1 overflow-auto">
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Custom Test Case</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea
+                value={customTestCase}
+                onChange={(e) => setCustomTestCase(e.target.value)}
+                placeholder="Enter your test case input here..."
+                className="h-24 resize-none"
+              />
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleTestCustomCase}
+                  disabled={
+                    !prompt.trim() || !customTestCase.trim() || isTesting
+                  }
+                  className="gap-2"
+                >
+                  {isTesting ? (
+                    <LoadingIndicator className="h-4 w-4" />
+                  ) : (
+                    <PlayCircle className="h-4 w-4" />
+                  )}
+                  Test
+                </Button>
+              </div>
+
+              {testResult && (
+                <div className="mt-4">
+                  <h3 className="mb-2 text-sm font-medium">Output:</h3>
+                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                    {testResult.output}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Test All Cases</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
                 <div className="flex justify-end">
                   <Button
-                    onClick={handleTestCustomCase}
-                    disabled={
-                      !prompt.trim() || !customTestCase.trim() || isTesting
-                    }
+                    onClick={handleTestAllCases}
+                    disabled={!prompt.trim() || isTesting}
                     className="gap-2"
                   >
                     {isTesting ? (
@@ -278,166 +337,119 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     ) : (
                       <PlayCircle className="h-4 w-4" />
                     )}
-                    Test
+                    Test All Cases
                   </Button>
                 </div>
 
-                {testResults.custom && (
-                  <div className="mt-4">
-                    <h3 className="mb-2 text-sm font-medium">Output:</h3>
-                    <div className="rounded-md bg-muted p-3 font-mono text-sm">
-                      {testResults.custom.output}
+                {allTestResults.map((result, index) => (
+                  <div key={index} className="space-y-2">
+                    <h3 className="text-sm font-medium">
+                      Test Case {index + 1}:
+                    </h3>
+                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                      {result.input}
+                    </div>
+                    <h3 className="text-sm font-medium">Output:</h3>
+                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                      {result.output}
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Test All Cases</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleTestAllCases}
-                      disabled={!prompt.trim() || isTesting}
-                      className="gap-2"
-                    >
-                      {isTesting ? (
-                        <LoadingIndicator className="h-4 w-4" />
-                      ) : (
-                        <PlayCircle className="h-4 w-4" />
-                      )}
-                      Test All Cases
-                    </Button>
-                  </div>
-
-                  {Object.keys(testResults)
-                    .filter((key) => key !== 'custom')
-                    .map((key) => {
-                      // Safely extract the test number
-                      const parts = key.split('-');
-                      const testIndex =
-                        parts.length > 1 && !isNaN(Number(parts[1]))
-                          ? Number(parts[1])
-                          : 0;
-                      const testNumber = testIndex + 1;
-
-                      // Safely get the test case
-                      const testCase = problem.testcases[testIndex] || '';
-
-                      // Safely get the output
-                      const output = testResults[key]?.output || '';
-
-                      return (
-                        <div key={key} className="space-y-2">
-                          <h3 className="text-sm font-medium">
-                            Test Case {testNumber}:
-                          </h3>
-                          <div className="rounded-md bg-muted p-3 font-mono text-sm">
-                            {testCase}
-                          </div>
-                          <h3 className="text-sm font-medium">Output:</h3>
-                          <div className="rounded-md bg-muted p-3 font-mono text-sm">
-                            {output}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="history" className="flex-1 overflow-auto">
-          <div className="space-y-4">
-            {history.length > 0 ? (
-              history.map((entry) => (
-                <Card key={entry.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={
-                            entry.score >= 70 ? 'success' : 'destructive'
-                          }
-                          className="px-2 py-0"
-                        >
-                          {entry.score}%
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          <Clock className="mr-1 inline h-3 w-3" />
-                          {new Date(entry.created_at).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2 pt-0 pb-3">
-                    <div>
-                      <h3 className="mb-1 text-xs font-medium text-muted-foreground">
-                        Prompt:
-                      </h3>
-                      <div className="rounded-md bg-muted p-2 text-sm">
-                        {entry.prompt}
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="mb-1 text-xs font-medium text-muted-foreground">
-                        Feedback:
-                      </h3>
-                      <div className="rounded-md bg-muted p-2 text-sm">
-                        {entry.feedback}
-                      </div>
-                    </div>
-                    {entry.criteria_scores &&
-                      entry.criteria_scores.length > 0 && (
-                        <div className="space-y-2">
-                          <h3 className="text-xs font-medium text-muted-foreground">
-                            Criteria Scores:
-                          </h3>
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {entry.criteria_scores.map((criteriaScore) => (
-                              <div
-                                key={criteriaScore.criteria_id}
-                                className="flex items-center justify-between rounded-md border p-2"
-                              >
-                                <span className="text-xs">
-                                  {criteriaScore.criteria.name}
-                                </span>
-                                <Badge
-                                  variant={
-                                    criteriaScore.score >= 7
-                                      ? 'success'
-                                      : criteriaScore.score >= 4
-                                        ? 'warning'
-                                        : 'destructive'
-                                  }
-                                  className="px-2 py-0"
-                                >
-                                  {criteriaScore.score}/10
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="flex h-40 items-center justify-center rounded-md border border-dashed">
-                <p className="text-sm text-muted-foreground">
-                  No submission history yet
-                </p>
+                ))}
               </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="history" className="flex-1 overflow-auto">
+        <div className="space-y-4">
+          {submissions.length > 0 ? (
+            submissions.map((submission) => (
+              <Card key={submission.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          submission.score >= 8
+                            ? 'success'
+                            : submission.score >= 5
+                              ? 'warning'
+                              : 'destructive'
+                        }
+                        className="px-2 py-0"
+                      >
+                        {submission.score}/10
+                      </Badge>
+                      <span className="text-muted-foreground text-xs">
+                        <Clock className="mr-1 inline h-3 w-3" />
+                        {new Date(submission.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 pb-3 pt-0">
+                  <div>
+                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
+                      Prompt:
+                    </h3>
+                    <div className="bg-muted rounded-md p-2 text-sm">
+                      {submission.prompt}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
+                      Feedback:
+                    </h3>
+                    <div className="bg-muted rounded-md p-2 text-sm">
+                      {submission.feedback}
+                    </div>
+                  </div>
+                  {submission.criteria_scores &&
+                    submission.criteria_scores.length > 0 && (
+                      <div className="space-y-2">
+                        <h3 className="text-muted-foreground text-xs font-medium">
+                          Criteria Scores:
+                        </h3>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {submission.criteria_scores.map((criteriaScore) => (
+                            <div
+                              key={criteriaScore.criteria_id}
+                              className="flex items-center justify-between rounded-md border p-2"
+                            >
+                              <span className="text-xs">
+                                {criteriaScore.criteria.name}
+                              </span>
+                              <Badge
+                                variant={
+                                  criteriaScore.score >= 7
+                                    ? 'success'
+                                    : criteriaScore.score >= 4
+                                      ? 'warning'
+                                      : 'destructive'
+                                }
+                                className="px-2 py-0"
+                              >
+                                {criteriaScore.score}/10
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="flex h-40 items-center justify-center rounded-md border border-dashed">
+              <p className="text-muted-foreground text-sm">
+                No submission history yet
+              </p>
+            </div>
+          )}
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 }
 

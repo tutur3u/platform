@@ -59,7 +59,6 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   try {
-
     const systemInstruction = `
       You are an AI assistant that applies a given prompt instruction to process user input.
       
@@ -78,7 +77,10 @@ export async function POST(req: Request, { params }: Params) {
       "${customTestCase}"
       
       3. Return ONLY a JSON object with this format:
-      {"output": "Your response here"}
+      {
+        "input": "test case 1",
+        "output": "test case 1 output",
+      },
       
       Your response must be valid JSON. Do not include explanations or commentary in the output.
       Don't include markdown formatting like \`\`\`json or \`\`\`.
@@ -95,19 +97,16 @@ export async function POST(req: Request, { params }: Params) {
       const cleanResponse = response.replace(/```json\n|\n```|```/g, '').trim();
       const parsedResponse = JSON.parse(cleanResponse);
 
- 
       return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
 
-      // If parsing fails, wrap the raw response in our own JSON structure
       return NextResponse.json(
         {
-          response: {
-            output: response.trim(),
-          },
+          message:
+            'Invalid response format. Expected JSON with input and output.',
         },
-        { status: 200 }
+        { status: 422 }
       );
     }
   } catch (error: any) {
