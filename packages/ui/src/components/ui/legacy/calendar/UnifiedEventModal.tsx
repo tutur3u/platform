@@ -559,51 +559,63 @@ export function UnifiedEventModal() {
   };
 
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const mediaStream = useRef<MediaStream | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startRecording = async () => {
     setIsRecording(true);
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder.current = new MediaRecorder(stream, {
-      mimeType: 'audio/webm',
-    });
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStream.current = stream;
+      mediaRecorder.current = new MediaRecorder(stream, {
+        mimeType: 'audio/webm',
+      });
 
-    mediaRecorder.current.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        audioChunks.current.push(event.data);
-      }
-    };
+      mediaRecorder.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
+      };
 
-    mediaRecorder.current.onstop = async () => {
-      if (audioChunks.current.length === 0) {
-        console.error('No recording data!');
-        setIsRecording(false);
-        return;
-      }
-
-      const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-      const reader = new FileReader();
-
-      reader.readAsDataURL(audioBlob);
-      reader.onloadend = async () => {
-        const base64Audio = reader.result?.toString().split(',')[1];
-
-        if (!base64Audio) {
-          console.error('Error when converting audio to base64');
+      mediaRecorder.current.onstop = async () => {
+        if (audioChunks.current.length === 0) {
+          console.error('No recording data!');
+          setIsRecording(false);
+          setIsProcessingAudio(false);
           return;
         }
 
-        console.log('Sending Base64 Audio to server...');
-        sendAudioToServer(base64Audio);
+        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result?.toString().split(',')[1];
+
+          if (!base64Audio) {
+            console.error('Error when converting audio to base64');
+            setIsProcessingAudio(false);
+            return;
+          }
+
+          console.log('Sending Base64 Audio to server...');
+          sendAudioToServer(base64Audio);
+        };
+
+        // Cleanup
+        revokeMediaPermissions();
+        audioChunks.current = [];
       };
 
+      mediaRecorder.current.start();
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
       setIsRecording(false);
-      audioChunks.current = [];
-    };
-
-    mediaRecorder.current.start();
+    }
   };
 
   const triggerImageUpload = () => {
@@ -612,7 +624,22 @@ export function UnifiedEventModal() {
 
   const stopRecording = () => {
     setIsRecording(false);
-    mediaRecorder.current?.stop();
+    setIsProcessingAudio(true);
+    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+      mediaRecorder.current.stop();
+    } else {
+      revokeMediaPermissions();
+      setIsProcessingAudio(false);
+    }
+  };
+
+  const revokeMediaPermissions = () => {
+    if (mediaStream.current) {
+      mediaStream.current.getTracks().forEach((track) => {
+        track.stop();
+      });
+      mediaStream.current = null;
+    }
   };
 
   const sendAudioToServer = async (base64Audio: string) => {
@@ -629,9 +656,21 @@ export function UnifiedEventModal() {
         aiForm.setValue('prompt', result.text);
       } else {
         console.error('Failed to transcribe audio:', result.error);
+        toast({
+          title: 'Transcription Error',
+          description: result.error || 'Failed to transcribe audio',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error calling API:', error);
+      toast({
+        title: 'API Error',
+        description: 'Failed to process audio recording',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessingAudio(false);
     }
   };
 
@@ -641,12 +680,14 @@ export function UnifiedEventModal() {
     const file = event.target.files?.[0]; // image file from input
     if (!file) return;
 
+    setIsProcessingImage(true);
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = async () => {
       const base64Image = reader.result?.toString().split(',')[1]; // convert to base64
       if (!base64Image) {
         console.error('Error when changing image to base64');
+        setIsProcessingImage(false);
         return;
       }
 
@@ -666,9 +707,24 @@ export function UnifiedEventModal() {
           aiForm.setValue('prompt', result.text);
         } else {
           console.error('Failed to extract text from image:', result.error);
+          toast({
+            title: 'Image Processing Error',
+            description: result.error || 'Failed to extract text from image',
+            variant: 'destructive',
+          });
         }
       } catch (error) {
         console.error('Error when sending image to server:', error);
+        toast({
+          title: 'API Error',
+          description: 'Failed to process uploaded image',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsProcessingImage(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     };
   };
@@ -1003,7 +1059,12 @@ export function UnifiedEventModal() {
                                     autoFocus
                                     placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
                                     className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:ring-1 focus:ring-ring focus:outline-none"
-                                    disabled={isLoading || isRecording}
+                                    disabled={
+                                      isLoading ||
+                                      isRecording ||
+                                      isProcessingAudio ||
+                                      isProcessingImage
+                                    }
                                   />
 
                                   {/* Record Button */}
@@ -1019,10 +1080,17 @@ export function UnifiedEventModal() {
                                           ? stopRecording
                                           : startRecording
                                       }
+                                      disabled={
+                                        isProcessingAudio ||
+                                        isProcessingImage ||
+                                        isLoading
+                                      }
                                       className="flex items-center rounded-md"
                                     >
                                       {isRecording ? (
                                         <StopCircle className="h-4 w-4" />
+                                      ) : isProcessingAudio ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
                                       ) : (
                                         <Mic className="h-4 w-4" />
                                       )}
@@ -1034,9 +1102,19 @@ export function UnifiedEventModal() {
                                       type="button"
                                       variant="default"
                                       onClick={triggerImageUpload}
+                                      disabled={
+                                        isRecording ||
+                                        isProcessingAudio ||
+                                        isProcessingImage ||
+                                        isLoading
+                                      }
                                       className="flex items-center rounded-md"
                                     >
-                                      <ImageIcon className="h-4 w-4" />
+                                      {isProcessingImage ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <ImageIcon className="h-4 w-4" />
+                                      )}
                                     </Button>
                                     <input
                                       type="file"
