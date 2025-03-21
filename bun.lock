@@ -643,8 +643,8 @@
         "@ai-sdk/deepseek": "^0.2.0",
         "@ai-sdk/fal": "^0.1.0",
         "@ai-sdk/fireworks": "^0.2.0",
-        "@ai-sdk/google": "^1.2.0",
-        "@ai-sdk/google-vertex": "^2.2.0",
+        "@ai-sdk/google": "^1.2.1",
+        "@ai-sdk/google-vertex": "^2.2.1",
         "@ai-sdk/groq": "^1.2.0",
         "@ai-sdk/luma": "^0.1.0",
         "@ai-sdk/mistral": "^1.2.0",
@@ -869,6 +869,7 @@
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "tailwind-merge": "^3.0.2",
+        "uuid": "^11.1.0",
         "zod": "^3.24.2",
       },
       "devDependencies": {
@@ -910,9 +911,9 @@
 
     "@ai-sdk/fireworks": ["@ai-sdk/fireworks@0.2.0", "", { "dependencies": { "@ai-sdk/openai-compatible": "0.2.0", "@ai-sdk/provider": "1.1.0", "@ai-sdk/provider-utils": "2.2.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-rdD4pIZaMXYtgLBQL0dWQ0h9Y0cvcl/xGfKR/VkJSpTqZmWMAt6Z9kh1lMvjH5PVBO+0IZbpWneN+WuAOjSTWQ=="],
 
-    "@ai-sdk/google": ["@ai-sdk/google@1.2.0", "", { "dependencies": { "@ai-sdk/provider": "1.1.0", "@ai-sdk/provider-utils": "2.2.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-e/sDYsjOc9YdzhnobCt16bkHsEkDEFHs7ZCAOQ1A06zJhRYVll3hyAmWDEgXf25Zdk1R20gu+JEvnIpZ9qgT5w=="],
+    "@ai-sdk/google": ["@ai-sdk/google@1.2.1", "", { "dependencies": { "@ai-sdk/provider": "1.1.0", "@ai-sdk/provider-utils": "2.2.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-kT3o8pEbks5JJDTIkUdL7OHCNcxrnWYu2s+DQUBdyJt7BTgCBLtqZAwTeDuO8lDAW2fRtVSs7Gk6OVU2yiutiQ=="],
 
-    "@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@2.2.0", "", { "dependencies": { "@ai-sdk/anthropic": "1.2.0", "@ai-sdk/google": "1.2.0", "@ai-sdk/provider": "1.1.0", "@ai-sdk/provider-utils": "2.2.0", "google-auth-library": "^9.15.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-nIM/ZdlvUI/kPlT8Qr2pW1sU11entgXw2wP6RlAMxUaz/13VwXt8BLGFS9GmHipi6CRvrmKIy9IN1ukrkI8NGg=="],
+    "@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@2.2.1", "", { "dependencies": { "@ai-sdk/anthropic": "1.2.0", "@ai-sdk/google": "1.2.1", "@ai-sdk/provider": "1.1.0", "@ai-sdk/provider-utils": "2.2.0", "google-auth-library": "^9.15.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-5I8R3isk3ohWX7we+3bPatyZ7+bg3CmZbHQaczSZTIFTcvdX4/Oxwg1kptp3ECWtoPiiz5JzbU84zfq3BiqH8Q=="],
 
     "@ai-sdk/groq": ["@ai-sdk/groq@1.2.0", "", { "dependencies": { "@ai-sdk/provider": "1.1.0", "@ai-sdk/provider-utils": "2.2.0" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-hF62hBUTpOMyqum+w9mozh/KIgxueKowM9cRo38n5PqpXYUexDEKcW8HxOAXWwmbAZcE4l+FBSTu/xk4lBZzZQ=="],
 

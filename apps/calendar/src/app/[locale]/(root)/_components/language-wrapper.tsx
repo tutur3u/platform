@@ -1,5 +1,5 @@
 import { LanguageDropdownItem } from './language-dropdown-item';
-import { supportedLocales } from '@/i18n/routing';
+import { type Locale, supportedLocales } from '@/i18n/routing';
 
 interface Props {
   label: string;
@@ -9,7 +9,7 @@ interface Props {
 
 export function LanguageWrapper({ label, locale, currentLocale }: Props) {
   const isLocaleSupported = currentLocale
-    ? supportedLocales.includes(currentLocale as any)
+    ? supportedLocales.includes(currentLocale as Locale)
     : true; // user is using system locale
 
   const isCurrentLocale = isLocaleSupported

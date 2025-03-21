@@ -110,7 +110,7 @@ export default function UserAvatar({ user }: AvatarProps) {
 
       const filePath = `${generateRandomUUID()}`;
 
-      const { data: _, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, compressedFile);
 
