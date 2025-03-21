@@ -1,5 +1,6 @@
 import LocalWorkspaceSelect from './local-workspace-select';
 import NavbarActions from './navbar-actions';
+import NavbarCalendarWrapper from './navbar-calendar-wrapper';
 import NavbarSeparator from './navbar-separator';
 import ServerMenu from './server-menu';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
@@ -40,6 +41,15 @@ export default async function Navbar({
           }
         >
           <LocalWorkspaceSelect />
+        </Suspense>
+      }
+      navigationMenu={
+        <Suspense
+          fallback={
+            <div className="h-10 w-96 animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <NavbarCalendarWrapper />
         </Suspense>
       }
       actions={

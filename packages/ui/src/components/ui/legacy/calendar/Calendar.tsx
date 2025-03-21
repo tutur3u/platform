@@ -109,6 +109,7 @@ export const Calendar = ({
   initialSettings,
   enableHeader = true,
   onSaveSettings,
+  externalState,
 }: {
   t: any;
   locale: string;
@@ -119,6 +120,15 @@ export const Calendar = ({
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
+  externalState?: {
+    date: Date;
+    setDate: React.Dispatch<React.SetStateAction<Date>>;
+    view: 'day' | '4-days' | 'week' | 'month';
+    setView: React.Dispatch<
+      React.SetStateAction<'day' | '4-days' | 'week' | 'month'>
+    >;
+    availableViews: { value: string; label: string; disabled?: boolean }[];
+  };
 }) => {
   return (
     <CalendarProvider
@@ -135,6 +145,7 @@ export const Calendar = ({
         initialSettings={initialSettings}
         enableHeader={enableHeader}
         onSaveSettings={onSaveSettings}
+        externalState={externalState}
       />
     </CalendarProvider>
   );
@@ -149,6 +160,7 @@ const CalendarContent = ({
   initialSettings,
   enableHeader = true,
   onSaveSettings,
+  externalState,
 }: {
   t: any;
   locale: string;
@@ -157,17 +169,49 @@ const CalendarContent = ({
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
+  externalState?: {
+    date: Date;
+    setDate: React.Dispatch<React.SetStateAction<Date>>;
+    view: 'day' | '4-days' | 'week' | 'month';
+    setView: React.Dispatch<
+      React.SetStateAction<'day' | '4-days' | 'week' | 'month'>
+    >;
+    availableViews: { value: string; label: string; disabled?: boolean }[];
+  };
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
 
   const [initialized, setInitialized] = useState(false);
-  const [date, setDate] = useState(new Date());
-  const [view, setView] = useState<CalendarView>();
+  const [date, setDate] = useState(externalState?.date || new Date());
+  const [view, setView] = useState<CalendarView>(externalState?.view || 'week');
   const [dates, setDates] = useState<Date[]>([]);
   const [availableViews, setAvailableViews] = useState<
     { value: string; label: string; disabled?: boolean }[]
-  >([]);
+  >(externalState?.availableViews || []);
+
+  // Use the external state handlers when provided
+  const handleSetDate = useCallback(
+    (newDate: Date | ((prevDate: Date) => Date)) => {
+      if (externalState?.setDate) {
+        externalState.setDate(newDate);
+      } else {
+        setDate(newDate);
+      }
+    },
+    [externalState]
+  );
+
+  const handleSetView = useCallback(
+    (newView: CalendarView) => {
+      if (externalState?.setView) {
+        externalState.setView(newView);
+      } else {
+        setView(newView);
+      }
+    },
+    [externalState]
+  );
 
   // View switching handlers
   const enableDayView = useCallback(() => {
@@ -175,10 +219,10 @@ const CalendarContent = ({
     newDate.setHours(0, 0, 0, 0);
 
     transition('day', () => {
-      setView('day');
+      handleSetView('day');
       setDates([newDate]);
     });
-  }, [date, transition, setView, setDates]);
+  }, [date, transition, handleSetView, setDates]);
 
   const enable4DayView = useCallback(() => {
     const dates: Date[] = [];
@@ -191,10 +235,10 @@ const CalendarContent = ({
     }
 
     transition('4-days', () => {
-      setView('4-days');
+      handleSetView('4-days');
       setDates(dates);
     });
-  }, [date, transition, setView, setDates]);
+  }, [date, transition, handleSetView, setDates]);
 
   const enableWeekView = useCallback(() => {
     // Get the first day of week from settings
@@ -257,10 +301,10 @@ const CalendarContent = ({
     };
 
     transition('week', () => {
-      setView('week');
+      handleSetView('week');
       setDates(getWeekdays());
     });
-  }, [date, transition, settings, setView, setDates]);
+  }, [date, transition, settings, handleSetView, setDates]);
 
   const enableMonthView = useCallback(() => {
     const newDate = new Date(date);
@@ -268,41 +312,49 @@ const CalendarContent = ({
     newDate.setDate(1); // First day of month
 
     transition('month', () => {
-      setView('month');
+      handleSetView('month');
       setDates([newDate]);
     });
-  }, [date, transition, setView, setDates]);
+  }, [date, transition, handleSetView, setDates]);
 
   // Initialize available views
   useEffect(() => {
     if (initialized) return;
 
     setInitialized(true);
-    setAvailableViews([
-      {
-        value: 'day',
-        label: t('day'),
-        disabled: false,
-      },
-      {
-        value: '4-days',
-        label: t('4-days'),
-        disabled: window.innerWidth <= 768,
-      },
-      {
-        value: 'week',
-        label: t('week'),
-        disabled: window.innerWidth <= 768,
-      },
-      {
-        value: 'month',
-        label: t('month'),
-        disabled: false,
-      },
-    ]);
 
-    // Set initial view based on settings
-    if (initialSettings?.appearance?.defaultView) {
+    if (!externalState?.availableViews) {
+      setAvailableViews([
+        {
+          value: 'day',
+          label: t('day'),
+          disabled: false,
+        },
+        {
+          value: '4-days',
+          label: t('4-days'),
+          disabled: window.innerWidth <= 768,
+        },
+        {
+          value: 'week',
+          label: t('week'),
+          disabled: window.innerWidth <= 768,
+        },
+        {
+          value: 'month',
+          label: t('month'),
+          disabled: false,
+        },
+      ]);
+    }
+
+    // Set initial view based on settings or external state
+    if (externalState?.view) {
+      if (externalState.view === 'day') enableDayView();
+      else if (externalState.view === '4-days') enable4DayView();
+      else if (externalState.view === 'week') enableWeekView();
+      else if (externalState.view === 'month') enableMonthView();
+    } else if (initialSettings?.appearance?.defaultView) {
       const defaultView = initialSettings.appearance.defaultView;
       if (defaultView === 'day') enableDayView();
       else if (defaultView === '4-days') enable4DayView();
@@ -320,14 +372,29 @@ const CalendarContent = ({
     enable4DayView,
     enableWeekView,
     enableMonthView,
+    externalState,
   ]);
+
+  // Update the date when external state changes
+  useEffect(() => {
+    if (externalState?.date) {
+      setDate(externalState.date);
+    }
+  }, [externalState?.date]);
+
+  // Update the view when external state changes
+  useEffect(() => {
+    if (externalState?.view && view !== externalState.view) {
+      setView(externalState.view);
+    }
+  }, [externalState?.view, view]);
 
   // Update the date's hour and minute, every minute
   useEffect(() => {
     const secondsToNextMinute = 60 - new Date().getSeconds();
 
     const timeout = setTimeout(() => {
-      setDate((date) => {
+      handleSetDate((date) => {
         const newDate = new Date(date);
         newDate.setHours(new Date().getHours());
         newDate.setMinutes(new Date().getMinutes());
@@ -335,7 +402,7 @@ const CalendarContent = ({
       });
 
       const interval = setInterval(() => {
-        setDate((date) => {
+        handleSetDate((date) => {
           const newDate = new Date(date);
           newDate.setHours(new Date().getHours());
           newDate.setMinutes(new Date().getMinutes());
@@ -347,7 +414,7 @@ const CalendarContent = ({
     }, secondsToNextMinute * 1000);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [handleSetDate]);
 
   // Update the dates array when date changes while maintaining the same view
   useEffect(() => {
@@ -424,7 +491,7 @@ const CalendarContent = ({
           locale={locale}
           availableViews={availableViews}
           date={date}
-          setDate={setDate}
+          setDate={handleSetDate}
           view={view}
           offset={
             view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
