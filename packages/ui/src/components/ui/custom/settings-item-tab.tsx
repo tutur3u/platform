@@ -4,7 +4,7 @@ interface SettingItemTabProps {
   children: React.ReactNode;
 }
 
-export default function SettingItemTab({
+export function SettingItemTab({
   title,
   description,
   children,

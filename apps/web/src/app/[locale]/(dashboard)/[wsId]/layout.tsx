@@ -9,12 +9,12 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
   SIDEBAR_SIZE_COOKIE_NAME,
 } from '@/constants/common';
-import { getCurrentUser } from '@/lib/user-helper';
 import {
   getPermissions,
   getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   Archive,
   Banknote,

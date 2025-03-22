@@ -3,7 +3,6 @@ import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-it
 import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
 import { TTR_URL } from '@/constants/common';
-import { getCurrentUser } from '@/lib/user-helper';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
   DropdownMenu,
@@ -20,6 +19,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { Globe, Palette, Settings, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';

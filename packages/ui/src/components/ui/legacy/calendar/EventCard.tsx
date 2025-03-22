@@ -325,7 +325,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
       } else {
         // No overlaps - use full width (with small margin)
         eventWidth = columnWidth - 8;
-        eventLeft = dateIdx * columnWidth + 4; // 4px margin on each side
+        eventLeft = dateIdx * (columnWidth + 2); // 4px margin on each side
       }
 
       cardEl.style.width = `${eventWidth}px`;
@@ -892,7 +892,7 @@ export default function EventCard({ dates, event, level = 0 }: EventCardProps) {
           ref={cardRef}
           id={`event-${id}`}
           className={cn(
-            'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 select-none',
+            'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 transition-colors duration-300 select-none',
             'group transition-all hover:ring-1 focus:outline-none',
             {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction

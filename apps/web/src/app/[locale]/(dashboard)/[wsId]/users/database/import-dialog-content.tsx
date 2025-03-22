@@ -1,6 +1,5 @@
 'use client';
 
-import { generateUUID } from '@/utils/uuid-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -13,6 +12,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
+import { generateUUID } from '@tuturuuu/utils/uuid-helper';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,

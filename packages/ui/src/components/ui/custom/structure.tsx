@@ -50,8 +50,10 @@ export function Structure({
         id="navbar"
         className="fixed z-20 flex w-full flex-none items-center justify-between gap-2 border-b bg-background/70 px-6 py-2 backdrop-blur-lg md:hidden"
       >
-        <div className="flex h-[52px] items-center gap-2">{mobileHeader}</div>
-        <div className="flex h-[52px] items-center gap-2">
+        <div className="flex h-[52px] w-full items-center gap-2">
+          {mobileHeader}
+        </div>
+        <div className="flex h-[52px] w-full items-center gap-2">
           {userPopover}
           <Button
             size="icon"
@@ -107,7 +109,7 @@ export function Structure({
             >
               <div
                 className={cn(
-                  'flex h-[52px] items-center justify-center',
+                  'flex h-[52px] w-full items-center justify-center',
                   isCollapsed ? 'h-[52px]' : 'px-4'
                 )}
               >

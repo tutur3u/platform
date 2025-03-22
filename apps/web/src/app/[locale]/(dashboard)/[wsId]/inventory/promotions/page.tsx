@@ -1,12 +1,12 @@
 import { getPromotionColumns } from './columns';
 import { PromotionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { getCurrentUser } from '@/lib/user-helper';
 import { getWorkspaceUser } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
