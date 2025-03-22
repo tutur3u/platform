@@ -136,7 +136,182 @@
         "description": "Tham gia bảng xếp hạng và so sánh kỹ năng thiết kế prompt của bạn với người khác."
       }
     },
-    "learn_more": "Tìm hiểu thêm"
+    "learn_more": "Tìm hiểu thêm",
+    "about": {
+      "title": "Đội Ngũ Phía Sau",
+      "subtitle": "Gặp gỡ đội ngũ tổ chức, nhà phát triển, nhà tài trợ và cộng tác viên đã tạo nên NEO League - Prompt the Future 2025.",
+      "event-intro": {
+        "event-title": "NEO League – Tạo Dựng Tương Lai 2025",
+        "event-description": "Cuộc thi kỹ thuật tạo prompt đầu tiên được tổ chức bởi CLB Neo Culture Tech – RMIT SGS, với sự hỗ trợ kỹ thuật và nền tảng từ Tuturuuu, đơn vị tiên phong trong lĩnh vực AI và công cụ tăng năng suất thông minh.",
+        "features": {
+          "challengesTitle": "Thử Thách Sáng Tạo",
+          "challengesDesc": "Thí sinh đối mặt với các bài toán tạo prompt AI thực tiễn được thiết kế bởi các chuyên gia trong ngành.",
+          "skillsTitle": "Phát Triển Kỹ Năng",
+          "skillsDesc": "Tài nguyên học tập toàn diện và hỗ trợ từ cố vấn giúp thí sinh làm chủ kỹ năng tạo prompt.",
+          "communityTitle": "Xây Dựng Cộng Đồng",
+          "communityDesc": "Kết nối với những người đam mê AI và chuyên gia trong ngành trong suốt cuộc thi."
+        },
+        "call-to-action": {
+          "title": "Tham Gia Cuộc Cách Mạng",
+          "desc": "Hãy là một phần của cuộc thi kỹ thuật tạo prompt đầu tiên, định hình tương lai tương tác với AI."
+        }
+      },
+      "prompt-intro": {
+        "title1": "Prompt Engineering ",
+        "title2": "Là Gì?",
+        "description": "Một lĩnh vực đang phát triển kết nối sáng tạo của con người với trí tuệ nhân tạo, nhằm khai phá toàn bộ tiềm năng của các hệ thống AI thông qua các hướng dẫn được thiết kế cẩn thận.",
+        "cards": {
+          "language-title": "Ngôn Ngữ Của AI",
+          "language-desc": "Prompt engineering là nghệ thuật giao tiếp hiệu quả với hệ thống AI, bằng cách xây dựng hướng dẫn chính xác giúp mô hình tạo ra kết quả mong muốn.",
+          "creativity-title": "Độ Chính Xác & Sáng Tạo",
+          "creativity-desc": "Kết hợp giữa sự chính xác kỹ thuật và tư duy sáng tạo để khai phá các khả năng ẩn trong mô hình AI, chuyển đổi ý tưởng mơ hồ thành kết quả cụ thể.",
+          "future-work-title": "Tương Lai Của Công Việc",
+          "future-work-desc": "Một kỹ năng thiết yếu trong thời đại AI, giúp các chuyên gia ở mọi ngành nghề tận dụng AI như một công cụ mạnh mẽ cho đổi mới và giải quyết vấn đề."
+        }
+      },
+      "prompt-impact": {
+        "title": "Cầu Nối Giữa Ý Định Con Người và Năng Lực AI",
+        "description": "Khi các hệ thống AI ngày càng mạnh mẽ, việc định hướng chúng một cách hiệu quả trở nên quan trọng hơn bao giờ hết. Prompt engineering chính là chìa khóa để khai phá tiềm năng đó, biến các công cụ tinh vi thành giải pháp thực tiễn cho những thách thức đời thực.",
+        "cards": {
+          "democratize-title": "Dân Chủ Hóa AI",
+          "democratize-desc": "Giúp AI tiên tiến tiếp cận được với tất cả mọi người, bất kể nền tảng kỹ thuật.",
+          "precision-title": "Kiểm Soát Chính Xác",
+          "precision-desc": "Đạt được kết quả cụ thể, chính xác từ các mô hình AI đa năng.",
+          "skill-title": "Kỹ Năng Của Tương Lai",
+          "skill-desc": "Một năng lực thiết yếu cho các chuyên gia trong kỷ nguyên AI đang phát triển nhanh chóng."
+        },
+        "example-code": "Lập một kế hoạch chi tiết cho một thành phố thông minh bền vững tích hợp AI để quản lý tài nguyên."
+      },
+      "why-now-why-us": {
+        "why-now": {
+          "title": "Thời Điểm Hoàn Hảo",
+          "description": "Chúng ta đang ở một giai đoạn quan trọng trong sự phát triển của AI. Các mô hình ngôn ngữ lớn đã đạt đến mức độ mà kỹ thuật tạo prompt không chỉ là kỹ năng kỹ thuật—mà còn là lĩnh vực sáng tạo với tiềm năng thay đổi nhiều ngành công nghiệp.",
+          "tagline": "Năm Của Kỹ Thuật Prompt"
+        },
+        "why-us": {
+          "title": "Tiên Phong Trong Chất Lượng",
+          "description": "Sự hợp tác giữa CLB Neo Culture Tech – RMIT SGS và Tuturuuu kết hợp giữa tính học thuật nghiêm túc và đổi mới công nghệ. Chúng tôi ở vị thế đặc biệt để tổ chức một cuộc thi vừa đầy thử thách vừa cung cấp đầy đủ nguồn lực giúp thí sinh tỏa sáng.",
+          "academic": "Xuất Sắc Học Thuật",
+          "technical": "Đổi Mới Công Nghệ"
+        }
+      },
+      "organizers": {
+        "title": "Ban Tổ Chức",
+        "subtitle": "Đội ngũ dẫn dắt sáng kiến và cuộc thi NEO League.",
+        "members": {
+          "vo-hoang-phuc": {
+            "name": "Võ Hoàng Phúc",
+            "role": "Trưởng Dự Án Nova",
+            "organization": "Tuturuuu",
+            "bio": "Xây dựng nền tảng và đảm bảo cuộc thi diễn ra suôn sẻ, tập trung vào các khía cạnh kỹ thuật."
+          },
+          "nguyen-yen-ngoc": {
+            "name": "Nguyễn Yến Ngọc",
+            "role": "Trưởng Bộ Phận Đối Ngoại Nova",
+            "organization": "Tuturuuu",
+            "bio": "Làm việc với các tổ chức và đối tác bên ngoài để đảm bảo cuộc thi thành công."
+          },
+          "doan-huu-quoc": {
+            "name": "Đoàn Hữu Quốc",
+            "role": "Trưởng Bộ Phận Đảm Bảo Chất Lượng Nova",
+            "organization": "ZenBright",
+            "bio": "Đảm bảo nền tảng chất lượng cao và dễ sử dụng, tập trung vào trải nghiệm người dùng."
+          },
+          "cao-nguyen-viet-quang": {
+            "name": "Cao Nguyễn Việt Quang",
+            "role": "Trưởng Dự Án & Đối Ngoại Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Giám sát dự án và đảm bảo cuộc thi diễn ra suôn sẻ."
+          },
+          "dao-ngoc-khanh": {
+            "name": "Đào Ngọc Khanh",
+            "role": "Đồng Trưởng Dự Án & Truyền Thông Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Quảng bá cuộc thi và xây dựng cộng đồng."
+          },
+          "ngo-van-tai": {
+            "name": "Ngô Văn Tài",
+            "role": "Trưởng Chương Trình Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phụ trách toàn bộ chương trình, bao gồm cả cuộc thi và cộng đồng."
+          },
+          "huynh-tan-phat": {
+            "name": "Huỳnh Tấn Phát",
+            "role": "Trưởng Bộ Phận Hậu Cần & Tài Chính Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phụ trách hậu cần và tài chính cho cuộc thi."
+          },
+          "huynh-hoang-duc": {
+            "name": "Huỳnh Hoàng Đức",
+            "role": "Trưởng Bộ Phận Nội Bộ Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phụ trách các hoạt động nội bộ của cuộc thi."
+          },
+          "nguyen-vo-phuong-quynh": {
+            "name": "Nguyễn Võ Phương Quỳnh",
+            "role": "Trưởng Bộ Phận Sáng Tạo Neo League",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phụ trách mảng sáng tạo cho cuộc thi."
+          },
+          "tran-duc-linh": {
+            "name": "Dr. Trần Đức Linh",
+            "role": "Cố Vấn Học Thuật Neo League",
+            "organization": "RMIT University",
+            "bio": "Cung cấp định hướng và xây dựng đề bài cho cuộc thi."
+          },
+          "pham-chi-thanh": {
+            "name": "Dr. Phạm Chí Thanh",
+            "role": "Cố Vấn Học Thuật Neo League",
+            "organization": "RMIT University",
+            "bio": "Cung cấp định hướng và xây dựng đề bài cho cuộc thi."
+          },
+          "tom-huynh": {
+            "name": "Dr. Tom Huynh",
+            "role": "Cố Vấn Học Thuật Neo League",
+            "organization": "RMIT University",
+            "bio": "Cung cấp định hướng và xây dựng đề bài cho cuộc thi."
+          }
+        }
+      },
+      "platform-builder": {
+        "title": "Đội Ngũ Phát Triển Nền Tảng",
+        "subtitle": "Đội ngũ kỹ thuật đứng sau nền tảng Neo League.",
+        "members": {
+          "vo-hoang-phuc": {
+            "name": "Võ Hoàng Phúc",
+            "role": "Lập Trình Viên Chính",
+            "organization": "Tuturuuu",
+            "bio": "Người duy trì chính của Tuturuuu và Nova, đam mê xây dựng các công cụ giúp mọi người sáng tạo và làm việc hiệu quả hơn."
+          },
+          "huynh-tan-phat": {
+            "name": "Huỳnh Tấn Phát",
+            "role": "Kỹ Sư Fullstack",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Xây dựng nền móng cho nền tảng Neo League, tập trung vào khả năng mở rộng và hiệu suất."
+          },
+          "nguyen-gia-khang": {
+            "name": "Nguyễn Gia Khang",
+            "role": "Kỹ Sư Fullstack",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Cải thiện trải nghiệm người dùng cho nền tảng Neo League, chú trọng đến tính thân thiện và dễ sử dụng."
+          },
+          "ngo-van-tai": {
+            "name": "Ngô Văn Tài",
+            "role": "Kỹ Sư Fullstack",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Chịu trách nhiệm Việt hóa nền tảng Neo League, đảm bảo tính dễ đọc và khả năng tiếp cận."
+          },
+          "huynh-thai-duong": {
+            "name": "Huỳnh Thái Dương",
+            "role": "Kỹ Sư Frontend",
+            "organization": "RMIT SGS Neo Culture Tech",
+            "bio": "Phát triển giao diện người dùng thân thiện và hiển thị tốt trên mọi thiết bị cho nền tảng Neo League."
+          }
+        }
+      },
+      "sponsors": {},
+      "special-thanks": {}
+    }
   },
   "common": {
     "alpha": "Alpha",
