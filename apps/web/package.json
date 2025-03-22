@@ -159,8 +159,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.0",
-    "@eslint/js": "^9.22.0",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.23.0",
     "@next/bundle-analyzer": "^15.2.3",
     "@next/eslint-plugin-next": "^15.2.3",
     "@tanstack/eslint-plugin-query": "^5.68.0",
@@ -181,7 +181,7 @@
     "@typescript-eslint/parser": "^8.27.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
-    "eslint": "^9.22.0",
+    "eslint": "^9.23.0",
     "jsdom": "^26.0.0",
     "lint-staged": "^15.5.0",
     "postcss": "^8.5.3",
