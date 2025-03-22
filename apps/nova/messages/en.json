@@ -448,6 +448,7 @@
       "title": "The People Behind",
       "subtitle": "Meet the team of organizers, developers, sponsors, and contributors who make the NEO League - Prompt the Future 2025 possible.",
       "event-intro": {
+        "badge": "First Ever Collaboration",
         "event-title": "NEO League – Prompt the Future 2025",
         "event-description": "The first-ever prompt engineering competition hosted by RMIT SGS Neo Culture Tech club, with technical and platform support from Tuturuuu, a pioneer in AI and smart productivity tools.",
         "features": {
@@ -464,6 +465,7 @@
         }
       },
       "prompt-intro": {
+        "badge": "The Art & Science",
         "title1": "What is ",
         "title2": "Prompt Engineering?",
         "description": "The emerging discipline that bridges human creativity with artificial intelligence, unlocking the full potential of AI systems through carefully crafted instructions",
@@ -477,13 +479,14 @@
         }
       },
       "prompt-impact": {
+        "badge": "Why It Matters",
         "title": "The Bridge Between Human Intent and AI Capability",
         "description": "As AI systems become increasingly powerful, the ability to direct them effectively becomes crucial. Prompt engineering is the key that unlocks their potential, transforming these sophisticated tools into practical solutions for real-world challenges.",
         "cards": {
           "democratize-title": "Democratizing AI",
-          "democratize-desc": " Making advanced AI accessible to everyone, regardless of technical background.",
+          "democratize-desc": "Making advanced AI accessible to everyone.",
           "precision-title": "Precision Control",
-          "precision-desc": " Achieving specific, accurate results from general-purpose AI models.",
+          "precision-desc": "Achieving specific, accurate results from general-purpose AI models.",
           "skill-title": "Skill of the Future",
           "skill-desc": "A critical competency for professionals in the rapidly evolving AI landscape."
         },
@@ -491,11 +494,13 @@
       },
       "why-now-why-us": {
         "why-now": {
+          "badge": "Why Now?",
           "title": "The Perfect Moment",
           "description": " We're at a pivotal moment in AI development. Large language models have reached a level of capability where prompt engineering is no longer just a technical skill—it's a creative discipline with transformative potential across industries.",
           "tagline": "The Year of Prompt Engineering"
         },
         "why-us": {
+          "badge": "Why Us?",
           "title": "Pioneering Excellence",
           "description": "The collaboration between RMIT SGS Neo Culture Tech club and Tuturuuu brings together academic rigor and technical innovation. We're uniquely positioned to create a competition that challenges participants while providing the resources they need to excel.",
           "academic": "Academic Excellence",
@@ -697,7 +702,7 @@
           }
         },
         "quote": {
-          "text": "This competition represents our commitment to advancing prompt engineering as a discipline and empowering the next generation of AI practitioners. We're proud to collaborate with RMIT SGS Neo Culture Tech to make this vision a reality.",
+          "text": "This competition represents our commitment to advancing prompt engineering as a discipline and empowering the next generation of AI practitioners.",
           "author": "The Tuturuuu Team"
         }
       }

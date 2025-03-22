@@ -477,32 +477,6 @@ export function AboutUsPage() {
           style={{ opacity, scale }}
           className="relative mx-auto flex max-w-6xl flex-col items-center justify-center px-4 py-24 sm:py-32"
         >
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Badge
-              variant="outline"
-              className="mb-8 bg-foreground/10 backdrop-blur-sm"
-            >
-              <motion.div
-                animate={{
-                  boxShadow: [
-                    '0 0 0 0 rgba(var(--primary-rgb), 0)',
-                    '0 0 0 8px rgba(var(--primary-rgb), 0.2)',
-                    '0 0 0 0 rgba(var(--primary-rgb), 0)',
-                  ],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="mr-2 flex h-4 w-4 items-center justify-center rounded-full"
-              >
-                <Users className="h-4 w-4" />
-              </motion.div>
-              <span>Our Team</span>
-            </Badge>
-          </motion.div>
-
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -591,12 +565,12 @@ export function AboutUsPage() {
             <div>
               <Badge variant="outline" className="mb-4">
                 <RocketIcon className="mr-2 h-4 w-4" />
-                First Ever Collaboration
+                {t('event-intro.badge')}
               </Badge>
               <h2 className="mb-4 text-3xl font-bold">
                 {t('event-intro.event-title')}
               </h2>
-              <p className="mb-6 text-muted-foreground">
+              <p className="mb-6 text-balance text-muted-foreground">
                 {t('event-intro.event-description')}
               </p>
               <div className="space-y-4">
@@ -762,7 +736,7 @@ export function AboutUsPage() {
             >
               <Badge variant="outline" className="mb-4">
                 <Sparkles className="mr-2 h-4 w-4" />
-                The Art & Science
+                {t('prompt-intro.badge')}
               </Badge>
               <h2 className="mb-6 text-4xl font-bold md:text-5xl">
                 {t('prompt-intro.title1')}
@@ -770,7 +744,7 @@ export function AboutUsPage() {
                   {t('prompt-intro.title2')}
                 </span>
               </h2>
-              <p className="mx-auto mb-12 max-w-3xl text-lg text-muted-foreground">
+              <p className="mx-auto mb-12 max-w-3xl text-lg text-balance text-muted-foreground">
                 {t('prompt-intro.description')}
               </p>
             </motion.div>
@@ -838,7 +812,7 @@ export function AboutUsPage() {
                     >
                       {t('prompt-intro.cards.language-title')}
                     </motion.h3>
-                    <p className="text-center text-muted-foreground">
+                    <p className="text-center text-balance text-muted-foreground">
                       {t('prompt-intro.cards.language-desc')}
                     </p>
                   </div>
@@ -906,7 +880,7 @@ export function AboutUsPage() {
                     >
                       {t('prompt-intro.cards.creativity-title')}
                     </motion.h3>
-                    <p className="text-center text-muted-foreground">
+                    <p className="text-center text-balance text-muted-foreground">
                       {t('prompt-intro.cards.creativity-desc')}
                     </p>
                   </div>
@@ -981,7 +955,7 @@ export function AboutUsPage() {
                     >
                       {t('prompt-intro.cards.future-work-title')}
                     </motion.h3>
-                    <p className="text-center text-muted-foreground">
+                    <p className="text-center text-balance text-muted-foreground">
                       {t('prompt-intro.cards.future-work-desc')}
                     </p>
                   </div>
@@ -999,12 +973,12 @@ export function AboutUsPage() {
                 viewport={{ once: true }}
               >
                 <Badge variant="outline" className="mb-4">
-                  Why It Matters
+                  {t('prompt-impact.badge')}
                 </Badge>
                 <h3 className="mb-4 text-3xl font-bold">
                   {t('prompt-impact.title')}
                 </h3>
-                <p className="mb-6 text-muted-foreground">
+                <p className="mb-6 text-balance text-muted-foreground">
                   {t('prompt-impact.description')}
                 </p>
 
@@ -1079,7 +1053,7 @@ export function AboutUsPage() {
                         <div className="h-3 w-3 rounded-full bg-yellow-500" />
                         <div className="h-3 w-3 rounded-full bg-green-500" />
                         <div className="ml-auto text-xs text-muted-foreground">
-                          prompt.ai
+                          Tuturuuu AI
                         </div>
                       </div>
 
@@ -1125,10 +1099,12 @@ export function AboutUsPage() {
                 >
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-medium">AI Transformation</p>
+                    <p className="text-sm font-medium">
+                      {t('prompt-impact.cards.democratize-title')}
+                    </p>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Unlocking potential through prompts
+                    {t('prompt-impact.cards.democratize-desc')}
                   </p>
                 </motion.div>
               </motion.div>
@@ -1139,15 +1115,12 @@ export function AboutUsPage() {
           <div className="mb-16 rounded-2xl border border-primary/10 bg-foreground/5 p-8">
             <div className="grid gap-8 md:grid-cols-2">
               <div>
-                <Badge variant="outline" className="mb-4">
-                  <RocketIcon className="mr-2 h-4 w-4" />
-                  Why Now
-                </Badge>
-                <h3 className="mb-4 text-2xl font-bold">
+                <h3 className="mb-4 flex items-center gap-4 text-2xl font-bold">
+                  <RocketIcon className="h-5 w-5" />
                   {t('why-now-why-us.why-now.title')}
                 </h3>
 
-                <p className="mb-6 text-muted-foreground">
+                <p className="mb-6 text-balance text-muted-foreground">
                   {t('why-now-why-us.why-now.description')}
                 </p>
 
@@ -1180,14 +1153,11 @@ export function AboutUsPage() {
               </div>
 
               <div>
-                <Badge variant="outline" className="mb-4">
-                  <Users className="mr-2 h-4 w-4" />
-                  Why Us
-                </Badge>
-                <h3 className="mb-4 text-2xl font-bold">
+                <h3 className="mb-4 flex items-center gap-4 text-2xl font-bold">
+                  <Users className="h-5 w-5" />
                   {t('why-now-why-us.why-us.title')}
                 </h3>
-                <p className="mb-6 text-muted-foreground">
+                <p className="mb-6 text-balance text-muted-foreground">
                   {t('why-now-why-us.why-us.description')}
                 </p>
 

@@ -1,6 +1,6 @@
 {
   "nova": {
-    "badge": "Chào mừng đến với tương lai của Prompt Engineering",
+    "badge": "Chào mừng đến với tương lai của kỹ thuật tạo lệnh",
     "title": "Làm chủ cuộc chơi với",
     "description": "Sân chơi của bạn để chế tạo, thử nghiệm và hoàn thiện lời nhắc AI. Tham gia cộng đồng những người sáng tạo giải quyết các vấn đề thực tế thông qua kỹ thuật lời nhắc tiên tiến.",
     "error": "Error",
@@ -13,7 +13,7 @@
     "performance-analysis-description": "Theo dõi và tối ưu hóa các nỗ lực kỹ thuật nhắc nhở của bạn",
     "ai-capabilities": "Khả năng AI",
     "performance-analysis": "Phân tích hiệu suất",
-    "module-4-description": "Khám phá các kỹ thuật nâng cao trong kỹ thuật prompt phức tạp",
+    "module-4-description": "Khám phá các kỹ thuật nâng cao trong kỹ thuật tạo lệnh phức tạp",
     "ai-capabilities-subtitle": "Được hỗ trợ bởi Công nghệ AI tiên tiến",
     "ai-capabilities-description": "Trải nghiệm thế hệ kỹ thuật nhắc nhở tiếp theo với các tính năng và công cụ AI tiên tiến của chúng tôi",
     "advanced-ai-models": "Các mô hình AI tiên tiến",
@@ -22,21 +22,21 @@
     "smart-templating-description": "Tạo và chia sẻ các mẫu nhắc nhở có thể tái sử dụng",
     "performance-analytics": "Phân tích hiệu suất",
     "start-button": "Bắt đầu",
-    "why-is-prompt-engineering": "Tại sao Kỹ Thuật Prompt lại Quan Trọng?",
-    "why-is-prompt-engineering-description": "Kỹ thuật prompt rất quan trọng vì nó ảnh hưởng trực tiếp đến chất lượng và tính hữu ích của nội dung được tạo ra bởi AI. Những prompt được thiết kế tốt có thể cải thiện đáng kể độ chính xác, tính liên quan và sự mạch lạc của các kết quả do AI tạo ra.",
+    "why-is-prompt-engineering": "Tại sao kỹ thuật tạo lệnh lại Quan Trọng?",
+    "why-is-prompt-engineering-description": "Kỹ thuật tạo lệnh rất quan trọng vì nó ảnh hưởng trực tiếp đến chất lượng và tính hữu ích của nội dung được tạo ra bởi AI. Những prompt được thiết kế tốt có thể cải thiện đáng kể độ chính xác, tính liên quan và sự mạch lạc của các kết quả do AI tạo ra.",
     "learning-page-subtitle": "Hãy theo dõi chương trình học toàn diện của chúng tôi để trở thành chuyên gia trong việc tạo ra các prompt hiệu quả cho AI",
-    "module-1": "Giới Thiệu về Kỹ Thuật Prompt",
-    "module-1-description": "Tìm hiểu các khái niệm cơ bản về kỹ thuật prompt và tầm quan trọng của nó trong phát triển AI",
-    "what-is-prompt-engineering": "Kỹ Thuật Prompt là gì?",
-    "what-is-prompt-engineering-description": "Kỹ thuật prompt là thực hành thiết kế và cải tiến các prompt đầu vào cho các mô hình ngôn ngữ AI để tạo ra các kết quả mong muốn. Nó liên quan đến việc soạn thảo các hướng dẫn rõ ràng, cụ thể và hiệu quả để hướng dẫn AI tạo ra các phản hồi chính xác và phù hợp.",
-    "module-2": "Kỹ Thuật Cơ Bản trong Kỹ Thuật Prompt",
+    "module-1": "Giới Thiệu về kỹ thuật tạo lệnh",
+    "module-1-description": "Tìm hiểu các khái niệm cơ bản về kỹ thuật tạo lệnh và tầm quan trọng của nó trong phát triển AI",
+    "what-is-prompt-engineering": "Kỹ thuật tạo lệnh là gì?",
+    "what-is-prompt-engineering-description": "Kỹ thuật tạo lệnh là thực hành thiết kế và cải tiến các prompt đầu vào cho các mô hình ngôn ngữ AI để tạo ra các kết quả mong muốn. Nó liên quan đến việc soạn thảo các hướng dẫn rõ ràng, cụ thể và hiệu quả để hướng dẫn AI tạo ra các phản hồi chính xác và phù hợp.",
+    "module-2": "Kỹ Thuật Cơ Bản trong kỹ thuật tạo lệnh",
     "module-2-description": "Làm chủ các chiến lược cơ bản để tạo prompt hiệu quả",
     "zero-shot": "Zero-shot & Few-shot Prompting",
     "zero-shot-description": "Tìm hiểu sự khác biệt giữa zero-shot và few-shot prompting, và khi nào sử dụng từng phương pháp hiệu quả.",
     "chain-of-thought": "Chain of Thought Prompting",
     "chain-of-thought-description": "Làm chủ kỹ thuật phân tách các vấn đề phức tạp thành các bước logic để có các phản hồi tốt hơn từ AI.",
     "module-3": "Chiến Lược Nâng Cao",
-    "module-3-description": "Khám phá các kỹ thuật nâng cao trong kỹ thuật prompt phức tạp",
+    "module-3-description": "Khám phá các kỹ thuật nâng cao trong kỹ thuật tạo lệnh phức tạp",
     "iterative-refinement": "Cải Tiến Lặp Lại",
     "iterative-refinement-description": "Tìm hiểu cách cải thiện prompt qua từng vòng lặp dựa trên các kết quả của AI để có được kết quả tối ưu.",
     "module-4": "Các Thực Hành Tốt Nhất",
@@ -65,11 +65,11 @@
     "register": "Đăng kí NEO League",
     "feature": "Tính năng",
     "platform-feature": "Tính năng",
-    "feature-title": "Những thứ bạn cần biết để vượt trội Prompt Engineering",
+    "feature-title": "Những thứ bạn cần biết để vượt trội kỹ thuật tạo lệnh",
     "feature-title-description": "Một bộ công cụ toàn diện được thiết kế cho các kỹ sư hiện đại",
     "advanced-ai": "Mô hình AI nâng cao",
     "learning-resources": "Tài nguyên học tập",
-    "learning-subtitle": "Nắm vững Kỹ thuật nhắc nhở thông qua Học tập có cấu trúc",
+    "learning-subtitle": "Nắm vững kỹ thuật nhắc nhở thông qua Học tập có cấu trúc",
     "learning-subtitle-description": "Truy cập các hướng dẫn, chỉ dẫn và ví dụ thực tế toàn diện để nâng cao kỹ năng kỹ thuật nhắc nhở của bạn. Học hỏi từ các chuyên gia trong ngành và tham gia cộng đồng hỗ trợ.",
     "learning-tututorials": "Hướng dẫn và bài tập tương tác",
     "real-world": "Ví dụ và nghiên cứu tình huống thực tế",
@@ -95,7 +95,7 @@
     "AI-assistant": "Trợ lý AI",
     "AI-assistant-description": "Nhận trợ giúp từ trợ lý AI của chúng tôi để có kỹ thuật nhanh chóng",
     "program-objectives": "Mục tiêu chương trình",
-    "program-objectives-description-1": "Dân chủ hóa Kỹ thuật nhanh chóng trên mọi nền tảng",
+    "program-objectives-description-1": "Dân chủ hóa kỹ thuật nhanh chóng trên mọi nền tảng",
     "program-objectives-description-2": "Phát triển các kỹ năng AI thực tế và khả năng giải quyết vấn đề",
     "program-objectives-description-3": "Xây dựng cộng đồng những người đổi mới AI toàn cầu",
     "program-objectives-description-4": "Nuôi dưỡng các giải pháp sáng tạo cho những thách thức trong thế giới thực",
@@ -113,7 +113,7 @@
     "dashboard": "Tổng Quan",
     "problems": "Đề Bài",
     "roles": "Vai Trò",
-    "prompt-engineering-challenges": "Thử thách về Prompt Engineering",
+    "prompt-engineering-challenges": "Thử thách về kỹ thuật tạo lệnh",
     "start-challenge": "Bắt đầu thử thách",
     "create-challenge": "Tạo Thử Thách Mới",
     "create-problem": "Tạo Đề Bài Mới",
@@ -141,8 +141,9 @@
       "title": "Đội Ngũ Phía Sau",
       "subtitle": "Gặp gỡ đội ngũ tổ chức, nhà phát triển, nhà tài trợ và cộng tác viên đã tạo nên NEO League - Prompt the Future 2025.",
       "event-intro": {
-        "event-title": "NEO League – Tạo Dựng Tương Lai 2025",
-        "event-description": "Cuộc thi kỹ thuật tạo prompt đầu tiên được tổ chức bởi CLB Neo Culture Tech – RMIT SGS, với sự hỗ trợ kỹ thuật và nền tảng từ Tuturuuu, đơn vị tiên phong trong lĩnh vực AI và công cụ tăng năng suất thông minh.",
+        "badge": "Cuộc Thi Đầu Tiên",
+        "event-title": "NEO League – Prompt the Future 2025",
+        "event-description": "Cuộc thi kỹ thuật tạo lệnh đầu tiên được tổ chức bởi CLB Neo Culture Tech – RMIT SGS, với sự hỗ trợ kỹ thuật và nền tảng từ Tuturuuu, đơn vị tiên phong trong lĩnh vực AI và công cụ tăng năng suất thông minh.",
         "features": {
           "challengesTitle": "Thử Thách Sáng Tạo",
           "challengesDesc": "Thí sinh đối mặt với các bài toán tạo prompt AI thực tiễn được thiết kế bởi các chuyên gia trong ngành.",
@@ -153,16 +154,17 @@
         },
         "call-to-action": {
           "title": "Tham Gia Cuộc Cách Mạng",
-          "desc": "Hãy là một phần của cuộc thi kỹ thuật tạo prompt đầu tiên, định hình tương lai tương tác với AI."
+          "desc": "Hãy là một phần của cuộc thi kỹ thuật tạo lệnh đầu tiên, định hình tương lai tương tác với AI."
         }
       },
       "prompt-intro": {
-        "title1": "Prompt Engineering ",
+        "badge": "Kỹ Thuật & Khoa Học",
+        "title1": "Kỹ thuật tạo lệnh ",
         "title2": "Là Gì?",
         "description": "Một lĩnh vực đang phát triển kết nối sáng tạo của con người với trí tuệ nhân tạo, nhằm khai phá toàn bộ tiềm năng của các hệ thống AI thông qua các hướng dẫn được thiết kế cẩn thận.",
         "cards": {
           "language-title": "Ngôn Ngữ Của AI",
-          "language-desc": "Prompt engineering là nghệ thuật giao tiếp hiệu quả với hệ thống AI, bằng cách xây dựng hướng dẫn chính xác giúp mô hình tạo ra kết quả mong muốn.",
+          "language-desc": "Kỹ thuật tạo lệnh là nghệ thuật giao tiếp hiệu quả với hệ thống AI, bằng cách xây dựng hướng dẫn chính xác giúp mô hình tạo ra kết quả mong muốn.",
           "creativity-title": "Độ Chính Xác & Sáng Tạo",
           "creativity-desc": "Kết hợp giữa sự chính xác kỹ thuật và tư duy sáng tạo để khai phá các khả năng ẩn trong mô hình AI, chuyển đổi ý tưởng mơ hồ thành kết quả cụ thể.",
           "future-work-title": "Tương Lai Của Công Việc",
@@ -170,11 +172,12 @@
         }
       },
       "prompt-impact": {
+        "badge": "Tầm quan trọng",
         "title": "Cầu Nối Giữa Ý Định Con Người và Năng Lực AI",
-        "description": "Khi các hệ thống AI ngày càng mạnh mẽ, việc định hướng chúng một cách hiệu quả trở nên quan trọng hơn bao giờ hết. Prompt engineering chính là chìa khóa để khai phá tiềm năng đó, biến các công cụ tinh vi thành giải pháp thực tiễn cho những thách thức đời thực.",
+        "description": "Khi các hệ thống AI ngày càng mạnh mẽ, việc định hướng chúng một cách hiệu quả trở nên quan trọng hơn bao giờ hết. kỹ thuật tạo lệnh chính là chìa khóa để khai phá tiềm năng đó, biến các công cụ tinh vi thành giải pháp thực tiễn cho những thách thức đời thực.",
         "cards": {
-          "democratize-title": "Dân Chủ Hóa AI",
-          "democratize-desc": "Giúp AI tiên tiến tiếp cận được với tất cả mọi người, bất kể nền tảng kỹ thuật.",
+          "democratize-title": "Cơ hội cho tất cả",
+          "democratize-desc": "Giúp AI tiên tiến tiếp cận được với tất cả mọi người.",
           "precision-title": "Kiểm Soát Chính Xác",
           "precision-desc": "Đạt được kết quả cụ thể, chính xác từ các mô hình AI đa năng.",
           "skill-title": "Kỹ Năng Của Tương Lai",
@@ -184,11 +187,13 @@
       },
       "why-now-why-us": {
         "why-now": {
+          "badge": "Tại sao là lúc này?",
           "title": "Thời Điểm Hoàn Hảo",
-          "description": "Chúng ta đang ở một giai đoạn quan trọng trong sự phát triển của AI. Các mô hình ngôn ngữ lớn đã đạt đến mức độ mà kỹ thuật tạo prompt không chỉ là kỹ năng kỹ thuật—mà còn là lĩnh vực sáng tạo với tiềm năng thay đổi nhiều ngành công nghiệp.",
-          "tagline": "Năm Của Kỹ Thuật Prompt"
+          "description": "Chúng ta đang ở một giai đoạn quan trọng trong sự phát triển của AI. Các mô hình ngôn ngữ lớn đã đạt đến mức độ mà kỹ thuật tạo lệnh không chỉ là kỹ năng kỹ thuật—mà còn là lĩnh vực sáng tạo với tiềm năng thay đổi nhiều ngành công nghiệp.",
+          "tagline": "Năm Của kỹ thuật tạo lệnh"
         },
         "why-us": {
+          "badge": "Tại sao là chúng tôi?",
           "title": "Tiên Phong Trong Chất Lượng",
           "description": "Sự hợp tác giữa CLB Neo Culture Tech – RMIT SGS và Tuturuuu kết hợp giữa tính học thuật nghiêm túc và đổi mới công nghệ. Chúng tôi ở vị thế đặc biệt để tổ chức một cuộc thi vừa đầy thử thách vừa cung cấp đầy đủ nguồn lực giúp thí sinh tỏa sáng.",
           "academic": "Xuất Sắc Học Thuật",
@@ -319,11 +324,11 @@
         },
         "tuturuuu": {
           "name": "Tuturuuu",
-          "description": "Đơn vị tiên phong trong lĩnh vực AI và công cụ tăng năng suất thông minh, hỗ trợ kỹ thuật và nền tảng cho cuộc thi Neo League. Tuturuuu Nova đang cách mạng hóa cách con người tương tác với AI thông qua kỹ thuật tạo prompt tiên tiến."
+          "description": "Đơn vị tiên phong trong lĩnh vực AI và công cụ tăng năng suất thông minh, hỗ trợ kỹ thuật và nền tảng cho cuộc thi Neo League. Tuturuuu Nova đang cách mạng hóa cách con người tương tác với AI thông qua kỹ thuật tạo lệnh tiên tiến."
         },
         "rmit-neo-culture-tech": {
           "name": "RMIT SGS Neo Culture Tech",
-          "description": "Đơn vị tổ chức cuộc thi Neo League – Prompt the Future 2025, hướng tới thúc đẩy đổi mới và xuất sắc kỹ thuật trong lĩnh vực AI và kỹ thuật prompt cho sinh viên."
+          "description": "Đơn vị tổ chức cuộc thi Neo League – Prompt the Future 2025, hướng tới thúc đẩy đổi mới và xuất sắc kỹ thuật trong lĩnh vực AI và kỹ thuật tạo lệnh cho sinh viên."
         }
       },
       "special-thanks": {
@@ -378,11 +383,11 @@
           },
           "resources": {
             "title": "Tài Nguyên Học Tập",
-            "description": "Xây dựng tài liệu và giáo trình giúp thí sinh làm chủ kỹ năng kỹ thuật tạo prompt."
+            "description": "Xây dựng tài liệu và giáo trình giúp thí sinh làm chủ kỹ năng kỹ thuật tạo lệnh."
           },
           "challenges": {
             "title": "Thiết Kế Đề Bài",
-            "description": "Tạo ra các thử thách kỹ thuật chất lượng, mang giá trị giáo dục cao về prompt engineering."
+            "description": "Tạo ra các thử thách kỹ thuật chất lượng, mang giá trị giáo dục cao về kỹ thuật tạo lệnh."
           },
           "mentorship": {
             "title": "Hướng Dẫn & Hỗ Trợ",
@@ -390,7 +395,7 @@
           }
         },
         "quote": {
-          "text": "Cuộc thi này thể hiện cam kết của chúng tôi trong việc phát triển prompt engineering như một lĩnh vực và trao quyền cho thế hệ AI kế tiếp. Chúng tôi tự hào được hợp tác cùng RMIT SGS Neo Culture Tech để biến tầm nhìn này thành hiện thực.",
+          "text": "Cuộc thi này thể hiện cam kết của chúng tôi trong việc phát triển kỹ thuật tạo lệnh như một lĩnh vực và trao quyền cho thế hệ AI kế tiếp.",
           "author": "Đội ngũ Tuturuuu"
         }
       }
