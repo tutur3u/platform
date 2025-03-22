@@ -15,7 +15,6 @@ import {
   OverlapWarning,
 } from './EventFormComponents';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { calendarEventSchema } from '@tuturuuu/ai/calendar/events';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -54,7 +53,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { format } from 'date-fns';
-import { OAuth2Client } from 'google-auth-library';
 import {
   AlertCircle,
   Brain,
