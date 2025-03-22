@@ -9,6 +9,7 @@ import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
+import { useSearchParams } from 'next/navigation';
 import {
   ReactNode,
   createContext,
@@ -57,6 +58,8 @@ const CalendarContext = createContext<{
   getModalStatus: (id: string) => boolean;
   getActiveEvent: () => CalendarEvent | undefined;
   isModalActive: () => boolean;
+  googleTokens: { access_token: string; refresh_token?: string } | null;
+  syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
 }>({
@@ -79,6 +82,8 @@ const CalendarContext = createContext<{
   getModalStatus: () => false,
   getActiveEvent: () => undefined,
   isModalActive: () => false,
+  googleTokens: { access_token: '' },
+  syncWithGoogleCalendar: () => Promise.resolve(),
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
 });
@@ -106,6 +111,7 @@ export const CalendarProvider = ({
   initialSettings?: Partial<CalendarSettings>;
 }) => {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
 
   // Add debounce timer reference for update events
   const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -234,6 +240,37 @@ export const CalendarProvider = ({
   const [isModalHidden, setModalHidden] = useState(false);
   const [pendingNewEvent, setPendingNewEvent] =
     useState<Partial<CalendarEvent> | null>(null);
+
+  // Google Calendar token storage (for simplicity, using local state; in production, use a secure storage)
+  const [googleTokens, setGoogleTokens] = useState<{
+    access_token: string;
+    refresh_token?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
+
+    if (accessToken) {
+      const tokens = {
+        access_token: accessToken,
+        refresh_token: refreshToken || undefined,
+      };
+      console.log('Tokens from URL:', tokens);
+      setGoogleTokens(tokens);
+      localStorage.setItem('googleTokens', JSON.stringify(tokens));
+      // Remove params from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      const storedTokens = localStorage.getItem('googleTokens');
+      if (storedTokens) {
+        console.log('Tokens from localStorage:', JSON.parse(storedTokens));
+        setGoogleTokens(JSON.parse(storedTokens));
+      } else {
+        console.log('No tokens found in URL or localStorage');
+      }
+    }
+  }, [searchParams]);
 
   // Event getters
   const getEvent = useCallback(
@@ -625,6 +662,35 @@ export const CalendarProvider = ({
     [ws, refresh, pendingNewEvent]
   );
 
+  // Google Calendar sync moved to API Route
+  const syncWithGoogleCalendar = useCallback(
+    async (event: CalendarEvent) => {
+      if (!googleTokens?.access_token) {
+        console.error('Google Calendar not authenticated');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/v1/calendar/auth/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event, googleTokens }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to sync with Google Calendar');
+        }
+
+        console.log('Event synced with Google Calendar');
+      } catch (error) {
+        console.error('Failed to sync with Google Calendar:', error);
+        throw error;
+      }
+    },
+
+    [googleTokens]
+  );
+
   // Modal management
   const openModal = useCallback((eventId?: string) => {
     if (eventId) {
@@ -718,6 +784,9 @@ export const CalendarProvider = ({
     hideModal,
     showModal,
 
+    // Google Calendar sync
+    googleTokens,
+    syncWithGoogleCalendar,
     // Settings API
     settings,
     updateSettings,

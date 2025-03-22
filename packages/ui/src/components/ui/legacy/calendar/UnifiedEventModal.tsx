@@ -104,8 +104,52 @@ export function UnifiedEventModal() {
     updateEvent,
     deleteEvent,
     getEvents,
+    syncWithGoogleCalendar,
     settings,
   } = useCalendar();
+
+  const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
+
+  const handleGoogleAuth = async () => {
+    setIsGoogleAuthenticating(true);
+    try {
+      const response = await fetch('/api/v1/calendar/auth', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const { authUrl } = await response.json();
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error initiating Google auth:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to initiate Google authentication',
+        variant: 'destructive',
+      });
+      setIsGoogleAuthenticating(false);
+    }
+  };
+
+  const handleSyncWithGoogle = async () => {
+    if (!activeEvent) return;
+    try {
+      await syncWithGoogleCalendar(activeEvent);
+      toast({
+        title: 'Success',
+        description: 'Event synced with Google Calendar',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to sync with Google Calendar',
+        variant: 'destructive',
+      });
+    }
+  };
 
   // State for manual event creation/editing
   const [event, setEvent] = useState<Partial<CalendarEvent>>({
@@ -295,7 +339,6 @@ export function UnifiedEventModal() {
   const handleManualSave = async () => {
     if (!event.start_at || !event.end_at) return;
 
-    // Validate dates
     const startDate = new Date(event.start_at);
     const endDate = new Date(event.end_at);
 
@@ -308,26 +351,32 @@ export function UnifiedEventModal() {
     setIsSaving(true);
 
     try {
-      // Check if this is a new event or an existing one
+      let savedEvent: CalendarEvent;
       if (activeEvent?.id === 'new') {
-        // Create a new event
-        await addEvent(event as Omit<CalendarEvent, 'id'>);
+        savedEvent = await addEvent(event as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
-        // For split events, use the original ID
         const originalId = activeEvent.id;
-
-        // Make sure originalId is not undefined
         if (originalId) {
-          // Update existing event
-          await updateEvent(originalId, event);
+          savedEvent = await updateEvent(originalId, event);
+        } else {
+          throw new Error('Invalid event ID');
         }
+      } else {
+        throw new Error('No event to save');
       }
+
+      await syncWithGoogleCalendar(savedEvent);
+      toast({
+        title: 'Success',
+        description: 'Event saved and synced with Google Calendar',
+      });
+
       closeModal();
     } catch (error) {
       console.error('Error saving event:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save event. Please try again.',
+        description: 'Failed to save or sync event. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -395,8 +444,8 @@ export function UnifiedEventModal() {
 
     setIsSaving(true);
     try {
-      // Save all events or just the current one based on user selection
       const eventsToSave = generatedEvents;
+      const savedEvents: CalendarEvent[] = [];
 
       for (const eventData of eventsToSave) {
         const calendarEvent: Omit<CalendarEvent, 'id'> = {
@@ -409,12 +458,14 @@ export function UnifiedEventModal() {
           locked: false, // Default to unlocked for AI-generated events
         };
 
-        await addEvent(calendarEvent);
+        const savedEvent = await addEvent(calendarEvent);
+        savedEvents.push(savedEvent);
+        await syncWithGoogleCalendar(savedEvent); // Đồng bộ từng sự kiện
       }
 
       toast({
         title: 'Success',
-        description: `${eventsToSave.length} event${eventsToSave.length > 1 ? 's' : ''} added to your calendar`,
+        description: `${eventsToSave.length} event${eventsToSave.length > 1 ? 's' : ''} saved and synced with Google Calendar`,
       });
 
       closeModal();
@@ -422,7 +473,7 @@ export function UnifiedEventModal() {
       console.error('Error saving AI events to calendar:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save AI-generated events. Please try again.',
+        description: 'Failed to save or sync AI-generated events.',
         variant: 'destructive',
       });
     } finally {
@@ -759,7 +810,7 @@ export function UnifiedEventModal() {
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 pt-6 pb-4">
+        <DialogHeader className="border-b px-6 pb-4 pt-6">
           <DialogTitle className="text-xl font-semibold">
             {isEditing ? 'Edit Event' : 'Create Event'}
           </DialogTitle>
@@ -775,10 +826,10 @@ export function UnifiedEventModal() {
           onValueChange={(value) => setActiveTab(value as any)}
           className="flex h-[calc(90vh-140px)] flex-col"
         >
-          <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
+          <TabsList className="justify-start gap-2 bg-transparent px-6 pb-0 pt-4">
             <TabsTrigger
               value="ai"
-              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="data-[state=active]:bg-background rounded-b-none rounded-t-md border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:shadow-sm"
               disabled={!!isEditing}
             >
               <Sparkles className="mr-2 h-4 w-4" />
@@ -786,7 +837,7 @@ export function UnifiedEventModal() {
             </TabsTrigger>
             <TabsTrigger
               value="manual"
-              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="data-[state=active]:bg-background rounded-b-none rounded-t-md border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:shadow-sm"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               Manual
@@ -797,7 +848,7 @@ export function UnifiedEventModal() {
             {/* Manual Event Creation Tab */}
             <TabsContent
               value="manual"
-              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'manual' ? 'flex' : 'none' }}
             >
               <div className="flex flex-1 flex-col overflow-hidden">
@@ -805,7 +856,7 @@ export function UnifiedEventModal() {
                   <div className="space-y-6 p-6">
                     {/* Locked Event Indicator */}
                     {event.locked && (
-                      <div className="mb-4 flex items-center gap-2 rounded-md border border-dynamic-light-yellow/30 bg-dynamic-light-yellow/10 p-3 text-dynamic-light-yellow">
+                      <div className="border-dynamic-light-yellow/30 bg-dynamic-light-yellow/10 text-dynamic-light-yellow mb-4 flex items-center gap-2 rounded-md border p-3">
                         <div>
                           <h3 className="font-semibold">Event is Locked</h3>
                           <p className="text-sm">
@@ -897,8 +948,8 @@ export function UnifiedEventModal() {
                             Advanced Settings
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="pt-2 pb-0">
-                          <div className="space-y-4 rounded-lg bg-muted/30 p-4">
+                        <AccordionContent className="pb-0 pt-2">
+                          <div className="bg-muted/30 space-y-4 rounded-lg p-4">
                             <h3 className="text-sm font-medium">
                               Event Properties
                             </h3>
@@ -925,11 +976,11 @@ export function UnifiedEventModal() {
                                 />
                                 <div className="mt-1 flex items-center gap-2">
                                   {event.locked ? (
-                                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <Lock className="text-muted-foreground h-3.5 w-3.5" />
                                   ) : (
-                                    <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <Unlock className="text-muted-foreground h-3.5 w-3.5" />
                                   )}
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-muted-foreground text-xs">
                                     {event.locked
                                       ? 'Event is locked'
                                       : 'Event is unlocked'}
@@ -937,7 +988,7 @@ export function UnifiedEventModal() {
                                 </div>
                               </div>
                             </div>
-                            <div className="mt-2 text-xs text-muted-foreground">
+                            <div className="text-muted-foreground mt-2 text-xs">
                               <p className="flex items-center gap-1">
                                 <Info className="h-3 w-3" />
                                 Color and protection settings help organize and
@@ -994,6 +1045,24 @@ export function UnifiedEventModal() {
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
+                        onClick={handleGoogleAuth}
+                        disabled={isGoogleAuthenticating}
+                      >
+                        {isGoogleAuthenticating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          'Link Google Calendar'
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleSyncWithGoogle}
+                        disabled={!activeEvent || isSaving}
+                      >
+                        Sync with Google
+                      </Button>
+                      <Button
+                        variant="outline"
                         onClick={closeModal}
                         disabled={isSaving || isDeleting}
                         className="flex items-center gap-2"
@@ -1033,7 +1102,7 @@ export function UnifiedEventModal() {
             {/* AI Event Generation Tab */}
             <TabsContent
               value="ai"
-              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
             >
               <Form {...aiForm}>
@@ -1058,7 +1127,7 @@ export function UnifiedEventModal() {
                                     {...field}
                                     autoFocus
                                     placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
-                                    className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:ring-1 focus:ring-ring focus:outline-none"
+                                    className="border-input bg-background focus:ring-ring min-h-[200px] w-full resize-none rounded-md border p-4 pr-20 text-base focus:outline-none focus:ring-1"
                                     disabled={
                                       isLoading ||
                                       isRecording ||
@@ -1068,7 +1137,7 @@ export function UnifiedEventModal() {
                                   />
 
                                   {/* Record Button */}
-                                  <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                                  <div className="absolute bottom-2 right-2 flex items-center gap-1">
                                     <Button
                                       size="xs"
                                       type="button"
@@ -1137,8 +1206,8 @@ export function UnifiedEventModal() {
                         {isLoading && (
                           <div className="flex items-center justify-center py-8">
                             <div className="flex flex-col items-center gap-2">
-                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                              <p className="text-sm text-muted-foreground">
+                              <Loader2 className="text-primary h-8 w-8 animate-spin" />
+                              <p className="text-muted-foreground text-sm">
                                 Creating your event...
                               </p>
                             </div>
@@ -1172,7 +1241,7 @@ export function UnifiedEventModal() {
                         <Button
                           type="submit"
                           disabled={isLoading || !aiForm.watch('prompt')}
-                          className="flex items-center gap-2 bg-primary"
+                          className="bg-primary flex items-center gap-2"
                         >
                           {isLoading ? (
                             <>
@@ -1196,23 +1265,23 @@ export function UnifiedEventModal() {
             {/* Preview Tab */}
             <TabsContent
               value="preview"
-              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'preview' ? 'flex' : 'none' }}
             >
               <div className="flex flex-1 flex-col overflow-hidden">
                 <ScrollArea className="h-[calc(90vh-250px)] flex-1">
                   <div className="space-y-6 p-6">
                     {/* AI Generated Event Preview */}
-                    <div className="rounded-lg border bg-muted/10 p-4">
+                    <div className="bg-muted/10 rounded-lg border p-4">
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="flex items-center gap-2 text-base font-medium">
-                          <Sparkles className="h-4 w-4 text-primary" />
+                          <Sparkles className="text-primary h-4 w-4" />
                           AI Generated Event
                           {generatedEvents.length > 1 ? 's' : ''}
                         </h3>
                         <div className="flex items-center gap-2">
                           {generatedEvents.length > 1 && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <div className="text-muted-foreground flex items-center gap-1 text-xs">
                               <span>{currentEventIndex + 1}</span>
                               <span>/</span>
                               <span>{generatedEvents.length}</span>
@@ -1231,7 +1300,7 @@ export function UnifiedEventModal() {
                               <h4 className="text-lg font-medium">
                                 {generatedEvent.title}
                               </h4>
-                              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                              <div className="text-muted-foreground flex flex-wrap gap-2 text-sm">
                                 <div className="flex items-center gap-1">
                                   <CalendarIcon className="h-3.5 w-3.5" />
                                   <span>
@@ -1269,7 +1338,7 @@ export function UnifiedEventModal() {
                                 <h5 className="text-sm font-medium">
                                   Description
                                 </h5>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                   {generatedEvent.description}
                                 </p>
                               </div>
@@ -1306,8 +1375,8 @@ export function UnifiedEventModal() {
 
                             {/* Event protection status */}
                             <div className="flex items-center gap-2">
-                              <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
+                              <Unlock className="text-muted-foreground h-3.5 w-3.5" />
+                              <span className="text-muted-foreground text-xs">
                                 Event will be created unlocked
                               </span>
                             </div>
@@ -1344,9 +1413,9 @@ export function UnifiedEventModal() {
 
                     {/* AI Insights and Suggestions */}
                     {aiSuggestions.length > 0 && (
-                      <div className="rounded-lg border bg-muted/10 p-4">
+                      <div className="bg-muted/10 rounded-lg border p-4">
                         <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
-                          <Brain className="h-4 w-4 text-primary" />
+                          <Brain className="text-primary h-4 w-4" />
                           AI Insights & Suggestions
                         </h3>
                         <ul className="space-y-2">
@@ -1355,7 +1424,7 @@ export function UnifiedEventModal() {
                               key={index}
                               className="flex items-start gap-2 text-sm"
                             >
-                              <div className="mt-0.5 text-primary">•</div>
+                              <div className="text-primary mt-0.5">•</div>
                               <span>{suggestion}</span>
                             </li>
                           ))}
