@@ -3,7 +3,6 @@
 import GradientHeadline from '../../../../../gradient-headline';
 import {
   Contributor,
-  OrganizerTranslation,
   type Sponsor,
   type TeamMember,
   contributors,
@@ -247,6 +246,11 @@ export function AboutUsPage() {
 
   // Render sponsor card with enhanced design
   const renderSponsor = (sponsor: Sponsor) => {
+    const name = t(`sponsors.${sponsor.tKey}.name` as unknown as any);
+    const description = t(
+      `sponsors.${sponsor.tKey}.description` as unknown as any
+    );
+
     const tierColors = {
       host: 'from-[#E5E4E2] to-[#B9B8B5]',
       platinum: 'from-[#E5E4E2] to-[#B9B8B5]',
@@ -303,7 +307,7 @@ export function AboutUsPage() {
                 >
                   <Image
                     src={sponsor.logo}
-                    alt={sponsor.name}
+                    alt={name}
                     fill
                     className="object-contain"
                   />
@@ -334,10 +338,10 @@ export function AboutUsPage() {
                 className="group-hover:text-primary mb-2 text-balance text-xl font-bold transition-colors duration-300"
                 whileHover={{ scale: 1.02 }}
               >
-                {sponsor.name}
+                {name}
               </motion.h3>
               <p className="text-muted-foreground mb-4 text-balance text-sm">
-                {sponsor.description}
+                {description}
               </p>
               {/* <Link
                 href={sponsor.website}
@@ -362,20 +366,29 @@ export function AboutUsPage() {
   };
 
   // Render contributor card with enhanced design
-  const renderContributor = (contributor: Contributor) => (
-    <motion.div variants={itemVariants}>
-      <Card className="border-foreground/10 bg-foreground/5 hover:border-primary/30 hover:bg-foreground/10 hover:shadow-primary/5 h-full overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="p-4">
-          <div className="mb-2 flex flex-col items-center justify-center gap-3 text-center">
-            <h3 className="text-balance font-semibold">{contributor.name}</h3>
-            <p className="text-muted-foreground text-balance text-xs">
-              {contributor.contribution}
-            </p>
+  const renderContributor = (contributor: Contributor) => {
+    const name = t(
+      `special-thanks.contributors.${contributor.tKey}.name` as unknown as any
+    );
+    const contribution = t(
+      `special-thanks.contributors.${contributor.tKey}.contribution` as unknown as any
+    );
+
+    return (
+      <motion.div variants={itemVariants}>
+        <Card className="border-foreground/10 bg-foreground/5 hover:border-primary/30 hover:bg-foreground/10 hover:shadow-primary/5 h-full overflow-hidden transition-all duration-300 hover:shadow-md">
+          <div className="p-4">
+            <div className="mb-2 flex flex-col items-center justify-center gap-3 text-center">
+              <h3 className="text-balance font-semibold">{name}</h3>
+              <p className="text-muted-foreground text-balance text-xs">
+                {contribution}
+              </p>
+            </div>
           </div>
-        </div>
-      </Card>
-    </motion.div>
-  );
+        </Card>
+      </motion.div>
+    );
+  };
 
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center">
@@ -1249,11 +1262,11 @@ export function AboutUsPage() {
               </TabsTrigger>
               <TabsTrigger value="sponsors" className="gap-2">
                 <Building className="h-4 w-4" />
-                <span>Sponsors</span>
+                <span>{t('sponsors.badge')}</span>
               </TabsTrigger>
               <TabsTrigger value="thanks" className="gap-2">
                 <Heart className="h-4 w-4" />
-                <span>Special Thanks</span>
+                <span>{t('special-thanks.title')}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1295,8 +1308,7 @@ export function AboutUsPage() {
                   </span>
                 </h2>
                 <p className="text-muted-foreground">
-                  The development team who built the NEO League platform,
-                  powered by Tuturuuu technology.
+                  {t('platform-builder.subtitle')}
                 </p>
               </div>
 
@@ -1320,11 +1332,11 @@ export function AboutUsPage() {
                 <h2 className="mb-2 text-2xl font-bold">
                   <span className="flex items-center gap-2">
                     <Building className="text-primary h-5 w-5" />
-                    Our Sponsors
+                    {t('sponsors.title')}
                   </span>
                 </h2>
                 <p className="text-muted-foreground">
-                  Organizations supporting the NEO League initiative.
+                  {t('sponsors.subtitle')}
                 </p>
               </div>
 
@@ -1343,11 +1355,11 @@ export function AboutUsPage() {
 
               <div className="mt-12 text-center">
                 <h3 className="mb-4 text-xl font-semibold">
-                  Interested in sponsoring NEO League?
+                  {t('sponsors.call-to-action.text')}
                 </h3>
                 <Link href="mailto:contact@tuturuuu.com">
                   <Button className="group">
-                    Contact Us
+                    {t('sponsors.call-to-action.button')}
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
@@ -1360,12 +1372,11 @@ export function AboutUsPage() {
                 <h2 className="mb-2 text-2xl font-bold">
                   <span className="flex items-center gap-2">
                     <Heart className="text-primary h-5 w-5" />
-                    Special Thanks
+                    {t('special-thanks.title')}
                   </span>
                 </h2>
                 <p className="text-muted-foreground">
-                  Contributors and supporters who helped make NEO League
-                  possible.
+                  {t('special-thanks.subtitle')}
                 </p>
               </div>
 
@@ -1390,13 +1401,10 @@ export function AboutUsPage() {
                     </div>
                     <div>
                       <h3 className="mb-2 text-xl font-semibold">
-                        Community Contributions
+                        {t('special-thanks.community.title')}
                       </h3>
                       <p className="text-muted-foreground">
-                        We'd like to thank all the community members,
-                        volunteers, and participants who have contributed to
-                        making NEO League a success. Your passion and dedication
-                        drive us forward.
+                        {t('special-thanks.community.contribution')}
                       </p>
                     </div>
                   </div>
@@ -1477,7 +1485,7 @@ export function AboutUsPage() {
 
               <div>
                 <h2 className="mb-4 text-3xl font-bold">
-                  Powered by{' '}
+                  {t('tech-sponsor.title')}
                   <span className="from-primary bg-gradient-to-r to-purple-500 bg-clip-text text-transparent">
                     Tuturuuu
                   </span>
@@ -1489,10 +1497,7 @@ export function AboutUsPage() {
                   viewport={{ once: true }}
                   transition={{ delay: 0.2 }}
                 >
-                  The Tuturuuu team has been instrumental in making the Neo
-                  League competition a reality. Beyond just providing the Nova
-                  platform, Tuturuuu's contributions span across multiple
-                  aspects of the competition:
+                  {t('tech-sponsor.intro')}
                 </motion.p>
 
                 <motion.div
@@ -1510,10 +1515,11 @@ export function AboutUsPage() {
                       <Code className="text-primary h-4 w-4" />
                     </div>
                     <div>
-                      <h3 className="font-medium">Technical Infrastructure</h3>
+                      <h3 className="font-medium">
+                        {t('tech-sponsor.sections.infrastructure.title')}
+                      </h3>
                       <p className="text-muted-foreground text-sm">
-                        Developing and maintaining the entire competition
-                        platform, including the prompt evaluation system.
+                        {t('tech-sponsor.sections.infrastructure.description')}
                       </p>
                     </div>
                   </motion.div>
@@ -1526,10 +1532,11 @@ export function AboutUsPage() {
                       <Target className="text-primary h-4 w-4" />
                     </div>
                     <div>
-                      <h3 className="font-medium">Challenge Design</h3>
+                      <h3 className="font-medium">
+                        {t('tech-sponsor.sections.challenges.title')}
+                      </h3>
                       <p className="text-muted-foreground text-sm">
-                        Creating technically sound and educationally valuable
-                        prompt engineering challenges.
+                        {t('tech-sponsor.sections.challenges.description')}
                       </p>
                     </div>
                   </motion.div>
@@ -1542,10 +1549,11 @@ export function AboutUsPage() {
                       <GraduationCap className="text-primary h-4 w-4" />
                     </div>
                     <div>
-                      <h3 className="font-medium">Educational Resources</h3>
+                      <h3 className="font-medium">
+                        {t('tech-sponsor.sections.resources.title')}
+                      </h3>
                       <p className="text-muted-foreground text-sm">
-                        Developing learning materials and documentation to help
-                        participants master prompt engineering.
+                        {t('tech-sponsor.sections.resources.description')}
                       </p>
                     </div>
                   </motion.div>
@@ -1558,10 +1566,11 @@ export function AboutUsPage() {
                       <Users className="text-primary h-4 w-4" />
                     </div>
                     <div>
-                      <h3 className="font-medium">Mentorship & Support</h3>
+                      <h3 className="font-medium">
+                        {t('tech-sponsor.sections.mentorship.title')}
+                      </h3>
                       <p className="text-muted-foreground text-sm">
-                        Providing technical guidance and mentorship to
-                        participants throughout the competition.
+                        {t('tech-sponsor.sections.mentorship.description')}
                       </p>
                     </div>
                   </motion.div>
@@ -1574,15 +1583,9 @@ export function AboutUsPage() {
                   viewport={{ once: true }}
                   transition={{ delay: 0.6 }}
                 >
-                  <p className="italic">
-                    "This competition represents our commitment to advancing
-                    prompt engineering as a discipline and empowering the next
-                    generation of AI practitioners. We're proud to collaborate
-                    with RMIT SGS Neo Culture Tech to make this vision a
-                    reality."
-                  </p>
+                  <p className="italic">{t('tech-sponsor.quote.text')}</p>
                   <p className="text-foreground mt-2 font-medium">
-                    — The Tuturuuu Team
+                    — {t('tech-sponsor.quote.author')}
                   </p>
                 </motion.div>
               </div>

@@ -275,11 +275,11 @@
       },
       "platform-builder": {
         "title": "Đội Ngũ Phát Triển Nền Tảng",
-        "subtitle": "Đội ngũ kỹ thuật đứng sau nền tảng Neo League.",
+        "subtitle": "Đội ngũ phát triển đã xây dựng nền tảng NEO League, vận hành trên công nghệ của Tuturuuu.",
         "members": {
           "vo-hoang-phuc": {
             "name": "Võ Hoàng Phúc",
-            "role": "Lập Trình Viên Chính",
+            "role": "Trưởng Nhóm Phát Triển",
             "organization": "Tuturuuu",
             "bio": "Người duy trì chính của Tuturuuu và Nova, đam mê xây dựng các công cụ giúp mọi người sáng tạo và làm việc hiệu quả hơn."
           },
@@ -309,8 +309,91 @@
           }
         }
       },
-      "sponsors": {},
-      "special-thanks": {}
+      "sponsors": {
+        "badge": "Nhà Tài Trợ",
+        "title": "Nhà Tài Trợ",
+        "subtitle": "Các tổ chức đồng hành cùng NEO League.",
+        "call-to-action": {
+          "text": "Bạn muốn đồng hành tài trợ cho NEO League?",
+          "button": "Liên hệ ngay"
+        },
+        "tuturuuu": {
+          "name": "Tuturuuu",
+          "description": "Đơn vị tiên phong trong lĩnh vực AI và công cụ tăng năng suất thông minh, hỗ trợ kỹ thuật và nền tảng cho cuộc thi Neo League. Tuturuuu Nova đang cách mạng hóa cách con người tương tác với AI thông qua kỹ thuật tạo prompt tiên tiến."
+        },
+        "rmit-neo-culture-tech": {
+          "name": "RMIT SGS Neo Culture Tech",
+          "description": "Đơn vị tổ chức cuộc thi Neo League – Prompt the Future 2025, hướng tới thúc đẩy đổi mới và xuất sắc kỹ thuật trong lĩnh vực AI và kỹ thuật prompt cho sinh viên."
+        }
+      },
+      "special-thanks": {
+        "title": "Lời Cảm Ơn Đặc Biệt",
+        "subtitle": "Những cá nhân và tổ chức đã góp phần làm nên NEO League.",
+        "contributors": {
+          "rmit-university": {
+            "name": "RMIT University",
+            "contribution": "Hỗ trợ học thuật và cung cấp địa điểm tổ chức vòng chung kết"
+          },
+          "ai-research-community": {
+            "name": "Cộng Đồng Nghiên Cứu AI",
+            "contribution": "Thiết kế đề thi và cố vấn kỹ thuật"
+          },
+          "volunteer-mentors": {
+            "name": "Người Hướng Dẫn Tình Nguyện",
+            "contribution": "Cung cấp định hướng và hỗ trợ chuyên môn cho thí sinh tham gia Neo League"
+          },
+          "industry-experts": {
+            "name": "Chuyên Gia Từ Doanh Nghiệp",
+            "contribution": "Đảm nhiệm vai trò giám khảo và chia sẻ kinh nghiệm thực tiễn trong các buổi đào tạo chuyên sâu"
+          },
+          "student-ambassadors": {
+            "name": "Đại Sứ Sinh Viên",
+            "contribution": "Kết nối trong trường và hỗ trợ thí sinh"
+          },
+          "open-source-community": {
+            "name": "Cộng Đồng Mã Nguồn Mở",
+            "contribution": "Cung cấp thư viện và công cụ dùng trong nền tảng"
+          },
+          "beta-testers": {
+            "name": "Người Dùng Thử",
+            "contribution": "Kiểm thử và đóng góp phản hồi trước khi ra mắt"
+          },
+          "media-partners": {
+            "name": "Đối Tác Truyền Thông",
+            "contribution": "Đưa tin và quảng bá cho cuộc thi Neo League"
+          }
+        },
+        "community": {
+          "title": "Đóng Góp Từ Cộng Đồng",
+          "contribution": "Chúng tôi xin gửi lời cảm ơn đến tất cả thành viên cộng đồng, tình nguyện viên và người tham gia đã góp phần tạo nên thành công của NEO League. Chính sự đam mê và cống hiến của bạn đã thúc đẩy chúng tôi tiến bước."
+        }
+      },
+      "tech-sponsor": {
+        "title": "Vận Hành Bởi ",
+        "intro": "Nhóm Tuturuuu đã đóng vai trò quan trọng trong việc biến cuộc thi Neo League thành hiện thực. Không chỉ cung cấp nền tảng Nova, Tuturuuu còn đóng góp ở nhiều khía cạnh khác nhau của cuộc thi:",
+        "sections": {
+          "infrastructure": {
+            "title": "Hạ Tầng Kỹ Thuật",
+            "description": "Phát triển và duy trì toàn bộ nền tảng cuộc thi, bao gồm cả hệ thống đánh giá prompt."
+          },
+          "resources": {
+            "title": "Tài Nguyên Học Tập",
+            "description": "Xây dựng tài liệu và giáo trình giúp thí sinh làm chủ kỹ năng kỹ thuật tạo prompt."
+          },
+          "challenges": {
+            "title": "Thiết Kế Đề Bài",
+            "description": "Tạo ra các thử thách kỹ thuật chất lượng, mang giá trị giáo dục cao về prompt engineering."
+          },
+          "mentorship": {
+            "title": "Hướng Dẫn & Hỗ Trợ",
+            "description": "Cung cấp cố vấn kỹ thuật và hỗ trợ xuyên suốt cho thí sinh trong suốt cuộc thi."
+          }
+        },
+        "quote": {
+          "text": "Cuộc thi này thể hiện cam kết của chúng tôi trong việc phát triển prompt engineering như một lĩnh vực và trao quyền cho thế hệ AI kế tiếp. Chúng tôi tự hào được hợp tác cùng RMIT SGS Neo Culture Tech để biến tầm nhìn này thành hiện thực.",
+          "author": "Đội ngũ Tuturuuu"
+        }
+      }
     }
   },
   "common": {

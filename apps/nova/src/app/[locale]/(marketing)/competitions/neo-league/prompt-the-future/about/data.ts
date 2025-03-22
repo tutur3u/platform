@@ -1,9 +1,3 @@
-export type OrganizerTranslation = {
-  name: string;
-  role: string;
-  organization: string;
-  bio: string;
-};
 // export interface TeamMember {
 //   name: string;
 //   role: string;
@@ -30,17 +24,28 @@ export interface TeamMember {
   };
 }
 
+// export interface Sponsor {
+//   name: string;
+//   tier: 'host' | 'platinum' | 'gold' | 'silver' | 'bronze';
+//   logo: string;
+//   website: string;
+//   description: string;
+// }
+
 export interface Sponsor {
-  name: string;
+  tKey: string;
   tier: 'host' | 'platinum' | 'gold' | 'silver' | 'bronze';
   logo: string;
   website: string;
-  description: string;
 }
 
+// export interface Contributor {
+//   name: string;
+//   contribution: string;
+//   image?: string;
+// }
 export interface Contributor {
-  name: string;
-  contribution: string;
+  tKey: string;
   image?: string;
 }
 
@@ -245,55 +250,81 @@ export const platformBuilders: TeamMember[] = [
 
 export const sponsors: Sponsor[] = [
   {
-    name: 'Tuturuuu',
+    tKey: 'tuturuuu',
     tier: 'host',
     logo: '/media/logos/light.png',
     website: 'https://tuturuuu.com',
-    description:
-      'Pioneer in AI and smart productivity tools, providing technical and platform support for the Neo League competition. Tuturuuu Nova is revolutionizing how we interact with AI through advanced prompt engineering.',
   },
   {
-    name: 'RMIT SGS Neo Culture Tech',
+    tKey: 'rmit-neo-culture-tech',
     tier: 'host',
     logo: '/media/featured/competitions/neo-league/nct.jpg',
-    website: 'https://rmitnct.club',
-    description:
-      'Host of the Neo League - Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students.',
+    website: 'https://www.rmit.edu.vn',
   },
 ];
 
+// export const sponsors: Sponsor[] = [
+//   {
+//     name: 'Tuturuuu',
+//     tier: 'host',
+//     logo: '/media/logos/light.png',
+//     website: 'https://tuturuuu.com',
+//     description:
+//       'Pioneer in AI and smart productivity tools, providing technical and platform support for the Neo League competition. Tuturuuu Nova is revolutionizing how we interact with AI through advanced prompt engineering.',
+//   },
+//   {
+//     name: 'RMIT SGS Neo Culture Tech',
+//     tier: 'host',
+//     logo: '/media/featured/competitions/neo-league/nct.jpg',
+//     website: 'https://rmitnct.club',
+//     description:
+//       'Host of the Neo League - Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students.',
+//   },
+// ];
+
 export const contributors: Contributor[] = [
-  {
-    name: 'RMIT University',
-    contribution:
-      'Academic support and venue hosting for the final competition',
-  },
-  {
-    name: 'AI Research Community',
-    contribution: 'Challenge design and technical advisory',
-  },
-  {
-    name: 'Volunteer Mentors',
-    contribution: 'Providing guidance and support to Neo League participants',
-  },
-  {
-    name: 'Industry Experts',
-    contribution: 'Judging panel and masterclass sessions',
-  },
-  {
-    name: 'Student Ambassadors',
-    contribution: 'Campus outreach and participant support',
-  },
-  {
-    name: 'Open Source Community',
-    contribution: 'Various libraries and tools used in the platform',
-  },
-  {
-    name: 'Beta Testers',
-    contribution: 'Platform testing and feedback before launch',
-  },
-  {
-    name: 'Media Partners',
-    contribution: 'Coverage and promotion of the Neo League competition',
-  },
+  { tKey: 'rmit-university' },
+  { tKey: 'ai-research-community' },
+  { tKey: 'volunteer-mentors' },
+  { tKey: 'industry-experts' },
+  { tKey: 'student-ambassadors' },
+  { tKey: 'open-source-community' },
+  { tKey: 'beta-testers' },
+  { tKey: 'media-partners' },
 ];
+
+// export const contributors: Contributor[] = [
+//   {
+//     name: 'RMIT University',
+//     contribution:
+//       'Academic support and venue hosting for the final competition',
+//   },
+//   {
+//     name: 'AI Research Community',
+//     contribution: 'Challenge design and technical advisory',
+//   },
+//   {
+//     name: 'Volunteer Mentors',
+//     contribution: 'Providing guidance and support to Neo League participants',
+//   },
+//   {
+//     name: 'Industry Experts',
+//     contribution: 'Judging panel and masterclass sessions',
+//   },
+//   {
+//     name: 'Student Ambassadors',
+//     contribution: 'Campus outreach and participant support',
+//   },
+//   {
+//     name: 'Open Source Community',
+//     contribution: 'Various libraries and tools used in the platform',
+//   },
+//   {
+//     name: 'Beta Testers',
+//     contribution: 'Platform testing and feedback before launch',
+//   },
+//   {
+//     name: 'Media Partners',
+//     contribution: 'Coverage and promotion of the Neo League competition',
+//   },
+// ];

@@ -582,7 +582,7 @@
       },
       "platform-builder": {
         "title": "Platform Builders",
-        "subtitle": "The technical team behind the Neo League platform.",
+        "subtitle": "The development team who built the NEO League platform, powered by Tuturuuu technology.",
         "members": {
           "vo-hoang-phuc": {
             "name": "Võ Hoàng Phúc",
@@ -616,8 +616,91 @@
           }
         }
       },
-      "sponsors": {},
-      "special-thanks": {}
+      "sponsors": {
+        "badge": "sponsor",
+        "title": "Our Sponsors",
+        "subtitle": "Organizations supporting the NEO League initiative.",
+        "call-to-action": {
+          "text": "Interested in sponsoring NEO League?",
+          "button": "Contact Us"
+        },
+        "tuturuuu": {
+          "name": "Tuturuuu",
+          "description": "Pioneer in AI and smart productivity tools, providing technical and platform support for the Neo League competition. Tuturuuu Nova is revolutionizing how we interact with AI through advanced prompt engineering."
+        },
+        "rmit-neo-culture-tech": {
+          "name": "RMIT SGS Neo Culture Tech",
+          "description": "Host of the Neo League – Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
+        }
+      },
+      "special-thanks": {
+        "title": "Special Thanks",
+        "subtitle": "Contributors and supporters who helped make NEO League possible.",
+        "contributors": {
+          "rmit-university": {
+            "name": "RMIT University",
+            "contribution": "Academic support and venue hosting for the final competition"
+          },
+          "ai-research-community": {
+            "name": "AI Research Community",
+            "contribution": "Challenge design and technical advisory"
+          },
+          "volunteer-mentors": {
+            "name": "Volunteer Mentors",
+            "contribution": "Providing guidance and support to Neo League participants"
+          },
+          "industry-experts": {
+            "name": "Industry Experts",
+            "contribution": "Judging panel and masterclass sessions"
+          },
+          "student-ambassadors": {
+            "name": "Student Ambassadors",
+            "contribution": "Campus outreach and participant support"
+          },
+          "open-source-community": {
+            "name": "Open Source Community",
+            "contribution": "Various libraries and tools used in the platform"
+          },
+          "beta-testers": {
+            "name": "Beta Testers",
+            "contribution": "Platform testing and feedback before launch"
+          },
+          "media-partners": {
+            "name": "Media Partners",
+            "contribution": "Coverage and promotion of the Neo League competition"
+          }
+        },
+        "community": {
+          "title": "Community Contributions",
+          "contribution": "We'd like to thank all the community members, volunteers, and participants who have contributed to making NEO League a success. Your passion and dedication drive us forward."
+        }
+      },
+      "tech-sponsor": {
+        "title": "Power by ",
+        "intro": "The Tuturuuu team has been instrumental in making the Neo League competition a reality. Beyond just providing the Nova platform, Tuturuuu's contributions span across multiple aspects of the competition:",
+        "sections": {
+          "infrastructure": {
+            "title": "Technical Infrastructure",
+            "description": "Developing and maintaining the entire competition platform, including the prompt evaluation system."
+          },
+          "resources": {
+            "title": "Educational Resources",
+            "description": "Developing learning materials and documentation to help participants master prompt engineering."
+          },
+          "challenges": {
+            "title": "Challenge Design",
+            "description": "Creating technically sound and educationally valuable prompt engineering challenges."
+          },
+          "mentorship": {
+            "title": "Mentorship & Support",
+            "description": "Providing technical guidance and mentorship to participants throughout the competition."
+          }
+        },
+        "quote": {
+          "text": "This competition represents our commitment to advancing prompt engineering as a discipline and empowering the next generation of AI practitioners. We're proud to collaborate with RMIT SGS Neo Culture Tech to make this vision a reality.",
+          "author": "The Tuturuuu Team"
+        }
+      }
     }
   },
   "home": {
