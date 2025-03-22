@@ -2487,13 +2487,5 @@
     "consistency": "Tính nhất quán",
     "overall": "Tổng thể"
   },
-  "aurora_select_model": "Chọn mô hình",
-  "nova": {
-    "cards": {
-      "innovate": {
-        "title": ""
-      }
-    },
-    "title": ""
-  }
+  "aurora_select_model": "Chọn mô hình"
 }
