@@ -440,6 +440,38 @@ export type Database = {
           },
         ];
       };
+      calendar_auth_tokens: {
+        Row: {
+          access_token: string;
+          created_at: string;
+          id: string;
+          refresh_token: string;
+          user_id: string;
+        };
+        Insert: {
+          access_token: string;
+          created_at?: string;
+          id?: string;
+          refresh_token: string;
+          user_id: string;
+        };
+        Update: {
+          access_token?: string;
+          created_at?: string;
+          id?: string;
+          refresh_token?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_auth_tokens_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_event_colors: {
         Row: {
           value: string;
