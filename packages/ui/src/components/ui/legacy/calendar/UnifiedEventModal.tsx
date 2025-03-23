@@ -134,23 +134,6 @@ export function UnifiedEventModal() {
     }
   };
 
-  const handleSyncWithGoogle = async () => {
-    if (!activeEvent) return;
-    try {
-      await syncWithGoogleCalendar(activeEvent);
-      toast({
-        title: 'Success',
-        description: 'Event synced with Google Calendar',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to sync with Google Calendar',
-        variant: 'destructive',
-      });
-    }
-  };
-
   // State for manual event creation/editing
   const [event, setEvent] = useState<Partial<CalendarEvent>>({
     title: '',
@@ -460,7 +443,7 @@ export function UnifiedEventModal() {
 
         const savedEvent = await addEvent(calendarEvent);
         savedEvents.push(savedEvent);
-        await syncWithGoogleCalendar(savedEvent); // Đồng bộ từng sự kiện
+        await syncWithGoogleCalendar(savedEvent);
       }
 
       toast({
@@ -1053,13 +1036,6 @@ export function UnifiedEventModal() {
                         ) : (
                           'Link Google Calendar'
                         )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleSyncWithGoogle}
-                        disabled={!activeEvent || isSaving}
-                      >
-                        Sync with Google
                       </Button>
                       <Button
                         variant="outline"

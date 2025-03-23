@@ -247,30 +247,35 @@ export const CalendarProvider = ({
     refresh_token?: string;
   } | null>(null);
 
+  // Fetch tokens from the new API endpoint when the component mounts
   useEffect(() => {
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
+    const fetchTokens = async () => {
+      try {
+        const response = await fetch('/api/v1/calendar/auth/tokens', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-    if (accessToken) {
-      const tokens = {
-        access_token: accessToken,
-        refresh_token: refreshToken || undefined,
-      };
-      console.log('Tokens from URL:', tokens);
-      setGoogleTokens(tokens);
-      localStorage.setItem('googleTokens', JSON.stringify(tokens));
-      // Remove params from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else {
-      const storedTokens = localStorage.getItem('googleTokens');
-      if (storedTokens) {
-        console.log('Tokens from localStorage:', JSON.parse(storedTokens));
-        setGoogleTokens(JSON.parse(storedTokens));
-      } else {
-        console.log('No tokens found in URL or localStorage');
+        if (!response.ok) {
+          throw new Error('Failed to fetch tokens');
+        }
+
+        const { tokens } = await response.json();
+        if (tokens) {
+          setGoogleTokens(tokens);
+        } else {
+          setGoogleTokens(null);
+        }
+      } catch (error) {
+        console.error('Error fetching Google tokens:', error);
+        setGoogleTokens(null);
       }
-    }
-  }, [searchParams]);
+    };
+
+    fetchTokens();
+  }, []);
 
   // Event getters
   const getEvent = useCallback(
@@ -665,16 +670,42 @@ export const CalendarProvider = ({
   // Google Calendar sync moved to API Route
   const syncWithGoogleCalendar = useCallback(
     async (event: CalendarEvent) => {
-      if (!googleTokens?.access_token) {
+      // Fetch tokens if not already in state
+      let tokensToUse = googleTokens;
+      if (!tokensToUse) {
+        try {
+          const response = await fetch('/api/v1/calendar/auth/tokens', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch tokens');
+          }
+
+          const { tokens } = await response.json();
+          if (tokens) {
+            setGoogleTokens(tokens);
+            tokensToUse = tokens;
+          }
+        } catch (error) {
+          console.error('Error fetching Google tokens for sync:', error);
+          throw new Error('Failed to fetch Google tokens');
+        }
+      }
+
+      if (!tokensToUse?.access_token) {
         console.error('Google Calendar not authenticated');
-        return;
+        throw new Error('Google Calendar not authenticated');
       }
 
       try {
         const response = await fetch('/api/v1/calendar/auth/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ event, googleTokens }),
+          body: JSON.stringify({ event, googleTokens: tokensToUse }),
         });
 
         if (!response.ok) {
@@ -687,7 +718,6 @@ export const CalendarProvider = ({
         throw error;
       }
     },
-
     [googleTokens]
   );
 
