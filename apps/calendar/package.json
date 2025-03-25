@@ -24,7 +24,7 @@
     "dayjs": "^1.11.13",
     "lucide-react": "^0.483.0",
     "negotiator": "^1.0.0",
-    "next": "^15.2.3",
+    "next": "^15.2.4",
     "next-intl": "^3.26.5",
     "next-themes": "^0.4.6",
     "react": "^19.0.0",
@@ -35,11 +35,11 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.13.12",
+    "@types/node": "^22.13.13",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
     "eslint": "^9.23.0",
-    "eslint-config-next": "^15.2.3",
+    "eslint-config-next": "^15.2.4",
     "postcss": "^8.5.3",
     "typescript": "^5.8.2"
   }
