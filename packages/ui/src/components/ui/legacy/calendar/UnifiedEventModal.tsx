@@ -64,6 +64,7 @@ import {
   FileText,
   Image as ImageIcon,
   Info,
+  Link,
   Loader2,
   Lock,
   MapPin,
@@ -93,7 +94,13 @@ const AIFormSchema = z.object({
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
 });
 
-export function UnifiedEventModal() {
+export function UnifiedEventModal({
+  experimentalGoogleCalendarLinked = false,
+  enableExperimentalGoogleCalendar = false,
+}: {
+  experimentalGoogleCalendarLinked?: boolean;
+  enableExperimentalGoogleCalendar?: boolean;
+}) {
   const { toast } = useToast();
 
   const {
@@ -1001,7 +1008,7 @@ export function UnifiedEventModal() {
                 </ScrollArea>
 
                 {/* Action Buttons */}
-                <div className="mt-auto border-t p-6">
+                <div className="mt-auto border-t p-2">
                   <div className="flex justify-between">
                     {isEditing ? (
                       <Button
@@ -1023,20 +1030,33 @@ export function UnifiedEventModal() {
                         )}
                       </Button>
                     ) : (
-                      <div></div>
+                      <div />
                     )}
+
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={handleGoogleAuth}
-                        disabled={isGoogleAuthenticating}
-                      >
-                        {isGoogleAuthenticating ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          'Link Google Calendar'
-                        )}
-                      </Button>
+                      {isEditing ||
+                        (enableExperimentalGoogleCalendar && (
+                          <Button
+                            variant="outline"
+                            onClick={handleGoogleAuth}
+                            disabled={
+                              experimentalGoogleCalendarLinked ||
+                              isGoogleAuthenticating
+                            }
+                          >
+                            {experimentalGoogleCalendarLinked ? (
+                              <>
+                                <Link className="h-4 w-4" />
+                                <span>Google Calendar Linked</span>
+                              </>
+                            ) : isGoogleAuthenticating ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              'Link Google Calendar'
+                            )}
+                          </Button>
+                        ))}
+
                       <Button
                         variant="outline"
                         onClick={closeModal}
