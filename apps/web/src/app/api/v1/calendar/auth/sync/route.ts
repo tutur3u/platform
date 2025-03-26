@@ -1,3 +1,4 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
@@ -11,6 +12,7 @@ const getGoogleAuthClient = (tokens: {
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     redirectUri: process.env.GOOGLE_REDIRECT_URI,
   });
+
   oauth2Client.setCredentials(tokens);
   return oauth2Client;
 };
@@ -33,7 +35,33 @@ const getGoogleColorId = (color?: string): string => {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { googleTokens, event } = body;
+  const { event } = body;
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { error: 'User not authenticated' },
+      { status: 401 }
+    );
+  }
+
+  const { data: googleTokens, error: googleTokensError } = await supabase
+    .from('calendar_auth_tokens')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  if (googleTokensError) {
+    return NextResponse.json(
+      { error: 'Failed to fetch Google tokens' },
+      { status: 500 }
+    );
+  }
 
   if (!googleTokens?.access_token) {
     return NextResponse.json(

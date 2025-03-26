@@ -57,7 +57,6 @@ const CalendarContext = createContext<{
   getModalStatus: (id: string) => boolean;
   getActiveEvent: () => CalendarEvent | undefined;
   isModalActive: () => boolean;
-  googleTokens: { access_token: string; refresh_token?: string } | null;
   syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
@@ -81,7 +80,6 @@ const CalendarContext = createContext<{
   getModalStatus: () => false,
   getActiveEvent: () => undefined,
   isModalActive: () => false,
-  googleTokens: { access_token: '' },
   syncWithGoogleCalendar: () => Promise.resolve(),
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
@@ -102,12 +100,14 @@ export const CalendarProvider = ({
   useQueryClient,
   children,
   initialSettings,
+  enableExperimentalGoogleCalendar = false,
 }: {
   ws?: Workspace;
   useQuery: any;
   useQueryClient: any;
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
+  enableExperimentalGoogleCalendar?: boolean;
 }) => {
   const queryClient = useQueryClient();
 
@@ -238,42 +238,6 @@ export const CalendarProvider = ({
   const [isModalHidden, setModalHidden] = useState(false);
   const [pendingNewEvent, setPendingNewEvent] =
     useState<Partial<CalendarEvent> | null>(null);
-
-  // Google Calendar token storage (for simplicity, using local state; in production, use a secure storage)
-  const [googleTokens, setGoogleTokens] = useState<{
-    access_token: string;
-    refresh_token?: string;
-  } | null>(null);
-
-  // Fetch tokens from the new API endpoint when the component mounts
-  useEffect(() => {
-    const fetchTokens = async () => {
-      try {
-        const response = await fetch('/api/v1/calendar/auth/tokens', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch tokens');
-        }
-
-        const { tokens } = await response.json();
-        if (tokens) {
-          setGoogleTokens(tokens);
-        } else {
-          setGoogleTokens(null);
-        }
-      } catch (error) {
-        console.error('Error fetching Google tokens:', error);
-        setGoogleTokens(null);
-      }
-    };
-
-    fetchTokens();
-  }, []);
 
   // Event getters
   const getEvent = useCallback(
@@ -666,58 +630,28 @@ export const CalendarProvider = ({
   );
 
   // Google Calendar sync moved to API Route
-  const syncWithGoogleCalendar = useCallback(
-    async (event: CalendarEvent) => {
-      // Fetch tokens if not already in state
-      let tokensToUse = googleTokens;
-      if (!tokensToUse) {
-        try {
-          const response = await fetch('/api/v1/calendar/auth/tokens', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
+  const syncWithGoogleCalendar = useCallback(async (event: CalendarEvent) => {
+    if (!enableExperimentalGoogleCalendar) {
+      return;
+    }
 
-          if (!response.ok) {
-            throw new Error('Failed to fetch tokens');
-          }
+    try {
+      const response = await fetch('/api/v1/calendar/auth/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event }),
+      });
 
-          const { tokens } = await response.json();
-          if (tokens) {
-            setGoogleTokens(tokens);
-            tokensToUse = tokens;
-          }
-        } catch (error) {
-          console.error('Error fetching Google tokens for sync:', error);
-          throw new Error('Failed to fetch Google tokens');
-        }
+      if (!response.ok) {
+        throw new Error('Failed to sync with Google Calendar');
       }
 
-      if (!tokensToUse?.access_token) {
-        console.error('Google Calendar not authenticated');
-        throw new Error('Google Calendar not authenticated');
-      }
-
-      try {
-        const response = await fetch('/api/v1/calendar/auth/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ event, googleTokens: tokensToUse }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to sync with Google Calendar');
-        }
-
-        console.log('Event synced with Google Calendar');
-      } catch (error) {
-        console.error('Failed to sync with Google Calendar:', error);
-        throw error;
-      }
-    },
-    [googleTokens]
-  );
+      console.log('Event synced with Google Calendar');
+    } catch (error) {
+      console.error('Failed to sync with Google Calendar:', error);
+      throw error;
+    }
+  }, []);
 
   // Modal management
   const openModal = useCallback((eventId?: string) => {
@@ -812,9 +746,9 @@ export const CalendarProvider = ({
     hideModal,
     showModal,
 
-    // Google Calendar sync
-    googleTokens,
+    // Google Calendar API
     syncWithGoogleCalendar,
+
     // Settings API
     settings,
     updateSettings,
