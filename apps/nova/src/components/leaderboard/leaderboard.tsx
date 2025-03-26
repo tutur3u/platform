@@ -28,6 +28,7 @@ import {
   Star,
   TrendingUp,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 
 export type LeaderboardEntry = {
@@ -309,7 +310,10 @@ export function Leaderboard({
                           )}
 
                         {/* Hexagonal avatar for all players */}
-                        <div className="relative h-10 w-10 overflow-hidden transition-transform duration-300 group-hover:scale-110">
+                        <Link
+                          href={`/profile/${entry.id}`}
+                          className="relative block h-10 w-10 overflow-hidden transition-transform duration-300 group-hover:scale-110"
+                        >
                           <Avatar className="h-10 w-10 ring-offset-white dark:ring-offset-slate-900">
                             <AvatarImage
                               src={entry.avatar}
@@ -320,11 +324,12 @@ export function Leaderboard({
                               {entry.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                        </div>
+                        </Link>
                       </div>
 
                       <div>
-                        <div
+                        <Link
+                          href={`/profile/${entry.id}`}
                           className={cn(
                             'font-medium text-gray-800 transition-all duration-300 group-hover:translate-x-1 dark:text-slate-200',
                             currentUserId === entry.id &&
@@ -339,7 +344,7 @@ export function Leaderboard({
                           )}
                         >
                           {entry.name}
-                        </div>
+                        </Link>
                         {currentUserId === entry.id && (
                           <Badge
                             variant="outline"
