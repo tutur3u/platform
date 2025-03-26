@@ -1,15 +1,14 @@
-import {
-  CalendarSettings,
-  defaultCalendarSettings,
-} from '../components/ui/legacy/calendar/settings/CalendarSettingsContext';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import {
+  CalendarSettings,
+  defaultCalendarSettings,
+} from '@tuturuuu/ui/legacy/calendar/settings/CalendarSettingsContext';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
-import { useSearchParams } from 'next/navigation';
 import {
   ReactNode,
   createContext,
@@ -111,7 +110,6 @@ export const CalendarProvider = ({
   initialSettings?: Partial<CalendarSettings>;
 }) => {
   const queryClient = useQueryClient();
-  const searchParams = useSearchParams();
 
   // Add debounce timer reference for update events
   const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);

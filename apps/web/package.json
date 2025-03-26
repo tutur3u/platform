@@ -37,7 +37,6 @@
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.0",
-    "@googleapis/calendar": "^9.8.0",
     "@google/generative-ai": "^0.24.0",
     "@hocuspocus/provider": "^2.15.2",
     "@mantine/hooks": "^7.17.2",
