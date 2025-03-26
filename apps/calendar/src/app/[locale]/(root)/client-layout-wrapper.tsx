@@ -1,24 +1,23 @@
 'use client';
 
-import { CalendarProvider } from '@/contexts/CalendarContext';
+import { DEV_MODE } from '@/constants/common';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 import React from 'react';
 
 interface ClientLayoutWrapperProps {
   children: React.ReactNode;
-  defaultLabels: {
-    day: string;
-    '4-days': string;
-    week: string;
-    month: string;
-  };
 }
 
 export default function ClientLayoutWrapper({
   children,
-  defaultLabels,
 }: ClientLayoutWrapperProps) {
   return (
-    <CalendarProvider defaultLabels={defaultLabels}>
+    <CalendarProvider
+      useQuery={useQuery}
+      useQueryClient={useQueryClient}
+      enableExperimentalGoogleCalendar={DEV_MODE}
+    >
       {children}
     </CalendarProvider>
   );

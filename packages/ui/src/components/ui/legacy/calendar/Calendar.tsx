@@ -108,6 +108,8 @@ export const Calendar = ({
   disabled,
   initialSettings,
   enableHeader = true,
+  experimentalGoogleCalendarLinked = false,
+  enableExperimentalGoogleCalendar = false,
   onSaveSettings,
   externalState,
 }: {
@@ -119,6 +121,8 @@ export const Calendar = ({
   disabled?: boolean;
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
+  experimentalGoogleCalendarLinked?: boolean;
+  enableExperimentalGoogleCalendar?: boolean;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
@@ -136,6 +140,7 @@ export const Calendar = ({
       useQuery={useQuery}
       useQueryClient={useQueryClient}
       initialSettings={initialSettings}
+      enableExperimentalGoogleCalendar={enableExperimentalGoogleCalendar}
     >
       <CalendarContent
         t={t}
@@ -144,6 +149,8 @@ export const Calendar = ({
         workspace={workspace}
         initialSettings={initialSettings}
         enableHeader={enableHeader}
+        experimentalGoogleCalendarLinked={experimentalGoogleCalendarLinked}
+        enableExperimentalGoogleCalendar={enableExperimentalGoogleCalendar}
         onSaveSettings={onSaveSettings}
         externalState={externalState}
       />
@@ -159,6 +166,8 @@ const CalendarContent = ({
   workspace,
   initialSettings,
   enableHeader = true,
+  experimentalGoogleCalendarLinked,
+  enableExperimentalGoogleCalendar,
   onSaveSettings,
   externalState,
 }: {
@@ -168,6 +177,8 @@ const CalendarContent = ({
   workspace?: Workspace;
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
+  experimentalGoogleCalendarLinked: boolean;
+  enableExperimentalGoogleCalendar: boolean;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
@@ -519,7 +530,10 @@ const CalendarContent = ({
 
       {disabled ? null : (
         <>
-          <UnifiedEventModal />
+          <UnifiedEventModal
+            experimentalGoogleCalendarLinked={experimentalGoogleCalendarLinked}
+            enableExperimentalGoogleCalendar={enableExperimentalGoogleCalendar}
+          />
           <CreateEventButton />
           <SettingsButton
             initialSettings={initialSettings}

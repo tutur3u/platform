@@ -64,6 +64,7 @@ import {
   FileText,
   Image as ImageIcon,
   Info,
+  Link,
   Loader2,
   Lock,
   MapPin,
@@ -93,7 +94,13 @@ const AIFormSchema = z.object({
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
 });
 
-export function UnifiedEventModal() {
+export function UnifiedEventModal({
+  experimentalGoogleCalendarLinked = false,
+  enableExperimentalGoogleCalendar = false,
+}: {
+  experimentalGoogleCalendarLinked?: boolean;
+  enableExperimentalGoogleCalendar?: boolean;
+}) {
   const { toast } = useToast();
 
   const {
@@ -104,8 +111,35 @@ export function UnifiedEventModal() {
     updateEvent,
     deleteEvent,
     getEvents,
+    syncWithGoogleCalendar,
     settings,
   } = useCalendar();
+
+  const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
+
+  const handleGoogleAuth = async () => {
+    setIsGoogleAuthenticating(true);
+    try {
+      const response = await fetch('/api/v1/calendar/auth', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const { authUrl } = await response.json();
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error initiating Google auth:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to initiate Google authentication',
+        variant: 'destructive',
+      });
+      setIsGoogleAuthenticating(false);
+    }
+  };
 
   // State for manual event creation/editing
   const [event, setEvent] = useState<Partial<CalendarEvent>>({
@@ -295,7 +329,6 @@ export function UnifiedEventModal() {
   const handleManualSave = async () => {
     if (!event.start_at || !event.end_at) return;
 
-    // Validate dates
     const startDate = new Date(event.start_at);
     const endDate = new Date(event.end_at);
 
@@ -308,26 +341,32 @@ export function UnifiedEventModal() {
     setIsSaving(true);
 
     try {
-      // Check if this is a new event or an existing one
+      let savedEvent: CalendarEvent;
       if (activeEvent?.id === 'new') {
-        // Create a new event
-        await addEvent(event as Omit<CalendarEvent, 'id'>);
+        savedEvent = await addEvent(event as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
-        // For split events, use the original ID
         const originalId = activeEvent.id;
-
-        // Make sure originalId is not undefined
         if (originalId) {
-          // Update existing event
-          await updateEvent(originalId, event);
+          savedEvent = await updateEvent(originalId, event);
+        } else {
+          throw new Error('Invalid event ID');
         }
+      } else {
+        throw new Error('No event to save');
       }
+
+      await syncWithGoogleCalendar(savedEvent);
+      toast({
+        title: 'Success',
+        description: 'Event saved and synced with Google Calendar',
+      });
+
       closeModal();
     } catch (error) {
       console.error('Error saving event:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save event. Please try again.',
+        description: 'Failed to save or sync event. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -395,8 +434,8 @@ export function UnifiedEventModal() {
 
     setIsSaving(true);
     try {
-      // Save all events or just the current one based on user selection
       const eventsToSave = generatedEvents;
+      const savedEvents: CalendarEvent[] = [];
 
       for (const eventData of eventsToSave) {
         const calendarEvent: Omit<CalendarEvent, 'id'> = {
@@ -409,12 +448,14 @@ export function UnifiedEventModal() {
           locked: false, // Default to unlocked for AI-generated events
         };
 
-        await addEvent(calendarEvent);
+        const savedEvent = await addEvent(calendarEvent);
+        savedEvents.push(savedEvent);
+        await syncWithGoogleCalendar(savedEvent);
       }
 
       toast({
         title: 'Success',
-        description: `${eventsToSave.length} event${eventsToSave.length > 1 ? 's' : ''} added to your calendar`,
+        description: `${eventsToSave.length} event${eventsToSave.length > 1 ? 's' : ''} saved and synced with Google Calendar`,
       });
 
       closeModal();
@@ -422,7 +463,7 @@ export function UnifiedEventModal() {
       console.error('Error saving AI events to calendar:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save AI-generated events. Please try again.',
+        description: 'Failed to save or sync AI-generated events.',
         variant: 'destructive',
       });
     } finally {
@@ -967,7 +1008,7 @@ export function UnifiedEventModal() {
                 </ScrollArea>
 
                 {/* Action Buttons */}
-                <div className="mt-auto border-t p-6">
+                <div className="mt-auto border-t p-2">
                   <div className="flex justify-between">
                     {isEditing ? (
                       <Button
@@ -989,9 +1030,33 @@ export function UnifiedEventModal() {
                         )}
                       </Button>
                     ) : (
-                      <div></div>
+                      <div />
                     )}
+
                     <div className="flex gap-2">
+                      {isEditing ||
+                        (enableExperimentalGoogleCalendar && (
+                          <Button
+                            variant="outline"
+                            onClick={handleGoogleAuth}
+                            disabled={
+                              experimentalGoogleCalendarLinked ||
+                              isGoogleAuthenticating
+                            }
+                          >
+                            {experimentalGoogleCalendarLinked ? (
+                              <>
+                                <Link className="h-4 w-4" />
+                                <span>Google Calendar Linked</span>
+                              </>
+                            ) : isGoogleAuthenticating ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              'Link Google Calendar'
+                            )}
+                          </Button>
+                        ))}
+
                       <Button
                         variant="outline"
                         onClick={closeModal}

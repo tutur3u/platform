@@ -102,7 +102,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
-    "framer-motion": "^12.6.0",
+    "framer-motion": "^12.6.1",
     "highlight.js": "^11.11.1",
     "html2canvas": "^1.4.1",
     "jotai": "^2.12.2",

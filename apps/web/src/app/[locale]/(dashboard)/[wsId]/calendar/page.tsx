@@ -1,5 +1,6 @@
 import CalendarClientPage from './client';
 import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
 
 interface PageProps {
@@ -16,8 +17,22 @@ export default async function CalendarPage({ params }: PageProps) {
     wsId,
   });
 
+  const supabase = await createClient();
+
+  const { data: googleTokens } = await supabase
+    .from('calendar_auth_tokens')
+    .select('*')
+    .maybeSingle();
+
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
   if (!workspace) return null;
 
-  return <CalendarClientPage workspace={workspace} />;
+  const ggCalendarLinked = googleTokens !== null;
+
+  return (
+    <CalendarClientPage
+      workspace={workspace}
+      experimentalGoogleCalendarLinked={ggCalendarLinked}
+    />
+  );
 }

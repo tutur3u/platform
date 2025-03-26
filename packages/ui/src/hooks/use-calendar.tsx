@@ -1,11 +1,11 @@
-import {
-  CalendarSettings,
-  defaultCalendarSettings,
-} from '../components/ui/legacy/calendar/settings/CalendarSettingsContext';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import {
+  CalendarSettings,
+  defaultCalendarSettings,
+} from '@tuturuuu/ui/legacy/calendar/settings/CalendarSettingsContext';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -57,6 +57,7 @@ const CalendarContext = createContext<{
   getModalStatus: (id: string) => boolean;
   getActiveEvent: () => CalendarEvent | undefined;
   isModalActive: () => boolean;
+  syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
 }>({
@@ -79,6 +80,7 @@ const CalendarContext = createContext<{
   getModalStatus: () => false,
   getActiveEvent: () => undefined,
   isModalActive: () => false,
+  syncWithGoogleCalendar: () => Promise.resolve(),
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
 });
@@ -98,12 +100,14 @@ export const CalendarProvider = ({
   useQueryClient,
   children,
   initialSettings,
+  enableExperimentalGoogleCalendar = false,
 }: {
   ws?: Workspace;
   useQuery: any;
   useQueryClient: any;
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
+  enableExperimentalGoogleCalendar?: boolean;
 }) => {
   const queryClient = useQueryClient();
 
@@ -625,6 +629,30 @@ export const CalendarProvider = ({
     [ws, refresh, pendingNewEvent]
   );
 
+  // Google Calendar sync moved to API Route
+  const syncWithGoogleCalendar = useCallback(async (event: CalendarEvent) => {
+    if (!enableExperimentalGoogleCalendar) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/v1/calendar/auth/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to sync with Google Calendar');
+      }
+
+      console.log('Event synced with Google Calendar');
+    } catch (error) {
+      console.error('Failed to sync with Google Calendar:', error);
+      throw error;
+    }
+  }, []);
+
   // Modal management
   const openModal = useCallback((eventId?: string) => {
     if (eventId) {
@@ -717,6 +745,9 @@ export const CalendarProvider = ({
     isEditing,
     hideModal,
     showModal,
+
+    // Google Calendar API
+    syncWithGoogleCalendar,
 
     // Settings API
     settings,

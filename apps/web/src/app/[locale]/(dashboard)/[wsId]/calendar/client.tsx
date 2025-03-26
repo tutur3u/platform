@@ -1,13 +1,16 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Calendar } from '@tuturuuu/ui/legacy/calendar/Calendar';
 import { useLocale, useTranslations } from 'next-intl';
 
 export default function CalendarClientPage({
+  experimentalGoogleCalendarLinked = false,
   workspace,
 }: {
+  experimentalGoogleCalendarLinked?: boolean;
   workspace: Workspace;
 }) {
   const t = useTranslations('calendar');
@@ -20,6 +23,8 @@ export default function CalendarClientPage({
       workspace={workspace}
       useQuery={useQuery}
       useQueryClient={useQueryClient}
+      experimentalGoogleCalendarLinked={experimentalGoogleCalendarLinked}
+      enableExperimentalGoogleCalendar={DEV_MODE}
     />
   );
 }
