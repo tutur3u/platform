@@ -16,7 +16,13 @@
   },
   "tailwindCSS.experimental.configFile": "packages/ui/src/globals.css",
   "i18n-ally.enabledFrameworks": ["next-intl"],
-  "i18n-ally.localesPaths": ["apps/web/messages"],
+  "i18n-ally.localesPaths": [
+    "apps/calendar/messages",
+    "apps/web/messages",
+    "apps/rewise/messages",
+    "apps/nova/messages",
+    "apps/mira/messages"
+  ],
   "i18n-ally.keystyle": "nested",
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"

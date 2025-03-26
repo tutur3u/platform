@@ -19,11 +19,11 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "next": "^15.2.3",
+        "next": "^15.2.4",
         "react": "^19.0.0"
     },
     "devDependencies": {
-        "@types/node": "^22.13.11",
+        "@types/node": "^22.13.13",
         "@types/react": "^19.0.12",
         "@types/react-dom": "^19.0.4",
         "eslint": "^9.23.0",

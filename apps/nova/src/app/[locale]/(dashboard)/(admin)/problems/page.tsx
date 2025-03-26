@@ -1,5 +1,5 @@
+import ProblemCardSkeleton from './ProblemCardSkeleton';
 import CreateProblemDialog from './createProblemDialog';
-import LoadingProblems from './loading';
 import ProblemCard from './problemCard';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
@@ -23,11 +23,10 @@ export default async function ProblemsPage() {
           }
         />
       </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Suspense fallback={<LoadingProblems />}>
-          <ProblemsList />
-        </Suspense>
-      </div>
+
+      <Suspense fallback={<ProblemCardSkeleton />}>
+        <ProblemsList />
+      </Suspense>
     </div>
   );
 }
@@ -36,9 +35,11 @@ async function ProblemsList() {
   const problems = await fetchProblems();
 
   return problems.length > 0 ? (
-    problems.map((problem) => (
-      <ProblemCard key={problem.id} problem={problem} />
-    ))
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {problems.map((problem) => (
+        <ProblemCard key={problem.id} problem={problem} />
+      ))}
+    </div>
   ) : (
     <div className="col-span-full text-center">
       <p className="text-muted-foreground">No problems available.</p>
