@@ -113,7 +113,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
-    "framer-motion": "^12.6.0",
+    "framer-motion": "^12.6.1",
     "google-auth-library": "^9.15.1",
     "googleapis": "^146.0.0",
     "highlight.js": "^11.11.1",
