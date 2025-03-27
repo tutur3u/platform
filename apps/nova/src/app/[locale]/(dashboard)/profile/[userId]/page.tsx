@@ -10,8 +10,12 @@ export async function generateMetadata({
 }: {
   params: Promise<{ userId: string }>;
 }): Promise<Metadata> {
-  const { userId } = await params;
+  const { userId: rawUserId } = await params;
   const sbAdmin = await createAdminClient();
+
+  const userId = rawUserId
+    .replace(/-/g, '')
+    .replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
 
   // Fetch user data for metadata
   const { data: userData } = await sbAdmin
@@ -22,9 +26,26 @@ export async function generateMetadata({
 
   const userName = userData?.display_name || generateFunName(userId);
 
+  // Construct OG image URL using userId
+  const ogImageUrl = new URL(
+    `/api/og/${userId}`,
+    process.env.NEXT_PUBLIC_APP_URL || 'https://nova.tuturuuu.com'
+  ).toString();
+
   return {
     title: `${userName}'s Profile | Nova`,
     description: `View ${userName}'s prompt engineering achievements, challenges, and leaderboard ranking on Nova.`,
+    openGraph: {
+      title: `${userName}'s Profile | Nova`,
+      description: `View ${userName}'s prompt engineering achievements, challenges, and leaderboard ranking on Nova.`,
+      images: [{ url: ogImageUrl, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${userName}'s Profile | Nova`,
+      description: `View ${userName}'s prompt engineering achievements, challenges, and leaderboard ranking on Nova.`,
+      images: [ogImageUrl],
+    },
   };
 }
 
@@ -33,8 +54,12 @@ export default async function UserProfilePage({
 }: {
   params: Promise<{ userId: string }>;
 }) {
-  const { userId } = await params;
+  const { userId: rawUserId } = await params;
   const sbAdmin = await createAdminClient();
+
+  const userId = rawUserId
+    .replace(/-/g, '')
+    .replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
 
   // Fetch user data
   const { data: userData, error: userError } = await sbAdmin

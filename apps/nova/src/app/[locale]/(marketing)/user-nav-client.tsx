@@ -121,7 +121,7 @@ export default function UserNavClient({
               </DropdownMenuItem>
             </Link>
             {user && (
-              <Link href={`/profile/${user.id}`}>
+              <Link href={`/profile/${user.id.replace(/-/g, '')}`}>
                 <DropdownMenuItem className="flex cursor-pointer gap-4">
                   <User className="h-4 w-4" />
                   <span>My Profile</span>
