@@ -45,7 +45,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 interface RecentActivity {
@@ -67,7 +67,7 @@ interface ProfileData {
   id: string;
   name: string;
   avatar: string;
-  joinedDate: string;
+  joinedDate: string | null;
   totalScore: number;
   rank: number;
   challengeCount: number;
@@ -83,14 +83,12 @@ export default function UserProfileClient({
 }) {
   const supabase = createClient();
   const router = useRouter();
-  const pathname = usePathname();
   const achievementsTabRef = useRef<HTMLButtonElement>(null);
   const activityTabRef = useRef<HTMLButtonElement>(null);
 
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [showShareModal, setShowShareModal] = useState(false);
+  const [, setActiveTab] = useState('overview');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -120,15 +118,15 @@ export default function UserProfileClient({
   };
 
   const isCurrentUser = user?.id === profile.id;
-  const joinedDate = new Date(profile.joinedDate);
-  const formattedJoinedDate = joinedDate.toLocaleDateString(undefined, {
+  const joinedDate = profile.joinedDate ? new Date(profile.joinedDate) : null;
+  const formattedJoinedDate = joinedDate?.toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
   const daysActive = Math.ceil(
-    (new Date().getTime() - joinedDate.getTime()) / (1000 * 3600 * 24)
+    (new Date().getTime() - (joinedDate?.getTime() || 0)) / (1000 * 3600 * 24)
   );
 
   // Determine achievements based on profile data
@@ -586,7 +584,7 @@ export default function UserProfileClient({
                 <ThumbnailGrid
                   items={unlockedAchievements
                     .slice(0, 6)
-                    .map((achievement, index) => ({
+                    .map((achievement) => ({
                       id: achievement.id,
                       title: achievement.title,
                       description: achievement.description,

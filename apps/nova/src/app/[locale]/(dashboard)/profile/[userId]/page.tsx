@@ -8,9 +8,9 @@ import { notFound } from 'next/navigation';
 export async function generateMetadata({
   params,
 }: {
-  params: { userId: string };
+  params: Promise<{ userId: string }>;
 }): Promise<Metadata> {
-  const { userId } = params;
+  const { userId } = await params;
   const sbAdmin = await createAdminClient();
 
   // Fetch user data for metadata
@@ -31,9 +31,9 @@ export async function generateMetadata({
 export default async function UserProfilePage({
   params,
 }: {
-  params: { userId: string };
+  params: Promise<{ userId: string }>;
 }) {
-  const { userId } = params;
+  const { userId } = await params;
   const sbAdmin = await createAdminClient();
 
   // Fetch user data
@@ -95,18 +95,21 @@ export default async function UserProfilePage({
   }
 
   // Calculate total score and best challenge
-  const totalScore = sessionsData.reduce(
-    (sum, session) => sum + (session.total_score || 0),
-    0
-  );
+  const totalScore =
+    sessionsData?.reduce(
+      (sum, session) => sum + (session.total_score || 0),
+      0
+    ) || 0;
 
   // Group scores by challenge
   const challengeScores: Record<string, number> = {};
-  for (const session of sessionsData) {
-    if (session.challenge_id) {
-      challengeScores[session.challenge_id] =
-        (challengeScores[session.challenge_id] || 0) +
-        (session.total_score || 0);
+  if (sessionsData) {
+    for (const session of sessionsData) {
+      if (session.challenge_id) {
+        challengeScores[session.challenge_id] =
+          (challengeScores[session.challenge_id] || 0) +
+          (session.total_score || 0);
+      }
     }
   }
 
@@ -118,15 +121,14 @@ export default async function UserProfilePage({
     `);
 
   // Group by user and calculate total scores for ranking
-  const userScores = leaderboardData.reduce(
+  const userScores = leaderboardData?.reduce(
     (acc, curr) => {
       if (!acc[curr.user_id]) {
         acc[curr.user_id] = 0;
       }
 
-      if (curr.total_score) {
-        acc[curr.user_id] += curr.total_score;
-      }
+      acc[curr.user_id] = (acc[curr.user_id] || 0) + (curr.total_score || 0);
+
       return acc;
     },
     {} as Record<string, number>
@@ -150,35 +152,37 @@ export default async function UserProfilePage({
     rank: userRank || 999, // Fallback rank if not found
     challengeCount: Object.keys(challengeScores).length,
     challengeScores,
-    recentActivity: recentActivity.map((activity) => ({
-      id: activity.id,
-      problemId: activity.problem_id,
-      problemTitle: activity.nova_problems?.title || 'Unknown Problem',
-      score: activity.score || 0,
-      date: activity.created_at,
-    })),
-    challenges: sessionsData.reduce(
-      (acc, session) => {
-        if (
-          session.nova_challenges &&
-          !acc.some((c) => c.id === session.challenge_id)
-        ) {
-          acc.push({
-            id: session.challenge_id,
-            title: session.nova_challenges.title,
-            description: session.nova_challenges.description,
-            score: challengeScores[session.challenge_id] || 0,
-          });
-        }
-        return acc;
-      },
-      [] as Array<{
-        id: string;
-        title: string;
-        description: string;
-        score: number;
-      }>
-    ),
+    recentActivity:
+      recentActivity?.map((activity) => ({
+        id: activity.id,
+        problemId: activity.problem_id,
+        problemTitle: activity.nova_problems?.title || 'Unknown Problem',
+        score: activity.score || 0,
+        date: activity.created_at,
+      })) || [],
+    challenges:
+      sessionsData?.reduce(
+        (acc, session) => {
+          if (
+            session.nova_challenges &&
+            !acc.some((c) => c.id === session.challenge_id)
+          ) {
+            acc.push({
+              id: session.challenge_id,
+              title: session.nova_challenges.title,
+              description: session.nova_challenges.description,
+              score: challengeScores[session.challenge_id] || 0,
+            });
+          }
+          return acc;
+        },
+        [] as Array<{
+          id: string;
+          title: string;
+          description: string;
+          score: number;
+        }>
+      ) || [],
   };
 
   return <UserProfileClient profile={profileData} />;
