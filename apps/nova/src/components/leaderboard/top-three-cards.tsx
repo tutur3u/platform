@@ -7,6 +7,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ExternalLink, Medal, Share, Sparkles, Trophy } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 
 interface TopThreeCardsProps {
@@ -152,7 +153,7 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
           >
             <div
               className={cn(
-                'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-gray-200 p-6 pt-9 pt-32 transition-all dark:border-slate-700',
+                'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-gray-200 p-6 pt-32 transition-all dark:border-slate-700',
                 hoveredCard === index
                   ? 'shadow-lg dark:shadow-[0_0_30px_rgba(0,0,0,0.3)]'
                   : 'shadow-md dark:shadow-2xl'
@@ -490,9 +491,12 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
               </motion.div>
 
               {/* View profile button */}
-              <button className="mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+              <Link
+                href={`/profile/${entry.id.replace(/-/g, '')}`}
+                className="mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
                 View profile <ExternalLink className="ml-1 h-3 w-3" />
-              </button>
+              </Link>
             </div>
           </motion.div>
         );

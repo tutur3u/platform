@@ -102,7 +102,7 @@ export default function UserNavClient({
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col">
               <Link
-                href="/settings/account" // TODO: Add account settings page
+                href={user ? `/profile/${user.id}` : '/settings/account'}
                 className="line-clamp-1 w-fit text-sm font-medium break-all hover:underline"
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
@@ -120,6 +120,14 @@ export default function UserNavClient({
                 <span>{t('common.dashboard')}</span>
               </DropdownMenuItem>
             </Link>
+            {user && (
+              <Link href={`/profile/${user.id.replace(/-/g, '')}`}>
+                <DropdownMenuItem className="flex cursor-pointer gap-4">
+                  <User className="h-4 w-4" />
+                  <span>My Profile</span>
+                </DropdownMenuItem>
+              </Link>
+            )}
             <Link href="/challenges">
               <DropdownMenuItem className="flex cursor-pointer gap-4">
                 <Trophy className="h-4 w-4" />
