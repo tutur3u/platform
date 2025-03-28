@@ -25,7 +25,7 @@
     "sb:typegen": "cd ../db && pnpm supabase gen types typescript --local --schema public > src/types/supabase.ts && prettier --write src/types/supabase.ts"
   },
   "dependencies": {
-    "@deepgram/sdk": "^3.11.2",
+    "@deepgram/sdk": "^3.11.3",
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.1",
@@ -55,7 +55,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-email": "^3.0.7",
+    "react-email": "^4.0.1",
     "react-intersection-observer": "^9.16.0",
     "react-pdftotext": "^1.3.4",
     "react-textarea-autosize": "^8.5.8",
@@ -80,7 +80,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.16",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.13.13",
+    "@types/node": "^22.13.14",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
     "@types/uuid": "^10.0.0",
@@ -102,5 +102,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@10.6.5"
+  "packageManager": "pnpm@10.7.0"
 }

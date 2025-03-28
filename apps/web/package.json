@@ -29,8 +29,8 @@
     "ui:diff": "pnpm dlx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.775.0",
-    "@deepgram/sdk": "^3.11.2",
+    "@aws-sdk/client-ses": "^3.777.0",
+    "@deepgram/sdk": "^3.11.3",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -39,7 +39,7 @@
     "@formatjs/intl-localematcher": "^0.6.1",
     "@google/generative-ai": "^0.24.0",
     "@hocuspocus/provider": "^2.15.2",
-    "@mantine/hooks": "^7.17.2",
+    "@mantine/hooks": "^7.17.3",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
     "@radix-ui/react-popover": "^1.1.6",
     "@radix-ui/react-slot": "^1.1.2",
@@ -109,11 +109,11 @@
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",
     "cron-parser": "^4.9.0",
-    "cronstrue": "^2.56.0",
+    "cronstrue": "^2.57.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
-    "framer-motion": "^12.6.1",
+    "framer-motion": "^12.6.2",
     "google-auth-library": "^9.15.1",
     "googleapis": "^146.0.0",
     "highlight.js": "^11.11.1",
@@ -136,7 +136,7 @@
     "react-colorful": "^5.6.1",
     "react-confetti": "^6.4.0",
     "react-dom": "^19.0.0",
-    "react-email": "^3.0.7",
+    "react-email": "^4.0.1",
     "react-intersection-observer": "^9.16.0",
     "react-papaparse": "^4.4.0",
     "react-pdf": "^9.2.1",
@@ -175,7 +175,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.16",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.13.13",
+    "@types/node": "^22.13.14",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
     "@types/uuid": "^10.0.0",
@@ -198,5 +198,5 @@
     "apps/*",
     "packages/*"
   ],
-  "packageManager": "pnpm@10.6.5"
+  "packageManager": "pnpm@10.7.0"
 }
