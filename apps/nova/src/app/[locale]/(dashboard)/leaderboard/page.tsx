@@ -31,6 +31,18 @@ export default async function Page() {
     .select('id, title')
     .order('title', { ascending: true });
 
+  // Fetch whitelisted users that aren't already in leaderboard
+  const { data: whitelistedData, error: whitelistError } = await sbAdmin
+    .from('nova_roles')
+    .select(
+      `
+      email
+    `
+    )
+    .eq('enabled', true);
+
+  if (whitelistError) throw whitelistError;
+
   const groupedData = leaderboardData.reduce(
     (acc, curr) => {
       const existingUser = acc.find((item) => item.user_id === curr.user_id);
@@ -72,6 +84,47 @@ export default async function Page() {
       challenge_scores?: Record<string, number>;
     })[]
   );
+
+  // Get existing user IDs in the leaderboard
+  const existingUserIds = groupedData.map((entry) => entry.user_id);
+
+  // Add whitelisted users who haven't taken any challenges
+  if (whitelistedData && whitelistedData.length > 0) {
+    for (const whitelistedUser of whitelistedData) {
+      if (!whitelistedUser.email) continue;
+
+      // Get user data from the user_private_details table
+      const { data: userData } = await sbAdmin
+        .from('user_private_details')
+        .select('user_id')
+        .eq('email', whitelistedUser.email)
+        .maybeSingle();
+
+      if (userData?.user_id && !existingUserIds.includes(userData.user_id)) {
+        // Get user profile
+        const { data: userProfile } = await sbAdmin
+          .from('users')
+          .select('display_name, avatar_url')
+          .eq('id', userData.user_id)
+          .maybeSingle();
+
+        if (userProfile) {
+          groupedData.push({
+            id: crypto.randomUUID(),
+            user_id: userData.user_id,
+            challenge_id: '',
+            total_score: 0,
+            users: {
+              display_name: userProfile.display_name,
+              avatar_url: userProfile.avatar_url,
+            },
+            nova_challenges: { id: '', title: '' },
+            challenge_scores: {},
+          });
+        }
+      }
+    }
+  }
 
   groupedData.sort((a, b) => (b.total_score ?? 0) - (a.total_score ?? 0));
 
