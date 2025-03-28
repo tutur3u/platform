@@ -18,22 +18,22 @@ export async function GET(request: Request) {
   }
 
   try {
-    let query = supabase.from('nova_problem_testcases').select('*');
+    let query = supabase.from('nova_problem_test_cases').select('*');
     if (problemId) {
       query = query.eq('problem_id', problemId);
     }
 
-    const { data: testcases, error } = await query;
+    const { data: testCases, error } = await query;
 
     if (error) {
       console.error('Database Error: ', error);
       return NextResponse.json(
-        { message: 'Error fetching testcases' },
+        { message: 'Error fetching test cases' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(testcases, { status: 200 });
+    return NextResponse.json(testCases, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     };
 
     const { data: testcase, error: testcaseError } = await supabase
-      .from('nova_problem_testcases')
+      .from('nova_problem_test_cases')
       .insert(testcaseData)
       .select()
       .single();

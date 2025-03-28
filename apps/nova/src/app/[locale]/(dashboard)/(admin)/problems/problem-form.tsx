@@ -63,7 +63,7 @@ const formSchema = z
       message: 'Example output is required.',
     }),
     challengeId: z.string().nonempty('Challenge is required'),
-    testcases: z
+    testCases: z
       .array(testCaseSchema)
       .min(1, 'At least one test case is required'),
   })
@@ -96,15 +96,15 @@ export default function ProblemForm({
 
   // Add a new test case
   const addTestCase = () => {
-    const currentTestcases = form.getValues('testcases');
-    form.setValue('testcases', [...currentTestcases, { input: '' }]);
+    const currentTestcases = form.getValues('testCases');
+    form.setValue('testCases', [...currentTestcases, { input: '' }]);
   };
 
   // Remove a test case
   const removeTestCase = (index: number) => {
-    const currentTestcases = form.getValues('testcases');
+    const currentTestcases = form.getValues('testCases');
     const updatedTestcases = currentTestcases.filter((_, i) => i !== index);
-    form.setValue('testcases', updatedTestcases);
+    form.setValue('testCases', updatedTestcases);
   };
 
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function ProblemForm({
         <Tabs defaultValue="details">
           <TabsList>
             <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="testcases">Test Cases</TabsTrigger>
+            <TabsTrigger value="testCases">Test Cases</TabsTrigger>
           </TabsList>
           <ScrollArea className="h-[500px]">
             <TabsContent value="details">
@@ -283,7 +283,7 @@ export default function ProblemForm({
               </Card>
             </TabsContent>
 
-            <TabsContent value="testcases">
+            <TabsContent value="testCases">
               <Card>
                 <CardHeader>
                   <CardTitle>Test Cases</CardTitle>
@@ -292,8 +292,8 @@ export default function ProblemForm({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {form.watch('testcases').length > 0 ? (
-                    form.watch('testcases').map((testCase, index) => (
+                  {form.watch('testCases').length > 0 ? (
+                    form.watch('testCases').map((testCase, index) => (
                       <div
                         key={testCase.id || index}
                         className="space-y-4 rounded-md border p-4"
@@ -312,7 +312,7 @@ export default function ProblemForm({
 
                         <FormField
                           control={form.control}
-                          name={`testcases.${index}.input`}
+                          name={`testCases.${index}.input`}
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Input</FormLabel>
@@ -329,7 +329,7 @@ export default function ProblemForm({
                       </div>
                     ))
                   ) : (
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       No test cases added yet.
                     </p>
                   )}

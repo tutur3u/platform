@@ -8,12 +8,12 @@ export interface TestCase {
 }
 
 export interface TestCaseComponentProps {
-  testcases: TestCase[];
+  testCases: TestCase[];
   className?: string;
 }
 
 export default function TestCaseComponent({
-  testcases,
+  testCases,
   className,
 }: TestCaseComponentProps) {
   return (
@@ -21,16 +21,16 @@ export default function TestCaseComponent({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Code className="text-primary h-4 w-4" />
+            <Code className="h-4 w-4 text-primary" />
             Test Cases
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {testcases.length > 0 ? (
+          {testCases.length > 0 ? (
             <Tabs defaultValue="all">
               <TabsList className="mb-2">
                 <TabsTrigger value="all">All Test Cases</TabsTrigger>
-                {testcases.map((_, index) => (
+                {testCases.map((_, index) => (
                   <TabsTrigger key={index} value={`test-${index}`}>
                     Test {index + 1}
                   </TabsTrigger>
@@ -39,12 +39,12 @@ export default function TestCaseComponent({
 
               <TabsContent value="all">
                 <div className="space-y-4">
-                  {testcases.map((testcase, index) => (
+                  {testCases.map((testcase, index) => (
                     <div key={testcase.id} className="rounded-md border p-3">
                       <div className="mb-2 font-medium">
                         Test Case {index + 1}:
                       </div>
-                      <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                      <div className="rounded-md bg-muted p-3 font-mono text-sm">
                         {testcase.input}
                       </div>
                     </div>
@@ -52,9 +52,9 @@ export default function TestCaseComponent({
                 </div>
               </TabsContent>
 
-              {testcases.map((testcase, index) => (
+              {testCases.map((testcase, index) => (
                 <TabsContent key={index} value={`test-${index}`}>
-                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                  <div className="rounded-md bg-muted p-3 font-mono text-sm">
                     {testcase.input}
                   </div>
                 </TabsContent>

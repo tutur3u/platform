@@ -16,7 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type ExtendedNovaProblem = NovaProblem & {
-  testcases: NovaProblemTestCase[];
+  testCases: NovaProblemTestCase[];
 };
 
 interface Props {
@@ -51,7 +51,7 @@ export default function ProblemPage({ params }: Props) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground text-xl font-semibold">
+        <p className="text-xl font-semibold text-muted-foreground">
           Loading...
         </p>
       </div>
@@ -82,14 +82,14 @@ export default function ProblemPage({ params }: Props) {
 
       <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-6 md:grid-cols-2">
         <div className="flex h-full w-full flex-col gap-4 overflow-hidden">
-          <Card className="border-foreground/10 bg-foreground/5 h-full overflow-y-auto">
+          <Card className="h-full overflow-y-auto border-foreground/10 bg-foreground/5">
             <CardContent className="p-0">
               <Tabs defaultValue="problem" className="w-full">
-                <TabsList className="bg-foreground/10 w-full rounded-b-none rounded-t-lg">
+                <TabsList className="w-full rounded-t-lg rounded-b-none bg-foreground/10">
                   <TabsTrigger value="problem" className="flex-1">
                     Problem
                   </TabsTrigger>
-                  <TabsTrigger value="testcases" className="flex-1">
+                  <TabsTrigger value="test-cases" className="flex-1">
                     Test Cases
                   </TabsTrigger>
                 </TabsList>
@@ -105,8 +105,8 @@ export default function ProblemPage({ params }: Props) {
                     }}
                   />
                 </TabsContent>
-                <TabsContent value="testcases" className="m-0 p-4">
-                  <TestCaseComponent testcases={problem.testcases} />
+                <TabsContent value="test-cases" className="m-0 p-4">
+                  <TestCaseComponent testCases={problem.testCases} />
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -123,7 +123,7 @@ export default function ProblemPage({ params }: Props) {
                 maxPromptLength: problem.max_prompt_length,
                 exampleInput: problem.example_input,
                 exampleOutput: problem.example_output,
-                testcases: problem.testcases.map(
+                testCases: problem.testCases.map(
                   (testCase) => testCase.input || ''
                 ),
               }}
@@ -155,8 +155,8 @@ async function getProblem(
     }
 
     // Fetch test cases for the problem
-    const { data: testcases, error: testcaseError } = await supabase
-      .from('nova_problem_testcases')
+    const { data: testCases, error: testcaseError } = await supabase
+      .from('nova_problem_test_cases')
       .select('*')
       .eq('problem_id', problemId);
 
@@ -167,7 +167,7 @@ async function getProblem(
 
     return {
       ...problem,
-      testcases: testcases || [],
+      testCases: testCases || [],
     } as ExtendedNovaProblem;
   } catch (error) {
     console.error('Unexpected error fetching problem:', error);

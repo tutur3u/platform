@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 type ExtendedNovaProblem = NovaProblem & {
-  testcases: NovaProblemTestCase[];
+  test_cases: NovaProblemTestCase[];
 };
 
 interface EditProblemDialogProps {
@@ -41,7 +41,7 @@ export default function EditProblemDialog({
       exampleInput: problem.example_input,
       exampleOutput: problem.example_output,
       challengeId: problem.challenge_id,
-      testcases: problem.testcases.map((tc) => ({
+      testCases: problem.test_cases.map((tc) => ({
         id: tc.id,
         input: tc.input,
       })),
@@ -66,22 +66,22 @@ export default function EditProblemDialog({
         variant: 'default',
       });
 
-      // Find testcases to create, update, and delete
-      const newTestcaseIds = new Set(values.testcases.map((tc) => tc.id));
+      // Find testCases to create, update, and delete
+      const newTestCaseIds = new Set(values.testCases.map((tc) => tc.id));
       // Testcases to create (those without IDs)
-      const testcasesToCreate = values.testcases.filter((tc) => !tc.id);
+      const testCasesToCreate = values.testCases.filter((tc) => !tc.id);
       // Testcases to update (those with existing IDs)
-      const testcasesToUpdate = values.testcases.filter((tc) => tc.id);
+      const testCasesToUpdate = values.testCases.filter((tc) => tc.id);
       // Testcases to delete (IDs that exist in old but not in new)
-      const testcasesToDelete = problem.testcases.filter(
-        (tc) => !newTestcaseIds.has(tc.id)
+      const testCasesToDelete = problem.test_cases.filter(
+        (tc) => !newTestCaseIds.has(tc.id)
       );
 
       // Handle all testcase operations
       await Promise.allSettled([
-        // Create new testcases
-        ...testcasesToCreate.map((tc) =>
-          fetch(`/api/v1/testcases`, {
+        // Create new testCases
+        ...testCasesToCreate.map((tc) =>
+          fetch(`/api/v1/test-cases`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -89,9 +89,9 @@ export default function EditProblemDialog({
             body: JSON.stringify({ input: tc.input, problemId: problem.id }),
           })
         ),
-        // Update existing testcases
-        ...testcasesToUpdate.map((tc) =>
-          fetch(`/api/v1/testcases/${tc.id}`, {
+        // Update existing testCases
+        ...testCasesToUpdate.map((tc) =>
+          fetch(`/api/v1/test-cases/${tc.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -99,9 +99,9 @@ export default function EditProblemDialog({
             body: JSON.stringify({ input: tc.input }),
           })
         ),
-        // Delete removed testcases
-        ...testcasesToDelete.map((tc) =>
-          fetch(`/api/v1/testcases/${tc.id}`, {
+        // Delete removed testCases
+        ...testCasesToDelete.map((tc) =>
+          fetch(`/api/v1/test-cases/${tc.id}`, {
             method: 'DELETE',
           })
         ),

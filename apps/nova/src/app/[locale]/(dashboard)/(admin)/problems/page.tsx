@@ -51,7 +51,7 @@ async function fetchProblems() {
   const database = await createClient();
   const { data: problems, error } = await database
     .from('nova_problems')
-    .select('*, testcases:nova_problem_testcases(*)');
+    .select('*, test_cases:nova_problem_test_cases(*)');
 
   if (error) {
     console.error('Error fetching problems:', error.message);

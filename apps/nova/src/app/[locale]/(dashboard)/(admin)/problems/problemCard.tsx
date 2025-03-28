@@ -28,7 +28,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 type ExtendedNovaProblem = NovaProblem & {
-  testcases: NovaProblemTestCase[];
+  test_cases: NovaProblemTestCase[];
 };
 
 interface ProblemCardProps {

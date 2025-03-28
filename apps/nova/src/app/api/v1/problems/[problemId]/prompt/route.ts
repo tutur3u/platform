@@ -59,7 +59,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const { data: testCases, error: testCasesError } = await supabase
-    .from('nova_problem_testcases')
+    .from('nova_problem_test_cases')
     .select('*')
     .eq('problem_id', problemId);
 

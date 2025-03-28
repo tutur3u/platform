@@ -49,8 +49,8 @@ export default function CreateProblemDialog({
 
       if (problem?.id) {
         Promise.allSettled(
-          values.testcases.map((tc) =>
-            fetch('/api/v1/testcases', {
+          values.testCases.map((tc) =>
+            fetch('/api/v1/test-cases', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

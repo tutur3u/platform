@@ -30,7 +30,7 @@ import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   problems: (NovaProblem & {
-    testcases: NovaProblemTestCase[];
+    test_cases: NovaProblemTestCase[];
   })[];
 };
 
@@ -174,7 +174,7 @@ export default function Page({ params }: Props) {
                     <TabsTrigger value="problem" className="flex-1">
                       Problem
                     </TabsTrigger>
-                    <TabsTrigger value="testcases" className="flex-1">
+                    <TabsTrigger value="test-cases" className="flex-1">
                       Test Cases
                     </TabsTrigger>
                   </TabsList>
@@ -194,9 +194,11 @@ export default function Page({ params }: Props) {
                       }}
                     />
                   </TabsContent>
-                  <TabsContent value="testcases" className="m-0 p-4">
+                  <TabsContent value="test-cases" className="m-0 p-4">
                     <TestCaseComponent
-                      testcases={problems[currentProblemIndex]?.testcases || []}
+                      testCases={
+                        problems[currentProblemIndex]?.test_cases || []
+                      }
                     />
                   </TabsContent>
                 </Tabs>
@@ -217,8 +219,8 @@ export default function Page({ params }: Props) {
                     problems[currentProblemIndex]?.example_input || '',
                   exampleOutput:
                     problems[currentProblemIndex]?.example_output || '',
-                  testcases:
-                    problems[currentProblemIndex]?.testcases?.map(
+                  testCases:
+                    problems[currentProblemIndex]?.test_cases?.map(
                       (testCase) => testCase.input || ''
                     ) || [],
                 }}
@@ -278,20 +280,21 @@ async function getChallenge(challengeId: string) {
 
     const problemIds = problems.map((problem) => problem.id);
 
-    const { data: testcases, error: testcaseError } = await supabase
-      .from('nova_problem_testcases')
+    const { data: testCases, error: testCaseError } = await supabase
+      .from('nova_problem_test_cases')
       .select('*')
       .in('problem_id', problemIds);
-    if (testcaseError) {
-      console.error('Error fetching test cases:', testcaseError.message);
+
+    if (testCaseError) {
+      console.error('Error fetching test cases:', testCaseError.message);
     }
 
     // Map problems with test cases
     const formattedProblems = problems.map((problem) => {
-      // Get testcases for this specific problem
+      // Get test cases for this specific problem
       return {
         ...problem,
-        testcases: testcases?.filter((t) => t.problem_id === problem.id) || [],
+        test_cases: testCases?.filter((t) => t.problem_id === problem.id) || [],
       };
     });
 

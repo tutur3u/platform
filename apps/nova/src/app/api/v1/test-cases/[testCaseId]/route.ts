@@ -3,13 +3,13 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
-    testcaseId: string;
+    testCaseId: string;
   }>;
 }
 
 export async function GET(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { testcaseId } = await params;
+  const { testCaseId } = await params;
 
   const {
     data: { user },
@@ -22,9 +22,9 @@ export async function GET(_request: Request, { params }: Params) {
 
   try {
     const { data: testcase, error } = await supabase
-      .from('nova_problem_testcases')
+      .from('nova_problem_test_cases')
       .select('*')
-      .eq('id', testcaseId)
+      .eq('id', testCaseId)
       .single();
 
     if (error) {
@@ -53,7 +53,7 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { testcaseId } = await params;
+  const { testCaseId } = await params;
 
   const {
     data: { user },
@@ -89,9 +89,9 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.problemId) updateData.problem_id = body.problemId;
 
     const { data: updatedTestcase, error: updateError } = await supabase
-      .from('nova_problem_testcases')
+      .from('nova_problem_test_cases')
       .update(updateData)
-      .eq('id', testcaseId)
+      .eq('id', testCaseId)
       .select()
       .single();
 
@@ -121,7 +121,7 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   const supabase = await createClient();
-  const { testcaseId } = await params;
+  const { testCaseId } = await params;
 
   const {
     data: { user },
@@ -134,9 +134,9 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     const { error: deleteError } = await supabase
-      .from('nova_problem_testcases')
+      .from('nova_problem_test_cases')
       .delete()
-      .eq('id', testcaseId);
+      .eq('id', testCaseId);
 
     if (deleteError) {
       console.error('Database Error: ', deleteError);
