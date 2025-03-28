@@ -5,8 +5,8 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
+import { FilePlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { FilePlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -52,7 +52,7 @@ export default async function DocumentsPage({ params }: Props) {
 
       <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {documents && documents.length === 0 && (
-          <div className="col-span-full text-foreground/80">
+          <div className="text-foreground/80 col-span-full">
             {noDocumentsLabel}
           </div>
         )}

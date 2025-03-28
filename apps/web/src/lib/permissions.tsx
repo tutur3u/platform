@@ -30,7 +30,7 @@ import {
   UserCheck,
   UserCog,
   Users,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
 import { ReactNode } from 'react';
 
 export type RolePermission = {

@@ -5,6 +5,7 @@ import { useMail } from '../use-mail';
 import { MailDisplay } from './mail-display';
 import { MailList } from './mail-list';
 import { Nav } from './nav';
+import { Archive, Inbox, Search, Send } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
   ResizableHandle,
@@ -15,7 +16,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { Archive, Inbox, Search, Send } from 'lucide-react';
 import * as React from 'react';
 
 interface MailProps {
@@ -175,10 +175,10 @@ export function Mail({
               </TabsList>
             </div>
             <Separator />
-            <div className="bg-background/95 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 p-4 backdrop-blur">
               <form>
                 <div className="relative">
-                  <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
+                  <Search className="text-muted-foreground absolute left-2 top-2.5 h-4 w-4" />
                   <Input placeholder="Search" className="pl-8" />
                 </div>
               </form>

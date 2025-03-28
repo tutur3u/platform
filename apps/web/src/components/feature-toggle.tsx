@@ -1,5 +1,5 @@
 import { Button } from '@tuturuuu/ui/button';
-import { Check, X } from 'lucide-react';
+import { Check, X } from '@tuturuuu/ui/icons';
 
 interface Props {
   label: string;

@@ -1,6 +1,6 @@
 import { Button } from '@tuturuuu/ui/button';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 interface Challenge {

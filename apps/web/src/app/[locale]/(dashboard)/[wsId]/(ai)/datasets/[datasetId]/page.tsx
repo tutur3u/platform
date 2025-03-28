@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { BarChart, FileText, RefreshCw, Upload } from 'lucide-react';
+import { BarChart, FileText, RefreshCw, Upload } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -44,7 +44,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{dataset.name}</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {dataset.description || 'No description provided'}
           </p>
         </div>
@@ -72,11 +72,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Columns</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalColumns}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Number of columns in the dataset
             </p>
           </CardContent>
@@ -85,11 +85,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Rows</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
+            <BarChart className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalRows}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Number of rows in the dataset
             </p>
           </CardContent>
@@ -98,7 +98,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Last Updated</CardTitle>
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
+            <RefreshCw className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -106,7 +106,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
                 ? moment(lastUpdated).format('DD/MM/YYYY HH:mm')
                 : '-'}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Time since last data update
             </p>
           </CardContent>
@@ -115,11 +115,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
+            <RefreshCw className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold capitalize">Active</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Current dataset status
             </p>
           </CardContent>

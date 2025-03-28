@@ -6,7 +6,7 @@ import { joinPath, popPath } from '@/utils/path-helper';
 import { ColumnDef } from '@tanstack/react-table';
 import { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { ChevronLeft, FileText, Folder } from 'lucide-react';
+import { ChevronLeft, FileText, Folder } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';

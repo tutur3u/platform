@@ -21,10 +21,10 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { UserPlus } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as z from 'zod';
@@ -206,7 +206,7 @@ export default function InviteMemberButton({
           </>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
-            <p className="text-center text-muted-foreground">
+            <p className="text-muted-foreground text-center">
               You must be an admin or higher to invite members.
             </p>
           </div>

@@ -1,5 +1,5 @@
 import { Button } from '@tuturuuu/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles } from '@tuturuuu/ui/icons';
 
 export default function FleetingNavigatorMenu({
   setCurrentView,

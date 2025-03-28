@@ -2,9 +2,9 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { BugPlay, ExternalLink, Loader2, RefreshCw } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
-import { BugPlay, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 export default function CrawlButton({
@@ -56,7 +56,7 @@ export default function CrawlButton({
           <div className="flex flex-col gap-1 truncate">
             <span className="truncate">{url}</span>
             {originUrl && (
-              <span className="truncate text-xs text-muted-foreground">
+              <span className="text-muted-foreground truncate text-xs">
                 From: {originUrl}
               </span>
             )}

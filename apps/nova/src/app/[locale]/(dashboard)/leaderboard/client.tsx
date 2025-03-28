@@ -10,8 +10,6 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Separator } from '@tuturuuu/ui/separator';
-import { motion } from 'framer-motion';
 import {
   Crown,
   Medal,
@@ -22,7 +20,9 @@ import {
   Trophy,
   Users,
   Zap,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 export default function LeaderboardPage({
@@ -285,7 +285,7 @@ export default function LeaderboardPage({
           </Card>
         </div>
 
-        <Separator className="mt-2 mb-8 border-slate-800" />
+        <Separator className="mb-8 mt-2 border-slate-800" />
 
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">

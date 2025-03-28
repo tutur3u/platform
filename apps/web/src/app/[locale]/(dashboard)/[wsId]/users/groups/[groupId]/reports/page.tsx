@@ -8,9 +8,15 @@ import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import {
+  Calendar,
+  ChartColumn,
+  FileUser,
+  User,
+  UserCheck,
+} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { Calendar, ChartColumn, FileUser, User, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

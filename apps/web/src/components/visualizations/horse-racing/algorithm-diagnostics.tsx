@@ -1,15 +1,15 @@
 import { type Horse, type Race } from './types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import { Progress } from '@tuturuuu/ui/progress';
-import { motion } from 'framer-motion';
 import {
   AlertTriangle,
   CheckCircle,
   LineChart,
   Sparkles,
   Workflow,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Progress } from '@tuturuuu/ui/progress';
+import { motion } from 'framer-motion';
 import {
   Line,
   LineChart as RechartsLineChart,
@@ -110,7 +110,7 @@ export function AlgorithmDiagnostics({
             </div>
             <div className="grid gap-2">
               <div>
-                <div className="mb-1 text-xs text-muted-foreground">
+                <div className="text-muted-foreground mb-1 text-xs">
                   Position Resolution Progress
                 </div>
                 <Progress
@@ -122,7 +122,7 @@ export function AlgorithmDiagnostics({
                 </div>
               </div>
               <div>
-                <div className="mb-1 text-xs text-muted-foreground">
+                <div className="text-muted-foreground mb-1 text-xs">
                   Race Completion
                 </div>
                 <Progress
@@ -144,16 +144,16 @@ export function AlgorithmDiagnostics({
               Performance Metrics
             </div>
             <div className="grid gap-2">
-              <div className="rounded-md bg-muted p-2">
-                <div className="text-xs text-muted-foreground">
+              <div className="bg-muted rounded-md p-2">
+                <div className="text-muted-foreground text-xs">
                   Convergence Rate
                 </div>
                 <div className="text-lg font-bold">
                   {Math.round(convergenceRate * 100)}%
                 </div>
               </div>
-              <div className="rounded-md bg-muted p-2">
-                <div className="text-xs text-muted-foreground">
+              <div className="bg-muted rounded-md p-2">
+                <div className="text-muted-foreground text-xs">
                   Remaining Horses
                 </div>
                 <div className="text-lg font-bold">{remainingHorses}</div>
@@ -192,7 +192,7 @@ export function AlgorithmDiagnostics({
               </RechartsLineChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             Shows how efficiently each race contributes to the final ranking
           </div>
         </div>
@@ -226,7 +226,7 @@ export function AlgorithmDiagnostics({
                     />
                     <div className="flex-1 text-sm">
                       <div className="font-medium">{bottleneck.message}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         Impact:{' '}
                         <Badge
                           variant={

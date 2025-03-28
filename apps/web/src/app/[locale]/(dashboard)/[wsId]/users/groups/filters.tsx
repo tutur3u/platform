@@ -1,7 +1,7 @@
 import { Filter } from '../filters';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { MinusCircle, PlusCircle } from 'lucide-react';
+import { MinusCircle, PlusCircle } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {

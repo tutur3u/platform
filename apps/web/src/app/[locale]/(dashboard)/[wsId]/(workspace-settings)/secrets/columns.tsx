@@ -9,8 +9,8 @@ import {
 import { ColumnDef } from '@tanstack/react-table';
 import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Loader2 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Loader2 } from 'lucide-react';
 import moment from 'moment';
 import { useParams, useRouter } from 'next/navigation';
 
@@ -123,7 +123,7 @@ export const secretColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="line-clamp-1 font-semibold break-all">
+        <div className="line-clamp-1 break-all font-semibold">
           {row.getValue('name') || '-'}
         </div>
       ),

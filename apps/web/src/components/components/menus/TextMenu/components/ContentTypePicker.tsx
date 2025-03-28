@@ -6,7 +6,7 @@ import { Icon } from '@/components/components/ui/Icon';
 import { Surface } from '@/components/components/ui/Surface';
 import { Toolbar } from '@/components/components/ui/Toolbar';
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
-import { icons } from 'lucide-react';
+import { icons } from '@tuturuuu/ui/icons';
 import { useMemo } from 'react';
 
 export type ContentTypePickerOption = {

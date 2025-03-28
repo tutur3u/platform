@@ -2,9 +2,9 @@ import { NavLink } from '@/components/navigation';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button, buttonVariants } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { Star, StarOff } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { Star, StarOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -68,11 +68,11 @@ export default function ChatLink({
               size: isCollapsed ? 'icon' : 'sm',
             }),
             isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
-            'font-semibold whitespace-normal',
+            'whitespace-normal font-semibold',
             isActive
-              ? 'bg-gradient-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
+              ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-gradient-to-br text-white hover:text-white'
               : urlToLoad === link.href
-                ? 'animate-pulse bg-gradient-to-br from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground'
+                ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
                 : 'bg-foreground/5 hover:bg-foreground/10',
             link.disabled &&
               link.showDisabled &&
@@ -143,11 +143,11 @@ export default function ChatLink({
                 size: isCollapsed ? 'icon' : 'sm',
               }),
               isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
-              'font-semibold whitespace-normal',
+              'whitespace-normal font-semibold',
               isActive
-                ? 'bg-gradient-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
+                ? 'from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 bg-gradient-to-br text-white hover:text-white'
                 : urlToLoad === link.href
-                  ? 'animate-pulse bg-gradient-to-br from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground'
+                  ? 'from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground animate-pulse bg-gradient-to-br'
                   : 'bg-foreground/5 hover:bg-foreground/10',
               link.disabled &&
                 link.showDisabled &&
@@ -209,7 +209,7 @@ export default function ChatLink({
       <TooltipContent
         side="right"
         className={cn(
-          'flex items-center gap-4 border bg-background text-foreground'
+          'bg-background text-foreground flex items-center gap-4 border'
         )}
       >
         {link.title}

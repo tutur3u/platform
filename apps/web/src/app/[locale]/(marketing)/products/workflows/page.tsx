@@ -15,7 +15,7 @@ import {
   TimerReset,
   Workflow,
   Zap,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 const features = [
@@ -96,7 +96,7 @@ export default function WorkflowsProductPage() {
           Coming Soon
         </Badge>
         <h1 className="mb-4 text-4xl font-bold">Workflow Automation</h1>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
           Transform your business processes with intelligent workflow
           automation. Design, automate, and optimize your workflows with our
           powerful visual builder and AI-powered suggestions.
@@ -115,7 +115,7 @@ export default function WorkflowsProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="h-12 w-12 text-primary" />
+            <ShieldCheck className="text-primary h-12 w-12" />
             <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your workflows and business processes are protected with advanced
@@ -150,12 +150,12 @@ export default function WorkflowsProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <Workflow className="mb-4 h-8 w-8 text-primary" />
+              <Workflow className="text-primary mb-4 h-8 w-8" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="text-muted-foreground space-y-2">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
                     {item}
                   </li>
                 ))}
@@ -169,8 +169,8 @@ export default function WorkflowsProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
-              <PlayCircle className="h-8 w-8 text-primary" />
+            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-b-0 md:border-r">
+              <PlayCircle className="text-primary h-8 w-8" />
               <h3 className="text-2xl font-bold">One-Click Automation</h3>
               <p className="text-muted-foreground">
                 Deploy and run workflows with a single click, monitoring their
@@ -178,7 +178,7 @@ export default function WorkflowsProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <TimerReset className="h-8 w-8 text-primary" />
+              <TimerReset className="text-primary h-8 w-8" />
               <h3 className="text-2xl font-bold">Scheduled Triggers</h3>
               <p className="text-muted-foreground">
                 Schedule workflows to run automatically based on time, events,
@@ -196,7 +196,7 @@ export default function WorkflowsProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <Settings className="mb-4 h-8 w-8 text-primary" />
+            <Settings className="text-primary mb-4 h-8 w-8" />
             <h3 className="mb-2 text-xl font-bold">Advanced Configuration</h3>
             <p className="text-muted-foreground">
               Fine-tune your workflows with detailed configuration options and
@@ -204,7 +204,7 @@ export default function WorkflowsProductPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <History className="mb-4 h-8 w-8 text-primary" />
+            <History className="text-primary mb-4 h-8 w-8" />
             <h3 className="mb-2 text-xl font-bold">Execution History</h3>
             <p className="text-muted-foreground">
               Track and audit workflow executions with comprehensive logs and

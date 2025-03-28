@@ -2,7 +2,7 @@
 
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
-import { Trash } from 'lucide-react';
+import { Trash } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

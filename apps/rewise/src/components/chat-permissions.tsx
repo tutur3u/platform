@@ -9,10 +9,10 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Copy, QrCode, User, UserPlus, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Copy, QrCode, User, UserPlus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useState } from 'react';
@@ -208,9 +208,9 @@ export function ChatPermissions({
       <div className="space-y-2">
         <Label className="font-medium">{t('members')}</Label>
         {loading ? (
-          <div className="text-sm text-muted-foreground">{t('loading')}</div>
+          <div className="text-muted-foreground text-sm">{t('loading')}</div>
         ) : members.length === 0 ? (
-          <div className="text-sm text-muted-foreground">{t('no_members')}</div>
+          <div className="text-muted-foreground text-sm">{t('no_members')}</div>
         ) : (
           <div className="space-y-2">
             {members.map((member) => (
@@ -231,7 +231,7 @@ export function ChatPermissions({
                     <div className="font-medium">
                       {member.display_name || t('unnamed_user')}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-muted-foreground text-xs">
                       {member.email}
                     </div>
                   </div>

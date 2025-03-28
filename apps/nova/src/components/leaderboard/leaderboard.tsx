@@ -3,6 +3,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  ArrowDownUp,
+  Crown,
+  Medal,
+  Sparkles,
+  Star,
+  TrendingUp,
+} from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Table,
@@ -20,14 +28,6 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
-import {
-  ArrowDownUp,
-  Crown,
-  Medal,
-  Sparkles,
-  Star,
-  TrendingUp,
-} from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -155,7 +155,7 @@ export function Leaderboard({
         </TooltipProvider>
       </div>
 
-      <div className="scrollbar-thin max-h-[600px] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700">
+      <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700 max-h-[600px] overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/30">
             <TableRow className="border-b border-gray-200 hover:bg-transparent dark:border-slate-700/50 dark:hover:bg-transparent">
@@ -227,7 +227,7 @@ export function Leaderboard({
                         {/* Hexagon background with animated glow for top ranks */}
                         <div
                           className={cn(
-                            'absolute top-0 left-0 h-full w-full',
+                            'absolute left-0 top-0 h-full w-full',
                             entry.rank <= 3 && 'hex-shape'
                           )}
                           style={{

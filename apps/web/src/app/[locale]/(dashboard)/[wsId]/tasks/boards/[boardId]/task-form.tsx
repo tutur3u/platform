@@ -1,8 +1,8 @@
 import { createTask } from '@/lib/task-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
+import { Plus } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {

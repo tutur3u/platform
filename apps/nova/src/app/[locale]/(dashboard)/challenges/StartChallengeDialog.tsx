@@ -15,8 +15,8 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { ArrowRight, Clock } from '@tuturuuu/ui/icons';
 import { formatDuration } from '@tuturuuu/utils/format';
-import { ArrowRight, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -128,13 +128,13 @@ export function StartChallengeDialog({
           <AlertDialogDescription>
             Are you sure you want to start this challenge?
           </AlertDialogDescription>
-          <div className="mt-4 rounded-md bg-muted p-3 text-sm">
+          <div className="bg-muted mt-4 rounded-md p-3 text-sm">
             <div className="font-medium">Challenge Details:</div>
             <div className="mt-2 flex items-center">
-              <Clock className="mr-2 h-4 w-4 text-primary" />
+              <Clock className="text-primary mr-2 h-4 w-4" />
               <span>Duration: {formatDuration(challenge.duration)}</span>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="text-muted-foreground mt-1 text-xs">
               Once started, the timer cannot be paused and will continue until
               completed.
             </div>

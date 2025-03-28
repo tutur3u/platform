@@ -2,6 +2,7 @@
 
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { ArrowDownIcon, ArrowUpIcon } from '@tuturuuu/ui/icons';
 import {
   Select,
   SelectContent,
@@ -11,7 +12,6 @@ import {
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useState } from 'react';
@@ -188,7 +188,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
               </Select>
 
               {insights && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   {t('aurora.last_updated')}:{' '}
                   {formatDate(
                     locale,
@@ -215,7 +215,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
                   <CardContent>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {t('aurora.high')}
                         </span>
                         <span className="text-success font-medium">
@@ -223,15 +223,15 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {t('aurora.low')}
                         </span>
-                        <span className="font-medium text-destructive">
+                        <span className="text-destructive font-medium">
                           {formatCurrency(insights.low)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {t('aurora.average')}
                         </span>
                         <span className="font-medium">
@@ -253,7 +253,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
                       {insights.trend > 0 ? (
                         <ArrowUpIcon className="text-success h-4 w-4" />
                       ) : (
-                        <ArrowDownIcon className="h-4 w-4 text-destructive" />
+                        <ArrowDownIcon className="text-destructive h-4 w-4" />
                       )}
                       <span
                         className={
@@ -506,7 +506,7 @@ const MetricCard = ({
     <Card className="transition-all duration-200 hover:shadow-md">
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+          <h3 className="text-muted-foreground text-sm font-medium">{title}</h3>
           {calculatedTrend && (
             <div
               className={cn(
@@ -536,7 +536,7 @@ const MetricCard = ({
             {formattedValue}
           </div>
           <div className="mt-2">
-            <div className="h-2 overflow-hidden rounded-full bg-muted/20">
+            <div className="bg-muted/20 h-2 overflow-hidden rounded-full">
               <div
                 className="h-full rounded-full transition-all duration-300"
                 style={{

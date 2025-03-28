@@ -1,5 +1,5 @@
 import { Editor } from '@tiptap/core';
-import { icons } from 'lucide-react';
+import { icons } from '@tuturuuu/ui/icons';
 
 export interface Group {
   name: string;

@@ -7,10 +7,10 @@ import { Button } from '@tuturuuu/ui/button';
 import { Form, FormControl, FormField, FormItem } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { ArrowDownToLine, Expand, RotateCcw, Send } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { ArrowDownToLine, Expand, RotateCcw, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -142,7 +142,7 @@ export default function FleetingAssistant({
     <div className="flex h-full flex-col">
       <div className="flex h-[28.25rem] flex-col p-2">
         <div className="mb-2 flex items-center justify-between gap-2 transition">
-          <div className="w-fit rounded border bg-foreground px-2 py-0.5 font-mono text-xs font-bold text-background">
+          <div className="bg-foreground text-background w-fit rounded border px-2 py-0.5 font-mono text-xs font-bold">
             ALPHA
           </div>
 

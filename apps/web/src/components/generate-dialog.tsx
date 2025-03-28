@@ -17,9 +17,9 @@ import {
   FormLabel,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { Loader2, Sparkles } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Loader2, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -89,7 +89,7 @@ export function GenerateDialog({
               <Checkbox id="include-content" disabled />
               <label
                 htmlFor="include-content"
-                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_module_content')}
               </label>
@@ -99,7 +99,7 @@ export function GenerateDialog({
               <Checkbox id="include-resources" disabled />
               <label
                 htmlFor="include-resources"
-                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_resources')}
               </label>
@@ -109,7 +109,7 @@ export function GenerateDialog({
               <Checkbox id="include-youtube-links" disabled />
               <label
                 htmlFor="include-youtube-links"
-                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_youtube_links')}
               </label>

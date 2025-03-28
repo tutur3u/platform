@@ -3,8 +3,8 @@ import FileDisplay from './file-display';
 import { StorageObjectForm } from '@/app/[locale]/(dashboard)/[wsId]/drive/form';
 import { createDynamicClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Paperclip } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Paperclip } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -51,7 +51,7 @@ export default async function ModuleResourcesPage({ params }: Props) {
         resources.map((file) => (
           <div
             key={file.name}
-            className="flex flex-wrap items-center gap-2 rounded-lg border border-foreground/10 p-2 md:p-4"
+            className="border-foreground/10 flex flex-wrap items-center gap-2 rounded-lg border p-2 md:p-4"
           >
             <DeleteResourceButton path={`${storagePath}${file.name}`} />
             <div className="font-semibold hover:underline">

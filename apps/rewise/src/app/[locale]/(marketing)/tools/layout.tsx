@@ -2,7 +2,7 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { ArrowRight, Globe } from 'lucide-react';
+import { ArrowRight, Globe } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, use, useState } from 'react';
 

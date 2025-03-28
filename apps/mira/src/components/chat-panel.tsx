@@ -17,9 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
 import {
   ArrowDownToLine,
   Check,
@@ -29,7 +26,10 @@ import {
   Globe,
   LinkIcon,
   Lock,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
@@ -159,7 +159,7 @@ export function ChatPanel({
               <Button
                 size="icon"
                 variant="outline"
-                className="pointer-events-auto flex-none bg-background/20 backdrop-blur-lg"
+                className="bg-background/20 pointer-events-auto flex-none backdrop-blur-lg"
                 onClick={() => setCollapsed(!collapsed)}
               >
                 {collapsed ? (
@@ -192,7 +192,7 @@ export function ChatPanel({
                   }`}
                 >
                   <div className="text-center">
-                    <div className="font-semibold text-foreground">
+                    <div className="text-foreground font-semibold">
                       {t('chats')}
                       {count ? (
                         <span className="opacity-50"> ({count})</span>
@@ -235,7 +235,7 @@ export function ChatPanel({
                             )
                           )
                         ) : (
-                          <div className="mt-8 p-8 text-foreground/60">
+                          <div className="text-foreground/60 mt-8 p-8">
                             {t('no_chats')}
                           </div>
                         )}
@@ -286,7 +286,7 @@ export function ChatPanel({
             </div>
 
             <div
-              className={`flex flex-col items-start justify-start rounded-xl border bg-background/70 p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
+              className={`bg-background/70 flex flex-col items-start justify-start rounded-xl border p-2 shadow-lg backdrop-blur-lg transition-all md:p-4`}
             >
               <ChatModelSelector
                 open={showExtraOptions}

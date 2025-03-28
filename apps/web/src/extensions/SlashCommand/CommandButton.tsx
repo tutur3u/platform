@@ -1,6 +1,6 @@
 import { Icon } from '@/components/components/ui/Icon';
+import { icons } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { icons } from 'lucide-react';
 import { forwardRef } from 'react';
 
 export type CommandButtonProps = {

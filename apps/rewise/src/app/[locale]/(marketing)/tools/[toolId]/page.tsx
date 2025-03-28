@@ -4,8 +4,8 @@ import { supportedLocales } from '@/i18n/routing';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { ChevronLeft } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { ChevronLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -47,7 +47,7 @@ export default function ToolDetailsPage({
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl">{tool.name}</CardTitle>
-          <p className="mt-2 text-muted-foreground">{tool.description}</p>
+          <p className="text-muted-foreground mt-2">{tool.description}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {tool.tags.map((tag) => (
               <Badge key={tag} variant="secondary">

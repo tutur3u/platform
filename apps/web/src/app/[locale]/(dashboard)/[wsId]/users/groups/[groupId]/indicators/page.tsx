@@ -3,10 +3,15 @@ import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import {
+  CalendarIcon,
+  ChartColumn,
+  FileUser,
+  UserCheck,
+} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import 'dayjs/locale/vi';
-import { CalendarIcon, ChartColumn, FileUser, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -137,14 +142,14 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
             <div className="grid border-r last:border-r-0">
               <button
                 key={indicator.id}
-                className="w-32 px-4 py-2 font-semibold hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
+                className="hover:bg-dynamic-purple/10 hover:text-dynamic-purple w-32 px-4 py-2 font-semibold"
               >
                 <span className="line-clamp-1 break-all">{indicator.name}</span>
               </button>
               {users.map((user) => (
                 <button
                   key={user.id}
-                  className="w-32 border-t px-4 py-2 hover:bg-dynamic-blue/10 hover:text-dynamic-blue"
+                  className="hover:bg-dynamic-blue/10 hover:text-dynamic-blue w-32 border-t px-4 py-2"
                 >
                   {indicators.find(
                     (i) =>

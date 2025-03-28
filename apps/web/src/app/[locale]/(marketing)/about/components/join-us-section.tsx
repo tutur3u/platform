@@ -1,7 +1,6 @@
 'use client';
 
 import { Card } from '@tuturuuu/ui/card';
-import { motion } from 'framer-motion';
 import {
   ArrowRight,
   Brain,
@@ -13,14 +12,15 @@ import {
   Star,
   Target,
   Users,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { motion } from 'framer-motion';
 
 const benefits = [
   {
     title: 'Innovation & Growth',
     description: 'Be at the forefront of technological advancement',
     features: ['Cutting-edge projects', 'Continuous learning', 'Career growth'],
-    icon: <Brain className="h-6 w-6 text-primary" />,
+    icon: <Brain className="text-primary h-6 w-6" />,
     gradient: 'from-blue-500/20 via-cyan-500/10 to-transparent',
     metrics: { projects: '50+', growth: '2x faster' },
   },
@@ -28,7 +28,7 @@ const benefits = [
     title: 'Global Impact',
     description: 'Make a difference on a global scale',
     features: ['Worldwide reach', 'Meaningful work', 'Social impact'],
-    icon: <Globe2 className="h-6 w-6 text-primary" />,
+    icon: <Globe2 className="text-primary h-6 w-6" />,
     gradient: 'from-purple-500/20 via-pink-500/10 to-transparent',
     metrics: { reach: '20+ countries', impact: '10K+ users' },
   },
@@ -36,7 +36,7 @@ const benefits = [
     title: 'Future-Forward',
     description: 'Shape the technologies of tomorrow',
     features: ['AI development', 'Research opportunities', 'Innovation focus'],
-    icon: <Rocket className="h-6 w-6 text-primary" />,
+    icon: <Rocket className="text-primary h-6 w-6" />,
     gradient: 'from-green-500/20 via-emerald-500/10 to-transparent',
     metrics: { innovations: '100+', success: '95%' },
   },
@@ -61,7 +61,7 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute top-0 -left-32 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="absolute -left-32 top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -73,7 +73,7 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute top-[30%] -right-32 h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="absolute -right-32 top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -119,12 +119,12 @@ export function JoinUsSection() {
                   ease: 'easeInOut',
                 },
               }}
-              className="group mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+              className="bg-primary/10 group mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl"
             >
-              <Users className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+              <Users className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
             </motion.div>
             <motion.h2
-              className="mb-6 text-4xl font-bold text-foreground md:text-5xl lg:text-6xl"
+              className="text-foreground mb-6 text-4xl font-bold md:text-5xl lg:text-6xl"
               whileHover={{
                 scale: 1.02,
               }}
@@ -138,13 +138,13 @@ export function JoinUsSection() {
                   repeat: Infinity,
                   ease: 'linear',
                 }}
-                className="relative bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-balance text-transparent"
+                className="from-primary relative text-balance bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
               >
                 Be Part of Our Story
               </motion.span>
             </motion.h2>
             <motion.p
-              className="mx-auto mb-12 max-w-2xl text-lg text-muted-foreground md:text-xl"
+              className="text-muted-foreground mx-auto mb-12 max-w-2xl text-lg md:text-xl"
               whileHover={{
                 scale: 1.01,
               }}
@@ -178,14 +178,14 @@ export function JoinUsSection() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 + index * 0.1 }}
-                  className="group flex items-center gap-4 rounded-full border border-primary/10 bg-background/50 py-3 pr-6 pl-3 backdrop-blur-sm"
+                  className="border-primary/10 bg-background/50 group flex items-center gap-4 rounded-full border py-3 pl-3 pr-6 backdrop-blur-sm"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 transition-transform duration-300 group-hover:scale-110">
+                  <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110">
                     {item.icon}
                   </div>
                   <div className="text-left">
                     <div className="font-medium">{item.text}</div>
-                    <div className="text-sm text-primary">{item.metric}</div>
+                    <div className="text-primary text-sm">{item.metric}</div>
                   </div>
                 </motion.div>
               ))}
@@ -204,8 +204,8 @@ export function JoinUsSection() {
               whileHover={{ y: -5 }}
               className="group"
             >
-              <Card className="relative h-full overflow-hidden bg-background/50 backdrop-blur-sm">
-                <div className="relative flex h-full flex-col bg-primary/5 p-8 transition-all duration-300 group-hover:bg-primary/10">
+              <Card className="bg-background/50 relative h-full overflow-hidden backdrop-blur-sm">
+                <div className="bg-primary/5 group-hover:bg-primary/10 relative flex h-full flex-col p-8 transition-all duration-300">
                   <motion.div
                     initial={{ opacity: 0 }}
                     whileHover={{ opacity: 1 }}
@@ -221,14 +221,14 @@ export function JoinUsSection() {
                       repeat: Infinity,
                       ease: 'linear',
                     }}
-                    className={`absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br ${benefit.gradient} blur-2xl`}
+                    className={`absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br ${benefit.gradient} blur-2xl`}
                   />
                   <div className="pointer-events-none relative">
-                    <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 transition-transform duration-300 group-hover:scale-110">
+                    <div className="bg-primary/10 mb-6 flex h-14 w-14 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110">
                       {benefit.icon}
                     </div>
                     <h3 className="mb-3 text-2xl font-bold">{benefit.title}</h3>
-                    <p className="mb-6 text-muted-foreground">
+                    <p className="text-muted-foreground mb-6">
                       {benefit.description}
                     </p>
                     <div className="space-y-3">
@@ -237,10 +237,10 @@ export function JoinUsSection() {
                           key={i}
                           initial={false}
                           whileHover={{ scale: 1.02, x: 4 }}
-                          className="flex items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-3 backdrop-blur-sm"
+                          className="border-primary/10 bg-background/50 flex items-center gap-3 rounded-lg border p-3 backdrop-blur-sm"
                         >
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                            <CheckCircle className="h-4 w-4 text-primary" />
+                          <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+                            <CheckCircle className="text-primary h-4 w-4" />
                           </div>
                           <span className="font-medium">{feature}</span>
                         </motion.div>
@@ -249,10 +249,10 @@ export function JoinUsSection() {
                     <div className="mt-6 flex items-center justify-between">
                       {Object.entries(benefit.metrics).map(([key, value]) => (
                         <div key={key} className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-primary">
+                          <span className="text-primary text-sm font-bold">
                             {value}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             {key}
                           </span>
                         </div>
@@ -263,7 +263,7 @@ export function JoinUsSection() {
                     initial={{ scaleX: 0 }}
                     whileHover={{ scaleX: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r from-primary/20 to-primary/5"
+                    className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
                   />
                 </div>
               </Card>
@@ -276,9 +276,9 @@ export function JoinUsSection() {
             href="https://github.com/tutur3u"
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative w-full overflow-hidden rounded-lg bg-foreground px-8 py-3 text-background transition-transform hover:scale-105 sm:w-auto"
+            className="bg-foreground text-background group relative w-full overflow-hidden rounded-lg px-8 py-3 transition-transform hover:scale-105 sm:w-auto"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="from-primary/20 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <span className="relative flex items-center justify-center gap-2 font-medium">
               <Github className="h-5 w-5" />
               Explore Our Work
@@ -288,9 +288,9 @@ export function JoinUsSection() {
 
           <motion.a
             href="/contact"
-            className="group relative w-full overflow-hidden rounded-lg bg-primary/10 px-8 py-3 transition-transform hover:scale-105 sm:w-auto"
+            className="bg-primary/10 group relative w-full overflow-hidden rounded-lg px-8 py-3 transition-transform hover:scale-105 sm:w-auto"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="from-primary/10 to-primary/5 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <span className="relative flex items-center justify-center gap-2 font-medium">
               <Mail className="h-5 w-5" />
               Get in Touch

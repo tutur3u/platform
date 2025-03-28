@@ -1,5 +1,5 @@
+import { icons } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { icons } from 'lucide-react';
 import { memo } from 'react';
 
 export type IconProps = {

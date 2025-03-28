@@ -1,7 +1,7 @@
 'use client';
 
 import { DEV_MODE } from '@/constants/common';
-import { BookOpen, Info, Shield } from 'lucide-react';
+import { BookOpen, Info, Shield } from '@tuturuuu/ui/icons';
 import { ReactNode } from 'react';
 
 export interface NavItem {

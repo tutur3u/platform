@@ -15,6 +15,14 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import {
+  CalendarIcon,
+  InfoIcon,
+  ListChecks,
+  PlusCircle,
+  TimerIcon,
+  Trash2,
+} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -27,14 +35,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import {
-  CalendarIcon,
-  InfoIcon,
-  ListChecks,
-  PlusCircle,
-  TimerIcon,
-  Trash2,
-} from 'lucide-react';
 import * as z from 'zod';
 
 const criteriaSchema = z.object({
@@ -195,7 +195,7 @@ export default function ChallengeForm({
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div>
                     <CardTitle>Judging Criteria</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-sm">
                       Define how submissions will be evaluated. Each criterion
                       will be scored separately.
                     </p>
@@ -249,7 +249,7 @@ export default function ChallengeForm({
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+                              className="text-destructive hover:text-destructive/80 h-8 w-8 p-0"
                               onClick={() => removeCriteria(index)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -308,7 +308,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Duration</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Set how long participants have to complete the challenge
                     once they start.
                   </p>
@@ -367,7 +367,7 @@ export default function ChallengeForm({
                         </div>
 
                         {field.value && (
-                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
+                          <div className="bg-muted/30 mt-4 rounded-md border p-3">
                             <DurationDisplay seconds={field.value} />
                           </div>
                         )}
@@ -388,19 +388,19 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Schedule</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Set when your challenge is available to participants.
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6 rounded-md border border-dashed p-4">
                     <div className="mb-2 flex items-center">
-                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
                       <h3 className="text-sm font-medium">
                         Timeline Recommendation
                       </h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       For best results, set dates in this order: Preview Date ➝
                       Open Date ➝ Close Date. This allows admins to preview
                       challenges before they open to participants.
@@ -431,7 +431,7 @@ export default function ChallengeForm({
                     />
 
                     <div className="relative">
-                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
+                      <div className="bg-muted-foreground/20 absolute -top-3 left-4 h-full w-px"></div>
                       <FormField
                         control={form.control}
                         name="openAt"
@@ -456,7 +456,7 @@ export default function ChallengeForm({
                     </div>
 
                     <div className="relative">
-                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
+                      <div className="bg-muted-foreground/20 absolute -top-3 left-4 h-full w-px"></div>
                       <FormField
                         control={form.control}
                         name="closeAt"

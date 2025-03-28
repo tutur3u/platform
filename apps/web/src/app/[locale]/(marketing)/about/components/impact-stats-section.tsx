@@ -1,7 +1,7 @@
 'use client';
 
+import { BarChart } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { BarChart } from 'lucide-react';
 
 interface StatProps {
   value: string;
@@ -95,12 +95,12 @@ export function ImpactStatsSection() {
                 ease: 'easeInOut',
               },
             }}
-            className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+            className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
           >
-            <BarChart className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+            <BarChart className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
           <motion.h2
-            className="mb-4 text-4xl font-bold text-foreground"
+            className="text-foreground mb-4 text-4xl font-bold"
             whileHover={{
               scale: 1.02,
             }}
@@ -114,13 +114,13 @@ export function ImpactStatsSection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="relative bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+              className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
             >
               Our Growing Impact
             </motion.span>
           </motion.h2>
           <motion.p
-            className="mx-auto max-w-2xl text-lg text-foreground/60"
+            className="text-foreground/60 mx-auto max-w-2xl text-lg"
             whileHover={{
               scale: 1.01,
             }}
@@ -148,7 +148,7 @@ export function ImpactStatsSection() {
               }}
               className="group relative"
             >
-              <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 p-8 backdrop-blur-sm">
+              <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl p-8 backdrop-blur-sm">
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
@@ -164,10 +164,10 @@ export function ImpactStatsSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                  className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                 />
                 <motion.div
-                  className="pointer-events-none relative mb-2 text-4xl font-bold text-primary"
+                  className="text-primary pointer-events-none relative mb-2 text-4xl font-bold"
                   whileHover={{
                     scale: 1.1,
                     color: 'hsl(var(--primary))',
@@ -184,7 +184,7 @@ export function ImpactStatsSection() {
                   {stat.value}
                 </motion.div>
                 <motion.div
-                  className="pointer-events-none relative mb-1 text-lg font-medium text-foreground"
+                  className="text-foreground pointer-events-none relative mb-1 text-lg font-medium"
                   whileHover={{
                     scale: 1.05,
                     color: 'hsl(var(--primary))',
@@ -193,7 +193,7 @@ export function ImpactStatsSection() {
                   {stat.label}
                 </motion.div>
                 <motion.div
-                  className="pointer-events-none relative text-sm text-foreground/60"
+                  className="text-foreground/60 pointer-events-none relative text-sm"
                   whileHover={{
                     scale: 1.02,
                   }}
@@ -204,7 +204,7 @@ export function ImpactStatsSection() {
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r from-primary/20 to-primary/5"
+                  className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
                 />
               </div>
             </motion.div>

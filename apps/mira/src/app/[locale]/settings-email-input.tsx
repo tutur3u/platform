@@ -12,8 +12,8 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Check, Loader2 } from '@tuturuuu/ui/icons';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

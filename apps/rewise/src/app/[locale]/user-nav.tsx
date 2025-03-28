@@ -17,10 +17,10 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { Globe, Palette, Settings, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -40,7 +40,7 @@ export async function UserNav({
             'flex w-full gap-2 rounded border p-2 text-start transition',
             hideMetadata
               ? 'items-center justify-center border-transparent'
-              : 'items-start justify-start border-foreground/10 bg-foreground/10 hover:border-foreground/10 hover:bg-foreground/10 md:border-transparent md:bg-transparent'
+              : 'border-foreground/10 bg-foreground/10 hover:border-foreground/10 hover:bg-foreground/10 items-start justify-start md:border-transparent md:bg-transparent'
           )}
         >
           <Avatar className="relative cursor-pointer overflow-visible font-semibold">
@@ -58,10 +58,10 @@ export async function UserNav({
           </Avatar>
           {hideMetadata || (
             <div className="grid w-full">
-              <div className="line-clamp-1 text-sm font-semibold break-all">
+              <div className="line-clamp-1 break-all text-sm font-semibold">
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </div>
-              <div className="line-clamp-1 text-sm break-all opacity-70">
+              <div className="line-clamp-1 break-all text-sm opacity-70">
                 {user?.email}
               </div>
             </div>
@@ -77,11 +77,11 @@ export async function UserNav({
           <div className="flex flex-col">
             <Link
               href="/settings/account"
-              className="line-clamp-1 w-fit text-sm font-medium break-all hover:underline"
+              className="line-clamp-1 w-fit break-all text-sm font-medium hover:underline"
             >
               {user?.display_name || user?.handle || t('common.unnamed')}
             </Link>
-            <p className="line-clamp-1 text-xs break-all text-muted-foreground">
+            <p className="text-muted-foreground line-clamp-1 break-all text-xs">
               {user?.email}
             </p>
           </div>

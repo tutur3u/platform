@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Ellipsis } from 'lucide-react';
+import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
@@ -136,7 +136,7 @@ export function TransactionObjectRowActions({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="flex h-6 w-6 p-0 data-[state=open]:bg-muted"
+            className="data-[state=open]:bg-muted flex h-6 w-6 p-0"
             size="xs"
           >
             <Ellipsis className="h-4 w-4" />

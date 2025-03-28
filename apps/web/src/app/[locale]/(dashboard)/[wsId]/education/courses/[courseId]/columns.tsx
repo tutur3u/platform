@@ -4,7 +4,7 @@ import { WorkspaceCourseModuleRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { Check, X } from 'lucide-react';
+import { Check, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
 

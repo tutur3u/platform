@@ -11,8 +11,6 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
 import {
   ChevronDown,
   Crown,
@@ -20,7 +18,9 @@ import {
   ImagePlay,
   MessagesSquare,
   WandSparkles,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -77,7 +77,7 @@ export function Structure({
       title: t('common.current_plan'),
       icon: <Crown className="h-5 w-5 flex-none" />,
       trailing: (
-        <span className="bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 font-semibold text-transparent">
+        <span className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 font-semibold text-transparent">
           {t('common.premium')}
         </span>
       ),
@@ -123,7 +123,7 @@ export function Structure({
         <LogoTitle
           text="Rewise"
           className={cn(
-            'bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
+            'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 text-transparent',
             'text-4xl font-bold md:text-3xl lg:text-4xl'
           )}
         />
@@ -154,7 +154,7 @@ export function Structure({
         <AccordionItem value="item-1" className="border-none p-0">
           <AccordionTrigger
             showChevron={false}
-            className="mx-2 mb-0 rounded-md bg-foreground/5 px-3 py-2 hover:bg-foreground/10"
+            className="bg-foreground/5 hover:bg-foreground/10 mx-2 mb-0 rounded-md px-3 py-2"
           >
             <div className="flex items-center gap-2">
               <MessagesSquare className="h-5 w-5 flex-none" />
@@ -196,7 +196,7 @@ export function Structure({
         <LogoTitle
           text="Rewise"
           className={cn(
-            'bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
+            'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 text-transparent',
             'text-4xl font-bold md:text-3xl lg:text-4xl'
           )}
         />

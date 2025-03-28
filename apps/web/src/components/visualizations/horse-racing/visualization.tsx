@@ -19,10 +19,10 @@ import { HorseRacingBenchmark } from '@/utils/horseRacingBenchmarks';
 // UI Components
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+// Icons
+import { ChevronUp, Lightbulb } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-// Icons
-import { ChevronUp, Lightbulb } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 // Types
@@ -551,7 +551,7 @@ export function HorseRacingVisualization() {
                             finalRanking={finalRanking}
                           />
                         ) : (
-                          <div className="flex h-40 items-center justify-center text-muted-foreground">
+                          <div className="text-muted-foreground flex h-40 items-center justify-center">
                             Start the visualization to see algorithm insights
                           </div>
                         )}
@@ -581,7 +581,7 @@ export function HorseRacingVisualization() {
                                       <div className="text-sm font-medium">
                                         Horse #{horse.id}
                                       </div>
-                                      <div className="text-xs text-muted-foreground">
+                                      <div className="text-muted-foreground text-xs">
                                         Speed:{' '}
                                         {showHorseSpeeds
                                           ? horse.speed.toFixed(2)
@@ -594,7 +594,7 @@ export function HorseRacingVisualization() {
                                   {finalRanking.includes(horse.id) &&
                                     finalRanking.indexOf(horse.id) <=
                                       currentRaceIndex && (
-                                      <div className="mt-2 flex items-center rounded-md bg-muted/50 px-2 py-1 text-xs">
+                                      <div className="bg-muted/50 mt-2 flex items-center rounded-md px-2 py-1 text-xs">
                                         <span className="font-medium">
                                           Position: #
                                           {finalRanking.indexOf(horse.id) + 1}
@@ -606,7 +606,7 @@ export function HorseRacingVisualization() {
                             </div>
                           </div>
                         ) : (
-                          <div className="flex h-40 items-center justify-center text-muted-foreground">
+                          <div className="text-muted-foreground flex h-40 items-center justify-center">
                             Start the visualization to see horse details
                           </div>
                         )}
@@ -624,7 +624,7 @@ export function HorseRacingVisualization() {
                             currentRaceIndex={currentRaceIndex}
                           />
                         ) : (
-                          <div className="flex h-40 items-center justify-center text-muted-foreground">
+                          <div className="text-muted-foreground flex h-40 items-center justify-center">
                             Start the visualization to see analytics
                           </div>
                         )}
@@ -642,7 +642,7 @@ export function HorseRacingVisualization() {
                             raceSize={raceSize}
                           />
                         ) : (
-                          <div className="flex h-40 items-center justify-center text-muted-foreground">
+                          <div className="text-muted-foreground flex h-40 items-center justify-center">
                             Start the visualization to see diagnostics
                           </div>
                         )}
@@ -752,7 +752,7 @@ export function HorseRacingVisualization() {
                           )}
                       </div>
                     ) : (
-                      <div className="py-2 text-center text-sm text-muted-foreground">
+                      <div className="text-muted-foreground py-2 text-center text-sm">
                         Start the visualization to see insights
                       </div>
                     )}

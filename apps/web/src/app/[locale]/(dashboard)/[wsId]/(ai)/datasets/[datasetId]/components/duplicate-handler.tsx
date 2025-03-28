@@ -11,8 +11,6 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { Progress } from '@tuturuuu/ui/progress';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   AlertCircle,
   CheckCircle,
@@ -20,7 +18,9 @@ import {
   RefreshCw,
   Trash2,
   XCircle,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Progress } from '@tuturuuu/ui/progress';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -196,7 +196,7 @@ export function DuplicateHandler({ wsId, datasetId }: Props) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Progress</span>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   {progress}%
                 </span>
               </div>
@@ -222,13 +222,13 @@ export function DuplicateHandler({ wsId, datasetId }: Props) {
                   >
                     {log.message}
                   </span>
-                  <span className="ml-auto text-xs text-muted-foreground">
+                  <span className="text-muted-foreground ml-auto text-xs">
                     {log.timestamp.toLocaleTimeString()}
                   </span>
                 </div>
               ))}
               {logs.length === 0 && (
-                <div className="text-center text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-center text-sm">
                   No logs yet. Start by detecting duplicates.
                 </div>
               )}

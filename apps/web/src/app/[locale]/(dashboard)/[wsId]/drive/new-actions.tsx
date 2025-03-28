@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { FileText, Folder, Plus } from 'lucide-react';
+import { FileText, Folder, Plus } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

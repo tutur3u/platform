@@ -2,19 +2,6 @@
 
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Separator } from '@tuturuuu/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@tuturuuu/ui/table';
-import { cn } from '@tuturuuu/utils/format';
-import { motion } from 'framer-motion';
 import {
   AlertCircle,
   Baby,
@@ -31,7 +18,20 @@ import {
   Shield,
   UserCog,
   Users,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@tuturuuu/ui/table';
+import { cn } from '@tuturuuu/utils/format';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 export default function PrivacyPage() {
@@ -319,7 +319,7 @@ Response Time: 48 hours
   }, []);
 
   return (
-    <main className="relative container space-y-16 py-24">
+    <main className="container relative space-y-16 py-24">
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -330,10 +330,10 @@ Response Time: 48 hours
         <Badge variant="secondary" className="mb-6">
           Legal Documentation
         </Badge>
-        <h1 className="mb-6 text-5xl font-bold text-balance text-foreground">
+        <h1 className="text-foreground mb-6 text-balance text-5xl font-bold">
           Privacy Policy
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-foreground/80">
+        <p className="text-foreground/80 mx-auto max-w-2xl text-lg">
           Effective Date:{' '}
           {new Date(
             // February 27, 2025
@@ -357,11 +357,11 @@ Response Time: 48 hours
           <div className="sticky top-24">
             <Card className="p-6">
               <h2 className="mb-4 flex items-center text-lg font-semibold">
-                <FileText className="mr-2 h-5 w-5 text-primary" />
+                <FileText className="text-primary mr-2 h-5 w-5" />
                 Table of Contents
               </h2>
 
-              <div className="mb-3 flex items-center text-xs text-muted-foreground">
+              <div className="text-muted-foreground mb-3 flex items-center text-xs">
                 <Clock className="mr-1 h-3 w-3" />
                 <span>Last updated: February 27, 2025</span>
               </div>
@@ -376,19 +376,19 @@ Response Time: 48 hours
                       href={`#${item.id}`}
                       className={`flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
                         activeSection === item.id
-                          ? 'bg-primary/10 font-medium text-primary'
+                          ? 'bg-primary/10 text-primary font-medium'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`}
                     >
                       <div className="flex items-center">
-                        <span className="mr-2 w-5 text-xs text-primary/70">
+                        <span className="text-primary/70 mr-2 w-5 text-xs">
                           {item.number.toString().padStart(2, '0')}
                         </span>
                         {item.title}
                       </div>
                       <Check
                         className={cn(
-                          'h-4 w-4 text-primary transition',
+                          'text-primary h-4 w-4 transition',
                           activeSection === item.id
                             ? 'opacity-100'
                             : 'opacity-0'
@@ -412,11 +412,11 @@ Response Time: 48 hours
           {/* Key Points Summary */}
           <Card className="bg-primary/5 p-6">
             <div className="mb-4 flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-primary" />
+              <AlertCircle className="text-primary h-6 w-6" />
               <h2 className="text-lg font-semibold">Key Privacy Principles</h2>
             </div>
 
-            <p className="mb-4 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mb-4 text-sm">
               This summary highlights important aspects of our privacy practices
               but does not replace the complete policy.
             </p>
@@ -483,21 +483,21 @@ Response Time: 48 hours
               transition={{ duration: 0.6, delay: 0.1 * index }}
               className="scroll-mt-32"
             >
-              <Card className="group overflow-hidden border-l-4 border-l-primary/20 transition-all duration-200 hover:border-l-primary">
+              <Card className="border-l-primary/20 hover:border-l-primary group overflow-hidden border-l-4 transition-all duration-200">
                 <div className="bg-card p-8">
                   <div className="mb-5 flex items-center gap-3">
-                    <div className="rounded-lg bg-primary/10 p-2 text-primary transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary/20">
+                    <div className="bg-primary/10 text-primary group-hover:bg-primary/20 rounded-lg p-2 transition-transform duration-300 group-hover:scale-110">
                       {section.icon}
                     </div>
                     <h2 className="text-2xl font-semibold">{section.title}</h2>
                   </div>
-                  <div className="prose max-w-none text-card-foreground prose-gray dark:prose-invert">
+                  <div className="prose text-card-foreground prose-gray dark:prose-invert max-w-none">
                     <MemoizedReactMarkdown>
                       {section.content}
                     </MemoizedReactMarkdown>
                   </div>
                 </div>
-                <div className="bg-muted/50 px-8 py-3 text-xs text-muted-foreground">
+                <div className="bg-muted/50 text-muted-foreground px-8 py-3 text-xs">
                   <div className="flex justify-between">
                     <span>
                       Section {index + 1} of {sections.length}
@@ -505,7 +505,7 @@ Response Time: 48 hours
                     {index < sections.length - 1 && (
                       <a
                         href={`#${sections[index + 1]!.title.toLowerCase().replace(/\s+/g, '-')}`}
-                        className="flex items-center hover:text-primary"
+                        className="hover:text-primary flex items-center"
                       >
                         Next: {sections[index + 1]!.title}
                         <ChevronRight className="ml-1 h-3 w-3" />
@@ -523,10 +523,10 @@ Response Time: 48 hours
           {/* GDPR Compliance Statement */}
           <Card className="border-primary/20 p-6">
             <h3 className="text-md mb-3 flex items-center font-semibold">
-              <Shield className="mr-2 h-4 w-4 text-primary" />
+              <Shield className="text-primary mr-2 h-4 w-4" />
               GDPR & International Compliance Statement
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Tuturuuu is committed to compliance with international data
               protection regulations, including GDPR, CCPA, and other applicable
               laws. We process personal data lawfully, fairly, and
@@ -544,7 +544,7 @@ Response Time: 48 hours
         transition={{ duration: 0.6, delay: 0.4 }}
         className="pt-12 text-center"
       >
-        <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-sm">
           This Privacy Policy outlines our commitment to protecting your
           personal information. For questions or concerns about your privacy,
           please contact our Data Protection Officer.

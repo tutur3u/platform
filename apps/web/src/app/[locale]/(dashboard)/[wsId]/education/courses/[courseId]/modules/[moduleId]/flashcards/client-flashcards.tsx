@@ -14,8 +14,8 @@ import {
   AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
+import { Pencil, Trash, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { Pencil, Trash, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
@@ -77,7 +77,7 @@ export default function ClientFlashcards({
           key={card?.id || idx}
           className={cn(
             previewMode ||
-              'rounded-lg border border-foreground/5 bg-foreground/5 p-2 md:p-4'
+              'border-foreground/5 bg-foreground/5 rounded-lg border p-2 md:p-4'
           )}
         >
           {editingCardId === card?.id ? (

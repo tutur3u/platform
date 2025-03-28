@@ -11,8 +11,8 @@ import { useSidebar } from '@/hooks/useSidebar';
 import '@/style/index.css';
 import { Editor } from '@tiptap/core';
 import { EditorContent, JSONContent } from '@tiptap/react';
+import { Loader2 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { Loader2 } from 'lucide-react';
 import {
   forwardRef,
   useCallback,
@@ -197,7 +197,7 @@ export const BlockEditor = forwardRef<
     if (!editor) {
       return (
         <div className="flex h-fit items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
         </div>
       );
     }
@@ -227,7 +227,7 @@ export const BlockEditor = forwardRef<
               <EditorContent
                 editor={editor}
                 className={cn(
-                  'prose max-w-none prose-neutral dark:prose-invert',
+                  'prose prose-neutral dark:prose-invert max-w-none',
                   'prose-headings:font-medium prose-headings:tracking-tight',
                   'prose-h1:text-4xl prose-h1:leading-tight prose-h1:font-bold',
                   'prose-h2:text-3xl prose-h2:font-semibold',

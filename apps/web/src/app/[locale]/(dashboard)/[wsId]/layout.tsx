@@ -14,7 +14,6 @@ import {
   getWorkspace,
   verifySecret,
 } from '@/lib/workspace-helper';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   Archive,
   Banknote,
@@ -36,7 +35,8 @@ import {
   ScanSearch,
   Sparkles,
   Users,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -457,7 +457,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       actions={
         <Suspense
           fallback={
-            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
           }
         >
           <NavbarActions />
@@ -466,7 +466,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       userPopover={
         <Suspense
           fallback={
-            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
           }
         >
           <UserNav hideMetadata />

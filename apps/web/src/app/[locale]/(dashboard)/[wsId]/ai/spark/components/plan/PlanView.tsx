@@ -13,10 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Progress } from '@tuturuuu/ui/progress';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { format, isValid, isWithinInterval, parseISO } from 'date-fns';
 import {
   AlertCircle,
   BarChart,
@@ -29,7 +25,11 @@ import {
   ListTodo,
   Target,
   Timer,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Progress } from '@tuturuuu/ui/progress';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { format, isValid, isWithinInterval, parseISO } from 'date-fns';
 import { useCallback, useMemo, useState } from 'react';
 
 interface PlanViewProps {
@@ -46,7 +46,7 @@ const taskStatusColors = {
 } as const;
 
 const taskPriorityIcons: Record<string, React.ReactNode> = {
-  high: <AlertCircle className="h-4 w-4 text-destructive" />,
+  high: <AlertCircle className="text-destructive h-4 w-4" />,
   medium: <Clock className="h-4 w-4 text-yellow-500" />,
   low: <Target className="h-4 w-4 text-green-500" />,
 };
@@ -211,7 +211,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
           <CardContent>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   Skill Level
                 </span>
                 <Badge variant="secondary">
@@ -219,7 +219,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   Weekly Hours
                 </span>
                 <Badge variant="secondary">
@@ -227,7 +227,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   Total Hours
                 </span>
                 <Badge variant="secondary">
@@ -297,7 +297,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
     return (
       <div
         key={uniqueKey}
-        className="flex items-start justify-between gap-4 rounded-md border bg-card/50 p-4"
+        className="bg-card/50 flex items-start justify-between gap-4 rounded-md border p-4"
       >
         <div className="space-y-2">
           <div className="flex items-start gap-3">
@@ -328,11 +328,11 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 )}
               </div>
               {task.description && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {task.description}
                 </p>
               )}
-              <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+              <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-4 text-xs">
                 {task.estimatedHours && (
                   <div className="flex items-center gap-1">
                     <Timer className="h-3 w-3" />
@@ -384,10 +384,10 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
+              <Target className="text-primary h-4 w-4" />
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">{stats.totalTasks}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   Total Tasks
                 </span>
               </div>
@@ -398,12 +398,12 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" />
+              <Calendar className="text-primary h-4 w-4" />
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">
                   {stats.tasksThisMonth}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   Tasks This Month
                 </span>
               </div>
@@ -414,12 +414,12 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Timer className="h-4 w-4 text-primary" />
+              <Timer className="text-primary h-4 w-4" />
               <div className="flex flex-col">
                 <span className="text-2xl font-bold">
                   {stats.estimatedHours}h
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   Total Hours
                 </span>
               </div>
@@ -432,7 +432,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <BarChart className="h-4 w-4 text-primary" />
+                  <BarChart className="text-primary h-4 w-4" />
                   <span className="text-sm font-medium">Completion</span>
                 </div>
                 <span className="text-sm font-medium">{stats.completion}%</span>
@@ -457,7 +457,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5 text-primary" />
+                  <CalendarDays className="text-primary h-5 w-5" />
                   Month Selection
                 </CardTitle>
                 <CardDescription>
@@ -497,8 +497,8 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
     return (
       <div className="relative space-y-8">
         {isLoading && (
-          <div className="absolute top-4 right-4">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="absolute right-4 top-4">
+            <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         )}
 
@@ -508,15 +508,15 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
 
         {/* Overview Section */}
         {yearPlan?.overview ? (
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold">
-              <Target className="h-5 w-5 text-primary" />
+              <Target className="text-primary h-5 w-5" />
               Overview
             </h3>
             <p className="text-muted-foreground">{yearPlan.overview}</p>
           </div>
         ) : isLoading ? (
-          <div className="h-20 animate-pulse rounded-lg bg-muted" />
+          <div className="bg-muted h-20 animate-pulse rounded-lg" />
         ) : null}
 
         {/* Quarters Section */}
@@ -528,9 +528,9 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
 
           return (
             <div key={`quarter-${quarterIdx}`} className="space-y-6">
-              <div className="rounded-lg border bg-card p-6">
+              <div className="bg-card rounded-lg border p-6">
                 <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                  <CheckCircle2 className="h-5 w-5 text-primary" />Q
+                  <CheckCircle2 className="text-primary h-5 w-5" />Q
                   {quarter.quarter}: {quarter.focus}
                   {isCurrentQuarter && (
                     <Badge variant="secondary" className="ml-2">
@@ -593,18 +593,18 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
 
         {/* Recommendations Section */}
         {yearPlan?.recommendations && yearPlan.recommendations.length > 0 && (
-          <div className="rounded-lg border bg-card p-6">
+          <div className="bg-card rounded-lg border p-6">
             <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-              <Target className="h-5 w-5 text-primary" />
+              <Target className="text-primary h-5 w-5" />
               Key Recommendations
             </h3>
             <ul className="grid gap-3 sm:grid-cols-2">
               {yearPlan.recommendations.map((recommendation, idx) => (
                 <li
                   key={`recommendation-${idx}`}
-                  className="flex items-start gap-2 rounded-md border bg-card/50 p-3 text-sm text-muted-foreground"
+                  className="bg-card/50 text-muted-foreground flex items-start gap-2 rounded-md border p-3 text-sm"
                 >
-                  <span className="mt-1 text-sm text-primary">•</span>
+                  <span className="text-primary mt-1 text-sm">•</span>
                   {recommendation}
                 </li>
               ))}
@@ -618,7 +618,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             {Array.from({ length: 3 }).map((_, idx) => (
               <div
                 key={`loading-${idx}`}
-                className="h-32 animate-pulse rounded-lg bg-muted"
+                className="bg-muted h-32 animate-pulse rounded-lg"
               />
             ))}
           </div>
@@ -631,12 +631,12 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
     return (
       <div className="relative space-y-4">
         {isLoading && (
-          <div className="absolute top-4 right-4">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="absolute right-4 top-4">
+            <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         )}
 
-        <pre className="rounded-lg bg-muted/50 p-4 text-sm whitespace-pre-wrap">
+        <pre className="bg-muted/50 whitespace-pre-wrap rounded-lg p-4 text-sm">
           {JSON.stringify(yearPlan, null, 2)}
         </pre>
       </div>

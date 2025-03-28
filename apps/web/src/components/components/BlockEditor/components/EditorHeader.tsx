@@ -13,8 +13,6 @@ import {
   AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
 import {
   AlignCenter,
   AlignJustify,
@@ -34,7 +32,9 @@ import {
   Strikethrough,
   Underline,
   Undo,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
 export type EditorHeaderProps = {
@@ -61,7 +61,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
   };
 
   return (
-    <div className="sticky top-0 z-50 flex flex-col gap-0.5 border-b bg-background/95 text-foreground backdrop-blur supports-[backdrop-filter]:bg-background/75">
+    <div className="bg-background/95 text-foreground supports-[backdrop-filter]:bg-background/75 sticky top-0 z-50 flex flex-col gap-0.5 border-b backdrop-blur">
       <div className="flex items-center justify-between border-b px-4 py-2">
         <div className="flex items-center gap-2">
           <EditorInfo characters={characters} words={words} />
@@ -96,7 +96,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
             <TooltipContent>Redo (⌘⇧Z)</TooltipContent>
           </Tooltip>
 
-          <div className="mx-2 h-4 w-px bg-border" />
+          <div className="bg-border mx-2 h-4 w-px" />
 
           <AlertDialog>
             <Tooltip>
@@ -142,7 +142,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('heading', { level: 1 }) && 'bg-muted'
                 )}
                 onClick={() =>
@@ -161,7 +161,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('heading', { level: 2 }) && 'bg-muted'
                 )}
                 onClick={() =>
@@ -180,7 +180,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('heading', { level: 3 }) && 'bg-muted'
                 )}
                 onClick={() =>
@@ -195,7 +195,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
           </Tooltip>
         </div>
 
-        <div className="mx-2 h-4 w-px bg-border" />
+        <div className="bg-border mx-2 h-4 w-px" />
 
         <div className="flex items-center">
           <Tooltip>
@@ -204,7 +204,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('bold') && 'bg-muted'
                 )}
                 onClick={() => editor.chain().focus().toggleBold().run()}
@@ -221,7 +221,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('italic') && 'bg-muted'
                 )}
                 onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -238,7 +238,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('underline') && 'bg-muted'
                 )}
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
@@ -255,7 +255,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('strike') && 'bg-muted'
                 )}
                 onClick={() => editor.chain().focus().toggleStrike().run()}
@@ -272,7 +272,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('code') && 'bg-muted'
                 )}
                 onClick={() => editor.chain().focus().toggleCode().run()}
@@ -285,7 +285,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
           </Tooltip>
         </div>
 
-        <div className="mx-2 h-4 w-px bg-border" />
+        <div className="bg-border mx-2 h-4 w-px" />
 
         <div className="flex items-center">
           <Tooltip>
@@ -294,7 +294,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('bulletList') && 'bg-muted'
                 )}
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -311,7 +311,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('orderedList') && 'bg-muted'
                 )}
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -328,7 +328,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive('blockquote') && 'bg-muted'
                 )}
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -341,7 +341,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
           </Tooltip>
         </div>
 
-        <div className="mx-2 h-4 w-px bg-border" />
+        <div className="bg-border mx-2 h-4 w-px" />
 
         <div className="flex items-center">
           <Tooltip>
@@ -350,7 +350,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive({ textAlign: 'left' }) && 'bg-muted'
                 )}
                 onClick={() =>
@@ -369,7 +369,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive({ textAlign: 'center' }) && 'bg-muted'
                 )}
                 onClick={() =>
@@ -388,7 +388,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive({ textAlign: 'right' }) && 'bg-muted'
                 )}
                 onClick={() =>
@@ -407,7 +407,7 @@ export const EditorHeader = ({ editor }: EditorHeaderProps) => {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'h-8 px-2 data-[active=true]:bg-muted',
+                  'data-[active=true]:bg-muted h-8 px-2',
                   editor.isActive({ textAlign: 'justify' }) && 'bg-muted'
                 )}
                 onClick={() =>

@@ -1,9 +1,9 @@
 'use client';
 
 import { buttonVariants } from '@tuturuuu/ui/button';
+import { LucideIcon } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 
 interface NavProps {
@@ -43,7 +43,7 @@ export function Nav({ links, isCollapsed }: NavProps) {
               <TooltipContent side="right" className="flex items-center gap-4">
                 {link.title}
                 {link.label && (
-                  <span className="ml-auto text-muted-foreground">
+                  <span className="text-muted-foreground ml-auto">
                     {link.label}
                   </span>
                 )}

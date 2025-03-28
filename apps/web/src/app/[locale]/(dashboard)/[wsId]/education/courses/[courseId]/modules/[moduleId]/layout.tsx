@@ -6,7 +6,6 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
 import {
   BookText,
   Box,
@@ -17,7 +16,8 @@ import {
   SquareCheck,
   SwatchBook,
   Youtube,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -52,7 +52,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
         title={
           <>
             <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-lg text-dynamic-purple max-md:hidden">
+              <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
                 <Box className="h-6 w-6" />
                 {t('ws-course-modules.singular')}
               </div>

@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { Plus, RotateCw, Trash, Upload } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Pagination,
@@ -34,7 +35,6 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { Plus, RotateCw, Trash, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -226,7 +226,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
     if (!headers.length) {
       return (
         <div className="flex h-64 flex-col items-center justify-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {t('ws-datasets.no_data')}
           </p>
           <Button variant="outline" onClick={handleRefresh} className="mt-4">
@@ -241,7 +241,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-muted/50">
+              <tr className="bg-muted/50 border-b">
                 {headers.map((header: any, index: number) => (
                   <th key={index} className="p-2 text-left text-sm">
                     <div className="line-clamp-1">{header}</div>
@@ -273,7 +273,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
                       {headers.map((header: any, colIndex: number) => (
                         <td
                           key={colIndex}
-                          className="min-w-32 p-2 text-sm whitespace-pre-line"
+                          className="min-w-32 whitespace-pre-line p-2 text-sm"
                         >
                           <span className="line-clamp-3">
                             {row.cells[header]}
@@ -319,7 +319,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {t('common.rows-per-page')}:
           </span>
           <Select value={pageSize} onValueChange={handlePageSizeChange}>
@@ -396,7 +396,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
       {rowsQuery.isFetching && !data?.length ? (
         <div className="flex h-64 items-center justify-center">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {t('common.loading')}...
           </span>
         </div>
@@ -414,7 +414,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
             </>
           ) : (
             <>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Showing {(currentPage - 1) * parseInt(pageSize) + 1} to{' '}
                 {Math.min(currentPage * parseInt(pageSize), totalRows)} of{' '}
                 {totalRows} rows

@@ -3,11 +3,16 @@ import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { YearCalendar } from '@tuturuuu/ui/custom/calendar/year-calendar';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import {
+  CalendarIcon,
+  ChartColumn,
+  FileUser,
+  UserCheck,
+} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { CalendarIcon, ChartColumn, FileUser, UserCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

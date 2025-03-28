@@ -4,8 +4,8 @@ import RowActions from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Check, X } from '@tuturuuu/ui/icons';
 import 'dayjs/locale/vi';
-import { Check, X } from 'lucide-react';
 import moment from 'moment';
 import Link from 'next/link';
 

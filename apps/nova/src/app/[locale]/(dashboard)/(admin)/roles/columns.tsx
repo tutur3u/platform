@@ -9,8 +9,8 @@ import {
 import { ColumnDef } from '@tanstack/react-table';
 import { NovaRole } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { Loader2 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Loader2 } from 'lucide-react';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
 

@@ -3,7 +3,7 @@
 import { Row } from '@tanstack/react-table';
 import type { CrawledUrl } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

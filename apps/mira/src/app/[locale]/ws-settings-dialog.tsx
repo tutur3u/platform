@@ -17,16 +17,6 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from '@tuturuuu/ui/sidebar';
-import {
   Bell,
   Check,
   Globe,
@@ -39,7 +29,17 @@ import {
   Paintbrush,
   Settings,
   Video,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from '@tuturuuu/ui/sidebar';
 import * as React from 'react';
 
 const data = {
@@ -116,7 +116,7 @@ export function WSSettingsDialog() {
               {Array.from({ length: 10 }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-video max-w-3xl rounded-xl bg-muted/50"
+                  className="bg-muted/50 aspect-video max-w-3xl rounded-xl"
                 />
               ))}
             </div>

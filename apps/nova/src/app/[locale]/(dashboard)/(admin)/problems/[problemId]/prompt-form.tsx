@@ -6,10 +6,10 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Clock, PlayCircle } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { Clock, PlayCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 type HistoryEntry = {
@@ -243,7 +243,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       <TabsContent value="write" className="flex-1 overflow-hidden">
         <div className="flex h-full flex-col">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               Characters: {prompt.length} / {problem.maxPromptLength}
             </div>
             <Progress
@@ -312,7 +312,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
               {testResult && (
                 <div className="mt-4">
                   <h3 className="mb-2 text-sm font-medium">Output:</h3>
-                  <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
                     {testResult.output}
                   </div>
                 </div>
@@ -346,11 +346,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     <h3 className="text-sm font-medium">
                       Test Case {index + 1}:
                     </h3>
-                    <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
                       {result.input}
                     </div>
                     <h3 className="text-sm font-medium">Output:</h3>
-                    <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
                       {result.output}
                     </div>
                   </div>
@@ -381,34 +381,34 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       >
                         {submission.score}/10
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         <Clock className="mr-1 inline h-3 w-3" />
                         {new Date(submission.created_at).toLocaleString()}
                       </span>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2 pt-0 pb-3">
+                <CardContent className="space-y-2 pb-3 pt-0">
                   <div>
-                    <h3 className="mb-1 text-xs font-medium text-muted-foreground">
+                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
                       Prompt:
                     </h3>
-                    <div className="rounded-md bg-muted p-2 text-sm">
+                    <div className="bg-muted rounded-md p-2 text-sm">
                       {submission.prompt}
                     </div>
                   </div>
                   <div>
-                    <h3 className="mb-1 text-xs font-medium text-muted-foreground">
+                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
                       Feedback:
                     </h3>
-                    <div className="rounded-md bg-muted p-2 text-sm">
+                    <div className="bg-muted rounded-md p-2 text-sm">
                       {submission.feedback}
                     </div>
                   </div>
                   {submission.criteria_scores &&
                     submission.criteria_scores.length > 0 && (
                       <div className="space-y-2">
-                        <h3 className="text-xs font-medium text-muted-foreground">
+                        <h3 className="text-muted-foreground text-xs font-medium">
                           Criteria Scores:
                         </h3>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -442,7 +442,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             ))
           ) : (
             <div className="flex h-40 items-center justify-center rounded-md border border-dashed">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No submission history yet
               </p>
             </div>

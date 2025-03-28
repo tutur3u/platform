@@ -3,7 +3,7 @@
 import ApiKeySelector from './api-key-selector';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
-import { Info } from 'lucide-react';
+import { Info } from '@tuturuuu/ui/icons';
 import { useEffect, useState } from 'react';
 
 interface Props {

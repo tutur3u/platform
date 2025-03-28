@@ -1,5 +1,6 @@
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Loader2 } from '@tuturuuu/ui/icons';
 import {
   Select,
   SelectContent,
@@ -8,7 +9,6 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { Loader2 } from 'lucide-react';
 
 interface PromptWorkbenchProps {
   prompt: string;

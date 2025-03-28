@@ -6,7 +6,7 @@ import { WorkspaceUserReport } from '@tuturuuu/types/db';
 import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { PlusCircle, User } from 'lucide-react';
+import { PlusCircle, User } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 

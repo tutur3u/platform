@@ -1,8 +1,8 @@
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { ChevronLeft, ChevronRight, Clock, LogOut } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
-import { ChevronLeft, ChevronRight, Clock, LogOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface CustomizedHeaderProps {
@@ -160,7 +160,7 @@ export default function CustomizedHeader({
   return (
     <div
       className={cn(
-        'h-16 border-b bg-background/80 backdrop-blur-sm',
+        'bg-background/80 h-16 border-b backdrop-blur-sm',
         className
       )}
     >
@@ -206,7 +206,7 @@ export default function CustomizedHeader({
           <Progress
             value={timeLeft.percentage}
             max={100}
-            className="h-2 w-24 bg-muted"
+            className="bg-muted h-2 w-24"
             style={
               {
                 '--progress-indicator-color': getProgressColor(),

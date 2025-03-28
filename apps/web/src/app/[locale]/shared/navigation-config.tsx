@@ -22,7 +22,7 @@ import {
   UsersRound,
   Utensils,
   WandSparkles,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
 import { ReactNode } from 'react';
 
 export interface NavItem {

@@ -9,8 +9,6 @@ import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
 import {
   Check,
   CircleSlash,
@@ -20,7 +18,9 @@ import {
   Save,
   Send,
   X,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -207,11 +207,11 @@ function UserCard({
           </Avatar>
         )}
         <div className="ml-4 w-full">
-          <h3 className="text-lg font-semibold text-foreground">
+          <h3 className="text-foreground text-lg font-semibold">
             {user.full_name}
           </h3>
           {(user.email || user.phone) && (
-            <p className="text-sm text-foreground">
+            <p className="text-foreground text-sm">
               {user.email || user.phone}
             </p>
           )}

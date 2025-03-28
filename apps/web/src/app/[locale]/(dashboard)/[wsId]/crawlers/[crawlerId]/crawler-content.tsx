@@ -10,11 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { CheckIcon, CopyIcon } from '@tuturuuu/ui/icons';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { formatDistance } from 'date-fns';
-import { CheckIcon, CopyIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -148,7 +148,7 @@ export function CrawlerContent({
                   <div
                     className={cn(
                       'p-4',
-                      'prose w-[calc(100vw-8rem)] min-w-full break-words text-foreground md:w-[38rem] lg:w-full dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2'
+                      'prose text-foreground dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2 w-[calc(100vw-8rem)] min-w-full break-words md:w-[38rem] lg:w-full'
                     )}
                   >
                     {crawledUrl.markdown ? (
@@ -190,7 +190,7 @@ export function CrawlerContent({
                   </div>
                   <div className="overflow-x-auto p-4">
                     {crawledUrl.html ? (
-                      <pre className="text-sm whitespace-pre">
+                      <pre className="whitespace-pre text-sm">
                         <code>{formatHTML(crawledUrl.html)}</code>
                       </pre>
                     ) : (

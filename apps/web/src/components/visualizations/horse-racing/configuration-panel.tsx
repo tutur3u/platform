@@ -1,5 +1,6 @@
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { HelpCircle, RefreshCw } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -17,7 +18,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { HelpCircle, RefreshCw } from 'lucide-react';
 
 interface ConfigurationPanelProps {
   numHorses: number;
@@ -99,7 +99,7 @@ export function ConfigurationPanel({
                   className="w-20"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Set between 2-100 horses
               </p>
             </div>
@@ -197,8 +197,8 @@ export function ConfigurationPanel({
                 onValueChange={(value) => setAnimationSpeed(value[0] ?? 1000)}
               />
               <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Fast</span>
-                <span className="text-xs text-muted-foreground">Slow</span>
+                <span className="text-muted-foreground text-xs">Fast</span>
+                <span className="text-muted-foreground text-xs">Slow</span>
               </div>
             </div>
 

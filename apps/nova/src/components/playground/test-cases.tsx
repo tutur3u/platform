@@ -1,5 +1,5 @@
 import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle, Loader2, XCircle } from '@tuturuuu/ui/icons';
 
 interface TestCasesProps {
   results: { passed: boolean; message: string }[];
@@ -18,7 +18,7 @@ export function TestCases({ results, isLoading }: TestCasesProps) {
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : results.length === 0 ? (
-          <p className="flex h-40 items-center justify-center text-center text-muted-foreground">
+          <p className="text-muted-foreground flex h-40 items-center justify-center text-center">
             Run your code to see the test results here.
           </p>
         ) : (
@@ -26,7 +26,7 @@ export function TestCases({ results, isLoading }: TestCasesProps) {
             {results.map((result, index) => (
               <li
                 key={index}
-                className="flex items-start space-x-2 rounded-md bg-muted p-2"
+                className="bg-muted flex items-start space-x-2 rounded-md p-2"
               >
                 {result.passed ? (
                   <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />

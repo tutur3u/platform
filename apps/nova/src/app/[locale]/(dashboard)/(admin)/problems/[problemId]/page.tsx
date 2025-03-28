@@ -9,8 +9,8 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -51,7 +51,7 @@ export default function ProblemPage({ params }: Props) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-muted-foreground">
+        <p className="text-muted-foreground text-xl font-semibold">
           Loading...
         </p>
       </div>
@@ -82,10 +82,10 @@ export default function ProblemPage({ params }: Props) {
 
       <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-6 md:grid-cols-2">
         <div className="flex h-full w-full flex-col gap-4 overflow-hidden">
-          <Card className="h-full overflow-y-auto border-foreground/10 bg-foreground/5">
+          <Card className="border-foreground/10 bg-foreground/5 h-full overflow-y-auto">
             <CardContent className="p-0">
               <Tabs defaultValue="problem" className="w-full">
-                <TabsList className="w-full rounded-t-lg rounded-b-none bg-foreground/10">
+                <TabsList className="bg-foreground/10 w-full rounded-b-none rounded-t-lg">
                   <TabsTrigger value="problem" className="flex-1">
                     Problem
                   </TabsTrigger>

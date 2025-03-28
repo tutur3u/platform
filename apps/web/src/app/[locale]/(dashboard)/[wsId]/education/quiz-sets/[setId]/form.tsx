@@ -14,11 +14,11 @@ import {
 } from '@tuturuuu/ui/form';
 import { useFieldArray, useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Loader, Pencil, Plus, PlusCircle, Wand } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Loader, Pencil, Plus, PlusCircle, Wand } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
@@ -173,7 +173,7 @@ export default function QuizForm({
                   placeholder={t('common.question')}
                   autoComplete="off"
                   {...field}
-                  className="rounded-md border-foreground/20 shadow-sm"
+                  className="border-foreground/20 rounded-md shadow-sm"
                 />
               </FormControl>
               <FormMessage />
@@ -197,7 +197,7 @@ export default function QuizForm({
                           control={form.control}
                           name={`quiz_options.${index}.is_correct`}
                           render={({ field }) => (
-                            <FormItem className="flex items-center space-y-0 space-x-1">
+                            <FormItem className="flex items-center space-x-1 space-y-0">
                               <Checkbox
                                 id={`quiz_options.${index}.is_correct`}
                                 checked={field.value}
@@ -213,7 +213,7 @@ export default function QuizForm({
                             placeholder={`${t('common.option')} ${index + 1}`}
                             autoComplete="off"
                             {...field}
-                            className="rounded-md border-foreground/20 shadow-sm"
+                            className="border-foreground/20 rounded-md shadow-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -261,7 +261,7 @@ export default function QuizForm({
                           placeholder={t('common.explanation')}
                           autoComplete="off"
                           {...field}
-                          className="rounded-md border-foreground/20 shadow-sm"
+                          className="border-foreground/20 rounded-md shadow-sm"
                         />
                       </FormControl>
                       <FormMessage />

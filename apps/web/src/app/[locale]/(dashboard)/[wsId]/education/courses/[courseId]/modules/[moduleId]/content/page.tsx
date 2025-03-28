@@ -1,7 +1,7 @@
 import { ModuleContentEditor } from './editor';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Goal, Sparkles } from 'lucide-react';
+import { Goal, Sparkles } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

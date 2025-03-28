@@ -4,7 +4,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
 } from '@tuturuuu/ui/dropdown-menu';
-import { CalendarClock } from 'lucide-react';
+import { CalendarClock } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

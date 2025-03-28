@@ -1,6 +1,6 @@
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { AlertCircleIcon, TrendingUpIcon } from 'lucide-react';
+import { AlertCircleIcon, TrendingUpIcon } from '@tuturuuu/ui/icons';
 
 interface Horse {
   id: number;
@@ -137,7 +137,7 @@ export function RaceInsights({
           <div className="space-y-3">
             <div>
               <h4 className="mb-1 text-sm font-medium">Race Analysis</h4>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 {race.horses.length === horses.length ? (
                   <p>
                     This race includes all horses, providing a complete ranking.
@@ -255,7 +255,7 @@ export function RaceInsights({
                       {horseId}
                     </div>
                     <div className="ml-2 flex-1">
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div className="bg-muted h-2 overflow-hidden rounded-full">
                         <div
                           className="h-full bg-gradient-to-r from-green-500 to-green-400"
                           style={{
@@ -268,7 +268,7 @@ export function RaceInsights({
                       {horse.speed.toFixed(2)}
                     </div>
                     {index < race.result.length - 1 && (
-                      <div className="ml-1 text-xs text-muted-foreground">
+                      <div className="text-muted-foreground ml-1 text-xs">
                         {speedDifferentials[index] &&
                           parseFloat(speedDifferentials[index].percentDiff) >
                             0 && (
@@ -285,7 +285,7 @@ export function RaceInsights({
           </div>
         </div>
 
-        <div className="mt-4 text-xs text-muted-foreground">
+        <div className="text-muted-foreground mt-4 text-xs">
           <p>
             Race {currentRaceIndex + 1} of {allRaces.length} •{' '}
             {race.raceType.charAt(0).toUpperCase() + race.raceType.slice(1)}{' '}

@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from '@tuturuuu/ui/icons';
 
 const templates = [
   {

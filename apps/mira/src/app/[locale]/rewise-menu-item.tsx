@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Sparkles } from 'lucide-react';
+import { Sparkles } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 export default function RewiseMenuItem() {

@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { ArrowRight, BookOpen, Code, Trophy, Zap } from 'lucide-react';
+import { ArrowRight, BookOpen, Code, Trophy, Zap } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -18,7 +18,7 @@ export default async function HomePage() {
         <h1 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
           {t('badge')}
         </h1>
-        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
           {t('title')}
         </p>
       </div>

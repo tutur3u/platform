@@ -17,10 +17,10 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Users } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import * as z from 'zod';
@@ -124,7 +124,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
                   text={form.watch('name')}
                   value={field.value}
                   onChange={field.onChange}
-                  className="line-clamp-1 w-full grow-0 break-all text-ellipsis whitespace-nowrap"
+                  className="line-clamp-1 w-full grow-0 text-ellipsis whitespace-nowrap break-all"
                 />
               </FormControl>
               <FormMessage />

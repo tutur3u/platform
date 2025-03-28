@@ -4,11 +4,11 @@ import { MigrationModule, ModulePackage, generateModules } from './modules';
 import { useLocalStorage } from '@mantine/hooks';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import { GitMerge, Play, RefreshCcw } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
-import { GitMerge, Play, RefreshCcw } from 'lucide-react';
 import { useState } from 'react';
 
 export default function MigrationDashboard() {

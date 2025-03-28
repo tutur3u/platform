@@ -18,11 +18,11 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { Mail } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Mail } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -357,7 +357,7 @@ export default function LoginForm() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-background text-muted-foreground px-2">
                 {t('login.or_continue_with')}
               </span>
             </div>
@@ -491,12 +491,12 @@ export default function LoginForm() {
           </Form>
 
           <Separator className="mt-2" />
-          <div className="text-center text-sm font-semibold text-balance text-foreground/50">
+          <div className="text-foreground/50 text-balance text-center text-sm font-semibold">
             {t('auth.notice-p1')}{' '}
             <Link
               href="/terms"
               target="_blank"
-              className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
+              className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
             >
               {t('auth.tos')}
             </Link>{' '}
@@ -504,7 +504,7 @@ export default function LoginForm() {
             <Link
               href="/privacy"
               target="_blank"
-              className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
+              className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
             >
               {t('auth.privacy')}
             </Link>{' '}

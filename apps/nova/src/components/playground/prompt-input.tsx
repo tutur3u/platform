@@ -1,8 +1,8 @@
 import { PromptTemplates } from './prompt-templates';
 import { Button } from '@tuturuuu/ui/button';
 import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { RotateCcw, Send, Sparkles } from '@tuturuuu/ui/icons';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { RotateCcw, Send, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 interface PromptInputProps {

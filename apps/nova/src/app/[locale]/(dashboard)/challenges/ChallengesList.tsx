@@ -5,9 +5,9 @@ import ChallengeCard from './challengeCard';
 import { useQuery } from '@tanstack/react-query';
 import type { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
+import { Clock, Filter, Search } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Clock, Filter, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {

@@ -9,6 +9,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import {
+  ArrowDownUp,
+  Calendar,
+  Check,
+  ChevronDown,
+  Flag,
+  Search,
+  Users,
+} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Table,
@@ -20,15 +29,6 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import {
-  ArrowDownUp,
-  Calendar,
-  Check,
-  ChevronDown,
-  Flag,
-  Search,
-  Users,
-} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -161,7 +161,7 @@ export function ListView({
     <div className="flex h-full flex-col gap-4 p-4">
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder="Search tasks..."
             value={searchQuery}
@@ -173,7 +173,7 @@ export function ListView({
 
       <div className="relative flex-1 overflow-auto rounded-lg border">
         <Table>
-          <TableHeader className="sticky top-0 bg-background">
+          <TableHeader className="bg-background sticky top-0">
             <TableRow>
               <TableHead className="w-[40px]">Status</TableHead>
               <TableHead>
@@ -260,7 +260,7 @@ export function ListView({
                 <TableCell>
                   <div className="flex justify-center">
                     {task.archived && (
-                      <Check className="h-4 w-4 text-primary" />
+                      <Check className="text-primary h-4 w-4" />
                     )}
                   </div>
                 </TableCell>
@@ -274,7 +274,7 @@ export function ListView({
                       {task.name}
                     </span>
                     {task.description && (
-                      <span className="line-clamp-1 text-xs text-muted-foreground">
+                      <span className="text-muted-foreground line-clamp-1 text-xs">
                         {task.description}
                       </span>
                     )}
@@ -299,7 +299,7 @@ export function ListView({
                 </TableCell>
                 <TableCell>
                   {task.start_date && (
-                    <div className="flex items-center gap-1 text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       {format(new Date(task.start_date), 'PP')}
                     </div>
@@ -312,7 +312,7 @@ export function ListView({
                         'text-muted-foreground':
                           !task.archived &&
                           new Date(task.end_date) > new Date(),
-                        'font-medium text-destructive':
+                        'text-destructive font-medium':
                           !task.archived &&
                           new Date(task.end_date) < new Date(),
                       })}
@@ -324,7 +324,7 @@ export function ListView({
                 </TableCell>
                 <TableCell>
                   {task.assignees && task.assignees.length > 0 && (
-                    <div className="flex items-center gap-1 text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-1">
                       <Users className="h-3 w-3" />
                       {task.assignees.length}
                     </div>

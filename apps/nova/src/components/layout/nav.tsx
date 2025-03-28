@@ -6,9 +6,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import { ChevronDown } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -63,7 +63,7 @@ export function Nav({
                       </TooltipTrigger>
                       <TooltipContent
                         side="right"
-                        className="flex items-center gap-4 border bg-background text-foreground"
+                        className="bg-background text-foreground flex items-center gap-4 border"
                       >
                         {item.name}
                       </TooltipContent>
@@ -105,7 +105,7 @@ export function Nav({
                         </TooltipTrigger>
                         <TooltipContent
                           side="right"
-                          className="flex items-center gap-4 border bg-background text-foreground"
+                          className="bg-background text-foreground flex items-center gap-4 border"
                         >
                           {subItem.name}
                         </TooltipContent>
@@ -150,7 +150,7 @@ export function Nav({
                 </TooltipTrigger>
                 <TooltipContent
                   side="right"
-                  className="flex items-center gap-4 border bg-background text-foreground"
+                  className="bg-background text-foreground flex items-center gap-4 border"
                 >
                   {item.name}
                 </TooltipContent>

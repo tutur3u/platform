@@ -2,11 +2,11 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
+import { CalendarIcon, Clock, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface DateTimePickerProps {
@@ -139,7 +139,7 @@ export function DateTimePicker({
           disabled={disabled || !value}
           placeholder="--:--"
         />
-        <Clock className="absolute top-2.5 right-3 h-4 w-4 text-muted-foreground" />
+        <Clock className="text-muted-foreground absolute right-3 top-2.5 h-4 w-4" />
       </div>
     </div>
   );

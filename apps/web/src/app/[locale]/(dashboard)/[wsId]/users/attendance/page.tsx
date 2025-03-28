@@ -6,8 +6,8 @@ import GeneralSearchBar from '@/components/general-search-bar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { MinusCircle, PlusCircle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { MinusCircle, PlusCircle } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 

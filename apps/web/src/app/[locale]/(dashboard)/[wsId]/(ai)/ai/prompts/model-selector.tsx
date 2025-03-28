@@ -9,9 +9,9 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import { FormControl, FormLabel } from '@tuturuuu/ui/form';
+import { CheckIcon, ChevronsUpDown } from '@tuturuuu/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import useSWR from 'swr';
 
 export default function AIModelSelector({

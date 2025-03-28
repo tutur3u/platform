@@ -3,8 +3,14 @@
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import {
+  Filter,
+  Loader2,
+  RotateCw,
+  ScanSearch,
+  Search,
+} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { Filter, Loader2, RotateCw, ScanSearch, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -85,7 +91,7 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
   return (
     <div className="flex items-center gap-4">
       <div className="relative">
-        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
         <Input
           placeholder="Search URLs..."
           value={urlSearch}
@@ -97,7 +103,7 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
         />
       </div>
       <div className="flex items-center gap-2">
-        <Filter className="h-4 w-4 text-muted-foreground" />
+        <Filter className="text-muted-foreground h-4 w-4" />
         <Combobox
           t={t}
           options={comboboxOptions}

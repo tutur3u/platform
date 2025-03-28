@@ -6,8 +6,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
 import {
   CalendarDays,
   LayoutGrid,
@@ -16,7 +14,9 @@ import {
   Pencil,
   Settings,
   Trash2,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -66,7 +66,7 @@ export function BoardHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="flex items-center rounded-lg border bg-background p-1">
+        <div className="bg-background flex items-center rounded-lg border p-1">
           <Button
             variant="ghost"
             size="sm"

@@ -11,8 +11,6 @@ import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
 import {
   Box,
   Calendar,
@@ -20,7 +18,9 @@ import {
   FileUser,
   MinusCircle,
   UserCheck,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { cn } from '@tuturuuu/utils/format';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -160,7 +160,7 @@ export default async function UserGroupDetailsPage({
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
         {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start"> */}
         {excludedUserGroups.length ? (
-          <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
+          <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
             <div className="mb-2 text-xl font-semibold">
               {t('ws-roles.members')}
             </div>
@@ -173,14 +173,14 @@ export default async function UserGroupDetailsPage({
           </div>
         ) : null}
 
-        <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <div className="mb-2 text-xl font-semibold">
             {t('ws-user-group-details.schedule')}
           </div>
           <GroupSchedule wsId={wsId} groupId={groupId} />
         </div>
 
-        <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
+        <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
           <PostsClient
             wsId={wsId}
             groupId={groupId}
@@ -190,7 +190,7 @@ export default async function UserGroupDetailsPage({
         </div>
 
         {lpCount ? (
-          <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
+          <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
             <div className="mb-2 text-xl font-semibold">
               {t('user-data-table.linked_products')}
               {!!lpCount && ` (${lpCount})`}
@@ -199,7 +199,7 @@ export default async function UserGroupDetailsPage({
               {linkedProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="flex items-center rounded-lg border bg-background p-2 md:p-4"
+                  className="bg-background flex items-center rounded-lg border p-2 md:p-4"
                 >
                   <Box className="mr-2 h-8 w-8" />
                   <div>

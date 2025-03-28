@@ -16,7 +16,7 @@ import {
   Sun,
   Trees,
   Waves,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 

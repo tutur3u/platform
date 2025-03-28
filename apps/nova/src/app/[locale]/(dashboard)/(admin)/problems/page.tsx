@@ -3,7 +3,7 @@ import CreateProblemDialog from './createProblemDialog';
 import ProblemCard from './problemCard';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 

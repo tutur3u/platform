@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { AlertCircle, BugPlay, Check, Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Pagination,
@@ -24,7 +25,6 @@ import {
 } from '@tuturuuu/ui/pagination';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
-import { AlertCircle, BugPlay, Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -243,7 +243,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
               {urlObj.pathname === '/' ? urlObj.hostname : urlObj.pathname}
             </span>
             {urlObj.searchParams.toString() && (
-              <span className="max-w-[300px] truncate rounded-full bg-muted-foreground/10 px-2 py-0.5 text-xs text-muted-foreground">
+              <span className="bg-muted-foreground/10 text-muted-foreground max-w-[300px] truncate rounded-full px-2 py-0.5 text-xs">
                 ?{urlObj.searchParams.toString()}
               </span>
             )}
@@ -257,7 +257,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
             href={url.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="truncate text-sm text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground truncate text-sm"
           >
             {url.url}
           </a>
@@ -304,7 +304,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
               href={originUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground text-sm"
             >
               {originUrl}
             </a>
@@ -388,9 +388,9 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12">
-            <BugPlay className="h-12 w-12 text-muted-foreground/50" />
+            <BugPlay className="text-muted-foreground/50 h-12 w-12" />
             <p className="mt-4 text-lg font-medium">All caught up!</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               All discovered URLs have been crawled
             </p>
           </div>
@@ -405,7 +405,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
         <CardHeader className="flex-row items-start justify-between space-y-0">
           <div className="space-y-1">
             <CardTitle>Uncrawled URLs</CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {pagination.totalItems} URL
               {pagination.totalItems !== 1 ? 's' : ''} waiting to be crawled
             </p>
@@ -481,7 +481,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
           <div className="space-y-4">
             {Object.entries(groupedUrls).length > 0 ? (
               <>
-                <div className="divide-y rounded-md border bg-card">
+                <div className="bg-card divide-y rounded-md border">
                   {Object.entries(groupedUrls).map(([originUrl, urls]) => (
                     <div key={originUrl} className="p-6">
                       {renderGroupHeader(originUrl, urls)}
@@ -493,7 +493,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Showing {(currentPage - 1) * currentPageSize + 1} to{' '}
                     {Math.min(
                       currentPage * currentPageSize,
@@ -556,7 +556,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
               !loading && (
                 <div className="flex flex-col items-center justify-center py-12">
                   <p className="text-lg font-medium">No uncrawled URLs found</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     All discovered URLs have been processed
                   </p>
                 </div>

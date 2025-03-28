@@ -6,9 +6,9 @@ import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import SearchBar from '@tuturuuu/ui/custom/search-bar';
+import { User, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { User, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -73,7 +73,7 @@ export default function RoleFormMembersSection({
 
   return (
     <>
-      <div className="mb-2 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 p-2 text-center font-bold text-dynamic-blue">
+      <div className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
         {form.watch('name') || '-'}
       </div>
       <div className="flex items-center gap-2">
@@ -88,9 +88,9 @@ export default function RoleFormMembersSection({
               <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
                 <AvatarImage
                   src={user?.avatar_url ?? undefined}
-                  className="overflow-clip rounded-full border border-foreground/50"
+                  className="border-foreground/50 overflow-clip rounded-full border"
                 />
-                <AvatarFallback className="border border-foreground/50 font-semibold">
+                <AvatarFallback className="border-foreground/50 border font-semibold">
                   {user?.display_name ? (
                     getInitials(user.display_name)
                   ) : (
@@ -123,9 +123,9 @@ export default function RoleFormMembersSection({
                 <Avatar className="relative h-12 w-12 overflow-visible font-semibold">
                   <AvatarImage
                     src={user?.avatar_url ?? undefined}
-                    className="overflow-clip rounded-full border border-foreground/50"
+                    className="border-foreground/50 overflow-clip rounded-full border"
                   />
-                  <AvatarFallback className="border border-foreground/50 font-semibold">
+                  <AvatarFallback className="border-foreground/50 border font-semibold">
                     {user?.display_name
                       ? getInitials(user?.display_name)
                       : null}
@@ -153,7 +153,7 @@ export default function RoleFormMembersSection({
           ))}
         </div>
       ) : (
-        <div className="mt-4 rounded border border-dashed p-4 text-center font-semibold text-foreground/50 md:p-8">
+        <div className="text-foreground/50 mt-4 rounded border border-dashed p-4 text-center font-semibold md:p-8">
           This role has no members yet.
         </div>
       )}

@@ -1,5 +1,5 @@
+import { Circle, Square, Triangle } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { Circle, Square, Triangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const FloatingElements = () => {

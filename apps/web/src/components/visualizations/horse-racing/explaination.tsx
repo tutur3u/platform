@@ -1,11 +1,11 @@
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { ChevronDown, ChevronUp, Trophy, Zap } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trophy, Zap } from '@tuturuuu/ui/icons';
 
 export default function Explanation() {
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="prose max-w-none dark:prose-invert">
+        <div className="prose dark:prose-invert max-w-none">
           <h3 className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-amber-500" />
             The Problem
@@ -17,7 +17,7 @@ export default function Explanation() {
             using the minimum number of races.
           </p>
 
-          <div className="my-4 rounded-md bg-muted p-3">
+          <div className="bg-muted my-4 rounded-md p-3">
             <p className="text-sm italic">
               <strong>Example:</strong> With 25 horses where we can race 5 at a
               time, a naive approach would require many races. Our algorithm
@@ -27,7 +27,7 @@ export default function Explanation() {
           </div>
 
           <h3 className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-primary" />
+            <Zap className="text-primary h-4 w-4" />
             Algorithm Approach
           </h3>
           <p>
@@ -40,7 +40,7 @@ export default function Explanation() {
               <strong>Initial Grouping:</strong> Divide the N horses into
               ceiling(N/M) groups and race each group separately to get
               preliminary rankings.
-              <div className="ml-6 text-sm text-muted-foreground">
+              <div className="text-muted-foreground ml-6 text-sm">
                 Example: With 25 horses racing 5 at a time, we form 5 groups of
                 5 horses each.
               </div>
@@ -48,7 +48,7 @@ export default function Explanation() {
             <li>
               <strong>Tournament of Champions:</strong> Race the winners from
               each group to determine the overall fastest horse.
-              <div className="ml-6 text-sm text-muted-foreground">
+              <div className="text-muted-foreground ml-6 text-sm">
                 This immediately identifies the #1 position in our final
                 ranking.
               </div>
@@ -57,7 +57,7 @@ export default function Explanation() {
               <strong>Candidate Set Maintenance:</strong> For each position,
               maintain a set of candidates who could potentially be next in the
               ranking.
-              <div className="ml-6 text-sm text-muted-foreground">
+              <div className="text-muted-foreground ml-6 text-sm">
                 For the #2 position, we only need to consider the runner-up from
                 the #1's group and the winners from other groups.
               </div>
@@ -87,7 +87,7 @@ export default function Explanation() {
             This significantly reduces the number of races needed.
           </p>
 
-          <div className="my-4 rounded-md bg-muted p-3">
+          <div className="bg-muted my-4 rounded-md p-3">
             <p className="text-sm">
               <strong>Real-World Applications:</strong> This algorithm
               demonstrates principles used in tournament design, searching in

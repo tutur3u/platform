@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
+import { Loader2 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function AuroraActions() {

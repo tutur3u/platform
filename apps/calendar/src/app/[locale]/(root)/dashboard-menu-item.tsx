@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
-import { ActivitySquare, Database } from 'lucide-react';
+import { ActivitySquare, Database } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

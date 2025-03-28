@@ -22,7 +22,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Pencil, Trash } from 'lucide-react';
+import { Pencil, Trash } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

@@ -10,9 +10,9 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Package, TicketPercent, User } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Package, TicketPercent, User } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {

@@ -4,7 +4,7 @@ import { RoleRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { WorkspaceRole } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { UserCircle } from 'lucide-react';
+import { UserCircle } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 
 export const roleColumns = (

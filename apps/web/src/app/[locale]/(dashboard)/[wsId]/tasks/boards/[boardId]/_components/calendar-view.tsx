@@ -8,6 +8,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
+import { Flag, MoreHorizontal } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import {
   addDays,
@@ -20,7 +21,6 @@ import {
   isToday,
   startOfMonth,
 } from 'date-fns';
-import { Flag, MoreHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -143,7 +143,7 @@ export function CalendarView({
       </div>
 
       <div className="flex-1 overflow-auto rounded-lg border">
-        <div className="grid grid-cols-7 gap-px border-b bg-muted">
+        <div className="bg-muted grid grid-cols-7 gap-px border-b">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
             <div
               key={day}
@@ -154,7 +154,7 @@ export function CalendarView({
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-px bg-muted">
+        <div className="bg-muted grid grid-cols-7 gap-px">
           {calendar.map((date) => {
             const dayTasks = tasks.filter(
               (task) =>
@@ -166,7 +166,7 @@ export function CalendarView({
               <div
                 key={date.toString()}
                 className={cn(
-                  'min-h-[120px] bg-background p-2',
+                  'bg-background min-h-[120px] p-2',
                   !isSameMonth(date, selectedDate) &&
                     'bg-muted/50 text-muted-foreground'
                 )}
@@ -174,7 +174,7 @@ export function CalendarView({
                 <div className="flex items-center justify-between">
                   <span
                     className={cn('text-sm', {
-                      'font-bold text-primary': isToday(date),
+                      'text-primary font-bold': isToday(date),
                     })}
                   >
                     {format(date, 'd')}
@@ -213,11 +213,11 @@ export function CalendarView({
                         <div className="space-y-2">
                           <h4 className="font-medium">{task.name}</h4>
                           {task.description && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               {task.description}
                             </p>
                           )}
-                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <div className="text-muted-foreground flex flex-wrap gap-2 text-xs">
                             {task.start_date && (
                               <span>
                                 Starts:{' '}

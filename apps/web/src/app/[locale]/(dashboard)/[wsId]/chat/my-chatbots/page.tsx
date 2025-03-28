@@ -4,8 +4,8 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Bot } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Bot } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 

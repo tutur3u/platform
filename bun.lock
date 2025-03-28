@@ -35,7 +35,6 @@
         "@vercel/analytics": "^1.5.0",
         "@vercel/speed-insights": "^1.2.0",
         "dayjs": "^1.11.13",
-        "lucide-react": "^0.483.0",
         "negotiator": "^1.0.0",
         "next": "^15.2.4",
         "next-intl": "^3.26.5",
@@ -177,7 +176,6 @@
         "juice": "^11.0.1",
         "lodash": "^4.17.21",
         "lowlight": "^3.3.0",
-        "lucide-react": "^0.477.0",
         "mermaid": "^11.6.0",
         "moment": "^2.30.1",
         "negotiator": "^1.0.0",
@@ -330,7 +328,6 @@
         "juice": "^11.0.1",
         "lodash": "^4.17.21",
         "lowlight": "^3.3.0",
-        "lucide-react": "^0.477.0",
         "mermaid": "^11.6.0",
         "moment": "^2.30.1",
         "negotiator": "^1.0.0",
@@ -416,7 +413,6 @@
         "date-fns": "^4.1.0",
         "dayjs": "^1.11.13",
         "lodash": "^4.17.21",
-        "lucide-react": "^0.477.0",
         "mermaid": "^11.6.0",
         "moment": "^2.30.1",
         "negotiator": "^1.0.0",
@@ -565,7 +561,6 @@
         "juice": "^11.0.1",
         "lodash": "^4.17.21",
         "lowlight": "^3.3.0",
-        "lucide-react": "^0.477.0",
         "mermaid": "^11.6.0",
         "moment": "^2.30.1",
         "negotiator": "^1.0.0",
@@ -821,7 +816,7 @@
         "eslint": "^9.23.0",
         "input-otp": "^1.4.2",
         "lodash": "^4.17.21",
-        "lucide-react": "^0.483.0",
+        "lucide-react": "^0.484.0",
         "moment": "^2.30.1",
         "next": "^15.2.4",
         "next-themes": "^0.4.6",
@@ -2976,7 +2971,7 @@
 
     "lru-cache": ["lru-cache@5.1.1", "", { "dependencies": { "yallist": "^3.0.2" } }, "sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w=="],
 
-    "lucide-react": ["lucide-react@0.483.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-WldsY17Qb/T3VZdMnVQ9C3DDIP7h1ViDTHVdVGnLZcvHNg30zH/MTQ04RTORjexoGmpsXroiQXZ4QyR0kBy0FA=="],
+    "lucide-react": ["lucide-react@0.484.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-oZy8coK9kZzvqhSgfbGkPtTgyjpBvs3ukLgDPv14dSOZtBtboryWF5o8i3qen7QbGg7JhiJBz5mK1p8YoMZTLQ=="],
 
     "luxon": ["luxon@3.6.0", "", {}, "sha512-WE7p0p7W1xji9qxkLYsvcIxZyfP48GuFrWIBQZIsbjCyf65dG1rv4n83HcOyEyhvzxJCrUoObCRNFgRNIQ5KNA=="],
 
@@ -3963,14 +3958,6 @@
     "@tuturuuu/external/@tuturuuu/typescript-config": ["@jsr/tuturuuu__typescript-config@0.1.0", "https://npm.jsr.io/~/11/@jsr/tuturuuu__typescript-config/0.1.0.tgz", {}, "sha512-wfZuXPMFcCk261oES8idY0O7QQW6Wtey4+WrkTRUmimRElntZhUipbd7939RPyozsK6uT/CsD0ZBXki9KqokLA=="],
 
     "@tuturuuu/external/@tuturuuu/utils": ["@jsr/tuturuuu__utils@0.0.1", "https://npm.jsr.io/~/11/@jsr/tuturuuu__utils/0.0.1.tgz", { "dependencies": { "clsx": "^2.1.1", "tailwind-merge": "^3.0.1" } }, "sha512-G45x4HptoVYR8qx6EkrO1L/0yrEG75fASgtKeBONiVvJk+t5/y+AmbagjWbYNJ4nnl6Ya+9rfY5jrRPi5ib6nw=="],
-
-    "@tuturuuu/mira/lucide-react": ["lucide-react@0.477.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-yCf7aYxerFZAbd8jHJxjwe1j7jEMPptjnaOqdYeirFnEy85cNR3/L+o0I875CYFYya+eEVzZSbNuRk8BZPDpVw=="],
-
-    "@tuturuuu/nova/lucide-react": ["lucide-react@0.477.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-yCf7aYxerFZAbd8jHJxjwe1j7jEMPptjnaOqdYeirFnEy85cNR3/L+o0I875CYFYya+eEVzZSbNuRk8BZPDpVw=="],
-
-    "@tuturuuu/rewise/lucide-react": ["lucide-react@0.477.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-yCf7aYxerFZAbd8jHJxjwe1j7jEMPptjnaOqdYeirFnEy85cNR3/L+o0I875CYFYya+eEVzZSbNuRk8BZPDpVw=="],
-
-    "@tuturuuu/web/lucide-react": ["lucide-react@0.477.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-yCf7aYxerFZAbd8jHJxjwe1j7jEMPptjnaOqdYeirFnEy85cNR3/L+o0I875CYFYya+eEVzZSbNuRk8BZPDpVw=="],
 
     "@types/cors/@types/node": ["@types/node@22.13.13", "", { "dependencies": { "undici-types": "~6.20.0" } }, "sha512-ClsL5nMwKaBRwPcCvH8E7+nU4GxHVx1axNvMZTFHMEfNI7oahimt26P5zjVCRrjiIWj6YFXfE1v3dEp94wLcGQ=="],
 

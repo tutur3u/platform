@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import { AlertCircle } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Pagination,
@@ -14,7 +15,6 @@ import {
   PaginationNext,
 } from '@tuturuuu/ui/pagination';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { AlertCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -228,7 +228,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
         <div className="space-y-4">
           {Object.entries(groupedUrls).length > 0 ? (
             <>
-              <div className="divide-y rounded-md border bg-card">
+              <div className="bg-card divide-y rounded-md border">
                 {Object.entries(groupedUrls).map(([originId, urls]) => (
                   <div key={originId} className="p-4">
                     <div className="mb-2 flex items-center justify-between">
@@ -254,7 +254,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
                       {urls?.map((url) => (
                         <div
                           key={url.url}
-                          className="flex items-center justify-between rounded-md bg-muted/50 p-2"
+                          className="bg-muted/50 flex items-center justify-between rounded-md p-2"
                         >
                           <div className="flex items-center gap-2 overflow-hidden">
                             <span className="truncate text-sm">{url.url}</span>
@@ -273,7 +273,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
               </div>
 
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Showing {(currentPage - 1) * currentPageSize + 1} to{' '}
                   {Math.min(
                     currentPage * currentPageSize,
@@ -334,7 +334,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
             </>
           ) : (
             !loading && (
-              <p className="text-center text-muted-foreground">
+              <p className="text-muted-foreground text-center">
                 No uncrawled URLs found
               </p>
             )

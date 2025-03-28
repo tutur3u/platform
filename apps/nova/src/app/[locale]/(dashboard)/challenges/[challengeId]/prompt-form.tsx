@@ -6,12 +6,12 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { CheckCircle2, Clock, PlayCircle, XCircle } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import { CheckCircle2, Clock, PlayCircle, XCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 type HistoryEntry = {
@@ -206,7 +206,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold">Your Prompt</h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Create a prompt that solves the problem effectively
                 </p>
               </div>
@@ -249,18 +249,18 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             )}
 
             {!isSubmitting && submissions.length > 0 && (
-              <div className="mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border border-foreground/10 bg-foreground/10 p-6 text-foreground shadow-md">
+              <div className="border-foreground/10 bg-foreground/10 text-foreground mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border p-6 shadow-md">
                 <h3 className="text-2xl font-semibold">Your Last Attempt</h3>
-                <div className="w-full rounded-lg border border-foreground/5 bg-foreground/5 p-4 shadow-md">
+                <div className="border-foreground/5 bg-foreground/5 w-full rounded-lg border p-4 shadow-md">
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-foreground">
+                      <p className="text-foreground text-sm">
                         <strong className="font-medium">Prompt: </strong>
                         {submissions[submissions.length - 1]?.prompt}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-foreground">
+                      <p className="text-foreground text-sm">
                         <strong className="font-medium">Score: </strong>
                         <Badge
                           variant={
@@ -315,10 +315,10 @@ export default function PromptForm({ problem }: { problem: Problem }) {
           </TabsContent>
 
           <TabsContent value="test" className="space-y-4">
-            <div className="space-y-4 rounded-lg border border-foreground/10 bg-foreground/10 p-6">
+            <div className="border-foreground/10 bg-foreground/10 space-y-4 rounded-lg border p-6">
               <div>
                 <h3 className="mb-2 text-lg font-medium">Custom Test Case</h3>
-                <p className="mb-3 text-sm text-muted-foreground">
+                <p className="text-muted-foreground mb-3 text-sm">
                   Enter a custom test case to see how your prompt would perform
                   on it. This won't count against your submission attempts.
                 </p>
@@ -349,11 +349,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
               )}
 
               {testResult && (
-                <div className="mt-4 rounded-lg border border-foreground/10 bg-foreground/5 p-4">
+                <div className="border-foreground/10 bg-foreground/5 mt-4 rounded-lg border p-4">
                   <h4 className="mb-2 text-lg font-medium">Test Result</h4>
                   <div className="space-y-3">
                     <span className="font-semibold">Output: </span>
-                    <p className="mt-1 text-sm whitespace-pre-wrap">
+                    <p className="mt-1 whitespace-pre-wrap text-sm">
                       {testResult.output}
                     </p>
                   </div>
@@ -365,16 +365,16 @@ export default function PromptForm({ problem }: { problem: Problem }) {
           <TabsContent value="history" className="space-y-4">
             <div className="mb-4">
               <h2 className="text-xl font-bold">Submission History</h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Review your previous submissions and their scores
               </p>
             </div>
 
             {submissions.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-                <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
+                <Clock className="text-muted-foreground mb-2 h-10 w-10" />
                 <h3 className="text-lg font-medium">No submissions yet</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="text-muted-foreground mt-1 text-sm">
                   Your submission history will appear here after you submit your
                   first prompt.
                 </p>
@@ -400,7 +400,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                           Score: {submission.score}/10
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         Submitted on{' '}
                         {new Date(submission.created_at).toLocaleString()}
                       </p>
@@ -409,7 +409,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       <div className="space-y-4">
                         <div>
                           <h4 className="mb-1 text-sm font-medium">Prompt</h4>
-                          <div className="rounded-md bg-muted p-3 text-sm">
+                          <div className="bg-muted rounded-md p-3 text-sm">
                             {submission.prompt}
                           </div>
                         </div>
@@ -466,7 +466,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
 
                         <div>
                           <h4 className="mb-1 text-sm font-medium">Feedback</h4>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             {submission.feedback}
                           </p>
                         </div>
@@ -481,8 +481,8 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       </div>
 
       {/* Fixed Chat Input */}
-      <div className="absolute right-0 bottom-0 left-0 border-t shadow-md">
-        <div className="flex flex-col gap-2 rounded-b-lg border bg-background p-4">
+      <div className="absolute bottom-0 left-0 right-0 border-t shadow-md">
+        <div className="bg-background flex flex-col gap-2 rounded-b-lg border p-4">
           <div className="flex gap-2">
             <Input
               placeholder={
@@ -505,7 +505,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             </Button>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span>
               {prompt.length} / {problem.maxPromptLength} characters
             </span>

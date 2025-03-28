@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import { Mail } from 'lucide-react';
+import { Mail } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

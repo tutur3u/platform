@@ -3,8 +3,6 @@ import { availableConfigs } from '@/constants/configs/reports';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import 'dayjs/locale/vi';
 import {
   Box,
   Calendar,
@@ -12,7 +10,9 @@ import {
   FileText,
   Percent,
   ShoppingCart,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import 'dayjs/locale/vi';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';

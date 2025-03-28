@@ -10,7 +10,13 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { Code, LayoutDashboard, List, ShieldCheck, Trophy } from 'lucide-react';
+import {
+  Code,
+  LayoutDashboard,
+  List,
+  ShieldCheck,
+  Trophy,
+} from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -95,7 +101,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
           }
         >
           <NavbarActions />
@@ -104,7 +110,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
           }
         >
           <UserNav hideMetadata />

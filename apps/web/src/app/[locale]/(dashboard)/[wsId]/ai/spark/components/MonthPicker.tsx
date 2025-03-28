@@ -1,4 +1,5 @@
 import { Button } from '@tuturuuu/ui/button';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import {
   Select,
   SelectContent,
@@ -6,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 interface MonthPickerProps {

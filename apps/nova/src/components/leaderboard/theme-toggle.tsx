@@ -7,9 +7,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Moon, Sun } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 

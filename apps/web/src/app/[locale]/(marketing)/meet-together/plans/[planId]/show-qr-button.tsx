@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { QrCode } from 'lucide-react';
+import { QrCode } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 

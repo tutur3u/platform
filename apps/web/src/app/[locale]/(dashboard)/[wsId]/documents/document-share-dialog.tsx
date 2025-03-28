@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Separator } from '@tuturuuu/ui/separator';
 import {
   Check,
   CheckCheck,
@@ -15,7 +14,8 @@ import {
   Globe,
   LinkIcon,
   Lock,
-} from 'lucide-react';
+} from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { QRCodeCanvas } from 'qrcode.react';
 import React, { useState } from 'react';
 

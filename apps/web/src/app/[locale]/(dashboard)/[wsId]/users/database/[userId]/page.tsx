@@ -6,8 +6,8 @@ import { WorkspaceUserReport } from '@tuturuuu/types/db';
 import { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
+import { TicketCheck, Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { TicketCheck, Users } from 'lucide-react';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
@@ -229,7 +229,7 @@ export default async function WorkspaceUserDetailsPage({
         </div>
       </div>
 
-      <div className="mt-4 mb-2 text-lg font-semibold">
+      <div className="mb-2 mt-4 text-lg font-semibold">
         Hoá đơn ({invoiceCount})
       </div>
       <CustomDataTable
