@@ -9,8 +9,8 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { Mail, Users } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { Mail, Users } from 'lucide-react';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -19,7 +19,6 @@ interface Member {
   id: string;
   team_id: string;
   created_at: string;
-  id: string;
   display_name: string;
   email: string;
 }
@@ -35,10 +34,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: members, isLoading: isLoadingMembers } = useQuery<{
-    data: Member[];
-    count: number;
-  }>({
+  const { data: members, isLoading: isLoadingMembers } = useQuery<Member[]>({
     queryKey: ['team', teamId, 'members'],
     queryFn: async () => {
       const res = await fetch(`/api/v1/nova/teams/${teamId}/members`);
@@ -49,10 +45,9 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
     enabled: isOpen, // Only fetch when accordion is open
   });
 
-  const { data: invitations, isLoading: isLoadingInvitations } = useQuery<{
-    data: Invitation[];
-    count: number;
-  }>({
+  const { data: invitations, isLoading: isLoadingInvitations } = useQuery<
+    Invitation[]
+  >({
     queryKey: ['team', teamId, 'invitations'],
     queryFn: async () => {
       const res = await fetch(`/api/v1/nova/teams/${teamId}/invitations`);
