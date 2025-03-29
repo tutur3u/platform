@@ -18,7 +18,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    let query = supabase.from('nova_submissions').select('*');
+    let query = supabase
+      .from('nova_submissions')
+      .select('*')
+      .eq('user_id', user.id);
+
     if (problemId) {
       query = query.eq('problem_id', problemId);
     }
