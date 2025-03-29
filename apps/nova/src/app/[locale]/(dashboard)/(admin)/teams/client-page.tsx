@@ -14,10 +14,10 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { z } from 'zod';
 
 export default function TeamClient({ onFinish }: { onFinish?: () => void }) {

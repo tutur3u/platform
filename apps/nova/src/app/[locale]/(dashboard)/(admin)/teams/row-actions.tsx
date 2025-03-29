@@ -9,9 +9,9 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis, Settings } from '@tuturuuu/ui/icons';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 
 interface Team {
   id: string;

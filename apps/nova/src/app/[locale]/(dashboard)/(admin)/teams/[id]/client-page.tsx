@@ -40,12 +40,12 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { z } from 'zod';
 
 interface TeamDetailsClientProps {
