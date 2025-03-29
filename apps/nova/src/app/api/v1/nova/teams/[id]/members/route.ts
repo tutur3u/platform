@@ -28,14 +28,14 @@ export async function GET(
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user?.id) {
+    if (!user?.email) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const { error: roleError } = await supabase
       .from('nova_roles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('email', user.email)
       .eq('allow_role_management', true)
       .single();
 

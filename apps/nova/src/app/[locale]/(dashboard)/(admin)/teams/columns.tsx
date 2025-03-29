@@ -1,6 +1,7 @@
 'use client';
 
 import { TeamRowActions } from './row-actions';
+import { TeamAccordion } from './team-accordion';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { cn } from '@tuturuuu/utils/format';
@@ -83,6 +84,17 @@ export const getTeamColumns = (t: any): ColumnDef<Team>[] => {
           {row.getValue('invitation_count') || 0}
         </div>
       ),
+    },
+    {
+      accessorKey: 'details',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t('team-tabs.overview')}
+        />
+      ),
+      cell: ({ row }) => <TeamAccordion teamId={row.getValue('id')} />,
     },
     {
       accessorKey: 'created_at',
