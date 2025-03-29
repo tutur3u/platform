@@ -29,6 +29,7 @@ import {
   FormItem,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import {
   Loader2,
   Mail,
@@ -44,7 +45,6 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
