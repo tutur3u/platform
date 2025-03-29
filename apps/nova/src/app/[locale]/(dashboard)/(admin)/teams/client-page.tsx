@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -13,6 +12,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

@@ -1,6 +1,5 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
 import {
   AlertDialog,
@@ -39,6 +38,7 @@ import {
   UsersRound,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';

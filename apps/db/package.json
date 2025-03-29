@@ -18,9 +18,5 @@
   "devDependencies": {
     "supabase": "^2.20.5"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "packageManager": "pnpm@10.7.0"
 }

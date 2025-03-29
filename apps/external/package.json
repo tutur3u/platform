@@ -17,8 +17,8 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "npm:@jsr/tuturuuu__utils@^0.0.1",
     "next": "^15.2.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "tailwindcss": "^4.0.17"
   },
   "devDependencies": {
