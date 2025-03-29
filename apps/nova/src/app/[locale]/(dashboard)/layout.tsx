@@ -11,11 +11,13 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
+  Box,
   Code,
-  LayoutDashboard,
+  Home,
   List,
   ShieldCheck,
   Trophy,
+  Users,
 } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
@@ -59,9 +61,9 @@ export default async function RootLayout({
 
   const navItems = [
     {
-      name: t('dashboard'),
-      href: '/dashboard',
-      icon: <LayoutDashboard className="h-4 w-4" />,
+      name: t('home'),
+      href: '/home',
+      icon: <Home className="h-4 w-4" />,
     },
     {
       name: t('challenges'),
@@ -75,9 +77,21 @@ export default async function RootLayout({
       requiresChallengeManagement: true,
     },
     {
+      name: t('submissions'),
+      href: '/submissions',
+      icon: <Box className="h-4 w-4" />,
+      requiresChallengeManagement: true,
+    },
+    {
       name: t('leaderboard'),
       href: '/leaderboard',
       icon: <Trophy className="h-4 w-4" />,
+    },
+    {
+      name: t('teams'),
+      href: '/teams',
+      icon: <Users className="h-4 w-4" />,
+      requiresRoleManagement: true,
     },
     {
       name: t('roles'),
@@ -101,7 +115,7 @@ export default async function RootLayout({
       actions={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+            <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <NavbarActions />
@@ -110,7 +124,7 @@ export default async function RootLayout({
       userPopover={
         <Suspense
           fallback={
-            <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
           <UserNav hideMetadata />

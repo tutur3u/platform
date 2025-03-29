@@ -18,7 +18,7 @@ export default async function NotWhitelistedPage() {
     .eq('email', user?.email)
     .maybeSingle();
 
-  if (data?.enabled) redirect('/dashboard');
+  if (data?.enabled) redirect('/home');
 
   return (
     <div className="mx-auto flex min-h-screen w-full flex-col items-center justify-center p-4 text-center md:p-8 lg:p-16">

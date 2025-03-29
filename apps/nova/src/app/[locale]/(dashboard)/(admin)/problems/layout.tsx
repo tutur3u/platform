@@ -25,7 +25,7 @@ export default async function RootLayout({
     .maybeSingle();
 
   if (!whitelisted?.enabled || !whitelisted?.allow_challenge_management)
-    redirect('/dashboard');
+    redirect('/home');
 
   return children;
 }

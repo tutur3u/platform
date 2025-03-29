@@ -468,7 +468,10 @@
     "error_adding_domain": "Failed to add domain",
     "is_admin": "Is Admin",
     "allow_challenge_management": "Allow Challenge Management",
-    "allow_role_management": "Allow Role Management"
+    "allow_role_management": "Allow Role Management",
+    "searching": "Searching",
+    "or": "Or",
+    "joined": "Joined"
   },
   "contact": {
     "title": "Contact us",
@@ -1715,7 +1718,9 @@
         }
       }
     },
-    "teams": "Teams"
+    "teams": "Teams",
+    "submissions": "Submissions",
+    "home": "Home"
   },
   "onboarding": {
     "just-a-moment": "Just a moment...",
@@ -1943,7 +1948,43 @@
     "description": "Teams are used to manage users who will be attending different challenges.",
     "create": "Create team",
     "create_description": "Create a new team",
-    "name_description": "Team name"
+    "name_description": "Team name",
+    "current_invitations": "Current invitations",
+    "current_invitations_description": "Current invitations for this team",
+    "no_invitations": "No invitations",
+    "email": "Email",
+    "invited_at": "Invited at",
+    "actions": "Actions",
+    "manage": "Manage",
+    "delete_success": "Team deleted successfully",
+    "delete_error": "Failed to delete team",
+    "email_already_invited": "Email already invited",
+    "invitation_sent": "Invitation sent",
+    "failed_to_invite": "Failed to invite",
+    "invitations": "Invitations",
+    "invited": "Invited",
+    "find_users": "Find users",
+    "current_members": "Current members",
+    "no_members": "No members yet.",
+    "members_count": "This team has {count} member(s).",
+    "add_member": "Add member",
+    "add_as_member": "Add as member",
+    "send_invitation": "Send invitation",
+    "created": "Created",
+    "invitation_removed": "Invitation removed",
+    "failed_to_remove_invitation": "Failed to remove invitation",
+    "remove_member": "Remove member",
+    "remove_member_confirmation": "Are you sure you want to remove {name} as a member of this team?",
+    "remove_invitation": "Remove invitation",
+    "remove_invitation_description": "Are you sure you want to revoke {email}'s invitation?",
+    "user_not_found": "User not found",
+    "member_added": "Member added",
+    "failed_to_add_member": "Failed to add member",
+    "member_removed": "Member removed",
+    "failed_to_remove_member": "Failed to remove member",
+    "create_success": "Team created successfully",
+    "create_error": "Failed to create team",
+    "members": "Members"
   },
   "transaction-category-data-table": {
     "id": "ID",
@@ -2975,5 +3016,9 @@
   },
   "ws_post_details": {
     "check_all": "Check all"
+  },
+  "validation": {
+    "invalid_email": "Email is not valid",
+    "required": "Team name is required"
   }
 }

@@ -2431,6 +2431,83 @@ export type Database = {
           },
         ];
       };
+      nova_team_emails: {
+        Row: {
+          created_at: string;
+          email: string;
+          team_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          team_id: string;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          team_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_team_emails_team_id_fkey';
+            columns: ['team_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_teams';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_team_members: {
+        Row: {
+          created_at: string;
+          team_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          team_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          team_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_team_members_team_id_fkey';
+            columns: ['team_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_teams';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_team_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_teams: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
       personal_notes: {
         Row: {
           content: string | null;

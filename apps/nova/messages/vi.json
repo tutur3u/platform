@@ -468,7 +468,10 @@
     "error_adding_domain": "Không thể thêm miền",
     "is_admin": "Quản trị viên",
     "allow_challenge_management": "Quản lý thử thách",
-    "allow_role_management": "Quản lý vai trò"
+    "allow_role_management": "Quản lý vai trò",
+    "searching": "Đang tìm kiếm",
+    "or": "Hoặc",
+    "joined": "Tham gia"
   },
   "contact": {
     "title": "Liên hệ với chúng tôi",
@@ -1640,7 +1643,9 @@
         }
       }
     },
-    "teams": "Các đội"
+    "teams": "Các đội",
+    "submissions": "Bài nộp",
+    "home": "Trang chủ"
   },
   "onboarding": {
     "just-a-moment": "Bước cuối cùng!",
@@ -1868,7 +1873,43 @@
     "description": "Đội được sử dụng để quản lý người dùng tham gia các thách thức khác nhau.",
     "create": "Tạo đội",
     "create_description": "Tạo một đội mới",
-    "name_description": "Tên đội"
+    "name_description": "Tên đội",
+    "current_invitations": "Lời mời hiện tại",
+    "current_invitations_description": "Lời mời hiện tại cho đội này",
+    "no_invitations": "Không có lời mời nào",
+    "email": "Email",
+    "invited_at": "Đã mời lúc",
+    "actions": "Hành động",
+    "manage": "Quản lý",
+    "delete_success": "Đội đã xóa thành công",
+    "delete_error": "Không xóa được nhóm",
+    "email_already_invited": "Email đã được mời",
+    "invitation_sent": "Lời mời được gửi",
+    "failed_to_invite": "Không mời",
+    "invitations": "Lời mời",
+    "invited": "Được mời",
+    "find_users": "Tìm người dùng",
+    "current_members": "Thành viên hiện tại",
+    "no_members": "Chưa có thành viên.",
+    "members_count": "Nhóm này có {count} thành viên.",
+    "add_member": "Thêm thành viên",
+    "add_as_member": "Thêm thành viên",
+    "send_invitation": "Gửi lời mời",
+    "created": "Đã tạo",
+    "invitation_removed": "Lời mời đã xóa",
+    "failed_to_remove_invitation": "Không xóa được lời mời",
+    "remove_member": "Loại bỏ thành viên",
+    "remove_member_confirmation": "Bạn có chắc là bạn muốn xóa {name} với tư cách là thành viên của nhóm này không?",
+    "remove_invitation": "Loại bỏ lời mời",
+    "remove_invitation_description": "Bạn có chắc là bạn muốn thu hồi lời mời của {email} không?",
+    "user_not_found": "Người dùng không tìm thấy",
+    "member_added": "Thành viên được thêm vào",
+    "failed_to_add_member": "Không thể thêm thành viên",
+    "member_removed": "Thành viên đã bị loại bỏ",
+    "failed_to_remove_member": "Không thể loại bỏ thành viên",
+    "create_success": "Đội tạo thành công",
+    "create_error": "Không thể tạo nhóm",
+    "members": "Thành viên"
   },
   "transaction-category-data-table": {
     "id": "Mã số",
@@ -2900,5 +2941,9 @@
   },
   "ws_post_details": {
     "check_all": "Đã kiểm tra tất cả"
+  },
+  "validation": {
+    "invalid_email": "Email không hợp lệ",
+    "required": "Tên nhóm được yêu cầu"
   }
 }
