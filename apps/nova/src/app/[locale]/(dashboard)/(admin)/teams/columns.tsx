@@ -3,6 +3,7 @@
 import { TeamRowActions } from './row-actions';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -49,7 +50,14 @@ export const getTeamColumns = (t: any): ColumnDef<Team>[] => {
         />
       ),
       cell: ({ row }) => (
-        <div className="w-fit rounded border bg-foreground/5 px-2 py-0.5 font-semibold">
+        <div
+          className={cn(
+            'w-fit rounded border px-2 py-0.5 font-semibold',
+            row.getValue('member_count') === 0
+              ? 'bg-foreground/5 opacity-50'
+              : 'border-dynamic-light-blue/20 bg-dynamic-light-blue/20 text-dynamic-light-blue'
+          )}
+        >
           {row.getValue('member_count') || 0}
         </div>
       ),
@@ -64,7 +72,14 @@ export const getTeamColumns = (t: any): ColumnDef<Team>[] => {
         />
       ),
       cell: ({ row }) => (
-        <div className="w-fit rounded border bg-foreground/5 px-2 py-0.5 font-semibold">
+        <div
+          className={cn(
+            'w-fit rounded border px-2 py-0.5 font-semibold',
+            row.getValue('invitation_count') === 0
+              ? 'bg-foreground/5 opacity-50'
+              : 'border-dynamic-light-blue/20 bg-dynamic-light-blue/20 text-dynamic-light-blue'
+          )}
+        >
           {row.getValue('invitation_count') || 0}
         </div>
       ),

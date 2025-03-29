@@ -210,7 +210,13 @@ export default function TeamDetailsClient({
           </CardHeader>
           <CardContent>
             <Form {...emailForm}>
-              <form className="space-y-4">
+              <form
+                className="space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  emailForm.handleSubmit(inviteByEmail)();
+                }}
+              >
                 <FormField
                   control={emailForm.control}
                   name="email"
@@ -235,18 +241,15 @@ export default function TeamDetailsClient({
                     type="button"
                     onClick={() => {
                       const { email } = emailForm.getValues();
-                      if (emailForm.formState.isValid) {
-                        inviteByEmail({ email });
-                      } else {
-                        emailForm.trigger();
-                      }
+                      inviteByEmail({ email });
                     }}
-                    disabled={isInviteLoading}
+                    disabled={isInviteLoading || !emailForm.formState.isValid}
                   >
-                    {isInviteLoading && (
+                    {isInviteLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Mail className="mr-2 h-4 w-4" />
                     )}
-                    <Mail className="mr-2 h-4 w-4" />
                     {t('teams.send_invitation')}
                   </Button>
                 </div>

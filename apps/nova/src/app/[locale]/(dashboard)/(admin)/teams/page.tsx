@@ -33,6 +33,7 @@ export default async function TeamsPage({ searchParams }: Props) {
       />
       <Separator className="my-4" />
       <CustomDataTable
+        pageSize={100}
         data={teamData}
         columnGenerator={getTeamColumns}
         count={teamCount}
@@ -47,7 +48,7 @@ export default async function TeamsPage({ searchParams }: Props) {
 async function getTeamsData({
   q,
   page = '1',
-  pageSize = '10',
+  pageSize = '100',
   retry = true,
 }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}) {
   const supabase = await createClient();
