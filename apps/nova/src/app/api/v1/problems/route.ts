@@ -6,7 +6,9 @@ import { ZodError } from 'zod';
 export async function GET(request: Request) {
   const supabase = await createClient();
   const { searchParams } = new URL(request.url);
+
   const challengeId = searchParams.get('challengeId');
+  const includeChallenge = searchParams.get('includeChallenge') === 'true';
 
   const {
     data: { user },
@@ -18,11 +20,26 @@ export async function GET(request: Request) {
   }
 
   try {
-    let query = supabase.from('nova_problems').select('*');
+    // Build query with proper select statement based on params
+    let selectQuery = '*';
+    if (includeChallenge) {
+      selectQuery = `
+        *,
+        nova_challenges (
+          id,
+          title
+        )
+      `;
+    }
+
+    let query = supabase.from('nova_problems').select(selectQuery);
+
+    // Apply challenge filter if provided
     if (challengeId) {
       query = query.eq('challenge_id', challengeId);
     }
 
+    console.log('Executing problems query with challengeId:', challengeId);
     const { data: problems, error } = await query;
 
     if (error) {

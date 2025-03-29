@@ -42,10 +42,20 @@ export default function SubmissionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [relatedSubmissions, setRelatedSubmissions] = useState<
+    SubmissionDetails[]
+  >([]);
+  const [loadingRelated, setLoadingRelated] = useState(true);
 
   useEffect(() => {
     fetchSubmissionDetails();
   }, [submissionId]);
+
+  useEffect(() => {
+    if (submission) {
+      fetchRelatedSubmissions();
+    }
+  }, [submission]);
 
   async function fetchSubmissionDetails() {
     setLoading(true);
@@ -76,6 +86,27 @@ export default function SubmissionDetailPage() {
       setError('Failed to load submission details');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchRelatedSubmissions() {
+    setLoadingRelated(true);
+    try {
+      if (!submission) return;
+
+      // Fetch other submissions from the same problem
+      const response = await fetch(
+        `/api/v1/admin/submissions?problemId=${submission.problem_id}&limit=5&excludeId=${submission.id}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setRelatedSubmissions(data.submissions || []);
+      }
+    } catch (error) {
+      console.error('Error fetching related submissions:', error);
+    } finally {
+      setLoadingRelated(false);
     }
   }
 
@@ -303,6 +334,63 @@ export default function SubmissionDetailPage() {
             </Tabs>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Related Submissions Section */}
+      <div className="mt-8">
+        <h2 className="mb-4 text-2xl font-bold">Related Submissions</h2>
+
+        {loadingRelated ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-36 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : relatedSubmissions.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            {relatedSubmissions.map((related) => (
+              <Card
+                key={related.id}
+                className="cursor-pointer transition-colors hover:bg-accent/50"
+                onClick={() => router.push(`/submissions/${related.id}`)}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">
+                      Submission #{related.id}
+                    </CardTitle>
+                    <Badge className={cn(getScoreColor(related.score))}>
+                      {related.score}/10
+                    </Badge>
+                  </div>
+                  <CardDescription>
+                    {formatDate(related.created_at)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    {related.users?.avatar_url ? (
+                      <img
+                        src={related.users.avatar_url}
+                        alt="User"
+                        className="h-6 w-6 rounded-full"
+                      />
+                    ) : (
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs">
+                        {related.users?.display_name?.charAt(0) || '?'}
+                      </div>
+                    )}
+                    <span className="truncate text-sm font-medium">
+                      {related.users?.display_name || 'Unknown User'}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground">No related submissions found.</p>
+        )}
       </div>
     </div>
   );

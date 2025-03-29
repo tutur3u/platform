@@ -6,9 +6,9 @@ import { NextResponse } from 'next/server';
 
 /**
  * GET /api/v1/admin/submissions/stats
- * Admin endpoint to fetch statistics about submissions
+ * Admin endpoint to fetch statistics about submissions with filtering support
  */
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
 
   const {
@@ -32,82 +32,114 @@ export async function GET() {
   }
 
   const sbAdmin = await createAdminClient();
+  const { searchParams } = new URL(request.url);
+
+  // Get filter parameters
+  const challengeId = searchParams.get('challengeId') || null;
+  const problemId = searchParams.get('problemId') || null;
+  const search = searchParams.get('search') || '';
+
+  console.log('Stats API request with params:', {
+    challengeId,
+    problemId,
+    search,
+  });
 
   try {
-    // Get total count
-    const { count: totalCount, error: countError } = await sbAdmin
-      .from('nova_submissions')
-      .select('*', { count: 'exact', head: true });
+    // First, fetch all matched submissions to use for all stats calculations
+    let matchedSubmissions = [];
 
-    if (countError) {
-      console.error('Error fetching count:', countError);
-      return NextResponse.json(
-        { message: 'Error fetching submission statistics' },
-        { status: 500 }
+    // Step 1: Handle the challenge filter by getting problem IDs first
+    if (challengeId) {
+      // Get all problems for this challenge
+      const { data: problems } = await sbAdmin
+        .from('nova_problems')
+        .select('id')
+        .eq('challenge_id', challengeId);
+
+      if (!problems || problems.length === 0) {
+        // No problems found for this challenge, return empty stats
+        console.log('No problems found for challenge:', challengeId);
+        return emptyStats();
+      }
+
+      // Get all submissions for these problems
+      const problemIds = problems.map((p) => p.id);
+      console.log('Found problems for challenge:', problemIds);
+
+      const { data: submissions } = await sbAdmin
+        .from('nova_submissions')
+        .select('*')
+        .in('problem_id', problemIds);
+
+      matchedSubmissions = submissions || [];
+    }
+    // Step 2: Handle problem filter
+    else if (problemId) {
+      const { data: submissions } = await sbAdmin
+        .from('nova_submissions')
+        .select('*')
+        .eq('problem_id', problemId);
+
+      matchedSubmissions = submissions || [];
+    }
+    // Step 3: If no problem or challenge filter, get all submissions
+    else {
+      const { data: submissions } = await sbAdmin
+        .from('nova_submissions')
+        .select('*');
+
+      matchedSubmissions = submissions || [];
+    }
+
+    // Step 4: Apply search filter if provided
+    if (search && matchedSubmissions.length > 0) {
+      const searchLower = search.toLowerCase();
+      matchedSubmissions = matchedSubmissions.filter(
+        (submission) =>
+          submission.prompt?.toLowerCase().includes(searchLower) ||
+          submission.feedback?.toLowerCase().includes(searchLower)
       );
     }
 
-    // Calculate average score directly
-    let averageScore = 0;
-    const { data: scores, error: scoresError } = await sbAdmin
-      .from('nova_submissions')
-      .select('score');
+    console.log(
+      `Found ${matchedSubmissions.length} matching submissions after all filters`
+    );
 
-    if (scoresError) {
-      console.error('Error fetching scores:', scoresError);
-      return NextResponse.json(
-        { message: 'Error fetching submission statistics' },
-        { status: 500 }
-      );
+    // If no matching submissions, return empty stats
+    if (matchedSubmissions.length === 0) {
+      return emptyStats();
     }
 
-    if (scores && scores.length > 0) {
-      const sum = scores.reduce(
-        (acc, submission) => acc + (submission.score || 0),
-        0
-      );
-      averageScore = sum / scores.length;
-    }
+    // Calculate stats from the filtered submissions
+    // 1. Total count
+    const totalCount = matchedSubmissions.length;
 
-    // Get highest score
-    const { data: highestScoreData, error: highestScoreError } = await sbAdmin
-      .from('nova_submissions')
-      .select('score')
-      .order('score', { ascending: false })
-      .limit(1)
-      .single();
+    // 2. Average score
+    const totalScore = matchedSubmissions.reduce(
+      (sum, sub) => sum + (sub.score || 0),
+      0
+    );
+    const averageScore = totalScore / totalCount;
 
-    if (highestScoreError && highestScoreError.code !== 'PGRST116') {
-      console.error('Error fetching highest score:', highestScoreError);
-      return NextResponse.json(
-        { message: 'Error fetching submission statistics' },
-        { status: 500 }
-      );
-    }
+    // 3. Highest score
+    const highestScore = Math.max(
+      ...matchedSubmissions.map((sub) => sub.score || 0)
+    );
 
-    // Get most recent submission date
-    const { data: latestSubmission, error: latestError } = await sbAdmin
-      .from('nova_submissions')
-      .select('created_at')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (latestError && latestError.code !== 'PGRST116') {
-      console.error('Error fetching latest submission:', latestError);
-      return NextResponse.json(
-        { message: 'Error fetching submission statistics' },
-        { status: 500 }
-      );
-    }
+    // 4. Latest submission date
+    const latestDate = new Date(
+      Math.max(
+        ...matchedSubmissions.map((sub) => new Date(sub.created_at).getTime())
+      )
+    ).toISOString();
 
     return NextResponse.json(
       {
-        totalCount: totalCount || 0,
-        averageScore: averageScore || 0,
-        highestScore: highestScoreData?.score || 0,
-        lastSubmissionDate:
-          latestSubmission?.created_at || new Date().toISOString(),
+        totalCount,
+        averageScore,
+        highestScore,
+        lastSubmissionDate: latestDate,
       },
       { status: 200 }
     );
@@ -118,4 +150,17 @@ export async function GET() {
       { status: 500 }
     );
   }
+}
+
+// Helper function to return empty stats
+function emptyStats() {
+  return NextResponse.json(
+    {
+      totalCount: 0,
+      averageScore: 0,
+      highestScore: 0,
+      lastSubmissionDate: new Date().toISOString(),
+    },
+    { status: 200 }
+  );
 }

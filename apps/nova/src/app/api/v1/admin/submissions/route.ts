@@ -43,6 +43,10 @@ export async function GET(request: Request) {
     | 'asc'
     | 'desc';
   const search = searchParams.get('search') || '';
+  const challengeId = searchParams.get('challengeId') || null;
+  const problemId = searchParams.get('problemId') || null;
+  const excludeId = searchParams.get('excludeId') || null;
+  const limit = parseInt(searchParams.get('limit') || pageSize.toString());
 
   // Calculate pagination
   const from = (page - 1) * pageSize;
@@ -72,9 +76,54 @@ export async function GET(request: Request) {
 
     // Apply search if provided
     if (search) {
-      query = query.or(
-        `prompt.ilike.%${search}%,feedback.ilike.%${search}%,users.display_name.ilike.%${search}%,nova_problems.title.ilike.%${search}%`
-      );
+      console.log('Applying search filter with query:', search);
+
+      // Only search in the prompt and feedback fields directly on the submissions table
+      // This avoids issues with joined tables but limits search scope
+      query = query.or(`prompt.ilike.%${search}%,feedback.ilike.%${search}%`);
+    }
+
+    // Apply challenge filter if provided
+    if (challengeId) {
+      console.log('Filtering submissions by challenge ID:', challengeId);
+
+      // We need to be more specific with the challenge filtering
+      // Use a JOIN filter to get submissions where the problem's challenge_id matches
+      const { data: matchingProblemIds } = await sbAdmin
+        .from('nova_problems')
+        .select('id')
+        .eq('challenge_id', challengeId);
+
+      if (matchingProblemIds && matchingProblemIds.length > 0) {
+        const problemIds = matchingProblemIds.map((p) => p.id);
+        console.log('Found matching problem IDs for challenge:', problemIds);
+        query = query.in('problem_id', problemIds);
+      } else {
+        console.log(
+          'No matching problems found for challenge ID:',
+          challengeId
+        );
+        // Return empty result if no matching problems
+        return NextResponse.json(
+          {
+            submissions: [],
+            count: 0,
+            page,
+            pageSize,
+          },
+          { status: 200 }
+        );
+      }
+    }
+
+    // Apply problem filter if provided
+    if (problemId) {
+      query = query.eq('problem_id', problemId);
+    }
+
+    // Exclude a specific submission if needed
+    if (excludeId) {
+      query = query.neq('id', Number(excludeId));
     }
 
     // Apply sorting and pagination
@@ -89,31 +138,60 @@ export async function GET(request: Request) {
       ? sortField
       : 'created_at';
 
-    const {
-      data: submissions,
-      count,
-      error,
-    } = await query
-      .order(actualSortField, { ascending: sortDirection === 'asc' })
-      .range(from, to);
+    // When a limit is specified directly, use it instead of pagination
+    if (searchParams.has('limit')) {
+      const {
+        data: submissions,
+        count,
+        error,
+      } = await query
+        .order(actualSortField, { ascending: sortDirection === 'asc' })
+        .limit(limit);
 
-    if (error) {
-      console.error('Database Error: ', error);
+      if (error) {
+        console.error('Database Error: ', error);
+        return NextResponse.json(
+          { message: 'Error fetching submissions' },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
-        { message: 'Error fetching submissions' },
-        { status: 500 }
+        {
+          submissions,
+          count,
+          page,
+          pageSize,
+        },
+        { status: 200 }
+      );
+    } else {
+      const {
+        data: submissions,
+        count,
+        error,
+      } = await query
+        .order(actualSortField, { ascending: sortDirection === 'asc' })
+        .range(from, to);
+
+      if (error) {
+        console.error('Database Error: ', error);
+        return NextResponse.json(
+          { message: 'Error fetching submissions' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          submissions,
+          count,
+          page,
+          pageSize,
+        },
+        { status: 200 }
       );
     }
-
-    return NextResponse.json(
-      {
-        submissions,
-        count,
-        page,
-        pageSize,
-      },
-      { status: 200 }
-    );
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
