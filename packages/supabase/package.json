@@ -13,7 +13,7 @@
   "packageManager": "pnpm@10.7.0",
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.49.3",
+    "@supabase/supabase-js": "^2.49.4",
     "@tuturuuu/types": "workspace:*",
     "eslint": "^9.23.0",
     "next": "^15.2.4",
