@@ -23,7 +23,7 @@ export function checkEnvVariables({
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url) throw Error('Missing Supabase URL');
-  if (!key) throw Error(`Missing Supabase key: ${key}`);
+  if (!key) throw Error(`Missing Supabase key`);
 
   return { url, key };
 }

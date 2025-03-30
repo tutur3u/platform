@@ -51,6 +51,7 @@ describe('common', () => {
     });
 
     it('should throw an error if URL is missing', () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = '';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 
       expect(() => checkEnvVariables({ useServiceKey: false })).toThrow(
@@ -60,6 +61,7 @@ describe('common', () => {
 
     it('should throw an error if key is missing', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = '';
 
       expect(() => checkEnvVariables({ useServiceKey: false })).toThrow(
         'Missing Supabase key'
