@@ -1,5 +1,6 @@
 'use client';
 
+import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
@@ -122,18 +123,15 @@ export function LessonContent({ lesson }: LessonProps) {
                 {Array.isArray(section.content) ? (
                   <div className="space-y-4">
                     {section.content.map((item, idx) => (
-                      <p
-                        key={idx}
-                        className="text-lg leading-relaxed whitespace-pre-line text-muted-foreground"
-                      >
+                      <MemoizedReactMarkdown key={idx}>
                         {item}
-                      </p>
+                      </MemoizedReactMarkdown>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-lg leading-relaxed whitespace-pre-line text-muted-foreground">
+                  <MemoizedReactMarkdown>
                     {section.content}
-                  </p>
+                  </MemoizedReactMarkdown>
                 )}
                 {index < lesson.sections.length - 1 && (
                   <Separator className="my-8" />
