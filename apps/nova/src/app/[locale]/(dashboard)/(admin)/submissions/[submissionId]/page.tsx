@@ -39,9 +39,7 @@ interface Props {
   }>;
 }
 
-export default async function SubmissionDetailPage({ params }: Props) {
-  const { submissionId } = await params;
-
+export default function Page({ params }: Props) {
   const [submission, setSubmission] = useState<SubmissionDetails | null>(null);
   const [relatedSubmissions, setRelatedSubmissions] = useState<
     SubmissionDetails[]
@@ -54,7 +52,7 @@ export default async function SubmissionDetailPage({ params }: Props) {
 
   useEffect(() => {
     fetchSubmissionDetails();
-  }, [submissionId]);
+  }, []);
 
   useEffect(() => {
     if (submission) {
@@ -65,6 +63,8 @@ export default async function SubmissionDetailPage({ params }: Props) {
   async function fetchSubmissionDetails() {
     setLoading(true);
     try {
+      const { submissionId } = await params;
+
       // Fetch submission data
       const submissionRes = await fetch(
         `/api/v1/admin/submissions/${submissionId}`
