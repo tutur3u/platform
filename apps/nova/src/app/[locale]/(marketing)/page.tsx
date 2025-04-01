@@ -319,12 +319,14 @@ export default function MarketingPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Button size="lg" disabled>
-                      <span className="relative z-10 flex items-center gap-2">
-                        {t('register')}
-                        <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                      </span>
-                    </Button>
+                    <Link href="https://forms.office.com/r/RuLSL21iTV">
+                      <Button size="lg">
+                        <span className="relative z-10 flex items-center gap-2">
+                          {t('register')}
+                          <RocketIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </Button>
+                    </Link>
                   </motion.div>
                   <motion.div
                     className="mt-12 text-center"
