@@ -207,7 +207,7 @@
     "get-started": "Get Started",
     "title-v2": "Chuẩn bị cho tương lai, thành thạo AI",
     "get-started-desc": "Sign up for free and start using our platform today.",
-    "copyright": "Copyright © 2025 Tuturuuu LLC – All rights reserved.",
+    "copyright": "Copyright © 2025 Tuturuuu, Inc. – All rights reserved.",
     "legal": "Legal",
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",
@@ -1633,7 +1633,7 @@
         }
       },
       "sponsors": {
-        "badge": "sponsor",
+        "badge": "Sponsors",
         "title": "Our Sponsors",
         "subtitle": "Organizations supporting the NEO League initiative.",
         "call-to-action": {
@@ -1647,6 +1647,10 @@
         "rmit-neo-culture-tech": {
           "name": "RMIT SGS Neo Culture Tech",
           "description": "Host of the Neo League – Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
+        },
+        "rmit-sset": {
+          "name": "RMIT SSET",
+          "description": "Partner of the Neo League – Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
         }
       },
       "special-thanks": {

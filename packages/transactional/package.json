@@ -6,7 +6,7 @@
     "dev": "email dev -p 3001",
     "export": "email export"
   },
-  "packageManager": "pnpm@10.7.0",
+  "packageManager": "pnpm@10.7.1",
   "dependencies": {
     "@react-email/components": "^0.0.34",
     "@react-email/tailwind": "^1.0.4",
@@ -14,7 +14,7 @@
     "react-email": "^4.0.2"
   },
   "devDependencies": {
-    "@types/node": "^22.13.16",
+    "@types/node": "^22.13.17",
     "@types/react": "^19.0.12"
   }
 }

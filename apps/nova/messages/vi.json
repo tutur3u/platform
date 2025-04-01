@@ -207,7 +207,7 @@
     "coming_soon": "Sắp ra mắt",
     "get-started": "Bắt đầu ngay",
     "get-started-desc": "Đăng ký miễn phí và bắt đầu sử dụng nền tảng của chúng tôi ngay hôm nay.",
-    "copyright": "Bản quyền © 2025 Tuturuuu LLC – Mọi quyền được bảo lưu.",
+    "copyright": "Bản quyền © 2025 Công ty Cổ phần Tuturuuu – Mọi quyền được bảo lưu.",
     "legal": "Pháp lý",
     "terms": "Điều khoản sử dụng",
     "privacy": "Chính sách bảo mật",
@@ -1522,7 +1522,7 @@
         }
       },
       "platform-builder": {
-        "title": "Đội Ngũ Phát Triển Nền Tảng",
+        "title": "Đội Ngũ Phát Triển",
         "subtitle": "Đội ngũ phát triển đã xây dựng nền tảng NEO League, vận hành trên công nghệ của Tuturuuu.",
         "members": {
           "vo-hoang-phuc": {
@@ -1572,6 +1572,10 @@
         "rmit-neo-culture-tech": {
           "name": "RMIT SGS Neo Culture Tech",
           "description": "Đơn vị tổ chức cuộc thi Neo League – Prompt the Future 2025, hướng tới thúc đẩy đổi mới và xuất sắc kỹ thuật trong lĩnh vực AI và kỹ thuật tạo lệnh cho sinh viên."
+        },
+        "rmit-sset": {
+          "name": "RMIT SSET",
+          "description": "Đối tác của cuộc thi Neo League – Prompt the Future 2025, hướng tới thúc đẩy đổi mới và xuất sắc kỹ thuật trong lĩnh vực AI và kỹ thuật tạo lệnh cho sinh viên."
         }
       },
       "special-thanks": {

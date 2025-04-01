@@ -1,23 +1,21 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
 export function BasicTokenVerifier() {
   const router = useRouter();
-  const supabase = createClient();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const handleUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const nextUrl = searchParams.get('nextUrl');
 
-      if (user) router.push('/onboarding');
-      else router.push('/login');
+      if (nextUrl) {
+        router.push(nextUrl || '/onboarding');
+        return;
+      }
     };
     handleUser();
   }, [searchParams]);
