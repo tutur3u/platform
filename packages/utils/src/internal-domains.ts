@@ -12,6 +12,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://nova.tuturuuu.com',
   },
   {
+    name: 'nova',
+    url: 'https://nova.ai.vn',
+  },
+  {
     name: 'mira',
     url: 'https://mira.tuturuuu.com',
   },

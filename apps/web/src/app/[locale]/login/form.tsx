@@ -66,7 +66,13 @@ export default function LoginForm() {
     if (returnUrl) {
       const returnApp = mapUrlToApp(returnUrl);
       console.log(returnApp);
+
       if (!returnApp) throw new Error('Invalid returnUrl');
+
+      if (returnApp === 'web') {
+        router.push(returnUrl);
+        return;
+      }
 
       const token = await generateCrossAppToken(supabase, returnApp, 'web');
 
