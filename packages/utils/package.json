@@ -16,7 +16,7 @@
     "next": "^15.2.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwind-merge": "^3.0.2",
+    "tailwind-merge": "^3.1.0",
     "uuid": "^11.1.0",
     "zod": "^3.24.2"
   },
@@ -26,7 +26,7 @@
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^22.13.14",
+    "@types/node": "^22.13.15",
     "@types/react": "^19.0.12",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
