@@ -12,6 +12,8 @@ export const APP_PUBLIC_PATHS = [
   '/pitch',
   '/careers',
   '/security',
+  '/security/bug-bounty',
+  '/contributors',
   '/blog',
   '/faq',
   '/terms',

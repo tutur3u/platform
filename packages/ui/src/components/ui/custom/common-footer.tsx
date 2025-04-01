@@ -23,7 +23,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
       <div className="flex flex-col flex-wrap items-center justify-between gap-4 px-4 md:gap-8 md:px-32 lg:flex-row lg:gap-16 xl:px-64">
         <div className="flex flex-col items-center justify-center gap-4">
           <Link
-            href="/"
+            href={TUTURUUU_URL}
             className="flex items-center gap-4 transition"
             aria-label="Tuturuuu"
           >

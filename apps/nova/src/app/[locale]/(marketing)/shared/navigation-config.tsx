@@ -56,9 +56,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
 
   const company: NavItem[] = [
     {
-      href: DEV_MODE
-        ? 'http://localhost:7805/learn'
-        : 'https://nova.tuturuuu.com/learn',
+      href: '/learn',
       label: t('common.learn'),
       description: t('common.learn-description'),
       icon: <BookOpen className="h-4 w-4" />,

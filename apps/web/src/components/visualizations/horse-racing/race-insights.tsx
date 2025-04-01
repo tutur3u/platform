@@ -137,7 +137,7 @@ export function RaceInsights({
           <div className="space-y-3">
             <div>
               <h4 className="mb-1 text-sm font-medium">Race Analysis</h4>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 {race.horses.length === horses.length ? (
                   <p>
                     This race includes all horses, providing a complete ranking.
@@ -255,7 +255,7 @@ export function RaceInsights({
                       {horseId}
                     </div>
                     <div className="ml-2 flex-1">
-                      <div className="bg-muted h-2 overflow-hidden rounded-full">
+                      <div className="h-2 overflow-hidden rounded-full bg-muted">
                         <div
                           className="h-full bg-gradient-to-r from-green-500 to-green-400"
                           style={{
@@ -268,7 +268,7 @@ export function RaceInsights({
                       {horse.speed.toFixed(2)}
                     </div>
                     {index < race.result.length - 1 && (
-                      <div className="text-muted-foreground ml-1 text-xs">
+                      <div className="ml-1 text-xs text-muted-foreground">
                         {speedDifferentials[index] &&
                           parseFloat(speedDifferentials[index].percentDiff) >
                             0 && (
@@ -285,7 +285,7 @@ export function RaceInsights({
           </div>
         </div>
 
-        <div className="text-muted-foreground mt-4 text-xs">
+        <div className="mt-4 text-xs text-muted-foreground">
           <p>
             Race {currentRaceIndex + 1} of {allRaces.length} •{' '}
             {race.raceType.charAt(0).toUpperCase() + race.raceType.slice(1)}{' '}

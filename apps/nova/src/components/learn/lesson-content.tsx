@@ -1,5 +1,6 @@
 'use client';
 
+import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
@@ -121,27 +122,16 @@ export function LessonContent({ lesson }: LessonProps) {
                 </h2>
                 {Array.isArray(section.content) ? (
                   <div className="space-y-4">
-                    {section.content.map((item, idx) => {
-                      const hasIndentation = item.startsWith('\t');
-                      const content = hasIndentation ? item.substring(1) : item;
-
-                      return (
-                        <p
-                          key={idx}
-                          className={cn(
-                            'text-muted-foreground whitespace-pre-line text-lg leading-relaxed',
-                            hasIndentation && 'pl-8'
-                          )}
-                        >
-                          {item}
-                        </p>
-                      );
-                    })}
+                    {section.content.map((item, idx) => (
+                      <MemoizedReactMarkdown key={idx}>
+                        {item}
+                      </MemoizedReactMarkdown>
+                    ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground whitespace-pre-line text-lg leading-relaxed">
+                  <MemoizedReactMarkdown>
                     {section.content}
-                  </p>
+                  </MemoizedReactMarkdown>
                 )}
                 {index < lesson.sections.length - 1 && (
                   <Separator className="my-8" />

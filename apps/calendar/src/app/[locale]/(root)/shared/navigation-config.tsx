@@ -133,12 +133,6 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <BookText className="h-4 w-4" />,
     },
     {
-      href: '/visualizations/horse-racing',
-      label: 'Horse Racing Algorithm',
-      description: 'Visualize the horse racing ranking algorithm',
-      icon: <Sparkles className="h-4 w-4" />,
-    },
-    {
       href: '/about',
       label: t('common.about'),
       description: t('common.about-description'),
@@ -154,6 +148,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       href: '/careers',
       label: t('common.careers'),
       description: t('common.careers-description'),
+      icon: <Users className="h-4 w-4" />,
+    },
+    {
+      href: '/contributors',
+      label: t('common.contributors'),
+      description: t('common.contributors-description'),
       icon: <Users className="h-4 w-4" />,
     },
     {
