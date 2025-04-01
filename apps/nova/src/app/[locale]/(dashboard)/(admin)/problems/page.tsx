@@ -12,8 +12,8 @@ export default async function ProblemsPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Prompt Engineering Problems</h1>
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">{t('problems')}</h1>
         <CreateProblemDialog
           trigger={
             <Button className="gap-2">
