@@ -71,16 +71,16 @@ export function EmptyScreen({
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-4xl xl:max-w-6xl">
-      <div className="bg-background rounded-lg border p-4 md:p-8">
+      <div className="rounded-lg border bg-background p-4 md:p-8">
         <div className="flex flex-col items-center justify-center text-center">
           <h1 className="mb-2 text-lg font-semibold">
             {t('welcome_to')}{' '}
-            <span className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue overflow-hidden bg-gradient-to-r bg-clip-text font-bold text-transparent">
+            <span className="overflow-hidden bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text font-bold text-transparent">
               Rewise
             </span>
             .
           </h1>
-          <p className="text-foreground/90 text-sm leading-normal md:text-base">
+          <p className="text-sm leading-normal text-foreground/90 md:text-base">
             {t('welcome_msg')}
           </p>
 
@@ -96,7 +96,7 @@ export function EmptyScreen({
                 onClick={() => setInput(message.message)}
               >
                 {message.icon}
-                <div className="line-clamp-1 whitespace-normal break-all">
+                <div className="line-clamp-1 break-all whitespace-normal">
                   {message.heading}
                 </div>
               </Button>

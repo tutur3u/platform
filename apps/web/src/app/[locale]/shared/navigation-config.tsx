@@ -1,6 +1,6 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
+import { DEV_MODE, GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   BookText,
   Building,
@@ -181,7 +181,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       external: true,
     },
     {
-      href: 'https://github.com/tutur3u',
+      href: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`,
       label: 'GitHub',
       description: t('common.github-description'),
       icon: <Github className="h-4 w-4" />,

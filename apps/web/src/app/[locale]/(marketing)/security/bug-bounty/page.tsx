@@ -1,5 +1,6 @@
 'use client';
 
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -450,7 +451,7 @@ export default function BugBountyPage() {
                 </motion.a>
 
                 <motion.a
-                  href="https://github.com/tutur3u/platform/blob/main/SECURITY.md"
+                  href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/main/SECURITY.md`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-foreground/10 px-8 py-4 font-semibold transition-all duration-300 hover:bg-foreground/20"

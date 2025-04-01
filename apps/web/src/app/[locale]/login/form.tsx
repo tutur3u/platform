@@ -357,7 +357,7 @@ export default function LoginForm() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background text-muted-foreground px-2">
+              <span className="bg-background px-2 text-muted-foreground">
                 {t('login.or_continue_with')}
               </span>
             </div>
@@ -491,12 +491,12 @@ export default function LoginForm() {
           </Form>
 
           <Separator className="mt-2" />
-          <div className="text-foreground/50 text-balance text-center text-sm font-semibold">
+          <div className="text-center text-sm font-semibold text-balance text-foreground/50">
             {t('auth.notice-p1')}{' '}
             <Link
               href="/terms"
               target="_blank"
-              className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
+              className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
             >
               {t('auth.tos')}
             </Link>{' '}
@@ -504,7 +504,7 @@ export default function LoginForm() {
             <Link
               href="/privacy"
               target="_blank"
-              className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
+              className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
             >
               {t('auth.privacy')}
             </Link>{' '}

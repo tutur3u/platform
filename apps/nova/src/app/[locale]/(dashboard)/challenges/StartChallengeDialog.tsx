@@ -128,13 +128,13 @@ export function StartChallengeDialog({
           <AlertDialogDescription>
             Are you sure you want to start this challenge?
           </AlertDialogDescription>
-          <div className="bg-muted mt-4 rounded-md p-3 text-sm">
+          <div className="mt-4 rounded-md bg-muted p-3 text-sm">
             <div className="font-medium">Challenge Details:</div>
             <div className="mt-2 flex items-center">
-              <Clock className="text-primary mr-2 h-4 w-4" />
+              <Clock className="mr-2 h-4 w-4 text-primary" />
               <span>Duration: {formatDuration(challenge.duration)}</span>
             </div>
-            <div className="text-muted-foreground mt-1 text-xs">
+            <div className="mt-1 text-xs text-muted-foreground">
               Once started, the timer cannot be paused and will continue until
               completed.
             </div>

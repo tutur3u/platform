@@ -1,5 +1,6 @@
 'use client';
 
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -19,6 +20,7 @@ import {
   ShieldCheck,
   Trophy,
   UserCheck,
+  Users,
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -209,7 +211,7 @@ export default function SecurityPage() {
                 </motion.a>
 
                 <motion.a
-                  href="https://github.com/tutur3u/platform/blob/main/SECURITY.md"
+                  href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/main/SECURITY.md`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-foreground/10 px-8 py-4 font-semibold transition-all duration-300 hover:bg-foreground/20"
@@ -224,6 +226,14 @@ export default function SecurityPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <Trophy className="relative h-5 w-5" />
                     <span className="relative">Bug Bounty Hall of Fame</span>
+                  </motion.div>
+                </Link>
+
+                <Link href="/contributors">
+                  <motion.div className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-foreground/10 px-8 py-4 font-semibold transition-all duration-300 hover:bg-foreground/20">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <Users className="relative h-5 w-5" />
+                    <span className="relative">Contributors</span>
                   </motion.div>
                 </Link>
               </div>

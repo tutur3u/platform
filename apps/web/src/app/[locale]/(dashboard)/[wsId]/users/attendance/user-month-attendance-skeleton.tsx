@@ -57,7 +57,7 @@ export default function UserMonthAttendanceSkeleton() {
         <div className="aspect-square h-10 w-10 rounded-lg bg-gradient-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
         <div className="ml-2 w-full">
           <div className="flex items-center justify-between gap-1">
-            <div className="bg-foreground/5 line-clamp-1 h-6 w-32 rounded font-semibold text-zinc-900 hover:underline dark:text-zinc-200" />
+            <div className="line-clamp-1 h-6 w-32 rounded bg-foreground/5 font-semibold text-zinc-900 hover:underline dark:text-zinc-200" />
           </div>
         </div>
       </div>
@@ -68,13 +68,13 @@ export default function UserMonthAttendanceSkeleton() {
             <div className="mb-4 flex items-center justify-between gap-4 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
-                <div className="bg-foreground/20 mx-2 h-4 w-[1px] rotate-[30deg]" />
+                <div className="mx-2 h-4 w-[1px] rotate-[30deg] bg-foreground/20" />
                 <span className="text-lg font-semibold md:text-xl">
                   {thisMonth}
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="bg-foreground/5 rounded border px-2 py-0.5 text-xs opacity-50">
+                <div className="rounded border bg-foreground/5 px-2 py-0.5 text-xs opacity-50">
                   <span className="text-green-500 dark:text-green-300">?</span>{' '}
                   + <span className="text-red-500 dark:text-red-300">?</span> ={' '}
                   <span className="text-blue-500 dark:text-blue-300">?</span>
@@ -95,7 +95,7 @@ export default function UserMonthAttendanceSkeleton() {
                 {days.map((day, idx) => (
                   <div
                     key={`day-${idx}`}
-                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded p-2 font-semibold transition duration-300 md:rounded-lg"
+                    className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
                   >
                     {day}
                   </div>
@@ -108,7 +108,7 @@ export default function UserMonthAttendanceSkeleton() {
                     <div
                       className={`flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
                         !isCurrentMonth(day)
-                          ? 'text-foreground/20 border-transparent'
+                          ? 'border-transparent text-foreground/20'
                           : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'
                       }`}
                     >

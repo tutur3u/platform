@@ -197,7 +197,7 @@ export const BlockEditor = forwardRef<
     if (!editor) {
       return (
         <div className="flex h-fit items-center justify-center">
-          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       );
     }
@@ -227,7 +227,7 @@ export const BlockEditor = forwardRef<
               <EditorContent
                 editor={editor}
                 className={cn(
-                  'prose prose-neutral dark:prose-invert max-w-none',
+                  'prose max-w-none prose-neutral dark:prose-invert',
                   'prose-headings:font-medium prose-headings:tracking-tight',
                   'prose-h1:text-4xl prose-h1:leading-tight prose-h1:font-bold',
                   'prose-h2:text-3xl prose-h2:font-semibold',

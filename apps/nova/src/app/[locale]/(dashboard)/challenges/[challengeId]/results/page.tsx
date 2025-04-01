@@ -79,7 +79,7 @@ export default function Page({ params }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin" />
           <p className="text-xl font-semibold">Loading your results...</p>
@@ -90,12 +90,12 @@ export default function Page({ params }: Props) {
 
   if (error) {
     return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
-        <div className="bg-background mx-auto max-w-md rounded-xl p-8 shadow-xl">
-          <div className="bg-destructive/20 text-destructive mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="mx-auto max-w-md rounded-xl bg-background p-8 shadow-xl">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/20 text-destructive">
             <X className="h-10 w-10" />
           </div>
-          <p className="text-destructive text-center text-xl font-semibold">
+          <p className="text-center text-xl font-semibold text-destructive">
             {error}
           </p>
           <Button
@@ -112,13 +112,13 @@ export default function Page({ params }: Props) {
 
   if (!data) {
     return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
-        <div className="bg-background mx-auto max-w-md rounded-xl p-8 text-center shadow-xl">
-          <div className="bg-muted text-muted-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="mx-auto max-w-md rounded-xl bg-background p-8 text-center shadow-xl">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <BookOpen className="h-10 w-10" />
           </div>
           <p className="text-xl font-semibold">No data available</p>
-          <p className="text-muted-foreground mt-2">
+          <p className="mt-2 text-muted-foreground">
             We couldn't find any results for this challenge.
           </p>
           <Button
@@ -133,7 +133,7 @@ export default function Page({ params }: Props) {
   }
 
   return (
-    <div className="bg-background min-h-screen px-4 py-12 sm:px-6">
+    <div className="min-h-screen bg-background px-4 py-12 sm:px-6">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center">
           <Button
@@ -146,7 +146,7 @@ export default function Page({ params }: Props) {
           <h1 className="text-3xl font-bold">Challenge Results</h1>
         </div>
 
-        <div className="bg-primary/10 mb-6 rounded-lg p-4">
+        <div className="mb-6 rounded-lg bg-primary/10 p-4">
           <p className="text-lg font-semibold">
             Total Score: {data.total_score}
           </p>
@@ -230,7 +230,7 @@ export default function Page({ params }: Props) {
                               >
                                 {criteriaScore?.score || 0}
                               </span>
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-xs text-muted-foreground">
                                 {criteria.description}
                               </span>
                             </div>

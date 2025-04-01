@@ -139,7 +139,7 @@ export function DateTimePicker({
           disabled={disabled || !value}
           placeholder="--:--"
         />
-        <Clock className="text-muted-foreground absolute right-3 top-2.5 h-4 w-4" />
+        <Clock className="absolute top-2.5 right-3 h-4 w-4 text-muted-foreground" />
       </div>
     </div>
   );

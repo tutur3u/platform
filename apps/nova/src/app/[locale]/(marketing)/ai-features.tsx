@@ -55,14 +55,14 @@ export default function AiFeatures() {
   return (
     <section id="ai" className="relative w-full py-24">
       {/* Background decorations */}
-      <div className="from-foreground/5 absolute inset-0 bg-gradient-to-b via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-foreground/5 via-transparent to-transparent" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(var(--primary-rgb),0.1),transparent)]" />
 
       <div className="relative mx-auto max-w-6xl px-4">
         <div className="mb-16 text-center">
           <Badge
             variant="outline"
-            className="border-foreground/10 mb-4 inline-flex items-center gap-1"
+            className="mb-4 inline-flex items-center gap-1 border-foreground/10"
           >
             <Bot className="h-4 w-4" />
             {t('ai-capabilities')}
@@ -70,7 +70,7 @@ export default function AiFeatures() {
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
             {t('ai-capabilities-subtitle')}
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
+          <p className="mx-auto max-w-2xl text-muted-foreground">
             {t('ai-capabilities-description')}
           </p>
         </div>
@@ -90,19 +90,19 @@ export default function AiFeatures() {
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="border-foreground/10 bg-foreground/10 hover:border-foreground/30 group relative overflow-hidden transition-colors">
+                  <Card className="group relative overflow-hidden border-foreground/10 bg-foreground/10 transition-colors hover:border-foreground/30">
                     <div className="relative z-10 p-6">
-                      <div className="bg-foreground/10 text-foreground mb-3 w-fit rounded-full p-2">
+                      <div className="mb-3 w-fit rounded-full bg-foreground/10 p-2 text-foreground">
                         {feature.icon}
                       </div>
                       <h3 className="mb-1 font-semibold">{feature.title}</h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {feature.description}
                       </p>
                     </div>
 
                     {/* Decorative gradient */}
-                    <div className="from-foreground/5 absolute inset-0 bg-gradient-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-foreground/5 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                   </Card>
                 </motion.div>
               ))}
@@ -119,14 +119,14 @@ export default function AiFeatures() {
 
             {/* Decorative elements */}
             <motion.div
-              className="absolute -right-12 -top-12 h-24 w-24"
+              className="absolute -top-12 -right-12 h-24 w-24"
               animate={{
                 scale: [1, 1.1, 1],
                 rotate: [0, 90, 0],
               }}
               transition={{ duration: 20, repeat: Infinity }}
             >
-              <div className="bg-foreground/10 h-full w-full rounded-full blur-3xl" />
+              <div className="h-full w-full rounded-full bg-foreground/10 blur-3xl" />
             </motion.div>
 
             <motion.div
@@ -137,7 +137,7 @@ export default function AiFeatures() {
               }}
               transition={{ duration: 15, repeat: Infinity }}
             >
-              <div className="bg-foreground/5 h-full w-full rounded-full blur-3xl" />
+              <div className="h-full w-full rounded-full bg-foreground/5 blur-3xl" />
             </motion.div>
           </motion.div>
         </div>
@@ -147,10 +147,10 @@ export default function AiFeatures() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="border-foreground/10 bg-foreground/5 rounded-xl border p-8 backdrop-blur-sm"
+          className="rounded-xl border border-foreground/10 bg-foreground/5 p-8 backdrop-blur-sm"
         >
           <div className="flex items-center gap-4">
-            <div className="bg-foreground/10 text-foreground rounded-full p-3">
+            <div className="rounded-full bg-foreground/10 p-3 text-foreground">
               <Wand2 className="h-6 w-6" />
             </div>
             <div>
@@ -161,7 +161,7 @@ export default function AiFeatures() {
             </div>
           </div>
 
-          <div className="text-muted-foreground mt-6 grid gap-4 text-sm sm:grid-cols-3">
+          <div className="mt-6 grid gap-4 text-sm text-muted-foreground sm:grid-cols-3">
             {[
               '/story "Generate a creative story about..."',
               '/analyze "Analyze this text for sentiment..."',
@@ -173,7 +173,7 @@ export default function AiFeatures() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="border-foreground/10 bg-foreground/5 rounded-lg border p-3 font-mono"
+                className="rounded-lg border border-foreground/10 bg-foreground/5 p-3 font-mono"
               >
                 {command}
               </motion.div>
