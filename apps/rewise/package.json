@@ -79,7 +79,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.16",
     "@types/negotiator": "^0.6.3",
-    "@types/node": "^22.13.16",
+    "@types/node": "^22.13.17",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
     "@types/uuid": "^10.0.0",
@@ -97,5 +97,5 @@
   "overrides": {
     "react-is": "^19.1.0"
   },
-  "packageManager": "pnpm@10.7.0"
+  "packageManager": "pnpm@10.7.1"
 }

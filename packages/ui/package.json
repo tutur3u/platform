@@ -9,7 +9,7 @@
     "ui": "pnpm dlx shadcn-ui@latest",
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.7.0",
+  "packageManager": "pnpm@10.7.1",
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
     "@mantine/hooks": "^7.17.3",
@@ -83,7 +83,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.16",
-    "@types/node": "^22.13.16",
+    "@types/node": "^22.13.17",
     "@types/react": "^19.0.12",
     "@types/react-resizable": "^3.0.8",
     "@types/react-syntax-highlighter": "^15.5.13",
