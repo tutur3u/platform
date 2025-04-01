@@ -52,7 +52,7 @@ export default async function DocumentsPage({ params }: Props) {
 
       <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {documents && documents.length === 0 && (
-          <div className="text-foreground/80 col-span-full">
+          <div className="col-span-full text-foreground/80">
             {noDocumentsLabel}
           </div>
         )}

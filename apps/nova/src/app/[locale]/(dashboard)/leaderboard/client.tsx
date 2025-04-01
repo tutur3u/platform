@@ -285,7 +285,7 @@ export default function LeaderboardPage({
           </Card>
         </div>
 
-        <Separator className="mb-8 mt-2 border-slate-800" />
+        <Separator className="mt-2 mb-8 border-slate-800" />
 
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">

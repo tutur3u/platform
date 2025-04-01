@@ -160,7 +160,7 @@ export default function CustomizedHeader({
   return (
     <div
       className={cn(
-        'bg-background/80 h-16 border-b backdrop-blur-sm',
+        'h-16 border-b bg-background/80 backdrop-blur-sm',
         className
       )}
     >
@@ -206,7 +206,7 @@ export default function CustomizedHeader({
           <Progress
             value={timeLeft.percentage}
             max={100}
-            className="bg-muted h-2 w-24"
+            className="h-2 w-24 bg-muted"
             style={
               {
                 '--progress-indicator-color': getProgressColor(),

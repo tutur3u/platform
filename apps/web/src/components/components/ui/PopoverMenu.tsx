@@ -116,7 +116,7 @@ export type CategoryTitle = {
 
 export const CategoryTitle = ({ children }: CategoryTitle) => {
   return (
-    <div className="mb-1.5 mt-4 select-none px-1 text-[0.625rem] font-medium uppercase text-neutral-400 first:mt-1.5 dark:text-neutral-600">
+    <div className="mt-4 mb-1.5 px-1 text-[0.625rem] font-medium text-neutral-400 uppercase select-none first:mt-1.5 dark:text-neutral-600">
       {children}
     </div>
   );
