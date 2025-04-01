@@ -480,6 +480,7 @@
         "@google/generative-ai": "^0.24.0",
         "@hocuspocus/provider": "^2.15.2",
         "@mantine/hooks": "^7.17.3",
+        "@octokit/auth-app": "^7.1.5",
         "@octokit/rest": "^21.1.1",
         "@radix-ui/react-dropdown-menu": "^2.1.6",
         "@radix-ui/react-popover": "^1.1.6",
