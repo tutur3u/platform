@@ -7,7 +7,7 @@ import { Plus } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
-export default async function ProblemsPage() {
+export default async function Page() {
   const t = await getTranslations('nova');
 
   return (
