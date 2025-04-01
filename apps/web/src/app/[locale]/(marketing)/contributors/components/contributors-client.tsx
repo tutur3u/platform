@@ -181,7 +181,6 @@ export default function ContributorsClient({
   locale,
   githubData,
 }: ContributorsClientProps) {
-  const [isConfettiActive, setIsConfettiActive] = useState(false);
   const [windowDimensions, setWindowDimensions] = useState({
     width: 0,
     height: 0,
@@ -199,15 +198,8 @@ export default function ContributorsClient({
     window.addEventListener('resize', handleResize);
     handleResize();
 
-    setIsConfettiActive(true);
-
-    const timer = setTimeout(() => {
-      setIsConfettiActive(false);
-    }, 5000);
-
     return () => {
       window.removeEventListener('resize', handleResize);
-      clearTimeout(timer);
     };
   }, []);
 
@@ -235,15 +227,13 @@ export default function ContributorsClient({
   return (
     <>
       {/* Confetti Celebration */}
-      {isConfettiActive && (
-        <Confetti
-          width={windowDimensions.width}
-          height={windowDimensions.height}
-          numberOfPieces={200}
-          recycle={false}
-          colors={['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3']}
-        />
-      )}
+      <Confetti
+        width={windowDimensions.width}
+        height={windowDimensions.height}
+        numberOfPieces={200}
+        recycle={false}
+        colors={['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3']}
+      />
 
       {/* Enhanced Background Effects */}
       <div className="pointer-events-none fixed inset-0 -z-10">
