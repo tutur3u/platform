@@ -169,8 +169,6 @@ export default function ChallengesList({ isAdmin }: ChallengesListProps) {
     return result;
   }, [challenges, filter, searchQuery]);
 
-  if (isLoading) return <ChallengeCardSkeleton />;
-
   return (
     <>
       <div className="bg-card mb-6 rounded-lg border p-4 shadow-sm">
@@ -209,7 +207,9 @@ export default function ChallengesList({ isAdmin }: ChallengesListProps) {
         </div>
       </div>
 
-      {filteredChallenges.length > 0 ? (
+      {isLoading ? (
+        <ChallengeCardSkeleton />
+      ) : filteredChallenges.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredChallenges.map((challenge) => (
             <ChallengeCard

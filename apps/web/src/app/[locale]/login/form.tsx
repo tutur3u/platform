@@ -75,6 +75,7 @@ export default function LoginForm() {
       }
 
       const token = await generateCrossAppToken(supabase, returnApp, 'web');
+      await supabase.auth.refreshSession();
 
       console.log('Cross App Token', token);
       if (!token) {

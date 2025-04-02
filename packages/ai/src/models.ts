@@ -38,22 +38,6 @@ export const models: {
       'Gemini 2.0 Flash Lite Preview 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
     context: 1000000,
   },
-  {
-    value: 'gemini-1.5-flash',
-    label: 'gemini-1.5-flash',
-    provider: 'Google',
-    description:
-      "Gemini 1.5 Flash is the latest model of the Gemini family. It's a multimodal model that supports up to 1 million tokens. It is optimized for speed and efficiency.",
-    context: 1000000,
-  },
-  {
-    value: 'gemini-1.5-pro',
-    label: 'gemini-1.5-pro',
-    provider: 'Google',
-    description:
-      "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",
-    context: 2000000,
-  },
 
   {
     value: 'imagen-3.0-generate-001',
@@ -102,22 +86,6 @@ export const models: {
     description:
       'Gemini 2.0 Flash Lite Preview 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
     context: 1000000,
-  },
-  {
-    value: 'gemini-1.5-flash-002',
-    label: 'gemini-1.5-flash-002',
-    provider: 'Google Vertex',
-    description:
-      "Gemini 1.5 Flash is the latest model of the Gemini family. It's a multimodal model that supports up to 1 million tokens. It is optimized for speed and efficiency.",
-    context: 1000000,
-  },
-  {
-    value: 'gemini-1.5-pro-002',
-    label: 'gemini-1.5-pro-002',
-    provider: 'Google Vertex',
-    description:
-      "Gemini 1.5 Pro is the latest model of the Gemini family. It's a mid-size multimodal model that supports up to 1 million tokens and excels at long-context tasks.",
-    context: 2000000,
   },
 
   {
@@ -202,6 +170,7 @@ export const models: {
     description:
       'GPT-4o from OpenAI has broad general knowledge and domain expertise allowing it to follow complex instructions in natural language and solve difficult problems accurately. It matches GPT-4 Turbo performance with a faster and cheaper API.',
     context: 128000,
+    disabled: true,
   },
   {
     value: 'gpt-4o-mini',
@@ -210,6 +179,7 @@ export const models: {
     description:
       'GPT-4o mini from OpenAI is their most advanced and cost-efficient small model. It is multi-modal (accepting text or image inputs and outputting text) and has higher intelligence than gpt-3.5-turbo but is just as fast.',
     context: 128000,
+    disabled: true,
   },
 ].sort(
   // Sort by provider (ones that have all models disabled should be at the end)

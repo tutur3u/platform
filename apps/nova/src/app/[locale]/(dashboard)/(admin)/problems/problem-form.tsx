@@ -105,13 +105,13 @@ export default function ProblemForm({
 
   // Add a new test case
   const addTestCase = () => {
-    const currentTestcases = form.getValues('testCases');
+    const currentTestcases = form.getValues('testCases') || [];
     form.setValue('testCases', [...currentTestcases, { input: '' }]);
   };
 
   // Remove a test case
   const removeTestCase = (index: number) => {
-    const currentTestcases = form.getValues('testCases');
+    const currentTestcases = form.getValues('testCases') || [];
     const updatedTestcases = currentTestcases.filter((_, i) => i !== index);
     form.setValue('testCases', updatedTestcases);
   };

@@ -252,6 +252,8 @@ export const verifyRouteToken = async ({
 
     if (userId) {
       // Token is valid, redirect to next url
+      await supabase.auth.refreshSession();
+
       const nextUrl = searchParams.get('nextUrl');
       if (nextUrl) {
         router.push(nextUrl);
