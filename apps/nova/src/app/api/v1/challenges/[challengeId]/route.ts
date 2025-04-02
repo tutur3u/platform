@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -96,6 +97,16 @@ export async function PUT(request: Request, { params }: Params) {
       updateData.duration = body.duration;
     }
     if (body.enabled !== undefined) updateData.enabled = body.enabled;
+    if (body.maxAttempts !== undefined)
+      updateData.max_attempts = body.maxAttempts;
+    if (body.maxDailyAttempts !== undefined)
+      updateData.max_daily_attempts = body.maxDailyAttempts;
+    if (body.password !== undefined) {
+      const salt = generateSalt();
+      const hashedPassword = await hashPassword(body.password, salt);
+      updateData.password_hash = hashedPassword;
+      updateData.password_salt = salt;
+    }
     if (body.previewable_at !== undefined)
       updateData.previewable_at = body.previewable_at;
     if (body.open_at !== undefined) updateData.open_at = body.open_at;

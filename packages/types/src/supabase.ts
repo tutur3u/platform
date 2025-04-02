@@ -2145,6 +2145,8 @@ export type Database = {
           max_attempts: number;
           max_daily_attempts: number;
           open_at: string | null;
+          password_hash: string | null;
+          password_salt: string | null;
           previewable_at: string | null;
           title: string;
         };
@@ -2158,6 +2160,8 @@ export type Database = {
           max_attempts?: number;
           max_daily_attempts?: number;
           open_at?: string | null;
+          password_hash?: string | null;
+          password_salt?: string | null;
           previewable_at?: string | null;
           title: string;
         };
@@ -2171,6 +2175,8 @@ export type Database = {
           max_attempts?: number;
           max_daily_attempts?: number;
           open_at?: string | null;
+          password_hash?: string | null;
+          password_salt?: string | null;
           previewable_at?: string | null;
           title?: string;
         };

@@ -25,7 +25,7 @@ import {
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -49,6 +49,7 @@ export default function Page({ params }: Props) {
   const [showEndDialog, setShowEndDialog] = useState(false);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -70,15 +71,43 @@ export default function Page({ params }: Props) {
   useEffect(() => {
     const fetchData = async () => {
       const { challengeId } = await params;
-      const challengeData = await getChallenge(challengeId);
-      setChallenge(challengeData);
+      const token = searchParams.get('token');
 
-      // Fetch challenge session
-      const response = await fetch(
-        `/api/v1/sessions?challengeId=${challengeId}`
-      );
+      try {
+        // Verify password if token exists
+        if (!token) {
+          router.replace('/challenges');
+          return;
+        }
 
-      if (response.ok) {
+        const verifyResponse = await fetch('/auth/challenges/verify-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            challengeId,
+            token,
+          }),
+        });
+
+        if (!verifyResponse.ok) {
+          router.replace('/challenges');
+          return;
+        }
+
+        // If verification successful, proceed to fetch challenge
+        const challengeData = await getChallenge(challengeId);
+        setChallenge(challengeData);
+
+        // Fetch challenge session
+        const response = await fetch(
+          `/api/v1/sessions?challengeId=${challengeId}`
+        );
+
+        if (!response.ok) {
+          router.replace(`/challenges`);
+          return;
+        }
+
         const sessionsData = await response.json();
 
         // API returns an array of sessions, find the most recent active one
@@ -90,18 +119,21 @@ export default function Page({ params }: Props) {
         // If challenge is ended, redirect to report page
         if (sessionData?.status === 'ENDED') {
           router.replace(`/challenges/${challengeId}/results`);
+          return;
         } else if (sessionData) {
           setSession(sessionData);
         } else {
-          router.push(`/challenges`);
+          router.replace(`/challenges`);
+          return;
         }
-      } else {
-        router.push(`/challenges`);
+      } catch (error) {
+        console.error('Error loading challenge:', error);
+        router.replace('/challenges');
       }
     };
 
     fetchData();
-  }, []);
+  }, [params, router, searchParams]);
 
   const problems = challenge?.problems || [];
 
@@ -126,7 +158,7 @@ export default function Page({ params }: Props) {
     });
 
     if (response.ok) {
-      router.push(`/challenges/${challenge?.id}/results`);
+      router.replace(`/challenges/${challenge?.id}/results`);
     } else {
       toast({
         title: 'Error',
@@ -139,7 +171,7 @@ export default function Page({ params }: Props) {
   if (!session) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-muted-foreground">
+        <p className="text-muted-foreground text-xl font-semibold">
           Loading...
         </p>
       </div>
@@ -167,10 +199,10 @@ export default function Page({ params }: Props) {
 
         <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-4 md:grid-cols-2">
           <div className="flex h-full w-full flex-col gap-4 overflow-hidden">
-            <Card className="h-full overflow-y-auto border-foreground/10 bg-foreground/5">
+            <Card className="border-foreground/10 bg-foreground/5 h-full overflow-y-auto">
               <CardContent className="p-0">
                 <Tabs defaultValue="problem" className="w-full">
-                  <TabsList className="w-full rounded-t-lg rounded-b-none bg-foreground/10">
+                  <TabsList className="bg-foreground/10 w-full rounded-b-none rounded-t-lg">
                     <TabsTrigger value="problem" className="flex-1">
                       Problem
                     </TabsTrigger>

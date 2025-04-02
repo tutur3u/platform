@@ -5,22 +5,27 @@ export const createChallengeSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   duration: z.number().positive('Duration must be a positive number'),
-  criteria: z
-    .array(
-      z.object({
-        name: z
-          .string()
-          .min(2, { message: 'Name must be at least 2 characters.' }),
-        description: z.string().min(10, {
-          message: 'Description must be at least 10 characters.',
-        }),
-      })
-    )
-    .min(1, { message: 'At least one criteria is required' }),
+  criteria: z.array(
+    z.object({
+      name: z
+        .string()
+        .min(2, { message: 'Name must be at least 2 characters.' }),
+      description: z.string().min(10, {
+        message: 'Description must be at least 10 characters.',
+      }),
+    })
+  ),
   enabled: z.boolean(),
-  previewable_at: z.string(),
-  open_at: z.string(),
-  close_at: z.string(),
+  maxAttempts: z.number().min(1, {
+    message: 'Max attempts must be at least 1.',
+  }),
+  maxDailyAttempts: z.number().min(1, {
+    message: 'Max daily attempts must be at least 1.',
+  }),
+  password: z.string().nullable(),
+  previewableAt: z.string().nullable(),
+  openAt: z.string().nullable(),
+  closeAt: z.string().nullable(),
 });
 
 // Criteria

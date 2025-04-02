@@ -2,7 +2,7 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
-import { CalendarIcon, Clock, X } from '@tuturuuu/ui/icons';
+import { CalendarIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
@@ -89,22 +89,13 @@ export function DateTimePicker({
           <Button
             variant="outline"
             className={cn(
-              'w-full justify-start text-left font-normal',
+              'flex w-full justify-start text-left font-normal',
               !value && 'text-muted-foreground'
             )}
             disabled={disabled}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {value ? format(value, 'PPP') : placeholder}
-            {value && (
-              <X
-                className="ml-auto h-4 w-4 opacity-50 hover:opacity-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClear();
-                }}
-              />
-            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -112,7 +103,6 @@ export function DateTimePicker({
             mode="single"
             selected={value || undefined}
             onSelect={handleDateSelect}
-            initialFocus
             className="rounded-md border shadow"
           />
           <div className="flex items-center justify-between border-t p-3">
@@ -139,7 +129,6 @@ export function DateTimePicker({
           disabled={disabled || !value}
           placeholder="--:--"
         />
-        <Clock className="absolute top-2.5 right-3 h-4 w-4 text-muted-foreground" />
       </div>
     </div>
   );
