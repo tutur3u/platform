@@ -33,7 +33,7 @@
     "@ai-sdk/xai": "^1.2.6",
     "@google/generative-ai": "^0.24.0",
     "@tuturuuu/supabase": "workspace:*",
-    "ai": "^4.2.10",
+    "ai": "^4.2.11",
     "eslint": "^9.23.0",
     "next": "^15.2.4",
     "react": "^19.1.0",
