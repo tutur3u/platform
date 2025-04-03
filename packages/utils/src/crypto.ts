@@ -14,7 +14,8 @@ export async function hashPassword(password: string, salt: string) {
     new TextEncoder().encode(passwordWithSalt)
   );
 
-  // convert the hashed password to a string
-  const hashedPasswordStr = new Uint8Array(hashedPassword).join('');
-  return parseInt(hashedPasswordStr).toString(16).replace(/0+$/, '');
+  // convert the hashed password to a hex string
+  return Array.from(new Uint8Array(hashedPassword))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
