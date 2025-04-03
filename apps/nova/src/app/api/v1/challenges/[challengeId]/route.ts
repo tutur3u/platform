@@ -87,15 +87,7 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined)
       updateData.description = body.description;
-    if (body.duration !== undefined) {
-      if (body.duration <= 0) {
-        return NextResponse.json(
-          { message: 'Duration must be a positive number' },
-          { status: 400 }
-        );
-      }
-      updateData.duration = body.duration;
-    }
+    if (body.duration !== undefined) updateData.duration = body.duration;
     if (body.enabled !== undefined) updateData.enabled = body.enabled;
 
     if (body.maxAttempts !== undefined)
