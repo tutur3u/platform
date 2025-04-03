@@ -97,16 +97,19 @@ export async function PUT(request: Request, { params }: Params) {
       updateData.duration = body.duration;
     }
     if (body.enabled !== undefined) updateData.enabled = body.enabled;
+
     if (body.maxAttempts !== undefined)
       updateData.max_attempts = body.maxAttempts;
     if (body.maxDailyAttempts !== undefined)
       updateData.max_daily_attempts = body.maxDailyAttempts;
+
     if (body.password !== undefined) {
       const passwordSalt = generateSalt();
       const passwordHash = await hashPassword(body.password, passwordSalt);
       updateData.password_hash = passwordHash;
       updateData.password_salt = passwordSalt;
     }
+
     if (body.previewable_at !== undefined)
       updateData.previewable_at = body.previewable_at;
     if (body.open_at !== undefined) updateData.open_at = body.open_at;
