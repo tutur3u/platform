@@ -52,23 +52,6 @@ export default function Page({ params }: Props) {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (session?.status === 'IN_PROGRESS') {
-        const confirmationMessage =
-          'You have an ongoing challenge, are you sure you want to leave?';
-        event.returnValue = confirmationMessage;
-        return confirmationMessage;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [session]);
-
-  useEffect(() => {
     const fetchData = async () => {
       const { challengeId } = await params;
       const token = searchParams.get('token');
@@ -80,14 +63,17 @@ export default function Page({ params }: Props) {
           return;
         }
 
-        const verifyResponse = await fetch('/auth/challenges/verify-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            challengeId,
-            token,
-          }),
-        });
+        const verifyResponse = await fetch(
+          '/api/auth/challenges/verify-password',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              challengeId,
+              token,
+            }),
+          }
+        );
 
         if (!verifyResponse.ok) {
           router.replace('/challenges');

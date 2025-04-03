@@ -68,8 +68,8 @@ export async function POST(request: Request) {
     // Validate request body with Zod
     const validatedData = createChallengeSchema.parse(body);
 
-    let passwordHash = null;
     let passwordSalt = null;
+    let passwordHash = null;
 
     if (validatedData.password) {
       passwordSalt = generateSalt();

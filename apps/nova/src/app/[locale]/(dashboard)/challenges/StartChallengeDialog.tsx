@@ -15,7 +15,7 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { ArrowRight, Clock, Eye, EyeOff } from '@tuturuuu/ui/icons';
+import { Clock, Eye, EyeOff } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { formatDuration } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
@@ -23,14 +23,12 @@ import { useState } from 'react';
 
 interface StartChallengeDialogProps {
   challenge: NovaChallenge;
-  variant?: 'default' | 'outline' | 'secondary';
-  disabled?: boolean;
+  trigger: React.ReactNode;
 }
 
 export function StartChallengeDialog({
   challenge,
-  variant = 'default',
-  disabled = false,
+  trigger,
 }: StartChallengeDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -46,11 +44,29 @@ export function StartChallengeDialog({
     try {
       // Check password if challenge is password protected
       if (challenge.password_hash) {
-        // TODO: Add password validation against hash
         if (password.length === 0) {
           toast({
             title: 'Password Required',
             description: 'Please enter the password to start the challenge.',
+            variant: 'destructive',
+          });
+          setIsStarting(false);
+          return;
+        }
+
+        const response = await fetch(`/api/auth/challenges/verify-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            challengeId: challenge.id,
+            password,
+          }),
+        });
+
+        if (!response.ok) {
+          toast({
+            title: 'Invalid password',
+            description: 'The password you entered is incorrect.',
             variant: 'destructive',
           });
           setIsStarting(false);
@@ -91,7 +107,9 @@ export function StartChallengeDialog({
       if (response.ok) {
         // Invalidate challenges query to update the UI with the new session
         queryClient.invalidateQueries({ queryKey: ['challenges'] });
-        router.push(`/challenges/${challenge.id}`);
+        router.push(
+          `/challenges/${challenge.id}?token=${challenge.password_hash}`
+        );
       } else {
         toast({
           title: 'Failed to start challenge.',
@@ -114,30 +132,7 @@ export function StartChallengeDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button
-          variant={disabled ? 'secondary' : variant}
-          className="w-full gap-2"
-          disabled={
-            // Challenge is disabled
-            disabled ||
-            // Challenge is not open yet
-            (!!challenge.open_at && new Date() < new Date(challenge.open_at)) ||
-            // Challenge is already closed
-            (!!challenge.close_at && new Date() > new Date(challenge.close_at))
-          }
-        >
-          {!challenge.open_at ||
-          (challenge.open_at && new Date() < new Date(challenge.open_at)) ? (
-            <span className="text-muted-foreground">Available Soon</span>
-          ) : (
-            <>
-              <span>Start Challenge</span>
-              <ArrowRight className="h-4 w-4" />
-            </>
-          )}
-        </Button>
-      </AlertDialogTrigger>
+      <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
 
       <AlertDialogContent>
         <AlertDialogHeader>

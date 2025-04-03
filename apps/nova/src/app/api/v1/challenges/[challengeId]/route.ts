@@ -102,10 +102,10 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.maxDailyAttempts !== undefined)
       updateData.max_daily_attempts = body.maxDailyAttempts;
     if (body.password !== undefined) {
-      const salt = generateSalt();
-      const hashedPassword = await hashPassword(body.password, salt);
-      updateData.password_hash = hashedPassword;
-      updateData.password_salt = salt;
+      const passwordSalt = generateSalt();
+      const passwordHash = await hashPassword(body.password, passwordSalt);
+      updateData.password_hash = passwordHash;
+      updateData.password_salt = passwordSalt;
     }
     if (body.previewable_at !== undefined)
       updateData.previewable_at = body.previewable_at;

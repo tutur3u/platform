@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -22,11 +23,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { challengeId, password_hash } = body;
+    const { challengeId, password, token } = body;
 
-    if (!challengeId || !password_hash) {
+    if (!challengeId || (!password && !token)) {
       return NextResponse.json(
-        { message: 'Missing required fields: challengeId and password_hash' },
+        {
+          message: 'Missing required fields: challengeId and password or token',
+        },
         { status: 400 }
       );
     }
@@ -51,8 +54,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify if the provided password hash matches what's stored
-    if (challenge.password_hash !== password_hash) {
+    // Hash the provided password and compare with stored hash
+    const passwordSalt = challenge.password_salt || generateSalt();
+    const passwordHash = password
+      ? await hashPassword(password, passwordSalt)
+      : token;
+
+    if (challenge.password_hash !== passwordHash) {
       return NextResponse.json(
         { message: 'Invalid password' },
         { status: 401 }
