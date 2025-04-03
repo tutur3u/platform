@@ -1,8 +1,8 @@
 'use client';
 
 import { Countdown } from './Countdown';
-import { StartChallengeDialog } from './StartChallengeDialog';
 import { TimeProgress } from './TimeProgress';
+import { ConfirmDialog } from './confirmDialog';
 import EditChallengeDialog from './editChallengeDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import type {
@@ -187,10 +187,6 @@ export default function ChallengeCard({
     const interval = setInterval(updateStatus, 60000);
     return () => clearInterval(interval);
   }, [updateStatus]);
-
-  const handleResumeChallenge = async () => {
-    router.push(`/challenges/${challenge.id}`);
-  };
 
   const handleViewResults = async () => {
     router.push(`/challenges/${challenge.id}/results`);
@@ -380,14 +376,21 @@ export default function ChallengeCard({
 
       if (session?.status === 'IN_PROGRESS') {
         return (
-          <Button onClick={handleResumeChallenge} className="w-full gap-2">
-            Resume Challenge <ArrowRight className="h-4 w-4" />
-          </Button>
+          <ConfirmDialog
+            mode="resume"
+            challenge={challenge}
+            trigger={
+              <Button className="w-full gap-2">
+                Resume Challenge <ArrowRight className="h-4 w-4" />
+              </Button>
+            }
+          />
         );
       }
 
       return (
-        <StartChallengeDialog
+        <ConfirmDialog
+          mode="start"
           challenge={challenge}
           trigger={
             <Button className="w-full gap-2">

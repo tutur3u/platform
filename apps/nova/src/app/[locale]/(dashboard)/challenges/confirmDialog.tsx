@@ -21,25 +21,27 @@ import { formatDuration } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface StartChallengeDialogProps {
+interface ConfirmDialogProps {
+  mode: 'start' | 'resume';
   challenge: NovaChallenge;
   trigger: React.ReactNode;
 }
 
-export function StartChallengeDialog({
+export function ConfirmDialog({
+  mode = 'start',
   challenge,
   trigger,
-}: StartChallengeDialogProps) {
+}: ConfirmDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [isStarting, setIsStarting] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleStartChallenge = async () => {
-    setIsStarting(true);
+  const handleConfirm = async () => {
+    setIsConfirming(true);
 
     try {
       // Check password if challenge is password protected
@@ -50,7 +52,7 @@ export function StartChallengeDialog({
             description: 'Please enter the password to start the challenge.',
             variant: 'destructive',
           });
-          setIsStarting(false);
+          setIsConfirming(false);
           return;
         }
 
@@ -69,7 +71,7 @@ export function StartChallengeDialog({
             description: 'The password you entered is incorrect.',
             variant: 'destructive',
           });
-          setIsStarting(false);
+          setIsConfirming(false);
           return;
         }
       }
@@ -88,34 +90,43 @@ export function StartChallengeDialog({
         return;
       }
 
-      // Create a new session
-      const startTime = new Date();
-      const endTime = new Date(startTime.getTime() + challenge.duration * 1000);
+      if (mode === 'start') {
+        // Create a new session
+        const startTime = new Date();
+        const endTime = new Date(
+          startTime.getTime() + challenge.duration * 1000
+        );
 
-      const response = await fetch(`/api/v1/sessions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
-          status: 'IN_PROGRESS',
-          totalScore: 0,
-          challengeId: challenge.id,
-        }),
-      });
+        const response = await fetch(`/api/v1/sessions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            status: 'IN_PROGRESS',
+            totalScore: 0,
+            challengeId: challenge.id,
+          }),
+        });
 
-      if (response.ok) {
-        // Invalidate challenges query to update the UI with the new session
-        queryClient.invalidateQueries({ queryKey: ['challenges'] });
+        if (response.ok) {
+          // Invalidate challenges query to update the UI with the new session
+          queryClient.invalidateQueries({ queryKey: ['challenges'] });
+          router.push(
+            `/challenges/${challenge.id}?token=${challenge.password_hash}`
+          );
+        } else {
+          toast({
+            title: 'Failed to start challenge.',
+            description: 'Please try again.',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        // Resume existing session
         router.push(
           `/challenges/${challenge.id}?token=${challenge.password_hash}`
         );
-      } else {
-        toast({
-          title: 'Failed to start challenge.',
-          description: 'Please try again.',
-          variant: 'destructive',
-        });
       }
     } catch (error) {
       console.error('Error starting challenge', error);
@@ -125,7 +136,7 @@ export function StartChallengeDialog({
         variant: 'destructive',
       });
     } finally {
-      setIsStarting(false);
+      setIsConfirming(false);
       setOpen(false);
     }
   };
@@ -136,11 +147,17 @@ export function StartChallengeDialog({
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Start Challenge</AlertDialogTitle>
+          <AlertDialogTitle>
+            {mode === 'start' ? 'Start Challenge' : 'Resume Challenge'}
+          </AlertDialogTitle>
           <AlertDialogDescription>
             {challenge.password_hash
-              ? 'Please enter the password to start the challenge.'
-              : 'Are you sure you want to start this challenge?'}
+              ? mode === 'start'
+                ? 'Please enter the password to start the challenge.'
+                : 'Please enter the password to resume the challenge.'
+              : mode === 'start'
+                ? 'Are you sure you want to start this challenge?'
+                : 'Do you want to resume this challenge?'}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -170,25 +187,30 @@ export function StartChallengeDialog({
           </div>
         )}
 
-        <div className="bg-muted mt-4 rounded-md p-3 text-sm">
-          <div className="font-medium">Challenge Details:</div>
-          <div className="mt-2 flex items-center">
-            <Clock className="text-primary mr-2 h-4 w-4" />
-            <span>Duration: {formatDuration(challenge.duration)}</span>
+        {mode === 'start' && (
+          <div className="bg-muted mt-4 rounded-md p-3 text-sm">
+            <div className="font-medium">Challenge Details:</div>
+            <div className="mt-2 flex items-center">
+              <Clock className="text-primary mr-2 h-4 w-4" />
+              <span>Duration: {formatDuration(challenge.duration)}</span>
+            </div>
+            <div className="text-muted-foreground mt-1 text-xs">
+              Once started, the timer cannot be paused and will continue until
+              completed.
+            </div>
           </div>
-          <div className="text-muted-foreground mt-1 text-xs">
-            Once started, the timer cannot be paused and will continue until
-            completed.
-          </div>
-        </div>
+        )}
 
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={isStarting}
-            onClick={handleStartChallenge}
-          >
-            {isStarting ? 'Starting...' : 'Start Challenge'}
+          <AlertDialogAction disabled={isConfirming} onClick={handleConfirm}>
+            {isConfirming
+              ? mode === 'start'
+                ? 'Starting...'
+                : 'Resuming...'
+              : mode === 'start'
+                ? 'Start Challenge'
+                : 'Resume Challenge'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
