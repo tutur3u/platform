@@ -103,9 +103,9 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     if (body.previewable_at !== undefined)
-      updateData.previewable_at = body.previewable_at;
-    if (body.open_at !== undefined) updateData.open_at = body.open_at;
-    if (body.close_at !== undefined) updateData.close_at = body.close_at;
+      updateData.previewable_at = body.previewableAt;
+    if (body.open_at !== undefined) updateData.open_at = body.openAt;
+    if (body.close_at !== undefined) updateData.close_at = body.closeAt;
 
     const { data: updatedChallenge, error: updateError } = await supabase
       .from('nova_challenges')
