@@ -84,13 +84,15 @@ export async function PUT(request: Request, { params }: Params) {
   try {
     const updateData: any = {};
 
-    if (body.title) updateData.title = body.title;
-    if (body.description) updateData.description = body.description;
-    if (body.duration) updateData.duration = body.duration;
-    if (body.enabled) updateData.enabled = body.enabled;
+    if (body.title !== undefined) updateData.title = body.title;
+    if (body.description !== undefined)
+      updateData.description = body.description;
+    if (body.duration !== undefined) updateData.duration = body.duration;
+    if (body.enabled !== undefined) updateData.enabled = body.enabled;
 
-    if (body.maxAttempts) updateData.max_attempts = body.maxAttempts;
-    if (body.maxDailyAttempts)
+    if (body.maxAttempts !== undefined)
+      updateData.max_attempts = body.maxAttempts;
+    if (body.maxDailyAttempts !== undefined)
       updateData.max_daily_attempts = body.maxDailyAttempts;
 
     if (body.password) {
@@ -100,9 +102,10 @@ export async function PUT(request: Request, { params }: Params) {
       updateData.password_salt = passwordSalt;
     }
 
-    if (body.previewableAt) updateData.previewable_at = body.previewableAt;
-    if (body.openAt) updateData.open_at = body.openAt;
-    if (body.closeAt) updateData.close_at = body.closeAt;
+    if (body.previewableAt !== undefined)
+      updateData.previewable_at = body.previewableAt;
+    if (body.openAt !== undefined) updateData.open_at = body.openAt;
+    if (body.closeAt !== undefined) updateData.close_at = body.closeAt;
 
     const { data: updatedChallenge, error: updateError } = await supabase
       .from('nova_challenges')
