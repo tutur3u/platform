@@ -23,12 +23,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { challengeId, password, token } = body;
+    const { challengeId, password } = body;
 
-    if (!challengeId || (!password && !token)) {
+    if (!challengeId || !password) {
       return NextResponse.json(
         {
-          message: 'Missing required fields: challengeId and password or token',
+          message: 'Missing required fields: challengeId and password',
         },
         { status: 400 }
       );
@@ -56,9 +56,7 @@ export async function POST(request: Request) {
 
     // Hash the provided password and compare with stored hash
     const passwordSalt = challenge.password_salt || generateSalt();
-    const passwordHash = password
-      ? await hashPassword(password, passwordSalt)
-      : token;
+    const passwordHash = await hashPassword(password, passwordSalt);
 
     if (challenge.password_hash !== passwordHash) {
       return NextResponse.json(
