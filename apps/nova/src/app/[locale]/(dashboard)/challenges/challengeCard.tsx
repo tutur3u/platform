@@ -84,15 +84,9 @@ export default function ChallengeCard({
     if (!response.ok) return null;
     const data = await response.json();
     setSession(data[0]);
-
-    // If session state changes, invalidate challenges query
-    if (data[0]?.status !== session?.status) {
-      queryClient.invalidateQueries({ queryKey: ['challenges'] });
-    }
-  }, [challenge.id, queryClient, session?.status]);
+  }, [challenge]);
 
   const updateStatus = useCallback(() => {
-    // Determine challenge status
     if (!challenge.enabled) {
       setStatus('disabled');
       return;
@@ -177,15 +171,7 @@ export default function ChallengeCard({
   }, [challenge]);
 
   useEffect(() => {
-    fetchSession();
-    const interval = setInterval(fetchSession, 60000);
-    return () => clearInterval(interval);
-  }, [fetchSession]);
-
-  useEffect(() => {
     updateStatus();
-    const interval = setInterval(updateStatus, 60000);
-    return () => clearInterval(interval);
   }, [updateStatus]);
 
   const handleViewResults = async () => {
@@ -334,10 +320,7 @@ export default function ChallengeCard({
             </div>
             <Countdown
               targetDate={endTime}
-              onComplete={() => {
-                fetchSession();
-                updateStatus();
-              }}
+              onComplete={fetchSession}
               className="mb-2"
             />
           </div>
@@ -441,9 +424,7 @@ export default function ChallengeCard({
       <Card key={challenge.id} className="flex flex-col overflow-hidden">
         <CardHeader className="flex flex-row justify-between pb-2">
           <div className="flex flex-col gap-2">
-            <CardTitle className="flex">
-              <span>{challenge.title}</span>
-            </CardTitle>
+            <CardTitle>{challenge.title}</CardTitle>
             {renderStatusBadge()}
           </div>
           {isAdmin && (
@@ -457,9 +438,6 @@ export default function ChallengeCard({
               <DropdownMenuContent align="end">
                 <EditChallengeDialog
                   challenge={challenge}
-                  onSuccessfulEdit={() => {
-                    queryClient.invalidateQueries({ queryKey: ['challenges'] });
-                  }}
                   trigger={
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                       <Pencil className="mr-2 h-4 w-4" />
@@ -519,10 +497,7 @@ export default function ChallengeCard({
                 <div className="mt-2 flex items-center justify-center">
                   <Countdown
                     targetDate={new Date(challenge.open_at)}
-                    onComplete={() => {
-                      fetchSession();
-                      updateStatus();
-                    }}
+                    onComplete={updateStatus}
                   />
                 </div>
                 <div className="mt-2 h-1 w-full rounded-full bg-blue-100 dark:bg-blue-800">
@@ -555,10 +530,7 @@ export default function ChallengeCard({
                 <div className="mt-2 flex items-center justify-center">
                   <Countdown
                     targetDate={new Date(challenge.close_at)}
-                    onComplete={() => {
-                      fetchSession();
-                      updateStatus();
-                    }}
+                    onComplete={updateStatus}
                   />
                 </div>
                 <div className="mt-2 h-1 w-full rounded-full bg-amber-100 dark:bg-amber-800">

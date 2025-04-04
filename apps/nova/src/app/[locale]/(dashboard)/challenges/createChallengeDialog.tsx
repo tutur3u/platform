@@ -20,9 +20,10 @@ interface CreateChallengeDialogProps {
 export default function CreateChallengeDialog({
   trigger,
 }: CreateChallengeDialogProps) {
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const onSubmit = async (values: ChallengeFormValues) => {
     try {

@@ -1,6 +1,7 @@
 'use client';
 
 import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   type NovaChallenge,
   type NovaChallengeCriteria,
@@ -23,16 +24,16 @@ type ExtendedNovaChallenge = NovaChallenge & {
 interface EditChallengeDialogProps {
   challenge: ExtendedNovaChallenge;
   trigger: React.ReactNode;
-  onSuccessfulEdit?: () => void;
 }
 
 export default function EditChallengeDialog({
   challenge,
   trigger,
-  onSuccessfulEdit,
 }: EditChallengeDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const queryClient = useQueryClient();
 
   // Convert string dates to Date objects for the form
   const formattedDefaultValues = useMemo(() => {
@@ -121,12 +122,10 @@ export default function EditChallengeDialog({
         ),
       ]);
 
-      setOpen(false);
+      // Invalidate challenges query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ['challenges'] });
 
-      // Call the onSuccessfulEdit callback if provided
-      if (onSuccessfulEdit) {
-        onSuccessfulEdit();
-      }
+      setOpen(false);
     } catch (error) {
       console.error('Error:', error);
       toast({
