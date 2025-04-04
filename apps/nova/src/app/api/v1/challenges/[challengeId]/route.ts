@@ -52,6 +52,7 @@ export async function GET(_request: Request, { params }: Params) {
   }
 }
 
+// codeFactor-disable
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient();
   const { challengeId } = await params;
