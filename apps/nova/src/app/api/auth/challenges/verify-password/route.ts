@@ -65,10 +65,17 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { message: 'Password verified successfully' },
       { status: 200 }
     );
+    response.cookies.set('token', passwordHash, {
+      httpOnly: true,
+      secure: true,
+      maxAge: challenge.duration,
+    });
+
+    return response;
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(

@@ -112,9 +112,7 @@ export function ConfirmDialog({
         if (response.ok) {
           // Invalidate challenges query to update the UI with the new session
           queryClient.invalidateQueries({ queryKey: ['challenges'] });
-          router.push(
-            `/challenges/${challenge.id}?token=${challenge.password_hash}`
-          );
+          router.push(`/challenges/${challenge.id}`);
         } else {
           toast({
             title: 'Failed to start challenge.',
@@ -124,9 +122,7 @@ export function ConfirmDialog({
         }
       } else {
         // Resume existing session
-        router.push(
-          `/challenges/${challenge.id}?token=${challenge.password_hash}`
-        );
+        router.push(`/challenges/${challenge.id}`);
       }
     } catch (error) {
       console.error('Error starting challenge', error);

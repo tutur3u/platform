@@ -5,6 +5,7 @@ import {
   NovaProblem,
   NovaProblemTestCase,
 } from '@tuturuuu/types/db';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -17,21 +18,23 @@ interface Props {
   params: Promise<{
     challengeId: string;
   }>;
-  searchParams: Promise<{
-    token?: string;
-  }>;
 }
 
-export default async function Page({ params, searchParams }: Props) {
+export default async function Page({ params }: Props) {
   const { challengeId } = await params;
-  const { token } = await searchParams;
 
   try {
     const challenge = await getChallenge(challengeId);
 
     if (!challenge) redirect('/challenges');
 
-    if (challenge.password_hash && (!token || challenge.password_hash != token))
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token');
+
+    if (
+      challenge.password_hash &&
+      (!token || challenge.password_hash != token.value)
+    )
       redirect('/challenges');
 
     return <ChallengeClient challenge={challenge} />;
@@ -41,7 +44,6 @@ export default async function Page({ params, searchParams }: Props) {
   }
 }
 
-// Fetch Challenge from Supabase
 async function getChallenge(
   challengeId: string
 ): Promise<ExtendedNovaChallenge | null> {
