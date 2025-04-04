@@ -14,7 +14,6 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -32,8 +31,6 @@ export default function EditChallengeDialog({
   trigger,
   onSuccessfulEdit,
 }: EditChallengeDialogProps) {
-  const router = useRouter();
-
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -78,9 +75,6 @@ export default function EditChallengeDialog({
         variant: 'default',
       });
 
-      // Find criteria to create, update, and delete
-      const newCriteriaIds = new Set(values.criteria.map((c) => c.id));
-
       // Criteria to create (those without IDs)
       const criteriaToCreate = values.criteria.filter((c) => !c.id);
 
@@ -88,6 +82,7 @@ export default function EditChallengeDialog({
       const criteriaToUpdate = values.criteria.filter((c) => c.id);
 
       // Criteria to delete (IDs that exist in old but not in new)
+      const newCriteriaIds = new Set(values.criteria.map((c) => c.id));
       const criteriaToDelete = challenge.criteria.filter(
         (c) => !newCriteriaIds.has(c.id)
       );
@@ -132,8 +127,6 @@ export default function EditChallengeDialog({
       if (onSuccessfulEdit) {
         onSuccessfulEdit();
       }
-
-      router.refresh();
     } catch (error) {
       console.error('Error:', error);
       toast({
