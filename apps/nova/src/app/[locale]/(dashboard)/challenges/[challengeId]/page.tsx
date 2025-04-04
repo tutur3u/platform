@@ -18,7 +18,7 @@ interface Props {
     challengeId: string;
   }>;
   searchParams: Promise<{
-    token: string;
+    token?: string;
   }>;
 }
 
@@ -26,24 +26,15 @@ export default async function Page({ params, searchParams }: Props) {
   const { challengeId } = await params;
   const { token } = await searchParams;
 
-  // Redirect if no token is provided
-  if (!token) {
-    redirect('/challenges');
-  }
-
   try {
-    const challengeData = await getChallenge(challengeId);
+    const challenge = await getChallenge(challengeId);
 
-    if (!challengeData) {
+    if (!challenge) redirect('/challenges');
+
+    if (challenge.password_hash && (!token || challenge.password_hash != token))
       redirect('/challenges');
-    }
 
-    if (challengeData.password_hash && challengeData.password_hash != token) {
-      redirect('/challenges');
-    }
-
-    // Pass data to client component
-    return <ChallengeClient challenge={challengeData} />;
+    return <ChallengeClient challenge={challenge} />;
   } catch (error) {
     console.error('Error loading challenge:', error);
     redirect('/challenges');
@@ -89,6 +80,7 @@ async function getChallenge(
 
     if (testCaseError) {
       console.error('Error fetching test cases:', testCaseError.message);
+      return null;
     }
 
     // Map problems with test cases
