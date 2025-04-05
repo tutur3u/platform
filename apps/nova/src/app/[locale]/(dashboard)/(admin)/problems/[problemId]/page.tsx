@@ -16,7 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type ExtendedNovaProblem = NovaProblem & {
-  testCases: NovaProblemTestCase[];
+  test_cases: NovaProblemTestCase[];
 };
 
 interface Props {
@@ -94,19 +94,10 @@ export default function Page({ params }: Props) {
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="problem" className="m-0 p-4">
-                  <ProblemComponent
-                    problem={{
-                      id: problem.id,
-                      title: problem.title,
-                      description: problem.description,
-                      maxPromptLength: problem.max_prompt_length,
-                      exampleInput: problem.example_input,
-                      exampleOutput: problem.example_output,
-                    }}
-                  />
+                  <ProblemComponent problem={problem} />
                 </TabsContent>
                 <TabsContent value="test-cases" className="m-0 p-4">
-                  <TestCaseComponent testCases={problem.testCases} />
+                  <TestCaseComponent testCases={problem.test_cases} />
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -115,19 +106,7 @@ export default function Page({ params }: Props) {
 
         <div className="relative flex h-full w-full flex-col gap-4 overflow-hidden">
           <PromptComponent>
-            <PromptForm
-              problem={{
-                id: problem.id,
-                title: problem.title,
-                description: problem.description,
-                maxPromptLength: problem.max_prompt_length,
-                exampleInput: problem.example_input,
-                exampleOutput: problem.example_output,
-                testCases: problem.testCases.map(
-                  (testCase) => testCase.input || ''
-                ),
-              }}
-            />
+            <PromptForm problem={problem} />
           </PromptComponent>
         </div>
       </div>
@@ -135,7 +114,6 @@ export default function Page({ params }: Props) {
   );
 }
 
-// Fetch Problem from Supabase
 async function getProblem(
   problemId: string
 ): Promise<ExtendedNovaProblem | null> {
@@ -167,8 +145,8 @@ async function getProblem(
 
     return {
       ...problem,
-      testCases: testCases || [],
-    } as ExtendedNovaProblem;
+      test_cases: testCases || [],
+    };
   } catch (error) {
     console.error('Unexpected error fetching problem:', error);
     return null;
