@@ -253,6 +253,7 @@ export function AboutUsPage() {
 
     const tierColors = {
       host: 'from-[#E5E4E2] to-[#B9B8B5]',
+      partner: 'from-[#E5E4E2] to-[#B9B8B5]',
       platinum: 'from-[#E5E4E2] to-[#B9B8B5]',
       gold: 'from-[#FFD700] to-[#FFC000]',
       silver: 'from-[#C0C0C0] to-[#A9A9A9]',
@@ -261,6 +262,7 @@ export function AboutUsPage() {
 
     const tierGlows = {
       host: 'group-hover:shadow-[0_0_15px_rgba(229,228,226,0.3)]',
+      partner: 'group-hover:shadow-[0_0_15px_rgba(229,228,226,0.3)]',
       platinum: 'group-hover:shadow-[0_0_15px_rgba(229,228,226,0.3)]',
       gold: 'group-hover:shadow-[0_0_15px_rgba(255,215,0,0.3)]',
       silver: 'group-hover:shadow-[0_0_15px_rgba(192,192,192,0.3)]',
@@ -1221,7 +1223,7 @@ export function AboutUsPage() {
       <section className="w-full py-16">
         <div className="mx-auto max-w-6xl px-4">
           <Tabs defaultValue="organizers" className="w-full">
-            <TabsList className="mb-8 grid h-full w-full grid-cols-2 gap-1 md:grid-cols-4">
+            <TabsList className="mb-8 grid h-full w-full grid-cols-1 gap-1 md:grid-cols-2 lg:grid-cols-4">
               <TabsTrigger value="organizers" className="gap-2">
                 <Users className="h-4 w-4" />
                 <span>{t('organizers.title')}</span>

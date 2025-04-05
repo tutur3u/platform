@@ -96,13 +96,13 @@ export default function ProblemForm({
 
   // Add a new test case
   const addTestCase = () => {
-    const currentTestcases = form.getValues('testCases');
+    const currentTestcases = form.getValues('testCases') || [];
     form.setValue('testCases', [...currentTestcases, { input: '' }]);
   };
 
   // Remove a test case
   const removeTestCase = (index: number) => {
-    const currentTestcases = form.getValues('testCases');
+    const currentTestcases = form.getValues('testCases') || [];
     const updatedTestcases = currentTestcases.filter((_, i) => i !== index);
     form.setValue('testCases', updatedTestcases);
   };
@@ -292,7 +292,8 @@ export default function ProblemForm({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {form.watch('testCases').length > 0 ? (
+                  {form.watch('testCases') &&
+                  form.watch('testCases').length > 0 ? (
                     form.watch('testCases').map((testCase, index) => (
                       <div
                         key={testCase.id || index}

@@ -32,7 +32,7 @@ export default async function Page() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6 flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+      <div className="mb-8 flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <h1 className="text-3xl font-bold">
           {t('prompt-engineering-challenges')}
         </h1>

@@ -19,7 +19,7 @@ import { ArrowLeft, Clipboard, ClipboardCheck } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface SubmissionDetails extends NovaSubmission {
@@ -33,23 +33,26 @@ interface SubmissionDetails extends NovaSubmission {
   outputs?: NovaSubmissionOutput[];
 }
 
-export default function SubmissionDetailPage() {
-  const router = useRouter();
-  const params = useParams();
-  const submissionId = params.submissionId as string;
+interface Props {
+  params: Promise<{
+    submissionId: string;
+  }>;
+}
 
+export default function Page({ params }: Props) {
   const [submission, setSubmission] = useState<SubmissionDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [relatedSubmissions, setRelatedSubmissions] = useState<
     SubmissionDetails[]
   >([]);
+  const [loading, setLoading] = useState(true);
   const [loadingRelated, setLoadingRelated] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     fetchSubmissionDetails();
-  }, [submissionId]);
+  }, []);
 
   useEffect(() => {
     if (submission) {
@@ -60,6 +63,8 @@ export default function SubmissionDetailPage() {
   async function fetchSubmissionDetails() {
     setLoading(true);
     try {
+      const { submissionId } = await params;
+
       // Fetch submission data
       const submissionRes = await fetch(
         `/api/v1/admin/submissions/${submissionId}`
@@ -218,7 +223,7 @@ export default function SubmissionDetailPage() {
           <CardContent>
             <div className="mb-6 space-y-4">
               <div>
-                <h3 className="font-semibold text-muted-foreground">User</h3>
+                <h3 className="text-muted-foreground font-semibold">User</h3>
                 <div className="mt-1 flex items-center gap-2">
                   {submission.users?.avatar_url ? (
                     <img
@@ -227,7 +232,7 @@ export default function SubmissionDetailPage() {
                       className="h-8 w-8 rounded-full"
                     />
                   ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                    <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
                       {submission.users?.display_name?.charAt(0) || '?'}
                     </div>
                   )}
@@ -238,7 +243,7 @@ export default function SubmissionDetailPage() {
               </div>
 
               <div>
-                <h3 className="font-semibold text-muted-foreground">
+                <h3 className="text-muted-foreground font-semibold">
                   Challenge
                 </h3>
                 <p className="font-medium">
@@ -248,7 +253,7 @@ export default function SubmissionDetailPage() {
               </div>
 
               <div>
-                <h3 className="font-semibold text-muted-foreground">Problem</h3>
+                <h3 className="text-muted-foreground font-semibold">Problem</h3>
                 <p className="font-medium">
                   {submission.nova_problems?.title || 'Unknown Problem'}
                 </p>
@@ -300,13 +305,13 @@ export default function SubmissionDetailPage() {
 
               <TabsContent value="prompt" className="mt-4">
                 <div className="relative">
-                  <pre className="max-h-[400px] overflow-auto rounded-md bg-muted/50 p-4 text-sm">
+                  <pre className="bg-muted/50 max-h-[400px] overflow-auto rounded-md p-4 text-sm">
                     {submission.prompt}
                   </pre>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-2 right-2"
+                    className="absolute right-2 top-2"
                     onClick={() => copyToClipboard(submission.prompt)}
                   >
                     {copied ? (
@@ -319,14 +324,14 @@ export default function SubmissionDetailPage() {
               </TabsContent>
 
               <TabsContent value="feedback" className="mt-4">
-                <div className="max-h-[400px] overflow-auto rounded-md bg-muted/50 p-4 text-sm">
+                <div className="bg-muted/50 max-h-[400px] overflow-auto rounded-md p-4 text-sm">
                   {submission.feedback || 'No feedback provided'}
                 </div>
               </TabsContent>
 
               {submission.outputs && submission.outputs.length > 0 && (
                 <TabsContent value="output" className="mt-4">
-                  <div className="max-h-[400px] overflow-auto rounded-md bg-muted/50 p-4 text-sm">
+                  <div className="bg-muted/50 max-h-[400px] overflow-auto rounded-md p-4 text-sm">
                     {submission.outputs[0]?.output || 'No output available'}
                   </div>
                 </TabsContent>
@@ -351,7 +356,7 @@ export default function SubmissionDetailPage() {
             {relatedSubmissions.map((related) => (
               <Card
                 key={related.id}
-                className="cursor-pointer transition-colors hover:bg-accent/50"
+                className="hover:bg-accent/50 cursor-pointer transition-colors"
                 onClick={() => router.push(`/submissions/${related.id}`)}
               >
                 <CardHeader className="pb-2">
@@ -376,7 +381,7 @@ export default function SubmissionDetailPage() {
                         className="h-6 w-6 rounded-full"
                       />
                     ) : (
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs">
+                      <div className="bg-primary/10 flex h-6 w-6 items-center justify-center rounded-full text-xs">
                         {related.users?.display_name?.charAt(0) || '?'}
                       </div>
                     )}

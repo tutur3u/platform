@@ -34,7 +34,7 @@ export interface TeamMember {
 
 export interface Sponsor {
   tKey: string;
-  tier: 'host' | 'platinum' | 'gold' | 'silver' | 'bronze';
+  tier: 'host' | 'partner' | 'platinum' | 'gold' | 'silver' | 'bronze';
   logo: string;
   website: string;
 }
@@ -259,6 +259,12 @@ export const sponsors: Sponsor[] = [
     tKey: 'rmit-neo-culture-tech',
     tier: 'host',
     logo: '/media/featured/competitions/neo-league/nct.jpg',
+    website: 'https://rmitnct.club',
+  },
+  {
+    tKey: 'rmit-sset',
+    tier: 'partner',
+    logo: '/media/featured/competitions/neo-league/rmit.png',
     website: 'https://www.rmit.edu.vn',
   },
 ];
