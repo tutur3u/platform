@@ -11,7 +11,7 @@
     "@react-email/components": "^0.0.35",
     "@react-email/tailwind": "^1.0.4",
     "react": "^19.1.0",
-    "react-email": "^4.0.3"
+    "react-email": "^4.0.4"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
