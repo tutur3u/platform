@@ -66,7 +66,7 @@ export default function LearnPage() {
     },
     {
       id: 'basic-techniques',
-      title: 'Prompt Engineering',
+      title: 'What is Prompt Engineering?',
       description: t('module-2-description'),
       icon: <BookOpen className="h-5 w-5" />,
       sections: [
@@ -116,7 +116,7 @@ export default function LearnPage() {
     },
     {
       id: 'advanced-strategies',
-      title: 'How to Craft Effective Prompts?',
+      title: 'Prompt Engineering for Generative AI',
       description: t('module-3-description'),
       icon: <Sparkles className="h-5 w-5" />,
       sections: [
@@ -151,26 +151,19 @@ export default function LearnPage() {
     },
     {
       id: 'best-practices',
-      title: 'General Best Practise',
+      title: 'Ohter steps',
       description: t('module-4-description'),
       icon: <Sparkles className="h-5 w-5" />,
       sections: [
         {
-          title: 'Be Clear and Specific',
+          title: 'How to Craft Effective Prompts',
           content: 'The importance of clear, precise instructions.',
-          duration: '5 min',
+          duration: '15 min',
           isCompleted: false,
         },
         {
-          title: 'Iterative Refinement',
+          title: 'General Best Practices',
           content: 'How to refine prompts based on model responses.',
-          duration: '5 min',
-          isCompleted: false,
-        },
-        {
-          title: 'Requesting a Different Tone',
-          content:
-            'Understanding how to specify tone and adjust style in prompts.',
           duration: '5 min',
           isCompleted: false,
         },
