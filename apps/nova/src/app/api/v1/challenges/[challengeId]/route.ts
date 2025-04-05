@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -64,7 +65,18 @@ export async function PUT(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  let body;
+  let body: {
+    title?: string;
+    description?: string;
+    duration?: number;
+    enabled?: boolean;
+    maxAttempts?: number;
+    maxDailyAttempts?: number;
+    password?: string;
+    previewableAt?: string;
+    openAt?: string;
+    closeAt?: string;
+  };
 
   try {
     body = await request.json();
@@ -86,20 +98,25 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined)
       updateData.description = body.description;
-    if (body.duration !== undefined) {
-      if (body.duration <= 0) {
-        return NextResponse.json(
-          { message: 'Duration must be a positive number' },
-          { status: 400 }
-        );
-      }
-      updateData.duration = body.duration;
-    }
+    if (body.duration !== undefined) updateData.duration = body.duration;
     if (body.enabled !== undefined) updateData.enabled = body.enabled;
-    if (body.previewable_at !== undefined)
-      updateData.previewable_at = body.previewable_at;
-    if (body.open_at !== undefined) updateData.open_at = body.open_at;
-    if (body.close_at !== undefined) updateData.close_at = body.close_at;
+
+    if (body.maxAttempts !== undefined)
+      updateData.max_attempts = body.maxAttempts;
+    if (body.maxDailyAttempts !== undefined)
+      updateData.max_daily_attempts = body.maxDailyAttempts;
+
+    if (body.password) {
+      const passwordSalt = generateSalt();
+      const passwordHash = await hashPassword(body.password, passwordSalt);
+      updateData.password_hash = passwordHash;
+      updateData.password_salt = passwordSalt;
+    }
+
+    if (body.previewableAt !== undefined)
+      updateData.previewable_at = body.previewableAt;
+    if (body.openAt !== undefined) updateData.open_at = body.openAt;
+    if (body.closeAt !== undefined) updateData.close_at = body.closeAt;
 
     const { data: updatedChallenge, error: updateError } = await supabase
       .from('nova_challenges')

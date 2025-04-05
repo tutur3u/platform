@@ -1,8 +1,8 @@
 'use client';
 
 import { Countdown } from './Countdown';
-import { StartChallengeDialog } from './StartChallengeDialog';
 import { TimeProgress } from './TimeProgress';
+import { ConfirmDialog } from './confirmDialog';
 import EditChallengeDialog from './editChallengeDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import type {
@@ -84,15 +84,9 @@ export default function ChallengeCard({
     if (!response.ok) return null;
     const data = await response.json();
     setSession(data[0]);
-
-    // If session state changes, invalidate challenges query
-    if (data[0]?.status !== session?.status) {
-      queryClient.invalidateQueries({ queryKey: ['challenges'] });
-    }
-  }, [challenge.id, queryClient, session?.status]);
+  }, [challenge]);
 
   const updateStatus = useCallback(() => {
-    // Determine challenge status
     if (!challenge.enabled) {
       setStatus('disabled');
       return;
@@ -178,19 +172,8 @@ export default function ChallengeCard({
 
   useEffect(() => {
     fetchSession();
-    const interval = setInterval(fetchSession, 60000);
-    return () => clearInterval(interval);
-  }, [fetchSession]);
-
-  useEffect(() => {
     updateStatus();
-    const interval = setInterval(updateStatus, 60000);
-    return () => clearInterval(interval);
-  }, [updateStatus]);
-
-  const handleResumeChallenge = async () => {
-    router.push(`/challenges/${challenge.id}`);
-  };
+  }, [fetchSession, updateStatus]);
 
   const handleViewResults = async () => {
     router.push(`/challenges/${challenge.id}/results`);
@@ -295,10 +278,12 @@ export default function ChallengeCard({
   const renderSessionStatus = () => {
     if (!session) return null;
 
-    const startTime = session.start_time ? new Date(session.start_time) : null;
-    const endTime = session.end_time ? new Date(session.end_time) : null;
-
-    if (!startTime || !endTime) return null;
+    const startTime = new Date(session.start_time);
+    const endTime = session.end_time
+      ? new Date(session.end_time)
+      : new Date(
+          new Date(session.start_time).getTime() + challenge.duration * 1000
+        );
 
     if (session.status === 'ENDED') {
       return (
@@ -310,12 +295,12 @@ export default function ChallengeCard({
             </Badge>
           </div>
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
-              <span>Started: {format(startTime, 'PPpp')}</span>
+              <span>Started at: {format(startTime, 'PPpp')}</span>
             </div>
             <div className="flex items-center">
-              <span>Ends: {format(endTime, 'PPpp')}</span>
+              <span>Ended at: {format(endTime, 'PPpp')}</span>
             </div>
           </div>
         </div>
@@ -333,15 +318,12 @@ export default function ChallengeCard({
           </div>
 
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center text-xs">
               <Clock className="mr-1 h-3 w-3" /> Time remaining:
             </div>
             <Countdown
               targetDate={endTime}
-              onComplete={() => {
-                fetchSession();
-                updateStatus();
-              }}
+              onComplete={fetchSession}
               className="mb-2"
             />
           </div>
@@ -349,12 +331,12 @@ export default function ChallengeCard({
             <TimeProgress startDate={startTime} endDate={endTime} />
           </div>
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
-              <span>Started: {format(startTime, 'PPpp')}</span>
+              <span>Started at: {format(startTime, 'PPpp')}</span>
             </div>
             <div className="flex items-center">
-              <span>Ends: {format(endTime, 'PPpp')}</span>
+              <span>Ends at: {format(endTime, 'PPpp')}</span>
             </div>
           </div>
         </div>
@@ -380,13 +362,29 @@ export default function ChallengeCard({
 
       if (session?.status === 'IN_PROGRESS') {
         return (
-          <Button onClick={handleResumeChallenge} className="w-full gap-2">
-            Resume Challenge <ArrowRight className="h-4 w-4" />
-          </Button>
+          <ConfirmDialog
+            mode="resume"
+            challenge={challenge}
+            trigger={
+              <Button className="w-full gap-2">
+                Resume Challenge <ArrowRight className="h-4 w-4" />
+              </Button>
+            }
+          />
         );
       }
 
-      return <StartChallengeDialog challenge={challenge} />;
+      return (
+        <ConfirmDialog
+          mode="start"
+          challenge={challenge}
+          trigger={
+            <Button className="w-full gap-2">
+              Start Challenge <ArrowRight className="h-4 w-4" />
+            </Button>
+          }
+        />
+      );
     }
 
     if (status === 'disabled') {
@@ -429,9 +427,7 @@ export default function ChallengeCard({
       <Card key={challenge.id} className="flex flex-col overflow-hidden">
         <CardHeader className="flex flex-row justify-between pb-2">
           <div className="flex flex-col gap-2">
-            <CardTitle className="flex">
-              <span>{challenge.title}</span>
-            </CardTitle>
+            <CardTitle>{challenge.title}</CardTitle>
             {renderStatusBadge()}
           </div>
           {isAdmin && (
@@ -445,9 +441,6 @@ export default function ChallengeCard({
               <DropdownMenuContent align="end">
                 <EditChallengeDialog
                   challenge={challenge}
-                  onSuccessfulEdit={() => {
-                    queryClient.invalidateQueries({ queryKey: ['challenges'] });
-                  }}
                   trigger={
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                       <Pencil className="mr-2 h-4 w-4" />
@@ -467,11 +460,11 @@ export default function ChallengeCard({
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
           <div className="flex flex-col gap-2">
             <div className="flex items-center">
-              <Clock className="h-4 w-4 text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">
+              <Clock className="text-primary h-4 w-4" />
+              <span className="text-muted-foreground ml-2 text-sm">
                 Duration: {formatDuration(challenge.duration)}
               </span>
             </div>
@@ -479,7 +472,7 @@ export default function ChallengeCard({
             {status === 'upcoming' && challenge.previewable_at && (
               <div className="flex items-center">
                 <Eye className="h-4 w-4 text-amber-500" />
-                <span className="ml-2 text-sm text-muted-foreground">
+                <span className="text-muted-foreground ml-2 text-sm">
                   Preview available:{' '}
                   {formatDistanceToNow(new Date(challenge.previewable_at), {
                     addSuffix: true,
@@ -507,10 +500,7 @@ export default function ChallengeCard({
                 <div className="mt-2 flex items-center justify-center">
                   <Countdown
                     targetDate={new Date(challenge.open_at)}
-                    onComplete={() => {
-                      fetchSession();
-                      updateStatus();
-                    }}
+                    onComplete={updateStatus}
                   />
                 </div>
                 <div className="mt-2 h-1 w-full rounded-full bg-blue-100 dark:bg-blue-800">
@@ -543,10 +533,7 @@ export default function ChallengeCard({
                 <div className="mt-2 flex items-center justify-center">
                   <Countdown
                     targetDate={new Date(challenge.close_at)}
-                    onComplete={() => {
-                      fetchSession();
-                      updateStatus();
-                    }}
+                    onComplete={updateStatus}
                   />
                 </div>
                 <div className="mt-2 h-1 w-full rounded-full bg-amber-100 dark:bg-amber-800">

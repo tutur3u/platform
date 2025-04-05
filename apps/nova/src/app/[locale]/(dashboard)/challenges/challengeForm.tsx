@@ -19,10 +19,12 @@ import {
   CalendarIcon,
   InfoIcon,
   ListChecks,
+  Lock,
   PlusCircle,
   TimerIcon,
   Trash2,
 } from '@tuturuuu/ui/icons';
+import { Eye, EyeOff } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -35,10 +37,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { useState } from 'react';
 import * as z from 'zod';
 
 const criteriaSchema = z.object({
-  id: z.string().optional(),
+  id: z.string().nullable(),
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   description: z.string().min(10, {
     message: 'Description must be at least 10 characters.',
@@ -58,9 +61,19 @@ const formSchema = z
       message: 'Duration must be at least 60 seconds.',
     }),
     enabled: z.boolean().default(false),
-    openAt: z.date().nullable().optional(),
-    closeAt: z.date().nullable().optional(),
-    previewableAt: z.date().nullable().optional(),
+    maxAttempts: z.number().min(1, {
+      message: 'Max attempts must be at least 1.',
+    }),
+    maxDailyAttempts: z.number().min(1, {
+      message: 'Max daily attempts must be at least 1.',
+    }),
+    password: z
+      .string()
+      .min(6, { message: 'Password must be at least 6 characters.' })
+      .nullable(),
+    openAt: z.date().nullable(),
+    closeAt: z.date().nullable(),
+    previewableAt: z.date().nullable(),
   })
   .required();
 
@@ -81,16 +94,31 @@ export default function ChallengeForm({
 }: ChallengeFormProps) {
   const isEditing = !!challengeId;
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const form = useForm<ChallengeFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: {
+      title: '',
+      description: '',
+      criteria: [],
+      duration: 3600,
+      enabled: false,
+      maxAttempts: 1,
+      maxDailyAttempts: 1,
+      password: null,
+      openAt: null,
+      closeAt: null,
+      previewableAt: null,
+      ...defaultValues,
+    },
   });
 
   const addCriteria = () => {
     const currentCriteria = form.getValues('criteria');
     form.setValue('criteria', [
       ...currentCriteria,
-      { name: '', description: '' },
+      { id: null, name: '', description: '' },
     ]);
   };
 
@@ -112,6 +140,10 @@ export default function ChallengeForm({
             <TabsTrigger value="criteria">
               <ListChecks className="h-4 w-4" />
               <span>Judging Criteria</span>
+            </TabsTrigger>
+            <TabsTrigger value="security">
+              <Lock className="h-4 w-4" />
+              <span>Security</span>
             </TabsTrigger>
             <TabsTrigger value="duration">
               <TimerIcon className="h-4 w-4" />
@@ -142,7 +174,7 @@ export default function ChallengeForm({
                         <FormDescription>
                           Give your challenge a descriptive title.
                         </FormDescription>
-                        <FormMessage />
+                        <FormMessage className="text-xs" />
                       </FormItem>
                     )}
                   />
@@ -163,7 +195,7 @@ export default function ChallengeForm({
                           Provide a short description of what this challenge is
                           about.
                         </FormDescription>
-                        <FormMessage />
+                        <FormMessage className="text-xs" />
                       </FormItem>
                     )}
                   />
@@ -182,7 +214,7 @@ export default function ChallengeForm({
                         <FormDescription>
                           Whether this challenge is currently active.
                         </FormDescription>
-                        <FormMessage />
+                        <FormMessage className="text-xs" />
                       </FormItem>
                     )}
                   />
@@ -195,7 +227,7 @@ export default function ChallengeForm({
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div>
                     <CardTitle>Judging Criteria</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-sm">
                       Define how submissions will be evaluated. Each criterion
                       will be scored separately.
                     </p>
@@ -213,92 +245,165 @@ export default function ChallengeForm({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {form.watch('criteria')?.map((criterion, index) => (
-                      <Card
-                        key={criterion.id || index}
-                        className="border-dashed"
-                      >
-                        <CardContent className="p-4">
-                          <div className="mb-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-medium">
-                                Criteria {index + 1}
-                              </h4>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Badge
-                                      variant="outline"
-                                      className="cursor-help"
-                                    >
-                                      {form.watch(`criteria.${index}.name`) ||
-                                        'Unnamed'}
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="max-w-xs">
-                                      {form.watch(
-                                        `criteria.${index}.description`
-                                      ) || 'No description yet'}
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                    {form.watch('criteria')?.length > 0 ? (
+                      form.watch('criteria')?.map((criterion, index) => (
+                        <Card
+                          key={criterion.id || index}
+                          className="border-dashed"
+                        >
+                          <CardContent className="p-4">
+                            <div className="mb-3 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-medium">
+                                  Criteria {index + 1}
+                                </h4>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Badge
+                                        variant="outline"
+                                        className="cursor-help"
+                                      >
+                                        {form.watch(`criteria.${index}.name`) ||
+                                          'Unnamed'}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">
+                                        {form.watch(
+                                          `criteria.${index}.description`
+                                        ) || 'No description yet'}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive/80 h-8 w-8 p-0"
+                                onClick={() => removeCriteria(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Remove</span>
+                              </Button>
                             </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
-                              onClick={() => removeCriteria(index)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Remove</span>
-                            </Button>
-                          </div>
-                          <div className="space-y-3">
-                            <FormField
-                              control={form.control}
-                              name={`criteria.${index}.name`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs">
-                                    Name
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      placeholder="Criteria name (e.g., Clarity, Efficiency)"
-                                      {...field}
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
+                            <div className="space-y-3">
+                              <FormField
+                                control={form.control}
+                                name={`criteria.${index}.name`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs">
+                                      Name
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Criteria name (e.g., Clarity, Efficiency)"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage className="text-xs" />
+                                  </FormItem>
+                                )}
+                              />
 
-                            <FormField
-                              control={form.control}
-                              name={`criteria.${index}.description`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs">
-                                    Description
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Textarea
-                                      className="min-h-24 resize-none"
-                                      placeholder="Explain how this criteria will be judged (e.g., 'How clear and unambiguous is the prompt?')"
-                                      {...field}
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                              <FormField
+                                control={form.control}
+                                name={`criteria.${index}.description`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs">
+                                      Description
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Textarea
+                                        className="min-h-24 resize-none"
+                                        placeholder="Explain how this criteria will be judged (e.g., 'How clear and unambiguous is the prompt?')"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage className="text-xs" />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-sm">
+                        No criteria yet
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="security" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Security</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4 rounded-lg border p-4">
+                    <div className="flex flex-row items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="text-sm font-medium">
+                          Password Protection
+                        </div>
+                        <div className="text-muted-foreground text-sm">
+                          Require a password to access this challenge
+                        </div>
+                      </div>
+                      <Switch
+                        checked={form.watch('password') !== null}
+                        onCheckedChange={(checked) => {
+                          form.setValue('password', checked ? '' : null);
+                        }}
+                      />
+                    </div>
+
+                    {form.watch('password') !== null && (
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Challenge Password</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Input
+                                  type={showPassword ? 'text' : 'password'}
+                                  placeholder="Enter password"
+                                  {...field}
+                                  value={field.value || ''}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                  ) : (
+                                    <Eye className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            </FormControl>
+                            <FormDescription>
+                              Must be at least 6 characters
+                            </FormDescription>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -308,7 +413,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Duration</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Set how long participants have to complete the challenge
                     once they start.
                   </p>
@@ -367,7 +472,7 @@ export default function ChallengeForm({
                         </div>
 
                         {field.value && (
-                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
+                          <div className="bg-muted/30 mt-4 rounded-md border p-3">
                             <DurationDisplay seconds={field.value} />
                           </div>
                         )}
@@ -376,10 +481,64 @@ export default function ChallengeForm({
                           How long users have to complete this challenge once
                           they start it.
                         </FormDescription>
-                        <FormMessage />
+                        <FormMessage className="text-xs" />
                       </FormItem>
                     )}
                   />
+
+                  <div className="mt-6 space-y-4">
+                    <h3 className="font-medium">Attempt Limits</h3>
+
+                    <FormField
+                      control={form.control}
+                      name="maxAttempts"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Maximum Attempts</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              value={field.value || 1}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value) || 1)
+                              }
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Total number of times a user can attempt this
+                            challenge.
+                          </FormDescription>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="maxDailyAttempts"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Maximum Daily Attempts</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              value={field.value || 1}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value) || 1)
+                              }
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Number of times a user can attempt this challenge
+                            per day.
+                          </FormDescription>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -388,22 +547,21 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Schedule</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Set when your challenge is available to participants.
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6 rounded-md border border-dashed p-4">
                     <div className="mb-2 flex items-center">
-                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
                       <h3 className="text-sm font-medium">
                         Timeline Recommendation
                       </h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       For best results, set dates in this order: Preview Date ➝
-                      Open Date ➝ Close Date. This allows admins to preview
-                      challenges before they open to participants.
+                      Open Date ➝ Close Date.
                     </p>
                   </div>
 
@@ -418,73 +576,56 @@ export default function ChallengeForm({
                             <DateTimePicker
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="When admins can preview (optional)"
                             />
                           </FormControl>
                           <FormDescription>
-                            When admins can preview this challenge before it
-                            opens to participants.
+                            When participants can preview this challenge before
+                            it starts.
                           </FormDescription>
-                          <FormMessage />
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
 
-                    <div className="relative">
-                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
-                      <FormField
-                        control={form.control}
-                        name="openAt"
-                        render={({ field }) => (
-                          <FormItem className="ml-8">
-                            <FormLabel>Opens At</FormLabel>
-                            <FormControl>
-                              <DateTimePicker
-                                value={field.value}
-                                onChange={field.onChange}
-                                placeholder="When challenge becomes available"
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              When the challenge becomes available to
-                              participants.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="openAt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Opens At</FormLabel>
+                          <FormControl>
+                            <DateTimePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            When the challenge starts
+                          </FormDescription>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
 
-                    <div className="relative">
-                      <div className="absolute -top-3 left-4 h-full w-px bg-muted-foreground/20"></div>
-                      <FormField
-                        control={form.control}
-                        name="closeAt"
-                        render={({ field }) => (
-                          <FormItem className="ml-8">
-                            <FormLabel>Closes At</FormLabel>
-                            <FormControl>
-                              <DateTimePicker
-                                value={field.value}
-                                onChange={field.onChange}
-                                placeholder="When challenge ends (optional)"
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              When the challenge will no longer be available to
-                              start.
-                              {field.value && form.watch('openAt') && (
-                                <span className="mt-1 block text-xs">
-                                  Challenge will be available from opening until
-                                  closing.
-                                </span>
-                              )}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="closeAt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Closes At</FormLabel>
+                          <FormControl>
+                            <DateTimePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            When the challenge closes
+                          </FormDescription>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </CardContent>
               </Card>

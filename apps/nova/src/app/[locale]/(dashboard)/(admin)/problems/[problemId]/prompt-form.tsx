@@ -1,6 +1,10 @@
 'use client';
 
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
+import {
+  NovaChallengeCriteria,
+  NovaProblem,
+  NovaProblemTestCase,
+} from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -30,17 +34,13 @@ type TestResult = {
   output: string;
 };
 
-interface Problem {
-  id: string;
-  title: string;
-  description: string;
-  maxPromptLength: number;
-  exampleInput: string;
-  exampleOutput: string;
-  testCases: string[];
+interface Props {
+  problem: NovaProblem & {
+    test_cases: NovaProblemTestCase[];
+  };
 }
 
-export default function PromptForm({ problem }: { problem: Problem }) {
+export default function PromptForm({ problem }: Props) {
   const [prompt, setPrompt] = useState('');
   const [customTestCase, setCustomTestCase] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -178,7 +178,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     setIsTesting(true);
 
     try {
-      const testPromises = problem.testCases.map(async (testcase, index) => {
+      const testPromises = problem.test_cases.map(async (testcase, index) => {
         if (!testcase) return null;
 
         const response = await fetch(
@@ -243,11 +243,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       <TabsContent value="write" className="flex-1 overflow-hidden">
         <div className="flex h-full flex-col">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Characters: {prompt.length} / {problem.maxPromptLength}
+            <div className="text-muted-foreground text-sm">
+              Characters: {prompt.length} / {problem.max_prompt_length}
             </div>
             <Progress
-              value={(prompt.length / problem.maxPromptLength) * 100}
+              value={(prompt.length / problem.max_prompt_length) * 100}
               className="h-1 w-24"
             />
           </div>
@@ -258,7 +258,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             onKeyDown={handleKeyDown}
             placeholder="Write your prompt here..."
             className="flex-1 resize-none"
-            maxLength={problem.maxPromptLength}
+            maxLength={problem.max_prompt_length}
           />
 
           <div className="mt-4 flex justify-end">
@@ -312,7 +312,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
               {testResult && (
                 <div className="mt-4">
                   <h3 className="mb-2 text-sm font-medium">Output:</h3>
-                  <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
                     {testResult.output}
                   </div>
                 </div>
@@ -346,11 +346,11 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                     <h3 className="text-sm font-medium">
                       Test Case {index + 1}:
                     </h3>
-                    <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
                       {result.input}
                     </div>
                     <h3 className="text-sm font-medium">Output:</h3>
-                    <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
                       {result.output}
                     </div>
                   </div>
@@ -381,34 +381,34 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                       >
                         {submission.score}/10
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         <Clock className="mr-1 inline h-3 w-3" />
                         {new Date(submission.created_at).toLocaleString()}
                       </span>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2 pt-0 pb-3">
+                <CardContent className="space-y-2 pb-3 pt-0">
                   <div>
-                    <h3 className="mb-1 text-xs font-medium text-muted-foreground">
+                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
                       Prompt:
                     </h3>
-                    <div className="rounded-md bg-muted p-2 text-sm">
+                    <div className="bg-muted rounded-md p-2 text-sm">
                       {submission.prompt}
                     </div>
                   </div>
                   <div>
-                    <h3 className="mb-1 text-xs font-medium text-muted-foreground">
+                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
                       Feedback:
                     </h3>
-                    <div className="rounded-md bg-muted p-2 text-sm">
+                    <div className="bg-muted rounded-md p-2 text-sm">
                       {submission.feedback}
                     </div>
                   </div>
                   {submission.criteria_scores &&
                     submission.criteria_scores.length > 0 && (
                       <div className="space-y-2">
-                        <h3 className="text-xs font-medium text-muted-foreground">
+                        <h3 className="text-muted-foreground text-xs font-medium">
                           Criteria Scores:
                         </h3>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -442,7 +442,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             ))
           ) : (
             <div className="flex h-40 items-center justify-center rounded-md border border-dashed">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No submission history yet
               </p>
             </div>

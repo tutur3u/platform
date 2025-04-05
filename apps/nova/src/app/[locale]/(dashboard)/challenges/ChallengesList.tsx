@@ -78,6 +78,7 @@ export default function ChallengesList({ isAdmin }: ChallengesListProps) {
     result = result.filter((challenge) => {
       // Apply status filter
       if (filter === 'all') return true;
+      if (filter === 'disabled') return !challenge.enabled;
 
       const now = new Date();
       const previewableAt = challenge.previewable_at
