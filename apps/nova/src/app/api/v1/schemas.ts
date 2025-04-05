@@ -50,9 +50,9 @@ export const createProblemSchema = z.object({
 // Sessions
 export const createSessionSchema = z.object({
   startTime: z.string().min(1, 'Start time is required'),
-  endTime: z.string(),
+  endTime: z.string().nullable(),
   status: z.string().min(1, 'Status is required'),
-  totalScore: z.number(),
+  totalScore: z.number().min(0, 'Total score must be non-negative'),
   challengeId: z.string().min(1, 'Challenge ID is required'),
 });
 

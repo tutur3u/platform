@@ -278,10 +278,12 @@ export default function ChallengeCard({
   const renderSessionStatus = () => {
     if (!session) return null;
 
-    const startTime = session.start_time ? new Date(session.start_time) : null;
-    const endTime = session.end_time ? new Date(session.end_time) : null;
-
-    if (!startTime || !endTime) return null;
+    const startTime = new Date(session.start_time);
+    const endTime = session.end_time
+      ? new Date(session.end_time)
+      : new Date(
+          new Date(session.start_time).getTime() + challenge.duration * 1000
+        );
 
     if (session.status === 'ENDED') {
       return (
@@ -295,10 +297,10 @@ export default function ChallengeCard({
 
           <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
-              <span>Started: {format(startTime, 'PPpp')}</span>
+              <span>Started at: {format(startTime, 'PPpp')}</span>
             </div>
             <div className="flex items-center">
-              <span>Ends: {format(endTime, 'PPpp')}</span>
+              <span>Ended at: {format(endTime, 'PPpp')}</span>
             </div>
           </div>
         </div>
@@ -331,10 +333,10 @@ export default function ChallengeCard({
 
           <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
-              <span>Started: {format(startTime, 'PPpp')}</span>
+              <span>Started at: {format(startTime, 'PPpp')}</span>
             </div>
             <div className="flex items-center">
-              <span>Ends: {format(endTime, 'PPpp')}</span>
+              <span>Ends at: {format(endTime, 'PPpp')}</span>
             </div>
           </div>
         </div>

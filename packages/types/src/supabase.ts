@@ -2319,7 +2319,7 @@ export type Database = {
         Row: {
           challenge_id: string;
           created_at: string;
-          end_time: string;
+          end_time: string | null;
           id: string;
           start_time: string;
           status: string;
@@ -2329,7 +2329,7 @@ export type Database = {
         Insert: {
           challenge_id: string;
           created_at?: string;
-          end_time: string;
+          end_time?: string | null;
           id?: string;
           start_time: string;
           status: string;
@@ -2339,7 +2339,7 @@ export type Database = {
         Update: {
           challenge_id?: string;
           created_at?: string;
-          end_time?: string;
+          end_time?: string | null;
           id?: string;
           start_time?: string;
           status?: string;

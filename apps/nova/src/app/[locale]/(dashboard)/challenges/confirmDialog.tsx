@@ -93,16 +93,13 @@ export function ConfirmDialog({
       if (mode === 'start') {
         // Create a new session
         const startTime = new Date();
-        const endTime = new Date(
-          startTime.getTime() + challenge.duration * 1000
-        );
 
         const response = await fetch(`/api/v1/sessions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
+            endTime: null,
             status: 'IN_PROGRESS',
             totalScore: 0,
             challengeId: challenge.id,

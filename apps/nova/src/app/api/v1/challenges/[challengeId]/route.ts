@@ -65,7 +65,18 @@ export async function PUT(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  let body;
+  let body: {
+    title?: string;
+    description?: string;
+    duration?: number;
+    enabled?: boolean;
+    maxAttempts?: number;
+    maxDailyAttempts?: number;
+    password?: string;
+    previewableAt?: string;
+    openAt?: string;
+    closeAt?: string;
+  };
 
   try {
     body = await request.json();

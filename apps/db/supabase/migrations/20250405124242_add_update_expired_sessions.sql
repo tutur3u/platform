@@ -6,7 +6,9 @@ CREATE OR REPLACE FUNCTION public.update_expired_sessions()
 AS $function$
 BEGIN
   UPDATE nova_sessions ns
-  SET status = 'ENDED'
+  SET
+    end_time = ns.start_time + (nc.duration * interval '1 second'),
+    status = 'ENDED'
   FROM nova_challenges nc
   WHERE ns.challenge_id = nc.id
   AND ns.start_time + (nc.duration * interval '1 second') <= now()

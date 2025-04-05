@@ -3,7 +3,7 @@
 import ProblemComponent from '../../shared/problem-component';
 import PromptComponent from '../../shared/prompt-component';
 import TestCaseComponent from '../../shared/test-case-component';
-import CustomizedHeader from './customizedHeader';
+import ChallengeHeader from './challengeHeader';
 import PromptForm from './prompt-form';
 import {
   NovaChallenge,
@@ -44,7 +44,6 @@ export default function ChallengeClient({ challenge }: Props) {
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-  const problems = challenge?.problems || [];
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -86,12 +85,15 @@ export default function ChallengeClient({ challenge }: Props) {
     };
 
     fetchSession();
-  }, [challenge.id, router]);
+  }, [challenge.id]);
 
-  // Memoize these functions to prevent unnecessary re-renders
+  const currentProblem =
+    challenge.problems[currentProblemIndex] ||
+    ({} as NovaProblem & { test_cases: NovaProblemTestCase[] });
+
   const nextProblem = () => {
     setCurrentProblemIndex((prev) =>
-      prev < problems.length - 1 ? prev + 1 : prev
+      prev < challenge.problems.length - 1 ? prev + 1 : prev
     );
   };
 
@@ -104,6 +106,13 @@ export default function ChallengeClient({ challenge }: Props) {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        endTime: new Date(
+          Math.min(
+            new Date().getTime(),
+            new Date(session?.start_time || '').getTime() +
+              challenge.duration * 1000
+          )
+        ).toISOString(),
         status: 'ENDED',
       }),
     });
@@ -142,18 +151,19 @@ export default function ChallengeClient({ challenge }: Props) {
   return (
     <>
       <div className="relative h-screen overflow-hidden">
-        <CustomizedHeader
-          key={`challenge-header-${session.id}`}
-          problemLength={problems.length}
+        <ChallengeHeader
+          className="flex-none"
+          problemLength={challenge.problems.length}
           currentProblem={currentProblemIndex + 1}
-          endTime={session.end_time}
+          startTime={session.start_time}
+          endTime={new Date(
+            new Date(session.start_time).getTime() + challenge.duration * 1000
+          ).toISOString()}
+          challengeCloseAt={challenge.close_at || ''}
           onPrev={prevProblem}
           onNext={nextProblem}
           onEnd={() => setShowEndDialog(true)}
           onAutoEnd={handleEndChallenge}
-          className="flex-none"
-          challengeCloseAt={challenge.close_at || undefined}
-          sessionStartTime={session.start_time}
         />
 
         <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-4 md:grid-cols-2">
@@ -170,26 +180,11 @@ export default function ChallengeClient({ challenge }: Props) {
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="problem" className="m-0 p-4">
-                    <ProblemComponent
-                      problem={{
-                        id: problems[currentProblemIndex]?.id || '',
-                        title: problems[currentProblemIndex]?.title || '',
-                        description:
-                          problems[currentProblemIndex]?.description || '',
-                        maxPromptLength:
-                          problems[currentProblemIndex]?.max_prompt_length || 0,
-                        exampleInput:
-                          problems[currentProblemIndex]?.example_input || '',
-                        exampleOutput:
-                          problems[currentProblemIndex]?.example_output || '',
-                      }}
-                    />
+                    <ProblemComponent problem={currentProblem} />
                   </TabsContent>
                   <TabsContent value="test-cases" className="m-0 p-4">
                     <TestCaseComponent
-                      testCases={
-                        problems[currentProblemIndex]?.test_cases || []
-                      }
+                      testCases={currentProblem.test_cases || []}
                     />
                   </TabsContent>
                 </Tabs>
@@ -199,23 +194,7 @@ export default function ChallengeClient({ challenge }: Props) {
 
           <div className="relative flex h-full w-full flex-col gap-4 overflow-hidden">
             <PromptComponent>
-              <PromptForm
-                problem={{
-                  id: problems[currentProblemIndex]?.id || '',
-                  title: problems[currentProblemIndex]?.title || '',
-                  description: problems[currentProblemIndex]?.description || '',
-                  maxPromptLength:
-                    problems[currentProblemIndex]?.max_prompt_length || 0,
-                  exampleInput:
-                    problems[currentProblemIndex]?.example_input || '',
-                  exampleOutput:
-                    problems[currentProblemIndex]?.example_output || '',
-                  testCases:
-                    problems[currentProblemIndex]?.test_cases?.map(
-                      (testCase) => testCase.input || ''
-                    ) || [],
-                }}
-              />
+              <PromptForm problem={currentProblem} />
             </PromptComponent>
           </div>
         </div>

@@ -5,38 +5,38 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useRef, useState } from 'react';
 
-interface CustomizedHeaderProps {
+interface Props {
+  className?: string;
   problemLength: number;
   currentProblem: number;
+  startTime: string;
   endTime: string;
-  className?: string;
+  challengeCloseAt: string;
   onPrev: () => void;
   onNext: () => void;
   onEnd: () => void;
   onAutoEnd: () => void;
-  challengeCloseAt?: string; // Optional challenge close_at time
-  sessionStartTime?: string; // Optional session start_time
 }
 
-export default function CustomizedHeader({
+export default function ChallengeHeader({
+  className,
   problemLength,
   currentProblem,
+  startTime,
   endTime,
-  className,
+  challengeCloseAt,
   onPrev,
   onNext,
   onEnd,
   onAutoEnd,
-  challengeCloseAt,
-  sessionStartTime,
-}: CustomizedHeaderProps) {
+}: Props) {
   // Static timer ID to ensure we don't create multiple timers
   const timerId = useRef<NodeJS.Timeout | null>(null);
 
   // Store the timer configuration in a ref to prevent resets on re-renders
   const timerConfig = useRef({
+    startTime: new Date(startTime),
     endTime: new Date(endTime),
-    startTime: sessionStartTime ? new Date(sessionStartTime) : new Date(),
     closeAt: challengeCloseAt ? new Date(challengeCloseAt) : null,
     initialized: false,
   });
@@ -143,7 +143,7 @@ export default function CustomizedHeader({
         timerId.current = null;
       }
     };
-  }, []); // Empty dependency array to ensure this only runs once
+  }, []);
 
   const getTimeColor = () => {
     if (timeLeft.totalSeconds < 300) return 'text-red-500'; // Less than 5 minutes
@@ -152,15 +152,15 @@ export default function CustomizedHeader({
   };
 
   const getProgressColor = () => {
-    if (timeLeft.percentage < 20) return 'bg-red-500';
-    if (timeLeft.percentage < 50) return 'bg-amber-500';
+    if (timeLeft.totalSeconds < 300) return 'bg-red-500';
+    if (timeLeft.totalSeconds < 900) return 'bg-amber-500';
     return 'bg-emerald-500';
   };
 
   return (
     <div
       className={cn(
-        'h-16 border-b bg-background/80 backdrop-blur-sm',
+        'bg-background/80 h-16 border-b backdrop-blur-sm',
         className
       )}
     >
@@ -205,13 +205,8 @@ export default function CustomizedHeader({
           </div>{' '}
           <Progress
             value={timeLeft.percentage}
-            max={100}
-            className="h-2 w-24 bg-muted"
-            style={
-              {
-                '--progress-indicator-color': getProgressColor(),
-              } as React.CSSProperties
-            }
+            className="h-2 w-24"
+            indicatorClassName={getProgressColor()}
           />
         </div>
 
