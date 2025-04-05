@@ -50,6 +50,7 @@ import {
   TimerOff,
   Trash2,
 } from '@tuturuuu/ui/icons';
+import { Progress } from '@tuturuuu/ui/progress';
 import { formatDuration } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
@@ -322,14 +323,16 @@ export default function ChallengeCard({
               <Clock className="mr-1 h-3 w-3" /> Time remaining:
             </div>
             <Countdown
-              targetDate={endTime}
+              target={endTime}
               onComplete={fetchSession}
               className="mb-2"
             />
           </div>
-          <div className="mb-2">
-            <TimeProgress startDate={startTime} endDate={endTime} />
-          </div>
+          <TimeProgress
+            startTime={startTime}
+            endTime={endTime}
+            className="mb-2"
+          />
 
           <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
@@ -499,18 +502,18 @@ export default function ChallengeCard({
                 </div>
                 <div className="mt-2 flex items-center justify-center">
                   <Countdown
-                    targetDate={new Date(challenge.open_at)}
+                    target={new Date(challenge.open_at)}
                     onComplete={updateStatus}
                   />
                 </div>
-                <div className="mt-2 h-1 w-full rounded-full bg-blue-100 dark:bg-blue-800">
-                  <div
-                    className="h-full rounded-full bg-blue-500 dark:bg-blue-400"
-                    style={{
-                      width: `${calculatePercentage(new Date(), new Date(challenge.open_at))}%`,
-                    }}
-                  />
-                </div>
+                <Progress
+                  value={calculatePercentage(
+                    new Date(),
+                    new Date(challenge.open_at)
+                  )}
+                  className="mt-2 h-1 w-full"
+                  indicatorClassName="bg-blue-500 dark:bg-blue-400"
+                />
               </div>
             )}
 
@@ -532,18 +535,18 @@ export default function ChallengeCard({
                 </div>
                 <div className="mt-2 flex items-center justify-center">
                   <Countdown
-                    targetDate={new Date(challenge.close_at)}
+                    target={new Date(challenge.close_at)}
                     onComplete={updateStatus}
                   />
                 </div>
-                <div className="mt-2 h-1 w-full rounded-full bg-amber-100 dark:bg-amber-800">
-                  <div
-                    className="h-full rounded-full bg-amber-500 dark:bg-amber-400"
-                    style={{
-                      width: `${calculatePercentage(new Date(), new Date(challenge.close_at))}%`,
-                    }}
-                  />
-                </div>
+                <Progress
+                  value={calculatePercentage(
+                    new Date(),
+                    new Date(challenge.close_at)
+                  )}
+                  className="mt-2 h-1 w-full"
+                  indicatorClassName="bg-amber-500 dark:bg-amber-400"
+                />
               </div>
             )}
           </div>

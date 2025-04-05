@@ -1,46 +1,42 @@
 'use client';
 
+import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useState } from 'react';
 
-interface TimeProgressProps {
-  startDate: Date;
-  endDate: Date;
+interface Props {
+  startTime: Date;
+  endTime: Date;
   className?: string;
 }
 
-export function TimeProgress({
-  startDate,
-  endDate,
-  className,
-}: TimeProgressProps) {
+export function TimeProgress({ startTime, endTime, className }: Props) {
   const [progress, setProgress] = useState(0);
   const [isClosed, setIsClosed] = useState(false);
 
   useEffect(() => {
     const calculateProgress = () => {
-      const now = new Date();
-      const current = now.getTime();
+      const now = new Date().getTime();
 
-      const start = startDate.getTime();
-      const end = endDate.getTime();
+      const start = startTime.getTime();
+      const end = endTime.getTime();
 
       // If we've passed the end date
-      if (current > end) {
+      if (now >= end) {
         setProgress(0);
         setIsClosed(true);
         return;
       }
 
       // If we're before the start date
-      if (current < start) {
+      if (now < start) {
         setProgress(100);
         return;
       }
 
       // Calculate percentage
       const totalDuration = end - start;
-      const elapsed = end - current;
+      const elapsed = end - now;
       const percentage = (elapsed / totalDuration) * 100;
       setProgress(percentage);
     };
@@ -52,7 +48,7 @@ export function TimeProgress({
     const interval = setInterval(calculateProgress, 1000);
 
     return () => clearInterval(interval);
-  }, [startDate, endDate]);
+  }, [startTime, endTime]);
 
   // Determine color based on progress
   const getProgressColor = () => {
@@ -65,17 +61,13 @@ export function TimeProgress({
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="h-2 w-full rounded-full bg-gray-200">
-        <div
-          className={cn(
-            'h-full rounded-full transition-all duration-1000 ease-out',
-            getProgressColor()
-          )}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+      <Progress
+        value={progress}
+        className="h-2 w-full"
+        indicatorClassName={getProgressColor()}
+      />
       {isClosed && (
-        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+        <div className="text-muted-foreground mt-1 flex justify-between text-xs">
           <span>Closed</span>
         </div>
       )}

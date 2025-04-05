@@ -3,16 +3,12 @@
 import { useEffect, useState } from 'react';
 
 interface CountdownProps {
-  targetDate: Date;
+  target: Date;
   onComplete?: () => void;
   className?: string;
 }
 
-export function Countdown({
-  targetDate,
-  onComplete,
-  className,
-}: CountdownProps) {
+export function Countdown({ target, onComplete, className }: CountdownProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -22,7 +18,7 @@ export function Countdown({
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const difference = targetDate.getTime() - new Date().getTime();
+      const difference = target.getTime() - new Date().getTime();
 
       if (difference <= 0) {
         onComplete?.();
@@ -44,31 +40,31 @@ export function Countdown({
     const interval = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(interval);
-  }, [targetDate, onComplete]);
+  }, [target, onComplete]);
 
   return (
     <div className={`flex gap-2 text-sm font-medium ${className}`}>
       <div className="flex flex-col items-center">
         <span className="text-lg font-bold">{timeLeft?.days ?? 0}</span>
-        <span className="text-xs text-muted-foreground">days</span>
+        <span className="text-muted-foreground text-xs">days</span>
       </div>
       <div className="flex flex-col items-center">
         <span className="text-lg font-bold">
           {String(timeLeft?.hours ?? 0).padStart(2, '0')}
         </span>
-        <span className="text-xs text-muted-foreground">hrs</span>
+        <span className="text-muted-foreground text-xs">hrs</span>
       </div>
       <div className="flex flex-col items-center">
         <span className="text-lg font-bold">
           {String(timeLeft?.minutes ?? 0).padStart(2, '0')}
         </span>
-        <span className="text-xs text-muted-foreground">min</span>
+        <span className="text-muted-foreground text-xs">min</span>
       </div>
       <div className="flex flex-col items-center">
         <span className="text-lg font-bold">
           {String(timeLeft?.seconds ?? 0).padStart(2, '0')}
         </span>
-        <span className="text-xs text-muted-foreground">sec</span>
+        <span className="text-muted-foreground text-xs">sec</span>
       </div>
     </div>
   );
