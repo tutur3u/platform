@@ -180,6 +180,30 @@ export default function ChallengeCard({
     router.push(`/challenges/${challenge.id}/results`);
   };
 
+  const handleEndChallenge = async () => {
+    const response = await fetch(`/api/v1/sessions/${session?.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        endTime: new Date(
+          new Date(session?.start_time || '').getTime() +
+            challenge.duration * 1000
+        ).toISOString(),
+        status: 'ENDED',
+      }),
+    });
+
+    if (response.ok) {
+      fetchSession();
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to end challenge',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDeleteChallenge = async () => {
     try {
       const response = await fetch(`/api/v1/challenges/${challenge.id}`, {
@@ -324,7 +348,7 @@ export default function ChallengeCard({
             </div>
             <Countdown
               target={endTime}
-              onComplete={fetchSession}
+              onComplete={handleEndChallenge}
               className="mb-2"
             />
           </div>
