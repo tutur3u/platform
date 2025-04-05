@@ -6473,6 +6473,10 @@ export type Database = {
         };
         Returns: boolean;
       };
+      update_expired_sessions: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       update_session_total_score: {
         Args: {
           challenge_id_param: string;

@@ -171,8 +171,9 @@ export default function ChallengeCard({
   }, [challenge]);
 
   useEffect(() => {
+    fetchSession();
     updateStatus();
-  }, [updateStatus]);
+  }, [fetchSession, updateStatus]);
 
   const handleViewResults = async () => {
     router.push(`/challenges/${challenge.id}/results`);
