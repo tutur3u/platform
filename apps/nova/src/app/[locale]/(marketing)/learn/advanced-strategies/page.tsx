@@ -4,39 +4,64 @@ const lessonData = {
   title: 'Advanced Strategies in Prompt Engineering',
   sections: [
     {
-      title: '1. Iterative Refinement',
-      content:
-        'Iterative refinement involves continuously improving prompts based on AI-generated outputs. By analyzing responses, adjusting phrasing, and incorporating structured feedback loops, this method enhances precision and reliability in AI interactions. Effective iterative refinement often includes A/B testing prompts and leveraging self-correction mechanisms in AI responses.',
+      title: 'Prompt Engineering for Generative AI',
+      content: [
+        'Prompt engineering is the practice of crafting effective prompts to get the best results from a Large Language Model (LLM). It enables users to interact with LLMs using plain language. Unlike traditional machine learning, where technical knowledge is essential, prompt engineering can be done in everyday language.',
+        'Estimated Read Time: 20 minutes',
+        'Learning Objectives:',
+        '- Understand basic prompting techniques.',
+        '- Apply best practices to craft effective prompts.',
+        'Being a great prompt engineer doesn’t require coding. Creativity and persistence are key. Below are best practices and techniques to improve your prompting skills.',
+      ],
     },
     {
-      title: '2. Prompt Chaining',
-      content:
-        'Prompt chaining links multiple prompts together, where the output of one serves as the input for the next. This is particularly useful for complex workflows, multi-step reasoning, or breaking down large tasks into sequential steps. It enhances AI reasoning, ensures better contextual continuity, and improves response coherence over long interactions.',
+      title: 'Prompting Best Practices',
+      content: [
+        '- **Clearly Define the Focus**: Emphasize the key content or information you need.',
+        '- **Structure the Prompt**: Start with the role of the model, then provide context and instructions.',
+        "- **Provide Specific Examples**: Use varied examples to narrow the model's focus.",
+        '- **Use Constraints**: Limit the output to avoid inaccuracies.',
+        '- **Break Down Tasks**: Divide complex tasks into simpler steps.',
+        '- **Self-Assessment**: Instruct the model to evaluate its response (e.g., "Is this answer correct?").',
+        '- **Be Creative**: Experiment and adapt for better results, as LLMs and prompting techniques evolve.',
+      ],
     },
     {
-      title: '3. Constrained Generation',
-      content:
-        'Constrained generation sets strict boundaries for AI outputs using rules, specific instructions, or delimiters. This can include controlling output length, enforcing structured formatting (e.g., JSON, tables), requiring specific terminology, or avoiding undesired topics. Such techniques ensure outputs align with user expectations and practical use cases, reducing inconsistencies.',
+      title: 'Types of Prompts',
+      content: [
+        '### Direct Prompting (Zero-shot)',
+        'The simplest form of prompting with no prior examples. You provide just the instruction or role.',
+        'Example: "Can you list blog post ideas for first-time tourists in NYC?"',
+        'Role Prompting Example: "You are a prompt-generating robot. Design a prompt after understanding my goals."',
+
+        '### Prompting with Examples',
+        'One-shot: Show the model a single example to follow.',
+        'Example: "List blog ideas for NYC tourism, e.g., \'Where to stay on your first visit.\'"',
+
+        'Few-shot & Multi-shot: Provide multiple examples for more complex tasks.',
+        "Example: \"Classify these reviews: 'Great product, 10/10' = Positive, 'Didn't work' = Negative.\"",
+
+        '### Chain-of-Thought Prompting',
+        'Encourages the model to explain its reasoning, improving results for complex tasks.',
+        'Example: "The odd numbers in this group add up to an even number: 4, 8, 9, 15, 12, 2, 1."',
+        'Reasoning: Add the odd numbers (9 + 15 + 1 = 25). False.',
+
+        '### Zero-shot Chain-of-Thought (CoT)',
+        'Adds a step-by-step instruction to a zero-shot prompt to improve accuracy.',
+        'Example: "I bought 10 apples, gave 2 away, bought 5 more, ate 1. How many do I have left? Let\'s think step by step."',
+      ],
     },
     {
-      title: '4. Meta-Prompting',
-      content:
-        'Meta-prompting involves using AI to generate new prompts, effectively leveraging AI to enhance its own prompting capabilities. This technique is useful for generating diverse creative prompts, automating prompt engineering, and optimizing model interactions dynamically. It’s often used in creative applications, research, and AI-driven automation processes.',
-    },
-    {
-      title: '5. Self-Consistency Prompting',
-      content:
-        'Self-consistency prompting involves generating multiple outputs for the same prompt and selecting the most consistent or high-quality response. By sampling various AI-generated responses and comparing them, users can ensure a more reliable final answer. This technique is particularly effective for reasoning-intensive tasks such as logical problem-solving and complex decision-making.',
-    },
-    {
-      title: '6. Multi-Turn Conversational Prompting',
-      content:
-        'Multi-turn conversational prompting creates a structured dialogue with AI over multiple exchanges, allowing the model to build on prior responses. This is essential for chatbot design, extended knowledge retrieval, and applications where sustained context is necessary. Techniques such as memory reinforcement and progressive elaboration are commonly used.',
-    },
-    {
-      title: '7. Negative Prompting',
-      content:
-        'Negative prompting explicitly instructs AI on what NOT to generate, ensuring unwanted biases or irrelevant content are minimized. This is useful for content moderation, ensuring focus in AI-generated outputs, and guiding AI to refine ambiguous responses. Combining negative prompting with strong constraints leads to more reliable outputs.',
+      title: 'Prompt Iteration Strategies',
+      content: [
+        '- **Refine and Repeat**: Modify prompts several times to get the desired output.',
+        '- **Clarify Output Format**: Specify formats (e.g., CSV, JSON).',
+        '- **Use Emphasis**: Highlight important instructions using capitalization or exaggeration.',
+        '- **Synonyms**: Swap words or phrases to improve response quality.',
+        '- **Sandwich Technique**: Repeat important points at different places in the prompt.',
+        '- **Use prompt libraries** like Prompt Hero for inspiration and improvement.',
+        'By following these guidelines and techniques, you can enhance your ability to work with LLMs effectively, even without coding experience.',
+      ],
     },
   ],
 };

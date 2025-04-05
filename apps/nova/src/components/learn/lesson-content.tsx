@@ -86,9 +86,9 @@ export function LessonContent({ lesson }: LessonProps) {
                   ?.scrollIntoView({ behavior: 'smooth' });
               }}
               className={cn(
-                'w-full rounded px-2 py-1 text-left text-sm transition-colors hover:bg-accent',
+                'hover:bg-accent w-full rounded px-2 py-1 text-left text-sm transition-colors',
                 activeSection === index
-                  ? 'bg-accent font-medium text-primary'
+                  ? 'bg-accent text-primary font-medium'
                   : 'text-muted-foreground'
               )}
             >
