@@ -844,10 +844,10 @@ importers:
         version: 2.7.23
       '@vercel/analytics':
         specifier: ^1.5.0
-        version: 1.5.0(next@15.2.4(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+        version: 1.5.0(next@15.2.4(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
       '@vercel/speed-insights':
         specifier: ^1.2.0
-        version: 1.2.0(next@15.2.4(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+        version: 1.2.0(next@15.2.4(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
       babel-plugin-react-compiler:
         specifier: 19.0.0-beta-21e868a-20250216
         version: 19.0.0-beta-21e868a-20250216
@@ -898,10 +898,10 @@ importers:
         version: 1.0.0
       next:
         specifier: ^15.2.4
-        version: 15.2.4(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.2.4(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next-intl:
         specifier: ^3.26.5
-        version: 3.26.5(next@15.2.4(@babel/core@7.26.10)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+        version: 3.26.5(next@15.2.4(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-21e868a-20250216)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1514,8 +1514,8 @@ importers:
         specifier: ^4.9.0
         version: 4.9.0
       cronstrue:
-        specifier: ^2.57.0
-        version: 2.57.0
+        specifier: ^2.58.0
+        version: 2.58.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -1761,8 +1761,8 @@ importers:
         specifier: ^1.2.6
         version: 1.2.6(zod@3.24.2)
       '@ai-sdk/azure':
-        specifier: ^1.3.7
-        version: 1.3.7(zod@3.24.2)
+        specifier: ^1.3.8
+        version: 1.3.8(zod@3.24.2)
       '@ai-sdk/cerebras':
         specifier: ^0.2.6
         version: 0.2.6(zod@3.24.2)
@@ -1782,14 +1782,14 @@ importers:
         specifier: ^0.2.6
         version: 0.2.6(zod@3.24.2)
       '@ai-sdk/google':
-        specifier: ^1.2.6
-        version: 1.2.6(zod@3.24.2)
+        specifier: ^1.2.8
+        version: 1.2.8(zod@3.24.2)
       '@ai-sdk/google-vertex':
-        specifier: ^2.2.9
-        version: 2.2.9(zod@3.24.2)
+        specifier: ^2.2.11
+        version: 2.2.11(zod@3.24.2)
       '@ai-sdk/groq':
-        specifier: ^1.2.4
-        version: 1.2.4(zod@3.24.2)
+        specifier: ^1.2.5
+        version: 1.2.5(zod@3.24.2)
       '@ai-sdk/luma':
         specifier: ^0.1.4
         version: 0.1.4(zod@3.24.2)
@@ -1818,8 +1818,8 @@ importers:
         specifier: workspace:*
         version: link:../supabase
       ai:
-        specifier: ^4.3.0
-        version: 4.3.0(react@19.1.0)(zod@3.24.2)
+        specifier: ^4.3.2
+        version: 4.3.2(react@19.1.0)(zod@3.24.2)
       eslint:
         specifier: ^9.24.0
         version: 9.24.0(jiti@2.4.2)
@@ -2369,8 +2369,8 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/azure@1.3.7':
-    resolution: {integrity: sha512-QV3ARc5zAC07Je6vQWuWbbQiK4/inkZElCLa0A7KAqaDSuDpuPGP3IGgiWc1evqqoMfGvEXJAuDLIYfDdvbemw==}
+  '@ai-sdk/azure@1.3.8':
+    resolution: {integrity: sha512-1B7ht7bGv7gJ0houI8hJAuUFBB8Nmm/HGY12aazns6yaSWBF0/7iBG2tV1I0hUzpuWrDB7G6y0YtRl2dAxzNhg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -2411,20 +2411,20 @@ packages:
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/google-vertex@2.2.9':
-    resolution: {integrity: sha512-26x8WB92+cOBTIjLHHrgZFW/Q13i+q+2CcYnLnS85z6OXHs1fyDe8iMOhLeDJ9INaJMd8cDFn2yIGpqdbr5FqQ==}
+  '@ai-sdk/google-vertex@2.2.11':
+    resolution: {integrity: sha512-gkjE1QX55gjb+RUIJe6SYwbrLHLowPZqGYJeS3RctEfW1+v8dMC5FDCpzK80Ws33JXvAW1xieTqZuTZbcfZWYw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/google@1.2.6':
-    resolution: {integrity: sha512-e6vl+hmz7xZzWmsZZkLv89TZc19Vjgqj+RgvJNg03npRiuG4f1R/He1PD/JX6f0az//Y55CcozCcaj4vnMz6gQ==}
+  '@ai-sdk/google@1.2.8':
+    resolution: {integrity: sha512-Q7Y71KGyH5sennNev5xZvt5MhxWlu+crp7tZZtdFbQ9iDkOGrl+TurPssqM0Wv5lYmV+Lc8m14CK9/k7nF2IRA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
 
-  '@ai-sdk/groq@1.2.4':
-    resolution: {integrity: sha512-jeO/tO8lGpk7L/zpPPSeZ6tMYwcXq2LbPEgmvTDhdrSj4AwYhL9WiEmZerixsKzNuOxjAzP0QZOns1SpsGaC2A==}
+  '@ai-sdk/groq@1.2.5':
+    resolution: {integrity: sha512-GLQQ6U5W7IVU6L/4LNMhfB6RxMNvXYHMqspnJ+PIB6iiCdQ1nMVLxzTsxZibsvOEIgiawmaOQCKiwGwxtAxAlw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.0.0
@@ -5800,8 +5800,8 @@ packages:
     resolution: {integrity: sha512-jRR5wdylq8CkOe6hei19GGZnxM6rBGwFl3Bg0YItGDimvjGtAvdZk4Pu6Cl4u4Igsws4a1fd1Vq3ezrhn4KmFw==}
     engines: {node: '>= 14'}
 
-  ai@4.3.0:
-    resolution: {integrity: sha512-PxyQYKhWaU3LiZEpeKRaekVonZIbWdKAwgnqm0CSAxy1MFufmYEC5SM5Mc9uiK2DoHcbAL3d1jyaQ2fSDAJL8w==}
+  ai@4.3.2:
+    resolution: {integrity: sha512-h643SfhKil0Pnxk2tVIazFDL1JevutUghvc3mOpWqJFMcudmgtwQYlvxCkwSfljrrq+qIfne8d6jCihMMhM7pw==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
@@ -6027,8 +6027,8 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
-  caniuse-lite@1.0.30001711:
-    resolution: {integrity: sha512-OpFA8GsKtoV3lCcsI3U5XBAV+oVrMu96OS8XafKqnhOaEAW2mveD1Mx81Sx/02chERwhDakuXs28zbyEc4QMKg==}
+  caniuse-lite@1.0.30001712:
+    resolution: {integrity: sha512-MBqPpGYYdQ7/hfKiet9SCI+nmN5/hp4ZzveOJubl5DTAMa5oggjAuoi0Z4onBpKPFI2ePGnQuQIzF3VxDjDJig==}
 
   canvas-confetti@1.9.3:
     resolution: {integrity: sha512-rFfTURMvmVEX1gyXFgn5QMn81bYk70qa0HLzcIOSVEyl57n6o9ItHeBtUSWdvKAPY0xlvBHno4/v3QPrT83q9g==}
@@ -6256,8 +6256,8 @@ packages:
     resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
     engines: {node: '>=12.0.0'}
 
-  cronstrue@2.57.0:
-    resolution: {integrity: sha512-gQOfxJa1RA9uDT4hx37NshhX4dW9t9zTCtIYu15LUziH+mkpuLXYcSEyM8ZewMJ2p8UVuHGjI3n4hGpu3HtCbg==}
+  cronstrue@2.58.0:
+    resolution: {integrity: sha512-5P3esL5URj/u1h7N1zYl33V9XHNh15DQVGQITdIq7kAY78rP9tMYxXgi8kCXGoFqbyXFMMQRvzthHTYxUtp9Fw==}
     hasBin: true
 
   cross-fetch@3.2.0:
@@ -10131,7 +10131,7 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.4(zod@3.24.2)
       zod: 3.24.2
 
-  '@ai-sdk/azure@1.3.7(zod@3.24.2)':
+  '@ai-sdk/azure@1.3.8(zod@3.24.2)':
     dependencies:
       '@ai-sdk/openai': 1.3.7(zod@3.24.2)
       '@ai-sdk/provider': 1.1.0
@@ -10178,10 +10178,10 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.4(zod@3.24.2)
       zod: 3.24.2
 
-  '@ai-sdk/google-vertex@2.2.9(zod@3.24.2)':
+  '@ai-sdk/google-vertex@2.2.11(zod@3.24.2)':
     dependencies:
       '@ai-sdk/anthropic': 1.2.6(zod@3.24.2)
-      '@ai-sdk/google': 1.2.6(zod@3.24.2)
+      '@ai-sdk/google': 1.2.8(zod@3.24.2)
       '@ai-sdk/provider': 1.1.0
       '@ai-sdk/provider-utils': 2.2.4(zod@3.24.2)
       google-auth-library: 9.15.1
@@ -10190,13 +10190,13 @@ snapshots:
       - encoding
       - supports-color
 
-  '@ai-sdk/google@1.2.6(zod@3.24.2)':
+  '@ai-sdk/google@1.2.8(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
       '@ai-sdk/provider-utils': 2.2.4(zod@3.24.2)
       zod: 3.24.2
 
-  '@ai-sdk/groq@1.2.4(zod@3.24.2)':
+  '@ai-sdk/groq@1.2.5(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
       '@ai-sdk/provider-utils': 2.2.4(zod@3.24.2)
@@ -11353,7 +11353,7 @@ snapshots:
   '@jsr/tuturuuu__ai@0.0.1(react@19.1.0)(zod@3.24.2)':
     dependencies:
       '@ai-sdk/react': 1.2.6(react@19.1.0)(zod@3.24.2)
-      ai: 4.3.0(react@19.1.0)(zod@3.24.2)
+      ai: 4.3.2(react@19.1.0)(zod@3.24.2)
     transitivePeerDependencies:
       - react
       - zod
@@ -13857,7 +13857,7 @@ snapshots:
 
   agent-base@7.1.3: {}
 
-  ai@4.3.0(react@19.1.0)(zod@3.24.2):
+  ai@4.3.2(react@19.1.0)(zod@3.24.2):
     dependencies:
       '@ai-sdk/provider': 1.1.0
       '@ai-sdk/provider-utils': 2.2.4(zod@3.24.2)
@@ -13984,7 +13984,7 @@ snapshots:
   autoprefixer@10.4.21(postcss@8.5.3):
     dependencies:
       browserslist: 4.24.4
-      caniuse-lite: 1.0.30001711
+      caniuse-lite: 1.0.30001712
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.1.1
@@ -14066,7 +14066,7 @@ snapshots:
 
   browserslist@4.24.4:
     dependencies:
-      caniuse-lite: 1.0.30001711
+      caniuse-lite: 1.0.30001712
       electron-to-chromium: 1.5.132
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.24.4)
@@ -14110,7 +14110,7 @@ snapshots:
 
   callsites@3.1.0: {}
 
-  caniuse-lite@1.0.30001711: {}
+  caniuse-lite@1.0.30001712: {}
 
   canvas-confetti@1.9.3: {}
 
@@ -14331,7 +14331,7 @@ snapshots:
     dependencies:
       luxon: 3.6.1
 
-  cronstrue@2.57.0: {}
+  cronstrue@2.58.0: {}
 
   cross-fetch@3.2.0:
     dependencies:
@@ -16874,7 +16874,7 @@ snapshots:
       '@swc/counter': 0.1.3
       '@swc/helpers': 0.5.15
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001711
+      caniuse-lite: 1.0.30001712
       postcss: 8.4.31
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
@@ -16901,7 +16901,7 @@ snapshots:
       '@swc/counter': 0.1.3
       '@swc/helpers': 0.5.15
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001711
+      caniuse-lite: 1.0.30001712
       postcss: 8.4.31
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
@@ -16928,7 +16928,7 @@ snapshots:
       '@swc/counter': 0.1.3
       '@swc/helpers': 0.5.15
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001711
+      caniuse-lite: 1.0.30001712
       postcss: 8.4.31
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
@@ -16955,7 +16955,7 @@ snapshots:
       '@swc/counter': 0.1.3
       '@swc/helpers': 0.5.15
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001711
+      caniuse-lite: 1.0.30001712
       postcss: 8.4.31
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
