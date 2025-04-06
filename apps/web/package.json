@@ -111,7 +111,7 @@
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",
     "cron-parser": "^4.9.0",
-    "cronstrue": "^2.57.0",
+    "cronstrue": "^2.58.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
