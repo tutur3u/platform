@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 interface Props {
   className?: string;
   problemLength: number;
-  currentProblem: number;
+  currentProblemIndex: number;
   startTime: string;
   endTime: string;
   challengeCloseAt: string;
@@ -21,7 +21,7 @@ interface Props {
 export default function ChallengeHeader({
   className,
   problemLength,
-  currentProblem,
+  currentProblemIndex,
   startTime,
   endTime,
   challengeCloseAt,
@@ -170,7 +170,7 @@ export default function ChallengeHeader({
             variant="outline"
             size="icon"
             onClick={onPrev}
-            disabled={currentProblem === 1}
+            disabled={currentProblemIndex === 1}
             className="h-8 w-8"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -178,14 +178,14 @@ export default function ChallengeHeader({
           <div className="flex items-center gap-1.5">
             <span className="font-medium">Problem</span>
             <Badge variant="secondary" className="px-2.5">
-              {currentProblem}/{problemLength}
+              {currentProblemIndex}/{problemLength}
             </Badge>
           </div>
           <Button
             variant="outline"
             size="icon"
             onClick={onNext}
-            disabled={currentProblem === problemLength}
+            disabled={currentProblemIndex === problemLength}
             className="h-8 w-8"
           >
             <ChevronRight className="h-4 w-4" />

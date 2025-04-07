@@ -25,7 +25,7 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   problems: (NovaProblem & {
@@ -35,57 +35,14 @@ type ExtendedNovaChallenge = NovaChallenge & {
 
 interface Props {
   challenge: ExtendedNovaChallenge;
+  session: NovaSession;
 }
 
-export default function ChallengeClient({ challenge }: Props) {
-  const [session, setSession] = useState<NovaSession | null>(null);
+export default function ChallengeClient({ challenge, session }: Props) {
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
   const [showEndDialog, setShowEndDialog] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-
-  useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        // Fetch challenge session
-        const response = await fetch(
-          `/api/v1/sessions?challengeId=${challenge.id}`
-        );
-
-        if (!response.ok) {
-          router.replace('/challenges');
-          return;
-        }
-
-        const sessionsData = await response.json();
-
-        // API returns an array of sessions, find the most recent active one
-        const sessionData =
-          Array.isArray(sessionsData) && sessionsData.length > 0
-            ? sessionsData[0] // Assuming the most recent session is first
-            : null;
-
-        // If challenge is ended, redirect to report page
-        if (sessionData?.status === 'ENDED') {
-          router.replace(`/challenges/${challenge.id}/results`);
-          return;
-        } else if (sessionData) {
-          setSession(sessionData);
-        } else {
-          router.replace('/challenges');
-          return;
-        }
-      } catch (error) {
-        console.error('Error loading session:', error);
-        router.replace('/challenges');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSession();
-  }, [challenge.id]);
 
   const currentProblem =
     challenge.problems[currentProblemIndex] ||
@@ -128,33 +85,13 @@ export default function ChallengeClient({ challenge }: Props) {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground text-xl font-semibold">
-          Loading...
-        </p>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground text-xl font-semibold">
-          Session not found
-        </p>
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="relative h-screen overflow-hidden">
         <ChallengeHeader
           className="flex-none"
           problemLength={challenge.problems.length}
-          currentProblem={currentProblemIndex + 1}
+          currentProblemIndex={currentProblemIndex + 1}
           startTime={session.start_time}
           endTime={new Date(
             new Date(session.start_time).getTime() + challenge.duration * 1000

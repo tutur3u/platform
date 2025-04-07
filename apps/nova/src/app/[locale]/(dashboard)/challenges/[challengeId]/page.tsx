@@ -4,6 +4,7 @@ import {
   NovaChallenge,
   NovaProblem,
   NovaProblemTestCase,
+  NovaSession,
 } from '@tuturuuu/types/db';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -37,7 +38,20 @@ export default async function Page({ params }: Props) {
     )
       redirect('/challenges');
 
-    return <ChallengeClient challenge={challenge} />;
+    // Fetch session data
+    const session = await getSession(challengeId);
+
+    // If challenge is ended, redirect to report page
+    if (session?.status === 'ENDED') {
+      redirect(`/challenges/${challengeId}/results`);
+    }
+
+    // If no session found, redirect to challenges page
+    if (!session) {
+      redirect('/challenges');
+    }
+
+    return <ChallengeClient challenge={challenge} session={session} />;
   } catch (error) {
     console.error('Error loading challenge:', error);
     redirect('/challenges');
@@ -100,6 +114,30 @@ async function getChallenge(
     };
   } catch (error) {
     console.error('Unexpected error:', error);
+    return null;
+  }
+}
+
+async function getSession(challengeId: string): Promise<NovaSession | null> {
+  const supabase = await createClient();
+
+  try {
+    // Fetch sessions for this challenge
+    const { data: session, error } = await supabase
+      .from('nova_sessions')
+      .select('*')
+      .eq('challenge_id', challengeId)
+      .order('created_at', { ascending: false })
+      .single();
+
+    if (error) {
+      console.error('Error fetching sessions:', error.message);
+      return null;
+    }
+
+    return session;
+  } catch (error) {
+    console.error('Unexpected error fetching session:', error);
     return null;
   }
 }
