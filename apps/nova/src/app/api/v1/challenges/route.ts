@@ -1,13 +1,17 @@
 import { createChallengeSchema } from '../schemas';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
   const { searchParams } = new URL(request.url);
   const enabled = searchParams.get('enabled');
+
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -18,8 +22,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   try {
-    let query = supabase.from('nova_challenges').select('*');
+    let query = sbAdmin
+      .from('nova_challenges')
+      .select(
+        'id, title, description, enabled, open_at, close_at, previewable_at, duration, max_attempts, max_daily_attempts, password_hash'
+      )
+      .order('created_at', { ascending: false });
+
     if (enabled) {
       query = query.eq('enabled', enabled === 'true');
     }
@@ -34,7 +46,16 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json(challenges, { status: 200 });
+    return NextResponse.json(
+      challenges.map((challenge) => ({
+        ...challenge,
+        //* Hide password hash from response
+        // If it's undefined, it means the challenge has no password
+        // Otherwise, it's an empty string to avoid exposing the password hash
+        password_hash: challenge.password_hash ? '' : undefined,
+      })),
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(

@@ -1,14 +1,18 @@
 import { createProblemSchema } from '../schemas';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
   const { searchParams } = new URL(request.url);
 
   const challengeId = searchParams.get('challengeId');
   const includeChallenge = searchParams.get('includeChallenge') === 'true';
+
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -18,6 +22,8 @@ export async function GET(request: Request) {
   if (authError || !user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+
+  const sbAdmin = await createAdminClient();
 
   try {
     // Build query with proper select statement based on params
@@ -32,7 +38,10 @@ export async function GET(request: Request) {
       `;
     }
 
-    let query = supabase.from('nova_problems').select(selectQuery);
+    let query = sbAdmin
+      .from('nova_problems')
+      .select(selectQuery)
+      .order('created_at', { ascending: false });
 
     // Apply challenge filter if provided
     if (challengeId) {

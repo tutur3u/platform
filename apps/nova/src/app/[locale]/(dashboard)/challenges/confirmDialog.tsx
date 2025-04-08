@@ -45,7 +45,7 @@ export function ConfirmDialog({
 
     try {
       // Check password if challenge is password protected
-      if (challenge.password_hash) {
+      if (challenge.password_hash !== undefined) {
         if (password.length === 0) {
           toast({
             title: 'Password Required',
@@ -144,7 +144,7 @@ export function ConfirmDialog({
             {mode === 'start' ? 'Start Challenge' : 'Resume Challenge'}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {challenge.password_hash
+            {challenge.password_hash !== undefined
               ? mode === 'start'
                 ? 'Please enter the password to start the challenge.'
                 : 'Please enter the password to resume the challenge.'
@@ -154,7 +154,7 @@ export function ConfirmDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        {challenge.password_hash && (
+        {challenge.password_hash !== undefined && (
           <div className="mb-4">
             <div className="relative">
               <Input

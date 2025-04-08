@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 
@@ -22,6 +25,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   try {
     const { challengeId, password } = body;
 
@@ -34,7 +39,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: challenge, error } = await supabase
+    const { data: challenge, error } = await sbAdmin
       .from('nova_challenges')
       .select('*')
       .eq('id', challengeId)

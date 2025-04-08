@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -8,8 +11,9 @@ interface Params {
 }
 
 export async function GET(_request: Request, { params }: Params) {
-  const supabase = await createClient();
   const { problemId } = await params;
+
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -20,8 +24,10 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   try {
-    const { data: problem, error } = await supabase
+    const { data: problem, error } = await sbAdmin
       .from('nova_problems')
       .select('*')
       .eq('id', problemId)

@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 
@@ -9,8 +12,9 @@ interface Params {
 }
 
 export async function GET(_request: Request, { params }: Params) {
-  const supabase = await createClient();
   const { challengeId } = await params;
+
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -21,10 +25,14 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   try {
-    const { data: challenge, error } = await supabase
+    const { data: challenge, error } = await sbAdmin
       .from('nova_challenges')
-      .select('*')
+      .select(
+        'id, title, description, enabled, open_at, close_at, previewable_at, duration, max_attempts, max_daily_attempts'
+      )
       .eq('id', challengeId)
       .single();
 
