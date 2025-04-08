@@ -89,6 +89,6 @@ describe('Supabase Middleware', () => {
     const response = await updateSession(mockRequest as any);
     expect(response.res).toBeDefined();
     expect(response.res.headers).toBeDefined();
-    expect(response.user).toBeNull(); 
+    expect(response.user).toBeNull();
   });
 });

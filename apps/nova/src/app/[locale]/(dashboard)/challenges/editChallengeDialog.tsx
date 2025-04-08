@@ -52,6 +52,7 @@ export default function EditChallengeDialog({
       previewableAt: challenge.previewable_at
         ? new Date(challenge.previewable_at)
         : null,
+      password: challenge.password_hash ? '' : null,
     };
   }, [challenge]);
 

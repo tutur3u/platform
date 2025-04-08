@@ -167,7 +167,7 @@ export function ConfirmDialog({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-0 h-full px-3"
+                className="absolute top-0 right-0 h-full px-3"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
@@ -181,13 +181,13 @@ export function ConfirmDialog({
         )}
 
         {mode === 'start' && (
-          <div className="bg-muted mt-4 rounded-md p-3 text-sm">
+          <div className="mt-4 rounded-md bg-muted p-3 text-sm">
             <div className="font-medium">Challenge Details:</div>
             <div className="mt-2 flex items-center">
-              <Clock className="text-primary mr-2 h-4 w-4" />
+              <Clock className="mr-2 h-4 w-4 text-primary" />
               <span>Duration: {formatDuration(challenge.duration)}</span>
             </div>
-            <div className="text-muted-foreground mt-1 text-xs">
+            <div className="mt-1 text-xs text-muted-foreground">
               Once started, the timer cannot be paused and will continue until
               completed.
             </div>
