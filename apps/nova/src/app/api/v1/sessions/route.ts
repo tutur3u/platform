@@ -1,8 +1,5 @@
 import { createSessionSchema } from '../schemas';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
@@ -21,10 +18,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient();
-
   try {
-    let query = sbAdmin
+    let query = supabase
       .from('nova_sessions')
       .select('*')
       .eq('user_id', user.id);

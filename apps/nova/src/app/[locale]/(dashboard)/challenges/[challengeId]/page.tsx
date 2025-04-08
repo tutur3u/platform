@@ -124,12 +124,22 @@ async function getChallenge(
 async function getSession(challengeId: string): Promise<NovaSession | null> {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    return null;
+  }
+
   try {
     // Fetch sessions for this challenge
     const { data: session, error } = await supabase
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .single();
 

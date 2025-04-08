@@ -48,8 +48,8 @@ export default function CreateChallengeDialog({
 
       const challenge = await response.json();
 
-      await Promise.allSettled([
-        ...values.criteria.map((c) =>
+      await Promise.allSettled(
+        values.criteria.map((c) =>
           fetch(`/api/v1/criteria`, {
             method: 'POST',
             headers: {
@@ -61,8 +61,8 @@ export default function CreateChallengeDialog({
               challengeId: challenge.id,
             }),
           })
-        ),
-      ]);
+        )
+      );
 
       // Invalidate challenges query to trigger a refetch
       queryClient.invalidateQueries({ queryKey: ['challenges'] });
