@@ -1,5 +1,8 @@
 import ChallengeClient from './client';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   NovaChallenge,
   NovaProblem,
@@ -61,11 +64,11 @@ export default async function Page({ params }: Props) {
 async function getChallenge(
   challengeId: string
 ): Promise<ExtendedNovaChallenge | null> {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   try {
     // Fetch challenge details
-    const { data: challenge, error: challengeError } = await supabase
+    const { data: challenge, error: challengeError } = await sbAdmin
       .from('nova_challenges')
       .select('*')
       .eq('id', challengeId)
@@ -77,7 +80,7 @@ async function getChallenge(
     }
 
     // Fetch problems linked to this challenge
-    const { data: problems, error: problemError } = await supabase
+    const { data: problems, error: problemError } = await sbAdmin
       .from('nova_problems')
       .select('*')
       .eq('challenge_id', challengeId);
@@ -89,7 +92,7 @@ async function getChallenge(
 
     const problemIds = problems.map((problem) => problem.id);
 
-    const { data: testCases, error: testCaseError } = await supabase
+    const { data: testCases, error: testCaseError } = await sbAdmin
       .from('nova_problem_test_cases')
       .select('*')
       .in('problem_id', problemIds);

@@ -1,12 +1,16 @@
 import { createSessionSchema } from '../schemas';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
   const { searchParams } = new URL(request.url);
   const challengeId = searchParams.get('challengeId');
+
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -17,8 +21,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   try {
-    let query = supabase.from('nova_sessions').select('*');
+    let query = sbAdmin
+      .from('nova_sessions')
+      .select('*')
+      .eq('user_id', user.id);
+
     if (challengeId) {
       query = query.eq('challenge_id', challengeId);
     }
