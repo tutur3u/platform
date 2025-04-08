@@ -2145,6 +2145,8 @@ export type Database = {
           max_attempts: number;
           max_daily_attempts: number;
           open_at: string | null;
+          password_hash: string | null;
+          password_salt: string | null;
           previewable_at: string | null;
           title: string;
         };
@@ -2158,6 +2160,8 @@ export type Database = {
           max_attempts?: number;
           max_daily_attempts?: number;
           open_at?: string | null;
+          password_hash?: string | null;
+          password_salt?: string | null;
           previewable_at?: string | null;
           title: string;
         };
@@ -2171,6 +2175,8 @@ export type Database = {
           max_attempts?: number;
           max_daily_attempts?: number;
           open_at?: string | null;
+          password_hash?: string | null;
+          password_salt?: string | null;
           previewable_at?: string | null;
           title?: string;
         };
@@ -2313,7 +2319,7 @@ export type Database = {
         Row: {
           challenge_id: string;
           created_at: string;
-          end_time: string;
+          end_time: string | null;
           id: string;
           start_time: string;
           status: string;
@@ -2323,7 +2329,7 @@ export type Database = {
         Insert: {
           challenge_id: string;
           created_at?: string;
-          end_time: string;
+          end_time?: string | null;
           id?: string;
           start_time: string;
           status: string;
@@ -2333,7 +2339,7 @@ export type Database = {
         Update: {
           challenge_id?: string;
           created_at?: string;
-          end_time?: string;
+          end_time?: string | null;
           id?: string;
           start_time?: string;
           status?: string;
@@ -6466,6 +6472,10 @@ export type Database = {
           transaction_id_2: string;
         };
         Returns: boolean;
+      };
+      update_expired_sessions: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
       };
       update_session_total_score: {
         Args: {

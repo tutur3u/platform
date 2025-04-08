@@ -1,34 +1,24 @@
+import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { BookOpen, Code, FileText, Info } from '@tuturuuu/ui/icons';
 
-export interface Problem {
-  id: string;
-  title: string;
-  description: string;
-  maxPromptLength: number;
-  exampleInput: string;
-  exampleOutput: string;
+interface Props {
+  problem: NovaProblem & {
+    test_cases: NovaProblemTestCase[];
+  };
 }
 
-export interface ProblemComponentProps {
-  problem: Problem;
-  className?: string;
-}
-
-export default function ProblemComponent({
-  problem,
-  className,
-}: ProblemComponentProps) {
+export default function ProblemComponent({ problem }: Props) {
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-bold">{problem.title}</h2>
         </div>
         <Badge variant="outline" className="px-3 py-1">
-          Max Length: {problem.maxPromptLength}
+          Max Length: {problem.max_prompt_length}
         </Badge>
       </div>
 
@@ -47,7 +37,7 @@ export default function ProblemComponent({
           </CardContent>
         </Card>
 
-        {(problem.exampleInput || problem.exampleOutput) && (
+        {(problem.example_input || problem.example_output) && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -56,20 +46,20 @@ export default function ProblemComponent({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {problem.exampleInput && (
+              {problem.example_input && (
                 <div>
                   <h3 className="mb-2 text-sm font-medium">Input:</h3>
                   <div className="rounded-md bg-muted p-3 font-mono text-sm">
-                    {problem.exampleInput}
+                    {problem.example_input}
                   </div>
                 </div>
               )}
 
-              {problem.exampleOutput && (
+              {problem.example_output && (
                 <div>
                   <h3 className="mb-2 text-sm font-medium">Output:</h3>
                   <div className="rounded-md bg-muted p-3 font-mono text-sm">
-                    {problem.exampleOutput}
+                    {problem.example_output}
                   </div>
                 </div>
               )}

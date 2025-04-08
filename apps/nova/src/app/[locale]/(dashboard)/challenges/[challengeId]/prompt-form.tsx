@@ -1,6 +1,10 @@
 'use client';
 
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
+import {
+  NovaChallengeCriteria,
+  NovaProblem,
+  NovaProblemTestCase,
+} from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -32,17 +36,13 @@ type TestResult = {
   output: string;
 };
 
-interface Problem {
-  id: string;
-  title: string;
-  description: string;
-  maxPromptLength: number;
-  exampleInput: string;
-  exampleOutput: string;
-  testCases: string[];
+interface Props {
+  problem: NovaProblem & {
+    test_cases: NovaProblemTestCase[];
+  };
 }
 
-export default function PromptForm({ problem }: { problem: Problem }) {
+export default function PromptForm({ problem }: Props) {
   const [prompt, setPrompt] = useState('');
   const [customTestCase, setCustomTestCase] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,17 +54,15 @@ export default function PromptForm({ problem }: { problem: Problem }) {
 
   useEffect(() => {
     const getSubmissions = async () => {
-      if (problem?.id) {
-        const fetchedSubmissions = await fetchSubmissions(problem.id);
-        if (fetchedSubmissions) {
-          setSubmissions(fetchedSubmissions);
-          setAttempts(fetchedSubmissions.length);
-        }
+      const fetchedSubmissions = await fetchSubmissions(problem.id);
+      if (fetchedSubmissions) {
+        setSubmissions(fetchedSubmissions);
+        setAttempts(fetchedSubmissions.length);
       }
     };
 
     getSubmissions();
-  }, [problem?.id]);
+  }, [problem.id]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -79,7 +77,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
       return;
     }
 
-    if (prompt.length > problem.maxPromptLength) {
+    if (prompt.length > problem.max_prompt_length) {
       setError('Prompt length exceeds the maximum allowed length.');
       return;
     }
@@ -228,15 +226,12 @@ export default function PromptForm({ problem }: { problem: Problem }) {
                         ? 'bg-amber-500/20'
                         : 'bg-emerald-500/20'
                   )}
-                  style={
-                    {
-                      '--progress-indicator-color':
-                        attempts >= 3
-                          ? 'var(--destructive)'
-                          : attempts >= 2
-                            ? 'rgb(245 158 11)' // amber-500
-                            : 'rgb(16 185 129)', // emerald-500
-                    } as React.CSSProperties
+                  indicatorClassName={
+                    attempts >= 3
+                      ? 'bg-destructive'
+                      : attempts >= 2
+                        ? 'bg-amber-500'
+                        : 'bg-emerald-500'
                   }
                 />
               </div>
@@ -507,7 +502,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
           {error && <p className="text-sm text-red-500">{error}</p>}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              {prompt.length} / {problem.maxPromptLength} characters
+              {prompt.length} / {problem.max_prompt_length} characters
             </span>
             <span>
               {attempts >= 3

@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -18,10 +21,10 @@ export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-
   const { prompt } = await req.json();
   const { problemId } = await params;
+
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -38,7 +41,9 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { data: problem, error: problemError } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { data: problem, error: problemError } = await sbAdmin
     .from('nova_problems')
     .select('*')
     .eq('id', problemId)
@@ -58,7 +63,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { data: testCases, error: testCasesError } = await supabase
+  const { data: testCases, error: testCasesError } = await sbAdmin
     .from('nova_problem_test_cases')
     .select('*')
     .eq('problem_id', problemId);

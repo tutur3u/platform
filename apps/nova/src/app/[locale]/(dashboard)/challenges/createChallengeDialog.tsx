@@ -11,7 +11,6 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface CreateChallengeDialogProps {
@@ -21,10 +20,10 @@ interface CreateChallengeDialogProps {
 export default function CreateChallengeDialog({
   trigger,
 }: CreateChallengeDialogProps) {
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const onSubmit = async (values: ChallengeFormValues) => {
     try {
@@ -47,11 +46,28 @@ export default function CreateChallengeDialog({
         variant: 'default',
       });
 
+      const challenge = await response.json();
+
+      await Promise.allSettled(
+        values.criteria.map((c) =>
+          fetch(`/api/v1/criteria`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: c.name,
+              description: c.description,
+              challengeId: challenge.id,
+            }),
+          })
+        )
+      );
+
       // Invalidate challenges query to trigger a refetch
       queryClient.invalidateQueries({ queryKey: ['challenges'] });
 
       setOpen(false);
-      router.refresh();
     } catch (error) {
       console.error('Error saving challenge:', error);
       toast({

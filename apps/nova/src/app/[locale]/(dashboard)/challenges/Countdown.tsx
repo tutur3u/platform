@@ -3,16 +3,12 @@
 import { useEffect, useState } from 'react';
 
 interface CountdownProps {
-  targetDate: Date;
+  target: Date;
   onComplete?: () => void;
   className?: string;
 }
 
-export function Countdown({
-  targetDate,
-  onComplete,
-  className,
-}: CountdownProps) {
+export function Countdown({ target, onComplete, className }: CountdownProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -22,7 +18,7 @@ export function Countdown({
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const difference = targetDate.getTime() - new Date().getTime();
+      const difference = target.getTime() - new Date().getTime();
 
       if (difference <= 0) {
         onComplete?.();
@@ -44,7 +40,7 @@ export function Countdown({
     const interval = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(interval);
-  }, [targetDate, onComplete]);
+  }, [target, onComplete]);
 
   return (
     <div className={`flex gap-2 text-sm font-medium ${className}`}>

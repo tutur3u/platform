@@ -22,7 +22,7 @@ export function SubmissionStatistics({
       <Card>
         <CardContent className="pt-6">
           <div className="text-center">
-            <h3 className="text-muted-foreground font-medium">
+            <h3 className="font-medium text-muted-foreground">
               Total Submissions
             </h3>
             {statsLoading ? (
@@ -37,7 +37,7 @@ export function SubmissionStatistics({
       <Card>
         <CardContent className="pt-6">
           <div className="text-center">
-            <h3 className="text-muted-foreground font-medium">Average Score</h3>
+            <h3 className="font-medium text-muted-foreground">Average Score</h3>
             {statsLoading ? (
               <Skeleton className="mx-auto mt-2 h-8 w-16" />
             ) : (
@@ -52,7 +52,7 @@ export function SubmissionStatistics({
       <Card>
         <CardContent className="pt-6">
           <div className="text-center">
-            <h3 className="text-muted-foreground font-medium">Highest Score</h3>
+            <h3 className="font-medium text-muted-foreground">Highest Score</h3>
             {statsLoading ? (
               <Skeleton className="mx-auto mt-2 h-8 w-16" />
             ) : (
@@ -65,7 +65,7 @@ export function SubmissionStatistics({
       <Card>
         <CardContent className="pt-6">
           <div className="text-center">
-            <h3 className="text-muted-foreground font-medium">
+            <h3 className="font-medium text-muted-foreground">
               Last Submission
             </h3>
             {statsLoading ? (

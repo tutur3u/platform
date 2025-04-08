@@ -1,6 +1,10 @@
 'use client';
 
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
+import {
+  NovaChallengeCriteria,
+  NovaProblem,
+  NovaProblemTestCase,
+} from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -30,17 +34,13 @@ type TestResult = {
   output: string;
 };
 
-interface Problem {
-  id: string;
-  title: string;
-  description: string;
-  maxPromptLength: number;
-  exampleInput: string;
-  exampleOutput: string;
-  testCases: string[];
+interface Props {
+  problem: NovaProblem & {
+    test_cases: NovaProblemTestCase[];
+  };
 }
 
-export default function PromptForm({ problem }: { problem: Problem }) {
+export default function PromptForm({ problem }: Props) {
   const [prompt, setPrompt] = useState('');
   const [customTestCase, setCustomTestCase] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -178,7 +178,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
     setIsTesting(true);
 
     try {
-      const testPromises = problem.testCases.map(async (testcase, index) => {
+      const testPromises = problem.test_cases.map(async (testcase, index) => {
         if (!testcase) return null;
 
         const response = await fetch(
@@ -244,10 +244,10 @@ export default function PromptForm({ problem }: { problem: Problem }) {
         <div className="flex h-full flex-col">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Characters: {prompt.length} / {problem.maxPromptLength}
+              Characters: {prompt.length} / {problem.max_prompt_length}
             </div>
             <Progress
-              value={(prompt.length / problem.maxPromptLength) * 100}
+              value={(prompt.length / problem.max_prompt_length) * 100}
               className="h-1 w-24"
             />
           </div>
@@ -258,7 +258,7 @@ export default function PromptForm({ problem }: { problem: Problem }) {
             onKeyDown={handleKeyDown}
             placeholder="Write your prompt here..."
             className="flex-1 resize-none"
-            maxLength={problem.maxPromptLength}
+            maxLength={problem.max_prompt_length}
           />
 
           <div className="mt-4 flex justify-end">

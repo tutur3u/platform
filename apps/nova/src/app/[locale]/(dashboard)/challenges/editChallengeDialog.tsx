@@ -1,6 +1,7 @@
 'use client';
 
 import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   type NovaChallenge,
   type NovaChallengeCriteria,
@@ -14,7 +15,6 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -24,18 +24,16 @@ type ExtendedNovaChallenge = NovaChallenge & {
 interface EditChallengeDialogProps {
   challenge: ExtendedNovaChallenge;
   trigger: React.ReactNode;
-  onSuccessfulEdit?: () => void;
 }
 
 export default function EditChallengeDialog({
   challenge,
   trigger,
-  onSuccessfulEdit,
 }: EditChallengeDialogProps) {
-  const router = useRouter();
-
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const queryClient = useQueryClient();
 
   // Convert string dates to Date objects for the form
   const formattedDefaultValues = useMemo(() => {
@@ -54,6 +52,7 @@ export default function EditChallengeDialog({
       previewableAt: challenge.previewable_at
         ? new Date(challenge.previewable_at)
         : null,
+      password: challenge.password_hash ? '' : null,
     };
   }, [challenge]);
 
@@ -78,9 +77,6 @@ export default function EditChallengeDialog({
         variant: 'default',
       });
 
-      // Find criteria to create, update, and delete
-      const newCriteriaIds = new Set(values.criteria.map((c) => c.id));
-
       // Criteria to create (those without IDs)
       const criteriaToCreate = values.criteria.filter((c) => !c.id);
 
@@ -88,6 +84,7 @@ export default function EditChallengeDialog({
       const criteriaToUpdate = values.criteria.filter((c) => c.id);
 
       // Criteria to delete (IDs that exist in old but not in new)
+      const newCriteriaIds = new Set(values.criteria.map((c) => c.id));
       const criteriaToDelete = challenge.criteria.filter(
         (c) => !newCriteriaIds.has(c.id)
       );
@@ -126,14 +123,10 @@ export default function EditChallengeDialog({
         ),
       ]);
 
+      // Invalidate challenges query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ['challenges'] });
+
       setOpen(false);
-
-      // Call the onSuccessfulEdit callback if provided
-      if (onSuccessfulEdit) {
-        onSuccessfulEdit();
-      }
-
-      router.refresh();
     } catch (error) {
       console.error('Error:', error);
       toast({

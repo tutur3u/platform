@@ -1,32 +1,16 @@
-'use client';
-
-import ProblemComponent from '../../shared/problem-component';
-import PromptComponent from '../../shared/prompt-component';
-import TestCaseComponent from '../../shared/test-case-component';
-import CustomizedHeader from './customizedHeader';
-import PromptForm from './prompt-form';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import ChallengeClient from './client';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   NovaChallenge,
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
 } from '@tuturuuu/types/db';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@tuturuuu/ui/alert-dialog';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   problems: (NovaProblem & {
@@ -40,223 +24,51 @@ interface Props {
   }>;
 }
 
-export default function Page({ params }: Props) {
-  const [challenge, setChallenge] = useState<ExtendedNovaChallenge | null>(
-    null
-  );
-  const [session, setSession] = useState<NovaSession | null>(null);
-  const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
-  const [showEndDialog, setShowEndDialog] = useState(false);
+export default async function Page({ params }: Props) {
+  const { challengeId } = await params;
 
-  const router = useRouter();
+  try {
+    const challenge = await getChallenge(challengeId);
 
-  useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (session?.status === 'IN_PROGRESS') {
-        const confirmationMessage =
-          'You have an ongoing challenge, are you sure you want to leave?';
-        event.returnValue = confirmationMessage;
-        return confirmationMessage;
-      }
-    };
+    if (!challenge) redirect('/challenges');
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token');
 
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [session]);
+    if (
+      challenge.password_hash &&
+      (!token || challenge.password_hash != token.value)
+    )
+      redirect('/challenges');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const { challengeId } = await params;
-      const challengeData = await getChallenge(challengeId);
-      setChallenge(challengeData);
+    // Fetch session data
+    const session = await getSession(challengeId);
 
-      // Fetch challenge session
-      const response = await fetch(
-        `/api/v1/sessions?challengeId=${challengeId}`
-      );
-
-      if (response.ok) {
-        const sessionsData = await response.json();
-
-        // API returns an array of sessions, find the most recent active one
-        const sessionData =
-          Array.isArray(sessionsData) && sessionsData.length > 0
-            ? sessionsData[0] // Assuming the most recent session is first
-            : null;
-
-        // If challenge is ended, redirect to report page
-        if (sessionData?.status === 'ENDED') {
-          router.replace(`/challenges/${challengeId}/results`);
-        } else if (sessionData) {
-          setSession(sessionData);
-        } else {
-          router.push(`/challenges`);
-        }
-      } else {
-        router.push(`/challenges`);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const problems = challenge?.problems || [];
-
-  // Memoize these functions to prevent unnecessary re-renders
-  const nextProblem = () => {
-    setCurrentProblemIndex((prev) =>
-      prev < problems.length - 1 ? prev + 1 : prev
-    );
-  };
-
-  const prevProblem = () => {
-    setCurrentProblemIndex((prev) => (prev > 0 ? prev - 1 : prev));
-  };
-
-  const handleEndChallenge = async () => {
-    const response = await fetch(`/api/v1/sessions/${session?.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        status: 'ENDED',
-      }),
-    });
-
-    if (response.ok) {
-      router.push(`/challenges/${challenge?.id}/results`);
-    } else {
-      toast({
-        title: 'Error',
-        description: 'Failed to end challenge',
-        variant: 'destructive',
-      });
+    // If challenge is ended, redirect to report page
+    if (session?.status === 'ENDED') {
+      redirect(`/challenges/${challengeId}/results`);
     }
-  };
 
-  if (!session) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-xl font-semibold text-muted-foreground">
-          Loading...
-        </p>
-      </div>
-    );
+    // If no session found, redirect to challenges page
+    if (!session) {
+      redirect('/challenges');
+    }
+
+    return <ChallengeClient challenge={challenge} session={session} />;
+  } catch (error) {
+    console.error('Error loading challenge:', error);
+    redirect('/challenges');
   }
-
-  return (
-    <>
-      <div className="relative h-screen overflow-hidden">
-        {session && (
-          <CustomizedHeader
-            key={`challenge-header-${session.id}`}
-            problemLength={problems.length}
-            currentProblem={currentProblemIndex + 1}
-            endTime={session.end_time}
-            onPrev={prevProblem}
-            onNext={nextProblem}
-            onEnd={() => setShowEndDialog(true)}
-            onAutoEnd={handleEndChallenge}
-            className="flex-none"
-            challengeCloseAt={challenge?.close_at || undefined}
-            sessionStartTime={session.start_time}
-          />
-        )}
-
-        <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-4 md:grid-cols-2">
-          <div className="flex h-full w-full flex-col gap-4 overflow-hidden">
-            <Card className="h-full overflow-y-auto border-foreground/10 bg-foreground/5">
-              <CardContent className="p-0">
-                <Tabs defaultValue="problem" className="w-full">
-                  <TabsList className="w-full rounded-t-lg rounded-b-none bg-foreground/10">
-                    <TabsTrigger value="problem" className="flex-1">
-                      Problem
-                    </TabsTrigger>
-                    <TabsTrigger value="test-cases" className="flex-1">
-                      Test Cases
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="problem" className="m-0 p-4">
-                    <ProblemComponent
-                      problem={{
-                        id: problems[currentProblemIndex]?.id || '',
-                        title: problems[currentProblemIndex]?.title || '',
-                        description:
-                          problems[currentProblemIndex]?.description || '',
-                        maxPromptLength:
-                          problems[currentProblemIndex]?.max_prompt_length || 0,
-                        exampleInput:
-                          problems[currentProblemIndex]?.example_input || '',
-                        exampleOutput:
-                          problems[currentProblemIndex]?.example_output || '',
-                      }}
-                    />
-                  </TabsContent>
-                  <TabsContent value="test-cases" className="m-0 p-4">
-                    <TestCaseComponent
-                      testCases={
-                        problems[currentProblemIndex]?.test_cases || []
-                      }
-                    />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="relative flex h-full w-full flex-col gap-4 overflow-hidden">
-            <PromptComponent>
-              <PromptForm
-                problem={{
-                  id: problems[currentProblemIndex]?.id || '',
-                  title: problems[currentProblemIndex]?.title || '',
-                  description: problems[currentProblemIndex]?.description || '',
-                  maxPromptLength:
-                    problems[currentProblemIndex]?.max_prompt_length || 0,
-                  exampleInput:
-                    problems[currentProblemIndex]?.example_input || '',
-                  exampleOutput:
-                    problems[currentProblemIndex]?.example_output || '',
-                  testCases:
-                    problems[currentProblemIndex]?.test_cases?.map(
-                      (testCase) => testCase.input || ''
-                    ) || [],
-                }}
-              />
-            </PromptComponent>
-          </div>
-        </div>
-      </div>
-
-      <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>End Challenge</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to end this challenge?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleEndChallenge}>
-              End
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
 }
 
-// Fetch Challenge from Supabase
-async function getChallenge(challengeId: string) {
-  const supabase = createClient();
+async function getChallenge(
+  challengeId: string
+): Promise<ExtendedNovaChallenge | null> {
+  const sbAdmin = await createAdminClient();
 
   try {
     // Fetch challenge details
-    const { data: challenge, error: challengeError } = await supabase
+    const { data: challenge, error: challengeError } = await sbAdmin
       .from('nova_challenges')
       .select('*')
       .eq('id', challengeId)
@@ -268,7 +80,7 @@ async function getChallenge(challengeId: string) {
     }
 
     // Fetch problems linked to this challenge
-    const { data: problems, error: problemError } = await supabase
+    const { data: problems, error: problemError } = await sbAdmin
       .from('nova_problems')
       .select('*')
       .eq('challenge_id', challengeId);
@@ -280,13 +92,14 @@ async function getChallenge(challengeId: string) {
 
     const problemIds = problems.map((problem) => problem.id);
 
-    const { data: testCases, error: testCaseError } = await supabase
+    const { data: testCases, error: testCaseError } = await sbAdmin
       .from('nova_problem_test_cases')
       .select('*')
       .in('problem_id', problemIds);
 
     if (testCaseError) {
       console.error('Error fetching test cases:', testCaseError.message);
+      return null;
     }
 
     // Map problems with test cases
@@ -303,7 +116,41 @@ async function getChallenge(challengeId: string) {
       problems: formattedProblems,
     };
   } catch (error) {
-    console.error('Unexpected error fetching challenge:', error);
+    console.error('Unexpected error:', error);
+    return null;
+  }
+}
+
+async function getSession(challengeId: string): Promise<NovaSession | null> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    return null;
+  }
+
+  try {
+    // Fetch sessions for this challenge
+    const { data: session, error } = await supabase
+      .from('nova_sessions')
+      .select('*')
+      .eq('challenge_id', challengeId)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .single();
+
+    if (error) {
+      console.error('Error fetching sessions:', error.message);
+      return null;
+    }
+
+    return session;
+  } catch (error) {
+    console.error('Unexpected error fetching session:', error);
     return null;
   }
 }

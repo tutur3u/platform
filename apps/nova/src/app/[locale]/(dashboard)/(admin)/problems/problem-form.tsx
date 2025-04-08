@@ -73,7 +73,7 @@ export type ProblemFormValues = z.infer<typeof formSchema>;
 
 interface ProblemFormProps {
   problemId?: string;
-  defaultValues?: Partial<ProblemFormValues>;
+  defaultValues?: ProblemFormValues;
   onSubmit: (values: ProblemFormValues) => void;
   isSubmitting: boolean;
 }
@@ -91,7 +91,16 @@ export default function ProblemForm({
   // Initialize form with default values
   const form = useForm<ProblemFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    defaultValues: {
+      title: '',
+      description: '',
+      maxPromptLength: 1000,
+      exampleInput: '',
+      exampleOutput: '',
+      challengeId: '',
+      testCases: [],
+      ...defaultValues,
+    },
   });
 
   // Add a new test case
@@ -292,9 +301,8 @@ export default function ProblemForm({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {form.watch('testCases') &&
-                  form.watch('testCases').length > 0 ? (
-                    form.watch('testCases').map((testCase, index) => (
+                  {form.watch('testCases')?.length > 0 ? (
+                    form.watch('testCases')?.map((testCase, index) => (
                       <div
                         key={testCase.id || index}
                         className="space-y-4 rounded-md border p-4"
