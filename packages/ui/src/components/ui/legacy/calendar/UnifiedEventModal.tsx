@@ -797,6 +797,14 @@ export function UnifiedEventModal({
     }
   };
 
+  // function to open Google Maps with the entered address
+  const openGoogleMaps = (address: string) => {
+    if (address) {
+      const encodedAddress = encodeURIComponent(address);
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+    }
+  };
+
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
@@ -1323,7 +1331,13 @@ export function UnifiedEventModal({
                                 {generatedEvent.location && (
                                   <div className="flex items-center gap-1">
                                     <MapPin className="h-3.5 w-3.5" />
-                                    <span>{generatedEvent.location}</span>
+                                    <button
+                                      onClick={() => openGoogleMaps(generatedEvent.location)}
+                                      className="text-sm text-muted-foreground hover:underline hover:text-primary"
+                                      title="Open in Google Maps"
+                                    >
+                                      {generatedEvent.location}
+                                    </button>
                                   </div>
                                 )}
                               </div>
