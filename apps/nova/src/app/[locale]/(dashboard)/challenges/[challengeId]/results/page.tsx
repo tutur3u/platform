@@ -1,5 +1,5 @@
 import ResultClient from './client';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   NovaChallenge,
   NovaChallengeCriteria,
@@ -26,11 +26,11 @@ interface Props {
 
 export default async function Page({ params }: Props) {
   const { challengeId } = await params;
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   try {
     // Get session
-    const { data: sessionData } = await supabase
+    const { data: sessionData } = await sbAdmin
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)
@@ -45,7 +45,7 @@ export default async function Page({ params }: Props) {
     }
 
     // Get challenge
-    const { data: challengeData } = await supabase
+    const { data: challengeData } = await sbAdmin
       .from('nova_challenges')
       .select('*')
       .eq('id', challengeId)
@@ -56,13 +56,13 @@ export default async function Page({ params }: Props) {
     }
 
     // Get criteria
-    const { data: criteriaData } = await supabase
+    const { data: criteriaData } = await sbAdmin
       .from('nova_challenge_criteria')
       .select('*')
       .eq('challenge_id', challengeId);
 
     // Get problems
-    const { data: problemsData } = await supabase
+    const { data: problemsData } = await sbAdmin
       .from('nova_problems')
       .select('*')
       .eq('challenge_id', challengeId);
@@ -75,11 +75,11 @@ export default async function Page({ params }: Props) {
     const problemsWithDetails = await Promise.all(
       problemsData.map(async (problem) => {
         const [criteriaScoresRes, submissionsRes] = await Promise.all([
-          supabase
+          sbAdmin
             .from('nova_problem_criteria_scores')
             .select('*')
             .eq('problem_id', problem.id),
-          supabase
+          sbAdmin
             .from('nova_submissions')
             .select('*')
             .eq('problem_id', problem.id),
