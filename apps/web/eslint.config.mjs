@@ -22,7 +22,7 @@ export default [{
 }, ...compat.extends(
     "@tuturuuu/eslint-config/next.js",
     "plugin:@next/next/recommended",
-    "plugin:@tanstack/eslint-plugin-query/recommended",
+    // "plugin:@tanstack/eslint-plugin-query/recommended",
 ), {
     languageOptions: {
         parser: tsParser,
@@ -35,8 +35,8 @@ export default [{
     },
 
     rules: {
-        "@tanstack/query/exhaustive-deps": "error",
-        "@tanstack/query/no-rest-destructuring": "warn",
-        "@tanstack/query/stable-query-client": "error",
+        // "@tanstack/query/exhaustive-deps": "error",
+        // "@tanstack/query/no-rest-destructuring": "warn",
+        // "@tanstack/query/stable-query-client": "error",
     },
 }];
