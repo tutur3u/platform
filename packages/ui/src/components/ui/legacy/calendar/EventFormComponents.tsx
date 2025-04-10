@@ -149,25 +149,55 @@ export const EventLocationInput = ({
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-}) => (
-  <div className="space-y-2">
-    <Label
-      htmlFor="location"
-      className="flex items-center gap-2 text-sm font-medium"
-    >
-      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-      Location
-    </Label>
-    <Input
-      id="location"
-      placeholder="Add location"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="border-none bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0"
-      disabled={disabled}
-    />
-  </div>
-);
+}) => {
+  // function to open Google Maps with the entered address
+  const openGoogleMaps = () => {
+    if (value) {
+      // encode the address to be used in the URL
+      const encodedAddress = encodeURIComponent(value);
+      // open Google Maps in a new tab
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label
+        htmlFor="location"
+        className="flex items-center gap-2 text-sm font-medium"
+      >
+        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+        Location
+      </Label>
+      <div className="relative">
+        <Input
+          id="location"
+          placeholder="Add location"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="border-none bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+          disabled={disabled}
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={openGoogleMaps}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            title="Open in Google Maps"
+            disabled={disabled}
+          >
+            <MapPin className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      {value && (
+        <div className="flex items-center text-xs text-muted-foreground">
+          <span>Click the map icon to view in Google Maps</span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Date and time picker component
 export const EventDateTimePicker = ({
