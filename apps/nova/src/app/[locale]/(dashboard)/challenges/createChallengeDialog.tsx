@@ -64,6 +64,15 @@ export default function CreateChallengeDialog({
         )
       );
 
+      await Promise.allSettled(
+        values.whitelistedEmails.map((email) =>
+          fetch(`/api/v1/challenges/${challenge.id}/whitelists`, {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+          })
+        )
+      );
+
       // Invalidate challenges query to trigger a refetch
       queryClient.invalidateQueries({ queryKey: ['challenges'] });
 

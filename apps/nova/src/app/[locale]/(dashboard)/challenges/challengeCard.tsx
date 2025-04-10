@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type {
   NovaChallenge,
   NovaChallengeCriteria,
+  NovaChallengeWhitelist,
   NovaSession,
 } from '@tuturuuu/types/db';
 import {
@@ -58,17 +59,15 @@ import { useCallback, useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
+  whitelists: NovaChallengeWhitelist[];
 };
 
-interface ChallengeCardProps {
+interface Props {
   isAdmin: boolean;
   challenge: ExtendedNovaChallenge;
 }
 
-export default function ChallengeCard({
-  isAdmin,
-  challenge,
-}: ChallengeCardProps) {
+export default function ChallengeCard({ isAdmin, challenge }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -320,7 +319,7 @@ export default function ChallengeCard({
             </Badge>
           </div>
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
               <span>Started at: {format(startTime, 'PPpp')}</span>
             </div>
@@ -343,7 +342,7 @@ export default function ChallengeCard({
           </div>
 
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center text-xs">
               <Clock className="mr-1 h-3 w-3" /> Time remaining:
             </div>
             <Countdown
@@ -358,7 +357,7 @@ export default function ChallengeCard({
             className="mb-2"
           />
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
               <span>Started at: {format(startTime, 'PPpp')}</span>
             </div>
@@ -487,11 +486,11 @@ export default function ChallengeCard({
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
           <div className="flex flex-col gap-2">
             <div className="flex items-center">
-              <Clock className="h-4 w-4 text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">
+              <Clock className="text-primary h-4 w-4" />
+              <span className="text-muted-foreground ml-2 text-sm">
                 Duration: {formatDuration(challenge.duration)}
               </span>
             </div>
@@ -499,7 +498,7 @@ export default function ChallengeCard({
             {status === 'upcoming' && challenge.previewable_at && (
               <div className="flex items-center">
                 <Eye className="h-4 w-4 text-amber-500" />
-                <span className="ml-2 text-sm text-muted-foreground">
+                <span className="text-muted-foreground ml-2 text-sm">
                   Preview available:{' '}
                   {formatDistanceToNow(new Date(challenge.previewable_at), {
                     addSuffix: true,
