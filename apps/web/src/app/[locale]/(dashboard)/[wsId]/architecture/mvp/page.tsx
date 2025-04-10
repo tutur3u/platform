@@ -1,0 +1,90 @@
+import { ArchitectureDataTable } from './data-table';
+import ArchitectureForm from './form';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
+import { getTranslations } from 'next-intl/server';
+
+interface SearchParams {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+}
+
+interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
+  searchParams: Promise<SearchParams>;
+}
+
+export default async function ArchitectureMVPPage({
+  params,
+  searchParams,
+}: Props) {
+  const t = await getTranslations();
+  const { wsId } = await params;
+
+  const { data, count } = await getData(wsId, await searchParams);
+
+  return (
+    <>
+      <FeatureSummary
+        pluralTitle="Building Projects"
+        singularTitle="Building Project"
+        description="Analyze building regulations, generate timelines, and estimate costs for your construction projects."
+        createTitle="New Building Project"
+        createDescription="Create a new building project analysis"
+        form={<ArchitectureForm wsId={wsId} />}
+      />
+      <Separator className="my-4" />
+      <ArchitectureDataTable
+        data={data || []}
+        count={count || 0}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
+  );
+}
+
+async function getData(
+  wsId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+    retry = true,
+  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
+) {
+  const supabase = await createClient();
+
+  const queryBuilder = supabase
+    .from('workspace_architecture_projects')
+    .select('*', {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  if (q) queryBuilder.ilike('name', `%${q}%`);
+
+  if (page && pageSize) {
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data, error, count } = await queryBuilder;
+
+  if (error) {
+    if (!retry) throw error;
+    return getData(wsId, { q, pageSize, retry: false });
+  }
+
+  return { data, count } as { data: any[]; count: number };
+}

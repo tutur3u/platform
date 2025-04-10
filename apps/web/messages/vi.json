@@ -618,6 +618,14 @@
     "name": "Tên",
     "created_at": "Tạo lúc"
   },
+  "architecture-data-table": {
+    "id": "Mã số",
+    "name": "Tên",
+    "status": "Trạng thái",
+    "location": "Địa điểm",
+    "building_requirements": "Yêu cầu xây dựng",
+    "created_at": "Tạo lúc"
+  },
   "storage-object-data-table": {
     "id": "Mã số",
     "name": "Tên",

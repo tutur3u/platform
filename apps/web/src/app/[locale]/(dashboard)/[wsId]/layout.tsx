@@ -18,6 +18,7 @@ import {
   Archive,
   Banknote,
   Box,
+  Building2,
   Calendar,
   ChartArea,
   CircleCheck,
@@ -350,6 +351,21 @@ export default async function Layout({ children, params }: LayoutProps) {
         })) ||
         withoutPermission('send_user_group_post_emails'),
       shortcut: 'M',
+      experimental: 'beta',
+    },
+    {
+      title: 'Architecture',
+      href: `/${wsId}/architecture`,
+      icon: <Building2 className="h-4 w-4" />,
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId,
+          name: 'ENABLE_CHAT',
+          value: 'true',
+        })),
+      shortcut: 'B',
       experimental: 'beta',
     },
     {

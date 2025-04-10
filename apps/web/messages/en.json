@@ -618,6 +618,14 @@
     "name": "Name",
     "created_at": "Created at"
   },
+  "architecture-data-table": {
+    "id": "ID",
+    "name": "Name",
+    "status": "Status",
+    "location": "Location",
+    "building_requirements": "Building Requirements",
+    "created_at": "Created at"
+  },
   "storage-object-data-table": {
     "id": "ID",
     "name": "Name",

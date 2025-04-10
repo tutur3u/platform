@@ -141,3 +141,131 @@ export const yearPlanSchema = z.object({
     // progress: progressSchema.describe('Overall progress tracking'),
   }),
 });
+
+export const architectureSchema = z.object({
+  buildingAnalysis: z.object({
+    regulationSummary: z
+      .string()
+      .describe(
+        'Summary of all relevant building regulations and codes for the specified location'
+      ),
+    permitRequirements: z
+      .array(
+        z.object({
+          name: z.string().describe('Name of the permit or approval required'),
+          description: z
+            .string()
+            .describe('Description of the permit requirements'),
+          timeline: z
+            .string()
+            .describe('Estimated timeline to obtain this permit'),
+          estimatedCost: z
+            .string()
+            .describe('Estimated cost to obtain this permit'),
+          requiredDocuments: z
+            .array(z.string())
+            .describe('List of documents required for this permit'),
+        })
+      )
+      .describe(
+        'List of permits and approvals required for the building project'
+      ),
+    timeline: z
+      .array(
+        z.object({
+          phase: z.string().describe('Name of the construction phase'),
+          description: z
+            .string()
+            .describe('Description of activities during this phase'),
+          startDate: z
+            .string()
+            .describe('Estimated start date (relative to project kickoff)'),
+          duration: z.string().describe('Estimated duration of this phase'),
+          dependencies: z
+            .array(z.string())
+            .optional()
+            .describe(
+              'Phases that must be completed before this one can start'
+            ),
+          keyMilestones: z
+            .array(
+              z.object({
+                name: z.string().describe('Name of the milestone'),
+                description: z
+                  .string()
+                  .describe('Description of the milestone'),
+                estimatedDate: z
+                  .string()
+                  .describe('Estimated date to reach this milestone'),
+              })
+            )
+            .describe('Key milestones within this phase'),
+        })
+      )
+      .describe('Timeline of construction phases'),
+    costEstimation: z
+      .object({
+        totalEstimate: z
+          .string()
+          .describe('Total estimated cost range for the entire project'),
+        breakdown: z
+          .array(
+            z.object({
+              category: z
+                .string()
+                .describe(
+                  'Cost category (e.g., "Land acquisition", "Design", "Construction", "Permits")'
+                ),
+              estimate: z
+                .string()
+                .describe('Estimated cost range for this category'),
+              notes: z
+                .string()
+                .describe(
+                  'Any relevant notes or factors affecting this estimate'
+                ),
+            })
+          )
+          .describe('Breakdown of costs by category'),
+        costFactors: z
+          .array(z.string())
+          .describe('Key factors affecting cost estimates'),
+      })
+      .describe('Cost estimation for the project'),
+    environmentalConsiderations: z
+      .array(
+        z.object({
+          aspect: z.string().describe('Environmental aspect to consider'),
+          description: z
+            .string()
+            .describe('Description of this environmental consideration'),
+          regulatoryRequirements: z
+            .string()
+            .describe('Regulatory requirements related to this aspect'),
+          recommendedActions: z
+            .array(z.string())
+            .describe('Recommended actions to address this aspect'),
+        })
+      )
+      .describe('Environmental considerations for the project'),
+    recommendations: z
+      .array(z.string())
+      .describe('General recommendations for the project'),
+    riskAssessment: z
+      .array(
+        z.object({
+          risk: z.string().describe('Potential risk to the project'),
+          impact: z
+            .enum(['low', 'medium', 'high'])
+            .describe('Potential impact of this risk'),
+          likelihood: z
+            .enum(['low', 'medium', 'high'])
+            .describe('Likelihood of this risk occurring'),
+          mitigationStrategies: z
+            .array(z.string())
+            .describe('Strategies to mitigate this risk'),
+        })
+      )
+      .describe('Assessment of potential risks to the project'),
+  }),
+});
