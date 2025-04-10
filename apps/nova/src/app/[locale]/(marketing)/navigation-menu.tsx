@@ -33,7 +33,7 @@ export function MainNavigationMenu() {
       <NavigationMenuList className="flex w-full justify-between">
         {main.map((item) => (
           <NavigationMenuItem key={item.href}>
-            <Link href={item.href} legacyBehavior passHref>
+            <Link href={item.href} passHref>
               <NavigationMenuLink
                 className={cn(
                   navigationMenuTriggerStyle(),
@@ -74,7 +74,7 @@ export function MainNavigationMenu() {
 
         {company.map((item) => (
           <NavigationMenuItem key={item.href}>
-            <Link href={item.href} legacyBehavior passHref>
+            <Link href={item.href} passHref>
               <NavigationMenuLink
                 className={cn(
                   navigationMenuTriggerStyle(),
