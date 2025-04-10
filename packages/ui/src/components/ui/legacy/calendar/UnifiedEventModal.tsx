@@ -801,7 +801,10 @@ export function UnifiedEventModal({
   const openGoogleMaps = (address: string) => {
     if (address) {
       const encodedAddress = encodeURIComponent(address);
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
+        '_blank'
+      );
     }
   };
 
@@ -1332,8 +1335,10 @@ export function UnifiedEventModal({
                                   <div className="flex items-center gap-1">
                                     <MapPin className="h-3.5 w-3.5" />
                                     <button
-                                      onClick={() => openGoogleMaps(generatedEvent.location)}
-                                      className="text-sm text-muted-foreground hover:underline hover:text-primary"
+                                      onClick={() =>
+                                        openGoogleMaps(generatedEvent.location)
+                                      }
+                                      className="text-sm text-muted-foreground hover:text-primary hover:underline"
                                       title="Open in Google Maps"
                                     >
                                       {generatedEvent.location}
