@@ -8,6 +8,7 @@ import {
   NovaSession,
   NovaSubmission,
 } from '@tuturuuu/types/db';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 
 type ReportData = NovaSession & {
@@ -27,6 +28,9 @@ interface Props {
 export default async function Page({ params }: Props) {
   const { challengeId } = await params;
   const sbAdmin = await createAdminClient();
+  const user = await getCurrentSupabaseUser();
+
+  if (!user) redirect('/dashboard');
 
   try {
     // Get session
@@ -34,6 +38,7 @@ export default async function Page({ params }: Props) {
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (!sessionData) {
