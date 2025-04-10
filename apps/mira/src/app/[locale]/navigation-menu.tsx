@@ -240,7 +240,7 @@ export function MainNavigationMenu() {
           </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <Link href="/pricing" legacyBehavior passHref>
+          <Link href="/pricing" passHref>
             <NavigationMenuLink
               className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
             >
@@ -249,7 +249,7 @@ export function MainNavigationMenu() {
           </Link>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <Link href="/about" legacyBehavior passHref>
+          <Link href="/about" passHref>
             <NavigationMenuLink
               className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
             >
@@ -258,7 +258,7 @@ export function MainNavigationMenu() {
           </Link>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <Link href="/contact" legacyBehavior passHref>
+          <Link href="/contact" passHref>
             <NavigationMenuLink
               className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
             >
