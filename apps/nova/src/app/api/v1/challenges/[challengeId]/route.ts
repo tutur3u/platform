@@ -78,6 +78,7 @@ export async function PUT(request: Request, { params }: Params) {
     description?: string;
     duration?: number;
     enabled?: boolean;
+    whitelistedOnly?: boolean;
     maxAttempts?: number;
     maxDailyAttempts?: number;
     password?: string;
@@ -108,6 +109,8 @@ export async function PUT(request: Request, { params }: Params) {
       updateData.description = body.description;
     if (body.duration !== undefined) updateData.duration = body.duration;
     if (body.enabled !== undefined) updateData.enabled = body.enabled;
+    if (body.whitelistedOnly !== undefined)
+      updateData.whitelisted_only = body.whitelistedOnly;
 
     if (body.maxAttempts !== undefined)
       updateData.max_attempts = body.maxAttempts;
