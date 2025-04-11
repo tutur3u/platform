@@ -3985,6 +3985,7 @@ export type Database = {
           start_at: string;
           title: string;
           ws_id: string;
+          location: string;
         };
         Insert: {
           color?: string | null;

@@ -444,7 +444,7 @@ export function UnifiedEventModal({
           start_at: eventData.start_at,
           end_at: eventData.end_at,
           color: eventData.color || 'BLUE',
-          // location: eventData.location,
+          location: eventData.location || '',
           locked: false, // Default to unlocked for AI-generated events
         };
 
