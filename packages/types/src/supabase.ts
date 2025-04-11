@@ -3981,11 +3981,11 @@ export type Database = {
           description: string;
           end_at: string;
           id: string;
+          location: string | null;
           locked: boolean;
           start_at: string;
           title: string;
           ws_id: string;
-          location: string;
         };
         Insert: {
           color?: string | null;
@@ -3993,6 +3993,7 @@ export type Database = {
           description?: string;
           end_at: string;
           id?: string;
+          location?: string | null;
           locked?: boolean;
           start_at: string;
           title?: string;
@@ -4004,6 +4005,7 @@ export type Database = {
           description?: string;
           end_at?: string;
           id?: string;
+          location?: string | null;
           locked?: boolean;
           start_at?: string;
           title?: string;
