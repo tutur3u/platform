@@ -376,7 +376,7 @@ export const CalendarProvider = ({
             start_at: startDate.toISOString(),
             end_at: endDate.toISOString(),
             color: eventColor as SupportedColor,
-            // location: event.location || '',
+            location: event.location || '',
             ws_id: ws.id,
             locked: false,
           })
@@ -486,6 +486,7 @@ export const CalendarProvider = ({
             start_at: updateData.start_at,
             end_at: updateData.end_at,
             color: updateData.color,
+            location: updateData.location,
             locked: updateData.locked,
           })
           .eq('id', eventId)
