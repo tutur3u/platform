@@ -33,6 +33,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -68,6 +69,7 @@ const formSchema = z
       message: 'Duration must be at least 60 seconds.',
     }),
     enabled: z.boolean().default(false),
+    whitelistedOnly: z.boolean().default(false),
     maxAttempts: z.number().min(1, {
       message: 'Max attempts must be at least 1.',
     }),
@@ -113,6 +115,7 @@ export default function ChallengeForm({
       criteria: [],
       duration: 3600,
       enabled: false,
+      whitelistedOnly: false,
       maxAttempts: 1,
       maxDailyAttempts: 1,
       password: null,
@@ -456,85 +459,108 @@ export default function ChallengeForm({
                     </div>
 
                     {form.watch('password') !== null && (
-                      <FormField
-                        control={form.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Challenge Password</FormLabel>
+                      <>
+                        <Separator className="mx-auto my-6 max-w-md" />
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Challenge Password</FormLabel>
 
-                            <div className="relative">
-                              <FormControl>
-                                <Input
-                                  type={showPassword ? 'text' : 'password'}
-                                  placeholder="Enter password"
-                                  {...field}
-                                  value={field.value || ''}
-                                />
-                              </FormControl>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3"
-                                onClick={() => setShowPassword(!showPassword)}
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
+                              <div className="relative">
+                                <FormControl>
+                                  <Input
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="Enter password"
+                                    {...field}
+                                    value={field.value || ''}
+                                  />
+                                </FormControl>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-3"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                  ) : (
+                                    <Eye className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
 
-                            <FormDescription>
-                              Must be at least 6 characters
-                            </FormDescription>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
+                              <FormDescription>
+                                Must be at least 6 characters
+                              </FormDescription>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                      </>
                     )}
                   </div>
 
                   <div className="space-y-4 rounded-lg border p-4">
-                    <div className="mb-4 space-y-0.5">
-                      <div className="text-sm font-medium">
-                        Whitelist Access
-                      </div>
-                      <div className="text-muted-foreground text-sm">
-                        Restrict access to specific users
-                      </div>
-                    </div>
-
                     <FormField
                       control={form.control}
                       name="enabled"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Enabled</FormLabel>
+                        <FormItem className="flex flex-row items-center justify-between">
+                          <div className="space-y-0.5">
+                            <FormLabel>Enabled</FormLabel>
+                            <FormDescription>
+                              Whether this challenge is currently enabled.
+                            </FormDescription>
+                          </div>
+
                           <FormControl>
                             <Switch
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                          <FormDescription>
-                            Whether this challenge is currently active.
-                          </FormDescription>
-                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
 
-                    {form.watch('enabled') && (
-                      <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="whitelistedOnly"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between">
+                          <div className="space-y-0.5">
+                            <FormLabel>Whitelisted Only</FormLabel>
+                            <FormDescription>
+                              Restrict access to only whitelisted users.
+                            </FormDescription>
+                          </div>
+
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch('whitelistedOnly') && (
+                      <>
+                        <Separator className="mx-auto my-6 max-w-md" />
                         <FormField
                           control={form.control}
                           name="whitelistedEmails"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Whitelisted Email Addresses</FormLabel>
+                              <FormDescription>
+                                Only these email addresses will have access to
+                                the challenge.
+                              </FormDescription>
                               <div className="space-y-2">
                                 <div className="flex flex-wrap gap-2">
                                   {field.value.map((email, index) => (
@@ -575,15 +601,11 @@ export default function ChallengeForm({
                                   </Button>
                                 </div>
                               </div>
-                              <FormDescription>
-                                Only these email addresses will have access to
-                                the challenge.
-                              </FormDescription>
                               <FormMessage className="text-xs" />
                             </FormItem>
                           )}
                         />
-                      </div>
+                      </>
                     )}
                   </div>
                 </CardContent>

@@ -2175,6 +2175,7 @@ export type Database = {
           password_salt: string | null;
           previewable_at: string | null;
           title: string;
+          whitelisted_only: boolean;
         };
         Insert: {
           close_at?: string | null;
@@ -2190,6 +2191,7 @@ export type Database = {
           password_salt?: string | null;
           previewable_at?: string | null;
           title: string;
+          whitelisted_only?: boolean;
         };
         Update: {
           close_at?: string | null;
@@ -2205,6 +2207,7 @@ export type Database = {
           password_salt?: string | null;
           previewable_at?: string | null;
           title?: string;
+          whitelisted_only?: boolean;
         };
         Relationships: [];
       };

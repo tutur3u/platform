@@ -51,7 +51,7 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       throw new Error('Error fetching challenges:', challengesError);
     }
 
-    // Fetch all criteria for the filtered challenges
+    // Fetch all criteria for the challenges
     const { data: allCriteria, error: criteriaError } = await sbAdmin
       .from('nova_challenge_criteria')
       .select('*')
@@ -62,6 +62,19 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
 
     if (criteriaError) {
       throw new Error('Error fetching criteria:', criteriaError);
+    }
+
+    // Fetch all whitelists for the challenges
+    const { data: allWhitelists, error: whitelistsError } = await sbAdmin
+      .from('nova_challenge_whitelisted_emails')
+      .select('*')
+      .in(
+        'challenge_id',
+        challenges.map((challenge) => challenge.id)
+      );
+
+    if (whitelistsError) {
+      throw new Error('Error fetching whitelists:', whitelistsError);
     }
 
     // Filter challenges if user doesn't have management permissions
@@ -79,24 +92,15 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       }
 
       // Filter to only include challenges that have the user's email whitelisted
-      filteredChallenges = challenges.filter((challenge) =>
-        whitelistedChallengeIds.some(
-          (whitelist) => whitelist.challenge_id === challenge.id
-        )
-      );
-    }
-
-    // Fetch all whitelists for the filtered challenges
-    const { data: allWhitelists, error: whitelistsError } = await sbAdmin
-      .from('nova_challenge_whitelisted_emails')
-      .select('*')
-      .in(
-        'challenge_id',
-        filteredChallenges.map((challenge) => challenge.id)
-      );
-
-    if (whitelistsError) {
-      throw new Error('Error fetching whitelists:', whitelistsError);
+      filteredChallenges = challenges.filter((challenge) => {
+        return (
+          challenge.enabled &&
+          (!challenge.whitelisted_only ||
+            whitelistedChallengeIds.some(
+              (whitelist) => whitelist.challenge_id === challenge.id
+            ))
+        );
+      });
     }
 
     // Combine all data
