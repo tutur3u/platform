@@ -1,5 +1,5 @@
 create policy "Enable all access for challenge manager"
-on "public"."nova_challenge_whitelists"
+on "public"."nova_challenge_whitelisted_emails"
 as permissive
 for all
 to authenticated
