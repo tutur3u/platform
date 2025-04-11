@@ -21,7 +21,7 @@
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.14.0",
-    "@types/react": "^19.1.0",
+    "@types/react": "^19.1.1",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
     "typescript": "^5.8.3"
