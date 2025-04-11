@@ -24,7 +24,7 @@ export async function GET(request: Request, { params }: Params) {
 
   try {
     let query = supabase
-      .from('nova_challenge_whitelists')
+      .from('nova_challenge_whitelisted_emails')
       .select('*')
       .eq('challenge_id', challengeId);
 
@@ -77,7 +77,7 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const { data, error } = await supabase
-      .from('nova_challenge_whitelists')
+      .from('nova_challenge_whitelisted_emails')
       .upsert({
         challenge_id: challengeId,
         email: email,
@@ -127,7 +127,7 @@ export async function DELETE(request: Request, { params }: Params) {
     }
 
     const { error } = await supabase
-      .from('nova_challenge_whitelists')
+      .from('nova_challenge_whitelisted_emails')
       .delete()
       .eq('challenge_id', challengeId)
       .eq('email', email);

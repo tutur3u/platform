@@ -7,12 +7,12 @@ import {
 import {
   NovaChallenge,
   NovaChallengeCriteria,
-  NovaChallengeWhitelist,
+  NovaChallengeWhitelistedEmail,
 } from '@tuturuuu/types/db';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
-  whitelists: NovaChallengeWhitelist[];
+  whitelists: NovaChallengeWhitelistedEmail[];
 };
 
 export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
@@ -70,7 +70,7 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       // Fetch whitelists for this user
       const { data: whitelistedChallengeIds, error: whitelistError } =
         await sbAdmin
-          .from('nova_challenge_whitelists')
+          .from('nova_challenge_whitelisted_emails')
           .select('challenge_id')
           .eq('email', user.email);
 
@@ -88,7 +88,7 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
 
     // Fetch all whitelists for the filtered challenges
     const { data: allWhitelists, error: whitelistsError } = await sbAdmin
-      .from('nova_challenge_whitelists')
+      .from('nova_challenge_whitelisted_emails')
       .select('*')
       .in(
         'challenge_id',

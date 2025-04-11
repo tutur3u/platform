@@ -2134,7 +2134,7 @@ export type Database = {
           },
         ];
       };
-      nova_challenge_whitelists: {
+      nova_challenge_whitelisted_emails: {
         Row: {
           challenge_id: string;
           created_at: string;
@@ -2152,7 +2152,7 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'nova_challenge_whitelists_challenge_id_fkey';
+            foreignKeyName: 'nova_challenge_whitelisted_emails_challenge_id_fkey';
             columns: ['challenge_id'];
             isOneToOne: false;
             referencedRelation: 'nova_challenges';

@@ -8,7 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type {
   NovaChallenge,
   NovaChallengeCriteria,
-  NovaChallengeWhitelist,
+  NovaChallengeWhitelistedEmail,
   NovaSession,
 } from '@tuturuuu/types/db';
 import {
@@ -59,7 +59,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
-  whitelists: NovaChallengeWhitelist[];
+  whitelists: NovaChallengeWhitelistedEmail[];
 };
 
 interface Props {

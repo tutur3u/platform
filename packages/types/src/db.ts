@@ -80,7 +80,8 @@ export type AuroraForecast = {
 
 export type NovaChallengeCriteria = Tables<'nova_challenge_criteria'>;
 export type NovaChallenge = Tables<'nova_challenges'>;
-export type NovaChallengeWhitelist = Tables<'nova_challenge_whitelists'>;
+export type NovaChallengeWhitelistedEmail =
+  Tables<'nova_challenge_whitelisted_emails'>;
 export type NovaProblemCriteriaScore = Tables<'nova_problem_criteria_scores'>;
 export type NovaProblemTestCase = Tables<'nova_problem_test_cases'>;
 export type NovaProblem = Tables<'nova_problems'>;
