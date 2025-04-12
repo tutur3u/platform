@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       challenges.map((challenge) => ({
         ...challenge,
-        //* Hide password hash from response
+        // Hide password hash from response
         // If it's undefined, it means the challenge has no password
         // Otherwise, it's an empty string to avoid exposing the password hash
         password_hash: challenge.password_hash ? '' : undefined,
@@ -122,23 +122,6 @@ export async function POST(request: Request) {
       console.error('Database Error when creating challenge:', challengeError);
       return NextResponse.json(
         { message: 'Error creating challenge' },
-        { status: 500 }
-      );
-    }
-
-    const { error: criteriaError } = await supabase
-      .from('nova_challenge_criteria')
-      .insert(
-        validatedData.criteria.map((criterion) => ({
-          ...criterion,
-          challenge_id: challenge.id,
-        }))
-      );
-
-    if (criteriaError) {
-      console.error('Database Error when creating criteria:', criteriaError);
-      return NextResponse.json(
-        { message: 'Error creating criteria' },
         { status: 500 }
       );
     }

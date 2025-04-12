@@ -45,7 +45,8 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
     // Fetch all challenges
     const { data: challenges, error: challengesError } = await sbAdmin
       .from('nova_challenges')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (challengesError) {
       throw new Error('Error fetching challenges:', challengesError);

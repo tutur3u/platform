@@ -309,28 +309,6 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           new Date(session.start_time).getTime() + challenge.duration * 1000
         );
 
-    if (session.status === 'ENDED') {
-      return (
-        <div className="mt-4 rounded-md border border-dashed p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-medium">Your Session</h3>
-            <Badge variant="secondary" className="text-xs">
-              Completed
-            </Badge>
-          </div>
-
-          <div className="text-muted-foreground mt-2 text-xs">
-            <div className="flex items-center">
-              <span>Started at: {format(startTime, 'PPpp')}</span>
-            </div>
-            <div className="flex items-center">
-              <span>Ended at: {format(endTime, 'PPpp')}</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     if (session.status === 'IN_PROGRESS') {
       return (
         <div className="mt-4 rounded-md border border-dashed p-3">
