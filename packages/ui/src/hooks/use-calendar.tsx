@@ -599,6 +599,8 @@ export const CalendarProvider = ({
 
   const deleteEvent = useCallback(
     async (eventId: string) => {
+      console.log('Current events array:', events);
+      console.log('Deleting event with ID:', eventId);
       // If this is a pending new event that hasn't been saved yet
       if (pendingNewEvent && eventId === 'new') {
         // Just clear the pending event
@@ -611,14 +613,11 @@ export const CalendarProvider = ({
 
       // Find the event first to get the Google Calendar ID
       const eventToDelete = events.find((e: CalendarEvent) => e.id === eventId);
-      const googleCalendarEventId = eventToDelete?.google_event_id
+      const googleCalendarEventId = eventToDelete?.google_event_id;
 
       // --- Google Calendar Sync (Delete) ---
       if (googleCalendarEventId && enableExperimentalGoogleCalendar) {
         // Check if ID exists and feature enabled
-        console.log(
-          `Attempting to delete Google Calendar event: ${googleCalendarEventId}`
-        );
         try {
           const syncResponse = await fetch('/api/v1/calendar/auth/sync', {
             method: 'DELETE',
@@ -628,7 +627,6 @@ export const CalendarProvider = ({
 
           if (!syncResponse.ok) {
             const errorData = await syncResponse.json();
-            // Handle specific errors like 404/410 (eventNotFound) or 401 (needsReAuth)
             if (errorData.eventNotFound) {
               console.warn(
                 `Google event ${googleCalendarEventId} not found during delete sync. Proceeding with local delete.`
