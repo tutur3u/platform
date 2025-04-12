@@ -609,6 +609,59 @@ export const CalendarProvider = ({
 
       if (!ws) throw new Error('No workspace selected');
 
+      // Find the event first to get the Google Calendar ID
+      const eventToDelete = events.find((e: CalendarEvent) => e.id === eventId);
+      const googleCalendarEventId = eventToDelete?.google_event_id
+
+      // --- Google Calendar Sync (Delete) ---
+      if (googleCalendarEventId && enableExperimentalGoogleCalendar) {
+        // Check if ID exists and feature enabled
+        console.log(
+          `Attempting to delete Google Calendar event: ${googleCalendarEventId}`
+        );
+        try {
+          const syncResponse = await fetch('/api/v1/calendar/auth/sync', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ googleCalendarEventId }),
+          });
+
+          if (!syncResponse.ok) {
+            const errorData = await syncResponse.json();
+            // Handle specific errors like 404/410 (eventNotFound) or 401 (needsReAuth)
+            if (errorData.eventNotFound) {
+              console.warn(
+                `Google event ${googleCalendarEventId} not found during delete sync. Proceeding with local delete.`
+              );
+              // Don't throw, just log. The event is gone from Google anyway.
+            } else if (errorData.needsReAuth) {
+              console.error(
+                'Google token needs refresh/re-auth during delete.'
+              );
+              // TODO: Notify user to re-authenticate. Should we block local delete? Maybe not.
+            } else {
+              // Throw an error to potentially stop the local delete or notify user
+              throw new Error(
+                `Google Calendar sync (DELETE) failed: ${syncResponse.statusText} - ${JSON.stringify(errorData)}`
+              );
+            }
+          } else {
+            console.log(
+              `Google Calendar event ${googleCalendarEventId} deleted via sync.`
+            );
+          }
+        } catch (syncError) {
+          console.error(
+            `Failed to sync delete with Google Calendar for event ${eventId}:`,
+            syncError
+          );
+        }
+      } else if (enableExperimentalGoogleCalendar && !googleCalendarEventId) {
+        console.log(
+          `Event ${eventId} has no Google Calendar ID, skipping delete sync.`
+        );
+      }
+
       try {
         const supabase = createClient();
         const { error } = await supabase

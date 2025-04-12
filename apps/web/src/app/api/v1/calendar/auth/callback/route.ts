@@ -99,7 +99,7 @@ export async function GET(request: Request) {
     }
 
     // Redirect to the calendar page without tokens in the URL
-    return NextResponse.redirect(new URL('/onboarding', request.url), 302);
+    return NextResponse.redirect(new URL('/onboarding/calendar', request.url), 302);
   } catch (error) {
     console.error('Error during OAuth callback:', error);
     return NextResponse.json(
