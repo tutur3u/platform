@@ -107,8 +107,8 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
     // Combine all data
     return filteredChallenges.map((challenge) => ({
       ...challenge,
-      password_salt: challenge.password_salt ? '' : null,
-      password_hash: challenge.password_hash ? '' : null,
+      password_salt: challenge.password_salt !== null ? '' : null,
+      password_hash: challenge.password_hash !== null ? '' : null,
       // Hide password hash from response
       // If it's undefined, it means the challenge has no password
       // Otherwise, it's an empty string to avoid exposing the password hash
