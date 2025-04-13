@@ -42,32 +42,30 @@ const testCaseSchema = z.object({
   input: z.string().min(1, 'Input is required'),
 });
 
-const formSchema = z
-  .object({
-    title: z.string().min(3, {
-      message: 'Title must be at least 3 characters.',
-    }),
-    description: z.string().min(10, {
-      message: 'Description must be at least 10 characters.',
-    }),
-    maxPromptLength: z.coerce
-      .number()
-      .min(1, {
-        message: 'Max prompt length must be at least 1.',
-      })
-      .default(1000),
-    exampleInput: z.string().min(1, {
-      message: 'Example input is required.',
-    }),
-    exampleOutput: z.string().min(1, {
-      message: 'Example output is required.',
-    }),
-    challengeId: z.string().nonempty('Challenge is required'),
-    testCases: z
-      .array(testCaseSchema)
-      .min(1, 'At least one test case is required'),
-  })
-  .required();
+const formSchema = z.object({
+  title: z.string().min(3, {
+    message: 'Title must be at least 3 characters.',
+  }),
+  description: z.string().min(10, {
+    message: 'Description must be at least 10 characters.',
+  }),
+  maxPromptLength: z.coerce
+    .number()
+    .min(1, {
+      message: 'Max prompt length must be at least 1.',
+    })
+    .default(1000),
+  exampleInput: z.string().min(1, {
+    message: 'Example input is required.',
+  }),
+  exampleOutput: z.string().min(1, {
+    message: 'Example output is required.',
+  }),
+  challengeId: z.string().nonempty('Challenge is required'),
+  testCases: z
+    .array(testCaseSchema)
+    .min(1, 'At least one test case is required'),
+});
 
 export type ProblemFormValues = z.infer<typeof formSchema>;
 
@@ -338,7 +336,7 @@ export default function ProblemForm({
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       No test cases added yet.
                     </p>
                   )}
