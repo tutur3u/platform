@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   }
 
   if (!googleTokens?.access_token) {
-    // TODO: Don't return error immediately, maybe user hasn't linked (fix in the future)
+    // T0D0: Don't return error immediately, maybe user hasn't linked (fix in the future)
     return NextResponse.json(
       { error: 'Google Calendar not authenticated' },
       { status: 401 }

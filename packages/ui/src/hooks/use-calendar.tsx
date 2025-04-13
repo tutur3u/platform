@@ -411,7 +411,7 @@ export const CalendarProvider = ({
 
   const addEmptyEvent = useCallback(
     (date: Date) => {
-      // TODO: Fix this weird workaround in the future
+      // TOD0: Fix this weird workaround in the future
       const selectedDate = dayjs(date);
       const correctDate = selectedDate.add(1, 'day');
 
@@ -642,7 +642,7 @@ export const CalendarProvider = ({
               console.error(
                 'Google token needs refresh/re-auth during delete.'
               );
-              // TODO: Notify user to re-authenticate. Should we block local delete? Maybe not.
+              // TOD0: Notify user to re-authenticate. Should we block local delete? Maybe not.
             } else {
               // Throw an error to potentially stop the local delete or notify user
               throw new Error(
