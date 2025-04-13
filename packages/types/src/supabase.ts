@@ -2134,6 +2134,32 @@ export type Database = {
           },
         ];
       };
+      nova_challenge_whitelisted_emails: {
+        Row: {
+          challenge_id: string;
+          created_at: string;
+          email: string;
+        };
+        Insert: {
+          challenge_id: string;
+          created_at?: string;
+          email: string;
+        };
+        Update: {
+          challenge_id?: string;
+          created_at?: string;
+          email?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_challenge_whitelisted_emails_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_challenges: {
         Row: {
           close_at: string | null;
@@ -2149,6 +2175,7 @@ export type Database = {
           password_salt: string | null;
           previewable_at: string | null;
           title: string;
+          whitelisted_only: boolean;
         };
         Insert: {
           close_at?: string | null;
@@ -2164,6 +2191,7 @@ export type Database = {
           password_salt?: string | null;
           previewable_at?: string | null;
           title: string;
+          whitelisted_only?: boolean;
         };
         Update: {
           close_at?: string | null;
@@ -2179,6 +2207,7 @@ export type Database = {
           password_salt?: string | null;
           previewable_at?: string | null;
           title?: string;
+          whitelisted_only?: boolean;
         };
         Relationships: [];
       };
@@ -3981,11 +4010,11 @@ export type Database = {
           description: string;
           end_at: string;
           id: string;
+          location: string | null;
           locked: boolean;
           start_at: string;
           title: string;
           ws_id: string;
-          location: string;
         };
         Insert: {
           color?: string | null;
@@ -3993,6 +4022,7 @@ export type Database = {
           description?: string;
           end_at: string;
           id?: string;
+          location?: string | null;
           locked?: boolean;
           start_at: string;
           title?: string;
@@ -4004,6 +4034,7 @@ export type Database = {
           description?: string;
           end_at?: string;
           id?: string;
+          location?: string | null;
           locked?: boolean;
           start_at?: string;
           title?: string;

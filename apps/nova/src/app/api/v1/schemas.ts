@@ -16,6 +16,7 @@ export const createChallengeSchema = z.object({
     })
   ),
   enabled: z.boolean(),
+  whitelistedOnly: z.boolean(),
   maxAttempts: z.number().min(1, {
     message: 'Max attempts must be at least 1.',
   }),

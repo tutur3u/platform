@@ -1,10 +1,11 @@
 'use client';
 
-import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
+import ChallengeForm, { ChallengeFormValues } from './challengeForm';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  type NovaChallenge,
-  type NovaChallengeCriteria,
+  NovaChallenge,
+  NovaChallengeCriteria,
+  NovaChallengeWhitelistedEmail,
 } from '@tuturuuu/types/db';
 import {
   Dialog,
@@ -19,17 +20,15 @@ import { useMemo, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
+  whitelists: NovaChallengeWhitelistedEmail[];
 };
 
-interface EditChallengeDialogProps {
+interface Props {
   challenge: ExtendedNovaChallenge;
   trigger: React.ReactNode;
 }
 
-export default function EditChallengeDialog({
-  challenge,
-  trigger,
-}: EditChallengeDialogProps) {
+export default function EditChallengeDialog({ challenge, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,6 +46,8 @@ export default function EditChallengeDialog({
       })),
       duration: challenge.duration,
       enabled: challenge.enabled,
+      whitelistedOnly: challenge.whitelisted_only,
+      whitelistedEmails: challenge.whitelists.map((w) => w.email),
       openAt: challenge.open_at ? new Date(challenge.open_at) : null,
       closeAt: challenge.close_at ? new Date(challenge.close_at) : null,
       previewableAt: challenge.previewable_at
@@ -120,6 +121,31 @@ export default function EditChallengeDialog({
           fetch(`/api/v1/criteria/${c.id}`, {
             method: 'DELETE',
           })
+        ),
+      ]);
+
+      const emailsToCreate = values.whitelistedEmails.filter(
+        (email) => !challenge.whitelists.map((w) => w.email).includes(email)
+      );
+
+      const emailsToDelete = challenge.whitelists
+        .filter((w) => !values.whitelistedEmails.includes(w.email))
+        .map((w) => w.email);
+
+      await Promise.allSettled([
+        ...emailsToCreate.map((email) =>
+          fetch(`/api/v1/challenges/${challenge.id}/whitelists`, {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+          })
+        ),
+        ...emailsToDelete.map((email) =>
+          fetch(
+            `/api/v1/challenges/${challenge.id}/whitelists?email=${email}`,
+            {
+              method: 'DELETE',
+            }
+          )
         ),
       ]);
 
