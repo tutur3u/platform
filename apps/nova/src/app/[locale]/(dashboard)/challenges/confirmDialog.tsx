@@ -67,7 +67,7 @@ export function ConfirmDialog({
 
     try {
       // Check password if challenge is password protected
-      if (challenge.password_hash) {
+      if (challenge.password_hash !== null) {
         const response = await fetch(`/api/auth/challenges/verify-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -151,7 +151,7 @@ export function ConfirmDialog({
             {mode === 'start' ? 'Start Challenge' : 'Resume Challenge'}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {challenge.password_hash
+            {challenge.password_hash !== null
               ? mode === 'start'
                 ? 'Please enter the password to start the challenge.'
                 : 'Please enter the password to resume the challenge.'
@@ -163,7 +163,7 @@ export function ConfirmDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleConfirm)}>
-            {challenge.password_hash && (
+            {challenge.password_hash !== null && (
               <FormField
                 control={form.control}
                 name="password"
