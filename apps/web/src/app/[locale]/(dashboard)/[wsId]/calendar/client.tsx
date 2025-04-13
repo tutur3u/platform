@@ -1,6 +1,5 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Calendar } from '@tuturuuu/ui/legacy/calendar/Calendar';
@@ -24,7 +23,7 @@ export default function CalendarClientPage({
       useQuery={useQuery}
       useQueryClient={useQueryClient}
       experimentalGoogleCalendarLinked={experimentalGoogleCalendarLinked}
-      enableExperimentalGoogleCalendar={DEV_MODE}
+      enableExperimentalGoogleCalendar={true}
     />
   );
 }
