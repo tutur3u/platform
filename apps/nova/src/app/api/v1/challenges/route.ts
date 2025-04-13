@@ -27,9 +27,7 @@ export async function GET(request: Request) {
   try {
     let query = sbAdmin
       .from('nova_challenges')
-      .select(
-        'id, title, description, enabled, open_at, close_at, previewable_at, duration, max_attempts, max_daily_attempts, password_hash'
-      )
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (enabled) {
@@ -49,10 +47,11 @@ export async function GET(request: Request) {
     return NextResponse.json(
       challenges.map((challenge) => ({
         ...challenge,
+        password_salt: challenge.password_salt ? '' : null,
+        password_hash: challenge.password_hash ? '' : null,
         // Hide password hash from response
-        // If it's undefined, it means the challenge has no password
+        // If it's null, the challenge has no password
         // Otherwise, it's an empty string to avoid exposing the password hash
-        password_hash: challenge.password_hash ? '' : undefined,
       })),
       { status: 200 }
     );

@@ -266,7 +266,6 @@ export default function ChallengeForm({
                             <Input
                               type="number"
                               {...field}
-                              value={field.value || 1}
                               onChange={(e) =>
                                 field.onChange(parseInt(e.target.value) || 1)
                               }
@@ -291,7 +290,6 @@ export default function ChallengeForm({
                             <Input
                               type="number"
                               {...field}
-                              value={field.value || 1}
                               onChange={(e) =>
                                 field.onChange(parseInt(e.target.value) || 1)
                               }

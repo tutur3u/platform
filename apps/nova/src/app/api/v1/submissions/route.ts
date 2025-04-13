@@ -22,7 +22,8 @@ export async function GET(request: Request) {
     let query = supabase
       .from('nova_submissions')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
     if (problemId) {
       query = query.eq('problem_id', problemId);
