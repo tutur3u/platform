@@ -58,7 +58,7 @@ export function ConfirmDialog({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      password: challenge.password_hash ? '' : undefined,
+      password: challenge.password_hash !== null ? '' : undefined,
     },
   });
 
