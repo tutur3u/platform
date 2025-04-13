@@ -187,7 +187,6 @@ export const EventLocationInput = ({
             onClick={openGoogleMaps}
             className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             title="Open in Google Maps"
-            disabled={disabled}
           >
             <MapPin className="h-4 w-4" />
           </button>
