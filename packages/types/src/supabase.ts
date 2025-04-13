@@ -4009,6 +4009,7 @@ export type Database = {
           created_at: string | null;
           description: string;
           end_at: string;
+          google_event_id: string | null;
           id: string;
           location: string | null;
           locked: boolean;
@@ -4021,6 +4022,7 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at: string;
+          google_event_id?: string | null;
           id?: string;
           location?: string | null;
           locked?: boolean;
@@ -4033,6 +4035,7 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at?: string;
+          google_event_id?: string | null;
           id?: string;
           location?: string | null;
           locked?: boolean;
