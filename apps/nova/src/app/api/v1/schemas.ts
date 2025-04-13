@@ -13,7 +13,7 @@ export const createChallengeSchema = z.object({
   maxDailyAttempts: z.number().min(1, {
     message: 'Max daily attempts must be at least 1.',
   }),
-  password: z.string().nullable(),
+  password: z.string().nullable().optional(),
   previewableAt: z.string().nullable(),
   openAt: z.string().nullable(),
   closeAt: z.string().nullable(),
