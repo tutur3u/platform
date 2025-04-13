@@ -4,6 +4,7 @@ import {
   NovaChallengeCriteria,
   NovaProblem,
   NovaProblemTestCase,
+  NovaSession,
 } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -130,6 +131,36 @@ export default function PromptForm({ problem }: Props) {
       if (fetchedSubmissions) {
         setSubmissions(fetchedSubmissions);
         setAttempts(fetchedSubmissions.length);
+      }
+
+      const fetchedSessionsResponse = await fetch(
+        `/api/v1/sessions?challengeId=${problem.challenge_id}`
+      );
+
+      if (!fetchedSessionsResponse.ok) {
+        throw new Error('Failed to fetch sessions');
+      }
+
+      const fetchedSessions = await fetchedSessionsResponse.json();
+      const activeSession = fetchedSessions.find(
+        (session: NovaSession) => session.status === 'IN_PROGRESS'
+      );
+
+      if (activeSession) {
+        const updatedSessionResponse = await fetch(
+          `/api/v1/sessions/${activeSession.id}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              totalScore: activeSession.total_score + score,
+            }),
+          }
+        );
+
+        if (!updatedSessionResponse.ok) {
+          throw new Error('Failed to update session');
+        }
       }
     } catch (error: any) {
       console.error('Error:', error);

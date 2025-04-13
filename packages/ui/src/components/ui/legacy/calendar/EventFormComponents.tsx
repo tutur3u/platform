@@ -156,7 +156,10 @@ export const EventLocationInput = ({
       // encode the address to be used in the URL
       const encodedAddress = encodeURIComponent(value);
       // open Google Maps in a new tab
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
+        '_blank'
+      );
     }
   };
 
@@ -175,14 +178,14 @@ export const EventLocationInput = ({
           placeholder="Add location"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="border-none bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+          className="border-none bg-muted/50 pr-10 focus-visible:ring-0 focus-visible:ring-offset-0"
           disabled={disabled}
         />
         {value && (
           <button
             type="button"
             onClick={openGoogleMaps}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             title="Open in Google Maps"
             disabled={disabled}
           >

@@ -1,63 +1,20 @@
 'use client';
 
 import ChallengeCardSkeleton from './ChallengeCardSkeleton';
+import { fetchChallenges } from './actions';
 import ChallengeCard from './challengeCard';
 import { useQuery } from '@tanstack/react-query';
-import type { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Clock, Filter, Search } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useMemo, useState } from 'react';
 
-type ExtendedNovaChallenge = NovaChallenge & {
-  criteria: NovaChallengeCriteria[];
-};
-
-interface ChallengesListProps {
+interface Props {
   isAdmin: boolean;
 }
 
-async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
-  try {
-    const response = await fetch('/api/v1/challenges', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch challenges');
-    }
-
-    const challenges = await response.json();
-
-    const criteria = await Promise.all(
-      challenges.map(async (challenge: NovaChallenge) => {
-        const response = await fetch(
-          `/api/v1/criteria?challengeId=${challenge.id}`
-        );
-        const data = await response.json();
-        return {
-          challengeId: challenge.id,
-          criteria: data,
-        };
-      })
-    );
-
-    return challenges.map((challenge: NovaChallenge) => ({
-      ...challenge,
-      criteria:
-        criteria.find((c) => c.challengeId === challenge.id)?.criteria || [],
-    }));
-  } catch (error) {
-    console.error('Error fetching challenges:', error);
-    return [];
-  }
-}
-
-export default function ChallengesList({ isAdmin }: ChallengesListProps) {
+export default function ChallengesList({ isAdmin }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<
     'disabled' | 'upcoming' | 'preview' | 'active' | 'closed' | 'all'
@@ -171,10 +128,10 @@ export default function ChallengesList({ isAdmin }: ChallengesListProps) {
 
   return (
     <>
-      <div className="mb-6 rounded-lg border bg-card p-4 shadow-sm">
-        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4">
+      <div className="bg-card mb-6 rounded-lg border p-4 shadow-sm">
+        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-x-4 md:space-y-0">
           <div className="relative flex-1">
-            <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute left-3 top-2.5 h-4 w-4" />
             <Input
               placeholder="Search challenges..."
               className="pl-9"
@@ -184,7 +141,7 @@ export default function ChallengesList({ isAdmin }: ChallengesListProps) {
           </div>
 
           <div className="flex items-center">
-            <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+            <Filter className="text-muted-foreground mr-2 h-4 w-4" />
             <Tabs
               defaultValue="all"
               value={filter}
@@ -221,9 +178,9 @@ export default function ChallengesList({ isAdmin }: ChallengesListProps) {
         </div>
       ) : (
         <div className="mt-12 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-          <Clock className="h-12 w-12 text-muted-foreground/50" />
+          <Clock className="text-muted-foreground/50 h-12 w-12" />
           <h3 className="mt-4 text-xl font-medium">No challenges found</h3>
-          <p className="mt-2 max-w-md text-muted-foreground">
+          <p className="text-muted-foreground mt-2 max-w-md">
             {searchQuery
               ? 'No challenges match your search criteria. Try adjusting your filters or search terms.'
               : 'There are no challenges available at the moment. Check back later or contact an administrator.'}
