@@ -1,6 +1,5 @@
 'use client';
 
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { CalendarProvider, useCalendar } from '../../../../hooks/use-calendar';
 import CalendarHeader from './CalendarHeader';
 import { CalendarSettingsDialog } from './CalendarSettingsDialog';
@@ -11,6 +10,7 @@ import WeekdayBar from './WeekdayBar';
 import { CalendarSettings } from './settings/CalendarSettingsContext';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   type CalendarView,
   useViewTransition,
@@ -45,9 +45,11 @@ const CreateEventButton = () => {
 
 // Settings button component
 const SettingsButton = ({
+  showSyncButton = false,
   // initialSettings,
   onSaveSettings,
 }: {
+  showSyncButton?: boolean;
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
@@ -74,7 +76,7 @@ const SettingsButton = ({
       setIsSyncing(false);
     }
   };
-  
+
   const handleSaveSettings = async (newSettings: CalendarSettings) => {
     console.log('Saving settings from dialog:', newSettings);
 
@@ -111,25 +113,27 @@ const SettingsButton = ({
         </TooltipTrigger>
         <TooltipContent>Calendar settings</TooltipContent>
       </Tooltip>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full shadow-lg"
-            onClick={handleSyncGoogleCalendar}
-            disabled={isSyncing}
-          >
-            {isSyncing ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Link className="h-5 w-5" />
-            )}
-            <span className="sr-only">Sync Google Calendar</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Sync Google Calendar</TooltipContent>
-      </Tooltip>
+      {showSyncButton && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-full shadow-lg"
+              onClick={handleSyncGoogleCalendar}
+              disabled={isSyncing}
+            >
+              {isSyncing ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Link className="h-5 w-5" />
+              )}
+              <span className="sr-only">Sync Google Calendar</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Sync Google Calendar</TooltipContent>
+        </Tooltip>
+      )}
       <CalendarSettingsDialog
         open={open}
         onOpenChange={setOpen}
@@ -571,12 +575,24 @@ const CalendarContent = ({
 
       {disabled ? null : (
         <>
-          <UnifiedEventModal
-            experimentalGoogleCalendarLinked={experimentalGoogleCalendarLinked}
-            enableExperimentalGoogleCalendar={enableExperimentalGoogleCalendar}
-          />
+          {workspace && (
+            <UnifiedEventModal
+              wsId={workspace.id}
+              experimentalGoogleCalendarLinked={
+                experimentalGoogleCalendarLinked
+              }
+              enableExperimentalGoogleCalendar={
+                enableExperimentalGoogleCalendar
+              }
+            />
+          )}
           <CreateEventButton />
           <SettingsButton
+            showSyncButton={
+              !!workspace?.id &&
+              experimentalGoogleCalendarLinked &&
+              enableExperimentalGoogleCalendar
+            }
             initialSettings={initialSettings}
             onSaveSettings={onSaveSettings}
           />

@@ -95,9 +95,11 @@ const AIFormSchema = z.object({
 });
 
 export function UnifiedEventModal({
+  wsId,
   experimentalGoogleCalendarLinked = false,
   enableExperimentalGoogleCalendar = false,
 }: {
+  wsId: string;
   experimentalGoogleCalendarLinked?: boolean;
   enableExperimentalGoogleCalendar?: boolean;
 }) {
@@ -120,7 +122,7 @@ export function UnifiedEventModal({
   const handleGoogleAuth = async () => {
     setIsGoogleAuthenticating(true);
     try {
-      const response = await fetch('/api/v1/calendar/auth', {
+      const response = await fetch(`/api/v1/calendar/auth?wsId=${wsId}`, {
         method: 'GET',
       });
 

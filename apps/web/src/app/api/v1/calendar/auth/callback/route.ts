@@ -5,6 +5,11 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
+  const wsId = url.searchParams.get('state');
+
+  if (!wsId) {
+    return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
+  }
 
   if (!code) {
     return NextResponse.json({ error: 'No code provided' }, { status: 400 });
@@ -49,6 +54,7 @@ export async function GET(request: Request) {
       .from('calendar_auth_tokens')
       .select('*')
       .eq('user_id', user.id)
+      .eq('ws_id', wsId)
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
@@ -84,6 +90,7 @@ export async function GET(request: Request) {
         .from('calendar_auth_tokens')
         .insert({
           user_id: user.id,
+          ws_id: wsId,
           access_token: tokens.access_token,
           refresh_token: refreshToken,
           created_at: new Date().toISOString(),
@@ -99,7 +106,10 @@ export async function GET(request: Request) {
     }
 
     // Redirect to the calendar page without tokens in the URL
-    return NextResponse.redirect(new URL('/onboarding/calendar', request.url), 302);
+    return NextResponse.redirect(
+      new URL(`/${wsId}/calendar`, request.url),
+      302
+    );
   } catch (error) {
     console.error('Error during OAuth callback:', error);
     return NextResponse.json(
