@@ -1,5 +1,6 @@
 'use client';
 
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { CalendarProvider, useCalendar } from '../../../../hooks/use-calendar';
 import CalendarHeader from './CalendarHeader';
 import { CalendarSettingsDialog } from './CalendarSettingsDialog';
@@ -16,7 +17,7 @@ import {
 } from '@tuturuuu/ui/hooks/use-view-transition';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { PlusIcon, Settings } from 'lucide-react';
+import { Link, Loader2, PlusIcon, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 // Floating action button for quick event creation
@@ -50,9 +51,30 @@ const SettingsButton = ({
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const { updateSettings, settings } = useCalendar();
+  const { updateSettings, settings, syncAllFromGoogleCalendar } = useCalendar();
+  const [isSyncing, setIsSyncing] = useState(false);
 
+  const handleSyncGoogleCalendar = async () => {
+    setIsSyncing(true);
+    try {
+      await syncAllFromGoogleCalendar();
+      toast({
+        title: 'Success',
+        description: 'Google Calendar events synced successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to sync Google Calendar events',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+  
   const handleSaveSettings = async (newSettings: CalendarSettings) => {
     console.log('Saving settings from dialog:', newSettings);
 
@@ -88,6 +110,25 @@ const SettingsButton = ({
           </Button>
         </TooltipTrigger>
         <TooltipContent>Calendar settings</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 rounded-full shadow-lg"
+            onClick={handleSyncGoogleCalendar}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Link className="h-5 w-5" />
+            )}
+            <span className="sr-only">Sync Google Calendar</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Sync Google Calendar</TooltipContent>
       </Tooltip>
       <CalendarSettingsDialog
         open={open}

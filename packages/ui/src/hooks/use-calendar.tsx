@@ -57,7 +57,10 @@ const CalendarContext = createContext<{
   getModalStatus: (id: string) => boolean;
   getActiveEvent: () => CalendarEvent | undefined;
   isModalActive: () => boolean;
+  // google calendar API
   syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
+  syncAllFromGoogleCalendar: () => Promise<void>;
+
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
 }>({
@@ -80,7 +83,10 @@ const CalendarContext = createContext<{
   getModalStatus: () => false,
   getActiveEvent: () => undefined,
   isModalActive: () => false,
+  // Google Calendar API
   syncWithGoogleCalendar: () => Promise.resolve(),
+  syncAllFromGoogleCalendar: () => Promise.resolve(),
+
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
 });
@@ -680,6 +686,81 @@ export const CalendarProvider = ({
     [ws, refresh, pendingNewEvent]
   );
 
+  const syncAllFromGoogleCalendar = useCallback(async () => {
+    if (!enableExperimentalGoogleCalendar || !ws?.id) {
+      console.log('Google Calendar sync disabled or no workspace selected');
+      return;
+    }
+
+    try {
+      // get all events from Google Calendar
+      const response = await fetch('/api/v1/calendar/auth/fetch', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || 'Failed to fetch Google Calendar events'
+        );
+      }
+
+      const { events: googleEvents } = await response.json();
+
+      // get existing events from Supabase
+      const supabase = createClient();
+      const { data: localEvents, error: localEventsError } = await supabase
+        .from('workspace_calendar_events')
+        .select('id, google_event_id')
+        .eq('ws_id', ws.id);
+
+      if (localEventsError) {
+        throw new Error('Failed to fetch local events');
+      }
+
+      // create a set of existing Google event IDs from Supabase
+      const localGoogleEventIds = new Set(
+        localEvents
+          .filter((e: any) => e.google_event_id)
+          .map((e: any) => e.google_event_id)
+      );
+
+      // filter out events that already exist in Supabase
+      const newEvents = googleEvents.filter(
+        (event: any) => !localGoogleEventIds.has(event.google_event_id)
+      );
+
+      // create a new event in Supabase for each new Google Calendar event
+      for (const event of newEvents) {
+        const { error: insertError } = await supabase
+          .from('workspace_calendar_events')
+          .insert({
+            title: event.title,
+            description: event.description,
+            start_at: event.start_at,
+            end_at: event.end_at,
+            color: event.color,
+            location: event.location,
+            ws_id: ws.id,
+            google_event_id: event.google_event_id,
+            locked: event.locked || false,
+          });
+
+        if (insertError) {
+          console.error('Failed to insert event:', insertError);
+          continue; // continue to the next event on error
+        }
+      }
+
+      console.log(`Synced ${newEvents.length} new events from Google Calendar`);
+      refresh();
+    } catch (error) {
+      console.error('Failed to sync all events from Google Calendar:', error);
+      throw error;
+    }
+  }, [enableExperimentalGoogleCalendar, ws?.id, refresh]);
+
   // Google Calendar sync moved to API Route
   const syncWithGoogleCalendar = useCallback(
     async (event: CalendarEvent) => {
@@ -836,6 +917,7 @@ export const CalendarProvider = ({
 
     // Google Calendar API
     syncWithGoogleCalendar,
+    syncAllFromGoogleCalendar,
 
     // Settings API
     settings,
