@@ -57,8 +57,8 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const company: NavItem[] = [
     {
       href: DEV_MODE
-        ? 'http://localhost:3000/neo-league/introduction'
-        : 'https://docs.tuturuuu.com/neo-league/introduction',
+        ? 'http://localhost:3000/prompt-engineering/introduction'
+        : 'https://docs.tuturuuu.com/prompt-engineering/introduction',
       label: t('common.learn'),
       description: t('common.learn-description'),
       icon: <BookOpen className="h-4 w-4" />,
