@@ -56,7 +56,9 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
 
   const company: NavItem[] = [
     {
-      href: '/learn',
+      href: DEV_MODE
+        ? 'http://localhost:3000/neo-league/introduction'
+        : 'https://docs.tuturuuu.com/neo-league/introduction',
       label: t('common.learn'),
       description: t('common.learn-description'),
       icon: <BookOpen className="h-4 w-4" />,
