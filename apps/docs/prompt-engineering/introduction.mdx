@@ -1,0 +1,193 @@
+---
+title: 'Introduction to Prompt Engineering'
+description: 'A foundational guide for NEO LEAGUE: Prompt the Future — empowering students to master the art of prompting and unlock AI’s full creative potential.'
+---
+
+## What is a prompt
+
+A **prompt** is a natural language input that instructs a generative AI on the task at hand. These AI models can create a variety of content like stories, conversations, videos, and more. The quality of the output depends on the prompt's clarity and context, as AI models need accurate details to produce meaningful and precise responses.
+
+### Prompt content types
+
+A prompt can include one or more of the following elements:
+
+- [**Input** (required)](#input)
+- [**Context**](#context)
+- [**Examples**](#examples)
+
+### Input
+
+The input is the core part of a prompt. It tells the model what task to perform or what question to answer. Inputs come in different forms:
+
+#### Question input
+
+A **question input** asks the model for an answer, usually in the form of a direct question.
+
+**Prompt Example:**
+
+```prompt
+What's a good name for a flower shop that specializes in selling bouquets of dried flowers? Create a list of 10 options with just the names.
+```
+
+**Response:**
+
+```response
+Here are 10 names for a flower shop specializing in dried flowers:
+
+1. Everlasting Blooms
+2. Dried & Delightful
+3. The Petal Preserve
+4. Whispers of Wildflowers
+5. Forever Blooms
+6. The Botanical Muse
+7. Timeless Blooms
+8. Dried Flower Co.
+9. Bloom & Co.
+10. The Sun-Kissed Petals
+```
+
+#### Task Input
+
+A **task input** asks the model to perform a specific action—like generating ideas, making a list, writing a summary, or offering suggestions.
+
+**Prompt Example:**
+
+```prompt
+Give me a simple list of just the things that I must bring on a camping trip. The list should have 10 items.
+```
+
+**Response:**
+
+```response
+Here's a list of 10 essential items for a camping trip:
+
+1. **Tent:** Your shelter from the elements.
+2. **Sleeping Bag:** Stay warm and comfortable.
+3. **Sleeping Pad:** Insulation and cushioning for a good night's sleep.
+4. **Headlamp or Flashlight:** Light for nighttime activities.
+5. **First Aid Kit:** Be prepared for minor injuries.
+6. **Water Bottle/Hydration Pack:** Stay hydrated.
+7. **Food and Snacks:** Fuel for your adventures.
+8. **Cooking Gear:** Camp stove, fuel, utensils, etc.
+9. **Knife and Multitool:** Essential for various tasks.
+10. **Camp Chair:** Enjoy your campfire and meals comfortably.
+```
+
+#### Entity Input
+
+An **entity input** is when the prompt gives the model a specific piece of content to act on—like summarizing a paragraph, classifying a sentence, or translating a passage. It’s often paired with clear instructions on what to do with that content.
+
+**Prompt Example:**
+
+```prompt
+Classify the following items as [large, small].
+Elephant
+Mouse
+Snail
+```
+
+**Response:**
+
+```response
+Here's the classification:
+
+* **Elephant:** Large
+* **Mouse:** Small
+* **Snail:** Small
+```
+
+#### Completion Input
+
+**Prompt Example:**
+
+```prompt
+Complete the following prompt: Some simple strategies for overcoming writer's block include...
+```
+
+**Response:**
+
+```response
+Some simple strategies for overcoming writer's block include:
+
+* **Freewriting:** Write non-stop for a set amount of time (5-10 minutes) without worrying about grammar, spelling, or even making sense. Just keep your pen moving and let your thoughts flow freely. This can help you loosen up and access ideas you might not have considered otherwise.
+* **Brainstorming:** Make a list of everything that comes to mind related to your topic, no matter how silly or unrelated it seems. You can also use mind mapping or other visual brainstorming techniques.
+* **Changing your environment:** Sometimes a change of scenery can be all you need to get the creative juices flowing. Go for a walk, work in a coffee shop, or even just move to a different room in your house.
+* **Reading:** Immerse yourself in the work of other writers, especially those who inspire you. Pay attention to their style, their structure, and their use of language.
+* **Taking a break:** Sometimes the best way to overcome writer's block is to simply step away from the project for a while. Go for a walk, watch a movie, listen to music, or do something else that you enjoy. You might be surprised at how much clearer your head feels when you return to your writing.
+* **Focusing on a single element:** Instead of tackling the entire project, focus on a single sentence, paragraph, or scene. Once you get something down on paper, it can be easier to build from there.
+* **Starting with the ending:** If you're stuck on the beginning, try writing the ending first. This can help you to clarify your overall vision for the project and provide a framework for your ideas.
+* **Talking it out:** Share your ideas and challenges with a friend, a writing group, or a writing coach. Discussing your project with someone else can help you to see it from a new perspective and find solutions to your writing problems.
+
+Remember, writer's block is a common experience, and it's not a sign that you're a bad writer. Just be patient with yourself, try some of these strategies, and keep writing!
+```
+
+### Context
+
+The **context** section gives the model helpful background or specific instructions that shape how it responds. You can use context to:
+
+- Direct the model’s behavior.
+- Supply relevant information it should refer to.
+- Limit the model’s answers to specific data or rules.
+
+Use context when you want to guide the model more clearly or restrict it to the facts you've provided.
+
+**Prompt Example:**
+
+```prompt
+Marbles:
+Color: red
+Number: 12
+Color: blue
+Number: 28
+Color: yellow
+Number: 15
+Color: green
+Number: 17
+
+How many green marbles are there?
+```
+
+**Response:**
+
+```response
+There are 17 green marbles.
+```
+
+In this case, the context is the list of marble colors and quantities, and the model uses that information to answer accurately.
+
+### Examples
+
+**Examples** are pairs of inputs and expected outputs you include in your prompt to show the model what kind of response you're looking for. This technique is especially useful when you want the output to follow a certain format or logic.
+
+**Prompt Example:**
+
+```prompt
+Classify the following.
+Options:
+- red wine
+- white wine
+
+Text: Chardonnay
+The answer is: white wine
+Text: Cabernet
+The answer is: red wine
+Text: Moscato
+The answer is: white wine
+
+Text: Riesling
+The answer is:
+```
+
+**Response:**
+
+```response
+The answer is: white wine
+```
+
+By including a few classification examples before the final input, you're teaching the model how to respond.
+
+---
+
+### References
+
+- Some sections in this guide are paraphrased or inspired by Google’s [Gemini API documentation on prompting](https://ai.google.dev/gemini-api/docs/prompting-intro#prompt-content-types).
