@@ -1,0 +1,2 @@
+CREATE INDEX idx_workspace_calendar_events_start_at ON public.workspace_calendar_events(start_at);
+CREATE INDEX idx_workspace_calendar_events_end_at ON public.workspace_calendar_events(end_at); 
