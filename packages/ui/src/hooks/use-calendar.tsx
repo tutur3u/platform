@@ -57,7 +57,10 @@ const CalendarContext = createContext<{
   getModalStatus: (id: string) => boolean;
   getActiveEvent: () => CalendarEvent | undefined;
   isModalActive: () => boolean;
+  // google calendar API
   syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
+  syncAllFromGoogleCalendar: () => Promise<void>;
+
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
 }>({
@@ -80,7 +83,10 @@ const CalendarContext = createContext<{
   getModalStatus: () => false,
   getActiveEvent: () => undefined,
   isModalActive: () => false,
+  // Google Calendar API
   syncWithGoogleCalendar: () => Promise.resolve(),
+  syncAllFromGoogleCalendar: () => Promise.resolve(),
+
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
 });
@@ -405,7 +411,7 @@ export const CalendarProvider = ({
 
   const addEmptyEvent = useCallback(
     (date: Date) => {
-      // TODO: Fix this weird workaround in the future
+      // TOD0: Fix this weird workaround in the future
       const selectedDate = dayjs(date);
       const correctDate = selectedDate.add(1, 'day');
 
@@ -599,6 +605,8 @@ export const CalendarProvider = ({
 
   const deleteEvent = useCallback(
     async (eventId: string) => {
+      console.log('Current events array:', events);
+      console.log('Deleting event with ID:', eventId);
       // If this is a pending new event that hasn't been saved yet
       if (pendingNewEvent && eventId === 'new') {
         // Just clear the pending event
@@ -608,6 +616,55 @@ export const CalendarProvider = ({
       }
 
       if (!ws) throw new Error('No workspace selected');
+
+      // Find the event first to get the Google Calendar ID
+      const eventToDelete = events.find((e: CalendarEvent) => e.id === eventId);
+      const googleCalendarEventId = eventToDelete?.google_event_id;
+
+      // --- Google Calendar Sync (Delete) ---
+      if (googleCalendarEventId && enableExperimentalGoogleCalendar) {
+        // Check if ID exists and feature enabled
+        try {
+          const syncResponse = await fetch('/api/v1/calendar/auth/sync', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ googleCalendarEventId }),
+          });
+
+          if (!syncResponse.ok) {
+            const errorData = await syncResponse.json();
+            if (errorData.eventNotFound) {
+              console.warn(
+                `Google event ${googleCalendarEventId} not found during delete sync. Proceeding with local delete.`
+              );
+              // Don't throw, just log. The event is gone from Google anyway.
+            } else if (errorData.needsReAuth) {
+              console.error(
+                'Google token needs refresh/re-auth during delete.'
+              );
+              // TOD0: Notify user to re-authenticate. Should we block local delete? Maybe not.
+            } else {
+              // Throw an error to potentially stop the local delete or notify user
+              throw new Error(
+                `Google Calendar sync (DELETE) failed: ${syncResponse.statusText} - ${JSON.stringify(errorData)}`
+              );
+            }
+          } else {
+            console.log(
+              `Google Calendar event ${googleCalendarEventId} deleted via sync.`
+            );
+          }
+        } catch (syncError) {
+          console.error(
+            `Failed to sync delete with Google Calendar for event ${eventId}:`,
+            syncError
+          );
+        }
+      } else if (enableExperimentalGoogleCalendar && !googleCalendarEventId) {
+        console.log(
+          `Event ${eventId} has no Google Calendar ID, skipping delete sync.`
+        );
+      }
 
       try {
         const supabase = createClient();
@@ -620,7 +677,6 @@ export const CalendarProvider = ({
 
         // Refresh the query cache after deleting an event
         refresh();
-
         setActiveEventId(null);
       } catch (err) {
         console.error(`Failed to delete event ${eventId}:`, err);
@@ -630,29 +686,141 @@ export const CalendarProvider = ({
     [ws, refresh, pendingNewEvent]
   );
 
-  // Google Calendar sync moved to API Route
-  const syncWithGoogleCalendar = useCallback(async (event: CalendarEvent) => {
-    if (!enableExperimentalGoogleCalendar) {
+  const syncAllFromGoogleCalendar = useCallback(async () => {
+    if (!enableExperimentalGoogleCalendar || !ws?.id) {
+      console.log('Google Calendar sync disabled or no workspace selected');
       return;
     }
 
     try {
-      const response = await fetch('/api/v1/calendar/auth/sync', {
-        method: 'POST',
+      // get all events from Google Calendar
+      const response = await fetch('/api/v1/calendar/auth/fetch', {
+        method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to sync with Google Calendar');
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || 'Failed to fetch Google Calendar events'
+        );
       }
 
-      console.log('Event synced with Google Calendar');
+      const { events: googleEvents } = await response.json();
+
+      // get existing events from Supabase
+      const supabase = createClient();
+      const { data: localEvents, error: localEventsError } = await supabase
+        .from('workspace_calendar_events')
+        .select('id, google_event_id')
+        .eq('ws_id', ws.id);
+
+      if (localEventsError) {
+        throw new Error('Failed to fetch local events');
+      }
+
+      // create a set of existing Google event IDs from Supabase
+      const localGoogleEventIds = new Set(
+        localEvents
+          .filter((e: any) => e.google_event_id)
+          .map((e: any) => e.google_event_id)
+      );
+
+      // filter out events that already exist in Supabase
+      const newEvents = googleEvents.filter(
+        (event: any) => !localGoogleEventIds.has(event.google_event_id)
+      );
+
+      // create a new event in Supabase for each new Google Calendar event
+      for (const event of newEvents) {
+        const { error: insertError } = await supabase
+          .from('workspace_calendar_events')
+          .insert({
+            title: event.title,
+            description: event.description,
+            start_at: event.start_at,
+            end_at: event.end_at,
+            color: event.color,
+            location: event.location,
+            ws_id: ws.id,
+            google_event_id: event.google_event_id,
+            locked: event.locked || false,
+          });
+
+        if (insertError) {
+          console.error('Failed to insert event:', insertError);
+          continue; // continue to the next event on error
+        }
+      }
+
+      console.log(`Synced ${newEvents.length} new events from Google Calendar`);
+      refresh();
     } catch (error) {
-      console.error('Failed to sync with Google Calendar:', error);
+      console.error('Failed to sync all events from Google Calendar:', error);
       throw error;
     }
-  }, []);
+  }, [enableExperimentalGoogleCalendar, ws?.id, refresh]);
+
+  // Google Calendar sync moved to API Route
+  const syncWithGoogleCalendar = useCallback(
+    async (event: CalendarEvent) => {
+      if (!enableExperimentalGoogleCalendar) {
+        return;
+      }
+
+      try {
+        let response;
+        if (event.google_event_id) {
+          // Update an existing event on Google Calendar
+          response = await fetch('/api/v1/calendar/auth/sync', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              eventId: event.id,
+              googleCalendarEventId: event.google_event_id,
+              eventUpdates: {
+                title: event.title,
+                description: event.description,
+                start_at: event.start_at,
+                end_at: event.end_at,
+                color: event.color,
+                location: event.location,
+              },
+            }),
+          });
+        } else {
+          // create a new event on Google Calendar
+          response = await fetch('/api/v1/calendar/auth/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event }),
+          });
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.needsReAuth) {
+            console.error('Google token needs refresh/re-auth.');
+            throw new Error('Google token invalid, please re-authenticate.');
+          } else if (errorData.eventNotFound) {
+            console.warn('Event not found on Google Calendar.');
+            // Handle the case where the event is not found
+          } else {
+            throw new Error(
+              errorData.error || 'Failed to sync with Google Calendar'
+            );
+          }
+        }
+
+        console.log('Event synced with Google Calendar');
+        refresh();
+      } catch (error) {
+        console.error('Failed to sync with Google Calendar:', error);
+        throw error;
+      }
+    },
+    [enableExperimentalGoogleCalendar, refresh]
+  );
 
   // Modal management
   const openModal = useCallback((eventId?: string) => {
@@ -749,6 +917,7 @@ export const CalendarProvider = ({
 
     // Google Calendar API
     syncWithGoogleCalendar,
+    syncAllFromGoogleCalendar,
 
     // Settings API
     settings,

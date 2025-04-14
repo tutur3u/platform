@@ -28,9 +28,9 @@ export async function GET(request: Request, { params }: Params) {
     const { data: events, error } = await supabase
       .from('workspace_calendar_events')
       .select('*')
-      .eq('ws_id', wsId)
-      .gte('start_at', new Date(start_at).toISOString())
-      .lte('end_at', new Date(end_at).toISOString());
+      .eq('ws_id', wsId);
+    // .lte('start_at', new Date(end_at).toISOString())
+    // .gte('end_at', new Date(start_at).toISOString());
 
     if (error) throw error;
 

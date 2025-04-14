@@ -16,6 +16,7 @@ export interface CalendarEvent {
   scheduling_note?: string;
   priority?: EventPriority;
   locked?: boolean;
+  google_event_id?: string;
 
   // Properties for multi-day events
   _originalId?: string;

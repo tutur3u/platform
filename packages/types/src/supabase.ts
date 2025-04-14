@@ -447,6 +447,7 @@ export type Database = {
           id: string;
           refresh_token: string;
           user_id: string;
+          ws_id: string;
         };
         Insert: {
           access_token: string;
@@ -454,6 +455,7 @@ export type Database = {
           id?: string;
           refresh_token: string;
           user_id: string;
+          ws_id: string;
         };
         Update: {
           access_token?: string;
@@ -461,6 +463,7 @@ export type Database = {
           id?: string;
           refresh_token?: string;
           user_id?: string;
+          ws_id?: string;
         };
         Relationships: [
           {
@@ -468,6 +471,13 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_auth_tokens_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -4019,6 +4029,7 @@ export type Database = {
           created_at: string | null;
           description: string;
           end_at: string;
+          google_event_id: string | null;
           id: string;
           location: string | null;
           locked: boolean;
@@ -4031,6 +4042,7 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at: string;
+          google_event_id?: string | null;
           id?: string;
           location?: string | null;
           locked?: boolean;
@@ -4043,6 +4055,7 @@ export type Database = {
           created_at?: string | null;
           description?: string;
           end_at?: string;
+          google_event_id?: string | null;
           id?: string;
           location?: string | null;
           locked?: boolean;

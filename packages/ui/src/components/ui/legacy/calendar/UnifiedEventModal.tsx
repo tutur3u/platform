@@ -95,9 +95,11 @@ const AIFormSchema = z.object({
 });
 
 export function UnifiedEventModal({
+  wsId,
   experimentalGoogleCalendarLinked = false,
   enableExperimentalGoogleCalendar = false,
 }: {
+  wsId: string;
   experimentalGoogleCalendarLinked?: boolean;
   enableExperimentalGoogleCalendar?: boolean;
 }) {
@@ -120,7 +122,7 @@ export function UnifiedEventModal({
   const handleGoogleAuth = async () => {
     setIsGoogleAuthenticating(true);
     try {
-      const response = await fetch('/api/v1/calendar/auth', {
+      const response = await fetch(`/api/v1/calendar/auth?wsId=${wsId}`, {
         method: 'GET',
       });
 
@@ -236,6 +238,7 @@ export function UnifiedEventModal({
       setEvent({
         ...eventData,
         priority: eventData.priority || 'medium',
+        locked: eventData.locked
       });
 
       // Check if this is an all-day event (no time component)
@@ -343,11 +346,17 @@ export function UnifiedEventModal({
     try {
       let savedEvent: CalendarEvent;
       if (activeEvent?.id === 'new') {
-        savedEvent = await addEvent(event as Omit<CalendarEvent, 'id'>);
+        savedEvent = await addEvent({
+          ...event,
+          locked: event.locked || false
+        } as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
         const originalId = activeEvent.id;
         if (originalId) {
-          savedEvent = await updateEvent(originalId, event);
+          savedEvent = await updateEvent(originalId, {
+            ...event,
+            locked: event.locked || false
+          });
         } else {
           throw new Error('Invalid event ID');
         }
@@ -808,6 +817,37 @@ export function UnifiedEventModal({
     }
   };
 
+  // Handle lock toggle
+  const handleLockToggle = async (checked: boolean) => {
+    if (!activeEvent?.id) return;
+
+    setIsSaving(true);
+    try {
+      const originalId = activeEvent.id;
+      const updatedEvent = await updateEvent(originalId, {
+        ...event,
+        locked: checked
+      });
+
+      setEvent(updatedEvent);
+      toast({
+        title: 'Success',
+        description: `Event ${checked ? 'locked' : 'unlocked'} successfully`,
+      });
+    } catch (error) {
+      console.error('Error updating event lock status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update event lock status',
+        variant: 'destructive',
+      });
+      // Revert the toggle if update fails
+      setEvent(prev => ({ ...prev, locked: !checked }));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
@@ -971,9 +1011,7 @@ export function UnifiedEventModal({
                                   label="Lock Event"
                                   description="Locked events cannot be modified accidentally"
                                   checked={event.locked || false}
-                                  onChange={(checked) =>
-                                    setEvent({ ...event, locked: checked })
-                                  }
+                                  onChange={handleLockToggle}
                                 />
                                 <div className="mt-1 flex items-center gap-2">
                                   {event.locked ? (
