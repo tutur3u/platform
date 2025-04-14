@@ -25,11 +25,11 @@
     "sb:typegen": "cd ../db && pnpm supabase gen types typescript --local --schema public > src/types/supabase.ts && prettier --write src/types/supabase.ts"
   },
   "dependencies": {
-    "@deepgram/sdk": "^3.11.3",
+    "@deepgram/sdk": "^3.12.0",
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.1",
-    "@tanstack/react-query": "^5.73.3",
+    "@tanstack/react-query": "^5.74.3",
     "@tanstack/react-table": "^8.21.2",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -72,7 +72,7 @@
     "@next/bundle-analyzer": "^15.3.0",
     "@next/eslint-plugin-next": "^15.3.0",
     "@tanstack/eslint-plugin-query": "^5.73.3",
-    "@tanstack/react-query-devtools": "^5.73.3",
+    "@tanstack/react-query-devtools": "^5.74.3",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
@@ -83,12 +83,12 @@
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.2",
     "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.29.1",
-    "@typescript-eslint/parser": "^8.29.1",
+    "@typescript-eslint/eslint-plugin": "^8.30.0",
+    "@typescript-eslint/parser": "^8.30.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.24.0",
-    "jsdom": "^26.0.0",
+    "jsdom": "^26.1.0",
     "lint-staged": "^15.5.1",
     "postcss": "^8.5.3",
     "typescript": "^5.8.3",
@@ -97,5 +97,5 @@
   "overrides": {
     "react-is": "^19.1.0"
   },
-  "packageManager": "pnpm@10.8.0"
+  "packageManager": "pnpm@10.8.1"
 }
