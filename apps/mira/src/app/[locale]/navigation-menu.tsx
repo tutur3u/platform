@@ -32,7 +32,6 @@ import {
 } from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import * as React from 'react';
 
 export function MainNavigationMenu() {
@@ -240,31 +239,28 @@ export function MainNavigationMenu() {
           </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <Link href="/pricing" passHref>
-            <NavigationMenuLink
-              className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
-            >
-              {t('common.pricing')}
-            </NavigationMenuLink>
-          </Link>
+          <NavigationMenuLink
+            className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
+            href="/pricing"
+          >
+            {t('common.pricing')}
+          </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <Link href="/about" passHref>
-            <NavigationMenuLink
-              className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
-            >
-              {t('common.about')}
-            </NavigationMenuLink>
-          </Link>
+          <NavigationMenuLink
+            className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
+            href="/about"
+          >
+            {t('common.about')}
+          </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <Link href="/contact" passHref>
-            <NavigationMenuLink
-              className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
-            >
-              {t('common.contact')}
-            </NavigationMenuLink>
-          </Link>
+          <NavigationMenuLink
+            className={cn(navigationMenuTriggerStyle(), 'px-6 font-semibold')}
+            href="/contact"
+          >
+            {t('common.contact')}
+          </NavigationMenuLink>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
