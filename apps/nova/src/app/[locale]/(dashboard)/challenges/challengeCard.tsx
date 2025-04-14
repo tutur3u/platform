@@ -505,7 +505,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           )}
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-4">{challenge.description}</p>
+          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
           <div className="flex flex-col gap-2">
             <div className="flex items-center">
               <Clock className="h-4 w-4 text-primary" />
@@ -517,7 +517,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             {(status === 'preview' || status === 'active') && (
               <div className="flex items-center">
                 <AlertCircle className="h-4 w-4 text-indigo-500" />
-                <span className="text-muted-foreground ml-2 text-sm">
+                <span className="ml-2 text-sm text-muted-foreground">
                   Total attempts: {totalSessions}/{challenge.max_attempts}
                 </span>
               </div>
@@ -526,7 +526,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             {(status === 'preview' || status === 'active') && (
               <div className="flex items-center">
                 <AlertCircle className="h-4 w-4 text-violet-500" />
-                <span className="text-muted-foreground ml-2 text-sm">
+                <span className="ml-2 text-sm text-muted-foreground">
                   Daily attempts: {dailySessions}/{challenge.max_daily_attempts}
                 </span>
               </div>
