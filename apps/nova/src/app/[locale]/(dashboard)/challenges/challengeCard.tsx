@@ -101,7 +101,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
     } catch (error) {
       console.error('Error fetching session counts:', error);
     }
-  }, [challenge.id]);
+  }, [challenge]);
 
   const updateStatus = useCallback(() => {
     if (!challenge.enabled) {
@@ -371,23 +371,28 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
   const renderActionButton = () => {
     if (isAdmin || status === 'active') {
       if (session?.status === 'ENDED') {
-        const hasRemainingAttempts =
-          totalSessions < challenge.max_attempts &&
+        const hasRemainingAttempts = totalSessions < challenge.max_attempts;
+        const hasRemainingDailyAttempts =
           dailySessions < challenge.max_daily_attempts;
 
         return (
           <>
-            {hasRemainingAttempts && (
-              <ConfirmDialog
-                mode="start"
-                challenge={challenge}
-                trigger={
-                  <Button className="w-full gap-2">
-                    Retry Challenge <ArrowRight className="h-4 w-4" />
-                  </Button>
-                }
-              />
-            )}
+            {hasRemainingAttempts &&
+              (hasRemainingDailyAttempts ? (
+                <ConfirmDialog
+                  mode="start"
+                  challenge={challenge}
+                  trigger={
+                    <Button className="w-full gap-2">
+                      Retry Challenge <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              ) : (
+                <Button disabled className="w-full gap-2">
+                  Comeback Tomorrow
+                </Button>
+              ))}
 
             <Button
               onClick={handleViewResults}
