@@ -1,0 +1,110 @@
+---
+title: 'Give Clear and Specific Instructions'
+description: 'Learn how to design prompts with clear tasks, constraints, and formatting guidance for more accurate AI responses.'
+---
+
+## Explain the Task Clearly
+
+To effectively guide the model's behavior, it's important to provide instructions that are both direct and specific. Whether you're asking for a simple summary or building a more complex user experience, the clearer your guidance, the better the model can deliver the result you want.
+
+**Prompt Example:**
+
+```prompt
+Create a summary of the following content:
+Text: A quantum computer operates using principles of quantum physics, enabling it to process data at speeds far beyond that of conventional machines. At microscopic levels, particles exhibit both wave and particle characteristics, and quantum systems are engineered to take advantage of this. Their inner workings defy traditional physics. When developed at scale, quantum machines could have vast applications—from decoding modern encryption to boosting weather prediction accuracy. However, today’s quantum tech remains mostly experimental and not yet suitable for real-world deployment.
+```
+
+**Response:**
+
+```response
+Quantum computers tap into the dual nature of matter—both wave and particle—at microscopic levels to execute tasks far faster than conventional machines. By utilizing quantum effects that classical physics can’t explain, they gain a significant speed advantage. Although they show strong potential in areas like cybersecurity and meteorology, these systems are still in early development and not ready for mainstream deployment.
+```
+
+## Specify any constraints
+
+Define any rules or limitations the model should follow while interpreting the prompt or creating a response. For instance, if you want a more concise version of the original text, make that clear by stating a word or sentence limit. In the earlier example, the summary was shorter than the source content—but you can explicitly direct the model to keep it brief by setting a specific length constraint.
+
+**Prompt Example:**
+
+```prompt
+Summarize this text in two sentences:
+Text: A quantum computer operates using principles of quantum physics, enabling it to process data at speeds far beyond that of conventional machines. At microscopic levels, particles exhibit both wave and particle characteristics, and quantum systems are engineered to take advantage of this. Their inner workings defy traditional physics. When developed at scale, quantum machines could have vast applications—from decoding modern encryption to boosting weather prediction accuracy. However, today’s quantum tech remains mostly experimental and not yet suitable for real-world deployment.
+```
+
+**Response:**
+
+```response
+Quantum machines utilize strange particle behaviors at the quantum level to achieve processing speeds that leave regular computers behind. Despite their huge promise in areas like cybersecurity and climate modeling, they’re still in early development and not yet viable for everyday tasks.
+```
+
+## Set the Desired Output Format
+
+You can guide how the model should present its answer by specifying a format. Whether you want the response in bullet points, a short paragraph, a table, a list of keywords, or even as an elevator pitch—you can simply include that in your instructions. For instance, you might ask the model to respond in a more casual, conversational tone by stating that directly in your prompt.
+
+**System message:**
+
+```message
+Respond to all prompts using clear and structured bullet points, unless the user explicitly requests a different format. Each bullet should be concise yet informative, helping break down complex information into easily digestible parts.
+```
+
+**Example Prompt:**
+
+```prompt
+What’s an effective way to run a DVD-selling business in 2025?
+```
+
+**Response:**
+
+```response
+Running a DVD-focused business in 2025 is challenging due to the rise of streaming and digital formats. However, it's not entirely out of reach. Here's a strategic way to approach it:
+
+- Niche Targeting: Focus on collectors, retro lovers, or areas with low internet access.
+
+- Product Differentiation: Sell special edition DVDs, box sets, or director’s cuts not available digitally.
+
+- Experience-Based Selling: Open pop-up nostalgia stores or host DVD movie nights to create a community experience.
+
+- Bundle Offers: Combine DVDs with themed merchandise (posters, T-shirts) to increase perceived value.
+```
+
+Another example about setting desired format.
+
+**System message:**
+
+```message
+Respond using a numbered list format by default. Each number should represent a main idea or step. Keep the explanations concise and informative. Only switch to another format if the user requests it.
+```
+
+**Example Prompt:**
+
+```prompt
+How can a student better manage their time while studying for exams?
+```
+
+**Response:**
+
+```response
+1. Set clear goals
+  Define what you need to study each day based on your exam schedule.
+
+2. Prioritize tasks
+  Focus first on subjects or topics you're weakest in or those that carry the most weight in the exam.
+
+3. Use time blocks
+  Study in focused intervals (e.g., Pomodoro method: 25 minutes study, 5 minutes break).
+
+4. Eliminate distractions
+  Turn off notifications, put your phone away, and create a quiet study environment.
+
+5. Review consistently
+  Instead of cramming, revisit key topics regularly to  strengthen memory.
+
+6. Track your progress
+  Use a checklist or planner to mark completed topics and stay motivated.
+```
+
+**📝 Summary:**
+
+- Clearly tell the model what task you want it to perform.
+- Make sure your instructions are detailed and easy to understand.
+- If there are any limits or formatting preferences for the response, be sure to include them.

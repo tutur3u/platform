@@ -1,0 +1,24 @@
+---
+title: 'Break Down Prompts into Manageable Parts'
+description: 'Simplify complex tasks using modular instructions, chaining prompts step-by-step, or aggregating outputs.'
+---
+
+When dealing with complex tasks, simplify them by dividing the prompt into smaller, more focused parts. This makes it easier for the model to follow and process your instructions accurately.
+
+## Simplify Instruction
+
+Rather than packing multiple instructions into a single prompt, create separate prompts for each one. Choose the appropriate prompt to run based on the user’s input or situation.
+
+## Use Chained Prompts
+
+For tasks that follow a specific order of steps, use one prompt per step and pass the output from one step into the next. This sequence allows the model to build on its responses and reach a final result.
+
+## Aggregate Outputs
+
+When you need to perform several tasks on different parts of your data, handle them separately and then combine the outputs. For instance, analyze the beginning of a document in one way, process the rest differently, and then merge the results for a complete answer.
+
+**📝 Summary:**
+
+- Break down complex prompts into individual instructions and select the right one based on the user’s needs.
+- For multi-step workflows, treat each step as its own prompt and pass outputs forward in sequence.
+- For parallel tasks, process each part independently and combine the results to produce a complete answer.

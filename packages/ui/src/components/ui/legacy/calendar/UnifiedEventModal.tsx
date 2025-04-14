@@ -238,7 +238,7 @@ export function UnifiedEventModal({
       setEvent({
         ...eventData,
         priority: eventData.priority || 'medium',
-        locked: eventData.locked
+        locked: eventData.locked,
       });
 
       // Check if this is an all-day event (no time component)
@@ -348,14 +348,14 @@ export function UnifiedEventModal({
       if (activeEvent?.id === 'new') {
         savedEvent = await addEvent({
           ...event,
-          locked: event.locked || false
+          locked: event.locked || false,
         } as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
         const originalId = activeEvent.id;
         if (originalId) {
           savedEvent = await updateEvent(originalId, {
             ...event,
-            locked: event.locked || false
+            locked: event.locked || false,
           });
         } else {
           throw new Error('Invalid event ID');
@@ -826,7 +826,7 @@ export function UnifiedEventModal({
       const originalId = activeEvent.id;
       const updatedEvent = await updateEvent(originalId, {
         ...event,
-        locked: checked
+        locked: checked,
       });
 
       setEvent(updatedEvent);
@@ -842,7 +842,7 @@ export function UnifiedEventModal({
         variant: 'destructive',
       });
       // Revert the toggle if update fails
-      setEvent(prev => ({ ...prev, locked: !checked }));
+      setEvent((prev) => ({ ...prev, locked: !checked }));
     } finally {
       setIsSaving(false);
     }
