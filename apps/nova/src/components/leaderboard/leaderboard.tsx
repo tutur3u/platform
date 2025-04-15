@@ -45,6 +45,7 @@ interface LeaderboardProps {
   data: LeaderboardEntry[];
   isLoading?: boolean;
   currentUserId?: string;
+  isChecked?: boolean;
   challenges?: { id: string; title: string }[];
   selectedChallenge?: string;
 }
@@ -58,6 +59,7 @@ interface UserInterface {
 export function Leaderboard({
   data,
   isLoading = false,
+  isChecked,
   currentUserId,
   challenges = [],
   selectedChallenge = 'all',
@@ -318,7 +320,7 @@ export function Leaderboard({
 
                         {/* Hexagonal avatar for all players */}
                         <Link
-                          href={`/profile/${entry.id.replace(/-/g, '')}`}
+                          href={`/${isChecked ? 'teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
                           className="relative block h-10 w-10 overflow-hidden transition-transform duration-300 group-hover:scale-110"
                         >
                           <Avatar className="h-10 w-10 ring-offset-white dark:ring-offset-slate-900">
@@ -336,7 +338,7 @@ export function Leaderboard({
 
                       <div>
                         <Link
-                          href={`/profile/${entry.id.replace(/-/g, '')}`}
+                          href={`/${isChecked ? 'teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
                           className={cn(
                             'font-medium text-gray-800 transition-all duration-300 group-hover:translate-x-1 dark:text-slate-200',
                             currentUserId === entry.id &&

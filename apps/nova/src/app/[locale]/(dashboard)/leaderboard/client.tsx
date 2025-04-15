@@ -20,10 +20,12 @@ export default function LeaderboardPage({
   data,
   challenges,
   onTeamModeChange,
+  isChecked,
 }: {
   data: LeaderboardEntry[];
   challenges: { id: string; title: string }[];
   onTeamModeChange?: (isTeamMode: boolean) => void;
+  isChecked: boolean;
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -31,7 +33,7 @@ export default function LeaderboardPage({
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(
     undefined
   );
-  const [_isChecked, setChecked] = useState(false);
+  const [_isCheck, setChecked] = useState(false);
 
   const supabase = createClient();
 
@@ -272,6 +274,7 @@ export default function LeaderboardPage({
             >
               <Leaderboard
                 data={filteredData}
+                isChecked= {isChecked}
                 isLoading={false}
                 currentUserId={currentUserId}
                 challenges={challenges}
