@@ -1,8 +1,8 @@
-import { createAdminClient } from "@tuturuuu/supabase/next/server";
-import { type NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
+import { type NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const sbAdmin = await createAdminClient();
 
   const { data: leaderboardData, error } = await sbAdmin.from('nova_sessions')
@@ -38,40 +38,43 @@ export async function GET(req: NextRequest) {
     .eq('enabled', true);
 
   if (whitelistError) {
-    return NextResponse.json({ error: whitelistError.message }, { status: 500 });
+    return NextResponse.json(
+      { error: whitelistError.message },
+      { status: 500 }
+    );
   }
 
-  const groupedData = leaderboardData.reduce(
-    (acc, curr) => {
-      const existingUser = acc.find((item) => item.user_id === curr.user_id);
-      if (existingUser) {
-        existingUser.total_score = (existingUser.total_score ?? 0) + (curr.total_score ?? 0);
-        const challengeId = curr.challenge_id;
-        if (challengeId) {
-          if (!existingUser.challenge_scores) {
-            existingUser.challenge_scores = {};
-          }
-          existingUser.challenge_scores[challengeId] = (existingUser.challenge_scores[challengeId] ?? 0) + (curr.total_score ?? 0);
+  const groupedData = leaderboardData.reduce((acc, curr) => {
+    const existingUser = acc.find((item) => item.user_id === curr.user_id);
+    if (existingUser) {
+      existingUser.total_score =
+        (existingUser.total_score ?? 0) + (curr.total_score ?? 0);
+      const challengeId = curr.challenge_id;
+      if (challengeId) {
+        if (!existingUser.challenge_scores) {
+          existingUser.challenge_scores = {};
         }
-      } else {
-        const challenge_scores: Record<string, number> = {};
-        if (curr.challenge_id) {
-          challenge_scores[curr.challenge_id] = curr.total_score ?? 0;
-        }
-        acc.push({
-          id: curr.id,
-          user_id: curr.user_id,
-          challenge_id: curr.challenge_id,
-          total_score: curr.total_score ?? 0,
-          users: curr.users,
-          nova_challenges: curr.nova_challenges,
-          challenge_scores,
-        });
+        existingUser.challenge_scores[challengeId] =
+          (existingUser.challenge_scores[challengeId] ?? 0) +
+          (curr.total_score ?? 0);
       }
-      return acc;
-    },
-    [] as any[]
-  );
+    } else {
+      const challenge_scores: Record<string, number> = {};
+      if (curr.challenge_id) {
+        challenge_scores[curr.challenge_id] = curr.total_score ?? 0;
+      }
+      acc.push({
+        id: curr.id,
+        user_id: curr.user_id,
+        challenge_id: curr.challenge_id,
+        total_score: curr.total_score ?? 0,
+        users: curr.users,
+        nova_challenges: curr.nova_challenges,
+        challenge_scores,
+      });
+    }
+    return acc;
+  }, [] as any[]);
 
   const existingUserIds = groupedData.map((entry) => entry.user_id);
 
@@ -124,6 +127,6 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     data: formattedData,
-    challenges: challenges || []
+    challenges: challenges || [],
   });
 }
