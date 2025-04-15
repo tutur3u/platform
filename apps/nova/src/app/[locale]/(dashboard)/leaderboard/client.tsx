@@ -52,11 +52,9 @@ export default function LeaderboardPage({
   useEffect(() => {
     let filtered = [...data];
 
-    // Filter by challenge
     if (selectedChallenge !== 'all') {
       filtered = filtered
         .map((entry) => {
-          // Create a copy with updated score based on the selected challenge
           const challengeScore =
             entry.challenge_scores?.[selectedChallenge] || 0;
           return {
@@ -64,7 +62,7 @@ export default function LeaderboardPage({
             score: challengeScore,
           };
         })
-        .filter((entry) => entry.score > 0); // Only show users who participated in this challenge
+        .filter((entry) => entry.score > 0);
 
       // Re-rank the filtered entries
       filtered.sort((a, b) => b.score - a.score);
@@ -84,9 +82,22 @@ export default function LeaderboardPage({
     setFilteredData(filtered);
   }, [searchQuery, selectedChallenge, data]);
 
-  // Calculate stats
-  const yourRank =
-    filteredData.findIndex((entry) => entry.id === currentUserId) + 1;
+  let yourRank = 0;
+  if (isChecked) {
+    // Find the team that contains the current user
+    const userTeam = filteredData.find((team) =>
+      team.member?.some((member) => member.id === currentUserId)
+    );
+
+    if (userTeam) {
+      // Get the team's rank
+      yourRank = filteredData.findIndex((team) => team.id === userTeam.id) + 1;
+    }
+  } else {
+    // Individual mode - find user's direct rank
+    yourRank =
+      filteredData.findIndex((entry) => entry.id === currentUserId) + 1;
+  }
   const topScore = filteredData.length > 0 ? filteredData[0]?.score : 0;
   const totalParticipants = filteredData.length;
 
@@ -106,6 +117,7 @@ export default function LeaderboardPage({
           yourRank={yourRank}
           totalParticipants={totalParticipants}
           topScore={topScore || 0}
+          isChecked={isChecked}
           filteredData={filteredData}
         />
         <div className="mb-8">
@@ -274,7 +286,7 @@ export default function LeaderboardPage({
             >
               <Leaderboard
                 data={filteredData}
-                isChecked= {isChecked}
+                isChecked={isChecked}
                 isLoading={false}
                 currentUserId={currentUserId}
                 challenges={challenges}

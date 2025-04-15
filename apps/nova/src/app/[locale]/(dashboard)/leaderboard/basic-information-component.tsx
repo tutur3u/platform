@@ -21,6 +21,7 @@ interface Props {
   yourRank: number;
   totalParticipants: number;
   topScore: Number;
+  isChecked: boolean;
   filteredData: LeaderboardEntry[];
 }
 export default function BasicInformationComponent({
@@ -29,6 +30,7 @@ export default function BasicInformationComponent({
   yourRank,
   totalParticipants,
   topScore,
+  isChecked,
   filteredData,
 }: Props) {
   return (
@@ -193,7 +195,7 @@ export default function BasicInformationComponent({
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                Total Players
+                {isChecked ? 'Total teams' : 'Total player'}
               </p>
               <h3 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                 {totalParticipants}
