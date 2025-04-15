@@ -4,6 +4,7 @@ import GradientHeadline from '../gradient-headline';
 import AiFeatures from './ai-features';
 import AnimatedTimeline from './animated-timeline';
 import FeatureShowcase from './feature-showcase';
+import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -106,7 +107,7 @@ export default function MarketingPage() {
                 className="group relative mb-8 overflow-hidden border-transparent backdrop-blur-sm"
               >
                 <motion.div
-                  className="absolute inset-0 bg-foreground/10 opacity-100 transition-opacity"
+                  className="bg-foreground/10 absolute inset-0 opacity-100 transition-opacity"
                   whileHover={{ opacity: 1 }}
                 />
                 <Sparkles className="mr-2 h-4 w-4" />
@@ -118,7 +119,7 @@ export default function MarketingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl"
+              className="text-foreground mb-6 text-balance text-center text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl"
             >
               {t('title')}
               <br />
@@ -129,7 +130,7 @@ export default function MarketingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
-              className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/50"
+              className="text-foreground/50 mb-8 max-w-2xl text-balance text-center text-lg"
             >
               {t('description')}
             </motion.div>
@@ -158,7 +159,7 @@ export default function MarketingPage() {
                     className="group relative overflow-hidden"
                   >
                     <motion.span
-                      className="absolute inset-0 bg-primary/10"
+                      className="bg-primary/10 absolute inset-0"
                       initial={{ x: '-100%' }}
                       whileHover={{ x: '100%' }}
                       transition={{ duration: 0.5 }}
@@ -194,17 +195,17 @@ export default function MarketingPage() {
                 >
                   <Badge
                     variant="outline"
-                    className="mb-4 animate-pulse bg-background/50 text-primary backdrop-blur-sm"
+                    className="bg-background/50 text-primary mb-4 animate-pulse backdrop-blur-sm"
                   >
                     <Trophy className="mr-2 h-4 w-4" />
-                    Featured Event
+                    {t('feature-event')}
                   </Badge>
 
-                  <h2 className="mb-4 bg-gradient-to-r from-primary via-dynamic-purple to-dynamic-blue bg-clip-text text-4xl font-bold text-balance text-transparent">
+                  <h2 className="from-primary via-dynamic-purple to-dynamic-blue mb-4 text-balance bg-gradient-to-r bg-clip-text text-4xl font-bold text-transparent">
                     NEO League {t('season')} 1
                   </h2>
 
-                  <div className="mb-6 bg-gradient-to-r from-dynamic-purple to-dynamic-red bg-clip-text text-3xl font-bold text-transparent">
+                  <div className="from-dynamic-purple to-dynamic-red mb-6 bg-gradient-to-r bg-clip-text text-3xl font-bold text-transparent">
                     Prompt The Future
                   </div>
                 </motion.div>
@@ -213,37 +214,37 @@ export default function MarketingPage() {
                 <AnimatedTimeline
                   events={[
                     {
-                      date: '19 April 2025',
-                      title: t('open-cere'),
-                      type: t('virtual'),
+                      date: t('time-line.open-cere-date'),
+                      title: t('time-line.open-cere'),
+                      type: t('time-line.virtual-badge'),
                       icon: <CalendarDays className="h-5 w-5" />,
-                      description: t('open-cere-description'),
+                      description: t('time-line.open-cere-description'),
                     },
                     {
-                      date: '26 April 2025',
-                      title: t('top-50-selection'),
-                      type: t('virtual'),
+                      date: t('time-line.top-30-selection-date'),
+                      title: t('time-line.top-30-selection'),
+                      type: t('time-line.virtual-badge'),
                       icon: <Trophy className="h-5 w-5" />,
-                      description: t('top-50-selection-description'),
+                      description: t('time-line.top-30-selection-description'),
                     },
                     {
-                      date: '10 May 2025',
-                      title: t('top-30-selection'),
-                      type: t('virtual'),
+                      date: t('time-line.top-15-selection-date'),
+                      title: t('time-line.top-15-selection'),
+                      type: t('time-line.virtual-badge'),
                       icon: <Star className="h-5 w-5" />,
-                      description: t('top-30-selection-description'),
+                      description: t('time-line.top-15-selection-description'),
                     },
                     {
-                      date: '31 May 2025',
-                      title: t('final-competition'),
-                      type: t('onsite'),
+                      date: t('time-line.final-competition-date'),
+                      title: t('time-line.final-competition'),
+                      type: t('time-line.onsite-badge'),
                       icon: <Trophy className="h-5 w-5" />,
-                      description: t('final-competition-description'),
+                      description: t('time-line.final-competition-description'),
                     },
                   ]}
                 />
 
-                <Separator className="my-12 bg-foreground/10" />
+                <Separator className="bg-foreground/10 my-12" />
 
                 {/* Enhanced Requirements and Info Cards */}
                 <div className="mt-16 grid gap-6 md:grid-cols-2">
@@ -252,23 +253,23 @@ export default function MarketingPage() {
                     whileHover="hover"
                     className="group"
                   >
-                    <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5">
+                    <Card className="border-foreground/10 bg-foreground/5 h-full overflow-hidden">
                       <div className="relative overflow-hidden rounded-xl p-6">
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
-                            <UserCheck className="h-5 w-5 text-primary" />
+                            <UserCheck className="text-primary h-5 w-5" />
                             {t('requirements')}
                           </h3>
                           <ul className="space-y-3">
-                            <li className="flex items-center gap-2 text-muted-foreground">
+                            <li className="text-muted-foreground flex items-center gap-2">
                               <MapPin className="h-4 w-4" />
                               <span>{t('based-in')}</span>
                             </li>
-                            <li className="flex items-center gap-2 text-muted-foreground">
+                            <li className="text-muted-foreground flex items-center gap-2">
                               <School className="h-4 w-4" />
                               <span>{t('undergraduates')}</span>
                             </li>
-                            <li className="flex items-center gap-2 text-muted-foreground">
+                            <li className="text-muted-foreground flex items-center gap-2">
                               <Clock className="h-4 w-4" />
                               <span>{t('age')}</span>
                             </li>
@@ -283,11 +284,11 @@ export default function MarketingPage() {
                     whileHover="hover"
                     className="group"
                   >
-                    <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5">
+                    <Card className="border-foreground/10 bg-foreground/5 h-full overflow-hidden">
                       <div className="relative overflow-hidden rounded-xl p-6">
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
-                            <Target className="h-5 w-5 text-primary" />
+                            <Target className="text-primary h-5 w-5" />
                             {t('program-objectives')}
                           </h3>
                           <ul className="space-y-3">
@@ -300,9 +301,9 @@ export default function MarketingPage() {
                             ].map((objective, index) => (
                               <li
                                 key={index}
-                                className="flex items-start gap-2 text-muted-foreground"
+                                className="text-muted-foreground flex items-start gap-2"
                               >
-                                <CheckCircle className="mt-1 h-4 w-4 flex-shrink-0 text-primary" />
+                                <CheckCircle className="text-primary mt-1 h-4 w-4 flex-shrink-0" />
                                 <span>{objective}</span>
                               </li>
                             ))}
@@ -369,7 +370,7 @@ export default function MarketingPage() {
 
         {/* Learning Section with enhanced visuals */}
         <section id="learning" className="relative w-full py-24">
-          <div className="absolute inset-0 bg-primary/5" />
+          <div className="bg-primary/5 absolute inset-0" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
           <div className="relative mx-auto max-w-6xl px-4">
@@ -402,7 +403,7 @@ export default function MarketingPage() {
                       transition={{ delay: index * 0.1 }}
                       className="flex items-center gap-2"
                     >
-                      <div className="rounded-full bg-primary/10 p-1 text-primary">
+                      <div className="bg-primary/10 text-primary rounded-full p-1">
                         <CheckCircle className="h-4 w-4" />
                       </div>
                       <span>{item}</span>
@@ -417,8 +418,8 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="relative"
               >
-                <div className="relative aspect-video rounded-xl border bg-background/30 backdrop-blur-sm">
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
+                <div className="bg-background/30 relative aspect-video rounded-xl border backdrop-blur-sm">
+                  <div className="from-primary/10 absolute inset-0 rounded-xl bg-gradient-to-br via-transparent to-transparent" />
                   <div className="relative p-8">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -449,14 +450,14 @@ export default function MarketingPage() {
                           whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: true }}
                           transition={{ delay: index * 0.1 }}
-                          className="flex items-start gap-4 rounded-lg border bg-background/10 p-4 backdrop-blur-sm"
+                          className="bg-background/10 flex items-start gap-4 rounded-lg border p-4 backdrop-blur-sm"
                         >
-                          <div className="rounded-full bg-foreground/10 p-2 text-primary">
+                          <div className="bg-foreground/10 text-primary rounded-full p-2">
                             {item.icon}
                           </div>
                           <div>
                             <h3 className="font-semibold">{item.title}</h3>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               {item.description}
                             </p>
                           </div>
@@ -488,7 +489,7 @@ export default function MarketingPage() {
             <h2 className="mb-4 text-4xl font-bold md:text-5xl">
               {t('get-started-today-subtitle')}
             </h2>
-            <p className="mb-8 text-muted-foreground">
+            <p className="text-muted-foreground mb-8">
               {t('get-started-today-description')}
             </p>
             <motion.div
@@ -499,9 +500,17 @@ export default function MarketingPage() {
               transition={{ delay: 0.2 }}
             >
               <GetStartedButton text={t('get-started')} href="/home" />
-              <Link href="/learn">
+              <Link
+                target="_blank"
+                href={
+                  DEV_MODE
+                    ? 'http://localhost:3000/prompt-engineering/introduction'
+                    : 'https://docs.tuturuuu.com/prompt-engineering/introduction'
+                }
+              >
                 <Button variant="outline" className="group">
-                  Browse Learning Resources
+                  {/* Browse Learning Resources */}
+                  {t('browse-learning-resources')}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
