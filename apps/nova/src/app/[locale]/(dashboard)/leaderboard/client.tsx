@@ -12,6 +12,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Medal, Share, Sparkles, Trophy } from '@tuturuuu/ui/icons';
+import { Switch } from '@tuturuuu/ui/switch';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
@@ -28,6 +29,7 @@ export default function LeaderboardPage({
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(
     undefined
   );
+  const [isChecked, setChecked] = useState(false);
 
   const supabase = createClient();
 
@@ -101,8 +103,22 @@ export default function LeaderboardPage({
           totalParticipants={totalParticipants}
           topScore={topScore || 0}
           filteredData={filteredData}
-        ></BasicInformationComponent>
+        />
         <div className="mb-8">
+          <div className="mb-6 flex items-center justify-end gap-2">
+            <span className="text-md font-medium text-slate-600 dark:text-slate-300">
+              Individual
+            </span>
+            <Switch
+              className="h-8 w-14 p-3 data-[state=checked]:bg-purple-600"
+              onCheckedChange={(checked) => {
+                setChecked(checked);
+              }}
+            />
+            <span className="text-md font-medium text-slate-600 dark:text-slate-300">
+              Teams
+            </span>
+          </div>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="relative">
