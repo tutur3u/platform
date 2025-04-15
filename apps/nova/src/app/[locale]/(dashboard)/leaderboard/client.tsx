@@ -84,24 +84,20 @@ export default function LeaderboardPage({
 
   let yourRank = 0;
   if (isChecked) {
-    // Find the team that contains the current user
     const userTeam = filteredData.find((team) =>
       team.member?.some((member) => member.id === currentUserId)
     );
 
     if (userTeam) {
-      // Get the team's rank
       yourRank = filteredData.findIndex((team) => team.id === userTeam.id) + 1;
     }
   } else {
-    // Individual mode - find user's direct rank
     yourRank =
       filteredData.findIndex((entry) => entry.id === currentUserId) + 1;
   }
   const topScore = filteredData.length > 0 ? filteredData[0]?.score : 0;
   const totalParticipants = filteredData.length;
 
-  // Get the selected challenge title
   const selectedChallengeTitle =
     selectedChallenge !== 'all'
       ? challenges.find((c) => c.id === selectedChallenge)?.title ||
