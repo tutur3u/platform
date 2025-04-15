@@ -19,9 +19,11 @@ import { useEffect, useState } from 'react';
 export default function LeaderboardPage({
   data,
   challenges,
+  onTeamModeChange,
 }: {
   data: LeaderboardEntry[];
   challenges: { id: string; title: string }[];
+  onTeamModeChange?: (isTeamMode: boolean) => void;
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -29,7 +31,7 @@ export default function LeaderboardPage({
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(
     undefined
   );
-  const [isChecked, setChecked] = useState(false);
+  const [_isChecked, setChecked] = useState(false);
 
   const supabase = createClient();
 
@@ -113,6 +115,7 @@ export default function LeaderboardPage({
               className="h-8 w-14 p-3 data-[state=checked]:bg-purple-600"
               onCheckedChange={(checked) => {
                 setChecked(checked);
+                onTeamModeChange?.(checked);
               }}
             />
             <span className="text-md font-medium text-slate-600 dark:text-slate-300">
