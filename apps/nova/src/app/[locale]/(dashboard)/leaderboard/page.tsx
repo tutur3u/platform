@@ -148,8 +148,11 @@ export default function Page() {
   };
   useEffect(() => {
     const fetchLeaderboard = async () => {
+      const baseUrl = isChecked
+        ? '/api/v1/leaderboard/team'
+        : '/api/v1/leaderboard';
       try {
-        const response = await fetch('/api/v1/leaderboard', {
+        const response = await fetch(baseUrl, {
           cache: 'no-store',
         });
 
@@ -168,7 +171,7 @@ export default function Page() {
     };
 
     fetchLeaderboard();
-  }, []);
+  }, [isChecked]);
 
   if (loading) {
     return <div className="p-6 text-center">Loading leaderboard...</div>;
@@ -177,7 +180,7 @@ export default function Page() {
   return (
     <LeaderboardPage
       onTeamModeChange={handleTeamModeChange}
-      data={isChecked ? teamData : data}
+      data={data}
       challenges={challenges}
     />
   );
