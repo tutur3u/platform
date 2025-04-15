@@ -130,7 +130,7 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
   } = await supabase.auth.getUser();
 
   if (authError || !user?.id) {
-    return null;
+    throw new Error('Unauthorized');
   }
 
   try {
@@ -141,16 +141,16 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
       .eq('challenge_id', challengeId)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (error) {
-      console.error('Error fetching sessions:', error.message);
-      return null;
+      throw new Error('Error fetching sessions');
     }
 
     return session;
   } catch (error) {
-    console.error('Unexpected error fetching session:', error);
+    console.error('Unexpected error:', error);
     return null;
   }
 }

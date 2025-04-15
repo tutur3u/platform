@@ -39,12 +39,15 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
     return {
       title: challenge.title,
       description: challenge.description,
+      maxAttempts: challenge.max_attempts,
+      maxDailyAttempts: challenge.max_daily_attempts,
       criteria: challenge.criteria.map((c) => ({
         id: c.id,
         name: c.name,
         description: c.description,
       })),
       duration: challenge.duration,
+      enablePassword: challenge.password_hash !== null,
       enabled: challenge.enabled,
       whitelistedOnly: challenge.whitelisted_only,
       whitelistedEmails: challenge.whitelists.map((w) => w.email),
@@ -53,7 +56,6 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       previewableAt: challenge.previewable_at
         ? new Date(challenge.previewable_at)
         : null,
-      password: challenge.password_hash ? '' : null,
     };
   }, [challenge]);
 
@@ -66,7 +68,10 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          password: values.enablePassword ? values.password || undefined : null,
+        }),
       });
 
       if (!response.ok) {

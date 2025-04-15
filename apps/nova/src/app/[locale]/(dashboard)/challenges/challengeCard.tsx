@@ -73,6 +73,8 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<NovaSession | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [dailySessions, setDailySessions] = useState(0);
   const [status, setStatus] = useState<
     'disabled' | 'upcoming' | 'preview' | 'active' | 'closed'
   >('disabled');
@@ -84,6 +86,21 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
     if (!response.ok) return null;
     const data = await response.json();
     setSession(data[0]);
+  }, [challenge]);
+
+  const fetchSessionCounts = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/v1/sessions/count?challengeId=${challenge.id}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setTotalSessions(data.total || 0);
+        setDailySessions(data.daily || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching session counts:', error);
+    }
   }, [challenge]);
 
   const updateStatus = useCallback(() => {
@@ -172,8 +189,9 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
 
   useEffect(() => {
     fetchSession();
+    fetchSessionCounts();
     updateStatus();
-  }, [fetchSession, updateStatus]);
+  }, [fetchSession, fetchSessionCounts, updateStatus]);
 
   const handleViewResults = async () => {
     router.push(`/challenges/${challenge.id}/results`);
@@ -309,28 +327,6 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           new Date(session.start_time).getTime() + challenge.duration * 1000
         );
 
-    if (session.status === 'ENDED') {
-      return (
-        <div className="mt-4 rounded-md border border-dashed p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-medium">Your Session</h3>
-            <Badge variant="secondary" className="text-xs">
-              Completed
-            </Badge>
-          </div>
-
-          <div className="mt-2 text-xs text-muted-foreground">
-            <div className="flex items-center">
-              <span>Started at: {format(startTime, 'PPpp')}</span>
-            </div>
-            <div className="flex items-center">
-              <span>Ended at: {format(endTime, 'PPpp')}</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     if (session.status === 'IN_PROGRESS') {
       return (
         <div className="mt-4 rounded-md border border-dashed p-3">
@@ -375,14 +371,37 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
   const renderActionButton = () => {
     if (isAdmin || status === 'active') {
       if (session?.status === 'ENDED') {
+        const hasRemainingAttempts = totalSessions < challenge.max_attempts;
+        const hasRemainingDailyAttempts =
+          dailySessions < challenge.max_daily_attempts;
+
         return (
-          <Button
-            onClick={handleViewResults}
-            className="w-full gap-2"
-            variant="secondary"
-          >
-            View Results <ArrowRight className="h-4 w-4" />
-          </Button>
+          <>
+            {hasRemainingAttempts &&
+              (hasRemainingDailyAttempts ? (
+                <ConfirmDialog
+                  mode="start"
+                  challenge={challenge}
+                  trigger={
+                    <Button className="w-full gap-2">
+                      Retry Challenge <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              ) : (
+                <Button disabled className="w-full gap-2">
+                  Comeback Tomorrow
+                </Button>
+              ))}
+
+            <Button
+              onClick={handleViewResults}
+              className="w-full gap-2"
+              variant="secondary"
+            >
+              View Results <ArrowRight className="h-4 w-4" />
+            </Button>
+          </>
         );
       }
 
@@ -485,7 +504,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             </DropdownMenu>
           )}
         </CardHeader>
-        <CardContent className="flex-grow">
+        <CardContent>
           <p className="mb-4 text-muted-foreground">{challenge.description}</p>
           <div className="flex flex-col gap-2">
             <div className="flex items-center">
@@ -494,6 +513,24 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                 Duration: {formatDuration(challenge.duration)}
               </span>
             </div>
+
+            {(status === 'preview' || status === 'active') && (
+              <div className="flex items-center">
+                <AlertCircle className="h-4 w-4 text-indigo-500" />
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Total attempts: {totalSessions}/{challenge.max_attempts}
+                </span>
+              </div>
+            )}
+
+            {(status === 'preview' || status === 'active') && (
+              <div className="flex items-center">
+                <AlertCircle className="h-4 w-4 text-violet-500" />
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Daily attempts: {dailySessions}/{challenge.max_daily_attempts}
+                </span>
+              </div>
+            )}
 
             {status === 'upcoming' && challenge.previewable_at && (
               <div className="flex items-center">
@@ -576,7 +613,9 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
 
           {renderSessionStatus()}
         </CardContent>
-        <CardFooter>{renderActionButton()}</CardFooter>
+        <CardFooter className="flex flex-col gap-2">
+          {renderActionButton()}
+        </CardFooter>
       </Card>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

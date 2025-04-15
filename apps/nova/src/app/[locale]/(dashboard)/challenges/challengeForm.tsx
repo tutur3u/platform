@@ -56,41 +56,37 @@ const criteriaSchema = z.object({
 
 const emailSchema = z.string().email({ message: 'Invalid email address' });
 
-const formSchema = z
-  .object({
-    title: z.string().min(3, {
-      message: 'Title must be at least 3 characters.',
-    }),
-    description: z.string().min(10, {
-      message: 'Description must be at least 10 characters.',
-    }),
-    criteria: z.array(criteriaSchema),
-    duration: z.coerce.number().min(60, {
-      message: 'Duration must be at least 60 seconds.',
-    }),
-    enabled: z.boolean().default(false),
-    whitelistedOnly: z.boolean().default(false),
-    maxAttempts: z.number().min(1, {
-      message: 'Max attempts must be at least 1.',
-    }),
-    maxDailyAttempts: z.number().min(1, {
-      message: 'Max daily attempts must be at least 1.',
-    }),
-    password: z
-      .string()
-      .min(6, { message: 'Password must be at least 6 characters.' })
-      .nullable(),
-    openAt: z.date().nullable(),
-    closeAt: z.date().nullable(),
-    previewableAt: z.date().nullable(),
-    whitelistedEmails: z.array(emailSchema),
-  })
-  .required();
+const formSchema = z.object({
+  title: z.string().min(3, {
+    message: 'Title must be at least 3 characters.',
+  }),
+  description: z.string().min(10, {
+    message: 'Description must be at least 10 characters.',
+  }),
+  maxAttempts: z.number().min(1, {
+    message: 'Max attempts must be at least 1.',
+  }),
+  maxDailyAttempts: z.number().min(1, {
+    message: 'Max daily attempts must be at least 1.',
+  }),
+  criteria: z.array(criteriaSchema),
+  duration: z.coerce.number().min(60, {
+    message: 'Duration must be at least 60 seconds.',
+  }),
+  enablePassword: z.boolean().default(false),
+  password: z.string().optional(),
+  enabled: z.boolean().default(false),
+  whitelistedOnly: z.boolean().default(false),
+  whitelistedEmails: z.array(emailSchema),
+  openAt: z.date().nullable(),
+  closeAt: z.date().nullable(),
+  previewableAt: z.date().nullable(),
+});
 
 export type ChallengeFormValues = z.infer<typeof formSchema>;
 
 interface ChallengeFormProps {
-  defaultValues?: Partial<ChallengeFormValues>;
+  defaultValues?: ChallengeFormValues;
   challengeId?: string;
   onSubmit: (values: ChallengeFormValues) => void;
   isSubmitting: boolean;
@@ -112,17 +108,18 @@ export default function ChallengeForm({
     defaultValues: {
       title: '',
       description: '',
-      criteria: [],
-      duration: 3600,
-      enabled: false,
-      whitelistedOnly: false,
       maxAttempts: 1,
       maxDailyAttempts: 1,
-      password: null,
+      criteria: [],
+      duration: 3600,
+      enablePassword: false,
+      password: '',
+      enabled: false,
+      whitelistedOnly: false,
+      whitelistedEmails: [],
       openAt: null,
       closeAt: null,
       previewableAt: null,
-      whitelistedEmails: [],
       ...defaultValues,
     },
   });
@@ -266,7 +263,6 @@ export default function ChallengeForm({
                             <Input
                               type="number"
                               {...field}
-                              value={field.value || 1}
                               onChange={(e) =>
                                 field.onChange(parseInt(e.target.value) || 1)
                               }
@@ -291,7 +287,6 @@ export default function ChallengeForm({
                             <Input
                               type="number"
                               {...field}
-                              value={field.value || 1}
                               onChange={(e) =>
                                 field.onChange(parseInt(e.target.value) || 1)
                               }
@@ -441,24 +436,29 @@ export default function ChallengeForm({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-4 rounded-lg border p-4">
-                    <div className="flex flex-row items-center justify-between">
-                      <div className="space-y-0.5">
-                        <div className="text-sm font-medium">
-                          Password Protection
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Require a password to access this challenge
-                        </div>
-                      </div>
-                      <Switch
-                        checked={form.watch('password') !== null}
-                        onCheckedChange={(checked) => {
-                          form.setValue('password', checked ? '' : null);
-                        }}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="enablePassword"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between">
+                          <div className="space-y-0.5">
+                            <FormLabel>Password Protection</FormLabel>
+                            <FormDescription>
+                              Require a password to access this challenge
+                            </FormDescription>
+                          </div>
 
-                    {form.watch('password') !== null && (
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch('enablePassword') && (
                       <>
                         <Separator className="mx-auto my-6 max-w-md" />
                         <FormField
@@ -472,7 +472,11 @@ export default function ChallengeForm({
                                 <FormControl>
                                   <Input
                                     type={showPassword ? 'text' : 'password'}
-                                    placeholder="Enter password"
+                                    placeholder={
+                                      isEditing
+                                        ? 'Leave empty to keep current password'
+                                        : 'Enter password'
+                                    }
                                     {...field}
                                     value={field.value || ''}
                                   />
@@ -493,7 +497,9 @@ export default function ChallengeForm({
                               </div>
 
                               <FormDescription>
-                                Must be at least 6 characters
+                                {isEditing
+                                  ? 'Enter a new password or leave empty to keep the current one'
+                                  : 'Must be at least 6 characters'}
                               </FormDescription>
                               <FormMessage className="text-xs" />
                             </FormItem>
