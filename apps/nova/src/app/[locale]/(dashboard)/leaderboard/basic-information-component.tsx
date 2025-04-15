@@ -1,3 +1,5 @@
+import { LeaderboardEntry } from './page';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { CardContent } from '@tuturuuu/ui/card';
 import {
@@ -9,18 +11,17 @@ import {
   Users,
   Zap,
 } from '@tuturuuu/ui/icons';
-import { Badge } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
 import React from 'react';
-import { LeaderboardEntry } from './page';
+
 interface Props {
   selectedChallenge: string;
   selectedChallengeTitle: string;
   yourRank: number;
   totalParticipants: number;
-  topScore:Number;
-  filteredData:LeaderboardEntry[]
+  topScore: Number;
+  filteredData: LeaderboardEntry[];
 }
 export default function BasicInformationComponent({
   selectedChallenge,
@@ -28,7 +29,7 @@ export default function BasicInformationComponent({
   yourRank,
   totalParticipants,
   topScore,
-  filteredData
+  filteredData,
 }: Props) {
   return (
     <div>
