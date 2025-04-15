@@ -141,6 +141,7 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
       .eq('challenge_id', challengeId)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (error) {
