@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.8.0",
+  "packageManager": "pnpm@10.8.1",
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "clsx": "^2.1.1",
@@ -28,8 +28,8 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^22.14.1",
     "@types/react": "^19.1.1",
-    "@typescript-eslint/eslint-plugin": "^8.29.1",
-    "@typescript-eslint/parser": "^8.29.1",
+    "@typescript-eslint/eslint-plugin": "^8.30.0",
+    "@typescript-eslint/parser": "^8.30.0",
     "typescript": "^5.8.3"
   },
   "overrides": {
