@@ -20,7 +20,7 @@ interface Props {
   selectedChallengeTitle: string;
   yourRank: number;
   totalParticipants: number;
-  topScore: Number;
+  topScore: number;
   isChecked: boolean;
   filteredData: LeaderboardEntry[];
 }
