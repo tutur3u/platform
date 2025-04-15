@@ -22,6 +22,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { ArrowLeft, BookOpen, Clock } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
 import { useRouter } from 'next/navigation';
 
 type Results = {
@@ -146,114 +147,126 @@ export default function ResultClient({ data }: Props) {
                   </CardContent>
                 </Card>
 
-                {session.problems.map((problem, problemIndex) => (
-                  <Card key={problemIndex}>
-                    <CardHeader>
-                      <CardTitle className="flex justify-between">
-                        <span>Problem {problemIndex + 1}</span>
-                        {problem.submissions.length > 0 && (
-                          <div
-                            className={`inline-flex items-center justify-center rounded-full px-2 py-1 font-medium ${
-                              (problem.submissions[0]?.score || 0) >= 8
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                : (problem.submissions[0]?.score || 0) >= 5
-                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                            }`}
+                <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
+                  {session.problems.map((problem, problemIndex) => (
+                    <Card key={problemIndex}>
+                      <CardHeader>
+                        <CardTitle className="flex justify-between">
+                          <span>Problem {problemIndex + 1}</span>
+                          {problem.submissions.length > 0 && (
+                            <div
+                              className={`inline-flex items-center justify-center rounded-full px-2 py-1 font-medium ${
+                                (problem.submissions[0]?.score || 0) >= 8
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                  : (problem.submissions[0]?.score || 0) >= 5
+                                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                              }`}
+                            >
+                              Best score:{' '}
+                              {Math.max(
+                                ...problem.submissions.map((s) => s.score || 0)
+                              )}
+                              /10
+                            </div>
+                          )}
+                        </CardTitle>
+                        <CardDescription>
+                          {problem.submissions.length} submission
+                          {problem.submissions.length !== 1 ? 's' : ''}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {problem.submissions.length > 0 ? (
+                          <Accordion
+                            type="single"
+                            collapsible
+                            className="w-full"
                           >
-                            Best score:{' '}
-                            {Math.max(
-                              ...problem.submissions.map((s) => s.score || 0)
-                            )}
-                            /10
+                            {problem.submissions
+                              .sort((a, b) => (b.score || 0) - (a.score || 0))
+                              .map((submission, subIndex) => (
+                                <AccordionItem
+                                  key={subIndex}
+                                  value={`submission-${sessionIndex}-${problemIndex}-${subIndex}`}
+                                >
+                                  <AccordionTrigger className="rounded-lg px-4 hover:bg-muted/50">
+                                    <div className="flex flex-1 justify-between">
+                                      <div className="flex items-center">
+                                        <span className="font-medium">
+                                          Submission {subIndex + 1}
+                                        </span>
+                                        {subIndex === 0 && (
+                                          <span className="ml-2 rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+                                            Best
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center space-x-4">
+                                        <div className="flex items-center">
+                                          <Clock className="mr-1 h-4 w-4 text-muted-foreground" />
+                                          <span className="text-sm text-muted-foreground">
+                                            {new Date(
+                                              submission.created_at
+                                            ).toLocaleString()}
+                                          </span>
+                                        </div>
+                                        <div
+                                          className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 font-medium ${
+                                            (submission.score || 0) >= 8
+                                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                              : (submission.score || 0) >= 5
+                                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                          }`}
+                                        >
+                                          {`${submission.score || 0}/10`}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </AccordionTrigger>
+                                  <AccordionContent className="px-4">
+                                    <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-2">
+                                      <div>
+                                        <h4 className="mb-2 text-sm font-medium">
+                                          Your Solution
+                                        </h4>
+                                        <div className="max-h-64 overflow-y-auto rounded-lg bg-muted p-3 whitespace-pre-wrap">
+                                          {submission.prompt ||
+                                            'No solution provided'}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <h4 className="mb-2 text-sm font-medium">
+                                          Feedback
+                                        </h4>
+                                        <div className="max-h-64 overflow-y-auto rounded-lg bg-muted p-3 whitespace-pre-wrap">
+                                          {submission.feedback ||
+                                            'No feedback available'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              ))}
+                          </Accordion>
+                        ) : (
+                          <div className="py-8 text-center text-muted-foreground">
+                            <div className="mb-2">
+                              No submissions for this problem
+                            </div>
                           </div>
                         )}
-                      </CardTitle>
-                      <CardDescription>
-                        {problem.submissions.length} submission
-                        {problem.submissions.length !== 1 ? 's' : ''}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {problem.submissions.length > 0 ? (
-                        <Accordion type="single" collapsible className="w-full">
-                          {problem.submissions
-                            .sort((a, b) => (b.score || 0) - (a.score || 0))
-                            .map((submission, subIndex) => (
-                              <AccordionItem
-                                key={subIndex}
-                                value={`submission-${sessionIndex}-${problemIndex}-${subIndex}`}
-                              >
-                                <AccordionTrigger className="rounded-lg px-4 hover:bg-muted/50">
-                                  <div className="flex flex-1 justify-between">
-                                    <div className="flex items-center">
-                                      <span className="font-medium">
-                                        Submission {subIndex + 1}
-                                      </span>
-                                      {subIndex === 0 && (
-                                        <span className="ml-2 rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
-                                          Best
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center space-x-4">
-                                      <div className="flex items-center">
-                                        <Clock className="mr-1 h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">
-                                          {new Date(
-                                            submission.created_at
-                                          ).toLocaleString()}
-                                        </span>
-                                      </div>
-                                      <div
-                                        className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 font-medium ${
-                                          (submission.score || 0) >= 8
-                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                            : (submission.score || 0) >= 5
-                                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                                        }`}
-                                      >
-                                        {`${submission.score || 0}/10`}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-4">
-                                  <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-2">
-                                    <div>
-                                      <h4 className="mb-2 text-sm font-medium">
-                                        Your Solution
-                                      </h4>
-                                      <div className="max-h-64 overflow-y-auto rounded-lg bg-muted p-3 whitespace-pre-wrap">
-                                        {submission.prompt ||
-                                          'No solution provided'}
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <h4 className="mb-2 text-sm font-medium">
-                                        Feedback
-                                      </h4>
-                                      <div className="max-h-64 overflow-y-auto rounded-lg bg-muted p-3 whitespace-pre-wrap">
-                                        {submission.feedback ||
-                                          'No feedback available'}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            ))}
-                        </Accordion>
-                      ) : (
-                        <div className="py-8 text-center text-muted-foreground">
-                          <div className="mb-2">
-                            No submissions for this problem
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {sessionIndex < data.sessions.length - 1 && (
+                  <div className="col-span-full mt-8 w-full">
+                    <Separator />
+                  </div>
+                )}
               </div>
             );
           })
