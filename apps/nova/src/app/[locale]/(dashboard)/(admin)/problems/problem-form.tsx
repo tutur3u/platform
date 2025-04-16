@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -40,6 +41,8 @@ import * as z from 'zod';
 const testCaseSchema = z.object({
   id: z.string().optional(),
   input: z.string().min(1, 'Input is required'),
+  output: z.string().min(1, 'Output is required'),
+  hidden: z.boolean().default(false),
 });
 
 const formSchema = z.object({
@@ -102,7 +105,10 @@ export default function ProblemForm({
   // Add a new test case
   const addTestCase = () => {
     const currentTestcases = form.getValues('testCases') || [];
-    form.setValue('testCases', [...currentTestcases, { input: '' }]);
+    form.setValue('testCases', [
+      ...currentTestcases,
+      { input: '', output: '', hidden: false },
+    ]);
   };
 
   // Remove a test case
@@ -326,6 +332,42 @@ export default function ProblemForm({
                                   placeholder="Enter test case input"
                                   {...field}
                                 />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name={`testCases.${index}.output`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Output</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Enter expected output"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name={`testCases.${index}.hidden`}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                  <FormLabel>Hide from users</FormLabel>
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>

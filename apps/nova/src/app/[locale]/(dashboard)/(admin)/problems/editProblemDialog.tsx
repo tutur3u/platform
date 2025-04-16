@@ -44,6 +44,8 @@ export default function EditProblemDialog({
       testCases: problem.test_cases.map((tc) => ({
         id: tc.id,
         input: tc.input,
+        output: tc.output,
+        hidden: tc.hidden,
       })),
     };
   }, [problem]);
