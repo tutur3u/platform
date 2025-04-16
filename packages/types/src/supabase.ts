@@ -2332,7 +2332,7 @@ export type Database = {
           allow_challenge_management: boolean;
           allow_role_management: boolean;
           created_at: string;
-          email: string;
+          email: string | null;
           enabled: boolean;
           id: string;
         };
@@ -2340,7 +2340,7 @@ export type Database = {
           allow_challenge_management?: boolean;
           allow_role_management?: boolean;
           created_at?: string;
-          email: string;
+          email?: string | null;
           enabled: boolean;
           id?: string;
         };
@@ -2348,7 +2348,7 @@ export type Database = {
           allow_challenge_management?: boolean;
           allow_role_management?: boolean;
           created_at?: string;
-          email?: string;
+          email?: string | null;
           enabled?: boolean;
           id?: string;
         };
