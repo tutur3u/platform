@@ -10,10 +10,10 @@ import {
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
+  EventPriorityPicker,
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
-  EventPriorityPicker,
 } from './EventFormComponents';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';

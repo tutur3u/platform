@@ -8,20 +8,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
+import { Slider } from '@tuturuuu/ui/slider';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin } from 'lucide-react';
 import { ReactNode } from 'react';
-import { Slider } from '@tuturuuu/ui/slider';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {
@@ -295,7 +288,7 @@ export const EventPriorityPicker = ({
       <Label htmlFor="priority" className="text-sm font-medium">
         Priority
       </Label>
-      <div className={cn("space-y-3", disabled ? "opacity-50" : "")}>
+      <div className={cn('space-y-3', disabled ? 'opacity-50' : '')}>
         <Slider
           id="priority"
           min={0}
@@ -311,9 +304,9 @@ export const EventPriorityPicker = ({
             <div
               key={option.value}
               className={cn(
-                "font-medium",
+                'font-medium',
                 option.color,
-                value === option.value ? "opacity-100" : "opacity-50"
+                value === option.value ? 'opacity-100' : 'opacity-50'
               )}
             >
               {option.label}
