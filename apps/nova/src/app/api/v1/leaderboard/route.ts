@@ -85,36 +85,54 @@ export async function GET(req: NextRequest) {
 
   // Add whitelisted users
   if (whitelistedData?.length > 0) {
-    for (const whitelistedUser of whitelistedData) {
-      if (!whitelistedUser.email) continue;
+    const whitelistedEmails = whitelistedData
+      .filter(user => user.email)
+      .map(user => user.email);
 
-      const { data: userData } = await sbAdmin
+    if (whitelistedEmails.length > 0) {
+      // Get all user IDs in one query
+      const { data: userDataBatch } = await sbAdmin
         .from('user_private_details')
-        .select('user_id')
-        .eq('email', whitelistedUser.email)
-        .maybeSingle();
+        .select('user_id, email')
+        .in('email', whitelistedEmails);
 
-      if (userData?.user_id && !existingUserIds.includes(userData.user_id)) {
-        const { data: userProfile } = await sbAdmin
+      // Get all user profiles in one query
+      const userIds = userDataBatch
+        ?.filter(data => data.user_id && !existingUserIds.includes(data.user_id))
+        .map(data => data.user_id) || [];
+
+      if (userIds.length > 0) {
+        const { data: userProfiles } = await sbAdmin
           .from('users')
-          .select('display_name, avatar_url')
-          .eq('id', userData.user_id)
-          .maybeSingle();
+          .select('id, display_name, avatar_url')
+          .in('id', userIds);
 
-        if (userProfile) {
-          groupedData.push({
-            id: crypto.randomUUID(),
-            user_id: userData.user_id,
-            challenge_id: '',
-            total_score: 0,
-            users: {
-              display_name: userProfile.display_name,
-              avatar_url: userProfile.avatar_url,
-            },
-            nova_challenges: { id: '', title: '' },
-            challenge_scores: {},
-          });
-        }
+        // Map user profiles by their user ID
+        const userProfileMap = new Map();
+        userProfiles?.forEach(profile => {
+          userProfileMap.set(profile.id, profile);
+        });
+
+        // Add whitelisted users to grouped data
+        userDataBatch?.forEach(userData => {
+          if (userData.user_id && !existingUserIds.includes(userData.user_id)) {
+            const userProfile = userProfileMap.get(userData.user_id);
+            if (userProfile) {
+              groupedData.push({
+                id: crypto.randomUUID(),
+                user_id: userData.user_id,
+                challenge_id: '',
+                total_score: 0,
+                users: {
+                  display_name: userProfile.display_name,
+                  avatar_url: userProfile.avatar_url,
+                },
+                nova_challenges: { id: '', title: '' },
+                challenge_scores: {},
+              });
+            }
+          }
+        });
       }
     }
   }
