@@ -1,9 +1,11 @@
 import ProblemCardSkeleton from './ProblemCardSkeleton';
 import CreateProblemDialog from './createProblemDialog';
 import ProblemCard from './problemCard';
+import SolutionEdit from './solutionEdit';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
@@ -24,9 +26,22 @@ export default async function Page() {
         />
       </div>
 
-      <Suspense fallback={<ProblemCardSkeleton />}>
-        <ProblemsList />
-      </Suspense>
+      <Tabs defaultValue="problems" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="problems">Problems</TabsTrigger>
+          <TabsTrigger value="solutions">Solutions</TabsTrigger>
+        </TabsList>
+        <TabsContent value="problems">
+          <Suspense fallback={<ProblemCardSkeleton />}>
+            <ProblemsList />
+          </Suspense>
+        </TabsContent>
+        <TabsContent value="solutions" className="mt-4">
+          <div className="grid grid-cols-1 items-center gap-6">
+            <SolutionEdit />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
