@@ -8,7 +8,12 @@ interface UserInterface {
   role: string;
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = 20;
+  const offset = (page - 1) * limit;
+
   const sbAdmin = await createAdminClient();
 
   // 1. Get all team members + their teams
@@ -95,11 +100,19 @@ export async function GET(_req: NextRequest) {
     })
   );
 
-  // 5. Sort & rank
+  // Sort and slice the data for pagination
   leaderboardArray.sort((a, b) => b.score - a.score);
-  leaderboardArray.forEach((entry, index) => {
-    entry.rank = index + 1;
+
+  const totalCount = leaderboardArray.length;
+  const hasMore = offset + limit < totalCount;
+  const paginatedData = leaderboardArray.slice(offset, offset + limit);
+
+  paginatedData.forEach((entry, index) => {
+    entry.rank = offset + index + 1;
   });
 
-  return NextResponse.json({ data: leaderboardArray });
+  return NextResponse.json({
+    data: paginatedData,
+    hasMore,
+  });
 }

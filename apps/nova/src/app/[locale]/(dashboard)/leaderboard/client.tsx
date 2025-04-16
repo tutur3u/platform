@@ -21,11 +21,15 @@ export default function LeaderboardPage({
   challenges,
   onTeamModeChange,
   isChecked,
+  onLoadMore,
+  hasMore,
 }: {
   data: LeaderboardEntry[];
   challenges: { id: string; title: string }[];
   onTeamModeChange?: (isTeamMode: boolean) => void;
   isChecked: boolean;
+  onLoadMore: () => void;
+  hasMore: boolean;
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -288,6 +292,18 @@ export default function LeaderboardPage({
                 challenges={challenges}
                 selectedChallenge={selectedChallenge}
               />
+
+              {hasMore && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={onLoadMore}
+                    className="gap-2"
+                  >
+                    Load More
+                  </Button>
+                </div>
+              )}
             </motion.div>
           </div>
 

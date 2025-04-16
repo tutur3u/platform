@@ -2,7 +2,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  const page = parseInt(searchParams.get('page') || '1');
+  const limit = 20;
+  const offset = (page - 1) * limit;
+
   const sbAdmin = await createAdminClient();
 
   const { data: leaderboardData, error } = await sbAdmin.from('nova_sessions')
@@ -114,11 +119,16 @@ export async function GET(_req: NextRequest) {
     }
   }
 
+  // Sort and slice the data for pagination
   groupedData.sort((a, b) => (b.total_score ?? 0) - (a.total_score ?? 0));
 
-  const formattedData = groupedData.map((entry, index) => ({
+  const totalCount = groupedData.length;
+  const hasMore = offset + limit < totalCount;
+  const paginatedData = groupedData.slice(offset, offset + limit);
+
+  const formattedData = paginatedData.map((entry, index) => ({
     id: entry.user_id,
-    rank: index + 1,
+    rank: offset + index + 1,
     name: entry.users.display_name || generateFunName(entry.user_id),
     avatar: entry.users.avatar_url ?? '',
     score: entry.total_score ?? 0,
@@ -128,5 +138,6 @@ export async function GET(_req: NextRequest) {
   return NextResponse.json({
     data: formattedData,
     challenges: challenges || [],
+    hasMore,
   });
 }
