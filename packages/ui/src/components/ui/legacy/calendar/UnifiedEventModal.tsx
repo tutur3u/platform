@@ -10,6 +10,7 @@ import {
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
+  EventPriorityPicker,
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
@@ -345,18 +346,18 @@ export function UnifiedEventModal({
 
     try {
       let savedEvent: CalendarEvent;
+      const eventData = {
+        ...event,
+        priority: event.priority || 'medium',
+        locked: event.locked || false,
+      };
+
       if (activeEvent?.id === 'new') {
-        savedEvent = await addEvent({
-          ...event,
-          locked: event.locked || false,
-        } as Omit<CalendarEvent, 'id'>);
+        savedEvent = await addEvent(eventData as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
         const originalId = activeEvent.id;
         if (originalId) {
-          savedEvent = await updateEvent(originalId, {
-            ...event,
-            locked: event.locked || false,
-          });
+          savedEvent = await updateEvent(originalId, eventData);
         } else {
           throw new Error('Invalid event ID');
         }
@@ -454,6 +455,7 @@ export function UnifiedEventModal({
           end_at: eventData.end_at,
           color: eventData.color || 'BLUE',
           location: eventData.location || '',
+          priority: eventData.priority || 'medium',
           locked: false, // Default to unlocked for AI-generated events
         };
 
@@ -959,6 +961,13 @@ export function UnifiedEventModal({
 
                     {/* Location and Description */}
                     <div className="space-y-4">
+                      <EventPriorityPicker
+                        value={event.priority || 'medium'}
+                        onChange={(value) =>
+                          setEvent({ ...event, priority: value })
+                        }
+                        disabled={event.locked}
+                      />
                       <EventLocationInput
                         value={event.location || ''}
                         onChange={(value) =>
