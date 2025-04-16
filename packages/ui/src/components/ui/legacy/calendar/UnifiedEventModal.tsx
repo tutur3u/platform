@@ -10,10 +10,10 @@ import {
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
-  EventPriorityPicker,
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
+  EventPriorityPicker,
 } from './EventFormComponents';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
@@ -446,30 +446,58 @@ export function UnifiedEventModal({
     try {
       const eventsToSave = generatedEvents;
       const savedEvents: CalendarEvent[] = [];
+      const failedEvents: Array<{ event: any, error: any }> = [];
 
+      // Save each event individually
       for (const eventData of eventsToSave) {
-        const calendarEvent: Omit<CalendarEvent, 'id'> = {
-          title: eventData.title || 'New Event',
-          description: eventData.description || '',
-          start_at: eventData.start_at,
-          end_at: eventData.end_at,
-          color: eventData.color || 'BLUE',
-          location: eventData.location || '',
-          priority: eventData.priority || 'medium',
-          locked: false, // Default to unlocked for AI-generated events
-        };
+        try {
+          const calendarEvent: Omit<CalendarEvent, 'id'> = {
+            title: eventData.title || 'New Event',
+            description: eventData.description || '',
+            start_at: eventData.start_at,
+            end_at: eventData.end_at,
+            color: eventData.color || 'BLUE',
+            location: eventData.location || '',
+            priority: eventData.priority || 'medium',
+            locked: false, // Default to unlocked for AI-generated events
+          };
 
-        const savedEvent = await addEvent(calendarEvent);
-        savedEvents.push(savedEvent);
-        await syncWithGoogleCalendar(savedEvent);
+          const savedEvent = await addEvent(calendarEvent);
+          savedEvents.push(savedEvent);
+        } catch (error) {
+          console.error('Error saving event to calendar:', error);
+          failedEvents.push({ event: eventData, error });
+        }
+      }
+      // Sync with Google Calendar if possible
+      if (enableExperimentalGoogleCalendar) {
+        for (const savedEvent of savedEvents) {
+          try {
+            await syncWithGoogleCalendar(savedEvent);
+          } catch (error) {
+            console.error('Error syncing with Google Calendar:', error);
+            // don't stop the loop
+          }
+        }
       }
 
-      toast({
-        title: 'Success',
-        description: `${eventsToSave.length} event${eventsToSave.length > 1 ? 's' : ''} saved and synced with Google Calendar`,
-      });
+      // Show success notification
+      if (savedEvents.length > 0) {
+        toast({
+          title: 'Success',
+          description: `${savedEvents.length}/${eventsToSave.length} event${savedEvents.length > 1 ? 's' : ''} saved${enableExperimentalGoogleCalendar ? ' and synced with Google Calendar' : ''}`,
+        });
+        closeModal();
+      }
 
-      closeModal();
+      // If there are failed events, show an error notification
+      if (failedEvents.length > 0) {
+        toast({
+          title: 'Warning',
+          description: `${failedEvents.length} event${failedEvents.length > 1 ? 's' : ''} failed to save`,
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.error('Error saving AI events to calendar:', error);
       toast({
