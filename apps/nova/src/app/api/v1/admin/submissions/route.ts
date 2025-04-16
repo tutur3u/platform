@@ -123,7 +123,7 @@ export async function GET(request: Request) {
 
     // Exclude a specific submission if needed
     if (excludeId) {
-      query = query.neq('id', Number(excludeId));
+      query = query.neq('id', excludeId);
     }
 
     // Apply sorting and pagination

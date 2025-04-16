@@ -2260,20 +2260,26 @@ export type Database = {
       nova_problem_test_cases: {
         Row: {
           created_at: string;
+          hidden: boolean;
           id: string;
           input: string;
+          output: string;
           problem_id: string;
         };
         Insert: {
           created_at?: string;
+          hidden?: boolean;
           id?: string;
           input: string;
+          output: string;
           problem_id: string;
         };
         Update: {
           created_at?: string;
+          hidden?: boolean;
           id?: string;
           input?: string;
+          output?: string;
           problem_id?: string;
         };
         Relationships: [
@@ -2402,64 +2408,35 @@ export type Database = {
           },
         ];
       };
-      nova_submission_outputs: {
-        Row: {
-          created_at: string;
-          id: number;
-          output: string;
-          submission_id: number;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          output: string;
-          submission_id: number;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          output?: string;
-          submission_id?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_submission_outputs_submission_id_fkey';
-            columns: ['submission_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_submissions';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       nova_submissions: {
         Row: {
           created_at: string;
           feedback: string;
-          id: number;
+          id: string;
           problem_id: string;
           prompt: string;
           score: number;
-          session_id: string | null;
+          session_id: string;
           user_id: string;
         };
         Insert: {
           created_at?: string;
           feedback: string;
-          id?: number;
+          id?: string;
           problem_id: string;
           prompt: string;
           score: number;
-          session_id?: string | null;
+          session_id: string;
           user_id: string;
         };
         Update: {
           created_at?: string;
           feedback?: string;
-          id?: number;
+          id?: string;
           problem_id?: string;
           prompt?: string;
           score?: number;
-          session_id?: string | null;
+          session_id?: string;
           user_id?: string;
         };
         Relationships: [

@@ -62,7 +62,7 @@ export async function GET(_request: Request, { params }: Params) {
         )
       `
       )
-      .eq('id', Number(submissionId))
+      .eq('id', submissionId)
       .single();
 
     if (error) {

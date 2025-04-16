@@ -24,7 +24,7 @@ export async function GET(_request: Request, { params }: Params) {
     const { data: submission, error } = await supabase
       .from('nova_submissions')
       .select('*')
-      .eq('id', Number(submissionId))
+      .eq('id', submissionId)
       .single();
 
     if (error) {
@@ -98,7 +98,7 @@ export async function PUT(request: Request, { params }: Params) {
     const { data: updatedSubmission, error: updateError } = await supabase
       .from('nova_submissions')
       .update(updateData)
-      .eq('id', Number(submissionId))
+      .eq('id', submissionId)
       .select()
       .single();
 
@@ -143,7 +143,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     const { error: deleteError } = await supabase
       .from('nova_submissions')
       .delete()
-      .eq('id', Number(submissionId));
+      .eq('id', submissionId);
 
     if (deleteError) {
       console.error('Database Error: ', deleteError);

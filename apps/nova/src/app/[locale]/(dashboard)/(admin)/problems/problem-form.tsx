@@ -62,9 +62,7 @@ const formSchema = z.object({
     message: 'Example output is required.',
   }),
   challengeId: z.string().nonempty('Challenge is required'),
-  testCases: z
-    .array(testCaseSchema)
-    .min(1, 'At least one test case is required'),
+  testCases: z.array(testCaseSchema),
 });
 
 export type ProblemFormValues = z.infer<typeof formSchema>;
@@ -336,7 +334,7 @@ export default function ProblemForm({
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       No test cases added yet.
                     </p>
                   )}

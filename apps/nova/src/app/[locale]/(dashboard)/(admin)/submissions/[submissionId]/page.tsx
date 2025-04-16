@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  NovaChallenge,
-  NovaProblem,
-  NovaSubmission,
-  NovaSubmissionOutput,
-} from '@tuturuuu/types/db';
+import { NovaChallenge, NovaProblem, NovaSubmission } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -30,7 +25,6 @@ interface SubmissionDetails extends NovaSubmission {
     display_name: string;
     avatar_url: string;
   };
-  outputs?: NovaSubmissionOutput[];
 }
 
 interface Props {
@@ -223,7 +217,7 @@ export default function Page({ params }: Props) {
           <CardContent>
             <div className="mb-6 space-y-4">
               <div>
-                <h3 className="font-semibold text-muted-foreground">User</h3>
+                <h3 className="text-muted-foreground font-semibold">User</h3>
                 <div className="mt-1 flex items-center gap-2">
                   {submission.users?.avatar_url ? (
                     <img
@@ -232,7 +226,7 @@ export default function Page({ params }: Props) {
                       className="h-8 w-8 rounded-full"
                     />
                   ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                    <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
                       {submission.users?.display_name?.charAt(0) || '?'}
                     </div>
                   )}
@@ -243,7 +237,7 @@ export default function Page({ params }: Props) {
               </div>
 
               <div>
-                <h3 className="font-semibold text-muted-foreground">
+                <h3 className="text-muted-foreground font-semibold">
                   Challenge
                 </h3>
                 <p className="font-medium">
@@ -253,7 +247,7 @@ export default function Page({ params }: Props) {
               </div>
 
               <div>
-                <h3 className="font-semibold text-muted-foreground">Problem</h3>
+                <h3 className="text-muted-foreground font-semibold">Problem</h3>
                 <p className="font-medium">
                   {submission.nova_problems?.title || 'Unknown Problem'}
                 </p>
@@ -296,22 +290,17 @@ export default function Page({ params }: Props) {
                 <TabsTrigger value="feedback" className="flex-1">
                   Feedback
                 </TabsTrigger>
-                {submission.outputs && submission.outputs.length > 0 && (
-                  <TabsTrigger value="output" className="flex-1">
-                    Output
-                  </TabsTrigger>
-                )}
               </TabsList>
 
               <TabsContent value="prompt" className="mt-4">
                 <div className="relative">
-                  <pre className="max-h-[400px] overflow-auto rounded-md bg-muted/50 p-4 text-sm">
+                  <pre className="bg-muted/50 max-h-[400px] overflow-auto rounded-md p-4 text-sm">
                     {submission.prompt}
                   </pre>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-2 right-2"
+                    className="absolute right-2 top-2"
                     onClick={() => copyToClipboard(submission.prompt)}
                   >
                     {copied ? (
@@ -324,18 +313,10 @@ export default function Page({ params }: Props) {
               </TabsContent>
 
               <TabsContent value="feedback" className="mt-4">
-                <div className="max-h-[400px] overflow-auto rounded-md bg-muted/50 p-4 text-sm">
+                <div className="bg-muted/50 max-h-[400px] overflow-auto rounded-md p-4 text-sm">
                   {submission.feedback || 'No feedback provided'}
                 </div>
               </TabsContent>
-
-              {submission.outputs && submission.outputs.length > 0 && (
-                <TabsContent value="output" className="mt-4">
-                  <div className="max-h-[400px] overflow-auto rounded-md bg-muted/50 p-4 text-sm">
-                    {submission.outputs[0]?.output || 'No output available'}
-                  </div>
-                </TabsContent>
-              )}
             </Tabs>
           </CardContent>
         </Card>
@@ -356,7 +337,7 @@ export default function Page({ params }: Props) {
             {relatedSubmissions.map((related) => (
               <Card
                 key={related.id}
-                className="cursor-pointer transition-colors hover:bg-accent/50"
+                className="hover:bg-accent/50 cursor-pointer transition-colors"
                 onClick={() => router.push(`/submissions/${related.id}`)}
               >
                 <CardHeader className="pb-2">
@@ -381,7 +362,7 @@ export default function Page({ params }: Props) {
                         className="h-6 w-6 rounded-full"
                       />
                     ) : (
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs">
+                      <div className="bg-primary/10 flex h-6 w-6 items-center justify-center rounded-full text-xs">
                         {related.users?.display_name?.charAt(0) || '?'}
                       </div>
                     )}
