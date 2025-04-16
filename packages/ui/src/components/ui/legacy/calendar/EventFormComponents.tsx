@@ -8,13 +8,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
+import { Slider } from '@tuturuuu/ui/slider';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
@@ -270,45 +264,59 @@ export const EventPriorityPicker = ({
   value: EventPriority;
   onChange: (value: EventPriority) => void;
   disabled?: boolean;
-}) => (
-  <div className="space-y-2">
-    <Label htmlFor="priority" className="text-sm font-medium">
-      Priority
-    </Label>
-    <Select
-      value={value}
-      onValueChange={(val) => onChange(val as EventPriority)}
-      disabled={disabled}
-    >
-      <SelectTrigger
-        id="priority"
-        className="border-none bg-muted/50 focus:ring-0"
-      >
-        <SelectValue placeholder="Select priority" />
-      </SelectTrigger>
-      <SelectContent>
-        {PRIORITY_OPTIONS.map((priority) => (
-          <SelectItem
-            key={priority.value}
-            value={priority.value}
-            className={cn(
-              'flex cursor-pointer items-center gap-2',
-              priority.className
-            )}
-          >
-            <div className="flex items-center gap-2">
-              {priority.icon}
-              <span>{priority.name}</span>
+}) => {
+  const priorityOptions = [
+    { value: 'low', label: 'Low Priority', color: 'text-blue-500' },
+    { value: 'medium', label: 'Medium Priority', color: 'text-green-500' },
+    { value: 'high', label: 'High Priority', color: 'text-red-500' },
+  ];
+
+  const priorityToValue = {
+    low: 0,
+    medium: 1,
+    high: 2,
+  };
+
+  const valueToPriority = (val: number): EventPriority => {
+    if (val === 0) return 'low';
+    if (val === 1) return 'medium';
+    return 'high';
+  };
+
+  return (
+    <div className="space-y-4">
+      <Label htmlFor="priority" className="text-sm font-medium">
+        Priority
+      </Label>
+      <div className={cn('space-y-3', disabled ? 'opacity-50' : '')}>
+        <Slider
+          id="priority"
+          min={0}
+          max={2}
+          step={1}
+          value={[priorityToValue[value]]}
+          onValueChange={(vals) => onChange(valueToPriority(vals[0] ?? 0))}
+          disabled={disabled}
+          className="w-full"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground">
+          {priorityOptions.map((option) => (
+            <div
+              key={option.value}
+              className={cn(
+                'font-medium',
+                option.color,
+                value === option.value ? 'opacity-100' : 'opacity-50'
+              )}
+            >
+              {option.label}
             </div>
-            <span className="text-xs text-muted-foreground">
-              {priority.description}
-            </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
-);
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Toggle switch component
 export const EventToggleSwitch = ({

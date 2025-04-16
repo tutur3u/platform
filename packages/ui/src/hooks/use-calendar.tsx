@@ -383,6 +383,7 @@ export const CalendarProvider = ({
             end_at: endDate.toISOString(),
             color: eventColor as SupportedColor,
             location: event.location || '',
+            priority: event.priority || 'medium',
             ws_id: ws.id,
             locked: false,
           })
@@ -493,6 +494,7 @@ export const CalendarProvider = ({
             end_at: updateData.end_at,
             color: updateData.color,
             location: updateData.location,
+            priority: updateData.priority,
             locked: updateData.locked,
           })
           .eq('id', eventId)
@@ -745,6 +747,7 @@ export const CalendarProvider = ({
             ws_id: ws.id,
             google_event_id: event.google_event_id,
             locked: event.locked || false,
+            priority: event.priority || 'medium',
           });
 
         if (insertError) {
@@ -785,6 +788,7 @@ export const CalendarProvider = ({
                 end_at: event.end_at,
                 color: event.color,
                 location: event.location,
+                priority: event.priority,
               },
             }),
           });

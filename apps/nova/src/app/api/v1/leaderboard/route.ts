@@ -86,8 +86,8 @@ export async function GET(req: NextRequest) {
   // Add whitelisted users
   if (whitelistedData?.length > 0) {
     const whitelistedEmails = whitelistedData
-      .filter(user => user.email)
-      .map(user => user.email);
+      .filter((user) => user.email)
+      .map((user) => user.email);
 
     if (whitelistedEmails.length > 0) {
       // Get all user IDs in one query
@@ -97,9 +97,12 @@ export async function GET(req: NextRequest) {
         .in('email', whitelistedEmails);
 
       // Get all user profiles in one query
-      const userIds = userDataBatch
-        ?.filter(data => data.user_id && !existingUserIds.includes(data.user_id))
-        .map(data => data.user_id) || [];
+      const userIds =
+        userDataBatch
+          ?.filter(
+            (data) => data.user_id && !existingUserIds.includes(data.user_id)
+          )
+          .map((data) => data.user_id) || [];
 
       if (userIds.length > 0) {
         const { data: userProfiles } = await sbAdmin
@@ -109,12 +112,12 @@ export async function GET(req: NextRequest) {
 
         // Map user profiles by their user ID
         const userProfileMap = new Map();
-        userProfiles?.forEach(profile => {
+        userProfiles?.forEach((profile) => {
           userProfileMap.set(profile.id, profile);
         });
 
         // Add whitelisted users to grouped data
-        userDataBatch?.forEach(userData => {
+        userDataBatch?.forEach((userData) => {
           if (userData.user_id && !existingUserIds.includes(userData.user_id)) {
             const userProfile = userProfileMap.get(userData.user_id);
             if (userProfile) {
