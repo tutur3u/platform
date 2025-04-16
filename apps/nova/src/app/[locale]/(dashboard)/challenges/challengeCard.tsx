@@ -338,7 +338,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           </div>
 
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center text-xs">
               <Clock className="mr-1 h-3 w-3" /> Time remaining:
             </div>
             <Countdown
@@ -353,7 +353,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             className="mb-2"
           />
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
               <span>Started at: {format(startTime, 'PPpp')}</span>
             </div>
@@ -469,7 +469,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
 
   return (
     <>
-      <Card key={challenge.id} className="flex flex-col overflow-hidden">
+      <Card key={challenge.id} className="flex h-full flex-col overflow-hidden">
         <CardHeader className="flex flex-row justify-between pb-2">
           <div className="flex flex-col gap-2">
             <CardTitle>{challenge.title}</CardTitle>
@@ -504,116 +504,133 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             </DropdownMenu>
           )}
         </CardHeader>
-        <CardContent>
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
-          <div className="flex flex-col gap-2">
+        <CardContent className="flex-grow">
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
+
+          <div className="grid gap-2">
             <div className="flex items-center">
-              <Clock className="h-4 w-4 text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">
+              <Clock className="text-primary h-4 w-4 flex-shrink-0" />
+              <span className="text-muted-foreground ml-2 text-sm">
                 Duration: {formatDuration(challenge.duration)}
               </span>
             </div>
 
-            {(status === 'preview' || status === 'active') && (
-              <div className="flex items-center">
-                <AlertCircle className="h-4 w-4 text-indigo-500" />
-                <span className="ml-2 text-sm text-muted-foreground">
-                  Total attempts: {totalSessions}/{challenge.max_attempts}
-                </span>
-              </div>
-            )}
-
-            {(status === 'preview' || status === 'active') && (
-              <div className="flex items-center">
-                <AlertCircle className="h-4 w-4 text-violet-500" />
-                <span className="ml-2 text-sm text-muted-foreground">
-                  Daily attempts: {dailySessions}/{challenge.max_daily_attempts}
-                </span>
-              </div>
-            )}
-
-            {status === 'upcoming' && challenge.previewable_at && (
-              <div className="flex items-center">
-                <Eye className="h-4 w-4 text-amber-500" />
-                <span className="ml-2 text-sm text-muted-foreground">
-                  Preview available:{' '}
-                  {formatDistanceToNow(new Date(challenge.previewable_at), {
-                    addSuffix: true,
-                  })}
-                </span>
-              </div>
-            )}
-
-            {status === 'preview' && challenge.open_at && (
-              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <CalendarCheck className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                    <span className="ml-2 text-sm font-medium text-blue-700 dark:text-blue-300">
-                      Opens in:
-                    </span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  >
-                    {format(new Date(challenge.open_at), 'MMM d, yyyy')}
-                  </Badge>
+            <div className="flex h-6 items-center">
+              {status === 'preview' ||
+              status === 'active' ||
+              status === 'upcoming' ? (
+                <div className="flex items-center">
+                  <AlertCircle className="h-4 w-4 text-indigo-500" />
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    Total attempts: {totalSessions}/{challenge.max_attempts}
+                  </span>
                 </div>
-                <div className="mt-2 flex items-center justify-center">
-                  <Countdown
-                    target={new Date(challenge.open_at)}
-                    onComplete={updateStatus}
-                  />
-                </div>
-                <Progress
-                  value={calculatePercentage(
-                    new Date(),
-                    new Date(challenge.open_at)
-                  )}
-                  className="mt-2 h-1 w-full"
-                  indicatorClassName="bg-blue-500 dark:bg-blue-400"
-                />
-              </div>
-            )}
+              ) : (
+                <div className="h-4" />
+              )}
+            </div>
 
-            {status === 'active' && challenge.close_at && (
-              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <CalendarX className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-                    <span className="ml-2 text-sm font-medium text-amber-700 dark:text-amber-300">
-                      Closes in:
-                    </span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
-                  >
-                    {format(new Date(challenge.close_at), 'MMM d, yyyy')}
-                  </Badge>
+            <div className="flex h-6 items-center">
+              {status === 'preview' ||
+              status === 'active' ||
+              status === 'upcoming' ? (
+                <div className="flex items-center">
+                  <AlertCircle className="h-4 w-4 text-violet-500" />
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    Daily attempts: {dailySessions}/
+                    {challenge.max_daily_attempts}
+                  </span>
                 </div>
-                <div className="mt-2 flex items-center justify-center">
-                  <Countdown
-                    target={new Date(challenge.close_at)}
-                    onComplete={updateStatus}
-                  />
+              ) : (
+                <div className="h-4" />
+              )}
+            </div>
+            <div className="flex h-6 items-center">
+              {status === 'upcoming' && challenge.previewable_at ? (
+                <div className="mt-2 flex items-center">
+                  <Eye className="h-4 w-4 text-amber-500" />
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    Preview available:{' '}
+                    {formatDistanceToNow(new Date(challenge.previewable_at), {
+                      addSuffix: true,
+                    })}
+                  </span>
                 </div>
-                <Progress
-                  value={calculatePercentage(
-                    new Date(),
-                    new Date(challenge.close_at)
-                  )}
-                  className="mt-2 h-1 w-full"
-                  indicatorClassName="bg-amber-500 dark:bg-amber-400"
-                />
-              </div>
-            )}
+              ) : (
+                <div className="h-4" />
+              )}
+            </div>
           </div>
+
+          {status === 'preview' && challenge.open_at && (
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <CalendarCheck className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                  <span className="ml-2 text-sm font-medium text-blue-700 dark:text-blue-300">
+                    Opens in:
+                  </span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                >
+                  {format(new Date(challenge.open_at), 'MMM d, yyyy')}
+                </Badge>
+              </div>
+              <div className="mt-2 flex items-center justify-center">
+                <Countdown
+                  target={new Date(challenge.open_at)}
+                  onComplete={updateStatus}
+                />
+              </div>
+              <Progress
+                value={calculatePercentage(
+                  new Date(),
+                  new Date(challenge.open_at)
+                )}
+                className="mt-2 h-1 w-full"
+                indicatorClassName="bg-blue-500 dark:bg-blue-400"
+              />
+            </div>
+          )}
+
+          {status === 'active' && challenge.close_at && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <CalendarX className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                  <span className="ml-2 text-sm font-medium text-amber-700 dark:text-amber-300">
+                    Closes in:
+                  </span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+                >
+                  {format(new Date(challenge.close_at), 'MMM d, yyyy')}
+                </Badge>
+              </div>
+              <div className="mt-2 flex items-center justify-center">
+                <Countdown
+                  target={new Date(challenge.close_at)}
+                  onComplete={updateStatus}
+                />
+              </div>
+              <Progress
+                value={calculatePercentage(
+                  new Date(),
+                  new Date(challenge.close_at)
+                )}
+                className="mt-2 h-1 w-full"
+                indicatorClassName="bg-amber-500 dark:bg-amber-400"
+              />
+            </div>
+          )}
 
           {renderSessionStatus()}
         </CardContent>
-        <CardFooter className="flex flex-col gap-2">
+        <CardFooter className="mt-auto flex flex-col gap-2">
           {renderActionButton()}
         </CardFooter>
       </Card>
