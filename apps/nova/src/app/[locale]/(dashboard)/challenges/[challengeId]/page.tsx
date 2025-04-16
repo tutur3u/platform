@@ -95,6 +95,7 @@ async function getChallenge(
     const { data: testCases, error: testCaseError } = await sbAdmin
       .from('nova_problem_test_cases')
       .select('*')
+      .eq('hidden', false)
       .in('problem_id', problemIds);
 
     if (testCaseError) {
