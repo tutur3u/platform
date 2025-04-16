@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { error } from 'console';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(_: NextRequest) {
@@ -46,6 +47,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { data: existingTeam, error: checkError } = await supabase
+      .from('nova_teams')
+      .select('id')
+      .eq('name', name.trim())
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking team name:', checkError);
+      return NextResponse.json(
+        { error: 'Error checking team name' },
+        { status: 500 }
+      );
+    }
+
+    // team already exists
+    if (existingTeam) {
+      return NextResponse.json(
+        { error: 'A team with this name already exists' },
+        { status: 409 }
+      );
+    }
+
+    // If team already exists, return conflict error
     const { data: team, error: teamError } = await supabase
       .from('nova_teams')
       .insert({ name })

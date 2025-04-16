@@ -56,7 +56,17 @@ export default function TeamClient({ onFinish }: { onFinish?: () => void }) {
         onFinish?.();
       } else {
         const data = await res.json();
-        toast.error(data.error || t('teams.create_error'));
+
+        // duplicated error
+        if (res.status === 409) {
+          form.setError('name', {
+            type: 'manual',
+            message:
+              t('teams.name_already_exists') || 'Team name already exists',
+          });
+        } else {
+          toast.error(data.error || t('teams.create_error'));
+        }
       }
     } catch (error) {
       console.error(error);
