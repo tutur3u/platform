@@ -2408,6 +2408,35 @@ export type Database = {
           },
         ];
       };
+      nova_submission_outputs: {
+        Row: {
+          created_at: string;
+          id: string;
+          output: string;
+          submission_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          output: string;
+          submission_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          output?: string;
+          submission_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_submission_outputs_submission_id_fkey';
+            columns: ['submission_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_submissions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_submissions: {
         Row: {
           created_at: string;
@@ -4010,6 +4039,7 @@ export type Database = {
           id: string;
           location: string | null;
           locked: boolean;
+          priority: string | null;
           start_at: string;
           title: string;
           ws_id: string;
@@ -4023,6 +4053,7 @@ export type Database = {
           id?: string;
           location?: string | null;
           locked?: boolean;
+          priority?: string | null;
           start_at: string;
           title?: string;
           ws_id: string;
@@ -4036,6 +4067,7 @@ export type Database = {
           id?: string;
           location?: string | null;
           locked?: boolean;
+          priority?: string | null;
           start_at?: string;
           title?: string;
           ws_id?: string;
