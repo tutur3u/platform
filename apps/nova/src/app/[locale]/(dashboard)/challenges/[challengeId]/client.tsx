@@ -131,7 +131,7 @@ export default function ChallengeClient({ challenge, session }: Props) {
 
           <div className="relative flex h-full w-full flex-col gap-4 overflow-hidden">
             <PromptComponent>
-              <PromptForm problem={currentProblem} />
+              <PromptForm problem={currentProblem} session={session} />
             </PromptComponent>
           </div>
         </div>

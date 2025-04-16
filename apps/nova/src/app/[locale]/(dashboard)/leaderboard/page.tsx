@@ -1,141 +1,100 @@
+'use client';
+
 import LeaderboardPage from './client';
-import type { LeaderboardEntry } from '@/components/leaderboard/leaderboard';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { generateFunName } from '@tuturuuu/utils/name-helper';
+import { useEffect, useState } from 'react';
 
-export default async function Page() {
-  const sbAdmin = await createAdminClient();
+interface UserInterface {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+}
 
-  // Fetch sessions with challenge information
-  const { data: leaderboardData, error } = await sbAdmin.from('nova_sessions')
-    .select(`
-        id,
-        user_id,
-        challenge_id,
-        total_score,
-        users!inner(
-          display_name,
-          avatar_url
-        ),
-        nova_challenges(
-          id,
-          title
-        )
-      `);
+interface UserInterface {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+}
 
-  if (error) throw error;
+export type LeaderboardEntry = {
+  id: string;
+  rank: number;
+  name: string;
+  avatar: string;
+  member?: UserInterface[];
+  score: number;
+  challenge_scores?: Record<string, number>;
+};
 
-  // Fetch all challenges for filtering options
-  const { data: challenges } = await sbAdmin
-    .from('nova_challenges')
-    .select('id, title')
-    .order('title', { ascending: true });
-
-  // Fetch whitelisted users that aren't already in leaderboard
-  const { data: whitelistedData, error: whitelistError } = await sbAdmin
-    .from('nova_roles')
-    .select(
-      `
-      email
-    `
-    )
-    .eq('enabled', true);
-
-  if (whitelistError) throw whitelistError;
-
-  const groupedData = leaderboardData.reduce(
-    (acc, curr) => {
-      const existingUser = acc.find((item) => item.user_id === curr.user_id);
-      if (existingUser) {
-        existingUser.total_score =
-          (existingUser.total_score ?? 0) + (curr.total_score ?? 0);
-
-        // Track scores by challenge
-        const challengeId = curr.challenge_id;
-        if (challengeId) {
-          if (!existingUser.challenge_scores) {
-            existingUser.challenge_scores = {};
-          }
-
-          existingUser.challenge_scores[challengeId] =
-            (existingUser.challenge_scores[challengeId] ?? 0) +
-            (curr.total_score ?? 0);
-        }
-      } else {
-        // Initialize challenge scores
-        const challenge_scores: Record<string, number> = {};
-        if (curr.challenge_id) {
-          challenge_scores[curr.challenge_id] = curr.total_score ?? 0;
-        }
-
-        acc.push({
-          id: curr.id,
-          user_id: curr.user_id,
-          challenge_id: curr.challenge_id,
-          total_score: curr.total_score ?? 0,
-          users: curr.users,
-          nova_challenges: curr.nova_challenges,
-          challenge_scores,
-        });
-      }
-      return acc;
-    },
-    [] as ((typeof leaderboardData)[0] & {
-      challenge_scores?: Record<string, number>;
-    })[]
+export default function Page() {
+  const [data, setData] = useState<LeaderboardEntry[]>([]);
+  const [challenges, setChallenges] = useState<{ id: string; title: string }[]>(
+    []
   );
+  const [loading, setLoading] = useState(true);
+  const [isChecked, setIsTeamMode] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  // Get existing user IDs in the leaderboard
-  const existingUserIds = groupedData.map((entry) => entry.user_id);
+  const handleTeamModeChange = (checked: boolean) => {
+    setIsTeamMode(checked);
+    console.log('Team mode toggled:', checked);
+  };
 
-  // Add whitelisted users who haven't taken any challenges
-  if (whitelistedData && whitelistedData.length > 0) {
-    for (const whitelistedUser of whitelistedData) {
-      if (!whitelistedUser.email) continue;
+  const fetchLeaderboard = async (pageNumber: number) => {
+    const baseUrl = isChecked
+      ? `/api/v1/leaderboard/team?page=${pageNumber}`
+      : `/api/v1/leaderboard?page=${pageNumber}`;
+    try {
+      const response = await fetch(baseUrl, {
+        cache: 'no-store',
+      });
 
-      // Get user data from the user_private_details table
-      const { data: userData } = await sbAdmin
-        .from('user_private_details')
-        .select('user_id')
-        .eq('email', whitelistedUser.email)
-        .maybeSingle();
-
-      if (userData?.user_id && !existingUserIds.includes(userData.user_id)) {
-        // Get user profile
-        const { data: userProfile } = await sbAdmin
-          .from('users')
-          .select('display_name, avatar_url')
-          .eq('id', userData.user_id)
-          .maybeSingle();
-
-        if (userProfile) {
-          groupedData.push({
-            id: crypto.randomUUID(),
-            user_id: userData.user_id,
-            challenge_id: '',
-            total_score: 0,
-            users: {
-              display_name: userProfile.display_name,
-              avatar_url: userProfile.avatar_url,
-            },
-            nova_challenges: { id: '', title: '' },
-            challenge_scores: {},
-          });
-        }
+      if (!response.ok) {
+        throw new Error('Failed to fetch leaderboard data');
       }
+
+      const json = await response.json();
+
+      if (pageNumber === 1) {
+        setData(json.data || []);
+      } else {
+        setData((prev) => [...prev, ...(json.data || [])]);
+      }
+
+      setChallenges(json.challenges || []);
+      setHasMore(json.hasMore || false);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    setPage(1);
+    fetchLeaderboard(1);
+  }, [isChecked]);
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchLeaderboard(nextPage);
+  };
+
+  if (loading) {
+    return <div className="p-6 text-center">Loading leaderboard...</div>;
   }
 
-  groupedData.sort((a, b) => (b.total_score ?? 0) - (a.total_score ?? 0));
-
-  const formattedData: LeaderboardEntry[] = groupedData.map((entry, index) => ({
-    id: entry.user_id,
-    rank: index + 1,
-    name: entry.users.display_name || generateFunName(entry.user_id),
-    avatar: entry.users.avatar_url ?? '',
-    score: entry.total_score ?? 0,
-    challenge_scores: entry.challenge_scores ?? {},
-  }));
-
-  return <LeaderboardPage data={formattedData} challenges={challenges || []} />;
+  return (
+    <LeaderboardPage
+      onTeamModeChange={handleTeamModeChange}
+      data={data}
+      isChecked={isChecked}
+      challenges={challenges}
+      onLoadMore={handleLoadMore}
+      hasMore={hasMore}
+    />
+  );
 }

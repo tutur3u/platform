@@ -5,16 +5,6 @@ export const createChallengeSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   duration: z.number().positive('Duration must be a positive number'),
-  criteria: z.array(
-    z.object({
-      name: z
-        .string()
-        .min(2, { message: 'Name must be at least 2 characters.' }),
-      description: z.string().min(10, {
-        message: 'Description must be at least 10 characters.',
-      }),
-    })
-  ),
   enabled: z.boolean(),
   whitelistedOnly: z.boolean(),
   maxAttempts: z.number().min(1, {
@@ -23,7 +13,7 @@ export const createChallengeSchema = z.object({
   maxDailyAttempts: z.number().min(1, {
     message: 'Max daily attempts must be at least 1.',
   }),
-  password: z.string().nullable(),
+  password: z.string().nullable().optional(),
   previewableAt: z.string().nullable(),
   openAt: z.string().nullable(),
   closeAt: z.string().nullable(),
@@ -63,6 +53,7 @@ export const createSubmissionSchema = z.object({
   feedback: z.string().min(1, 'Feedback is required'),
   score: z.number().min(0, 'Score must be non-negative'),
   problemId: z.string().min(1, 'Problem ID is required'),
+  sessionId: z.string().min(1, 'Session ID is required'),
 });
 
 // Testcases

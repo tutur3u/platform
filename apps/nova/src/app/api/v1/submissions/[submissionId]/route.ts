@@ -69,6 +69,7 @@ export async function PUT(request: Request, { params }: Params) {
     feedback?: string;
     score?: number;
     problemId?: string;
+    sessionId?: string;
   };
 
   try {
@@ -91,6 +92,7 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.feedback) updateData.feedback = body.feedback;
     if (body.score) updateData.score = body.score;
     if (body.problemId) updateData.problem_id = body.problemId;
+    if (body.sessionId) updateData.session_id = body.sessionId;
     updateData.user_id = user.id;
 
     const { data: updatedSubmission, error: updateError } = await supabase

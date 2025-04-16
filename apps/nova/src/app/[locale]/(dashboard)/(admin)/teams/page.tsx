@@ -77,7 +77,7 @@ async function getTeamsData({
     return getTeamsData({ q, pageSize, retry: false });
   }
 
-  // Transforms the data to include member_count and invitation_count
+  
   const transformedData = data.map((team) => ({
     ...team,
     member_count: team.nova_team_members?.[0]?.count || 0,

@@ -36,6 +36,7 @@ export type LeaderboardEntry = {
   rank: number;
   name: string;
   avatar: string;
+  member?: UserInterface[];
   score: number;
   challenge_scores?: Record<string, number>;
 };
@@ -44,13 +45,21 @@ interface LeaderboardProps {
   data: LeaderboardEntry[];
   isLoading?: boolean;
   currentUserId?: string;
+  isChecked?: boolean;
   challenges?: { id: string; title: string }[];
   selectedChallenge?: string;
 }
 
+interface UserInterface {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+}
 export function Leaderboard({
   data,
   isLoading = false,
+  isChecked,
   currentUserId,
   challenges = [],
   selectedChallenge = 'all',
@@ -155,7 +164,7 @@ export function Leaderboard({
         </TooltipProvider>
       </div>
 
-      <div className="scrollbar-thin max-h-[600px] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700">
+      <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700 max-h-[600px] overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/30">
             <TableRow className="border-b border-gray-200 hover:bg-transparent dark:border-slate-700/50 dark:hover:bg-transparent">
@@ -227,7 +236,7 @@ export function Leaderboard({
                         {/* Hexagon background with animated glow for top ranks */}
                         <div
                           className={cn(
-                            'absolute top-0 left-0 h-full w-full',
+                            'absolute left-0 top-0 h-full w-full',
                             entry.rank <= 3 && 'hex-shape'
                           )}
                           style={{
@@ -311,7 +320,7 @@ export function Leaderboard({
 
                         {/* Hexagonal avatar for all players */}
                         <Link
-                          href={`/profile/${entry.id.replace(/-/g, '')}`}
+                          href={`/${isChecked ? 'teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
                           className="relative block h-10 w-10 overflow-hidden transition-transform duration-300 group-hover:scale-110"
                         >
                           <Avatar className="h-10 w-10 ring-offset-white dark:ring-offset-slate-900">
@@ -329,7 +338,7 @@ export function Leaderboard({
 
                       <div>
                         <Link
-                          href={`/profile/${entry.id.replace(/-/g, '')}`}
+                          href={`/${isChecked ? 'teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
                           className={cn(
                             'font-medium text-gray-800 transition-all duration-300 group-hover:translate-x-1 dark:text-slate-200',
                             currentUserId === entry.id &&
