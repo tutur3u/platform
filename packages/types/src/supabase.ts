@@ -2439,6 +2439,7 @@ export type Database = {
           problem_id: string;
           prompt: string;
           score: number;
+          session_id: string | null;
           user_id: string;
         };
         Insert: {
@@ -2448,6 +2449,7 @@ export type Database = {
           problem_id: string;
           prompt: string;
           score: number;
+          session_id?: string | null;
           user_id: string;
         };
         Update: {
@@ -2457,6 +2459,7 @@ export type Database = {
           problem_id?: string;
           prompt?: string;
           score?: number;
+          session_id?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -2465,6 +2468,13 @@ export type Database = {
             columns: ['problem_id'];
             isOneToOne: false;
             referencedRelation: 'nova_problems';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_submissions_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_sessions';
             referencedColumns: ['id'];
           },
           {
@@ -6029,10 +6039,6 @@ export type Database = {
       };
     };
     Functions: {
-      check_challenge_attempt_limits: {
-        Args: { _challenge_id: string; _user_id: string };
-        Returns: boolean;
-      };
       cleanup_expired_cross_app_tokens: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;

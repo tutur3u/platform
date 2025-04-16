@@ -41,9 +41,10 @@ interface Props {
   problem: NovaProblem & {
     test_cases: NovaProblemTestCase[];
   };
+  session: NovaSession;
 }
 
-export default function PromptForm({ problem }: Props) {
+export default function PromptForm({ problem, session }: Props) {
   const [prompt, setPrompt] = useState('');
   const [customTestCase, setCustomTestCase] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,7 +56,7 @@ export default function PromptForm({ problem }: Props) {
 
   useEffect(() => {
     const getSubmissions = async () => {
-      const fetchedSubmissions = await fetchSubmissions(problem.id);
+      const fetchedSubmissions = await fetchSubmissions(problem.id, session.id);
       if (fetchedSubmissions) {
         setSubmissions(fetchedSubmissions);
         setAttempts(fetchedSubmissions.length);
@@ -63,7 +64,7 @@ export default function PromptForm({ problem }: Props) {
     };
 
     getSubmissions();
-  }, [problem.id]);
+  }, [session.id]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -120,6 +121,7 @@ export default function PromptForm({ problem }: Props) {
           feedback,
           score,
           problemId: problem.id,
+          sessionId: session.id,
         }),
       });
 
@@ -127,40 +129,25 @@ export default function PromptForm({ problem }: Props) {
         throw new Error('Failed to create submission');
       }
 
-      const fetchedSubmissions = await fetchSubmissions(problem.id);
+      const fetchedSubmissions = await fetchSubmissions(problem.id, session.id);
       if (fetchedSubmissions) {
         setSubmissions(fetchedSubmissions);
         setAttempts(fetchedSubmissions.length);
       }
 
-      const fetchedSessionsResponse = await fetch(
-        `/api/v1/sessions?challengeId=${problem.challenge_id}`
-      );
-
-      if (!fetchedSessionsResponse.ok) {
-        throw new Error('Failed to fetch sessions');
-      }
-
-      const fetchedSessions = await fetchedSessionsResponse.json();
-      const activeSession = fetchedSessions.find(
-        (session: NovaSession) => session.status === 'IN_PROGRESS'
-      );
-
-      if (activeSession) {
-        const updatedSessionResponse = await fetch(
-          `/api/v1/sessions/${activeSession.id}`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              totalScore: activeSession.total_score + score,
-            }),
-          }
-        );
-
-        if (!updatedSessionResponse.ok) {
-          throw new Error('Failed to update session');
+      const updatedSessionResponse = await fetch(
+        `/api/v1/sessions/${session.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            totalScore: session.total_score + score,
+          }),
         }
+      );
+
+      if (!updatedSessionResponse.ok) {
+        throw new Error('Failed to update session');
       }
     } catch (error: any) {
       console.error('Error:', error);
@@ -547,8 +534,10 @@ export default function PromptForm({ problem }: Props) {
   );
 }
 
-async function fetchSubmissions(problemId: string) {
-  const response = await fetch(`/api/v1/submissions?problemId=${problemId}`);
+async function fetchSubmissions(problemId: string, sessionId: string) {
+  const response = await fetch(
+    `/api/v1/submissions?problemId=${problemId}&sessionId=${sessionId}`
+  );
   const data = await response.json();
   if (response.ok) {
     return data;

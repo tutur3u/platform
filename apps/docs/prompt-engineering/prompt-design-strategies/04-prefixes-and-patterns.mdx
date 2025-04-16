@@ -1,0 +1,152 @@
+---
+title: 'Guide with Prefixes and Partial Patterns'
+description: 'Use labeled prefixes and incomplete structures to guide the model’s response format and intent.'
+---
+
+## Add prefixes
+
+Prefixes are short phrases or labels you can attach to parts of a prompt to guide the model’s understanding and output. They serve different roles based on where they’re placed:
+
+- **Input prefix**: This helps the model interpret sections of the input by labeling them. For instance, using “English:” and “French:” can indicate that different languages are being used.
+
+- **Output prefix**: Even though the model generates the output, you can lead with a prefix like “JSON:” to show that the response should follow a specific format.
+
+- **Example prefix**: In few-shot prompts, labeling examples with prefixes makes it easier for the model to recognize patterns and generate consistent, easy-to-understand results.
+
+For example, in the prompt:
+Text: signals the input section, and
+The answer is: signals the beginning of the expected output.
+
+**Example Prompt:**
+
+```prompt
+Classify the text as one of the following categories:
+- fruit
+- vegetable
+Text: Apple
+The answer is: fruit
+Text: Carrot
+The answer is: vegetable
+Text: Banana
+The answer is: fruit
+Text: Broccoli
+The answer is:
+```
+
+**Response:**
+
+```response
+The answer is: vegetable
+```
+
+## Let the model complete partial input
+
+Language models function similarly to powerful autocomplete systems. When you supply the beginning of a sentence, structure, or task, the model can predict and continue the rest based on that starting point. If your prompt includes examples or additional context, the model can use that information to generate a more relevant and accurate continuation.
+
+**Example Prompt:**
+
+```prompt
+Convert the following temperature report into a JSON object with fields for city, temperature (in Celsius), and condition.
+
+Report: It’s 18 degrees and cloudy in Hanoi.
+```
+
+**Response:**
+
+```response
+{
+  "city": "Hanoi",
+  "temperature": 18,
+  "condition": "cloudy"
+}
+```
+
+Although the model followed the instructions, describing the task in plain language can sometimes be tricky and may lead to varied interpretations. For instance, if someone says “Can I get two bananas and an orange?”, the model should generate a JSON object that includes only those items—banana and orange—and exclude fields like apple or grapes that weren’t mentioned. To make the task clearer and guide the output structure, it’s more effective to include a few-shot example with a response prefix like Output: so the model can complete the response by following the pattern shown.
+
+**Example Prompt:**
+
+```prompt
+Valid fields are apple, banana, orange, and grapes.
+Order: I'd like an apple and some grapes.
+Output:
+{
+  "apple": 1,
+  "grapes": 1
+}
+Order: Can I get two bananas and an orange?
+Output:
+```
+
+**Response:**
+
+```response
+{
+  "banana": 2,
+  "orange": 1
+}
+```
+
+Notice how "grapes" was excluded from the output because it wasn't a part of the order.
+
+## **Prompt the model to format its response**
+
+You can also guide the model to structure its output by using a completion-based approach. For example, the prompt below asks the model to generate an outline for an essay.
+
+**Example Prompt:**
+
+```prompt
+Create an outline for an essay about volcanoes.
+```
+
+**Response:**
+
+```response
+Volcanoes: Earth’s Fiery Power
+I. Introduction
+A. What volcanoes are and how they form
+B. Thesis: Volcanoes shape the Earth through both destruction and creation
+
+II. Types of Volcanoes
+A. Stratovolcanoes, shield, and cinder cones
+B. Key features and eruption styles
+
+III. Effects on People and Nature
+A. Hazards: lava, ash, tsunamis
+B. Benefits: fertile soil, geothermal energy
+
+IV. Monitoring and Safety
+A. How eruptions are predicted
+B. Importance of early warning systems
+
+V. Conclusion
+A. Volcanoes’ role in shaping Earth and human history
+```
+
+The prompt didn’t include instructions about how the outline should be structured, so the model selected a format on its own. If you want the model to follow a specific structure, you can provide the beginning of the outline in your desired format. The model will then continue generating the rest to match the pattern you've started.
+
+**Example Prompt:**
+
+```prompt
+Create an outline for an essay about volcanoes.
+I. Introduction
+*
+```
+
+**Response:**
+
+```response
+Volcanoes: Earth’s Fiery Sculptors
+I. Introduction
+- Hook: Start with a dramatic description of a volcanic eruption, capturing the raw power and impact on the landscape.
+- Background: Introduce what volcanoes are and how they form as openings in the Earth's crust.
+- Thesis: Present the central idea of the essay. Examples:
+  - Volcanoes are both destructive and creative forces that shape ecosystems and human life.
+  - Understanding volcanic activity is key to reducing disaster risks and appreciating Earth’s dynamic nature.
+  - Despite their dangers, volcanoes offer valuable scientific, ecological, and cultural insights.
+```
+
+**📝 Summary:**
+
+- When you provide the model with an incomplete input, it can finish it by recognizing patterns from any examples or context you've included.
+- In many cases, letting the model complete a partially written prompt is simpler and more effective than explaining the task in full.
+- By starting the answer yourself, you can guide the model to generate responses in the specific structure or style you want.

@@ -7,6 +7,7 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const { searchParams } = new URL(request.url);
   const problemId = searchParams.get('problemId');
+  const sessionId = searchParams.get('sessionId');
 
   const {
     data: { user },
@@ -21,10 +22,15 @@ export async function GET(request: Request) {
     let query = supabase
       .from('nova_submissions')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
     if (problemId) {
       query = query.eq('problem_id', problemId);
+    }
+
+    if (sessionId) {
+      query = query.eq('session_id', sessionId);
     }
 
     const { data: submissions, error } = await query;
@@ -76,6 +82,7 @@ export async function POST(request: Request) {
       feedback: validatedData.feedback,
       score: validatedData.score,
       problem_id: validatedData.problemId,
+      session_id: validatedData.sessionId,
       user_id: user.id,
     };
 

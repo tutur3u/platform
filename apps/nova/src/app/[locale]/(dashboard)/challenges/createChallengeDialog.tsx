@@ -34,7 +34,10 @@ export default function CreateChallengeDialog({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          password: values.enablePassword ? values.password || undefined : null,
+        }),
       });
 
       if (!response.ok) {

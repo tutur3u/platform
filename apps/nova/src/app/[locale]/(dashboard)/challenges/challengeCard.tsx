@@ -73,6 +73,8 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<NovaSession | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [dailySessions, setDailySessions] = useState(0);
   const [status, setStatus] = useState<
     'disabled' | 'upcoming' | 'preview' | 'active' | 'closed'
   >('disabled');
@@ -84,6 +86,21 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
     if (!response.ok) return null;
     const data = await response.json();
     setSession(data[0]);
+  }, [challenge]);
+
+  const fetchSessionCounts = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/v1/sessions/count?challengeId=${challenge.id}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setTotalSessions(data.total || 0);
+        setDailySessions(data.daily || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching session counts:', error);
+    }
   }, [challenge]);
 
   const updateStatus = useCallback(() => {
@@ -172,8 +189,9 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
 
   useEffect(() => {
     fetchSession();
+    fetchSessionCounts();
     updateStatus();
-  }, [fetchSession, updateStatus]);
+  }, [fetchSession, fetchSessionCounts, updateStatus]);
 
   const handleViewResults = async () => {
     router.push(`/challenges/${challenge.id}/results`);
@@ -309,28 +327,6 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           new Date(session.start_time).getTime() + challenge.duration * 1000
         );
 
-    if (session.status === 'ENDED') {
-      return (
-        <div className="mt-4 rounded-md border border-dashed p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-medium">Your Session</h3>
-            <Badge variant="secondary" className="text-xs">
-              Completed
-            </Badge>
-          </div>
-
-          <div className="text-muted-foreground mt-2 text-xs">
-            <div className="flex items-center">
-              <span>Started at: {format(startTime, 'PPpp')}</span>
-            </div>
-            <div className="flex items-center">
-              <span>Ended at: {format(endTime, 'PPpp')}</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     if (session.status === 'IN_PROGRESS') {
       return (
         <div className="mt-4 rounded-md border border-dashed p-3">
@@ -375,14 +371,37 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
   const renderActionButton = () => {
     if (isAdmin || status === 'active') {
       if (session?.status === 'ENDED') {
+        const hasRemainingAttempts = totalSessions < challenge.max_attempts;
+        const hasRemainingDailyAttempts =
+          dailySessions < challenge.max_daily_attempts;
+
         return (
-          <Button
-            onClick={handleViewResults}
-            className="w-full gap-2"
-            variant="secondary"
-          >
-            View Results <ArrowRight className="h-4 w-4" />
-          </Button>
+          <>
+            {hasRemainingAttempts &&
+              (hasRemainingDailyAttempts ? (
+                <ConfirmDialog
+                  mode="start"
+                  challenge={challenge}
+                  trigger={
+                    <Button className="w-full gap-2">
+                      Retry Challenge <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              ) : (
+                <Button disabled className="w-full gap-2">
+                  Comeback Tomorrow
+                </Button>
+              ))}
+
+            <Button
+              onClick={handleViewResults}
+              className="w-full gap-2"
+              variant="secondary"
+            >
+              View Results <ArrowRight className="h-4 w-4" />
+            </Button>
+          </>
         );
       }
 
@@ -450,7 +469,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
 
   return (
     <>
-      <Card key={challenge.id} className="flex flex-col overflow-hidden">
+      <Card key={challenge.id} className="flex h-full flex-col overflow-hidden">
         <CardHeader className="flex flex-row justify-between pb-2">
           <div className="flex flex-col gap-2">
             <CardTitle>{challenge.title}</CardTitle>
@@ -487,96 +506,133 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
         </CardHeader>
         <CardContent className="flex-grow">
           <p className="text-muted-foreground mb-4">{challenge.description}</p>
-          <div className="flex flex-col gap-2">
+
+          <div className="grid gap-2">
             <div className="flex items-center">
-              <Clock className="text-primary h-4 w-4" />
+              <Clock className="text-primary h-4 w-4 flex-shrink-0" />
               <span className="text-muted-foreground ml-2 text-sm">
                 Duration: {formatDuration(challenge.duration)}
               </span>
             </div>
 
-            {status === 'upcoming' && challenge.previewable_at && (
-              <div className="flex items-center">
-                <Eye className="h-4 w-4 text-amber-500" />
-                <span className="text-muted-foreground ml-2 text-sm">
-                  Preview available:{' '}
-                  {formatDistanceToNow(new Date(challenge.previewable_at), {
-                    addSuffix: true,
-                  })}
-                </span>
-              </div>
-            )}
+            <div className="flex h-6 items-center">
+              {status === 'preview' ||
+              status === 'active' ||
+              status === 'upcoming' ? (
+                <div className="flex items-center">
+                  <AlertCircle className="h-4 w-4 text-indigo-500" />
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    Total attempts: {totalSessions}/{challenge.max_attempts}
+                  </span>
+                </div>
+              ) : (
+                <div className="h-4" />
+              )}
+            </div>
 
-            {status === 'preview' && challenge.open_at && (
-              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <CalendarCheck className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                    <span className="ml-2 text-sm font-medium text-blue-700 dark:text-blue-300">
-                      Opens in:
-                    </span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  >
-                    {format(new Date(challenge.open_at), 'MMM d, yyyy')}
-                  </Badge>
+            <div className="flex h-6 items-center">
+              {status === 'preview' ||
+              status === 'active' ||
+              status === 'upcoming' ? (
+                <div className="flex items-center">
+                  <AlertCircle className="h-4 w-4 text-violet-500" />
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    Daily attempts: {dailySessions}/
+                    {challenge.max_daily_attempts}
+                  </span>
                 </div>
-                <div className="mt-2 flex items-center justify-center">
-                  <Countdown
-                    target={new Date(challenge.open_at)}
-                    onComplete={updateStatus}
-                  />
+              ) : (
+                <div className="h-4" />
+              )}
+            </div>
+            <div className="flex h-6 items-center">
+              {status === 'upcoming' && challenge.previewable_at ? (
+                <div className="mt-2 flex items-center">
+                  <Eye className="h-4 w-4 text-amber-500" />
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    Preview available:{' '}
+                    {formatDistanceToNow(new Date(challenge.previewable_at), {
+                      addSuffix: true,
+                    })}
+                  </span>
                 </div>
-                <Progress
-                  value={calculatePercentage(
-                    new Date(),
-                    new Date(challenge.open_at)
-                  )}
-                  className="mt-2 h-1 w-full"
-                  indicatorClassName="bg-blue-500 dark:bg-blue-400"
-                />
-              </div>
-            )}
-
-            {status === 'active' && challenge.close_at && (
-              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <CalendarX className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-                    <span className="ml-2 text-sm font-medium text-amber-700 dark:text-amber-300">
-                      Closes in:
-                    </span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
-                  >
-                    {format(new Date(challenge.close_at), 'MMM d, yyyy')}
-                  </Badge>
-                </div>
-                <div className="mt-2 flex items-center justify-center">
-                  <Countdown
-                    target={new Date(challenge.close_at)}
-                    onComplete={updateStatus}
-                  />
-                </div>
-                <Progress
-                  value={calculatePercentage(
-                    new Date(),
-                    new Date(challenge.close_at)
-                  )}
-                  className="mt-2 h-1 w-full"
-                  indicatorClassName="bg-amber-500 dark:bg-amber-400"
-                />
-              </div>
-            )}
+              ) : (
+                <div className="h-4" />
+              )}
+            </div>
           </div>
+
+          {status === 'preview' && challenge.open_at && (
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <CalendarCheck className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                  <span className="ml-2 text-sm font-medium text-blue-700 dark:text-blue-300">
+                    Opens in:
+                  </span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                >
+                  {format(new Date(challenge.open_at), 'MMM d, yyyy')}
+                </Badge>
+              </div>
+              <div className="mt-2 flex items-center justify-center">
+                <Countdown
+                  target={new Date(challenge.open_at)}
+                  onComplete={updateStatus}
+                />
+              </div>
+              <Progress
+                value={calculatePercentage(
+                  new Date(),
+                  new Date(challenge.open_at)
+                )}
+                className="mt-2 h-1 w-full"
+                indicatorClassName="bg-blue-500 dark:bg-blue-400"
+              />
+            </div>
+          )}
+
+          {status === 'active' && challenge.close_at && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <CalendarX className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                  <span className="ml-2 text-sm font-medium text-amber-700 dark:text-amber-300">
+                    Closes in:
+                  </span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+                >
+                  {format(new Date(challenge.close_at), 'MMM d, yyyy')}
+                </Badge>
+              </div>
+              <div className="mt-2 flex items-center justify-center">
+                <Countdown
+                  target={new Date(challenge.close_at)}
+                  onComplete={updateStatus}
+                />
+              </div>
+              <Progress
+                value={calculatePercentage(
+                  new Date(),
+                  new Date(challenge.close_at)
+                )}
+                className="mt-2 h-1 w-full"
+                indicatorClassName="bg-amber-500 dark:bg-amber-400"
+              />
+            </div>
+          )}
 
           {renderSessionStatus()}
         </CardContent>
-        <CardFooter>{renderActionButton()}</CardFooter>
+        <CardFooter className="mt-auto flex flex-col gap-2">
+          {renderActionButton()}
+        </CardFooter>
       </Card>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

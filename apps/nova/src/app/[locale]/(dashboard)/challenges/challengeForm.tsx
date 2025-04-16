@@ -56,41 +56,37 @@ const criteriaSchema = z.object({
 
 const emailSchema = z.string().email({ message: 'Invalid email address' });
 
-const formSchema = z
-  .object({
-    title: z.string().min(3, {
-      message: 'Title must be at least 3 characters.',
-    }),
-    description: z.string().min(10, {
-      message: 'Description must be at least 10 characters.',
-    }),
-    criteria: z.array(criteriaSchema),
-    duration: z.coerce.number().min(60, {
-      message: 'Duration must be at least 60 seconds.',
-    }),
-    enabled: z.boolean().default(false),
-    whitelistedOnly: z.boolean().default(false),
-    maxAttempts: z.number().min(1, {
-      message: 'Max attempts must be at least 1.',
-    }),
-    maxDailyAttempts: z.number().min(1, {
-      message: 'Max daily attempts must be at least 1.',
-    }),
-    password: z
-      .string()
-      .min(6, { message: 'Password must be at least 6 characters.' })
-      .nullable(),
-    openAt: z.date().nullable(),
-    closeAt: z.date().nullable(),
-    previewableAt: z.date().nullable(),
-    whitelistedEmails: z.array(emailSchema),
-  })
-  .required();
+const formSchema = z.object({
+  title: z.string().min(3, {
+    message: 'Title must be at least 3 characters.',
+  }),
+  description: z.string().min(10, {
+    message: 'Description must be at least 10 characters.',
+  }),
+  maxAttempts: z.number().min(1, {
+    message: 'Max attempts must be at least 1.',
+  }),
+  maxDailyAttempts: z.number().min(1, {
+    message: 'Max daily attempts must be at least 1.',
+  }),
+  criteria: z.array(criteriaSchema),
+  duration: z.coerce.number().min(60, {
+    message: 'Duration must be at least 60 seconds.',
+  }),
+  enablePassword: z.boolean().default(false),
+  password: z.string().optional(),
+  enabled: z.boolean().default(false),
+  whitelistedOnly: z.boolean().default(false),
+  whitelistedEmails: z.array(emailSchema),
+  openAt: z.date().nullable(),
+  closeAt: z.date().nullable(),
+  previewableAt: z.date().nullable(),
+});
 
 export type ChallengeFormValues = z.infer<typeof formSchema>;
 
 interface ChallengeFormProps {
-  defaultValues?: Partial<ChallengeFormValues>;
+  defaultValues?: ChallengeFormValues;
   challengeId?: string;
   onSubmit: (values: ChallengeFormValues) => void;
   isSubmitting: boolean;
@@ -112,17 +108,18 @@ export default function ChallengeForm({
     defaultValues: {
       title: '',
       description: '',
-      criteria: [],
-      duration: 3600,
-      enabled: false,
-      whitelistedOnly: false,
       maxAttempts: 1,
       maxDailyAttempts: 1,
-      password: null,
+      criteria: [],
+      duration: 3600,
+      enablePassword: false,
+      password: '',
+      enabled: false,
+      whitelistedOnly: false,
+      whitelistedEmails: [],
       openAt: null,
       closeAt: null,
       previewableAt: null,
-      whitelistedEmails: [],
       ...defaultValues,
     },
   });
@@ -266,7 +263,6 @@ export default function ChallengeForm({
                             <Input
                               type="number"
                               {...field}
-                              value={field.value || 1}
                               onChange={(e) =>
                                 field.onChange(parseInt(e.target.value) || 1)
                               }
@@ -291,7 +287,6 @@ export default function ChallengeForm({
                             <Input
                               type="number"
                               {...field}
-                              value={field.value || 1}
                               onChange={(e) =>
                                 field.onChange(parseInt(e.target.value) || 1)
                               }
@@ -315,7 +310,7 @@ export default function ChallengeForm({
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div className="flex flex-col gap-1">
                     <CardTitle>Judging Criteria</CardTitle>
-                    <CardDescription className="text-muted-foreground text-sm">
+                    <CardDescription className="text-sm text-muted-foreground">
                       Define how submissions will be evaluated. Each criterion
                       will be scored separately.
                     </CardDescription>
@@ -370,7 +365,7 @@ export default function ChallengeForm({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="text-destructive hover:text-destructive/80 h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
                                 onClick={() => removeCriteria(index)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -421,7 +416,7 @@ export default function ChallengeForm({
                         </Card>
                       ))
                     ) : (
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         No criteria yet
                       </p>
                     )}
@@ -434,31 +429,36 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Security</CardTitle>
-                  <CardDescription className="text-muted-foreground text-sm">
+                  <CardDescription className="text-sm text-muted-foreground">
                     Secure your challenge with a password or restrict access to
                     specific users.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-4 rounded-lg border p-4">
-                    <div className="flex flex-row items-center justify-between">
-                      <div className="space-y-0.5">
-                        <div className="text-sm font-medium">
-                          Password Protection
-                        </div>
-                        <div className="text-muted-foreground text-sm">
-                          Require a password to access this challenge
-                        </div>
-                      </div>
-                      <Switch
-                        checked={form.watch('password') !== null}
-                        onCheckedChange={(checked) => {
-                          form.setValue('password', checked ? '' : null);
-                        }}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="enablePassword"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between">
+                          <div className="space-y-0.5">
+                            <FormLabel>Password Protection</FormLabel>
+                            <FormDescription>
+                              Require a password to access this challenge
+                            </FormDescription>
+                          </div>
 
-                    {form.watch('password') !== null && (
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch('enablePassword') && (
                       <>
                         <Separator className="mx-auto my-6 max-w-md" />
                         <FormField
@@ -472,7 +472,11 @@ export default function ChallengeForm({
                                 <FormControl>
                                   <Input
                                     type={showPassword ? 'text' : 'password'}
-                                    placeholder="Enter password"
+                                    placeholder={
+                                      isEditing
+                                        ? 'Leave empty to keep current password'
+                                        : 'Enter password'
+                                    }
                                     {...field}
                                     value={field.value || ''}
                                   />
@@ -481,7 +485,7 @@ export default function ChallengeForm({
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="absolute right-0 top-0 h-full px-3"
+                                  className="absolute top-0 right-0 h-full px-3"
                                   onClick={() => setShowPassword(!showPassword)}
                                 >
                                   {showPassword ? (
@@ -493,7 +497,9 @@ export default function ChallengeForm({
                               </div>
 
                               <FormDescription>
-                                Must be at least 6 characters
+                                {isEditing
+                                  ? 'Enter a new password or leave empty to keep the current one'
+                                  : 'Must be at least 6 characters'}
                               </FormDescription>
                               <FormMessage className="text-xs" />
                             </FormItem>
@@ -616,7 +622,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Duration</CardTitle>
-                  <CardDescription className="text-muted-foreground text-sm">
+                  <CardDescription className="text-sm text-muted-foreground">
                     Set how long participants have to complete the challenge
                     once they start.
                   </CardDescription>
@@ -675,7 +681,7 @@ export default function ChallengeForm({
                         </div>
 
                         {field.value && (
-                          <div className="bg-muted/30 mt-4 rounded-md border p-3">
+                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
                             <DurationDisplay seconds={field.value} />
                           </div>
                         )}
@@ -696,19 +702,19 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Schedule</CardTitle>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Set when your challenge is available to participants.
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6 rounded-md border border-dashed p-4">
                     <div className="mb-2 flex items-center">
-                      <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                       <h3 className="text-sm font-medium">
                         Timeline Recommendation
                       </h3>
                     </div>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       For best results, set dates in this order: Preview Date ➝
                       Open Date ➝ Close Date.
                     </p>

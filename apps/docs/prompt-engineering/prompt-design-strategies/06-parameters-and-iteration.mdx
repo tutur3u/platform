@@ -1,0 +1,123 @@
+---
+title: 'Tune Parameters and Iterate on Prompts'
+description: 'Understand temperature, top-p, and max token settings. Learn how to refine your prompt through experimentation.'
+---
+
+## Experiment with different parameter values
+
+Each time you send a prompt to a model, it uses certain parameters that influence how the response is generated. Adjusting these values can help you fine-tune the output to better fit your task. Different models may offer different parameter options, but here are the most commonly used ones:
+
+### Max Output Tokens
+
+This limits the maximum length of the response. One token is roughly 4 characters or ¾ of a word.
+
+- Use a lower value for short answers
+- Use a higher value for longer, more detailed responses
+
+### Temperature
+
+Controls how creative or random the response is.
+
+- **Lower values (e.g., 0.2)** make outputs more focused and consistent
+- **Higher values (e.g., 0.7+)** lead to more varied, creative responses
+- A temperature of **0** always picks the most likely next word (deterministic)
+
+Start with **0.2** and increase if the output feels generic, repetitive, or too short.
+
+### Top-K
+
+Limits the model’s choices for the next word to the top K most likely tokens.
+
+- **Top-K = 1** gives the most predictable result
+
+- **Top-K = 3** or more allows more randomness and variation Top-K is often used with temperature and top-P together.
+
+### Top-P
+
+Instead of picking from a fixed number of top options like Top-K, Top-P chooses from the smallest set of words whose total probability exceeds the specified threshold.
+
+- **Lower top-P (e.g., 0.5)** = safer, more focused responses
+- **Higher top-P (e.g., 0.95)** = more variety and creativity
+
+## Prompt Iteration Strategies
+
+Designing effective prompts is a trial-and-error process, and it often takes several attempts to consistently get the results you want. This section offers tips on how to improve your prompts through iteration.
+
+### Use different phrasing
+
+Designing effective prompts is a trial-and-error process, and it often takes several attempts to consistently get the results you want. This section offers tips on how to improve your prompts through iteration.
+
+```prompt
+Version 1:
+How can I improve my sleep quality?
+
+Version 2:
+Give me tips for getting better sleep.
+
+Version 3:
+What are some effective ways to sleep better?
+```
+
+### Switch to an analogous task
+
+If the model isn’t responding well to your original instructions, consider reframing the task as a similar one that leads to the same outcome.
+
+For example, instead of directly asking the model to label a book, you might instruct it to sort the book into one of several predefined categories.
+
+**Example Prompt:**
+
+```prompt
+Which category does `1984` belong to:
+- romance
+- dystopian
+- fantasy
+- biography
+```
+
+**Response:**
+
+```response
+1984 belongs to the category of dystopian.
+Here’s why:
+- Dystopian: 1984 is set in a totalitarian future society where the government controls every aspect of life, including thoughts and language. It explores themes of surveillance, propaganda, and loss of freedom—hallmarks of dystopian fiction.
+```
+
+The answer is accurate, but the model went beyond the list of provided choices and responded in full sentences. If you want the model to stick strictly to the given options and respond with just one of them, you can reword the prompt as a multiple-choice question and instruct the model to select only one answer.
+
+**Example Prompt:**
+
+```prompt
+Multiple choice problem: Which of the following options describes the book `1984`?
+Options:
+- romance
+- dystopian
+- fantasy
+- biography
+```
+
+**Response:**
+
+```response
+The correct answer is dystopian.
+```
+
+### Change the order of prompt content
+
+Rearranging the elements in your prompt can influence how the model responds. Try altering the sequence of the content to see if it changes or improves the outcome.
+
+```prompt
+Format Option 1:
+- Sample responses
+- Background information
+- User input
+
+Format Option 2:
+- User input
+- Sample responses
+- Background information
+
+Format Option 3:
+- Sample responses
+- User input
+- Background details
+```

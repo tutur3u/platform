@@ -45,7 +45,8 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
     // Fetch all challenges
     const { data: challenges, error: challengesError } = await sbAdmin
       .from('nova_challenges')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (challengesError) {
       throw new Error('Error fetching challenges:', challengesError);
@@ -106,6 +107,11 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
     // Combine all data
     return filteredChallenges.map((challenge) => ({
       ...challenge,
+      password_salt: challenge.password_salt !== null ? '' : null,
+      password_hash: challenge.password_hash !== null ? '' : null,
+      // Hide password hash from response
+      // If it's undefined, it means the challenge has no password
+      // Otherwise, it's an empty string to avoid exposing the password hash
       criteria:
         allCriteria?.filter((c) => c.challenge_id === challenge.id) || [],
       whitelists:
