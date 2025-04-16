@@ -60,4 +60,6 @@ export const createSubmissionSchema = z.object({
 export const createTestcaseSchema = z.object({
   problemId: z.string().min(1, 'Problem ID is required'),
   input: z.string().min(1, 'Input is required'),
+  output: z.string().min(1, 'Output is required'),
+  hidden: z.boolean(),
 });
