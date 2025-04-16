@@ -104,7 +104,18 @@ export default function PromptForm({ problem }: Props) {
       });
 
       if (!submissionResponse.ok) {
-        throw new Error('Failed to create submission');
+        const errorData = await submissionResponse.json();
+
+        //submission limit error
+        if (submissionResponse.status === 403) {
+          throw new Error(
+            errorData.message || 'Failed to submit prompt. Please try again.'
+          );
+        }
+
+        throw new Error(
+          errorData.message || 'Failed to submit prompt. Please try again.'
+        );
       }
 
       // Add to history
@@ -123,7 +134,10 @@ export default function PromptForm({ problem }: Props) {
       console.error('Error submitting prompt:', error);
       toast({
         title: 'Error',
-        description: 'Failed to submit prompt. Please try again.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to submit prompt. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -243,7 +257,7 @@ export default function PromptForm({ problem }: Props) {
       <TabsContent value="write" className="flex-1 overflow-hidden">
         <div className="flex h-full flex-col">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               Characters: {prompt.length} / {problem.max_prompt_length}
             </div>
             <Progress
@@ -312,7 +326,7 @@ export default function PromptForm({ problem }: Props) {
               {testResult && (
                 <div className="mt-4">
                   <h3 className="mb-2 text-sm font-medium">Output:</h3>
-                  <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
                     {testResult.output}
                   </div>
                 </div>
@@ -346,11 +360,11 @@ export default function PromptForm({ problem }: Props) {
                     <h3 className="text-sm font-medium">
                       Test Case {index + 1}:
                     </h3>
-                    <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
                       {result.input}
                     </div>
                     <h3 className="text-sm font-medium">Output:</h3>
-                    <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                    <div className="bg-muted rounded-md p-3 font-mono text-sm">
                       {result.output}
                     </div>
                   </div>
@@ -381,34 +395,34 @@ export default function PromptForm({ problem }: Props) {
                       >
                         {submission.score}/10
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         <Clock className="mr-1 inline h-3 w-3" />
                         {new Date(submission.created_at).toLocaleString()}
                       </span>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2 pt-0 pb-3">
+                <CardContent className="space-y-2 pb-3 pt-0">
                   <div>
-                    <h3 className="mb-1 text-xs font-medium text-muted-foreground">
+                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
                       Prompt:
                     </h3>
-                    <div className="rounded-md bg-muted p-2 text-sm">
+                    <div className="bg-muted rounded-md p-2 text-sm">
                       {submission.prompt}
                     </div>
                   </div>
                   <div>
-                    <h3 className="mb-1 text-xs font-medium text-muted-foreground">
+                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
                       Feedback:
                     </h3>
-                    <div className="rounded-md bg-muted p-2 text-sm">
+                    <div className="bg-muted rounded-md p-2 text-sm">
                       {submission.feedback}
                     </div>
                   </div>
                   {submission.criteria_scores &&
                     submission.criteria_scores.length > 0 && (
                       <div className="space-y-2">
-                        <h3 className="text-xs font-medium text-muted-foreground">
+                        <h3 className="text-muted-foreground text-xs font-medium">
                           Criteria Scores:
                         </h3>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -442,7 +456,7 @@ export default function PromptForm({ problem }: Props) {
             ))
           ) : (
             <div className="flex h-40 items-center justify-center rounded-md border border-dashed">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No submission history yet
               </p>
             </div>

@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user?.id) {
+  if (authError || !user?.id || !user?.email) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -67,9 +67,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 
+  const { data: roleData, error: roleError } = await supabase
+    .from('nova_roles')
+    .select('*')
+    .eq('email', user.email)
+    .eq('allow_challenge_management', true)
+    .single();
+
+  // Check if the current user is an admin or not
+  const isAdmin = !roleError && roleData;
+
   try {
     // Validate request body with Zod
     const validatedData = createSubmissionSchema.parse(body);
+
+    const { error: countError, count } = await supabase
+      .from('nova_submissions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('problem_id', validatedData.problemId);
+
+    if (countError) {
+      console.error('Database Error when counting submissions: ', countError);
+      return NextResponse.json(
+        { message: 'Error checking submission count' },
+        { status: 500 }
+      );
+    }
+
+    //only apply the count for non-admin user
+    if (!isAdmin) {
+      if (count && count >= 3) {
+        return NextResponse.json(
+          {
+            message: 'You have reached the maximum of 3 submissions.',
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     const submissionData = {
       prompt: validatedData.prompt,
@@ -82,7 +118,7 @@ export async function POST(request: Request) {
     const { data: submission, error: submissionError } = await supabase
       .from('nova_submissions')
       .insert(submissionData)
-      .select()
+      .select('*')
       .single();
 
     if (submissionError) {
@@ -93,7 +129,16 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json(submission, { status: 201 });
+    let remainingAttempts = 3;
+    if (!isAdmin) {
+      // Calculate the remaining attempt
+      remainingAttempts = 3 - ((count || 0) + 1);
+    }
+
+    return NextResponse.json(
+      { ...submission, remainingAttempts },
+      { status: 201 }
+    );
   } catch (error) {
     if (error instanceof ZodError) {
       // Zod validation error
