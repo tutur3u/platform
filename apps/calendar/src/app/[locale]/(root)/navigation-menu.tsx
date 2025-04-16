@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import * as React from 'react';
 
 export function MainNavigationMenu() {
@@ -126,16 +125,15 @@ export function MainNavigationMenu() {
 
         {company.map((item) => (
           <NavigationMenuItem key={item.href}>
-            <Link href={item.href} passHref>
-              <NavigationMenuLink
-                className={cn(
-                  navigationMenuTriggerStyle(),
-                  'hover:from-primary/10 hover:to-primary/5 bg-gradient-to-r px-6 font-semibold transition-all duration-300'
-                )}
-              >
-                <span className="flex items-center gap-2">{item.label}</span>
-              </NavigationMenuLink>
-            </Link>
+            <NavigationMenuLink
+              href={item.href}
+              className={cn(
+                navigationMenuTriggerStyle(),
+                'hover:from-primary/10 hover:to-primary/5 bg-gradient-to-r px-6 font-semibold transition-all duration-300'
+              )}
+            >
+              <span className="flex items-center gap-2">{item.label}</span>
+            </NavigationMenuLink>
           </NavigationMenuItem>
         ))}
       </NavigationMenuList>

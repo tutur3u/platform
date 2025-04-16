@@ -4,6 +4,7 @@ import GradientHeadline from '../gradient-headline';
 import AiFeatures from './ai-features';
 import AnimatedTimeline from './animated-timeline';
 import FeatureShowcase from './feature-showcase';
+import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -197,7 +198,7 @@ export default function MarketingPage() {
                     className="bg-background/50 text-primary mb-4 animate-pulse backdrop-blur-sm"
                   >
                     <Trophy className="mr-2 h-4 w-4" />
-                    Featured Event
+                    {t('feature-event')}
                   </Badge>
 
                   <h2 className="from-primary via-dynamic-purple to-dynamic-blue mb-4 text-balance bg-gradient-to-r bg-clip-text text-4xl font-bold text-transparent">
@@ -213,32 +214,32 @@ export default function MarketingPage() {
                 <AnimatedTimeline
                   events={[
                     {
-                      date: '19 April 2025',
-                      title: t('open-cere'),
-                      type: t('virtual'),
+                      date: t('time-line.open-cere-date'),
+                      title: t('time-line.open-cere'),
+                      type: t('time-line.virtual-badge'),
                       icon: <CalendarDays className="h-5 w-5" />,
-                      description: t('open-cere-description'),
+                      description: t('time-line.open-cere-description'),
                     },
                     {
-                      date: '26 April 2025',
-                      title: t('top-50-selection'),
-                      type: t('virtual'),
+                      date: t('time-line.top-30-selection-date'),
+                      title: t('time-line.top-30-selection'),
+                      type: t('time-line.virtual-badge'),
                       icon: <Trophy className="h-5 w-5" />,
-                      description: t('top-50-selection-description'),
+                      description: t('time-line.top-30-selection-description'),
                     },
                     {
-                      date: '10 May 2025',
-                      title: t('top-30-selection'),
-                      type: t('virtual'),
+                      date: t('time-line.top-15-selection-date'),
+                      title: t('time-line.top-15-selection'),
+                      type: t('time-line.virtual-badge'),
                       icon: <Star className="h-5 w-5" />,
-                      description: t('top-30-selection-description'),
+                      description: t('time-line.top-15-selection-description'),
                     },
                     {
-                      date: '31 May 2025',
-                      title: t('final-competition'),
-                      type: t('onsite'),
+                      date: t('time-line.final-competition-date'),
+                      title: t('time-line.final-competition'),
+                      type: t('time-line.onsite-badge'),
                       icon: <Trophy className="h-5 w-5" />,
-                      description: t('final-competition-description'),
+                      description: t('time-line.final-competition-description'),
                     },
                   ]}
                 />
@@ -499,9 +500,17 @@ export default function MarketingPage() {
               transition={{ delay: 0.2 }}
             >
               <GetStartedButton text={t('get-started')} href="/home" />
-              <Link href="/learn">
+              <Link
+                target="_blank"
+                href={
+                  DEV_MODE
+                    ? 'http://localhost:3000/prompt-engineering/introduction'
+                    : 'https://docs.tuturuuu.com/prompt-engineering/introduction'
+                }
+              >
                 <Button variant="outline" className="group">
-                  Browse Learning Resources
+                  {/* Browse Learning Resources */}
+                  {t('browse-learning-resources')}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
