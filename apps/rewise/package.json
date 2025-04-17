@@ -29,7 +29,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.1",
-    "@tanstack/react-query": "^5.74.3",
+    "@tanstack/react-query": "^5.74.4",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -64,7 +64,7 @@
     "remark-math": "^6.0.0",
     "sharp": "^0.33.5",
     "uuid": "^11.1.0",
-    "zod": "^3.24.2"
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -72,7 +72,7 @@
     "@next/bundle-analyzer": "^15.3.0",
     "@next/eslint-plugin-next": "^15.3.0",
     "@tanstack/eslint-plugin-query": "^5.73.3",
-    "@tanstack/react-query-devtools": "^5.74.3",
+    "@tanstack/react-query-devtools": "^5.74.4",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
