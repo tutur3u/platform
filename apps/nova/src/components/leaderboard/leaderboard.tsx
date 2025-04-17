@@ -28,6 +28,7 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -67,6 +68,7 @@ export function Leaderboard({
   const prefersReducedMotion = useReducedMotion();
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const t = useTranslations('nova.leaderboard-page.rankings');
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-4 w-4 text-yellow-500" />;
@@ -139,7 +141,7 @@ export function Leaderboard({
 
       <div className="flex items-center justify-between bg-gray-50 px-4 py-2 dark:bg-slate-800/30">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-          Leaderboard Rankings
+          {t('title')}
         </h3>
         <TooltipProvider>
           <Tooltip>
@@ -151,31 +153,31 @@ export function Leaderboard({
                 className="h-8 gap-1 text-xs text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
               >
                 <ArrowDownUp className="h-3.5 w-3.5" />
-                {sortOrder === 'desc' ? 'Highest First' : 'Lowest First'}
+                {sortOrder === 'desc' ? t('highest-first') : t('lowest-first')}
               </Button>
             </TooltipTrigger>
             <TooltipContent
               side="left"
               className="border-gray-200 bg-white text-xs dark:border-slate-700 dark:bg-slate-800"
             >
-              <p>Click to change sort order</p>
+              <p>{t('hover-info')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
 
-      <div className="scrollbar-thin max-h-[600px] overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700">
+      <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700 max-h-[600px] overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/30">
             <TableRow className="border-b border-gray-200 hover:bg-transparent dark:border-slate-700/50 dark:hover:bg-transparent">
               <TableHead className="w-[100px] bg-gray-50 font-semibold text-gray-700 dark:bg-slate-800/30 dark:text-slate-300">
-                Rank
+                {t('rank')}
               </TableHead>
               <TableHead className="bg-gray-50 font-semibold text-gray-700 dark:bg-slate-800/30 dark:text-slate-300">
-                User
+                {t('user')}
               </TableHead>
               <TableHead className="bg-gray-50 text-right font-semibold text-gray-700 dark:bg-slate-800/30 dark:text-slate-300">
-                Score
+                {t('score')}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -236,7 +238,7 @@ export function Leaderboard({
                         {/* Hexagon background with animated glow for top ranks */}
                         <div
                           className={cn(
-                            'absolute top-0 left-0 h-full w-full',
+                            'absolute left-0 top-0 h-full w-full',
                             entry.rank <= 3 && 'hex-shape'
                           )}
                           style={{
@@ -359,7 +361,7 @@ export function Leaderboard({
                             variant="outline"
                             className="mt-1 w-fit border-blue-200 bg-blue-50 text-xs text-blue-600 dark:border-blue-500/30 dark:bg-blue-950/60 dark:text-blue-400"
                           >
-                            You
+                            {t('you')}
                           </Badge>
                         )}
                         {selectedChallenge === 'all' &&
@@ -370,7 +372,8 @@ export function Leaderboard({
                                 className="h-5 border-purple-200 bg-purple-50 px-1.5 py-0 text-[10px] font-normal text-purple-700 transition-all duration-300 group-hover:bg-purple-100 dark:border-purple-900/30 dark:bg-purple-900/20 dark:text-purple-400 dark:group-hover:bg-purple-900/30"
                               >
                                 <Sparkles className="mr-1 h-2.5 w-2.5" />
-                                Best in: {getBestChallengeForUser(entry)?.title}
+                                {t('best-in')}{' '}
+                                {getBestChallengeForUser(entry)?.title}
                               </Badge>
                             </div>
                           )}
@@ -420,10 +423,8 @@ export function Leaderboard({
                   colSpan={3}
                   className="h-32 text-center text-gray-500 dark:text-slate-400"
                 >
-                  <p>No entries found</p>
-                  <p className="mt-2 text-sm">
-                    Be the first to join the competition!
-                  </p>
+                  <p>{t('no-entries-found')}</p>
+                  <p className="mt-2 text-sm">{t('first-join')}</p>
                 </TableCell>
               </TableRow>
             )}
