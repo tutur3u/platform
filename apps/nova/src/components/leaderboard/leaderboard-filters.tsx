@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface LeaderboardFiltersProps {
@@ -31,6 +32,7 @@ export function LeaderboardFilters({
   challenges = [],
 }: LeaderboardFiltersProps) {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const t = useTranslations('nova.leaderboard-page.filters');
 
   return (
     <motion.div
@@ -60,20 +62,20 @@ export function LeaderboardFilters({
 
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full md:w-96">
-          <div className="absolute top-0 left-0 -z-10 h-full w-full rounded-md bg-blue-100/50 dark:bg-blue-500/5"></div>
+          <div className="absolute left-0 top-0 -z-10 h-full w-full rounded-md bg-blue-100/50 dark:bg-blue-500/5"></div>
           <div className="group relative">
-            <Search className="absolute top-2.5 left-3 h-4 w-4 text-blue-600/70 dark:text-blue-400/70" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-600/70 dark:text-blue-400/70" />
             <Input
-              placeholder="Search competitors..."
+              placeholder={t('search-competitors')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border-gray-300 bg-white pr-9 pl-9 text-gray-700 placeholder:text-gray-500 focus-visible:border-blue-500/50 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus-visible:border-blue-500/50 dark:focus-visible:ring-blue-500/20 dark:focus-visible:ring-offset-slate-900"
+              className="w-full border-gray-300 bg-white pl-9 pr-9 text-gray-700 placeholder:text-gray-500 focus-visible:border-blue-500/50 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus-visible:border-blue-500/50 dark:focus-visible:ring-blue-500/20 dark:focus-visible:ring-offset-slate-900"
             />
             {searchQuery && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 h-5 w-5 rounded-full p-0 text-gray-400 opacity-70 hover:bg-gray-100 hover:text-gray-700 hover:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                className="absolute right-2 top-2 h-5 w-5 rounded-full p-0 text-gray-400 opacity-70 hover:bg-gray-100 hover:text-gray-700 hover:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                 onClick={() => setSearchQuery('')}
               >
                 <X className="h-3 w-3" />
@@ -123,7 +125,7 @@ export function LeaderboardFilters({
                 </SelectTrigger>
                 <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                   <SelectItem value="all" className="text-sm">
-                    All Challenges
+                    {t('all-challenges')}
                   </SelectItem>
                   {challenges.map((challenge) => (
                     <SelectItem
@@ -180,7 +182,7 @@ export function LeaderboardFilters({
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
           >
             <Filter className="h-3.5 w-3.5" />
-            Filters
+            {t('filters')}
             {showAdvancedFilters && (
               <Sparkles className="ml-1 h-3 w-3 text-blue-600 dark:text-blue-400" />
             )}
@@ -220,67 +222,87 @@ export function LeaderboardFilters({
             <CardContent className="grid gap-4 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                  Score Range
+                  {t('score-range.name')}
                 </label>
                 <Select defaultValue="all">
                   <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                     <SelectValue placeholder="All scores" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                    <SelectItem value="all">All scores</SelectItem>
-                    <SelectItem value="high">High (1000+)</SelectItem>
-                    <SelectItem value="medium">Medium (500-999)</SelectItem>
-                    <SelectItem value="low">Low (0-499)</SelectItem>
+                    <SelectItem value="all">
+                      {t('score-range.all-scores')}
+                    </SelectItem>
+                    <SelectItem value="high">
+                      {t('score-range.high-scores')}
+                    </SelectItem>
+                    <SelectItem value="medium">
+                      {t('score-range.medium-scores')}
+                    </SelectItem>
+                    <SelectItem value="low">
+                      {t('score-range.low-scores')}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                  Time Period
+                  {t('time-period.name')}
                 </label>
                 <Select defaultValue="allTime">
                   <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                     <SelectValue placeholder="All time" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                    <SelectItem value="allTime">All time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="week">This week</SelectItem>
-                    <SelectItem value="month">This month</SelectItem>
+                    <SelectItem value="allTime">
+                      {t('time-period.all-time')}
+                    </SelectItem>
+                    <SelectItem value="today">
+                      {t('time-period.today')}
+                    </SelectItem>
+                    <SelectItem value="week">
+                      {t('time-period.this-week')}
+                    </SelectItem>
+                    <SelectItem value="month">
+                      {t('time-period.this-month')}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                  Status
+                  {t('status.name')}
                 </label>
                 <Select defaultValue="all">
                   <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                     <SelectValue placeholder="All users" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                    <SelectItem value="all">All users</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="all">{t('status.all-users')}</SelectItem>
+                    <SelectItem value="active">{t('status.active')}</SelectItem>
+                    <SelectItem value="inactive">
+                      {t('status.inactive')}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                  Region
+                  {t('region.name')}
                 </label>
                 <Select defaultValue="global">
                   <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                     <SelectValue placeholder="Global" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                    <SelectItem value="global">Global</SelectItem>
-                    <SelectItem value="americas">Americas</SelectItem>
-                    <SelectItem value="europe">Europe</SelectItem>
-                    <SelectItem value="asia">Asia</SelectItem>
+                    <SelectItem value="global">{t('region.global')}</SelectItem>
+                    <SelectItem value="americas">
+                      {t('region.americas')}
+                    </SelectItem>
+                    <SelectItem value="europe">{t('region.europe')}</SelectItem>
+                    <SelectItem value="asia">{t('region.asia')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

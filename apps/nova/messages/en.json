@@ -1749,7 +1749,124 @@
     },
     "teams": "Teams",
     "submissions": "Submissions",
-    "home": "Home"
+    "home": "Home",
+    "leaderboard-page": {
+      "title": "Leaderboard",
+      "description": "Compete against the best players around the world. Climb the ranks and claim your spot at the top of the leaderboard!",
+      "current-rank": "Your Current Rank",
+      "badge": {
+        "competition": "Competition",
+        "active": "Active",
+        "live": "Live"
+      },
+      "statistics": {
+        "position": {
+          "title": "Your Position",
+          "top-position": "Top tier competitor!",
+          "rising-position": "Rising through the ranks!",
+          "normal-position": "Keep improving!"
+        },
+        "highest-score": {
+          "title": "Highest Score",
+          "description": "Achieve by",
+          "no-participant": "No participants yet"
+        },
+        "total": {
+          "player": "Total Player",
+          "teams": "Total Teams",
+          "description": "Join the competition!",
+          "heating-up": "Competition is heating up!",
+          "join-now": "Join the competition!"
+        }
+      },
+      "individual": "Individual",
+      "team": "Teams",
+      "share": "Share",
+      "view-profile": "View Profile",
+      "top-performers": {
+        "title": "Top Performers",
+        "ranks": {
+          "first-badge": "Champion",
+          "second-badge": "Runner-up",
+          "third-badge": "Third Place"
+        }
+      },
+      "selected-challenges": "Selected Challenge",
+      "filter-challenges": {
+        "specific-challenge-title": "Showing leaderboard rankings for this specific challenge",
+        "view-all-challenges": "View All Challenges",
+        "total-participants": "Total Participants",
+        "highest-score": "Highest Score",
+        "your-rank": "Your Rank"
+      },
+      "load-more": "Load More",
+      "tutorials": {
+        "title": "How to Play",
+        "step-1": "Complete challenges and quests to earn points",
+        "step-2": "Your total points determine your rank on the leaderboard",
+        "step-3": "Compete with others for the top spot and win exclusive rewards"
+      },
+      "rewards": {
+        "current-rewards": "Current Rewards",
+        "1st-place": "Champion",
+        "1st-place-reward": "181,000,000 VND \n(Cash + Scholarships)",
+        "2nd-place": "1st Runner-up",
+        "2nd-place-reward": "108,000,000 VND (Cash + Scholarships)",
+        "3rd-place": "2nd Runner-up",
+        "3rd-place-reward": "65,000,000 VND (Cash + Scholarships)",
+        "top-5": "Co-Top 5 Finalists",
+        "top-5-reward": "59,000,000 VND (Scholarships)",
+        "first-45-teams": "First 45 Teams",
+        "first-45-teams-reward": "Tuturuuu Pro accounts per team"
+      },
+      "share-leaderboard": "Share Leaderboard",
+      "last-updated": "Last updated:",
+      "filters": {
+        "filters": "Filters",
+        "all-challenges": "All Challenges",
+        "search-competitors": "Search competitors...",
+        "score-range": {
+          "name": "Score Range",
+          "all-scores": "All Scores",
+          "high-scores": "High (1000+)",
+          "medium-scores": "Medium (500-999)",
+          "low-scores": "Low (0-499)"
+        },
+        "time-period": {
+          "name": "Time Period",
+          "all-time": "All Time",
+          "today": "Today",
+          "this-week": "This Week",
+          "this-month": "This Month"
+        },
+        "status": {
+          "name": "Status",
+          "all-users": "All Users",
+          "active": "Active",
+          "inactive": "Inactive"
+        },
+        "region": {
+          "name": "Region",
+          "global": "Global",
+          "americas": "Americas",
+          "europe": "Europe",
+          "asia": "Asia"
+        }
+      },
+      "rankings": {
+        "title": "Leaderboard Rankings",
+        "rank": "Hạng",
+        "score": "Điểm",
+        "user": "User",
+        "highest-first": "Highest First",
+        "lowest-first": "Lowest First",
+        "best-in": "Best in:",
+        "you": "You",
+        "hover-info": "Click to change sort order",
+        "no-entries-found": "No entries found",
+        "first-join": "Be the first to join the competition!"
+      }
+    }
   },
   "onboarding": {
     "just-a-moment": "Just a moment...",

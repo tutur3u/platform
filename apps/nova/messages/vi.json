@@ -1674,7 +1674,124 @@
     },
     "teams": "Các đội",
     "submissions": "Bài nộp",
-    "home": "Trang chủ"
+    "home": "Trang chủ",
+    "leaderboard-page": {
+      "title": "Bảng Xếp Hạng",
+      "description": "Thi đấu với những người chơi giỏi nhất trên toàn thế giới. Leo lên bảng xếp hạng và giành lấy vị trí của bạn ở top đầu!",
+      "current-rank": "Xếp Hạng Hiện Tại",
+      "badge": {
+        "competition": "Cuộc Thi",
+        "active": "Đang Hoạt Động",
+        "live": "Trực Tiếp"
+      },
+      "statistics": {
+        "position": {
+          "title": "Vị Trí Của Bạn",
+          "top-position": "Đối thủ hàng đầu!",
+          "rising-position": "Đang thăng hạng!",
+          "normal-position": "Tiếp tục cố gắng nhé!"
+        },
+        "highest-score": {
+          "title": "Điểm Cao Nhất",
+          "description": "Đạt được bởi",
+          "no-participant": "Chưa có người tham gia"
+        },
+        "total": {
+          "player": "Tổng Số Người Chơi",
+          "teams": "Tổng Số Đội",
+          "description": "Tham gia cuộc thi!",
+          "heating-up": "Cuộc thi đang nóng lên!",
+          "join-now": "Tham gia cuộc thi ngay!"
+        }
+      },
+      "individual": "Cá Nhân",
+      "team": "Đội",
+      "share": "Chia sẻ",
+      "view-profile": "Xem Trang Cá Nhân",
+      "top-performers": {
+        "title": "Top Người Thể Hiện Xuất Sắc",
+        "ranks": {
+          "first-badge": "Nhà Vô Địch",
+          "second-badge": "Á quân",
+          "third-badge": "Hạng Ba"
+        }
+      },
+      "selected-challenges": "Thử Thách Đã Chọn",
+      "filter-challenges": {
+        "specific-challenge-title": "Hiển thị bảng xếp hạng cho thử thách cụ thể này",
+        "view-all-challenges": "Xem Tất Cả Thử Thách",
+        "total-participants": "Tổng số người tham gia",
+        "highest-score": "Điểm Cao Nhất",
+        "your-rank": "Hạng Của Bạn"
+      },
+      "load-more": "Tải Thêm",
+      "tutorials": {
+        "title": "Hướng Dẫn Chơi",
+        "step-1": "Hoàn thành thử thách và nhiệm vụ để tích lũy điểm",
+        "step-2": "Tổng điểm của bạn sẽ quyết định thứ hạng trên bảng xếp hạng",
+        "step-3": "Cạnh tranh với người chơi khác để giành vị trí cao nhất và nhận phần thưởng độc quyền"
+      },
+      "rewards": {
+        "current-rewards": "Phần thưởng hiện tại",
+        "1st-place": "Quán Quân",
+        "1st-place-reward": "181.000.000 VND (Tiền mặt + Học bổng)",
+        "2nd-place": "A Quân 1",
+        "2nd-place-reward": "108.000.000 VND (Tiền mặt + Học bổng)",
+        "3rd-place": "Á Quân 2",
+        "3rd-place-reward": "65.000.000 VND (Tiền mặt + Học bổng)",
+        "top-5": "Đồng Hạng Top 5",
+        "top-5-reward": "59.000.000 VND (Học bổng)",
+        "first-45-teams": "45 Đội Đầu Tiên",
+        "first-45-teams-reward": "Tài khoản Tuturuu Pro cho mỗi đội"
+      },
+      "share-leaderboard": "Chia Sẻ Bảng Xếp Hạng",
+      "last-updated": "Cập nhật lần cuối:",
+      "filters": {
+        "filters": "Bộ Lọc",
+        "all-challenges": "Tất Cả Thử Thách",
+        "search-competitors": "Tìm kiếm người chơi...",
+        "score-range": {
+          "name": "Khoảng điểm",
+          "all-scores": "Tất cả điểm số",
+          "high-scores": "Cao (1000+)",
+          "medium-scores": "Trung bình (500-999)",
+          "low-scores": "Thấp (0-499)"
+        },
+        "time-period": {
+          "name": "Khoảng thời gian",
+          "all-time": "Mọi thời gian",
+          "today": "Hôm nay",
+          "this-week": "Tuần này",
+          "this-month": "Tháng này"
+        },
+        "status": {
+          "name": "Trạng thái",
+          "all-users": "Tất cả người dùng",
+          "active": "Đang hoạt động",
+          "inactive": "Không hoạt động"
+        },
+        "region": {
+          "name": "Khu vực",
+          "global": "Toàn cầu",
+          "americas": "Châu Mỹ",
+          "europe": "Châu Âu",
+          "asia": "Châu Á"
+        }
+      },
+      "rankings": {
+        "title": "Bảng Xếp Hạng",
+        "rank": "Hạng",
+        "score": "Điểm",
+        "user": "Người dùng",
+        "highest-first": "Cao Nhất Trước",
+        "lowest-first": "Thấp Nhất Trước",
+        "best-in": "Tốt nhất trong:",
+        "you": "Bạn",
+        "hover-info": "Nhấn để thay đổi thứ tự sắp xếp",
+        "no-entries-found": "Không tìm thấy mục nào",
+        "first-join": "Hãy là người đầu tiên tham gia cuộc thi!"
+      }
+    }
   },
   "onboarding": {
     "just-a-moment": "Bước cuối cùng!",
