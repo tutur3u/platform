@@ -259,7 +259,7 @@ export function CategoryColorsSettings({
                         <div
                           className={cn(
                             'h-6 w-6 flex-none cursor-pointer rounded-full border',
-                            colorMap[category.color].bg
+                            colorMap[category.color].cbg
                           )}
                           key={`color-circle-${category.color}`}
                           onClick={() => setEditingCategory(index)}
@@ -409,7 +409,7 @@ export function CategoryColorsSettings({
                   <CardContent className="p-3">
                     <div className="mb-2 flex items-center gap-2">
                       <div
-                        className={cn('h-4 w-4 rounded-full', colorInfo.bg)}
+                        className={cn('h-4 w-4 rounded-full', colorInfo.cbg)}
                       />
                       <div className="font-medium">{suggestion.name}</div>
                     </div>
