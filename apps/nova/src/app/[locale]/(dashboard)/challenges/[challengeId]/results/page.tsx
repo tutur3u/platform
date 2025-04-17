@@ -1,35 +1,9 @@
 import ResultClient from './client';
+import { ExtendedNovaSubmission, ResultsData } from './types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import {
-  NovaChallenge,
-  NovaChallengeCriteria,
-  NovaProblem,
-  NovaSession,
-  NovaSubmission,
-  NovaSubmissionCriteria,
-} from '@tuturuuu/types/db';
+import { NovaChallenge, NovaProblem } from '@tuturuuu/types/db';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
-
-type ExtendedNovaSubmission = NovaSubmission & {
-  total_tests: number;
-  passed_tests: number;
-  test_case_score: number;
-  criteria: (NovaChallengeCriteria & NovaSubmissionCriteria)[];
-  total_criteria: number;
-  sum_criterion_score: number;
-  criteria_score: number;
-  total_score: number;
-};
-
-type Results = {
-  challenge: NovaChallenge;
-  sessions: (NovaSession & {
-    problems: (NovaProblem & {
-      submissions: ExtendedNovaSubmission[];
-    })[];
-  })[];
-};
 
 interface Props {
   params: Promise<{ challengeId: string }>;
@@ -83,7 +57,7 @@ export default async function Page({ params }: Props) {
       .eq('challenge_id', challengeId);
 
     // Transform the data to match the expected structure
-    const data: Results = {
+    const data: ResultsData = {
       challenge: challenge as NovaChallenge,
       sessions: sessions.map((session) => ({
         ...session,
