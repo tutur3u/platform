@@ -1938,6 +1938,7 @@
     "failed_to_remove_member": "Không thể loại bỏ thành viên",
     "create_success": "Đội tạo thành công",
     "create_error": "Không thể tạo nhóm",
+    "name_already_exists": "Tên nhóm đã tồn tại",
     "members": "Thành viên"
   },
   "transaction-category-data-table": {

@@ -2013,6 +2013,7 @@
     "failed_to_remove_member": "Failed to remove member",
     "create_success": "Team created successfully",
     "create_error": "Failed to create team",
+    "name_already_exists": "Team's name already exists",
     "members": "Members"
   },
   "transaction-category-data-table": {
