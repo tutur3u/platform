@@ -104,7 +104,18 @@ export default function PromptForm({ problem }: Props) {
       });
 
       if (!submissionResponse.ok) {
-        throw new Error('Failed to create submission');
+        const errorData = await submissionResponse.json();
+
+        //submission limit error
+        if (submissionResponse.status === 403) {
+          throw new Error(
+            errorData.message || 'Failed to submit prompt. Please try again.'
+          );
+        }
+
+        throw new Error(
+          errorData.message || 'Failed to submit prompt. Please try again.'
+        );
       }
 
       // Add to history
@@ -123,7 +134,10 @@ export default function PromptForm({ problem }: Props) {
       console.error('Error submitting prompt:', error);
       toast({
         title: 'Error',
-        description: 'Failed to submit prompt. Please try again.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to submit prompt. Please try again.',
         variant: 'destructive',
       });
     } finally {
