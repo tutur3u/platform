@@ -115,8 +115,6 @@ export async function POST(request: Request) {
 
     const submissionData = {
       prompt: validatedData.prompt,
-      feedback: validatedData.feedback,
-      score: validatedData.score,
       problem_id: validatedData.problemId,
       session_id: validatedData.sessionId,
       user_id: user.id,

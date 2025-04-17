@@ -43,15 +43,12 @@ export const createSessionSchema = z.object({
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().nullable(),
   status: z.string().min(1, 'Status is required'),
-  totalScore: z.number().min(0, 'Total score must be non-negative'),
   challengeId: z.string().min(1, 'Challenge ID is required'),
 });
 
 // Submissions
 export const createSubmissionSchema = z.object({
   prompt: z.string().min(1, 'Prompt is required'),
-  feedback: z.string().min(1, 'Feedback is required'),
-  score: z.number().min(0, 'Score must be non-negative'),
   problemId: z.string().min(1, 'Problem ID is required'),
   sessionId: z.string().min(1, 'Session ID is required'),
 });

@@ -3,15 +3,16 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
-    problemId: string;
+    submissionId: string;
   }>;
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createClient();
+  const { submissionId } = await params;
   const { searchParams } = new URL(request.url);
   const criteriaId = searchParams.get('criteriaId');
-  const { problemId } = await params;
+
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -24,31 +25,31 @@ export async function GET(request: Request, { params }: Params) {
 
   try {
     let query = supabase
-      .from('nova_problem_criteria_scores')
+      .from('nova_submission_criteria')
       .select('*')
-      .eq('problem_id', problemId);
+      .eq('submission_id', submissionId);
 
     if (criteriaId) {
       query = query.eq('criteria_id', criteriaId);
     }
 
-    const { data: score, error } = await query;
+    const { data, error } = await query;
 
     if (error) {
       console.error('Database Error:', error);
       if (error.code === 'PGRST116') {
         return NextResponse.json(
-          { message: 'Score not found' },
+          { message: 'Record not found' },
           { status: 404 }
         );
       }
       return NextResponse.json(
-        { message: 'Error fetching score' },
+        { message: 'Error fetching record' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(score, { status: 200 });
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
     console.error('Unexpected Error:', error);
     return NextResponse.json(
@@ -58,9 +59,10 @@ export async function GET(request: Request, { params }: Params) {
   }
 }
 
-export async function POST(request: Request, { params }: Params) {
+export async function PUT(request: Request, { params }: Params) {
+  const { submissionId } = await params;
+
   const supabase = await createClient();
-  const { problemId } = await params;
 
   const {
     data: { user },
@@ -73,9 +75,9 @@ export async function POST(request: Request, { params }: Params) {
 
   try {
     const body = await request.json();
-    const { criteriaId, score } = body;
+    const { criteriaId, score, feedback } = body;
 
-    if (!criteriaId || typeof score !== 'number') {
+    if (!criteriaId || typeof score !== 'number' || !feedback) {
       return NextResponse.json(
         { message: 'Invalid request body' },
         { status: 400 }
@@ -83,11 +85,12 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const { data, error } = await supabase
-      .from('nova_problem_criteria_scores')
+      .from('nova_submission_criteria')
       .upsert({
-        problem_id: problemId,
+        submission_id: submissionId,
         criteria_id: criteriaId,
         score: score,
+        feedback: feedback,
       })
       .select()
       .single();
@@ -95,7 +98,7 @@ export async function POST(request: Request, { params }: Params) {
     if (error) {
       console.error('Database Error:', error);
       return NextResponse.json(
-        { message: 'Error saving criteria score' },
+        { message: 'Error saving record' },
         { status: 500 }
       );
     }
@@ -111,10 +114,11 @@ export async function POST(request: Request, { params }: Params) {
 }
 
 export async function DELETE(request: Request, { params }: Params) {
-  const supabase = await createClient();
+  const { submissionId } = await params;
   const { searchParams } = new URL(request.url);
   const criteriaId = searchParams.get('criteriaId');
-  const { problemId } = await params;
+
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -127,9 +131,9 @@ export async function DELETE(request: Request, { params }: Params) {
 
   try {
     let query = supabase
-      .from('nova_problem_criteria_scores')
+      .from('nova_submission_criteria')
       .delete()
-      .eq('problem_id', problemId);
+      .eq('submission_id', submissionId);
 
     if (criteriaId) {
       query = query.eq('criteria_id', criteriaId);
@@ -140,13 +144,13 @@ export async function DELETE(request: Request, { params }: Params) {
     if (error) {
       console.error('Database Error:', error);
       return NextResponse.json(
-        { message: 'Error deleting score' },
+        { message: 'Error deleting record' },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { message: 'Score deleted successfully' },
+      { message: 'Record deleted successfully' },
       { status: 200 }
     );
   } catch (error) {
