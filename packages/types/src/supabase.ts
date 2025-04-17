@@ -444,33 +444,24 @@ export type Database = {
         Row: {
           access_token: string;
           created_at: string;
-          expiration_time: string | null;
           id: string;
           refresh_token: string;
-          resource_id: string | null;
-          sync_token: string | null;
           user_id: string;
           ws_id: string;
         };
         Insert: {
           access_token: string;
           created_at?: string;
-          expiration_time?: string | null;
           id?: string;
           refresh_token: string;
-          resource_id?: string | null;
-          sync_token?: string | null;
           user_id: string;
           ws_id: string;
         };
         Update: {
           access_token?: string;
           created_at?: string;
-          expiration_time?: string | null;
           id?: string;
           refresh_token?: string;
-          resource_id?: string | null;
-          sync_token?: string | null;
           user_id?: string;
           ws_id?: string;
         };
@@ -2338,27 +2329,27 @@ export type Database = {
       };
       nova_roles: {
         Row: {
-          allow_challenge_management: boolean | null;
-          allow_role_management: boolean | null;
+          allow_challenge_management: boolean;
+          allow_role_management: boolean;
           created_at: string;
           email: string | null;
-          enabled: boolean | null;
+          enabled: boolean;
           id: string;
         };
         Insert: {
-          allow_challenge_management?: boolean | null;
-          allow_role_management?: boolean | null;
+          allow_challenge_management?: boolean;
+          allow_role_management?: boolean;
           created_at?: string;
           email?: string | null;
-          enabled?: boolean | null;
+          enabled: boolean;
           id?: string;
         };
         Update: {
-          allow_challenge_management?: boolean | null;
-          allow_role_management?: boolean | null;
+          allow_challenge_management?: boolean;
+          allow_role_management?: boolean;
           created_at?: string;
           email?: string | null;
-          enabled?: boolean | null;
+          enabled?: boolean;
           id?: string;
         };
         Relationships: [];
@@ -4042,7 +4033,6 @@ export type Database = {
           id: string;
           location: string | null;
           locked: boolean;
-          priority: string;
           start_at: string;
           title: string;
           ws_id: string;
@@ -4056,7 +4046,6 @@ export type Database = {
           id?: string;
           location?: string | null;
           locked?: boolean;
-          priority: string;
           start_at: string;
           title?: string;
           ws_id: string;
@@ -4070,7 +4059,6 @@ export type Database = {
           id?: string;
           location?: string | null;
           locked?: boolean;
-          priority?: string;
           start_at?: string;
           title?: string;
           ws_id?: string;
@@ -6348,6 +6336,10 @@ export type Database = {
       };
       is_member_invited: {
         Args: { _user_id: string; _org_id: string };
+        Returns: boolean;
+      };
+      is_nova_challenge_manager: {
+        Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
       is_org_member: {
