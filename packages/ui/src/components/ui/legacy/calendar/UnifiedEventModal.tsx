@@ -363,12 +363,26 @@ export function UnifiedEventModal({
       } else {
         throw new Error('No event to save');
       }
-
+    
+    // Only sync if Google is connected
+    let shouldSync: boolean | undefined;
+    
+    // Sync successfully
+    if (shouldSync){
       await syncWithGoogleCalendar(savedEvent);
       toast({
         title: 'Success',
         description: 'Event saved and synced with Google Calendar',
       });
+    } 
+    
+    // No sync
+    else {
+      toast({
+        title: 'Success',
+        description: 'Event saved Locally',
+      });
+    }
 
       closeModal();
     } catch (error) {
