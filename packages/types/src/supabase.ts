@@ -4033,6 +4033,7 @@ export type Database = {
           id: string;
           location: string | null;
           locked: boolean;
+          priority: string | null;
           start_at: string;
           title: string;
           ws_id: string;
@@ -4046,6 +4047,7 @@ export type Database = {
           id?: string;
           location?: string | null;
           locked?: boolean;
+          priority?: string | null;
           start_at: string;
           title?: string;
           ws_id: string;
@@ -4059,6 +4061,7 @@ export type Database = {
           id?: string;
           location?: string | null;
           locked?: boolean;
+          priority?: string | null;
           start_at?: string;
           title?: string;
           ws_id?: string;
