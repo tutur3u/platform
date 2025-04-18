@@ -364,9 +364,7 @@ export function UnifiedEventModal({
         throw new Error('No event to save');
       }
     
-    // Only sync if Google is connected
-    let shouldSync: boolean | undefined;
-    
+    const shouldSync = experimentalGoogleCalendarLinked;
     // Sync successfully
     if (shouldSync){
       await syncWithGoogleCalendar(savedEvent);
@@ -380,7 +378,7 @@ export function UnifiedEventModal({
     else {
       toast({
         title: 'Success',
-        description: 'Event saved Locally',
+        description: 'Event saved locally',
       });
     }
 
