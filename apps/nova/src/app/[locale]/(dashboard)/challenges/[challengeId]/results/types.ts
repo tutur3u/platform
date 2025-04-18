@@ -11,7 +11,9 @@ export type ExtendedNovaSubmission = NovaSubmission & {
   total_tests: number;
   passed_tests: number;
   test_case_score: number;
-  criteria: (NovaChallengeCriteria & NovaSubmissionCriteria)[];
+  criteria: (NovaChallengeCriteria & {
+    result: NovaSubmissionCriteria;
+  })[];
   total_criteria: number;
   sum_criterion_score: number;
   criteria_score: number;

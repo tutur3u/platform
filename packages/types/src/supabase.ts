@@ -5830,15 +5830,17 @@ export type Database = {
       };
       nova_submissions_with_scores: {
         Row: {
-          calculated_score: number | null;
           created_at: string | null;
+          criteria_score: number | null;
           id: string | null;
           passed_tests: number | null;
           problem_id: string | null;
           prompt: string | null;
           session_id: string | null;
-          sum_criteria_score: number | null;
+          sum_criterion_score: number | null;
+          test_case_score: number | null;
           total_criteria: number | null;
+          total_score: number | null;
           total_tests: number | null;
           user_id: string | null;
         };

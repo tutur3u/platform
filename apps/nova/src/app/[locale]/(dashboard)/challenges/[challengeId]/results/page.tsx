@@ -1,7 +1,6 @@
 import ResultClient from './client';
 import { ExtendedNovaSubmission, ResultsData } from './types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NovaChallenge, NovaProblem } from '@tuturuuu/types/db';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 
@@ -47,9 +46,9 @@ export default async function Page({ params }: Props) {
         *,
         submissions:nova_submissions_with_scores(
           *,
-          criteria:nova_submission_criteria(
+          criteria:nova_challenge_criteria(
             *,
-            criteria:nova_challenge_criteria(*)
+            results:nova_submission_criteria(*)
           )
         )
       `
@@ -58,37 +57,32 @@ export default async function Page({ params }: Props) {
 
     // Transform the data to match the expected structure
     const data: ResultsData = {
-      challenge: challenge as NovaChallenge,
+      challenge,
       sessions: sessions.map((session) => ({
         ...session,
         problems:
           problems?.map((problem) => {
-            // Explicitly define the problem type
-            const typedProblem = problem as unknown as NovaProblem & {
-              submissions: any[];
-            };
-
             return {
-              ...typedProblem,
-              submissions: typedProblem.submissions
+              ...problem,
+              submissions: problem.submissions
                 .filter((submission) => submission.session_id === session.id)
                 .map((submission) => {
                   // Map criteria to expected format
-                  const criteria =
-                    submission.criteria && Array.isArray(submission.criteria)
-                      ? submission.criteria.map((criteriaItem: any) => ({
-                          ...criteriaItem.criteria,
-                          ...criteriaItem,
-                        }))
-                      : [];
+                  const criteria = submission.criteria.map((criterion) => ({
+                    ...criterion,
+                    results: undefined,
+                    result: criterion.results.find(
+                      (result) => result.submission_id === submission.id
+                    ),
+                  }));
 
                   // Return properly typed submission
                   return {
                     ...submission,
-                    criteria,
                     total_tests: submission.total_tests || 0,
                     passed_tests: submission.passed_tests || 0,
                     test_case_score: submission.test_case_score || 0,
+                    criteria,
                     total_criteria: submission.total_criteria || 0,
                     sum_criterion_score: submission.sum_criterion_score || 0,
                     criteria_score: submission.criteria_score || 0,

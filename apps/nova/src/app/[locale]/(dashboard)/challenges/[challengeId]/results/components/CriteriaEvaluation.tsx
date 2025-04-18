@@ -54,14 +54,14 @@ export default function CriteriaEvaluation({
                       <TableCell className="text-right">
                         <div
                           className={`inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium ${
-                            criterion.score >= 8
+                            criterion.result.score >= 8
                               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                              : criterion.score >= 5
+                              : criterion.result.score >= 5
                                 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
                                 : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                           }`}
                         >
-                          {criterion.score.toFixed(2)}/10
+                          {criterion.result.score.toFixed(2)}/10
                         </div>
                       </TableCell>
                     </TableRow>
@@ -72,7 +72,7 @@ export default function CriteriaEvaluation({
                         </h4>
                         <div className="bg-muted rounded-lg p-3">
                           <div className="whitespace-pre-wrap text-sm">
-                            {criterion.feedback}
+                            {criterion.result.feedback}
                           </div>
                         </div>
                       </TableCell>
