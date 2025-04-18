@@ -36,7 +36,9 @@ async function fetchTeamData(id: string): Promise<TeamMember[]> {
         user_id,
         nova_teams (
           id,
-          name
+          name,
+          description,
+          goals
         ),
         users!inner (
           display_name,

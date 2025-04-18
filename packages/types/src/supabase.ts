@@ -2548,16 +2548,22 @@ export type Database = {
       nova_teams: {
         Row: {
           created_at: string;
+          description: string | null;
+          goals: string | null;
           id: string;
           name: string;
         };
         Insert: {
           created_at?: string;
+          description?: string | null;
+          goals?: string | null;
           id?: string;
           name: string;
         };
         Update: {
           created_at?: string;
+          description?: string | null;
+          goals?: string | null;
           id?: string;
           name?: string;
         };
@@ -6343,6 +6349,10 @@ export type Database = {
       };
       is_nova_challenge_manager: {
         Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      is_nova_member_in_team: {
+        Args: { id: string };
         Returns: boolean;
       };
       is_org_member: {

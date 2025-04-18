@@ -49,14 +49,16 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
   const [dialogState, setDialogState] = useState<{
     isOpen: boolean;
     type: 'goals' | 'reports' | 'des';
+    isEditing: boolean;
   }>({
     isOpen: false,
     type: 'goals',
+    isEditing: false,
   });
   const isTeamMember =
     user?.id && members.some((member) => member.user_id === user?.id);
-  const openDialog = (type: 'goals' | 'reports') => {
-    setDialogState({ isOpen: true, type });
+  const openDialog = (type: 'goals' | 'reports' | 'des') => {
+    setDialogState({ isOpen: true, type, isEditing: false });
   };
 
   const closeDialog = () => {
@@ -150,7 +152,20 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
           </div>
 
           <div className="flex flex-wrap gap-2 self-end sm:self-center">
-            {isTeamMember && <Button variant="outline">Edit Profile</Button>}
+            {isTeamMember && (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setDialogState({
+                    isOpen: true,
+                    type: 'des',
+                    isEditing: true,
+                  })
+                }
+              >
+                Edit Profile
+              </Button>
+            )}
             <Link href={'/leaderboard'}>
               <Button variant="outline">
                 <Trophy className="mr-1.5 h-4 w-4" />
@@ -295,6 +310,8 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
         isOpen={dialogState.isOpen}
         onClose={closeDialog}
         type={dialogState.type}
+        initialData={teamInfo ? { description: teamInfo.name } : undefined}
+        isEditing={dialogState.isEditing}
       />
     </div>
   );
