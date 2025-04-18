@@ -10,14 +10,13 @@ import WeekdayBar from './WeekdayBar';
 import { CalendarSettings } from './settings/CalendarSettingsContext';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { Button } from '@tuturuuu/ui/button';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   type CalendarView,
   useViewTransition,
 } from '@tuturuuu/ui/hooks/use-view-transition';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { Link, Loader2, PlusIcon, Settings } from 'lucide-react';
+import { PlusIcon, Settings } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 // Floating action button for quick event creation
@@ -25,7 +24,7 @@ const CreateEventButton = () => {
   const { openModal } = useCalendar();
 
   return (
-    <div className="fixed right-6 bottom-6 z-10 flex gap-2">
+    <div className="fixed bottom-6 right-6 z-10 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -45,7 +44,6 @@ const CreateEventButton = () => {
 
 // Settings button component
 const SettingsButton = ({
-  showSyncButton = false,
   // initialSettings,
   onSaveSettings,
 }: {
@@ -53,29 +51,8 @@ const SettingsButton = ({
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
 }) => {
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const { updateSettings, settings, syncAllFromGoogleCalendar } = useCalendar();
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  const handleSyncGoogleCalendar = async () => {
-    setIsSyncing(true);
-    try {
-      await syncAllFromGoogleCalendar();
-      toast({
-        title: 'Success',
-        description: 'Google Calendar events synced successfully',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to sync Google Calendar events',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+  const { updateSettings, settings } = useCalendar();
 
   const handleSaveSettings = async (newSettings: CalendarSettings) => {
     console.log('Saving settings from dialog:', newSettings);
@@ -98,7 +75,7 @@ const SettingsButton = ({
   };
 
   return (
-    <div className="fixed right-6 bottom-24 z-10 flex gap-2">
+    <div className="fixed bottom-24 right-6 z-10 flex gap-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -113,27 +90,6 @@ const SettingsButton = ({
         </TooltipTrigger>
         <TooltipContent>Calendar settings</TooltipContent>
       </Tooltip>
-      {showSyncButton && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-12 w-12 rounded-full shadow-lg"
-              onClick={handleSyncGoogleCalendar}
-              disabled={isSyncing}
-            >
-              {isSyncing ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Link className="h-5 w-5" />
-              )}
-              <span className="sr-only">Sync Google Calendar</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Sync Google Calendar</TooltipContent>
-        </Tooltip>
-      )}
       <CalendarSettingsDialog
         open={open}
         onOpenChange={setOpen}
@@ -565,7 +521,7 @@ const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="relative scrollbar-none flex-1 overflow-hidden">
+      <div className="scrollbar-none relative flex-1 overflow-hidden">
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar date={dates[0]} workspace={workspace} />
         ) : (
