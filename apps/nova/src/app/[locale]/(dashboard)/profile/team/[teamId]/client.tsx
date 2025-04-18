@@ -1,5 +1,8 @@
 'use client';
 
+import { TeamActionDialog } from './dialog-content';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -13,7 +16,6 @@ import {
 import {
   ChevronRight,
   Info,
-  ScrollText,
   Share2,
   Target,
   Trophy,
@@ -23,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface TeamMember {
   user_id: string;
@@ -40,8 +42,36 @@ interface TeamMember {
 
 export function TeamProfile({ members }: { members: TeamMember[] }) {
   const teamInfo = members[0]?.nova_teams;
-  const [copied, setCopied] = useState(false);
 
+  const [copied, setCopied] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const supabase = createClient();
+  const [dialogState, setDialogState] = useState<{
+    isOpen: boolean;
+    type: 'goals' | 'reports' | 'des';
+  }>({
+    isOpen: false,
+    type: 'goals',
+  });
+  const isTeamMember =
+    user?.id && members.some((member) => member.user_id === user?.id);
+  const openDialog = (type: 'goals' | 'reports') => {
+    setDialogState({ isOpen: true, type });
+  };
+
+  const closeDialog = () => {
+    setDialogState((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    fetchUser();
+  }, [supabase.auth]);
   // Share functionality
   const handleShare = () => {
     if (navigator.share) {
@@ -120,6 +150,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
           </div>
 
           <div className="flex flex-wrap gap-2 self-end sm:self-center">
+            {isTeamMember && <Button variant="outline">Edit Profile</Button>}
             <Link href={'/leaderboard'}>
               <Button variant="outline">
                 <Trophy className="mr-1.5 h-4 w-4" />
@@ -178,14 +209,30 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button className="w-full justify-start" variant="outline">
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  onClick={() => openDialog('des')}
+                >
+                  <Target className="mr-2 h-4 w-4" />
+                  Description
+                </Button>
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  onClick={() => openDialog('goals')}
+                >
                   <Target className="mr-2 h-4 w-4" />
                   View Team Goals
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                {/* <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  onClick={() => openDialog('reports')}
+                >
                   <ScrollText className="mr-2 h-4 w-4" />
                   Team Reports
-                </Button>
+                </Button> */}
               </CardContent>
             </Card>
           </div>
@@ -244,6 +291,11 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
           </Card>
         </TabsContent>
       </Tabs>
+      <TeamActionDialog
+        isOpen={dialogState.isOpen}
+        onClose={closeDialog}
+        type={dialogState.type}
+      />
     </div>
   );
 }
