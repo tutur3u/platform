@@ -50,7 +50,7 @@ export const createSessionSchema = z.object({
 export const createSubmissionSchema = z.object({
   prompt: z.string().min(1, 'Prompt is required'),
   problemId: z.string().min(1, 'Problem ID is required'),
-  sessionId: z.string().min(1, 'Session ID is required'),
+  sessionId: z.string().min(1, 'Session ID is required').nullable(),
 });
 
 // Testcases
