@@ -33,6 +33,8 @@ interface TeamMember {
   nova_teams: {
     id: string;
     name: string;
+    goals?: string;
+    description?: string;
   };
   users: {
     display_name: string;
@@ -42,7 +44,10 @@ interface TeamMember {
 
 export function TeamProfile({ members }: { members: TeamMember[] }) {
   const teamInfo = members[0]?.nova_teams;
-
+  const nova_infor = {
+    description: members[0]?.nova_teams.description,
+    goals: members[0]?.nova_teams.goals,
+  };
   const [copied, setCopied] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const supabase = createClient();
@@ -310,7 +315,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
         isOpen={dialogState.isOpen}
         onClose={closeDialog}
         type={dialogState.type}
-        initialData={teamInfo ? { description: teamInfo.name } : undefined}
+        initialData={nova_infor}
         isEditing={dialogState.isEditing}
       />
     </div>

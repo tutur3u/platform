@@ -78,12 +78,8 @@ export function TeamActionDialog({
       description: 'Set and track your team objectives',
       content: (
         <div className="space-y-4 py-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="font-medium">Current Goals</h3>
-            <p className="text-muted-foreground text-sm">
-              No active goals set for this team.
-            </p>
-          </div>
+          <h3 className="font-medium">Current Goals</h3>
+          <p className="text-muted-foreground text-sm">{initialData?.goals}</p>
         </div>
       ),
     },
@@ -113,7 +109,7 @@ export function TeamActionDialog({
           <div className="space-y-2">
             <h3 className="font-medium">Description</h3>
             <Textarea
-              value={formData.description}
+              value={formData?.description}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
@@ -127,7 +123,7 @@ export function TeamActionDialog({
           <div className="space-y-2">
             <h3 className="font-medium">Goals</h3>
             <Textarea
-              value={formData.goals}
+              value={formData?.goals}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, goals: e.target.value }))
               }
@@ -138,18 +134,10 @@ export function TeamActionDialog({
         </div>
       ) : (
         <div className="space-y-4 py-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="font-medium">Description</h3>
-            <p className="text-muted-foreground text-sm">
-              {initialData?.description || 'No description available.'}
-            </p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <h3 className="font-medium">Goals</h3>
-            <p className="text-muted-foreground text-sm">
-              {initialData?.goals || 'No goals set.'}
-            </p>
-          </div>
+          <h3 className="font-medium">Description</h3>
+          <p className="text-muted-foreground text-sm">
+            {initialData?.description || 'No description available.'}
+          </p>
         </div>
       ),
     },

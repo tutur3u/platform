@@ -62,7 +62,6 @@ export default function LeaderboardPage({
     getUserId();
   }, [supabase]);
 
-  // Filter by search query and challenge
   useEffect(() => {
     let filtered = [...data];
 
@@ -183,7 +182,6 @@ export default function LeaderboardPage({
           </div>
           <TopThreeCards data={filteredData} isLoading={false} />
 
-          {/* Add animated divider */}
           <div className="relative my-8 h-px w-full overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
             <motion.div
