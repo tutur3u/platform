@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 interface Props {
@@ -33,6 +34,8 @@ export default function BasicInformationComponent({
   isChecked,
   filteredData,
 }: Props) {
+  const t = useTranslations('nova.leaderboard-page');
+
   return (
     <div>
       <motion.div
@@ -48,7 +51,7 @@ export default function BasicInformationComponent({
               className="border-yellow-500/30 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
             >
               <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
-              Competition
+              {t('badge.competition')}
             </Badge>
 
             {selectedChallenge !== 'all' && (
@@ -66,7 +69,7 @@ export default function BasicInformationComponent({
               className="border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400"
             >
               <Rocket className="mr-2 h-4 w-4" />
-              Active
+              {t('badge.active')}
             </Badge>
 
             <Badge
@@ -74,7 +77,7 @@ export default function BasicInformationComponent({
               className="border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
             >
               <Zap className="mr-2 h-4 w-4" />
-              Live
+              {t('badge.live')}
             </Badge>
           </div>
         </div>
@@ -82,11 +85,10 @@ export default function BasicInformationComponent({
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="relative">
             <h1 className="mb-2 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent dark:from-blue-400 dark:via-blue-500 dark:to-indigo-600">
-              Leaderboard
+              {t('title')}
             </h1>
             <p className="max-w-2xl text-gray-600 dark:text-slate-400">
-              Compete against the best players around the world. Climb the ranks
-              and claim your spot at the top of the leaderboard!
+              {t('description')}
             </p>
           </div>
 
@@ -119,7 +121,7 @@ export default function BasicInformationComponent({
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                          Your Current Rank
+                          {t('current-rank')}
                         </p>
                       </div>
                       <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
@@ -143,17 +145,17 @@ export default function BasicInformationComponent({
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                Your Position
+                {t('statistics.position.title')}
               </p>
               <h3 className="text-2xl font-bold text-gray-800 dark:text-slate-100">
                 #{yourRank}
               </h3>
               <p className="text-xs text-gray-500 dark:text-slate-500">
                 {yourRank <= 10
-                  ? 'Top tier competitor!'
+                  ? t('statistics.position.top-position')
                   : yourRank <= 30
-                    ? 'Rising through the ranks!'
-                    : 'Keep improving!'}
+                    ? t('statistics.position.rising-position')
+                    : t('statistics.position.normal-position')}
               </p>
             </div>
             <div className="relative">
@@ -170,15 +172,15 @@ export default function BasicInformationComponent({
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                Highest Score
+                {t('statistics.highest-score.title')}
               </p>
               <h3 className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {topScore?.toLocaleString()}
               </h3>
               <p className="text-xs text-gray-500 dark:text-slate-500">
                 {filteredData.length > 0
-                  ? `Achieved by ${filteredData[0]?.name}`
-                  : 'No participants yet'}
+                  ? `${t('statistics.highest-score.description')} ${filteredData[0]?.name}`
+                  : t('statistics.highest-score.no-participant')}
               </p>
             </div>
             <div className="relative">
@@ -195,15 +197,17 @@ export default function BasicInformationComponent({
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-slate-400">
-                {isChecked ? 'Total teams' : 'Total player'}
+                {isChecked
+                  ? t('statistics.total.teams')
+                  : t('statistics.total.player')}
               </p>
               <h3 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                 {totalParticipants}
               </h3>
               <p className="text-xs text-gray-500 dark:text-slate-500">
                 {totalParticipants > 50
-                  ? 'Competition is heating up!'
-                  : 'Join the competition!'}
+                  ? t('statistics.total.heating-up')
+                  : t('statistics.total.join-now')}
               </p>
             </div>
             <div className="relative">
@@ -216,7 +220,7 @@ export default function BasicInformationComponent({
         </Card>
       </div>
 
-      <Separator className="mt-2 mb-8 border-slate-800" />
+      <Separator className="mb-8 mt-2 border-slate-800" />
     </div>
   );
 }
