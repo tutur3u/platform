@@ -17,6 +17,7 @@ import {
   Medal,
   Share,
   Sparkles,
+  Target,
   Trophy,
 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -408,6 +409,19 @@ export default function LeaderboardPage({
                           </p>
                           <p className="text-sm text-gray-500 dark:text-slate-400">
                             {t('rewards.top-5-reward')}
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-900/30">
+                          <Target className="h-4 w-4 text-pink-700 dark:text-pink-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-slate-200">
+                            {t('rewards.top-16')}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-slate-400">
+                            {t('rewards.top-16-reward')}
                           </p>
                         </div>
                       </li>
