@@ -11,6 +11,7 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 
 export default function CalendarHeader({
@@ -22,6 +23,7 @@ export default function CalendarHeader({
   offset,
   availableViews,
   onViewChange,
+  onAISchedule,
 }: {
   t: any;
   locale: string;
@@ -31,6 +33,7 @@ export default function CalendarHeader({
   offset: number;
   availableViews: { value: string; label: string; disabled?: boolean }[];
   onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
+  onAISchedule?: () => void;
 }) {
   const views = availableViews.filter((view) => view?.disabled !== true);
 
@@ -110,6 +113,19 @@ export default function CalendarHeader({
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
+
+        {onAISchedule && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            onClick={onAISchedule}
+            aria-label="AI Schedule"
+          >
+            <Sparkles className="h-4 w-4" />
+            AI Schedule
+          </Button>
+        )}
 
         {views.length > 1 && (
           <Select

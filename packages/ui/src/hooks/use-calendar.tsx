@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Workspace } from '@tuturuuu/types/primitives/Workspace';
-import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { CalendarEvent, EventPriority } from '@tuturuuu/types/primitives/calendar-event';
 import {
   CalendarSettings,
   defaultCalendarSettings,
@@ -60,6 +60,8 @@ const CalendarContext = createContext<{
   // google calendar API
   syncWithGoogleCalendar: (event: CalendarEvent) => Promise<void>;
   syncAllFromGoogleCalendar: () => Promise<void>;
+  // AI scheduling
+  rescheduleEvents: (startDate?: Date, endDate?: Date, viewMode?: 'day' | '4-days' | 'week' | 'month') => Promise<CalendarEvent[] | undefined>;
 
   settings: CalendarSettings;
   updateSettings: (settings: Partial<CalendarSettings>) => void;
@@ -86,6 +88,8 @@ const CalendarContext = createContext<{
   // Google Calendar API
   syncWithGoogleCalendar: () => Promise.resolve(),
   syncAllFromGoogleCalendar: () => Promise.resolve(),
+  // AI scheduling
+  rescheduleEvents: () => Promise.resolve(undefined),
 
   settings: defaultCalendarSettings,
   updateSettings: () => undefined,
@@ -893,6 +897,275 @@ export const CalendarProvider = ({
     [isModalHidden, activeEventId]
   );
 
+  // Helper function to detect overlap between events
+  const eventsOverlap = (event1: CalendarEvent, event2: CalendarEvent) => {
+    const event1Start = new Date(event1.start_at).getTime();
+    const event1End = new Date(event1.end_at).getTime();
+    const event2Start = new Date(event2.start_at).getTime();
+    const event2End = new Date(event2.end_at).getTime();
+
+    return event1Start < event2End && event1End > event2Start;
+  };
+
+  // New function for AI rescheduling of week events
+  const rescheduleEvents = useCallback(async (startDate?: Date, endDate?: Date, viewMode: 'day' | '4-days' | 'week' | 'month' = 'week') => {
+    if (!ws?.id) return;
+    
+    // Determine the time period based on the view mode
+    let periodStart: Date;
+    let periodEnd: Date;
+    
+    if (startDate && endDate) {
+      // If specific start and end dates are provided, use them
+      periodStart = new Date(startDate);
+      periodEnd = new Date(endDate);
+    } else {
+      // If no specific start and end dates, create a time period based on the current date and view mode
+      const currentDate = new Date();
+      
+      if (viewMode === 'day') {
+        // Day view: get today
+        periodStart = new Date(currentDate);
+        periodStart.setHours(0, 0, 0, 0);
+        
+        periodEnd = new Date(currentDate);
+        periodEnd.setHours(23, 59, 59, 999);
+      } 
+      else if (viewMode === '4-days') {
+        // 4 days view: from today to 3 days after
+        periodStart = new Date(currentDate);
+        periodStart.setHours(0, 0, 0, 0);
+        
+        periodEnd = new Date(currentDate);
+        periodEnd.setDate(periodEnd.getDate() + 3);
+        periodEnd.setHours(23, 59, 59, 999);
+      }
+      else if (viewMode === 'week') {
+        // Week view: get 7 days from the start of the week
+        periodStart = new Date(currentDate);
+        periodStart.setDate(currentDate.getDate() - currentDate.getDay()); // Set to Sunday
+        periodStart.setHours(0, 0, 0, 0);
+        
+        periodEnd = new Date(periodStart);
+        periodEnd.setDate(periodStart.getDate() + 6); // Tới thứ 7
+        periodEnd.setHours(23, 59, 59, 999);
+      }
+      else if (viewMode === 'month') {
+        // Month view: get the entire month
+        periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        periodStart.setHours(0, 0, 0, 0);
+        
+        periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        periodEnd.setHours(23, 59, 59, 999);
+      }
+      else {
+        // Set the default to week
+        periodStart = new Date(currentDate);
+        periodStart.setDate(currentDate.getDate() - currentDate.getDay());
+        periodStart.setHours(0, 0, 0, 0);
+        
+        periodEnd = new Date(periodStart);
+        periodEnd.setDate(periodStart.getDate() + 6);
+        periodEnd.setHours(23, 59, 59, 999);
+      }
+    }
+    
+    console.log(`Rescheduling events for period: ${viewMode}`, {
+      start: periodStart.toISOString(),
+      end: periodEnd.toISOString()
+    });
+    
+    // Get all events in the selected time period
+    const allEvents = events.filter((event: CalendarEvent) => {
+      const eventStart = new Date(event.start_at);
+      const eventEnd = new Date(event.end_at);
+      
+      // Check if the event is within the time period
+      return (
+        (eventStart >= periodStart && eventStart <= periodEnd) || // Start within the period
+        (eventEnd >= periodStart && eventEnd <= periodEnd) || // End within the period
+        (eventStart <= periodStart && eventEnd >= periodEnd) // Extend through the entire period
+      );
+    });
+    
+    console.log(`Found ${allEvents.length} events in the selected period`);
+    
+    // Fixed events (high priority or locked)
+    const fixedEvents = allEvents.filter(
+      (event: CalendarEvent) => event.locked || event.priority === 'high'
+    );
+    
+    // Events that can be rescheduled (medium and low priority)
+    const rescheduleableEvents = allEvents.filter(
+      (event: CalendarEvent) => !event.locked && event.priority !== 'high'
+    );
+    
+    console.log(`Fixed events: ${fixedEvents.length}, Rescheduleable events: ${rescheduleableEvents.length}`);
+    
+    // Sort by priority (medium first, low second)
+    rescheduleableEvents.sort((a: CalendarEvent, b: CalendarEvent) => {
+      // Convert priority to a number for comparison
+      const priorityValue: Record<EventPriority, number> = {
+        high: 3,
+        medium: 2,
+        low: 1,
+      };
+      
+      const aPriority = (a.priority as EventPriority) || 'low';
+      const bPriority = (b.priority as EventPriority) || 'low';
+      
+      return priorityValue[bPriority] - priorityValue[aPriority]; // Thứ tự giảm dần
+    });
+    
+    // Array containing the rescheduled events
+    const rescheduledEvents: CalendarEvent[] = [...fixedEvents];
+    
+    // Working hours (default 9am - 5pm)
+    const workingHourStart = 9;
+    const workingHourEnd = 17;
+      
+      // Create available slots
+    const availableSlots: Array<{
+      start: Date;
+      end: Date;
+      day: number;
+      hour: number;
+    }> = [];
+    
+    // Calculate the number of days needed to create slots
+    const totalDays = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+    
+    // Create slots for the entire time period
+    for (let day = 0; day < totalDays; day++) {
+      const dayDate = new Date(periodStart);
+      dayDate.setDate(periodStart.getDate() + day);
+      
+      // Create the working hours slots
+      for (let hour = workingHourStart; hour < workingHourEnd; hour++) {
+        const slotStart = new Date(dayDate);
+        slotStart.setHours(hour, 0, 0, 0);
+        
+        const slotEnd = new Date(slotStart);
+        slotEnd.setHours(slotStart.getHours() + 1, 0, 0, 0);
+        
+        // Skip slots that already have fixed events
+        const hasOverlap = fixedEvents.some((event: CalendarEvent) => {
+          const eventStart = new Date(event.start_at);
+          const eventEnd = new Date(event.end_at);
+          
+          return (
+            slotStart < eventEnd &&
+            slotEnd > eventStart
+          );
+        });
+        
+        if (!hasOverlap) {
+          availableSlots.push({
+            start: slotStart,
+            end: slotEnd,
+            day,
+            hour
+          });
+        }
+      }
+    }
+    
+    // Shuffle the slots
+    availableSlots.sort(() => Math.random() - 0.5);
+    
+    // Find the best slot for each rescheduleable event
+    for (const event of rescheduleableEvents) {
+      // calculate the event duration
+      const eventStart = new Date(event.start_at);
+      const eventEnd = new Date(event.end_at);
+      const eventDuration = eventEnd.getTime() - eventStart.getTime();
+      const eventDurationHours = eventDuration / (1000 * 60 * 60);
+      
+      // Bỏ qua các sự kiện dài hơn 8 giờ hoặc ngắn hơn 15 phút
+      if (eventDurationHours > 8 || eventDurationHours < 0.25) {
+        rescheduledEvents.push(event);
+        continue;
+      }
+      
+      // Find the best slot
+      let bestSlot: {
+        start: Date;
+        end: Date;
+        day: number;
+        hour: number;
+      } | null = null;
+      let bestScore = -1;
+      
+      for (const currentSlot of availableSlots) {
+        // Bỏ qua nếu không thể đặt sự kiện vào slot này
+        if (!currentSlot || currentSlot.end.getTime() - currentSlot.start.getTime() < eventDuration) {
+          continue;
+        }
+        
+        // Calculate the score for this slot (the higher the better)
+        // Priority: Slots that fit the event size are preferred
+        let score = 100;
+        
+        // Subtract points for the distance from the start time
+        const originalHour = eventStart.getHours();
+        const slotHour = currentSlot.start.getHours();
+        score -= Math.abs(originalHour - slotHour) * 5;
+        
+       // 
+        const originalDay = Math.floor((eventStart.getTime() - periodStart.getTime()) / (24 * 60 * 60 * 1000));
+        score -= Math.abs(originalDay - currentSlot.day) * 10;
+        
+        // Priority: Morning slots are preferred for medium priority events
+        if (event.priority === 'medium' && slotHour < 12) {
+          score += 20;
+        }
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestSlot = { ...currentSlot };
+        }
+      }
+      
+      if (bestSlot) {
+        // Set the event to the best slot
+        const newStart = new Date(bestSlot.start);
+        const newEnd = new Date(newStart);
+        newEnd.setTime(newStart.getTime() + eventDuration);
+        
+        // Create the updated event
+        const updatedEvent = {
+          ...event,
+          start_at: newStart.toISOString(),
+          end_at: newEnd.toISOString()
+        };
+        
+        // Add to the list of rescheduled events
+        rescheduledEvents.push(updatedEvent);
+        
+        // Xóa slot đã sử dụng
+        const index = availableSlots.indexOf(bestSlot);
+        if (index > -1) {
+          availableSlots.splice(index, 1);
+        }
+        
+        // Update the event in the database
+        try {
+          await updateEvent(event.id, updatedEvent);
+        } catch (error) {
+          console.error('Failed to update event during rescheduling:', error);
+        }
+      } else {
+        // If no suitable slot is found, keep the original event
+        rescheduledEvents.push(event);
+      }
+    }
+    
+      // Refresh the calendar
+    refresh();
+    
+    return rescheduledEvents;
+  }, [events, ws?.id, updateEvent, refresh]);
+
   const values = {
     getEvent,
     getCurrentEvents,
@@ -904,6 +1177,7 @@ export const CalendarProvider = ({
     addEmptyEvent,
     updateEvent,
     deleteEvent,
+    rescheduleEvents,
 
     // New API
     isModalOpen: !isModalHidden && activeEventId !== null,

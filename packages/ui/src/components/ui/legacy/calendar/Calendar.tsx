@@ -17,8 +17,16 @@ import {
 } from '@tuturuuu/ui/hooks/use-view-transition';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { Link, Loader2, PlusIcon, Settings } from 'lucide-react';
+import { Link, Loader2, PlusIcon, Settings, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { 
+  Dialog,
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@tuturuuu/ui/dialog';
 
 // Floating action button for quick event creation
 const CreateEventButton = () => {
@@ -222,8 +230,8 @@ const CalendarContent = ({
   workspace?: Workspace;
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
-  experimentalGoogleCalendarLinked: boolean;
-  enableExperimentalGoogleCalendar: boolean;
+  experimentalGoogleCalendarLinked?: boolean;
+  enableExperimentalGoogleCalendar?: boolean;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
@@ -236,8 +244,9 @@ const CalendarContent = ({
   };
 }) => {
   const { transition } = useViewTransition();
-  const { settings } = useCalendar();
-
+  const { settings, rescheduleEvents } = useCalendar();
+  const { toast } = useToast();
+  
   const [initialized, setInitialized] = useState(false);
   const [date, setDate] = useState(externalState?.date || new Date());
   const [view, setView] = useState<CalendarView>(externalState?.view || 'week');
@@ -245,6 +254,106 @@ const CalendarContent = ({
   const [availableViews, setAvailableViews] = useState<
     { value: string; label: string; disabled?: boolean }[]
   >(externalState?.availableViews || []);
+  const [isAIScheduling, setIsAIScheduling] = useState(false);
+  const [showAIScheduleConfirmation, setShowAIScheduleConfirmation] = useState(false);
+
+  // AI Scheduling confirmation handler
+  const handleAIScheduleClick = () => {
+    setShowAIScheduleConfirmation(true);
+  };
+  
+  // AI Scheduling handler
+  const handleAISchedule = async () => {
+    setShowAIScheduleConfirmation(false);
+    
+    try {
+      setIsAIScheduling(true);
+      
+      // Calculate the period based on the view
+      let periodStart: Date;
+      let periodEnd: Date;
+      
+      if (view === 'day') {
+        // Day view: get today
+        periodStart = new Date(date);
+        periodStart.setHours(0, 0, 0, 0);
+        
+        periodEnd = new Date(date);
+        periodEnd.setHours(23, 59, 59, 999);
+      } 
+      else if (view === '4-days') {
+        // 4 days view: from today to 3 days after
+        periodStart = new Date(date);
+        periodStart.setHours(0, 0, 0, 0);
+        
+        periodEnd = new Date(periodStart);
+        periodEnd.setDate(periodStart.getDate() + 3);
+        periodEnd.setHours(23, 59, 59, 999);
+      }
+      else if (view === 'week') {
+        // Week view: get 7 days from the start of the week
+        const currentDate = new Date(date);
+        const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, ...
+        periodStart = new Date(currentDate);
+        periodStart.setDate(currentDate.getDate() - dayOfWeek); // Set to Sunday
+        periodStart.setHours(0, 0, 0, 0); 
+        
+        periodEnd = new Date(periodStart);
+        periodEnd.setDate(periodStart.getDate() + 6); // Until Saturday
+        periodEnd.setHours(23, 59, 59, 999);
+      }
+      else if (view === 'month') {
+        // Month view: get the entire month
+        const currentDate = new Date(date);
+        periodStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        periodStart.setHours(0, 0, 0, 0);
+        
+        periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        periodEnd.setHours(23, 59, 59, 999);
+      }
+      else {
+        // Default to today
+        periodStart = new Date(date);
+        periodStart.setHours(0, 0, 0, 0);
+        
+        periodEnd = new Date(date);
+        periodEnd.setHours(23, 59, 59, 999);
+      }
+      
+      console.log('AI Schedule for period:', {
+        view,
+        start: periodStart.toISOString(),
+        end: periodEnd.toISOString()
+      });
+      
+      const result = await rescheduleEvents(periodStart, periodEnd, view);
+      
+      if (result) {
+        // Analyze results
+        const fixedEvents = result.filter(event => event.locked || event.priority === 'high');
+        const rescheduledEvents = result.filter(event => !event.locked && event.priority !== 'high');
+        
+        toast({
+          title: "AI Schedule completed",
+          description: `Optimized ${rescheduledEvents.length} events, kept ${fixedEvents.length} events with high priority or locked.`,
+        });
+      } else {
+        toast({
+          title: "AI Schedule completed",
+          description: "Your calendar has been optimized based on event priority",
+        });
+      }
+    } catch (error) {
+      console.error('Error during AI scheduling:', error);
+      toast({
+        title: "AI Schedule failed",
+          description: "An error occurred while optimizing your calendar",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAIScheduling(false);
+    }
+  };
 
   // Use the external state handlers when provided
   const handleSetDate = useCallback(
@@ -558,6 +667,7 @@ const CalendarContent = ({
             else if (newView === 'week') enableWeekView();
             else if (newView === 'month') enableMonthView();
           }}
+          onAISchedule={isAIScheduling ? undefined : handleAIScheduleClick}
         />
       )}
 
@@ -566,12 +676,62 @@ const CalendarContent = ({
       )}
 
       <div className="relative scrollbar-none flex-1 overflow-hidden">
+        {isAIScheduling && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/70 z-50">
+            <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-background shadow-lg">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm font-medium">Đang tối ưu lịch của bạn...</p>
+            </div>
+          </div>
+        )}
+        
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar date={dates[0]} workspace={workspace} />
         ) : (
           <CalendarViewWithTrail dates={dates} />
         )}
       </div>
+
+      {/* AI Schedule Confirmation Dialog */}
+      <Dialog open={showAIScheduleConfirmation} onOpenChange={setShowAIScheduleConfirmation}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Confirm AI Schedule
+            </DialogTitle>
+            <DialogDescription>
+              AI will automatically rearrange events in the {
+                view === 'day' ? 'day' : 
+                view === '4-days' ? '4 days' : 
+                view === 'week' ? 'week' : 
+                view === 'month' ? 'month' : 'time period'
+              } currently based on priority. 
+              Events with high priority or locked will not be changed.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-2 pt-4">
+            <p className="text-sm">How it works:</p>
+            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                <li>Event With <span className="text-red-500 font-medium">High Priority</span> Will Not Be Changed</li>
+              <li>Event with <span className="text-green-500 font-medium">Medium</span> priority will be scheduled in the morning when possible</li>
+              <li>Event with <span className="text-blue-500 font-medium">Low</span> priority will be scheduled in the remaining slots</li>
+              <li>Event with <span className="text-muted-foreground font-medium">Locked</span> will not be changed</li>
+            </ul>
+          </div>
+          
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setShowAIScheduleConfirmation(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAISchedule} className="gap-1">
+              <Sparkles className="h-4 w-4" />
+              Optimize Calendar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {disabled ? null : (
         <>
