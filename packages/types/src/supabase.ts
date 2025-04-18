@@ -6352,7 +6352,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_member_in_team: {
-        Args: { id: string };
+        Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
       is_org_member: {

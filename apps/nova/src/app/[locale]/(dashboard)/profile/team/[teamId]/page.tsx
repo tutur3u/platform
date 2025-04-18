@@ -47,7 +47,6 @@ async function fetchTeamData(id: string): Promise<TeamMember[]> {
       `
     )
     .eq('team_id', id);
-  console.log(data, ' team data');
   if (error) {
     console.error('Error fetching team data:', error.message);
     return [];
