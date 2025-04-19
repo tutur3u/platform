@@ -47,7 +47,7 @@ export default function ToolDetailsPage({
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl">{tool.name}</CardTitle>
-          <p className="mt-2 text-muted-foreground">{tool.description}</p>
+          <p className="text-muted-foreground mt-2">{tool.description}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {tool.tags.map((tag) => (
               <Badge key={tag} variant="secondary">

@@ -114,7 +114,7 @@ export function HorseDetails({
                           #{rank}
                         </Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           Unknown
                         </span>
                       )}

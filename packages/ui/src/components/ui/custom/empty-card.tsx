@@ -27,7 +27,7 @@ export function EmptyCard({
       {...props}
     >
       <div className="mr-4 shrink-0 rounded-full border border-dashed p-4">
-        <Icon className="size-8 text-muted-foreground" aria-hidden="true" />
+        <Icon className="text-muted-foreground size-8" aria-hidden="true" />
       </div>
       <div className="flex flex-col items-center gap-1.5 text-center">
         <CardTitle>{title}</CardTitle>

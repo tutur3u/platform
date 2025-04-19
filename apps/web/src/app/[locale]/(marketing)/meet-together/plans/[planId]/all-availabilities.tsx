@@ -38,7 +38,7 @@ export default function AllAvailabilities({
         <div>
           0/{totalUserCount} {t('available')}
         </div>
-        <div className="flex h-4 w-32 border border-foreground/50">
+        <div className="border-foreground/50 flex h-4 w-32 border">
           {Array.from({ length: totalUserCount + 1 }).map((_, i) => (
             <div
               key={i}
@@ -46,7 +46,7 @@ export default function AllAvailabilities({
                 width: `calc(100% / ${totalUserCount})`,
               }}
               className={`h-full ${
-                i < totalUserCount ? 'border-r border-foreground/50' : ''
+                i < totalUserCount ? 'border-foreground/50 border-r' : ''
               }`}
             >
               <div

@@ -123,7 +123,7 @@ export function RaceControls({
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          className="rounded-md border bg-background p-3"
+          className="bg-background rounded-md border p-3"
         >
           <div className="mb-2 text-xs font-medium">Animation Speed</div>
           <div className="flex flex-wrap gap-2">
@@ -199,7 +199,7 @@ export function RaceControls({
 
             {/* Race timeline scrubber */}
             <div
-              className="group relative h-8 flex-1 cursor-pointer overflow-hidden rounded-md bg-muted"
+              className="bg-muted group relative h-8 flex-1 cursor-pointer overflow-hidden rounded-md"
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const offsetX = e.clientX - rect.left;
@@ -231,17 +231,17 @@ export function RaceControls({
               {/* Hover preview */}
               {hoverPosition !== null && (
                 <div
-                  className="absolute top-0 z-10 h-full border-r-2 border-primary transition-all duration-75"
+                  className="border-primary absolute top-0 z-10 h-full border-r-2 transition-all duration-75"
                   style={{ left: `${(hoverPosition / races.length) * 100}%` }}
                 >
-                  <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md border bg-background px-1.5 py-0.5 text-xs whitespace-nowrap shadow-sm">
+                  <div className="bg-background absolute top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-xs shadow-sm">
                     Race {hoverPosition + 1}
                   </div>
                 </div>
               )}
 
               {/* Race markers */}
-              <div className="absolute top-0 left-0 h-full w-full">
+              <div className="absolute left-0 top-0 h-full w-full">
                 {races.map((race, idx) => {
                   // Create visual markers for different race types
                   const markerColor =
@@ -272,9 +272,9 @@ export function RaceControls({
                   width: `${((currentRaceIndex + 1) / races.length) * 100}%`,
                 }}
               >
-                <div className="h-full w-full bg-primary/30" />
-                <div className="absolute top-0 right-0 h-full w-1 bg-primary" />
-                <div className="absolute top-1/2 -right-2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full bg-primary shadow-sm">
+                <div className="bg-primary/30 h-full w-full" />
+                <div className="bg-primary absolute right-0 top-0 h-full w-1" />
+                <div className="bg-primary absolute -right-2 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full shadow-sm">
                   {races[currentRaceIndex]?.raceType === 'preliminary' ? (
                     <span className="text-[10px] font-bold text-white">
                       {currentRaceIndex + 1}

@@ -169,10 +169,10 @@ export function CategoryColorsSettings({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-md bg-muted/30 p-4">
+      <div className="bg-muted/30 rounded-md p-4">
         <div className="flex items-start gap-2">
-          <InfoIcon className="mt-0.5 h-4 w-4 text-muted-foreground" />
-          <div className="text-sm text-muted-foreground">
+          <InfoIcon className="text-muted-foreground mt-0.5 h-4 w-4" />
+          <div className="text-muted-foreground text-sm">
             <p>
               Categories help organize your events by color. The AI will
               automatically assign colors to events based on their title and
@@ -294,7 +294,7 @@ export function CategoryColorsSettings({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 text-xs text-muted-foreground"
+                              className="text-muted-foreground h-7 text-xs"
                               onClick={() => setEditingCategory(index)}
                             >
                               Edit
@@ -317,7 +317,7 @@ export function CategoryColorsSettings({
                             setEditingCategory(null);
                           }}
                           disabled={value.categories.length <= 1}
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          className="text-muted-foreground hover:text-destructive h-7 w-7"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -354,7 +354,7 @@ export function CategoryColorsSettings({
                                     colorInfo.activeBg,
                                     'h-12 w-full rounded-md border transition-all hover:scale-105 hover:shadow-md',
                                     isSelected &&
-                                      'shadow-md ring-2 ring-offset-2 ring-offset-background'
+                                      'ring-offset-background shadow-md ring-2 ring-offset-2'
                                   )}
                                   onClick={() => {
                                     // Create a new category object with the updated color
@@ -402,7 +402,7 @@ export function CategoryColorsSettings({
                     'overflow-hidden transition-all',
                     exists
                       ? 'opacity-50'
-                      : 'cursor-pointer hover:ring-1 hover:ring-primary'
+                      : 'hover:ring-primary cursor-pointer hover:ring-1'
                   )}
                   onClick={() => !exists && addSuggestedCategory(suggestion)}
                 >

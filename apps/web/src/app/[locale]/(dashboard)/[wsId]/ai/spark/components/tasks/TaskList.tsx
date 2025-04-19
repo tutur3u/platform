@@ -35,7 +35,7 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
   };
 
   const priorityIcons: Record<Priority, React.ReactNode> = {
-    high: <AlertCircle className="h-4 w-4 text-destructive" />,
+    high: <AlertCircle className="text-destructive h-4 w-4" />,
     medium: <Clock className="h-4 w-4 text-yellow-500" />,
     low: <Target className="h-4 w-4 text-green-500" />,
   };
@@ -44,7 +44,7 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-primary" />
+          <CheckCircle2 className="text-primary h-5 w-5" />
           Tasks for {format(selectedDate, 'MMMM d, yyyy')}
         </CardTitle>
         <CardDescription>
@@ -54,14 +54,14 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
 
       <CardContent className="space-y-4">
         {tasks.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
+          <div className="text-muted-foreground py-8 text-center">
             No tasks scheduled for this date
           </div>
         ) : (
           tasks.map((task, index) => (
             <div
               key={`${task.title}-${index}`}
-              className="flex items-start justify-between gap-4 rounded-md border bg-card/50 p-4"
+              className="bg-card/50 flex items-start justify-between gap-4 rounded-md border p-4"
             >
               <div className="space-y-2">
                 <div className="flex items-start gap-3">
@@ -90,11 +90,11 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
                       )}
                     </div>
                     {task.description && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {task.description}
                       </p>
                     )}
-                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-4 text-xs">
                       {task.estimatedHours && (
                         <div className="flex items-center gap-1">
                           <Timer className="h-3 w-3" />

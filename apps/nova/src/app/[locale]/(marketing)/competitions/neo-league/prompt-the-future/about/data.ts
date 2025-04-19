@@ -34,7 +34,14 @@ export interface TeamMember {
 
 export interface Sponsor {
   tKey: string;
-  tier: 'host' | 'partner' | 'platinum' | 'gold' | 'silver' | 'bronze';
+  tier:
+    | 'host'
+    | 'partner'
+    | 'platinum'
+    | 'gold'
+    | 'silver'
+    | 'bronze'
+    | 'diamond';
   logo: string;
   website: string;
 }
@@ -264,8 +271,38 @@ export const sponsors: Sponsor[] = [
   {
     tKey: 'rmit-sset',
     tier: 'partner',
-    logo: '/media/featured/competitions/neo-league/rmit.png',
+    logo: '/media/featured/competitions/neo-league/sponsors/rmit.png',
     website: 'https://www.rmit.edu.vn',
+  },
+  {
+    tKey: 'student-council',
+    tier: 'partner',
+    logo: '/media/featured/competitions/neo-league/sponsors/student-council.png',
+    website: 'https://www.rmit.edu.vn',
+  },
+  {
+    tKey: 'aptech',
+    tier: 'diamond',
+    logo: '/media/featured/competitions/neo-league/sponsors/aptech.png',
+    website: 'https://aptechvietnam.com.vn/',
+  },
+  {
+    tKey: 'AICT',
+    tier: 'diamond',
+    logo: '/media/featured/competitions/neo-league/sponsors/aict.png',
+    website: 'https://aict.edu.vn',
+  },
+  {
+    tKey: 'netcompany',
+    tier: 'gold',
+    logo: '/media/featured/competitions/neo-league/sponsors/netcompany.png',
+    website: 'https://netcompany.com/',
+  },
+  {
+    tKey: 'holistics',
+    tier: 'gold',
+    logo: '/media/featured/competitions/neo-league/sponsors/holistics.png',
+    website: 'https://www.holistics.io/',
   },
 ];
 

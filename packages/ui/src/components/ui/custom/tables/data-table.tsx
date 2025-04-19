@@ -217,7 +217,7 @@ export function DataTable<TData, TValue>({
               t={t}
               table={table}
               count={count}
-              className="rounded-lg border bg-foreground/[0.025] px-4 py-2 backdrop-blur-xl dark:bg-foreground/5"
+              className="bg-foreground/[0.025] dark:bg-foreground/5 rounded-lg border px-4 py-2 backdrop-blur-xl"
               setParams={setParams}
             />
             <div className="h-4" />

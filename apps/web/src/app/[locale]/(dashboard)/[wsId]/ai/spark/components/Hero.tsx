@@ -9,7 +9,7 @@ export function Hero() {
         Beta
       </Badge>
       <h1 className="mb-4 text-4xl font-bold">Spark AI Year Planner</h1>
-      <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+      <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
         Transform your yearly goals into actionable daily tasks with AI-powered
         planning. Let Spark help you create a detailed roadmap for success.
       </p>
