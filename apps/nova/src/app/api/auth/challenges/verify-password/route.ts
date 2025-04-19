@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
+    
     // Hash the provided password and compare with stored hash
     const passwordSalt = challenge.password_salt || generateSalt();
     const passwordHash = await hashPassword(password, passwordSalt);

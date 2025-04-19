@@ -2185,7 +2185,7 @@ export type Database = {
           password_salt: string | null;
           previewable_at: string | null;
           title: string;
-          whitelisted_only: boolean;
+          restricted_access: boolean;
         };
         Insert: {
           close_at?: string | null;

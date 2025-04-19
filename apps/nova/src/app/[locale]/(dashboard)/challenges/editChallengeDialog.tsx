@@ -49,7 +49,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       duration: challenge.duration,
       enablePassword: challenge.password_hash !== null,
       enabled: challenge.enabled,
-      whitelistedOnly: challenge.whitelisted_only,
+      restrictedAccess: challenge.restricted_access,
       whitelistedEmails: challenge.whitelists.map((w) => w.email),
       openAt: challenge.open_at ? new Date(challenge.open_at) : null,
       closeAt: challenge.close_at ? new Date(challenge.close_at) : null,

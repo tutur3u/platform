@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       description: validatedData.description,
       duration: validatedData.duration,
       enabled: validatedData.enabled,
-      whitelisted_only: validatedData.whitelistedOnly,
+      restricted_access: validatedData.restrictedAccess,
       max_attempts: validatedData.maxAttempts,
       max_daily_attempts: validatedData.maxDailyAttempts,
       password_hash: passwordHash,

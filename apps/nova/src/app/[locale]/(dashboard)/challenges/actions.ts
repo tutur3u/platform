@@ -96,7 +96,7 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       filteredChallenges = challenges.filter((challenge) => {
         return (
           challenge.enabled &&
-          (!challenge.whitelisted_only ||
+          (!challenge.restricted_access ||
             whitelistedChallengeIds.some(
               (whitelist) => whitelist.challenge_id === challenge.id
             ))

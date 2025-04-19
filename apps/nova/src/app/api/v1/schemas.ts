@@ -6,7 +6,7 @@ export const createChallengeSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   duration: z.number().positive('Duration must be a positive number'),
   enabled: z.boolean(),
-  whitelistedOnly: z.boolean(),
+  restrictedAccess: z.boolean().default(false),
   maxAttempts: z.number().min(1, {
     message: 'Max attempts must be at least 1.',
   }),
