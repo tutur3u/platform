@@ -1,19 +1,5 @@
-import { TeamProfile } from './client';
+import { type TeamMember, TeamProfile } from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import React from 'react';
-
-interface TeamMember {
-  user_id: string;
-  role: string;
-  nova_teams: {
-    id: string;
-    name: string;
-  };
-  users: {
-    display_name: string;
-    avatar_url: string | null;
-  };
-}
 
 export default async function TeamPage({
   params,
@@ -21,7 +7,6 @@ export default async function TeamPage({
   params: Promise<{ teamId: string }>;
 }) {
   const { teamId: id } = await params;
-
   const teamData = await fetchTeamData(id);
 
   return <TeamProfile members={teamData} />;
@@ -52,5 +37,5 @@ async function fetchTeamData(id: string): Promise<TeamMember[]> {
     return [];
   }
 
-  return data as unknown as TeamMember[];
+  return data as TeamMember[];
 }

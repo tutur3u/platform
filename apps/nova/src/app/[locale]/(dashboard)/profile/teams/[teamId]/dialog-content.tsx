@@ -33,9 +33,12 @@ export function TeamActionDialog({
   isEditing,
 }: DialogProps) {
   const params = useParams();
-  const teamId = params.teamId as string;
-  const { toast } = useToast();
   const supabase = createClient();
+
+  const { toast } = useToast();
+
+  const teamId = params.teamId as string;
+
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     description: initialData?.description || '',
@@ -74,24 +77,24 @@ export function TeamActionDialog({
   const content = {
     goals: {
       title: 'Team Goals',
-      icon: <Target className="text-primary h-5 w-5" />,
+      icon: <Target className="h-5 w-5 text-primary" />,
       description: 'Set and track your team objectives',
       content: (
         <div className="space-y-4 py-4">
           <h3 className="font-medium">Current Goals</h3>
-          <p className="text-muted-foreground text-sm">{initialData?.goals}</p>
+          <p className="text-sm text-muted-foreground">{initialData?.goals}</p>
         </div>
       ),
     },
     reports: {
       title: 'Team Reports',
-      icon: <ScrollText className="text-primary h-5 w-5" />,
+      icon: <ScrollText className="h-5 w-5 text-primary" />,
       description: 'View team performance reports',
       content: (
         <div className="space-y-4 py-4">
           <div className="rounded-lg border p-4">
             <h3 className="font-medium">Available Reports</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               No reports generated yet.
             </p>
           </div>
@@ -100,7 +103,7 @@ export function TeamActionDialog({
     },
     des: {
       title: isEditing ? 'Edit Team Information' : 'Team Description',
-      icon: <ScrollText className="text-primary h-5 w-5" />,
+      icon: <ScrollText className="h-5 w-5 text-primary" />,
       description: isEditing
         ? 'Update your team description and goals'
         : 'View team description',
@@ -135,7 +138,7 @@ export function TeamActionDialog({
       ) : (
         <div className="space-y-4 py-4">
           <h3 className="font-medium">Description</h3>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {initialData?.description || 'No description available.'}
           </p>
         </div>

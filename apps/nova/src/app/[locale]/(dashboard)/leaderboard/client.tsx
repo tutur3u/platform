@@ -180,7 +180,11 @@ export default function LeaderboardPage({
               <Share className="h-3.5 w-3.5" /> {t('share')}
             </Button>
           </div>
-          <TopThreeCards data={filteredData} isLoading={false} />
+          <TopThreeCards
+            data={filteredData}
+            isLoading={false}
+            isTeam={isChecked}
+          />
 
           <div className="relative my-8 h-px w-full overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
