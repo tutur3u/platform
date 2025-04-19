@@ -252,13 +252,18 @@ export function AboutUsPage() {
     );
 
     const tierColors = {
-      host: 'from-[#E5E4E2] to-[#B9B8B5]',
-      partner: 'from-[#E5E4E2] to-[#B9B8B5]',
-      platinum: 'from-[#E5E4E2] to-[#B9B8B5]',
-      gold: 'from-[#FFD700] to-[#FFC000]',
-      silver: 'from-[#C0C0C0] to-[#A9A9A9]',
-      bronze: 'from-[#CD7F32] to-[#A46628]',
-      diamond: 'from-[#B9F2FF] to-[#4F9EC4]',
+      host: 'from-black to-black border-black/50 border dark:from-[#E5E4E2] dark:to-[#B9B8B5] dark:border-white/50',
+      partner:
+        'from-black to-black border-black/50 border dark:from-[#E5E4E2] dark:to-[#B9B8B5] dark:border-white/50',
+      platinum:
+        'from-black to-black border-black/50 border dark:from-[#E5E4E2] dark:to-[#B9B8B5] dark:border-white/50',
+      gold: 'from-amber-500 to-amber-500 border-amber-500/50 border dark:from-[#FFD700] dark:to-[#FFC000] dark:border-amber-300/50',
+      silver:
+        'from-gray-500 to-gray-500 border-gray-500/50 border dark:from-[#C0C0C0] dark:to-[#A9A9A9] dark:border-gray-300/50',
+      bronze:
+        'from-amber-500 to-amber-500 border-amber-500/50 border dark:from-[#CD7F32] dark:to-[#A46628] dark:border-amber-300/50',
+      diamond:
+        'from-blue-500 to-blue-500 border-blue-500/50 border dark:from-[#B9F2FF] dark:to-[#4F9EC4] dark:border-blue-300/50',
     };
 
     const tierGlows = {
