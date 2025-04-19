@@ -10,10 +10,5 @@
     "prettier-plugin-tailwindcss"
   ],
   "tailwindStylesheet": "./packages/ui/src/globals.css",
-  "tailwindFunctions": [
-    "clsx",
-    "twMerge",
-    "cn",
-    "tw"
-  ]
+  "tailwindFunctions": ["clsx", "twMerge", "cn", "tw"]
 }
