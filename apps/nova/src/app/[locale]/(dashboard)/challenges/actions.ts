@@ -13,6 +13,7 @@ import {
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
   whitelists: NovaChallengeWhitelistedEmail[];
+  canManage: boolean;
 };
 
 export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
@@ -41,6 +42,17 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
     if (roleError) {
       throw new Error('Error fetching user role:', roleError);
     }
+
+    const isAdmin =
+      userRole?.allow_challenge_management ||
+      userRole?.allow_role_management ||
+      userRole?.allow_manage_all_challenges ||
+      false;
+
+    const isSuperAdmin =
+      userRole?.allow_role_management ||
+      userRole?.allow_manage_all_challenges ||
+      false;
 
     // Fetch all challenges
     const { data: challenges, error: challengesError } = await sbAdmin
@@ -78,30 +90,59 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       throw new Error('Error fetching whitelists:', whitelistsError);
     }
 
-    // Filter challenges if user doesn't have management permissions
-    let filteredChallenges = challenges;
-    if (!userRole?.allow_challenge_management) {
-      // Fetch whitelists for this user
-      const { data: whitelistedChallengeIds, error: whitelistError } =
-        await sbAdmin
-          .from('nova_challenge_whitelisted_emails')
-          .select('challenge_id')
-          .eq('email', user.email);
+    const userWhitelistedChallengeIds = new Set(
+      allWhitelists
+        ?.filter((whitelist) => whitelist.email === user.email)
+        .map((whitelist) => whitelist.challenge_id) || []
+    );
 
-      if (whitelistError) {
-        throw new Error('Error fetching user whitelists:', whitelistError);
-      }
+    const { data: managedChallenges, error: managerError } = await sbAdmin
+      .from('nova_challenge_manager_emails')
+      .select('challenge_id')
+      .eq('admin_email', user.email);
 
-      // Filter to only include challenges that have the user's email whitelisted
+    if (managerError) {
+      console.error('Error fetching managed challenges:', managerError);
+    }
+
+    // Build a Set of challenge IDs this admin can manage
+    const managedChallengeIds = new Set(
+      (managedChallenges || []).map((item) => item.challenge_id)
+    );
+
+    let filteredChallenges = [];
+
+    // Super admin - can see and manage everything
+    if (isSuperAdmin) {
+      filteredChallenges = challenges;
+    }
+    // Normal admins - can see all user-visible challenges + challenges they can manage
+    else if (userRole?.allow_challenge_management) {
       filteredChallenges = challenges.filter((challenge) => {
-        return (
+        // Public challenges (enabled and non-restricted)
+        if (challenge.enabled && !challenge.whitelisted_only) {
+          return true;
+        }
+        // Specifically assigned to manage
+        if (managedChallengeIds.has(challenge.id)) {
+          return true;
+        }
+        // Whitelisted restricted challenges
+        if (userWhitelistedChallengeIds.has(challenge.id)) {
+          return true;
+        }
+
+        return false;
+      });
+    }
+    // Regular Users - can only see enabled non-restricted challenges
+    else {
+      filteredChallenges = challenges.filter(
+        (challenge) =>
           challenge.enabled &&
           (!challenge.whitelisted_only ||
-            whitelistedChallengeIds.some(
-              (whitelist) => whitelist.challenge_id === challenge.id
-            ))
-        );
-      });
+            userWhitelistedChallengeIds.has(challenge.id))
+      );
     }
 
     // Combine all data
@@ -109,13 +150,12 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       ...challenge,
       password_salt: challenge.password_salt !== null ? '' : null,
       password_hash: challenge.password_hash !== null ? '' : null,
-      // Hide password hash from response
-      // If it's undefined, it means the challenge has no password
-      // Otherwise, it's an empty string to avoid exposing the password hash
       criteria:
         allCriteria?.filter((c) => c.challenge_id === challenge.id) || [],
-      whitelists:
-        allWhitelists?.filter((w) => w.challenge_id === challenge.id) || [],
+      whitelists: isAdmin
+        ? allWhitelists?.filter((w) => w.challenge_id === challenge.id) || []
+        : [],
+      canManage: isSuperAdmin || managedChallengeIds.has(challenge.id),
     }));
   } catch (error) {
     console.error('Error fetching challenges:', error);
