@@ -22,7 +22,7 @@
     "sb:link": "cd apps/db && pnpm sb:link",
     "sb:linkpush": "cd apps/db && pnpm sb:link && pnpm sb:push",
     "sb:reset": "cd apps/db && pnpm sb:reset",
-    "sb:diff": "cd apps/db && pnpm sb:diff",
+    "sb:diff": "cd apps/db && pnpm sb:up && pnpm sb:diff",
     "sb:new": "cd apps/db && pnpm sb:new",
     "sb:up": "cd apps/db && pnpm sb:up",
     "sb:typegen": "cd apps/db && pnpm sb:typegen",
