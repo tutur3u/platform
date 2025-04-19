@@ -133,7 +133,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
 
   // Calculate insights
   const getModelInsights = (modelData: any[], model: string) => {
-    if (!modelData.length) return null;
+    if (!modelData.length) return null;   
 
     const values = modelData.map((d) => d[model] || 0);
     const sortedValues = [...values].sort((a, b) => a - b);
