@@ -123,7 +123,7 @@ export default async function RootLayout({ children, params }: Props) {
     >
       <body
         className={cn(
-          'bg-background w-screen overflow-x-hidden overflow-y-scroll antialiased',
+          'w-screen overflow-x-hidden overflow-y-scroll bg-background antialiased',
           font.className
         )}
       >

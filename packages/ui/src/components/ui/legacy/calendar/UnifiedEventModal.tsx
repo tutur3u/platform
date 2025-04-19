@@ -10,10 +10,10 @@ import {
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
+  EventPriorityPicker,
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
-  EventPriorityPicker,
 } from './EventFormComponents';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
@@ -364,24 +364,24 @@ export function UnifiedEventModal({
       } else {
         throw new Error('No event to save');
       }
-    
-    const shouldSync = experimentalGoogleCalendarLinked;
-    // Sync successfully
-    if (shouldSync){
-      await syncWithGoogleCalendar(savedEvent);
-      toast({
-        title: 'Success',
-        description: 'Event saved and synced with Google Calendar',
-      });
-    } 
-    
-    // No sync
-    else {
-      toast({
-        title: 'Success',
-        description: 'Event saved locally',
-      });
-    }
+
+      const shouldSync = experimentalGoogleCalendarLinked;
+      // Sync successfully
+      if (shouldSync) {
+        await syncWithGoogleCalendar(savedEvent);
+        toast({
+          title: 'Success',
+          description: 'Event saved and synced with Google Calendar',
+        });
+      }
+
+      // No sync
+      else {
+        toast({
+          title: 'Success',
+          description: 'Event saved locally',
+        });
+      }
 
       closeModal();
     } catch (error) {
@@ -458,7 +458,7 @@ export function UnifiedEventModal({
     try {
       const eventsToSave = generatedEvents;
       const savedEvents: CalendarEvent[] = [];
-      const failedEvents: Array<{ event: any, error: any }> = [];
+      const failedEvents: Array<{ event: any; error: any }> = [];
 
       // Save each event individually
       for (const eventData of eventsToSave) {
