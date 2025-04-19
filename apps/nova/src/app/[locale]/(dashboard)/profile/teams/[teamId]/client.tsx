@@ -101,9 +101,9 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
   };
 
   return (
-    <div className="container max-w-6xl pt-8 pb-16">
+    <div className="container max-w-6xl pb-16 pt-8">
       {/* Breadcrumb navigation */}
-      <nav className="mb-8 flex items-center space-x-2 text-sm text-muted-foreground">
+      <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
         <Link href="/home" className="hover:text-foreground">
           Home
         </Link>
@@ -112,7 +112,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
           Teams
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="font-medium text-foreground">{teamInfo?.name}</span>
+        <span className="text-foreground font-medium">{teamInfo?.name}</span>
       </nav>
 
       {/* Team Header */}
@@ -120,7 +120,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-8 overflow-hidden rounded-xl border bg-card/50 p-6 shadow-sm"
+        className="bg-card/50 mb-8 overflow-hidden rounded-xl border p-6 shadow-sm"
       >
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-col items-center gap-4 sm:flex-row">
@@ -129,9 +129,9 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="absolute -inset-0.5 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 blur-md"
+                className="from-primary/30 to-primary/10 absolute -inset-0.5 rounded-full bg-gradient-to-br blur-md"
               />
-              <Avatar className="h-24 w-24 border-2 border-background shadow-md">
+              <Avatar className="border-background h-24 w-24 border-2 shadow-md">
                 <AvatarImage src={undefined} />
                 <AvatarFallback className="text-xl">
                   {getInitials(teamInfo?.name || '')}
@@ -207,7 +207,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Total Members
                   </span>
                   <span className="font-medium">{teamStats.totalMembers}</span>
@@ -266,7 +266,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
                 {members.map((member) => (
                   <div
                     key={member.user_id}
-                    className="flex items-center space-x-4 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                    className="hover:bg-muted/50 flex items-center space-x-4 rounded-lg border p-4 transition-colors"
                   >
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={member.users?.avatar_url || ''} />
@@ -295,7 +295,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
               <CardDescription>Recent team actions and updates</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex h-24 items-center justify-center text-muted-foreground">
+              <div className="text-muted-foreground flex h-24 items-center justify-center">
                 No recent activity
               </div>
             </CardContent>

@@ -77,24 +77,24 @@ export function TeamActionDialog({
   const content = {
     goals: {
       title: 'Team Goals',
-      icon: <Target className="h-5 w-5 text-primary" />,
+      icon: <Target className="text-primary h-5 w-5" />,
       description: 'Set and track your team objectives',
       content: (
         <div className="space-y-4 py-4">
           <h3 className="font-medium">Current Goals</h3>
-          <p className="text-sm text-muted-foreground">{initialData?.goals}</p>
+          <p className="text-muted-foreground text-sm">{initialData?.goals}</p>
         </div>
       ),
     },
     reports: {
       title: 'Team Reports',
-      icon: <ScrollText className="h-5 w-5 text-primary" />,
+      icon: <ScrollText className="text-primary h-5 w-5" />,
       description: 'View team performance reports',
       content: (
         <div className="space-y-4 py-4">
           <div className="rounded-lg border p-4">
             <h3 className="font-medium">Available Reports</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               No reports generated yet.
             </p>
           </div>
@@ -103,7 +103,7 @@ export function TeamActionDialog({
     },
     des: {
       title: isEditing ? 'Edit Team Information' : 'Team Description',
-      icon: <ScrollText className="h-5 w-5 text-primary" />,
+      icon: <ScrollText className="text-primary h-5 w-5" />,
       description: isEditing
         ? 'Update your team description and goals'
         : 'View team description',
@@ -138,7 +138,7 @@ export function TeamActionDialog({
       ) : (
         <div className="space-y-4 py-4">
           <h3 className="font-medium">Description</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {initialData?.description || 'No description available.'}
           </p>
         </div>
