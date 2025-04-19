@@ -60,16 +60,16 @@ export function RaceAnimation({
   };
 
   return (
-    <div className="mt-2 mb-4 rounded-lg border bg-gradient-to-r from-green-50 to-blue-50 p-4 dark:from-green-950/30 dark:to-blue-950/30">
+    <div className="mb-4 mt-2 rounded-lg border bg-gradient-to-r from-green-50 to-blue-50 p-4 dark:from-green-950/30 dark:to-blue-950/30">
       <div className="mb-2 text-sm font-medium">Race Animation</div>
 
       {/* Race track */}
       <div className="relative h-[240px] w-full overflow-hidden rounded-lg bg-neutral-800 dark:bg-black/70">
         {/* Starting line */}
-        <div className="absolute top-0 bottom-0 left-[10%] z-10 w-[2px] bg-white/30"></div>
+        <div className="absolute bottom-0 left-[10%] top-0 z-10 w-[2px] bg-white/30"></div>
 
         {/* Finish line */}
-        <div className="absolute top-0 right-[5%] bottom-0 z-10 flex w-[10px] flex-col bg-white/80">
+        <div className="absolute bottom-0 right-[5%] top-0 z-10 flex w-[10px] flex-col bg-white/80">
           <div className="flex-1 bg-black/50"></div>
           <div className="flex-1 bg-transparent"></div>
           <div className="flex-1 bg-black/50"></div>
@@ -89,14 +89,14 @@ export function RaceAnimation({
           return (
             <div
               key={horseId}
-              className="absolute right-0 left-0 border-t border-white/10"
+              className="absolute left-0 right-0 border-t border-white/10"
               style={{
                 top: `${yPosition}px`,
                 height: `${laneHeight}px`,
               }}
             >
               {/* Lane number */}
-              <div className="absolute top-[50%] left-[2%] flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-xs text-white">
+              <div className="absolute left-[2%] top-[50%] flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-xs text-white">
                 {index + 1}
               </div>
 

@@ -116,7 +116,7 @@ export function WSSettingsDialog() {
               {Array.from({ length: 10 }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-video max-w-3xl rounded-xl bg-muted/50"
+                  className="bg-muted/50 aspect-video max-w-3xl rounded-xl"
                 />
               ))}
             </div>

@@ -93,7 +93,7 @@ export const getQuizSetColumns = (
               <Link
                 href={`/${extraData.wsId}/education/courses/${module.course_id}/modules/${module.module_id}`}
                 key={`${module.course_name}-${module.module_name}`}
-                className="w-fit rounded border bg-foreground/5 px-2 py-0.5 hover:underline"
+                className="bg-foreground/5 w-fit rounded border px-2 py-0.5 hover:underline"
               >
                 {module.course_name} / {module.module_name}
               </Link>

@@ -69,7 +69,7 @@ export const FormSection = ({
   className?: string;
 }) => (
   <div className={cn('space-y-3', className)}>
-    <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+    <h3 className="text-muted-foreground text-sm font-medium">{title}</h3>
     <div className="space-y-4">{children}</div>
   </div>
 );
@@ -95,7 +95,7 @@ export const EventTitleInput = ({
       placeholder="Add title"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="border-none bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0"
+      className="bg-muted/50 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
       disabled={disabled}
       onFocus={(e) => e.target.select()}
       onKeyDown={(e) => {
@@ -128,7 +128,7 @@ export const EventDescriptionInput = ({
       placeholder="Add description"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="min-h-24 resize-none border-none bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0"
+      className="bg-muted/50 min-h-24 resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0"
       disabled={disabled}
     />
   </div>
@@ -163,7 +163,7 @@ export const EventLocationInput = ({
         htmlFor="location"
         className="flex items-center gap-2 text-sm font-medium"
       >
-        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+        <MapPin className="text-muted-foreground h-3.5 w-3.5" />
         Location
       </Label>
       <div className="relative">
@@ -172,14 +172,14 @@ export const EventLocationInput = ({
           placeholder="Add location"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="border-none bg-muted/50 pr-10 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="bg-muted/50 border-none pr-10 focus-visible:ring-0 focus-visible:ring-offset-0"
           disabled={disabled}
         />
         {value && (
           <button
             type="button"
             onClick={openGoogleMaps}
-            className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
             title="Open in Google Maps"
           >
             <MapPin className="h-4 w-4" />
@@ -187,7 +187,7 @@ export const EventLocationInput = ({
         )}
       </div>
       {value && (
-        <div className="flex items-center text-xs text-muted-foreground">
+        <div className="text-muted-foreground flex items-center text-xs">
           <span>Click the map icon to view in Google Maps</span>
         </div>
       )}
@@ -211,7 +211,7 @@ export const EventDateTimePicker = ({
 }) => (
   <div className="space-y-2">
     <Label className="flex items-center gap-2 text-sm font-medium">
-      {icon || <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
+      {icon || <Clock className="text-muted-foreground h-3.5 w-3.5" />}
       {label}
     </Label>
     <div className={cn(disabled ? 'pointer-events-none opacity-50' : '')}>
@@ -243,7 +243,7 @@ export const EventColorPicker = ({
             size="md"
             showTooltips={true}
           />
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
             <div className={cn('h-3 w-3 rounded-full', text)} />
             <span>
               {COLOR_OPTIONS.find((c) => c.value === value)?.name || 'Blue'}
@@ -299,7 +299,7 @@ export const EventPriorityPicker = ({
           disabled={disabled}
           className="w-full"
         />
-        <div className="flex justify-between text-xs text-muted-foreground">
+        <div className="text-muted-foreground flex justify-between text-xs">
           {priorityOptions.map((option) => (
             <div
               key={option.value}
@@ -340,7 +340,7 @@ export const EventToggleSwitch = ({
         {label}
       </Label>
       {description && (
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground text-xs">{description}</p>
       )}
     </div>
     <Switch

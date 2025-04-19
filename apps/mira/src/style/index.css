@@ -10,7 +10,7 @@
 
 /* Then, continue with the other CSS rules */
 .ProseMirror {
-  @apply z-0 mx-auto max-w-2xl py-16 pr-8 pl-20 caret-black outline-0 lg:pr-8 lg:pl-8 dark:caret-white;
+  @apply z-0 mx-auto max-w-2xl py-16 pl-20 pr-8 caret-black outline-0 lg:pl-8 lg:pr-8 dark:caret-white;
 
   .selection {
     @apply inline;
@@ -33,7 +33,7 @@
     @apply relative mx-auto w-full max-w-2xl;
 
     &:after {
-      @apply -top-[1.5em] right-0 left-0 mx-auto w-full max-w-2xl border-t-black/40 dark:border-t-white/40;
+      @apply -top-[1.5em] left-0 right-0 mx-auto w-full max-w-2xl border-t-black/40 dark:border-t-white/40;
     }
   }
 }

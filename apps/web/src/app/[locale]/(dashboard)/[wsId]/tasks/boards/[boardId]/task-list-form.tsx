@@ -42,7 +42,7 @@ export function TaskListForm({ boardId, onListCreated }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex h-min w-[350px] flex-col gap-2 rounded-lg border bg-card p-3 text-card-foreground"
+      className="bg-card text-card-foreground flex h-min w-[350px] flex-col gap-2 rounded-lg border p-3"
     >
       <Input
         placeholder="List name"

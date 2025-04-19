@@ -14,7 +14,7 @@ export default function PlanUserFilter({ users }: { users: any[] }) {
       <div className="text-center text-xl font-bold md:text-2xl">
         {t('plan_users')}
       </div>
-      <div className="mt-2 mb-4 opacity-50 md:mb-8">
+      <div className="mb-4 mt-2 opacity-50 md:mb-8">
         {t('select_users_to_filter')}.
       </div>
 
@@ -41,7 +41,7 @@ export default function PlanUserFilter({ users }: { users: any[] }) {
                 {user.is_guest ? (
                   <>
                     <br />
-                    <div className="rounded bg-foreground px-1 py-0.5 text-sm text-background">
+                    <div className="bg-foreground text-background rounded px-1 py-0.5 text-sm">
                       {t('guest')}
                     </div>
                   </>
@@ -50,7 +50,7 @@ export default function PlanUserFilter({ users }: { users: any[] }) {
                 )}
               </div>
               <Separator className="my-2" />
-              <div className="w-full rounded bg-foreground/10 p-2 text-center font-semibold lowercase">
+              <div className="bg-foreground/10 w-full rounded p-2 text-center font-semibold lowercase">
                 {user.timeblock_count} {t('timeblocks')}
               </div>
             </button>

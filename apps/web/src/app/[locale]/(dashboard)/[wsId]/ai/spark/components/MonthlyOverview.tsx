@@ -66,7 +66,7 @@ export function MonthlyOverview({
               return (
                 <div
                   key={priority}
-                  className="group relative rounded-lg border bg-muted/50 p-2 text-center transition-colors hover:bg-muted/80"
+                  className="bg-muted/50 hover:bg-muted/80 group relative rounded-lg border p-2 text-center transition-colors"
                 >
                   <div
                     className={cn(
@@ -81,7 +81,7 @@ export function MonthlyOverview({
                     {priority.toUpperCase()}
                   </div>
                   <div className="text-2xl font-bold">{count}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-muted-foreground text-xs">
                     {percentage}%
                   </div>
                 </div>
@@ -114,7 +114,7 @@ export function MonthlyOverview({
                     <span>
                       Q{quarter.quarter}: {quarter.focus}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {completedTasks}/{totalTasks} tasks
                     </span>
                   </div>

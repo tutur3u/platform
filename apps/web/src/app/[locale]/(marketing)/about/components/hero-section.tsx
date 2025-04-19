@@ -49,34 +49,34 @@ export function HeroSection() {
       >
         <Badge
           variant="secondary"
-          className="relative mb-6 cursor-default transition-colors hover:bg-primary/20"
+          className="hover:bg-primary/20 relative mb-6 cursor-default transition-colors"
         >
-          <span className="relative bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
+          <span className="from-primary via-primary/80 to-primary relative bg-gradient-to-r bg-clip-text text-transparent">
             Our Vision
           </span>
         </Badge>
       </motion.div>
 
       <motion.h1
-        className="mb-6 text-4xl font-bold tracking-tight text-balance text-foreground md:text-7xl"
+        className="text-foreground mb-6 text-balance text-4xl font-bold tracking-tight md:text-7xl"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.5 }}
       >
         Pioneering{' '}
         <span className="inline-block">
-          <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
             Breakthroughs
           </span>
         </span>{' '}
         <br />
-        <span className="bg-gradient-to-r from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent">
+        <span className="from-primary bg-gradient-to-r via-blue-500 to-cyan-500 bg-clip-text text-transparent">
           for Everyone
         </span>
       </motion.h1>
 
       <motion.p
-        className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-balance text-foreground/80 md:text-xl"
+        className="text-foreground/80 mx-auto mb-12 max-w-2xl text-balance text-lg leading-relaxed md:text-xl"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.6, duration: 0.5 }}
@@ -85,7 +85,7 @@ export function HeroSection() {
         the world&apos;s most innovative technology companies. But our mission
         transcends innovation—we&apos;re here to create life-changing
         breakthroughs that touch lives across the globe,{' '}
-        <strong className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text font-bold text-transparent">
+        <strong className="from-primary to-primary/60 bg-gradient-to-r bg-clip-text font-bold text-transparent">
           making the impossible possible for everyone, everywhere.
         </strong>
       </motion.p>
@@ -98,10 +98,10 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 + index * 0.1 }}
             whileHover={{ scale: 1.05 }}
-            className="flex cursor-default items-center gap-2 rounded-full bg-gradient-to-r from-foreground/5 to-foreground/10 px-4 py-2 transition-colors hover:from-primary/10 hover:to-primary/5"
+            className="from-foreground/5 to-foreground/10 hover:from-primary/10 hover:to-primary/5 flex cursor-default items-center gap-2 rounded-full bg-gradient-to-r px-4 py-2 transition-colors"
           >
             <span className="text-primary">{badge.icon}</span>
-            <span className="text-sm font-medium text-foreground/80">
+            <span className="text-foreground/80 text-sm font-medium">
               {badge.text}
             </span>
           </motion.div>

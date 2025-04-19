@@ -1,11 +1,11 @@
 .ProseMirror {
   .collaboration-cursor {
     &__caret {
-      @apply pointer-events-none relative -mr-[1px] -ml-[1px] border-r border-l border-black break-normal;
+      @apply pointer-events-none relative -ml-[1px] -mr-[1px] break-normal border-l border-r border-black;
     }
 
     &__label {
-      @apply absolute -top-[1.4em] -left-[1px] rounded rounded-tl-none px-1.5 py-0.5 text-xs leading-none font-semibold whitespace-nowrap text-black select-none;
+      @apply absolute -left-[1px] -top-[1.4em] select-none whitespace-nowrap rounded rounded-tl-none px-1.5 py-0.5 text-xs font-semibold leading-none text-black;
     }
   }
 }

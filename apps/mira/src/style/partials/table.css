@@ -30,7 +30,7 @@
     }
 
     .column-resize-handle {
-      @apply pointer-events-none absolute top-0 -right-1 -bottom-[2px] flex w-2;
+      @apply pointer-events-none absolute -bottom-[2px] -right-1 top-0 flex w-2;
 
       &::before {
         @apply ml-2 h-full w-[1px] bg-black/20;
@@ -91,7 +91,7 @@
     }
 
     .grip-row {
-      @apply top-0 -left-3 -mt-[1px] h-[calc(100%+1px)] w-3 border-t border-black/20;
+      @apply -left-3 top-0 -mt-[1px] h-[calc(100%+1px)] w-3 border-t border-black/20;
       @apply dark:border-white/20;
 
       &:hover,

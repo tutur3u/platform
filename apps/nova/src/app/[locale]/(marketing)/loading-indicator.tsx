@@ -18,12 +18,12 @@ export default function LoadingIndicator({
   return (
     <div className={`relative ${sizeClass} ${className}`}>
       <motion.div
-        className="absolute inset-0 rounded-full border-2 border-primary/20"
+        className="border-primary/20 absolute inset-0 rounded-full border-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       />
       <motion.div
-        className="absolute inset-0 rounded-full border-2 border-primary border-r-transparent"
+        className="border-primary absolute inset-0 rounded-full border-2 border-r-transparent"
         animate={{ rotate: 360 }}
         transition={{
           duration: 1,

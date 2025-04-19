@@ -310,7 +310,7 @@ export default function ChallengeForm({
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div className="flex flex-col gap-1">
                     <CardTitle>Judging Criteria</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground">
+                    <CardDescription className="text-muted-foreground text-sm">
                       Define how submissions will be evaluated. Each criterion
                       will be scored separately.
                     </CardDescription>
@@ -365,7 +365,7 @@ export default function ChallengeForm({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+                                className="text-destructive hover:text-destructive/80 h-8 w-8 p-0"
                                 onClick={() => removeCriteria(index)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -416,7 +416,7 @@ export default function ChallengeForm({
                         </Card>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         No criteria yet
                       </p>
                     )}
@@ -429,7 +429,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Security</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-muted-foreground text-sm">
                     Secure your challenge with a password or restrict access to
                     specific users.
                   </CardDescription>
@@ -485,7 +485,7 @@ export default function ChallengeForm({
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="absolute top-0 right-0 h-full px-3"
+                                  className="absolute right-0 top-0 h-full px-3"
                                   onClick={() => setShowPassword(!showPassword)}
                                 >
                                   {showPassword ? (
@@ -622,7 +622,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Duration</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-muted-foreground text-sm">
                     Set how long participants have to complete the challenge
                     once they start.
                   </CardDescription>
@@ -681,7 +681,7 @@ export default function ChallengeForm({
                         </div>
 
                         {field.value && (
-                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
+                          <div className="bg-muted/30 mt-4 rounded-md border p-3">
                             <DurationDisplay seconds={field.value} />
                           </div>
                         )}
@@ -702,19 +702,19 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Schedule</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Set when your challenge is available to participants.
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6 rounded-md border border-dashed p-4">
                     <div className="mb-2 flex items-center">
-                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
                       <h3 className="text-sm font-medium">
                         Timeline Recommendation
                       </h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       For best results, set dates in this order: Preview Date ➝
                       Open Date ➝ Close Date.
                     </p>
