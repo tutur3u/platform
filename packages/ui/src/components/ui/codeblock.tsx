@@ -104,12 +104,12 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
 
   return (
     <div className="codeblock relative w-full rounded font-sans">
-      <div className="flex w-full items-center justify-between rounded border bg-foreground/10 px-4 py-1 pr-4 text-foreground">
+      <div className="bg-foreground/10 text-foreground flex w-full items-center justify-between rounded border px-4 py-1 pr-4">
         <span className="text-xs font-semibold capitalize">{language}</span>
         <div className="flex items-center space-x-1">
           <Button
             variant="ghost"
-            className="hover:bg-foreground/5 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
+            className="hover:bg-foreground/5 focus-visible:ring-ring focus-visible:ring-1 focus-visible:ring-offset-0"
             onClick={downloadAsFile}
             size="icon"
           >
@@ -119,7 +119,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
           <Button
             variant="ghost"
             size="icon"
-            className="text-xs hover:bg-foreground/5 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
+            className="hover:bg-foreground/5 focus-visible:ring-ring text-xs focus-visible:ring-1 focus-visible:ring-offset-0"
             onClick={onCopy}
           >
             {isCopied ? <IconCheck /> : <IconCopy />}

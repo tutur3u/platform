@@ -53,7 +53,7 @@ export const NavigationLink = ({
         {item.icon}
         {item.label}
         {item.badge && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+          <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
             {item.badge}
           </span>
         )}

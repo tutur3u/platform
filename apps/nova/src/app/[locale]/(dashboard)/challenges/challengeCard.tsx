@@ -338,7 +338,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           </div>
 
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center text-xs">
               <Clock className="mr-1 h-3 w-3" /> Time remaining:
             </div>
             <Countdown
@@ -353,7 +353,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             className="mb-2"
           />
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
               <span>Started at: {format(startTime, 'PPpp')}</span>
             </div>
@@ -505,12 +505,12 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
 
           <div className="grid gap-2">
             <div className="flex items-center">
-              <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">
+              <Clock className="text-primary h-4 w-4 flex-shrink-0" />
+              <span className="text-muted-foreground ml-2 text-sm">
                 Duration: {formatDuration(challenge.duration)}
               </span>
             </div>
@@ -521,7 +521,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
               status === 'upcoming' ? (
                 <div className="flex items-center">
                   <AlertCircle className="h-4 w-4 text-indigo-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
+                  <span className="text-muted-foreground ml-2 text-sm">
                     Total attempts: {totalSessions}/{challenge.max_attempts}
                   </span>
                 </div>
@@ -536,7 +536,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
               status === 'upcoming' ? (
                 <div className="flex items-center">
                   <AlertCircle className="h-4 w-4 text-violet-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
+                  <span className="text-muted-foreground ml-2 text-sm">
                     Daily attempts: {dailySessions}/
                     {challenge.max_daily_attempts}
                   </span>
@@ -549,7 +549,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
               {status === 'upcoming' && challenge.previewable_at ? (
                 <div className="mt-2 flex items-center">
                   <Eye className="h-4 w-4 text-amber-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
+                  <span className="text-muted-foreground ml-2 text-sm">
                     Preview available:{' '}
                     {formatDistanceToNow(new Date(challenge.previewable_at), {
                       addSuffix: true,

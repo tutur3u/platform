@@ -17,7 +17,7 @@ const LoadingWrapper = ({ label }: LoadingWrapperProps) => {
         <path d="M21 12a9 9 0 1 1-6.219-8.56" />
       </svg>
       {label && (
-        <p className="text-sm leading-tight font-semibold text-white dark:text-black">
+        <p className="text-sm font-semibold leading-tight text-white dark:text-black">
           {label}
         </p>
       )}
@@ -28,7 +28,7 @@ const LoadingWrapper = ({ label }: LoadingWrapperProps) => {
 export const Loader = ({ hasOverlay = true, label }: LoaderProps) => {
   return hasOverlay ? (
     createPortal(
-      <div className="fixed top-0 left-0 z-[9999] flex h-full w-full items-center justify-center bg-black/60 select-none">
+      <div className="fixed left-0 top-0 z-[9999] flex h-full w-full select-none items-center justify-center bg-black/60">
         <LoadingWrapper label={label} />
       </div>,
       document.body

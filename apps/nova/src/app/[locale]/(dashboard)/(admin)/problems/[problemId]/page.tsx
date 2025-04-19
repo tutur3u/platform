@@ -25,7 +25,16 @@ export default async function Page({ params }: Props) {
   const { problemId } = await params;
   const problem = await getProblem(problemId);
 
-  if (!problem) redirect('/problems');
+  if (!problem) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+        <p className="text-xl font-semibold">Problem not found</p>
+        <Button onClick={() => redirect('/problems')}>
+          Go back to problems
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-screen overflow-hidden">

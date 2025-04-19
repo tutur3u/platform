@@ -364,24 +364,24 @@ export function UnifiedEventModal({
       } else {
         throw new Error('No event to save');
       }
-    
-    const shouldSync = experimentalGoogleCalendarLinked;
-    // Sync successfully
-    if (shouldSync){
-      await syncWithGoogleCalendar(savedEvent);
-      toast({
-        title: 'Success',
-        description: 'Event saved and synced with Google Calendar',
-      });
-    } 
-    
-    // No sync
-    else {
-      toast({
-        title: 'Success',
-        description: 'Event saved locally',
-      });
-    }
+
+      const shouldSync = experimentalGoogleCalendarLinked;
+      // Sync successfully
+      if (shouldSync) {
+        await syncWithGoogleCalendar(savedEvent);
+        toast({
+          title: 'Success',
+          description: 'Event saved and synced with Google Calendar',
+        });
+      }
+
+      // No sync
+      else {
+        toast({
+          title: 'Success',
+          description: 'Event saved locally',
+        });
+      }
 
       closeModal();
     } catch (error) {

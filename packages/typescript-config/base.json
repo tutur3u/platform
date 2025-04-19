@@ -12,11 +12,7 @@
     "preserveWatchOutput": true,
     "strictNullChecks": true,
     "allowJs": false,
-    "lib": [
-      "es2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["es2022", "DOM", "DOM.Iterable"],
     "module": "NodeNext",
     "moduleDetection": "force",
     "moduleResolution": "NodeNext",

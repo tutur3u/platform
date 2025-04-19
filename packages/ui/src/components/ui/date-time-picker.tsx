@@ -127,7 +127,7 @@ export function DateTimePicker({
 
         {showTimeSelect && (
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="text-muted-foreground h-4 w-4" />
 
             {isManualTimeEntry ? (
               <div className="flex items-center gap-1">

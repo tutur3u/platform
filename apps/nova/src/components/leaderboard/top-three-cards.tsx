@@ -20,9 +20,14 @@ import { useState } from 'react';
 interface TopThreeCardsProps {
   data: LeaderboardEntry[];
   isLoading?: boolean;
+  isTeam?: boolean;
 }
 
-export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
+export function TopThreeCards({
+  data,
+  isLoading = false,
+  isTeam = false,
+}: TopThreeCardsProps) {
   const topThree = data.slice(0, 3);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
@@ -499,7 +504,7 @@ export function TopThreeCards({ data, isLoading = false }: TopThreeCardsProps) {
 
               {/* View profile button */}
               <Link
-                href={`/profile/${entry.id.replace(/-/g, '')}`}
+                href={`/${isTeam ? 'profile/teams' : 'profile'}/${entry.id.replace(/-/g, '')}`}
                 className="mt-4 flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 opacity-0 transition-opacity hover:bg-gray-200 group-hover:opacity-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 {t('view-profile')} <ExternalLink className="ml-1 h-3 w-3" />

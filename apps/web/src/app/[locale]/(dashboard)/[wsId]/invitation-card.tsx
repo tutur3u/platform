@@ -117,7 +117,7 @@ export default function InvitationCard({
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {t('invite.you-been-invited-to-join-the')}{' '}
           <span className="text-foreground underline">{workspace.name}</span>
           {t('invite.accept-to-start-collaborating')}
@@ -127,7 +127,7 @@ export default function InvitationCard({
         <Button
           variant="outline"
           onClick={() => declineInvite(workspace)}
-          className="transition-colors hover:bg-destructive hover:text-destructive-foreground"
+          className="hover:bg-destructive hover:text-destructive-foreground transition-colors"
           disabled={!!loading}
         >
           {loading === 'decline' ? (

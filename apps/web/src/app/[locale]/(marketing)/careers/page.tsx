@@ -36,25 +36,25 @@ interface ValueProps {
 
 const values: ValueProps[] = [
   {
-    icon: <Globe2 className="h-8 w-8 text-primary" />,
+    icon: <Globe2 className="text-primary h-8 w-8" />,
     title: 'Think Big',
     description:
       'We believe in bold visions and transformative ideas that can reshape how technology serves humanity.',
   },
   {
-    icon: <Laptop className="h-8 w-8 text-primary" />,
+    icon: <Laptop className="text-primary h-8 w-8" />,
     title: 'Build Better',
     description:
       'We are obsessed with quality and craftsmanship, creating technology that is both powerful and beautiful.',
   },
   {
-    icon: <Sun className="h-8 w-8 text-primary" />,
+    icon: <Sun className="text-primary h-8 w-8" />,
     title: 'Grow Together',
     description:
       'We foster an environment where creativity thrives and every team member can reach their full potential.',
   },
   {
-    icon: <Rocket className="h-8 w-8 text-primary" />,
+    icon: <Rocket className="text-primary h-8 w-8" />,
     title: 'Dream Bigger',
     description:
       'We are not just building products; we are creating a future where technology empowers everyone.',
@@ -63,25 +63,25 @@ const values: ValueProps[] = [
 
 const benefits: ValueProps[] = [
   {
-    icon: <Clock className="h-8 w-8 text-primary" />,
+    icon: <Clock className="text-primary h-8 w-8" />,
     title: 'Flexible Hours',
     description:
       'Work when you are most productive. We trust our team to manage their time effectively.',
   },
   {
-    icon: <GraduationCap className="h-8 w-8 text-primary" />,
+    icon: <GraduationCap className="text-primary h-8 w-8" />,
     title: 'Learning & Growth',
     description:
       'Industry-leading learning budget and resources for courses, conferences, and professional development.',
   },
   {
-    icon: <Users2 className="h-8 w-8 text-primary" />,
+    icon: <Users2 className="text-primary h-8 w-8" />,
     title: 'Team Events',
     description:
       'Regular team activities and gatherings to build strong connections, with plans for global expansion.',
   },
   {
-    icon: <Heart className="h-8 w-8 text-primary" />,
+    icon: <Heart className="text-primary h-8 w-8" />,
     title: 'Premium Benefits',
     description:
       'Top-tier health coverage, wellness programs, and comprehensive benefits package to keep you at your best.',
@@ -90,25 +90,25 @@ const benefits: ValueProps[] = [
 
 const culturalPillars: ValueProps[] = [
   {
-    icon: <Sparkles className="h-8 w-8 text-primary" />,
+    icon: <Sparkles className="text-primary h-8 w-8" />,
     title: 'Innovation DNA',
     description:
       'We see possibilities where others see limitations, constantly pushing boundaries to create breakthrough solutions.',
   },
   {
-    icon: <MessageCircle className="h-8 w-8 text-primary" />,
+    icon: <MessageCircle className="text-primary h-8 w-8" />,
     title: 'Radical Transparency',
     description:
       'We believe in open, honest communication and sharing both our successes and learnings openly.',
   },
   {
-    icon: <Star className="h-8 w-8 text-primary" />,
+    icon: <Star className="text-primary h-8 w-8" />,
     title: 'Craftsman Spirit',
     description:
       'We take pride in our work, paying attention to every detail and striving for excellence in everything we create.',
   },
   {
-    icon: <Compass className="h-8 w-8 text-primary" />,
+    icon: <Compass className="text-primary h-8 w-8" />,
     title: 'Visionary Focus',
     description:
       'We are guided by our mission to democratize technology and make powerful tools accessible to everyone.',
@@ -117,25 +117,25 @@ const culturalPillars: ValueProps[] = [
 
 const teamHighlights: ValueProps[] = [
   {
-    icon: <MapPin className="h-8 w-8 text-primary" />,
+    icon: <MapPin className="text-primary h-8 w-8" />,
     title: 'Global Vision',
     description:
       'Currently based in Vietnam, we are building a foundation to expand globally and serve users worldwide.',
   },
   {
-    icon: <Code2 className="h-8 w-8 text-primary" />,
+    icon: <Code2 className="text-primary h-8 w-8" />,
     title: 'Tech Excellence',
     description:
       'We use and contribute to cutting-edge technologies, striving to be at the forefront of technological innovation.',
   },
   {
-    icon: <LayoutGrid className="h-8 w-8 text-primary" />,
+    icon: <LayoutGrid className="text-primary h-8 w-8" />,
     title: 'Best-in-Class',
     description:
       'We aim to provide the best compensation, benefits, and work environment in the industry.',
   },
   {
-    icon: <Building2 className="h-8 w-8 text-primary" />,
+    icon: <Building2 className="text-primary h-8 w-8" />,
     title: 'Startup Spirit',
     description:
       'Experience the energy and impact of a fast-growing startup that dreams big and executes with precision.',
@@ -191,7 +191,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y }}
-          className="absolute top-0 -left-[8rem] h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
+          className="absolute -left-[8rem] top-0 h-[20rem] w-[20rem] rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
@@ -204,7 +204,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y: opacity }}
-          className="absolute top-[30%] -right-[8rem] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
+          className="absolute -right-[8rem] top-[30%] h-[17.5rem] w-[17.5rem] rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -261,34 +261,34 @@ export default function CareersPage() {
           >
             <Badge
               variant="secondary"
-              className="relative mb-6 cursor-default transition-colors hover:bg-primary/20"
+              className="hover:bg-primary/20 relative mb-6 cursor-default transition-colors"
             >
-              <span className="relative bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
+              <span className="from-primary via-primary/80 to-primary relative bg-gradient-to-r bg-clip-text text-transparent">
                 Join Our Vision
               </span>
             </Badge>
           </motion.div>
 
           <motion.h1
-            className="mb-6 text-4xl font-bold tracking-tight text-balance text-foreground md:text-7xl"
+            className="text-foreground mb-6 text-balance text-4xl font-bold tracking-tight md:text-7xl"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
           >
             Shape{' '}
             <span className="inline-block">
-              <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
                 Tomorrow's
               </span>
             </span>{' '}
             <br />
-            <span className="bg-gradient-to-r from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent">
+            <span className="from-primary bg-gradient-to-r via-blue-500 to-cyan-500 bg-clip-text text-transparent">
               Technology
             </span>
           </motion.h1>
 
           <motion.p
-            className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-balance text-foreground/80 md:text-xl"
+            className="text-foreground/80 mx-auto mb-12 max-w-2xl text-balance text-lg leading-relaxed md:text-xl"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.5 }}
@@ -296,7 +296,7 @@ export default function CareersPage() {
             At Tuturuuu, we're building a world-class team starting from
             Vietnam, with a vision to expand globally. We're looking for
             visionaries who share our passion for{' '}
-            <strong className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text font-bold text-transparent">
+            <strong className="from-primary to-primary/60 bg-gradient-to-r bg-clip-text font-bold text-transparent">
               creating beautiful, impactful technology
             </strong>{' '}
             that makes a difference in people's lives.
@@ -310,10 +310,10 @@ export default function CareersPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 + index * 0.1 }}
                 whileHover={{ scale: 1.05 }}
-                className="flex cursor-default items-center gap-2 rounded-full bg-gradient-to-r from-foreground/5 to-foreground/10 px-4 py-2 transition-colors hover:from-primary/10 hover:to-primary/5"
+                className="from-foreground/5 to-foreground/10 hover:from-primary/10 hover:to-primary/5 flex cursor-default items-center gap-2 rounded-full bg-gradient-to-r px-4 py-2 transition-colors"
               >
                 <span className="text-primary">{badge.icon}</span>
-                <span className="text-sm font-medium text-foreground/80">
+                <span className="text-foreground/80 text-sm font-medium">
                   {badge.text}
                 </span>
               </motion.div>
@@ -337,11 +337,11 @@ export default function CareersPage() {
           <div className="relative mx-auto max-w-6xl">
             <Card className="group relative overflow-hidden">
               <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="from-primary/10 absolute inset-0 bg-gradient-to-br via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-[size:100px] opacity-20" />
-                <div className="absolute -top-32 -left-32 h-64 w-64 rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
-                <div className="absolute -right-32 -bottom-32 h-64 w-64 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
+                <div className="absolute -left-32 -top-32 h-64 w-64 rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
+                <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
               </div>
 
               <div className="relative grid gap-12 p-4 md:grid-cols-2 md:p-12">
@@ -349,20 +349,20 @@ export default function CareersPage() {
                   <motion.div
                     initial={{ scale: 0.95 }}
                     whileHover={{ scale: 1 }}
-                    className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20 md:mx-0"
+                    className="bg-primary/10 group-hover:bg-primary/20 relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl transition-colors duration-300 md:mx-0"
                   >
                     <div className="animate-spin-slow absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
-                    <div className="absolute inset-[2px] rounded-xl bg-background/80 backdrop-blur-sm" />
-                    <Mail className="relative h-10 w-10 text-primary" />
+                    <div className="bg-background/80 absolute inset-[2px] rounded-xl backdrop-blur-sm" />
+                    <Mail className="text-primary relative h-10 w-10" />
                   </motion.div>
 
                   <div className="space-y-4 text-center md:text-left">
-                    <h2 className="text-4xl font-bold text-foreground">
-                      <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                    <h2 className="text-foreground text-4xl font-bold">
+                      <span className="from-primary bg-gradient-to-r via-purple-500 to-pink-500 bg-clip-text text-transparent">
                         Shape the Future with Us
                       </span>
                     </h2>
-                    <p className="mx-auto max-w-2xl text-lg text-foreground/80">
+                    <p className="text-foreground/80 mx-auto max-w-2xl text-lg">
                       While we don't have any open positions at the moment,
                       we're always excited to connect with talented individuals
                       who share our vision.
@@ -372,10 +372,10 @@ export default function CareersPage() {
                   <div className="flex flex-wrap justify-center gap-4 md:justify-start">
                     <motion.a
                       href="mailto:contact@tuturuuu.com"
-                      className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-foreground px-8 py-4 font-semibold text-background transition-all duration-300 hover:bg-foreground/90"
+                      className="bg-foreground text-background hover:bg-foreground/90 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="from-primary/20 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       <Mail className="relative h-5 w-5" />
                       <span className="relative">Get in Touch</span>
                     </motion.a>
@@ -384,10 +384,10 @@ export default function CareersPage() {
                       href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-foreground/10 px-8 py-4 font-semibold transition-all duration-300 hover:bg-foreground/20"
+                      className="bg-foreground/10 hover:bg-foreground/20 group relative inline-flex items-center gap-2 overflow-hidden rounded-lg px-8 py-4 font-semibold transition-all duration-300"
                       whileHover={{ scale: 1.05 }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="from-primary/10 to-primary/0 absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                       <Github className="relative h-5 w-5" />
                       <span className="relative">View Our Work</span>
                     </motion.a>
@@ -395,20 +395,20 @@ export default function CareersPage() {
 
                   <div className="flex flex-wrap justify-center gap-6 md:justify-start">
                     <div className="flex items-center gap-2">
-                      <Timer className="h-5 w-5 text-primary" />
-                      <span className="text-sm text-foreground/60">
+                      <Timer className="text-primary h-5 w-5" />
+                      <span className="text-foreground/60 text-sm">
                         Quick Response
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Shield className="h-5 w-5 text-primary" />
-                      <span className="text-sm text-foreground/60">
+                      <Shield className="text-primary h-5 w-5" />
+                      <span className="text-foreground/60 text-sm">
                         Secure Communication
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Globe2 className="h-5 w-5 text-primary" />
-                      <span className="text-sm text-foreground/60">
+                      <Globe2 className="text-primary h-5 w-5" />
+                      <span className="text-foreground/60 text-sm">
                         Global Opportunities
                       </span>
                     </div>
@@ -416,67 +416,67 @@ export default function CareersPage() {
                 </div>
 
                 <div className="relative">
-                  <div className="group relative overflow-hidden rounded-2xl bg-foreground/5 p-4 backdrop-blur-sm md:p-8">
+                  <div className="bg-foreground/5 group relative overflow-hidden rounded-2xl p-4 backdrop-blur-sm md:p-8">
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <div className="relative space-y-6">
-                      <h3 className="text-center text-2xl font-bold text-balance text-foreground">
+                      <h3 className="text-foreground text-balance text-center text-2xl font-bold">
                         What We're Looking For
                       </h3>
                       <div className="space-y-4">
-                        <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4 text-center backdrop-blur-sm md:flex-row">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                            <Code2 className="h-5 w-5 text-primary" />
+                        <div className="border-primary/10 bg-background/50 flex flex-col items-center gap-3 rounded-lg border p-4 text-center backdrop-blur-sm md:flex-row">
+                          <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                            <Code2 className="text-primary h-5 w-5" />
                           </div>
                           <div className="flex flex-col items-start">
                             <h4 className="font-semibold">
                               Technical Excellence
                             </h4>
-                            <p className="text-sm text-foreground/60">
+                            <p className="text-foreground/60 text-sm">
                               Strong problem-solving abilities
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4 text-center backdrop-blur-sm md:flex-row">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                            <Users2 className="h-5 w-5 text-primary" />
+                        <div className="border-primary/10 bg-background/50 flex flex-col items-center gap-3 rounded-lg border p-4 text-center backdrop-blur-sm md:flex-row">
+                          <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                            <Users2 className="text-primary h-5 w-5" />
                           </div>
                           <div className="flex flex-col items-start">
                             <h4 className="font-semibold">Team Player</h4>
-                            <p className="text-sm text-foreground/60">
+                            <p className="text-foreground/60 text-sm">
                               Collaborative mindset
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4 text-center backdrop-blur-sm md:flex-row">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                            <Rocket className="h-5 w-5 text-primary" />
+                        <div className="border-primary/10 bg-background/50 flex flex-col items-center gap-3 rounded-lg border p-4 text-center backdrop-blur-sm md:flex-row">
+                          <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                            <Rocket className="text-primary h-5 w-5" />
                           </div>
                           <div className="flex flex-col items-start">
                             <h4 className="font-semibold">Growth Mindset</h4>
-                            <p className="text-sm text-foreground/60">
+                            <p className="text-foreground/60 text-sm">
                               Eager to learn and grow
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/10 bg-background/50 p-4 text-center backdrop-blur-sm md:flex-row">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                            <Globe2 className="h-5 w-5 text-primary" />
+                        <div className="border-primary/10 bg-background/50 flex flex-col items-center gap-3 rounded-lg border p-4 text-center backdrop-blur-sm md:flex-row">
+                          <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
+                            <Globe2 className="text-primary h-5 w-5" />
                           </div>
                           <div className="flex flex-col items-start">
                             <h4 className="font-semibold">Global Vision</h4>
-                            <p className="text-sm text-foreground/60">
+                            <p className="text-foreground/60 text-sm">
                               International mindset
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="mt-6 text-center text-sm text-foreground/60">
+                      <div className="text-foreground/60 mt-6 text-center text-sm">
                         Email us at{' '}
-                        <span className="font-semibold text-primary">
+                        <span className="text-primary font-semibold">
                           contact@tuturuuu.com
                         </span>
                         <br />
@@ -542,12 +542,12 @@ export default function CareersPage() {
                     ease: 'easeInOut',
                   },
                 }}
-                className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+                className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
               >
-                <Star className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+                <Star className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
               </motion.div>
               <motion.h2
-                className="mb-4 text-4xl font-bold text-foreground"
+                className="text-foreground mb-4 text-4xl font-bold"
                 whileHover={{
                   scale: 1.02,
                 }}
@@ -561,13 +561,13 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="relative bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary relative bg-gradient-to-r via-purple-500 to-pink-500 bg-[length:200%_auto] bg-clip-text text-transparent"
                 >
                   Our Values
                 </motion.span>
               </motion.h2>
               <motion.p
-                className="mx-auto max-w-2xl text-lg text-foreground/60"
+                className="text-foreground/60 mx-auto max-w-2xl text-lg"
                 whileHover={{
                   scale: 1.01,
                 }}
@@ -595,7 +595,7 @@ export default function CareersPage() {
                   }}
                   className="group relative"
                 >
-                  <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
+                  <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
@@ -611,7 +611,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -624,7 +624,7 @@ export default function CareersPage() {
                         }}
                         className="relative mb-6"
                       >
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
+                        <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
                           <motion.div
                             animate={{
                               scale: [1, 1.1, 1],
@@ -640,7 +640,7 @@ export default function CareersPage() {
                         </div>
                       </motion.div>
                       <motion.h3
-                        className="relative mb-4 text-xl font-bold text-foreground"
+                        className="text-foreground relative mb-4 text-xl font-bold"
                         whileHover={{
                           scale: 1.05,
                           color: 'hsl(var(--primary))',
@@ -649,7 +649,7 @@ export default function CareersPage() {
                         {item.title}
                       </motion.h3>
                       <motion.p
-                        className="relative text-foreground/60"
+                        className="text-foreground/60 relative"
                         whileHover={{
                           scale: 1.02,
                         }}
@@ -661,7 +661,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r from-primary/20 to-primary/5"
+                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
                     />
                   </div>
                 </motion.div>
@@ -722,12 +722,12 @@ export default function CareersPage() {
                     ease: 'easeInOut',
                   },
                 }}
-                className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+                className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
               >
-                <Heart className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+                <Heart className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
               </motion.div>
               <motion.h2
-                className="mb-4 text-4xl font-bold text-foreground"
+                className="text-foreground mb-4 text-4xl font-bold"
                 whileHover={{
                   scale: 1.02,
                 }}
@@ -741,13 +741,13 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="relative bg-gradient-to-r from-primary via-blue-500 to-cyan-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary relative bg-gradient-to-r via-blue-500 to-cyan-500 bg-[length:200%_auto] bg-clip-text text-transparent"
                 >
                   Benefits & Perks
                 </motion.span>
               </motion.h2>
               <motion.p
-                className="mx-auto max-w-2xl text-lg text-foreground/60"
+                className="text-foreground/60 mx-auto max-w-2xl text-lg"
                 whileHover={{
                   scale: 1.01,
                 }}
@@ -775,7 +775,7 @@ export default function CareersPage() {
                   }}
                   className="group relative"
                 >
-                  <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
+                  <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
@@ -791,7 +791,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -804,7 +804,7 @@ export default function CareersPage() {
                         }}
                         className="relative mb-6"
                       >
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
+                        <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
                           <motion.div
                             animate={{
                               scale: [1, 1.1, 1],
@@ -820,7 +820,7 @@ export default function CareersPage() {
                         </div>
                       </motion.div>
                       <motion.h3
-                        className="relative mb-4 text-xl font-bold text-foreground"
+                        className="text-foreground relative mb-4 text-xl font-bold"
                         whileHover={{
                           scale: 1.05,
                           color: 'hsl(var(--primary))',
@@ -829,7 +829,7 @@ export default function CareersPage() {
                         {item.title}
                       </motion.h3>
                       <motion.p
-                        className="relative text-foreground/60"
+                        className="text-foreground/60 relative"
                         whileHover={{
                           scale: 1.02,
                         }}
@@ -841,7 +841,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r from-primary/20 to-primary/5"
+                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
                     />
                   </div>
                 </motion.div>
@@ -912,12 +912,12 @@ export default function CareersPage() {
                     ease: 'easeInOut',
                   },
                 }}
-                className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+                className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
               >
-                <Building2 className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+                <Building2 className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
               </motion.div>
               <motion.h2
-                className="mb-4 text-4xl font-bold text-foreground"
+                className="text-foreground mb-4 text-4xl font-bold"
                 whileHover={{
                   scale: 1.02,
                 }}
@@ -931,13 +931,13 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="relative bg-gradient-to-r from-primary via-orange-500 to-red-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary relative bg-gradient-to-r via-orange-500 to-red-500 bg-[length:200%_auto] bg-clip-text text-transparent"
                 >
                   Cultural Pillars
                 </motion.span>
               </motion.h2>
               <motion.p
-                className="mx-auto max-w-2xl text-lg text-foreground/60"
+                className="text-foreground/60 mx-auto max-w-2xl text-lg"
                 whileHover={{
                   scale: 1.01,
                 }}
@@ -964,7 +964,7 @@ export default function CareersPage() {
                   }}
                   className="group relative"
                 >
-                  <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
+                  <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
@@ -980,7 +980,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -993,7 +993,7 @@ export default function CareersPage() {
                         }}
                         className="relative mb-6"
                       >
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
+                        <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
                           <motion.div
                             animate={{
                               scale: [1, 1.1, 1],
@@ -1009,7 +1009,7 @@ export default function CareersPage() {
                         </div>
                       </motion.div>
                       <motion.h3
-                        className="relative mb-4 text-xl font-bold text-foreground"
+                        className="text-foreground relative mb-4 text-xl font-bold"
                         whileHover={{
                           scale: 1.05,
                           color: 'hsl(var(--primary))',
@@ -1018,7 +1018,7 @@ export default function CareersPage() {
                         {item.title}
                       </motion.h3>
                       <motion.p
-                        className="relative text-foreground/60"
+                        className="text-foreground/60 relative"
                         whileHover={{
                           scale: 1.02,
                         }}
@@ -1030,7 +1030,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r from-primary/20 to-primary/5"
+                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
                     />
                   </div>
                 </motion.div>
@@ -1102,12 +1102,12 @@ export default function CareersPage() {
                     ease: 'easeInOut',
                   },
                 }}
-                className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+                className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
               >
-                <Users2 className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
+                <Users2 className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
               </motion.div>
               <motion.h2
-                className="mb-4 text-4xl font-bold text-foreground"
+                className="text-foreground mb-4 text-4xl font-bold"
                 whileHover={{
                   scale: 1.02,
                 }}
@@ -1121,13 +1121,13 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="relative bg-gradient-to-r from-primary via-green-500 to-emerald-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                  className="from-primary relative bg-gradient-to-r via-green-500 to-emerald-500 bg-[length:200%_auto] bg-clip-text text-transparent"
                 >
                   Team Highlights
                 </motion.span>
               </motion.h2>
               <motion.p
-                className="mx-auto max-w-2xl text-lg text-foreground/60"
+                className="text-foreground/60 mx-auto max-w-2xl text-lg"
                 whileHover={{
                   scale: 1.01,
                 }}
@@ -1154,7 +1154,7 @@ export default function CareersPage() {
                   }}
                   className="group relative"
                 >
-                  <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
+                  <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
                     <motion.div
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
@@ -1170,7 +1170,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
+                      className="absolute -right-8 -top-8 h-24 w-24 rounded-xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -1183,7 +1183,7 @@ export default function CareersPage() {
                         }}
                         className="relative mb-6"
                       >
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
+                        <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
                           <motion.div
                             animate={{
                               scale: [1, 1.1, 1],
@@ -1199,7 +1199,7 @@ export default function CareersPage() {
                         </div>
                       </motion.div>
                       <motion.h3
-                        className="relative mb-4 text-xl font-bold text-foreground"
+                        className="text-foreground relative mb-4 text-xl font-bold"
                         whileHover={{
                           scale: 1.05,
                           color: 'hsl(var(--primary))',
@@ -1208,7 +1208,7 @@ export default function CareersPage() {
                         {item.title}
                       </motion.h3>
                       <motion.p
-                        className="relative text-foreground/60"
+                        className="text-foreground/60 relative"
                         whileHover={{
                           scale: 1.02,
                         }}
@@ -1220,7 +1220,7 @@ export default function CareersPage() {
                       initial={{ scaleX: 0 }}
                       whileHover={{ scaleX: 1 }}
                       transition={{ duration: 0.3 }}
-                      className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-gradient-to-r from-primary/20 to-primary/5"
+                      className="from-primary/20 to-primary/5 absolute bottom-0 left-0 right-0 h-1 origin-left bg-gradient-to-r"
                     />
                   </div>
                 </motion.div>

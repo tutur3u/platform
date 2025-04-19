@@ -33,7 +33,7 @@ export const ImageBlockWidth = memo(
           onChange={handleChange}
           value={currentValue}
         />
-        <span className="text-xs font-semibold text-neutral-500 select-none">
+        <span className="select-none text-xs font-semibold text-neutral-500">
           {value}%
         </span>
       </div>

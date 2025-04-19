@@ -160,7 +160,7 @@ export default function ChallengeHeader({
   return (
     <div
       className={cn(
-        'h-16 border-b bg-background/80 backdrop-blur-sm',
+        'bg-background/80 h-16 border-b backdrop-blur-sm',
         className
       )}
     >

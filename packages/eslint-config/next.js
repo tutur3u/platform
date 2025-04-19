@@ -1,12 +1,9 @@
-import { resolve } from "node:path";
+import { resolve } from 'node:path';
 
-const project = resolve(process.cwd(), "tsconfig.json");
+const project = resolve(process.cwd(), 'tsconfig.json');
 
 /** @type {import("eslint").Linter.Config} */
-const extensions = [
-  "eslint:recommended",
-  "turbo",
-];
+const extensions = ['eslint:recommended', 'turbo'];
 export { extensions as extends };
 export const globals = {
   React: true,
@@ -16,9 +13,9 @@ export const env = {
   node: true,
   browser: true,
 };
-export const plugins = ["only-warn"];
+export const plugins = ['only-warn'];
 export const settings = {
-  "import/resolver": {
+  'import/resolver': {
     typescript: {
       project,
     },
@@ -26,7 +23,7 @@ export const settings = {
 };
 export const ignorePatterns = [
   // Ignore dotfiles
-  ".*.js",
-  "node_modules/",
+  '.*.js',
+  'node_modules/',
 ];
-export const overrides = [{ files: ["*.js?(x)", "*.ts?(x)"] }];
+export const overrides = [{ files: ['*.js?(x)', '*.ts?(x)'] }];

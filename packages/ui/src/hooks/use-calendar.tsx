@@ -693,7 +693,9 @@ export const CalendarProvider = ({
     const response = await fetch('/api/v1/calendar/auth/fetch');
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch Google Calendar events');
+      throw new Error(
+        errorData.error || 'Failed to fetch Google Calendar events'
+      );
     }
     return await response.json();
   };
@@ -768,7 +770,13 @@ export const CalendarProvider = ({
       // update local events in cache
       queryClient.invalidateQueries(['localCalendarEvents', ws?.id]);
     }
-  }, [googleEvents, localEvents, ws?.id, queryClient, enableExperimentalGoogleCalendar]);
+  }, [
+    googleEvents,
+    localEvents,
+    ws?.id,
+    queryClient,
+    enableExperimentalGoogleCalendar,
+  ]);
 
   // run syncNewEvents when googleEvents change
   useEffect(() => {
