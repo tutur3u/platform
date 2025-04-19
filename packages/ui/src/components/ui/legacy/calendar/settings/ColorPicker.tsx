@@ -1,11 +1,8 @@
-// ColorPicker.tsx
 'use client';
 
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-
-// ColorPicker.tsx
 
 // Color map with display names and CSS classes - Added cbg to avoid other color problems
 export const colorMap: Record<

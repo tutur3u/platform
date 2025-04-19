@@ -9,7 +9,7 @@
 
   ul,
   ol {
-    @apply py-0 px-8 my-6 first:mt-0 last:mb-0;
+    @apply my-6 px-8 py-0 first:mt-0 last:mb-0;
 
     ul,
     ol,
@@ -38,7 +38,7 @@
       @apply flex;
 
       > label {
-        @apply grow-0 shrink-0 flex-auto mt-1 mr-2 select-none;
+        @apply mt-1 mr-2 flex-auto shrink-0 grow-0 select-none;
       }
 
       > div {
