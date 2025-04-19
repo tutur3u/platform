@@ -10,14 +10,14 @@ registries:
     url: https://registry.tiptap.dev
     token: ${{secrets.TIPTAP_PRO_TOKEN}}
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "daily"
+      interval: 'daily'
 
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "daily"
+      interval: 'daily'
     registries:
       - npm-tiptap

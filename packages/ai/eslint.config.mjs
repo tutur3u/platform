@@ -1,20 +1,22 @@
-import { FlatCompat } from "@eslint/eslintrc";
-import js from "@eslint/js";
-import tsParser from "@typescript-eslint/parser";
-
+import { FlatCompat } from '@eslint/eslintrc';
+import js from '@eslint/js';
+import tsParser from '@typescript-eslint/parser';
 
 const compat = new FlatCompat({
-    baseDirectory: import.meta.dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
+  baseDirectory: import.meta.dirname,
+  recommendedConfig: js.configs.recommended,
+  allConfig: js.configs.all,
 });
 
-export default [...compat.extends("@tuturuuu/eslint-config/react-internal.js"), {
+export default [
+  ...compat.extends('@tuturuuu/eslint-config/react-internal.js'),
+  {
     languageOptions: {
-        parser: tsParser,
+      parser: tsParser,
     },
 
     rules: {
-        "no-redeclare": "off",
+      'no-redeclare': 'off',
     },
-}];
+  },
+];

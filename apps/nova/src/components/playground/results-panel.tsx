@@ -25,7 +25,7 @@ export function ResultsPanel({ results, isLoading }: ResultsPanelProps) {
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : results.length === 0 ? (
-          <p className="flex h-40 items-center justify-center text-center text-muted-foreground">
+          <p className="text-muted-foreground flex h-40 items-center justify-center text-center">
             Run your prompt to see the results and status here.
           </p>
         ) : (
@@ -33,9 +33,9 @@ export function ResultsPanel({ results, isLoading }: ResultsPanelProps) {
             {results.map((result, index) => (
               <li
                 key={index}
-                className="flex items-start rounded-md bg-muted p-3"
+                className="bg-muted flex items-start rounded-md p-3"
               >
-                <div className="mt-1 mr-3">{getStatusIcon(result)}</div>
+                <div className="mr-3 mt-1">{getStatusIcon(result)}</div>
                 <p className="flex-grow text-sm">{result}</p>
               </li>
             ))}

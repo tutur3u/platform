@@ -33,7 +33,7 @@ export default function Navbar({
               <LogoTitle
                 text="Rewise"
                 className={cn(
-                  'bg-gradient-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
+                  'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-gradient-to-r bg-clip-text py-1 text-transparent',
                   'text-4xl font-bold md:text-3xl lg:text-4xl'
                 )}
               />
@@ -47,7 +47,7 @@ export default function Navbar({
 
             <Suspense
               fallback={
-                <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+                <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
               }
             >
               <NavbarActions hideMetadata={hideMetadata} />

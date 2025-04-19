@@ -20,7 +20,7 @@ export function GetStartedButton({
       <Button
         className={cn(
           hidden &&
-            'pointer-events-none bg-transparent text-foreground/50 opacity-50 select-none'
+            'text-foreground/50 pointer-events-none select-none bg-transparent opacity-50'
         )}
       >
         {text}

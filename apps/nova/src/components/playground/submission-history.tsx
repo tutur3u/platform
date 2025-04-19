@@ -16,7 +16,7 @@ export function SubmissionHistory({ submissions }: SubmissionHistoryProps) {
       </CardHeader>
       <CardContent>
         {submissions.length === 0 ? (
-          <p className="text-center text-muted-foreground">
+          <p className="text-muted-foreground text-center">
             No submissions yet.
           </p>
         ) : (
@@ -24,11 +24,11 @@ export function SubmissionHistory({ submissions }: SubmissionHistoryProps) {
             {submissions.map((submission) => (
               <li
                 key={submission.id}
-                className="flex items-center justify-between rounded-md bg-muted p-2"
+                className="bg-muted flex items-center justify-between rounded-md p-2"
               >
                 <span>Submission {submission.id}</span>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     {submission.timestamp.toLocaleString()}
                   </span>
                   <Badge

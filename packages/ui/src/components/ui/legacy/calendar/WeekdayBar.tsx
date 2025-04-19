@@ -26,13 +26,13 @@ const WeekdayBar = ({
   return (
     <div className="flex">
       {/* Time column header */}
-      <div className="flex w-16 items-center justify-center rounded-tl-lg border border-r-0 bg-muted/30 p-2 font-medium">
-        <Clock className="h-4 w-4 text-muted-foreground" />
+      <div className="bg-muted/30 flex w-16 items-center justify-center rounded-tl-lg border border-r-0 p-2 font-medium">
+        <Clock className="text-muted-foreground h-4 w-4" />
       </div>
 
       {/* Weekday columns */}
       <div
-        className={cn('grid flex-1 rounded-tr-lg border-t border-r')}
+        className={cn('grid flex-1 rounded-tr-lg border-r border-t')}
         style={{
           gridTemplateColumns: `repeat(${visibleDates.length}, minmax(0, 1fr))`,
           minWidth: `${visibleDates.length * 120}px`, // Match column width
@@ -41,7 +41,7 @@ const WeekdayBar = ({
         {visibleDates.map((weekday) => (
           <div
             key={`date-${weekday.toLocaleString(locale, { weekday: 'short' })}-${weekday.getDate()}`}
-            className="group transition-colors last:border-r-0 hover:bg-muted/20"
+            className="hover:bg-muted/20 group transition-colors last:border-r-0"
           >
             <DayTitle
               view={view}

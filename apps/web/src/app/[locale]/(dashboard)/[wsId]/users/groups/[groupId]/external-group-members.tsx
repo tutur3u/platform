@@ -61,12 +61,12 @@ export default function ExternalGroupMembers({
           currentGroups.map((group) => (
             <div
               key={group.id}
-              className="flex items-center rounded-lg border bg-background p-2"
+              className="bg-background flex items-center rounded-lg border p-2"
             >
               <div className="w-full">
                 <Link
                   href={`/${wsId}/users/groups/${group.id}`}
-                  className="line-clamp-1 rounded border border-transparent text-center font-semibold break-all hover:border-foreground/10 hover:bg-foreground/10"
+                  className="hover:border-foreground/10 hover:bg-foreground/10 line-clamp-1 break-all rounded border border-transparent text-center font-semibold"
                 >
                   {group.name}
                 </Link>

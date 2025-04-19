@@ -1,4 +1,3 @@
-// ColorPicker.tsx
 'use client';
 
 import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -125,7 +124,7 @@ export function ColorPicker({
               sizeClasses[size],
               'rounded-full transition-all hover:scale-110',
               isSelected
-                ? 'shadow-md ring-2 ring-primary ring-offset-2 ring-offset-background'
+                ? 'ring-primary ring-offset-background shadow-md ring-2 ring-offset-2'
                 : 'hover:shadow-md'
             )}
             onClick={() => onChange(colorKey as SupportedColor)}
