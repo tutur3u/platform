@@ -7,6 +7,7 @@ import ChallengeHeader from './challengeHeader';
 import PromptForm from './prompt-form';
 import {
   NovaChallenge,
+  NovaChallengeCriteria,
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
@@ -28,6 +29,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
+  criteria: NovaChallengeCriteria[];
   problems: (NovaProblem & {
     test_cases: NovaProblemTestCase[];
   })[];
@@ -89,7 +91,7 @@ export default function ChallengeClient({ challenge, session }: Props) {
     <>
       <div className="relative h-screen overflow-hidden">
         <ChallengeHeader
-          className="flex-none"
+          challenge={challenge}
           problemLength={challenge.problems.length}
           currentProblemIndex={currentProblemIndex + 1}
           startTime={session.start_time}
