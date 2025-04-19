@@ -11,7 +11,7 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write .",
-    "format:check": "prettier --debug-check .",
+    "format:check": "prettier --check .",
     "stop": "cd apps/db && pnpm stop",
     "diff": "cd apps/db && pnpm sb:diff",
     "typegen": "cd apps/db && pnpm sb:typegen",
