@@ -54,18 +54,18 @@ export async function GET(request: Request) {
 
   try {
     // Initialize query
-    let query = sbAdmin.from('nova_submissions').select(
+    let query = sbAdmin.from('nova_submissions_with_scores').select(
       `
         *,
-        nova_problems (
+        problem:nova_problems (
           id,
           title,
-          nova_challenges (
+          challenge:nova_challenges (
             id,
             title
           )
         ),
-        users (
+        user:users (
           id,
           display_name,
           avatar_url

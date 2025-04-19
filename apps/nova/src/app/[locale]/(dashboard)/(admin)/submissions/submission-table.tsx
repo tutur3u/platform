@@ -40,15 +40,16 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 
-interface SubmissionWithDetails extends NovaSubmission {
-  nova_problems: NovaProblem & {
-    nova_challenges: NovaChallenge;
+type SubmissionWithDetails = NovaSubmission & {
+  problem: NovaProblem & {
+    challenge: NovaChallenge;
   };
-  users: {
+  user: {
     display_name: string;
     avatar_url: string;
   };
-}
+  total_score: number;
+};
 
 interface SubmissionTableProps {
   submissions: SubmissionWithDetails[];
@@ -218,29 +219,29 @@ export function SubmissionTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {submission.users?.avatar_url ? (
+                        {submission.user?.avatar_url ? (
                           <img
-                            src={submission.users.avatar_url}
+                            src={submission.user.avatar_url}
                             alt="User"
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                            {submission.users?.display_name?.charAt(0) || '?'}
+                          <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+                            {submission.user?.display_name?.charAt(0) || '?'}
                           </div>
                         )}
                         <span>
-                          {submission.users?.display_name || 'Unknown User'}
+                          {submission.user?.display_name || 'Unknown User'}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-medium">
-                          {submission.nova_problems?.title || 'Unknown Problem'}
+                          {submission.problem?.title || 'Unknown Problem'}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {submission.nova_problems?.nova_challenges?.title ||
+                        <span className="text-muted-foreground text-xs">
+                          {submission.problem?.challenge?.title ||
                             'Unknown Challenge'}
                         </span>
                       </div>
@@ -249,10 +250,10 @@ export function SubmissionTable({
                       <Badge
                         className={cn(
                           'font-medium',
-                          getScoreColor(submission.score)
+                          getScoreColor(submission.total_score)
                         )}
                       >
-                        {submission.score}/10
+                        {submission.total_score}/10
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(submission.created_at)}</TableCell>
@@ -295,7 +296,7 @@ export function SubmissionTable({
             <div className="col-span-full flex h-48 flex-col items-center justify-center space-y-4 rounded-lg border">
               {searchQuery ? (
                 <>
-                  <p className="text-center text-lg text-muted-foreground">
+                  <p className="text-muted-foreground text-center text-lg">
                     No results found for "{searchQuery}"
                   </p>
                   <Button
@@ -307,7 +308,7 @@ export function SubmissionTable({
                   </Button>
                 </>
               ) : (
-                <p className="text-center text-lg text-muted-foreground">
+                <p className="text-muted-foreground text-center text-lg">
                   No submissions found.
                 </p>
               )}
@@ -317,14 +318,16 @@ export function SubmissionTable({
             submissions.map((submission) => (
               <Card
                 key={submission.id}
-                className="cursor-pointer transition-colors hover:bg-accent/50"
+                className="hover:bg-accent/50 cursor-pointer transition-colors"
                 onClick={() => router.push(`/submissions/${submission.id}`)}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle>Submission #{submission.id}</CardTitle>
-                    <Badge className={cn(getScoreColor(submission.score))}>
-                      {submission.score}/10
+                    <Badge
+                      className={cn(getScoreColor(submission.total_score))}
+                    >
+                      {submission.total_score}/10
                     </Badge>
                   </div>
                   <CardDescription>
@@ -334,28 +337,28 @@ export function SubmissionTable({
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      {submission.users?.avatar_url ? (
+                      {submission.user?.avatar_url ? (
                         <img
-                          src={submission.users.avatar_url}
+                          src={submission.user.avatar_url}
                           alt="User"
                           className="h-8 w-8 rounded-full"
                         />
                       ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                          {submission.users?.display_name?.charAt(0) || '?'}
+                        <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+                          {submission.user?.display_name?.charAt(0) || '?'}
                         </div>
                       )}
                       <span className="truncate font-medium">
-                        {submission.users?.display_name || 'Unknown User'}
+                        {submission.user?.display_name || 'Unknown User'}
                       </span>
                     </div>
 
                     <div>
                       <p className="line-clamp-1 font-medium">
-                        {submission.nova_problems?.title || 'Unknown Problem'}
+                        {submission.problem?.title || 'Unknown Problem'}
                       </p>
-                      <p className="line-clamp-1 text-sm text-muted-foreground">
-                        {submission.nova_problems?.nova_challenges?.title ||
+                      <p className="text-muted-foreground line-clamp-1 text-sm">
+                        {submission.problem?.challenge?.title ||
                           'Unknown Challenge'}
                       </p>
                     </div>

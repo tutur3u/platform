@@ -7,15 +7,16 @@ import { NovaChallenge, NovaProblem, NovaSubmission } from '@tuturuuu/types/db';
 import debounce from 'lodash/debounce';
 import { useCallback, useEffect, useState } from 'react';
 
-interface SubmissionWithDetails extends NovaSubmission {
-  nova_problems: NovaProblem & {
-    nova_challenges: NovaChallenge;
+type SubmissionWithDetails = NovaSubmission & {
+  problem: NovaProblem & {
+    challenge: NovaChallenge;
   };
-  users: {
+  user: {
     display_name: string;
     avatar_url: string;
   };
-}
+  total_score: number;
+};
 
 interface SubmissionStats {
   totalCount: number;
