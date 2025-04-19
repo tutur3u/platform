@@ -1,5 +1,7 @@
 import { DateTimePicker } from './DateTimePicker';
 import { DurationDisplay } from './DurationDisplay';
+import { fetchAdmins } from './actions';
+import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -9,6 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@tuturuuu/ui/command';
 import {
   Form,
   FormControl,
@@ -21,6 +30,8 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import {
   CalendarIcon,
+  Check,
+  ChevronDown,
   Eye,
   EyeOff,
   InfoIcon,
@@ -29,8 +40,10 @@ import {
   PlusCircle,
   TimerIcon,
   Trash2,
+  X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -43,6 +56,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { useRef, useState } from 'react';
 import * as z from 'zod';
 
@@ -78,6 +92,7 @@ const formSchema = z.object({
   enabled: z.boolean().default(false),
   whitelistedOnly: z.boolean().default(false),
   whitelistedEmails: z.array(emailSchema),
+  managingAdmins: z.array(emailSchema),
   openAt: z.date().nullable(),
   closeAt: z.date().nullable(),
   previewableAt: z.date().nullable(),
@@ -92,6 +107,11 @@ interface ChallengeFormProps {
   isSubmitting: boolean;
 }
 
+export type AdminsResponse = {
+  admins: string[];
+  error?: string;
+};
+
 export default function ChallengeForm({
   defaultValues,
   challengeId,
@@ -102,6 +122,7 @@ export default function ChallengeForm({
 
   const [showPassword, setShowPassword] = useState(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const [adminSearchTerm, setAdminSearchTerm] = useState('');
 
   const form = useForm<ChallengeFormValues>({
     resolver: zodResolver(formSchema),
@@ -117,12 +138,23 @@ export default function ChallengeForm({
       enabled: false,
       whitelistedOnly: false,
       whitelistedEmails: [],
+      managingAdmins: [],
       openAt: null,
       closeAt: null,
       previewableAt: null,
       ...defaultValues,
     },
   });
+
+  const { data: adminsData = { admins: [] }, isLoading: isLoadingAdmins } =
+    useQuery<AdminsResponse, Error, AdminsResponse>({
+      queryKey: ['admins'],
+      queryFn: fetchAdmins,
+      refetchOnWindowFocus: true,
+      refetchInterval: 60000, // Refetch every minute
+    });
+
+  const admins = adminsData.admins;
 
   const addCriteria = () => {
     const currentCriteria = form.getValues('criteria');
@@ -136,6 +168,13 @@ export default function ChallengeForm({
     const currentCriteria = form.getValues('criteria');
     const updatedCriteria = currentCriteria.filter((_, i) => i !== index);
     form.setValue('criteria', updatedCriteria);
+  };
+
+  const removeAdmin = (index: number) => {
+    const currentAdmins = form.getValues('managingAdmins');
+    const updatedAdmins = [...currentAdmins];
+    updatedAdmins.splice(index, 1);
+    form.setValue('managingAdmins', updatedAdmins);
   };
 
   const addEmailToWhitelist = () => {
@@ -310,7 +349,7 @@ export default function ChallengeForm({
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div className="flex flex-col gap-1">
                     <CardTitle>Judging Criteria</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground">
+                    <CardDescription className="text-muted-foreground text-sm">
                       Define how submissions will be evaluated. Each criterion
                       will be scored separately.
                     </CardDescription>
@@ -365,7 +404,7 @@ export default function ChallengeForm({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+                                className="text-destructive hover:text-destructive/80 h-8 w-8 p-0"
                                 onClick={() => removeCriteria(index)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -416,7 +455,7 @@ export default function ChallengeForm({
                         </Card>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         No criteria yet
                       </p>
                     )}
@@ -429,7 +468,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Security</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-muted-foreground text-sm">
                     Secure your challenge with a password or restrict access to
                     specific users.
                   </CardDescription>
@@ -485,7 +524,7 @@ export default function ChallengeForm({
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="absolute top-0 right-0 h-full px-3"
+                                  className="absolute right-0 top-0 h-full px-3"
                                   onClick={() => setShowPassword(!showPassword)}
                                 >
                                   {showPassword ? (
@@ -507,6 +546,156 @@ export default function ChallengeForm({
                         />
                       </>
                     )}
+                  </div>
+
+                  <div className="mt-4 space-y-4 rounded-lg border p-4">
+                    <h3 className="text-base font-medium">
+                      Challenge Administration
+                    </h3>
+                    <FormField
+                      control={form.control}
+                      name="managingAdmins"
+                      render={({ field }) => (
+                        <FormItem className="space-y-4">
+                          <FormLabel>Managing Administrators</FormLabel>
+                          <FormDescription>
+                            Specify which administrators can manage this
+                            challenge.
+                          </FormDescription>
+
+                          <div className="space-y-2">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className={cn(
+                                      'w-full justify-between',
+                                      !field.value?.length &&
+                                        'text-muted-foreground'
+                                    )}
+                                  >
+                                    {isLoadingAdmins
+                                      ? 'Loading admins...'
+                                      : field.value?.length > 0
+                                        ? `${field.value.length} admin${field.value.length > 1 ? 's' : ''} selected`
+                                        : 'Select administrators'}
+                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+
+                              <PopoverContent
+                                className="w-full p-0"
+                                align="start"
+                              >
+                                <Command>
+                                  <CommandInput
+                                    placeholder="Search administrators..."
+                                    value={adminSearchTerm}
+                                    onValueChange={setAdminSearchTerm}
+                                  />
+
+                                  {isLoadingAdmins ? (
+                                    <div className="p-4 text-center text-sm">
+                                      Loading administrators...
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <CommandEmpty>
+                                        No administrators found.
+                                      </CommandEmpty>
+                                      <CommandGroup className="max-h-64 overflow-auto">
+                                        {admins
+                                          ?.filter((adminEmail) =>
+                                            adminEmail
+                                              .toLowerCase()
+                                              .includes(
+                                                adminSearchTerm.toLowerCase()
+                                              )
+                                          )
+                                          .map((adminEmail) => (
+                                            <CommandItem
+                                              key={adminEmail}
+                                              value={adminEmail}
+                                              onSelect={() => {
+                                                const currentAdmins = [
+                                                  ...field.value,
+                                                ];
+                                                const adminIndex =
+                                                  currentAdmins.indexOf(
+                                                    adminEmail
+                                                  );
+
+                                                if (adminIndex !== -1) {
+                                                  currentAdmins.splice(
+                                                    adminIndex,
+                                                    1
+                                                  );
+                                                } else {
+                                                  currentAdmins.push(
+                                                    adminEmail
+                                                  );
+                                                }
+
+                                                form.setValue(
+                                                  'managingAdmins',
+                                                  currentAdmins
+                                                );
+                                              }}
+                                            >
+                                              <Check
+                                                className={cn(
+                                                  'mr-2 h-4 w-4',
+                                                  field.value?.includes(
+                                                    adminEmail
+                                                  )
+                                                    ? 'opacity-100'
+                                                    : 'opacity-0'
+                                                )}
+                                              />
+                                              <div className="flex flex-col">
+                                                <span>{adminEmail}</span>
+                                              </div>
+                                            </CommandItem>
+                                          ))}
+                                      </CommandGroup>
+                                    </>
+                                  )}
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+
+                            {field.value?.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {field.value.map((adminEmail, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="secondary"
+                                    className="flex items-center gap-1 py-1"
+                                  >
+                                    {adminEmail}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="ml-1 h-4 w-4 p-0"
+                                      onClick={() => removeAdmin(index)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                      <span className="sr-only">Remove</span>
+                                    </Button>
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   <div className="space-y-4 rounded-lg border p-4">
@@ -622,7 +811,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Duration</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-muted-foreground text-sm">
                     Set how long participants have to complete the challenge
                     once they start.
                   </CardDescription>
@@ -681,7 +870,7 @@ export default function ChallengeForm({
                         </div>
 
                         {field.value && (
-                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
+                          <div className="bg-muted/30 mt-4 rounded-md border p-3">
                             <DurationDisplay seconds={field.value} />
                           </div>
                         )}
@@ -702,19 +891,19 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>Challenge Schedule</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Set when your challenge is available to participants.
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6 rounded-md border border-dashed p-4">
                     <div className="mb-2 flex items-center">
-                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
                       <h3 className="text-sm font-medium">
                         Timeline Recommendation
                       </h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       For best results, set dates in this order: Preview Date ➝
                       Open Date ➝ Close Date.
                     </p>

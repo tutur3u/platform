@@ -1,5 +1,6 @@
 'use server';
 
+import { AdminsResponse } from './challengeForm';
 import {
   createAdminClient,
   createClient,
@@ -14,6 +15,7 @@ type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
   whitelists: NovaChallengeWhitelistedEmail[];
   canManage: boolean;
+  managingAdmins?: string[];
 };
 
 export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
@@ -145,6 +147,15 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       );
     }
 
+    //get all managers of the challenge
+    const { data: allManagers, error: managersError } = await sbAdmin
+      .from('nova_challenge_manager_emails')
+      .select('*');
+
+    if (managersError) {
+      console.error('Error fetching challenge managers:', managersError);
+    }
+
     // Combine all data
     return filteredChallenges.map((challenge) => ({
       ...challenge,
@@ -156,9 +167,75 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
         ? allWhitelists?.filter((w) => w.challenge_id === challenge.id) || []
         : [],
       canManage: isSuperAdmin || managedChallengeIds.has(challenge.id),
+      managingAdmins:
+        allManagers
+          ?.filter((m) => m.challenge_id === challenge.id)
+          .map((m) => m.admin_email) || [],
     }));
   } catch (error) {
     console.error('Error fetching challenges:', error);
     return [];
+  }
+}
+
+export async function fetchAdmins(): Promise<AdminsResponse> {
+  try {
+    const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user?.email) {
+      throw new Error('Auth error or missing user');
+    }
+
+    // Check if the requester has permission to see admins
+    const { data: userRole, error: roleError } = await sbAdmin
+      .from('nova_roles')
+      .select(
+        'allow_challenge_management, allow_manage_all_challenges, allow_role_management'
+      )
+      .eq('email', user.email)
+      .single();
+
+    if (roleError) {
+      console.error('Error fetching user role:', roleError);
+      throw new Error('Error fetching user permissions');
+    }
+
+    // Only allow admins to fetch other admins
+    if (
+      !userRole?.allow_challenge_management &&
+      !userRole?.allow_manage_all_challenges &&
+      !userRole?.allow_role_management
+    ) {
+      throw new Error('Insufficient permissions to view administrators');
+    }
+
+    // Fetch only regular challenge admins (not super admins)
+    const { data: admins, error: adminsError } = await sbAdmin
+      .from('nova_roles')
+      .select('email, enabled, allow_challenge_management')
+      .eq('enabled', true)
+      .eq('allow_challenge_management', true)
+      .eq('allow_manage_all_challenges', false)
+      .eq('allow_role_management', false)
+      .order('email');
+
+    if (adminsError) {
+      console.error('Error fetching admins:', adminsError);
+      throw new Error('Failed to fetch administrators');
+    }
+
+    const emails = (admins || [])
+      .filter((admin) => admin.email !== null)
+      .map((admin) => admin.email as string);
+
+    return { admins: emails };
+  } catch (error) {
+    console.error('Error in getAdmins:', error);
+    return { admins: [], error: String(error) };
   }
 }

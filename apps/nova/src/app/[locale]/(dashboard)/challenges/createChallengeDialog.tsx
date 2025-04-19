@@ -76,6 +76,23 @@ export default function CreateChallengeDialog({
         )
       );
 
+      // Add managing admins in parallel
+      if (values.managingAdmins.length > 0) {
+        await Promise.allSettled(
+          values.managingAdmins.map((adminEmail) =>
+            fetch(`/api/v1/challenges/${challenge.id}/managers`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                adminEmail,
+              }),
+            })
+          )
+        );
+      }
+
       // Invalidate challenges query to trigger a refetch
       queryClient.invalidateQueries({ queryKey: ['challenges'] });
 
