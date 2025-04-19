@@ -1,31 +1,8 @@
-'use client';
-
-import { NovaChallenge, NovaProblem, NovaSubmission } from '@tuturuuu/types/db';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
-import { ArrowLeft, Clipboard, ClipboardCheck } from '@tuturuuu/ui/icons';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-
-interface SubmissionDetails extends NovaSubmission {
-  nova_problems: NovaProblem & {
-    nova_challenges: NovaChallenge;
-  };
-  users: {
-    display_name: string;
-    avatar_url: string;
-  };
-}
+import SubmissionClient from './client';
+import { SubmissionData } from './types';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { notFound } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -33,351 +10,111 @@ interface Props {
   }>;
 }
 
-export default function Page({ params }: Props) {
-  const [submission, setSubmission] = useState<SubmissionDetails | null>(null);
-  const [relatedSubmissions, setRelatedSubmissions] = useState<
-    SubmissionDetails[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingRelated, setLoadingRelated] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const router = useRouter();
+export default async function Page({ params }: Props) {
+  const { submissionId } = await params;
 
-  useEffect(() => {
-    fetchSubmissionDetails();
-  }, []);
+  const sbAdmin = await createAdminClient();
+  const user = await getCurrentSupabaseUser();
 
-  useEffect(() => {
-    if (submission) {
-      fetchRelatedSubmissions();
+  if (!user) notFound();
+
+  try {
+    // Fetch submission data
+    const { data: submission, error } = await sbAdmin
+      .from('nova_submissions_with_scores')
+      .select(
+        `
+        *,
+        problem:nova_problems(
+          *,
+          challenge:nova_challenges(*)
+        ),
+        user:users(
+          display_name,
+          avatar_url
+        ),
+        criteria:nova_challenge_criteria(
+          *,
+          results:nova_submission_criteria(*)
+        )
+      `
+      )
+      .eq('id', submissionId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching submission:', error);
+      return notFound();
     }
-  }, [submission]);
 
-  async function fetchSubmissionDetails() {
-    setLoading(true);
-    try {
-      const { submissionId } = await params;
+    // Prepare properly formatted criteria
+    const formattedCriteria = submission.criteria.map((criterion: any) => ({
+      ...criterion,
+      results: undefined,
+      result: criterion.results.find(
+        (result: any) => result.submission_id === submission.id
+      ),
+    }));
 
-      // Fetch submission data
-      const submissionRes = await fetch(
-        `/api/v1/admin/submissions/${submissionId}`
-      );
+    // Define default problem structure to match expected type
+    const formattedProblem = {
+      challenge_id: submission.problem?.challenge_id ?? '',
+      created_at: submission.problem?.created_at ?? '',
+      description: submission.problem?.description ?? '',
+      example_input: submission.problem?.example_input ?? '',
+      example_output: submission.problem?.example_output ?? '',
+      id: submission.problem?.id ?? '',
+      max_prompt_length: submission.problem?.max_prompt_length ?? 0,
+      title: submission.problem?.title ?? '',
+      challenge: {
+        id: submission.problem?.challenge?.id ?? '',
+        created_at: submission.problem?.challenge?.created_at ?? '',
+        title: submission.problem?.challenge?.title ?? '',
+        description: submission.problem?.challenge?.description ?? '',
+        duration: submission.problem?.challenge?.duration ?? 0,
+        enabled: submission.problem?.challenge?.enabled ?? false,
+        close_at: submission.problem?.challenge?.close_at ?? null,
+        open_at: submission.problem?.challenge?.open_at ?? null,
+        previewable_at: submission.problem?.challenge?.previewable_at ?? null,
+        whitelisted_only:
+          submission.problem?.challenge?.whitelisted_only ?? false,
+        max_attempts: submission.problem?.challenge?.max_attempts ?? 0,
+        max_daily_attempts:
+          submission.problem?.challenge?.max_daily_attempts ?? 0,
+        password_hash: submission.problem?.challenge?.password_hash ?? '',
+        password_salt: submission.problem?.challenge?.password_salt ?? '',
+      },
+    };
 
-      if (!submissionRes.ok) {
-        throw new Error('Failed to fetch submission details');
-      }
+    // Define default user structure to match expected type
+    const formattedUser = {
+      display_name: submission.user?.display_name || '',
+      avatar_url: submission.user?.avatar_url || '',
+    };
 
-      const submissionData = await submissionRes.json();
+    // Combine the data into our extended submission format
+    const submissionData: SubmissionData = {
+      id: submission.id || '',
+      created_at: submission.created_at || '',
+      problem_id: submission.problem_id || '',
+      prompt: submission.prompt || '',
+      session_id: submission.session_id || null,
+      user_id: submission.user_id || '',
+      total_tests: submission.total_tests || 0,
+      passed_tests: submission.passed_tests || 0,
+      test_case_score: submission.test_case_score || 0,
+      criteria: formattedCriteria,
+      total_criteria: submission.total_criteria || 0,
+      sum_criterion_score: submission.sum_criterion_score || 0,
+      criteria_score: submission.criteria_score || 0,
+      total_score: submission.total_score || 0,
+      problem: formattedProblem,
+      user: formattedUser,
+    };
 
-      // Fetch submission outputs if any
-      const outputsRes = await fetch(
-        `/api/v1/outputs?submissionId=${submissionId}`
-      );
-      if (outputsRes.ok) {
-        const outputsData = await outputsRes.json();
-        submissionData.outputs = outputsData;
-      }
-
-      setSubmission(submissionData);
-    } catch (error) {
-      console.error('Error fetching submission details:', error);
-      setError('Failed to load submission details');
-    } finally {
-      setLoading(false);
-    }
+    return <SubmissionClient submission={submissionData} />;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    notFound();
   }
-
-  async function fetchRelatedSubmissions() {
-    setLoadingRelated(true);
-    try {
-      if (!submission) return;
-
-      // Fetch other submissions from the same problem
-      const response = await fetch(
-        `/api/v1/admin/submissions?problemId=${submission.problem_id}&limit=5&excludeId=${submission.id}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setRelatedSubmissions(data.submissions || []);
-      }
-    } catch (error) {
-      console.error('Error fetching related submissions:', error);
-    } finally {
-      setLoadingRelated(false);
-    }
-  }
-
-  function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  function getScoreColor(score: number) {
-    if (score >= 8)
-      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-    if (score >= 5)
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-  }
-
-  function copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="mb-8 flex items-center">
-          <Button
-            onClick={() => router.push('/submissions')}
-            variant="outline"
-            className="mr-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          <Skeleton className="h-10 w-64" />
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !submission) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="mb-8 flex items-center">
-          <Button
-            onClick={() => router.push('/submissions')}
-            variant="outline"
-            className="mr-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Error</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{error || 'Submission not found'}</p>
-            <Button
-              onClick={() => router.push('/submissions')}
-              className="mt-4"
-            >
-              Return to Submissions
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8 flex items-center">
-        <Button
-          onClick={() => router.push('/submissions')}
-          variant="outline"
-          className="mr-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        <h1 className="text-3xl font-bold">Submission #{submission.id}</h1>
-        <Badge className={cn('ml-4 text-sm', getScoreColor(submission.score))}>
-          Score: {submission.score}/10
-        </Badge>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Submission Info Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Submission Details</CardTitle>
-            <CardDescription>
-              Submitted on {formatDate(submission.created_at)}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-6 space-y-4">
-              <div>
-                <h3 className="text-muted-foreground font-semibold">User</h3>
-                <div className="mt-1 flex items-center gap-2">
-                  {submission.users?.avatar_url ? (
-                    <img
-                      src={submission.users.avatar_url}
-                      alt="User"
-                      className="h-8 w-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
-                      {submission.users?.display_name?.charAt(0) || '?'}
-                    </div>
-                  )}
-                  <span className="font-medium">
-                    {submission.users?.display_name || 'Unknown User'}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-muted-foreground font-semibold">
-                  Challenge
-                </h3>
-                <p className="font-medium">
-                  {submission.nova_problems?.nova_challenges?.title ||
-                    'Unknown Challenge'}
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-muted-foreground font-semibold">Problem</h3>
-                <p className="font-medium">
-                  {submission.nova_problems?.title || 'Unknown Problem'}
-                </p>
-              </div>
-            </div>
-
-            {submission.nova_problems?.nova_challenges?.id ? (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const challengeId =
-                    submission.nova_problems?.nova_challenges?.id;
-                  if (challengeId) {
-                    router.push(`/challenges/${challengeId}/results`);
-                  }
-                }}
-                className="w-full"
-              >
-                View Challenge Results
-              </Button>
-            ) : (
-              <Button variant="outline" className="w-full" disabled>
-                Challenge Results Not Available
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Prompt & Feedback Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Content</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="prompt">
-              <TabsList className="w-full">
-                <TabsTrigger value="prompt" className="flex-1">
-                  Prompt
-                </TabsTrigger>
-                <TabsTrigger value="feedback" className="flex-1">
-                  Feedback
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="prompt" className="mt-4">
-                <div className="relative">
-                  <pre className="bg-muted/50 max-h-[400px] overflow-auto rounded-md p-4 text-sm">
-                    {submission.prompt}
-                  </pre>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-2"
-                    onClick={() => copyToClipboard(submission.prompt)}
-                  >
-                    {copied ? (
-                      <ClipboardCheck className="h-4 w-4" />
-                    ) : (
-                      <Clipboard className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="feedback" className="mt-4">
-                <div className="bg-muted/50 max-h-[400px] overflow-auto rounded-md p-4 text-sm">
-                  {submission.feedback || 'No feedback provided'}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Related Submissions Section */}
-      <div className="mt-8">
-        <h2 className="mb-4 text-2xl font-bold">Related Submissions</h2>
-
-        {loadingRelated ? (
-          <div className="grid gap-4 md:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-36 w-full rounded-lg" />
-            ))}
-          </div>
-        ) : relatedSubmissions.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-3">
-            {relatedSubmissions.map((related) => (
-              <Card
-                key={related.id}
-                className="hover:bg-accent/50 cursor-pointer transition-colors"
-                onClick={() => router.push(`/submissions/${related.id}`)}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
-                      Submission #{related.id}
-                    </CardTitle>
-                    <Badge className={cn(getScoreColor(related.score))}>
-                      {related.score}/10
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    {formatDate(related.created_at)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    {related.users?.avatar_url ? (
-                      <img
-                        src={related.users.avatar_url}
-                        alt="User"
-                        className="h-6 w-6 rounded-full"
-                      />
-                    ) : (
-                      <div className="bg-primary/10 flex h-6 w-6 items-center justify-center rounded-full text-xs">
-                        {related.users?.display_name?.charAt(0) || '?'}
-                      </div>
-                    )}
-                    <span className="truncate text-sm font-medium">
-                      {related.users?.display_name || 'Unknown User'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted-foreground">No related submissions found.</p>
-        )}
-      </div>
-    </div>
-  );
 }
