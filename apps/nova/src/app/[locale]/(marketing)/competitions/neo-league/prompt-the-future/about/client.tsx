@@ -258,6 +258,7 @@ export function AboutUsPage() {
       gold: 'from-[#FFD700] to-[#FFC000]',
       silver: 'from-[#C0C0C0] to-[#A9A9A9]',
       bronze: 'from-[#CD7F32] to-[#A46628]',
+      diamond: 'from-[#B9F2FF] to-[#4F9EC4]',
     };
 
     const tierGlows = {
@@ -267,6 +268,7 @@ export function AboutUsPage() {
       gold: 'group-hover:shadow-[0_0_15px_rgba(255,215,0,0.3)]',
       silver: 'group-hover:shadow-[0_0_15px_rgba(192,192,192,0.3)]',
       bronze: 'group-hover:shadow-[0_0_15px_rgba(205,127,50,0.3)]',
+      diamond: 'group-hover:shadow-[0_0_15px_rgba(185,242,255,0.3)]',
     };
 
     return (
