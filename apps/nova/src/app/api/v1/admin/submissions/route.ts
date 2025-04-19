@@ -134,9 +134,13 @@ export async function GET(request: Request) {
       'user_id',
       'problem_id',
     ];
-    const actualSortField = validSortFields.includes(sortField)
+    let actualSortField = validSortFields.includes(sortField)
       ? sortField
       : 'created_at';
+
+    if (actualSortField === 'score') {
+      actualSortField = 'total_score';
+    }
 
     // When a limit is specified directly, use it instead of pagination
     if (searchParams.has('limit')) {
