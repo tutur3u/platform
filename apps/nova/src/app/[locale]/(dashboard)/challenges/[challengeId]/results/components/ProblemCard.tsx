@@ -1,5 +1,6 @@
 import { ExtendedNovaSubmission } from '../types';
 import SubmissionAccordion from './SubmissionAccordion';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import { NovaProblem } from '@tuturuuu/types/db';
 import {
   Card,
@@ -33,17 +34,13 @@ export default function ProblemCard({
         <CardTitle className="flex justify-between">
           <span>Problem {problemIndex + 1}</span>
           {problem.submissions.length > 0 && (
-            <div
-              className={`inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium ${
-                bestSubmission >= 8
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                  : bestSubmission >= 5
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-              }`}
+            <ScoreBadge
+              score={bestSubmission}
+              maxScore={10}
+              className="inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium"
             >
               Best score: {bestSubmission.toFixed(2)}/10
-            </div>
+            </ScoreBadge>
           )}
         </CardTitle>
         <CardDescription>

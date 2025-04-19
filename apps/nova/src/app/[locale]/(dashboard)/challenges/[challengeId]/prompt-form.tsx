@@ -1,6 +1,7 @@
 'use client';
 
 import { ExtendedNovaSubmission, fetchSubmissions } from './actions';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import {
   NovaProblem,
   NovaProblemTestCase,
@@ -407,17 +408,12 @@ export default function PromptForm({ problem, session }: Props) {
                         <CardTitle className="text-base">
                           Attempt {index + 1}
                         </CardTitle>
-                        <Badge
-                          variant={
-                            submission.total_score >= 8
-                              ? 'success'
-                              : submission.total_score >= 5
-                                ? 'warning'
-                                : 'destructive'
-                          }
+                        <ScoreBadge
+                          score={submission.total_score}
+                          maxScore={10}
                         >
-                          Score: {submission.total_score}/10
-                        </Badge>
+                          {submission.total_score}/10
+                        </ScoreBadge>
                       </div>
                       <p className="text-muted-foreground text-xs">
                         Submitted on{' '}
@@ -465,17 +461,12 @@ export default function PromptForm({ problem, session }: Props) {
                                           {cs.name}
                                         </span>
                                       </div>
-                                      <Badge
-                                        variant={
-                                          cs.result.score >= 8
-                                            ? 'success'
-                                            : cs.result.score >= 5
-                                              ? 'warning'
-                                              : 'destructive'
-                                        }
+                                      <ScoreBadge
+                                        score={cs.result.score}
+                                        maxScore={10}
                                       >
                                         {cs.result.score}/10
-                                      </Badge>
+                                      </ScoreBadge>
                                     </div>
                                   );
                                 })}
@@ -495,17 +486,12 @@ export default function PromptForm({ problem, session }: Props) {
                                   Passed {submission.passed_tests} of{' '}
                                   {submission.total_tests} test cases
                                 </span>
-                                <Badge
-                                  variant={
-                                    submission.test_case_score >= 4
-                                      ? 'success'
-                                      : submission.test_case_score >= 2
-                                        ? 'warning'
-                                        : 'destructive'
-                                  }
+                                <ScoreBadge
+                                  score={submission.test_case_score}
+                                  maxScore={10}
                                 >
-                                  {submission.test_case_score}/5
-                                </Badge>
+                                  {submission.test_case_score}/10
+                                </ScoreBadge>
                               </div>
                               <Progress
                                 value={

@@ -1,4 +1,5 @@
 import { ExtendedNovaSubmission } from '../types';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import {
   Table,
   TableBody,
@@ -22,17 +23,13 @@ export default function CriteriaEvaluation({
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Criteria Score</span>
-            <div
-              className={`inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium ${
-                submission.criteria_score >= 8
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                  : submission.criteria_score >= 5
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-              }`}
+            <ScoreBadge
+              score={submission.criteria_score}
+              maxScore={10}
+              className="inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium"
             >
               {submission.criteria_score.toFixed(2)}/10
-            </div>
+            </ScoreBadge>
           </div>
           <div className="rounded-md border">
             <Table>
@@ -52,17 +49,13 @@ export default function CriteriaEvaluation({
                       </TableCell>
                       <TableCell>{criterion.description}</TableCell>
                       <TableCell className="text-right">
-                        <div
-                          className={`inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium ${
-                            criterion.result.score >= 8
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                              : criterion.result.score >= 5
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                          }`}
+                        <ScoreBadge
+                          score={criterion.result.score}
+                          maxScore={10}
+                          className="inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium"
                         >
                           {criterion.result.score.toFixed(2)}/10
-                        </div>
+                        </ScoreBadge>
                       </TableCell>
                     </TableRow>
                     <TableRow>

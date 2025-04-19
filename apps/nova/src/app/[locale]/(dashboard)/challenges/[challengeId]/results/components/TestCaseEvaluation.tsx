@@ -1,4 +1,5 @@
 import { ExtendedNovaSubmission } from '../types';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import { Progress } from '@tuturuuu/ui/progress';
 
 interface TestCaseEvaluationProps {
@@ -17,17 +18,13 @@ export default function TestCaseEvaluation({
               Passed {submission.passed_tests} of {submission.total_tests} test
               cases
             </span>
-            <div
-              className={`inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium ${
-                submission.test_case_score >= 8
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                  : submission.test_case_score >= 5
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-              }`}
+            <ScoreBadge
+              score={submission.test_case_score}
+              maxScore={10}
+              className="inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium"
             >
               {submission.test_case_score.toFixed(2)}/10
-            </div>
+            </ScoreBadge>
           </div>
           <Progress
             value={(submission.passed_tests / submission.total_tests) * 100}

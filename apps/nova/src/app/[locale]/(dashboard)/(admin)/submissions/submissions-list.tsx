@@ -297,14 +297,6 @@ export default function SubmissionsList() {
     });
   }
 
-  function getScoreColor(score: number) {
-    if (score >= 8)
-      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-    if (score >= 5)
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-  }
-
   function handleChallengeChange(value: string) {
     setSelectedChallenge(value === 'all' ? '' : value);
     setCurrentPage(1); // Reset to first page when filter changes
@@ -359,7 +351,6 @@ export default function SubmissionsList() {
         sortDirection={sortDirection}
         handleSort={handleSort}
         formatDate={formatDate}
-        getScoreColor={getScoreColor}
       />
     </>
   );

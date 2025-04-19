@@ -1,5 +1,5 @@
+import ScoreBadge from '@/components/common/ScoreBadge';
 import { NovaChallenge, NovaProblem, NovaSubmission } from '@tuturuuu/types/db';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -64,7 +64,6 @@ interface SubmissionTableProps {
   sortDirection: 'asc' | 'desc';
   handleSort: (field: string) => void;
   formatDate: (dateString: string) => string;
-  getScoreColor: (score: number) => string;
 }
 
 export function SubmissionTable({
@@ -80,7 +79,6 @@ export function SubmissionTable({
   sortDirection,
   handleSort,
   formatDate,
-  getScoreColor,
 }: SubmissionTableProps) {
   const router = useRouter();
 
@@ -247,14 +245,13 @@ export function SubmissionTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        className={cn(
-                          'font-medium',
-                          getScoreColor(submission.total_score)
-                        )}
+                      <ScoreBadge
+                        score={submission.total_score}
+                        maxScore={10}
+                        className="font-medium"
                       >
                         {submission.total_score}/10
-                      </Badge>
+                      </ScoreBadge>
                     </TableCell>
                     <TableCell>{formatDate(submission.created_at)}</TableCell>
                     <TableCell className="text-right">
@@ -324,11 +321,9 @@ export function SubmissionTable({
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle>Submission #{submission.id}</CardTitle>
-                    <Badge
-                      className={cn(getScoreColor(submission.total_score))}
-                    >
+                    <ScoreBadge score={submission.total_score} maxScore={10}>
                       {submission.total_score}/10
-                    </Badge>
+                    </ScoreBadge>
                   </div>
                   <CardDescription>
                     {formatDate(submission.created_at)}

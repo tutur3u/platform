@@ -3,7 +3,7 @@
 import CriteriaEvaluation from './components/CriteriaEvaluation';
 import TestCaseEvaluation from './components/TestCaseEvaluation';
 import { SubmissionData } from './types';
-import { Badge } from '@tuturuuu/ui/badge';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -13,7 +13,6 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { ArrowLeft, Clipboard, ClipboardCheck } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -33,14 +32,6 @@ export default function SubmissionClient({ submission }: Props) {
       hour: '2-digit',
       minute: '2-digit',
     });
-  }
-
-  function getScoreColor(score: number) {
-    if (score >= 8)
-      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-    if (score >= 5)
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
   }
 
   function copyToClipboard(text: string) {
@@ -71,11 +62,13 @@ export default function SubmissionClient({ submission }: Props) {
               Submitted on {formatDate(submission.created_at)}
             </CardDescription>
           </div>
-          <Badge
-            className={cn('text-sm', getScoreColor(submission.total_score))}
+          <ScoreBadge
+            score={submission.total_score}
+            maxScore={10}
+            className="text-sm"
           >
             Score: {submission.total_score.toFixed(2)}/10
-          </Badge>
+          </ScoreBadge>
         </CardHeader>
         <CardContent>
           <div className="mb-6 space-y-4">

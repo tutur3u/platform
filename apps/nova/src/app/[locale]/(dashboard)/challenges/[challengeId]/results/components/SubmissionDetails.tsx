@@ -21,7 +21,7 @@ export default function SubmissionDetails({
       </div>
 
       {/* Tabs for Test Cases and Criteria */}
-      <Tabs defaultValue="criteria" className="w-full">
+      <Tabs defaultValue="test-cases" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="test-cases">Test Case Evaluation</TabsTrigger>
           <TabsTrigger value="criteria">Criteria Evaluation</TabsTrigger>

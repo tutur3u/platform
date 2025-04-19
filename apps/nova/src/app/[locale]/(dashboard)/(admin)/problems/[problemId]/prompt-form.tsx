@@ -1,8 +1,8 @@
 'use client';
 
 import { ExtendedNovaSubmission, fetchSubmissions } from './actions';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -437,18 +437,13 @@ export default function PromptForm({ problem }: Props) {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          submission.total_score >= 8
-                            ? 'success'
-                            : submission.total_score >= 5
-                              ? 'warning'
-                              : 'destructive'
-                        }
+                      <ScoreBadge
+                        score={submission.total_score}
+                        maxScore={10}
                         className="px-2 py-0"
                       >
                         {submission.total_score.toFixed(2)}/10
-                      </Badge>
+                      </ScoreBadge>
                       <span className="text-muted-foreground text-xs">
                         <Clock className="mr-1 inline h-3 w-3" />
                         {new Date(submission.created_at).toLocaleString()}
@@ -477,24 +472,23 @@ export default function PromptForm({ problem }: Props) {
                           <h3 className="text-muted-foreground text-xs font-medium">
                             Test Case Evaluation:
                           </h3>
-                          <Badge
-                            variant={
-                              submission.test_case_score >= 8
-                                ? 'success'
-                                : submission.test_case_score >= 5
-                                  ? 'warning'
-                                  : 'destructive'
-                            }
+                          <ScoreBadge
+                            score={submission.test_case_score}
+                            maxScore={10}
                             className="px-2 py-0"
                           >
                             {submission.test_case_score.toFixed(2)}/10
-                          </Badge>
+                          </ScoreBadge>
                         </div>
                         <div className="flex items-center justify-between rounded-md border p-2">
                           <span className="text-xs">Test Cases Passed</span>
-                          <Badge variant="default" className="px-2 py-0">
+                          <ScoreBadge
+                            score={submission.passed_tests}
+                            maxScore={submission.total_tests}
+                            className="px-2 py-0"
+                          >
                             {submission.passed_tests}/{submission.total_tests}
-                          </Badge>
+                          </ScoreBadge>
                         </div>
                       </div>
 
@@ -503,18 +497,13 @@ export default function PromptForm({ problem }: Props) {
                           <h3 className="text-muted-foreground text-xs font-medium">
                             Criteria Evaluation:
                           </h3>
-                          <Badge
-                            variant={
-                              submission.criteria_score >= 8
-                                ? 'success'
-                                : submission.criteria_score >= 5
-                                  ? 'warning'
-                                  : 'destructive'
-                            }
+                          <ScoreBadge
+                            score={submission.criteria_score}
+                            maxScore={10}
                             className="px-2 py-0"
                           >
                             {submission.criteria_score.toFixed(2)}/10
-                          </Badge>
+                          </ScoreBadge>
                         </div>
                         <div className="flex flex-col gap-2">
                           {submission.criteria.map((criterion) => (
@@ -526,18 +515,13 @@ export default function PromptForm({ problem }: Props) {
                                 <span className="text-sm">
                                   {criterion.name}
                                 </span>
-                                <Badge
-                                  variant={
-                                    criterion.result.score >= 8
-                                      ? 'success'
-                                      : criterion.result.score >= 5
-                                        ? 'warning'
-                                        : 'destructive'
-                                  }
+                                <ScoreBadge
+                                  score={criterion.result.score}
+                                  maxScore={10}
                                   className="px-2 py-0"
                                 >
                                   {criterion.result.score.toFixed(2)}/10
-                                </Badge>
+                                </ScoreBadge>
                               </div>
                               <div className="bg-muted whitespace-pre-line rounded-md p-2 text-sm">
                                 <div

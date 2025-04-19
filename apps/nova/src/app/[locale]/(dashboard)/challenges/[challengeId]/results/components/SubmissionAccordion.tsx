@@ -1,5 +1,6 @@
 import { ExtendedNovaSubmission } from '../types';
 import SubmissionDetails from './SubmissionDetails';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import {
   Accordion,
   AccordionContent,
@@ -43,17 +44,13 @@ export default function SubmissionAccordion({
                     {new Date(submission.created_at).toLocaleString()}
                   </span>
                 </div>
-                <div
-                  className={`inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium ${
-                    submission.total_score >= 8
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                      : submission.total_score >= 5
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                  }`}
+                <ScoreBadge
+                  score={submission.total_score}
+                  maxScore={10}
+                  className="inline-flex items-center justify-center rounded-full px-2 py-1.5 font-medium"
                 >
-                  {`${submission.total_score.toFixed(2)}/10`}
-                </div>
+                  {submission.total_score.toFixed(2)}/10
+                </ScoreBadge>
               </div>
             </div>
           </AccordionTrigger>
