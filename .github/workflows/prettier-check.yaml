@@ -44,7 +44,7 @@ jobs:
         run: pnpm install
 
       - name: Check Prettier formatting
-        run: npx prettier --check "**/*.{ts,tsx,js,jsx,json,md,css,scss}" --config prettier.config.mjs
+        run: npx prettier --check "**/*.{ts,tsx,js,jsx,json,md,css,scss}" --config prettier.config.ts
 
       - name: Comment on PR
         if: github.event_name == 'pull_request' && failure()
