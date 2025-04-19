@@ -20,7 +20,7 @@ export const preferredRegion = 'sin1';
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
 
-  const { prompt, customTestCase } = await req.json();
+  const { prompt, input } = await req.json();
   const { problemId } = await params;
 
   const {
@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!prompt || !customTestCase) {
+  if (!prompt || !input) {
     return NextResponse.json(
       { message: 'Incomplete data provided.' },
       { status: 400 }
@@ -61,26 +61,32 @@ export async function POST(req: Request, { params }: Params) {
   try {
     const systemInstruction = `
       You are an AI assistant that applies a given prompt instruction to process user input.
+      You will be provided with:
+      - A problem title and description
+      - An example input/output
+      - Test cases input
+      - A user's answer or prompt that attempts to solve the problem
+
+      Your role is to:
+      1. **Attempt** to apply the user's response to provided test case (if the response is executable or can be logically applied). 
+      2. **Evaluate** how effectively the user's response addresses the problem.
+      3. **Return** your result for the test case in a specific JSON format.
       
-      For context, this is part of a prompt engineering competition with the following problem:
-      "${problem.description}"
-      
-      Example input: "${problem.example_input ?? 'N/A'}"
-      Example output: "${problem.example_output ?? 'N/A'}"
-      
-      But your task is NOT to evaluate. Your task is simply to:
-      
-      1. Apply this specific prompt instruction:
-      "${prompt}"
-      
-      2. To this specific input:
-      "${customTestCase}"
-      
-      3. Return ONLY a JSON object with this format:
+      Here is the problem context:
       {
-        "input": "test case 1",
-        "output": "test case 1 output",
-      },
+        "title": "${problem.title}",
+        "description": "${problem.description}",
+        "exampleInput": "${problem.example_input}",
+        "exampleOutput": "${problem.example_output}",
+        "testCaseInput": "${input}",
+        "userPrompt": "${prompt}"
+      }
+      
+      Return ONLY a JSON object with this format:
+      {
+        "input": "given test case input",
+        "output": "your test case output",
+      }
       
       Your response must be valid JSON. Do not include explanations or commentary in the output.
       Don't include markdown formatting like \`\`\`json or \`\`\`.
@@ -89,13 +95,14 @@ export async function POST(req: Request, { params }: Params) {
 
     // Get the model and generate content
     const aiModel = genAI.getGenerativeModel({ model });
+
     const result = await aiModel.generateContent(systemInstruction);
     const response = result.response.text();
-    console.log('AI response:', response);
+
     try {
-      // Clean and parse the JSON response
-      const cleanResponse = response.replace(/```json\n|\n```|```/g, '').trim();
-      const parsedResponse = JSON.parse(cleanResponse);
+      const parsedResponse = JSON.parse(
+        response.replace(/```json\n|\n```/g, '').trim()
+      );
 
       return NextResponse.json({ response: parsedResponse }, { status: 200 });
     } catch (parseError) {

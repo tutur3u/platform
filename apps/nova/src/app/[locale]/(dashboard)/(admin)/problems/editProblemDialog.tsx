@@ -44,6 +44,8 @@ export default function EditProblemDialog({
       testCases: problem.test_cases.map((tc) => ({
         id: tc.id,
         input: tc.input,
+        output: tc.output,
+        hidden: tc.hidden,
       })),
     };
   }, [problem]);
@@ -86,7 +88,12 @@ export default function EditProblemDialog({
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ input: tc.input, problemId: problem.id }),
+            body: JSON.stringify({
+              input: tc.input,
+              output: tc.output,
+              hidden: tc.hidden,
+              problemId: problem.id,
+            }),
           })
         ),
         // Update existing testCases
@@ -96,7 +103,11 @@ export default function EditProblemDialog({
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ input: tc.input }),
+            body: JSON.stringify({
+              input: tc.input,
+              output: tc.output,
+              hidden: tc.hidden,
+            }),
           })
         ),
         // Delete removed testCases

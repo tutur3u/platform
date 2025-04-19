@@ -54,18 +54,18 @@ export async function GET(request: Request) {
 
   try {
     // Initialize query
-    let query = sbAdmin.from('nova_submissions').select(
+    let query = sbAdmin.from('nova_submissions_with_scores').select(
       `
         *,
-        nova_problems (
+        problem:nova_problems (
           id,
           title,
-          nova_challenges (
+          challenge:nova_challenges (
             id,
             title
           )
         ),
-        users (
+        user:users (
           id,
           display_name,
           avatar_url
@@ -123,7 +123,7 @@ export async function GET(request: Request) {
 
     // Exclude a specific submission if needed
     if (excludeId) {
-      query = query.neq('id', Number(excludeId));
+      query = query.neq('id', excludeId);
     }
 
     // Apply sorting and pagination
@@ -134,9 +134,13 @@ export async function GET(request: Request) {
       'user_id',
       'problem_id',
     ];
-    const actualSortField = validSortFields.includes(sortField)
+    let actualSortField = validSortFields.includes(sortField)
       ? sortField
       : 'created_at';
+
+    if (actualSortField === 'score') {
+      actualSortField = 'total_score';
+    }
 
     // When a limit is specified directly, use it instead of pagination
     if (searchParams.has('limit')) {

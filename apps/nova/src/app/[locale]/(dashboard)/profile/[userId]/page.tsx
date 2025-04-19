@@ -80,8 +80,8 @@ export default async function UserProfilePage({
       id,
       user_id,
       challenge_id,
-      total_score,
       created_at,
+      nova_submissions_with_scores(id, total_score),
       nova_challenges(
         id,
         title,
@@ -98,12 +98,12 @@ export default async function UserProfilePage({
 
   // Fetch recent activity
   const { data: recentActivity = [], error: activityError } = await sbAdmin
-    .from('nova_submissions')
+    .from('nova_submissions_with_scores')
     .select(
       `
       id,
       problem_id,
-      score,
+      total_score,
       created_at,
       nova_problems(
         id,
@@ -121,19 +121,30 @@ export default async function UserProfilePage({
 
   // Calculate total score and best challenge
   const totalScore =
-    sessionsData?.reduce(
-      (sum, session) => sum + (session.total_score || 0),
-      0
-    ) || 0;
+    sessionsData?.reduce((sum, session) => {
+      // Get the total score from all submissions in this session
+      const sessionsScores =
+        session.nova_submissions_with_scores?.reduce(
+          (subSum, submission) => subSum + (submission.total_score || 0),
+          0
+        ) || 0;
+      return sum + sessionsScores;
+    }, 0) || 0;
 
   // Group scores by challenge
   const challengeScores: Record<string, number> = {};
   if (sessionsData) {
     for (const session of sessionsData) {
       if (session.challenge_id) {
+        // Calculate total score from submissions
+        const sessionScore =
+          session.nova_submissions_with_scores?.reduce(
+            (subSum, submission) => subSum + (submission.total_score || 0),
+            0
+          ) || 0;
+
         challengeScores[session.challenge_id] =
-          (challengeScores[session.challenge_id] || 0) +
-          (session.total_score || 0);
+          (challengeScores[session.challenge_id] || 0) + sessionScore;
       }
     }
   }
@@ -142,7 +153,7 @@ export default async function UserProfilePage({
   const { data: leaderboardData = [] } = await sbAdmin.from('nova_sessions')
     .select(`
       user_id,
-      total_score
+      nova_submissions_with_scores(id, total_score)
     `);
 
   // Group by user and calculate total scores for ranking
@@ -152,7 +163,14 @@ export default async function UserProfilePage({
         acc[curr.user_id] = 0;
       }
 
-      acc[curr.user_id] = (acc[curr.user_id] || 0) + (curr.total_score || 0);
+      // Calculate total score from submissions
+      const sessionScore =
+        curr.nova_submissions_with_scores?.reduce(
+          (subSum, submission) => subSum + (submission.total_score || 0),
+          0
+        ) || 0;
+
+      acc[curr.user_id] = (acc[curr.user_id] || 0) + sessionScore;
 
       return acc;
     },
@@ -179,11 +197,11 @@ export default async function UserProfilePage({
     challengeScores,
     recentActivity:
       recentActivity?.map((activity) => ({
-        id: activity.id,
-        problemId: activity.problem_id,
+        id: activity.id || '',
+        problemId: activity.problem_id || '',
         problemTitle: activity.nova_problems?.title || 'Unknown Problem',
-        score: activity.score || 0,
-        date: activity.created_at,
+        score: activity.total_score || 0,
+        date: activity.created_at || '',
       })) || [],
     challenges:
       sessionsData?.reduce(

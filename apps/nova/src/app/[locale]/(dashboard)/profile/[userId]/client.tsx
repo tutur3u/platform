@@ -49,7 +49,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 interface RecentActivity {
-  id: number;
+  id: string;
   problemId: string;
   problemTitle: string;
   score: number;

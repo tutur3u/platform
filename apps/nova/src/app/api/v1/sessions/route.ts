@@ -77,7 +77,6 @@ export async function POST(request: Request) {
       start_time: validatedData.startTime,
       end_time: validatedData.endTime,
       status: validatedData.status,
-      total_score: validatedData.totalScore,
       challenge_id: validatedData.challengeId,
       user_id: user.id,
     };

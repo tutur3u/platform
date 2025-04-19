@@ -31,17 +31,18 @@ export async function GET(
     const userName = userData.display_name || generateFunName(userData.id);
 
     // Fetch user's total score
-    const { data: sessionsData = [], error: sessionsError } = await sbAdmin
-      .from('nova_sessions')
-      .select('total_score')
-      .eq('user_id', userId);
+    const { data: submissionsData = [], error: submissionsError } =
+      await sbAdmin
+        .from('nova_submissions_with_scores')
+        .select('total_score')
+        .eq('user_id', userId);
 
-    if (sessionsError) {
-      console.error(sessionsError);
+    if (submissionsError) {
+      console.error(submissionsError);
     }
 
-    const totalScore = (sessionsData || []).reduce(
-      (sum, session) => sum + (session.total_score || 0),
+    const totalScore = (submissionsData || []).reduce(
+      (sum, submission) => sum + (submission.total_score || 0),
       0
     );
 

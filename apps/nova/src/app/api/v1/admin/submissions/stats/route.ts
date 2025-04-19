@@ -68,7 +68,7 @@ export async function GET(request: Request) {
       console.log('Found problems for challenge:', problemIds);
 
       const { data: submissions } = await sbAdmin
-        .from('nova_submissions')
+        .from('nova_submissions_with_scores')
         .select('*')
         .in('problem_id', problemIds);
 
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     // Step 2: Handle problem filter
     else if (problemId) {
       const { data: submissions } = await sbAdmin
-        .from('nova_submissions')
+        .from('nova_submissions_with_scores')
         .select('*')
         .eq('problem_id', problemId);
 
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
     // Step 3: If no problem or challenge filter, get all submissions
     else {
       const { data: submissions } = await sbAdmin
-        .from('nova_submissions')
+        .from('nova_submissions_with_scores')
         .select('*');
 
       matchedSubmissions = submissions || [];
@@ -95,10 +95,8 @@ export async function GET(request: Request) {
     // Step 4: Apply search filter if provided
     if (search && matchedSubmissions.length > 0) {
       const searchLower = search.toLowerCase();
-      matchedSubmissions = matchedSubmissions.filter(
-        (submission) =>
-          submission.prompt?.toLowerCase().includes(searchLower) ||
-          submission.feedback?.toLowerCase().includes(searchLower)
+      matchedSubmissions = matchedSubmissions.filter((submission) =>
+        submission.prompt?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -117,20 +115,22 @@ export async function GET(request: Request) {
 
     // 2. Average score
     const totalScore = matchedSubmissions.reduce(
-      (sum, sub) => sum + (sub.score || 0),
+      (sum, sub) => sum + (sub.total_score || 0),
       0
     );
     const averageScore = totalScore / totalCount;
 
     // 3. Highest score
     const highestScore = Math.max(
-      ...matchedSubmissions.map((sub) => sub.score || 0)
+      ...matchedSubmissions.map((sub) => sub.total_score || 0)
     );
 
     // 4. Latest submission date
     const latestDate = new Date(
       Math.max(
-        ...matchedSubmissions.map((sub) => new Date(sub.created_at).getTime())
+        ...matchedSubmissions
+          .filter((sub) => sub.created_at !== null)
+          .map((sub) => new Date(sub.created_at as string).getTime())
       )
     ).toISOString();
 

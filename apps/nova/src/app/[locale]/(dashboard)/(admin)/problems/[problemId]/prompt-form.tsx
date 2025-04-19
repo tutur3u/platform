@@ -1,13 +1,16 @@
 'use client';
 
-import {
-  NovaChallengeCriteria,
-  NovaProblem,
-  NovaProblemTestCase,
-} from '@tuturuuu/types/db';
-import { Badge } from '@tuturuuu/ui/badge';
+import { ExtendedNovaSubmission, fetchSubmissions } from './actions';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Clock, PlayCircle } from '@tuturuuu/ui/icons';
@@ -15,19 +18,6 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import React, { useEffect, useState } from 'react';
-
-type HistoryEntry = {
-  id: number;
-  prompt: string;
-  feedback: string;
-  score: number;
-  created_at: string;
-  criteria_scores?: {
-    criteria_id: string;
-    score: number;
-    criteria: NovaChallengeCriteria;
-  }[];
-};
 
 type TestResult = {
   input: string;
@@ -47,8 +37,8 @@ export default function PromptForm({ problem }: Props) {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [allTestResults, setAllTestResults] = useState<TestResult[]>([]);
-  const [submissions, setSubmissions] = useState<HistoryEntry[]>([]);
-  const [activeTab, setActiveTab] = useState('write');
+  const [submissions, setSubmissions] = useState<ExtendedNovaSubmission[]>([]);
+  const [activeTab, setActiveTab] = useState('prompt');
 
   useEffect(() => {
     // Load submission history when component mounts
@@ -77,52 +67,104 @@ export default function PromptForm({ problem }: Props) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/v1/problems/${problem.id}/prompt`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
+      // Step 1: Get evaluation results from the problem API
+      const promptResponse = await fetch(
+        `/api/v1/problems/${problem.id}/prompt`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        }
+      );
 
-      if (!response.ok) {
+      if (!promptResponse.ok) {
         throw new Error('Failed to process prompt');
       }
 
-      const data = await response.json();
-      const feedback = data.response.feedback || '';
-      const score = data.response.score || 0;
+      const promptData = await promptResponse.json();
+      const testCaseEvaluation = promptData.response.testCaseEvaluation || [];
+      const criteriaEvaluation = promptData.response.criteriaEvaluation || [];
 
-      // Add to submissions
+      // Step 2: Create the submission record
       const submissionResponse = await fetch(`/api/v1/submissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt,
-          feedback,
-          score,
           problemId: problem.id,
+          sessionId: null,
         }),
       });
 
       if (!submissionResponse.ok) {
         const errorData = await submissionResponse.json();
-
-        //submission limit error
-        if (submissionResponse.status === 403) {
-          throw new Error(
-            errorData.message || 'Failed to submit prompt. Please try again.'
-          );
-        }
-
         throw new Error(
           errorData.message || 'Failed to submit prompt. Please try again.'
         );
       }
 
-      // Add to history
+      // Get the newly created submission ID
+      const submissionData = await submissionResponse.json();
+      const submissionId = submissionData.id;
+
+      // Step 3: Save test case results
+      await Promise.allSettled(
+        testCaseEvaluation.map(async (testCase: any) => {
+          // Find matching test case in the problem
+          const matchingTestCase = problem.test_cases.find(
+            (tc) => tc.input === testCase.input
+          );
+
+          if (matchingTestCase) {
+            await fetch(`/api/v1/submissions/${submissionId}/test-cases`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                testCaseId: matchingTestCase.id,
+                output: testCase.output,
+                matched: matchingTestCase.output === testCase.output,
+              }),
+            });
+          }
+        })
+      );
+
+      // Step 4: Save criteria evaluations
+      // First, fetch the challenge criteria to get IDs
+      const criteriaResponse = await fetch(
+        `/api/v1/criteria?challengeId=${problem.challenge_id}`
+      );
+      if (criteriaResponse.ok) {
+        const challengeCriteria = await criteriaResponse.json();
+
+        // Then save each criteria evaluation with proper ID mapping
+        await Promise.allSettled(
+          criteriaEvaluation.map(async (criteriaEval: any) => {
+            // Find matching criteria by name
+            const matchingCriteria = challengeCriteria.find(
+              (c: any) => c.name === criteriaEval.name
+            );
+
+            if (matchingCriteria) {
+              await fetch(`/api/v1/submissions/${submissionId}/criteria`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  criteriaId: matchingCriteria.id,
+                  score: criteriaEval.score,
+                  feedback: criteriaEval.feedback,
+                }),
+              });
+            }
+          })
+        );
+      }
+
+      // Step 5: Refresh the submissions list
       const submissions = await fetchSubmissions(problem.id);
       setSubmissions(submissions);
 
-      // Reset prompt
+      // Reset prompt and show success message
       setPrompt('');
       setActiveTab('history');
 
@@ -169,10 +211,11 @@ export default function PromptForm({ problem }: Props) {
         throw new Error('Failed to test prompt');
       }
 
-      const result = await response.json();
+      const data = await response.json();
+
       setTestResult({
-        input: customTestCase,
-        output: result.output,
+        input: data.response.input,
+        output: data.response.output,
       });
     } catch (error) {
       console.error('Error testing prompt:', error);
@@ -193,8 +236,6 @@ export default function PromptForm({ problem }: Props) {
 
     try {
       const testPromises = problem.test_cases.map(async (testcase, index) => {
-        if (!testcase) return null;
-
         const response = await fetch(
           `/api/v1/problems/${problem.id}/custom-testcase`,
           {
@@ -204,7 +245,7 @@ export default function PromptForm({ problem }: Props) {
             },
             body: JSON.stringify({
               prompt,
-              customTestCase: testcase,
+              input: testcase.input,
             }),
           }
         );
@@ -214,15 +255,20 @@ export default function PromptForm({ problem }: Props) {
         }
 
         const data = await response.json();
+        // Extract input and output from the response
         return {
-          input: data.response.input,
-          output: data.response.output,
+          input: testcase.input,
+          output: data.response?.output || 'No output generated',
         };
       });
 
-      const results = (await Promise.all(testPromises)).filter(
-        (result) => result !== null
-      );
+      const settledResults = await Promise.allSettled(testPromises);
+      const results = settledResults
+        .filter(
+          (result): result is PromiseFulfilledResult<TestResult> =>
+            result.status === 'fulfilled'
+        )
+        .map((result) => result.value);
 
       setAllTestResults(results);
 
@@ -249,12 +295,12 @@ export default function PromptForm({ problem }: Props) {
       className="flex h-full flex-col"
     >
       <TabsList className="mb-4 grid w-full grid-cols-3">
-        <TabsTrigger value="write">Write</TabsTrigger>
+        <TabsTrigger value="prompt">Prompt</TabsTrigger>
         <TabsTrigger value="test">Test</TabsTrigger>
-        <TabsTrigger value="history">History</TabsTrigger>
+        <TabsTrigger value="submissions">Submissions</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="write" className="flex-1 overflow-hidden">
+      <TabsContent value="prompt" className="flex-1 overflow-hidden">
         <div className="flex h-full flex-col">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-muted-foreground text-sm">
@@ -297,6 +343,10 @@ export default function PromptForm({ problem }: Props) {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Custom Test Case</CardTitle>
+              <CardDescription>
+                Enter a custom test case to see how your prompt would perform on
+                it. This won't count against your submission attempts.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Textarea
@@ -337,6 +387,10 @@ export default function PromptForm({ problem }: Props) {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Test All Cases</CardTitle>
+              <CardDescription>
+                Test your prompt against all test cases. This won't count
+                against your submission attempts.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -375,7 +429,7 @@ export default function PromptForm({ problem }: Props) {
         </div>
       </TabsContent>
 
-      <TabsContent value="history" className="flex-1 overflow-auto">
+      <TabsContent value="submissions" className="flex-1 overflow-auto">
         <div className="space-y-4">
           {submissions.length > 0 ? (
             submissions.map((submission) => (
@@ -383,18 +437,13 @@ export default function PromptForm({ problem }: Props) {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          submission.score >= 8
-                            ? 'success'
-                            : submission.score >= 5
-                              ? 'warning'
-                              : 'destructive'
-                        }
+                      <ScoreBadge
+                        score={submission.total_score}
+                        maxScore={10}
                         className="px-2 py-0"
                       >
-                        {submission.score}/10
-                      </Badge>
+                        {submission.total_score.toFixed(2)}/10
+                      </ScoreBadge>
                       <span className="text-muted-foreground text-xs">
                         <Clock className="mr-1 inline h-3 w-3" />
                         {new Date(submission.created_at).toLocaleString()}
@@ -404,53 +453,97 @@ export default function PromptForm({ problem }: Props) {
                 </CardHeader>
                 <CardContent className="space-y-2 pb-3 pt-0">
                   <div>
-                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
+                    <h3 className="text-foreground text-md mb-1 font-medium">
                       Prompt:
                     </h3>
                     <div className="bg-muted rounded-md p-2 text-sm">
                       {submission.prompt}
                     </div>
                   </div>
-                  <div>
-                    <h3 className="text-muted-foreground mb-1 text-xs font-medium">
-                      Feedback:
-                    </h3>
-                    <div className="bg-muted rounded-md p-2 text-sm">
-                      {submission.feedback}
-                    </div>
-                  </div>
-                  {submission.criteria_scores &&
-                    submission.criteria_scores.length > 0 && (
-                      <div className="space-y-2">
-                        <h3 className="text-muted-foreground text-xs font-medium">
-                          Criteria Scores:
-                        </h3>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          {submission.criteria_scores.map((criteriaScore) => (
+
+                  {submission.criteria.length > 0 ? (
+                    <>
+                      <h3 className="text-foreground text-md font-medium">
+                        Evaluation Results:
+                      </h3>
+
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-muted-foreground text-xs font-medium">
+                            Test Case Evaluation:
+                          </h3>
+                          <ScoreBadge
+                            score={submission.test_case_score}
+                            maxScore={10}
+                            className="px-2 py-0"
+                          >
+                            {submission.test_case_score.toFixed(2)}/10
+                          </ScoreBadge>
+                        </div>
+                        <div className="flex items-center justify-between rounded-md border p-2">
+                          <span className="text-xs">Test Cases Passed</span>
+                          <ScoreBadge
+                            score={submission.passed_tests}
+                            maxScore={submission.total_tests}
+                            className="px-2 py-0"
+                          >
+                            {submission.passed_tests}/{submission.total_tests}
+                          </ScoreBadge>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-muted-foreground text-xs font-medium">
+                            Criteria Evaluation:
+                          </h3>
+                          <ScoreBadge
+                            score={submission.criteria_score}
+                            maxScore={10}
+                            className="px-2 py-0"
+                          >
+                            {submission.criteria_score.toFixed(2)}/10
+                          </ScoreBadge>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {submission.criteria.map((criterion) => (
                             <div
-                              key={criteriaScore.criteria_id}
-                              className="flex items-center justify-between rounded-md border p-2"
+                              key={criterion.result.criteria_id}
+                              className="space-y-2 rounded-md border px-2 py-3"
                             >
-                              <span className="text-xs">
-                                {criteriaScore.criteria.name}
-                              </span>
-                              <Badge
-                                variant={
-                                  criteriaScore.score >= 7
-                                    ? 'success'
-                                    : criteriaScore.score >= 4
-                                      ? 'warning'
-                                      : 'destructive'
-                                }
-                                className="px-2 py-0"
-                              >
-                                {criteriaScore.score}/10
-                              </Badge>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm">
+                                  {criterion.name}
+                                </span>
+                                <ScoreBadge
+                                  score={criterion.result.score}
+                                  maxScore={10}
+                                  className="px-2 py-0"
+                                >
+                                  {criterion.result.score.toFixed(2)}/10
+                                </ScoreBadge>
+                              </div>
+                              <div className="bg-muted whitespace-pre-line rounded-md p-2 text-sm">
+                                <div
+                                  key={criterion.result.criteria_id}
+                                  className="mb-2"
+                                >
+                                  <strong>Feedback: </strong>
+                                  {criterion.result.feedback}
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
-                    )}
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center py-4">
+                      <p className="text-muted-foreground text-sm">
+                        No evaluation results yet
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))
@@ -465,19 +558,4 @@ export default function PromptForm({ problem }: Props) {
       </TabsContent>
     </Tabs>
   );
-}
-
-async function fetchSubmissions(problemId: string): Promise<HistoryEntry[]> {
-  try {
-    const response = await fetch(`/api/v1/submissions?problemId=${problemId}`);
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch submissions');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching submissions:', error);
-    return [];
-  }
 }

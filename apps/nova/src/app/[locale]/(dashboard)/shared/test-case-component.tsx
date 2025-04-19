@@ -1,14 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { NovaProblemTestCase } from '@tuturuuu/types/db';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
 import { Code } from '@tuturuuu/ui/icons';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-
-export interface TestCase {
-  id: string;
-  input: string;
-}
 
 export interface TestCaseComponentProps {
-  testCases: TestCase[];
+  testCases: NovaProblemTestCase[];
   className?: string;
 }
 
@@ -24,42 +25,36 @@ export default function TestCaseComponent({
             <Code className="text-primary h-4 w-4" />
             Test Cases
           </CardTitle>
+          <CardDescription>
+            These test cases below are just part of the ones used to evaluate
+            your prompt when submitted.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {testCases.length > 0 ? (
-            <Tabs defaultValue="all">
-              <TabsList className="mb-2">
-                <TabsTrigger value="all">All Test Cases</TabsTrigger>
-                {testCases.map((_, index) => (
-                  <TabsTrigger key={index} value={`test-${index}`}>
-                    Test {index + 1}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-              <TabsContent value="all">
-                <div className="space-y-4">
-                  {testCases.map((testcase, index) => (
-                    <div key={testcase.id} className="rounded-md border p-3">
-                      <div className="mb-2 font-medium">
-                        Test Case {index + 1}:
-                      </div>
+            <div className="space-y-6">
+              {testCases.map((testcase, index) => (
+                <div key={testcase.id} className="rounded-md border p-3">
+                  <div className="mb-2 font-medium">Test Case {index + 1}:</div>
+                  <div className="flex flex-col gap-4">
+                    <div className="space-y-2">
+                      <p className="ml-2 text-sm font-medium">Input</p>
                       <div className="bg-muted rounded-md p-3 font-mono text-sm">
                         {testcase.input}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </TabsContent>
-
-              {testCases.map((testcase, index) => (
-                <TabsContent key={index} value={`test-${index}`}>
-                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
-                    {testcase.input}
+                    <div className="space-y-2">
+                      <p className="ml-2 text-sm font-medium">
+                        Output (Expected)
+                      </p>
+                      <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                        {testcase.output}
+                      </div>
+                    </div>
                   </div>
-                </TabsContent>
+                </div>
               ))}
-            </Tabs>
+            </div>
           ) : (
             <p className="text-muted-foreground">No test cases available.</p>
           )}
