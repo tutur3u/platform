@@ -146,7 +146,7 @@ export function MemberSettingsButton({
     >
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Settings className="h-6 w-6 text-foreground/70" />
+          <Settings className="text-foreground/70 h-6 w-6" />
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -173,7 +173,7 @@ export function MemberSettingsButton({
           </Avatar>
 
           <div className="flex-1 space-y-1">
-            <p className="line-clamp-1 text-sm leading-none font-medium">
+            <p className="line-clamp-1 text-sm font-medium leading-none">
               {user?.display_name ? (
                 user.display_name
               ) : (
@@ -182,7 +182,7 @@ export function MemberSettingsButton({
               {role ? <span className="text-orange-300">({role})</span> : null}
             </p>
 
-            <p className="line-clamp-1 text-sm text-foreground/60">
+            <p className="text-foreground/60 line-clamp-1 text-sm">
               {user?.email ||
                 (user?.handle
                   ? `@${user.handle}`

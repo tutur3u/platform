@@ -18,7 +18,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             </>
           )} */}
 
-      <Separator className="my-8 bg-foreground/5" />
+      <Separator className="bg-foreground/5 my-8" />
 
       <div className="flex flex-col flex-wrap items-center justify-between gap-4 px-4 md:gap-8 md:px-32 lg:flex-row lg:gap-16 xl:px-64">
         <div className="flex flex-col items-center justify-center gap-4">
@@ -40,7 +40,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
           <div className="flex gap-8">
             <Link
               href="https://www.facebook.com/tuturuuu"
-              className="fill-foreground/50 transition duration-300 hover:fill-foreground"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="Facebook"
             >
               <svg
@@ -54,7 +54,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
 
             <Link
               href="https://x.com/tutur3u"
-              className="fill-foreground/50 transition duration-300 hover:fill-foreground"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="X (formerly Twitter)"
             >
               <svg
@@ -75,7 +75,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
 
             <Link
               href="https://github.com/tutur3u"
-              className="fill-foreground/50 transition duration-300 hover:fill-foreground"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="Github"
             >
               <svg
@@ -89,7 +89,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
 
             <Link
               href="https://www.linkedin.com/company/tuturuuu/"
-              className="fill-foreground/50 transition duration-300 hover:fill-foreground"
+              className="fill-foreground/50 hover:fill-foreground transition duration-300"
               aria-label="LinkedIn"
             >
               <svg
@@ -110,31 +110,31 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             </div>
             <Link
               href={`${TUTURUUU_URL}/blog`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.blog')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/changelog`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.changelog')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/meet-together`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.meet-together')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/qr-generator`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.qr_generator')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/branding`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.branding')}
             </Link>
@@ -146,19 +146,19 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             </div>
             <Link
               href={`${TUTURUUU_URL}/about`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.about')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/contact`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.contact')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/pricing`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.pricing')}
             </Link>
@@ -170,19 +170,19 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             </div>
             <Link
               href={`${TUTURUUU_URL}/security`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.security')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/terms`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.terms')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/privacy`}
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.privacy')}
             </Link>
@@ -195,14 +195,14 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             <Link
               href="https://docs.tuturuuu.com"
               target="_blank"
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.documentation')}
             </Link>
             <Link
               href="https://github.com/tutur3u/platform"
               target="_blank"
-              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/80 hover:text-foreground text-sm hover:underline md:w-fit"
             >
               {t('common.open-source')}
             </Link>
@@ -210,8 +210,8 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
         </div>
       </div>
 
-      <Separator className="mt-8 bg-foreground/5" />
-      <div className="p-4 text-center text-sm text-balance opacity-80 md:px-32 xl:px-64">
+      <Separator className="bg-foreground/5 mt-8" />
+      <div className="text-balance p-4 text-center text-sm opacity-80 md:px-32 xl:px-64">
         {t('common.copyright')}
       </div>
     </div>

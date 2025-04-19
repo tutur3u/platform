@@ -18,7 +18,7 @@ export default async function WorkspaceInvites() {
           <WorkspaceInviteSnippet key={ws.id} ws={ws} />
         ))
       ) : (
-        <div className="flex h-full items-center justify-center px-4 py-16 text-center text-lg font-semibold text-foreground/60 md:text-2xl">
+        <div className="text-foreground/60 flex h-full items-center justify-center px-4 py-16 text-center text-lg font-semibold md:text-2xl">
           {t('no-invites')}
         </div>
       )}

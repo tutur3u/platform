@@ -62,7 +62,7 @@ export default function ResultClient({ data }: Props) {
           <div className="flex flex-1 items-center justify-center">
             <Card className="max-w-md">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <div className="bg-muted text-muted-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
                   <BookOpen className="h-10 w-10" />
                 </div>
                 <CardTitle>No data available</CardTitle>
@@ -120,7 +120,7 @@ export default function ResultClient({ data }: Props) {
                   <CardContent>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div className="flex flex-col items-center rounded-lg border p-3">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           Total Score
                         </span>
                         <span className="text-2xl font-bold">
@@ -128,7 +128,7 @@ export default function ResultClient({ data }: Props) {
                         </span>
                       </div>
                       <div className="flex flex-col items-center rounded-lg border p-3">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           Problems Attempted
                         </span>
                         <span className="text-2xl font-bold">
@@ -136,7 +136,7 @@ export default function ResultClient({ data }: Props) {
                         </span>
                       </div>
                       <div className="flex flex-col items-center rounded-lg border p-3">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           Total Submissions
                         </span>
                         <span className="text-2xl font-bold">
@@ -190,7 +190,7 @@ export default function ResultClient({ data }: Props) {
                                   key={subIndex}
                                   value={`submission-${sessionIndex}-${problemIndex}-${subIndex}`}
                                 >
-                                  <AccordionTrigger className="rounded-lg px-4 hover:bg-muted/50">
+                                  <AccordionTrigger className="hover:bg-muted/50 rounded-lg px-4">
                                     <div className="flex flex-1 justify-between">
                                       <div className="flex items-center">
                                         <span className="font-medium">
@@ -204,8 +204,8 @@ export default function ResultClient({ data }: Props) {
                                       </div>
                                       <div className="flex items-center space-x-4">
                                         <div className="flex items-center">
-                                          <Clock className="mr-1 h-4 w-4 text-muted-foreground" />
-                                          <span className="text-sm text-muted-foreground">
+                                          <Clock className="text-muted-foreground mr-1 h-4 w-4" />
+                                          <span className="text-muted-foreground text-sm">
                                             {new Date(
                                               submission.created_at
                                             ).toLocaleString()}
@@ -231,7 +231,7 @@ export default function ResultClient({ data }: Props) {
                                         <h4 className="mb-2 text-sm font-medium">
                                           Your Solution
                                         </h4>
-                                        <div className="max-h-64 overflow-y-auto rounded-lg bg-muted p-3 whitespace-pre-wrap">
+                                        <div className="bg-muted max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg p-3">
                                           {submission.prompt ||
                                             'No solution provided'}
                                         </div>
@@ -240,7 +240,7 @@ export default function ResultClient({ data }: Props) {
                                         <h4 className="mb-2 text-sm font-medium">
                                           Feedback
                                         </h4>
-                                        <div className="max-h-64 overflow-y-auto rounded-lg bg-muted p-3 whitespace-pre-wrap">
+                                        <div className="bg-muted max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg p-3">
                                           {submission.feedback ||
                                             'No feedback available'}
                                         </div>
@@ -251,7 +251,7 @@ export default function ResultClient({ data }: Props) {
                               ))}
                           </Accordion>
                         ) : (
-                          <div className="py-8 text-center text-muted-foreground">
+                          <div className="text-muted-foreground py-8 text-center">
                             <div className="mb-2">
                               No submissions for this problem
                             </div>

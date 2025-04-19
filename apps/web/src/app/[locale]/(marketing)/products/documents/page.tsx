@@ -99,7 +99,7 @@ export default function DocumentsProductPage() {
         <h1 className="mb-4 text-4xl font-bold">
           Intelligent Document Management
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
           Transform your document workflow with AI-powered analysis,
           collaboration tools, and intelligent organization. Create, manage, and
           share documents smarter.
@@ -118,7 +118,7 @@ export default function DocumentsProductPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="h-12 w-12 text-primary" />
+            <ShieldCheck className="text-primary h-12 w-12" />
             <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your documents are protected with industry-leading security
@@ -153,12 +153,12 @@ export default function DocumentsProductPage() {
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
-              <FileText className="mb-4 h-8 w-8 text-primary" />
+              <FileText className="text-primary mb-4 h-8 w-8" />
               <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="text-muted-foreground space-y-2">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span className="bg-primary h-1.5 w-1.5 rounded-full" />
                     {item}
                   </li>
                 ))}
@@ -172,8 +172,8 @@ export default function DocumentsProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
-              <Lock className="h-8 w-8 text-primary" />
+            <div className="border-border flex flex-col justify-center gap-4 border-b p-8 md:border-b-0 md:border-r">
+              <Lock className="text-primary h-8 w-8" />
               <h3 className="text-2xl font-bold">Advanced Security</h3>
               <p className="text-muted-foreground">
                 Protect sensitive information with encryption, access logs, and
@@ -181,7 +181,7 @@ export default function DocumentsProductPage() {
               </p>
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
-              <Share2 className="h-8 w-8 text-primary" />
+              <Share2 className="text-primary h-8 w-8" />
               <h3 className="text-2xl font-bold">Seamless Sharing</h3>
               <p className="text-muted-foreground">
                 Share documents securely with team members or external
@@ -199,7 +199,7 @@ export default function DocumentsProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <Sparkles className="mb-4 h-8 w-8 text-primary" />
+            <Sparkles className="text-primary mb-4 h-8 w-8" />
             <h3 className="mb-2 text-xl font-bold">AI Assistance</h3>
             <p className="text-muted-foreground">
               Get intelligent suggestions for content, formatting, and document
@@ -207,7 +207,7 @@ export default function DocumentsProductPage() {
             </p>
           </Card>
           <Card className="p-6">
-            <UserPlus className="mb-4 h-8 w-8 text-primary" />
+            <UserPlus className="text-primary mb-4 h-8 w-8" />
             <h3 className="mb-2 text-xl font-bold">Team Workspace</h3>
             <p className="text-muted-foreground">
               Create collaborative spaces for teams to work together on

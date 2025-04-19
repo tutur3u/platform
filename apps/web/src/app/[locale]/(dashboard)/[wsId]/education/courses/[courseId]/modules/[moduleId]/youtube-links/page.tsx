@@ -50,7 +50,7 @@ export default async function ModuleYoutubeLinksPage({ params }: Props) {
         links.map((link: string, index: number) => (
           <div
             key={`${index}-${link}`}
-            className="flex flex-wrap items-center gap-2 rounded-lg border border-foreground/10 p-2 md:p-4"
+            className="border-foreground/10 flex flex-wrap items-center gap-2 rounded-lg border p-2 md:p-4"
           >
             <DeleteLinkButton
               moduleId={moduleId}

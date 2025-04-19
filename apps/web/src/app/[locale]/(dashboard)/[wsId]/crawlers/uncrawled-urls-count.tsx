@@ -54,12 +54,12 @@ export default function UncrawledUrlsCount({ wsId }: { wsId: string }) {
 
   return (
     <Link href={`/${wsId}/crawlers/uncrawled`} className="block">
-      <Card className="transition-colors hover:bg-muted/50">
+      <Card className="hover:bg-muted/50 transition-colors">
         <CardContent className="grid grid-cols-2 gap-4 p-6">
           <div className="space-y-1">
-            <p className="text-sm leading-none font-medium">Uncrawled URLs</p>
+            <p className="text-sm font-medium leading-none">Uncrawled URLs</p>
             <p className="text-2xl font-bold">{uncrawledCount}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {uncrawledCount === 0
                 ? 'All caught up!'
                 : 'Waiting to be crawled'}
@@ -67,16 +67,16 @@ export default function UncrawledUrlsCount({ wsId }: { wsId: string }) {
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm leading-none font-medium">Domains</p>
+              <Globe className="text-muted-foreground h-4 w-4" />
+              <p className="text-sm font-medium leading-none">Domains</p>
             </div>
             <p className="text-2xl font-bold">{domainsCount}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Unique domains discovered
             </p>
           </div>
           <div className="col-span-2 flex items-center justify-end">
-            <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+            <ArrowUpRight className="text-muted-foreground h-4 w-4" />
           </div>
         </CardContent>
       </Card>

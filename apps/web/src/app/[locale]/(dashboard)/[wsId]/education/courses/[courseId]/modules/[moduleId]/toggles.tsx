@@ -58,7 +58,7 @@ export default function ModuleToggles({
   };
 
   return (
-    <div className="flex flex-col space-y-4 pt-4 pb-2">
+    <div className="flex flex-col space-y-4 pb-2 pt-4">
       {/* <div className="flex items-center space-x-2">
         <Checkbox
           id="isPublic"
@@ -82,7 +82,7 @@ export default function ModuleToggles({
         />
         <label
           htmlFor="isPublished"
-          className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
           {t('common.published')}
         </label>

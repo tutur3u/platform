@@ -251,7 +251,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h3 className="text-lg font-medium">Algorithm Benchmarks</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Run performance tests across different configurations
           </p>
         </div>
@@ -337,7 +337,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
               <Progress value={benchmarkProgress} className="h-2" />
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-muted-foreground text-xs">
                     Current Test
                   </div>
                   <div className="font-medium">
@@ -349,13 +349,13 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">Progress</div>
+                  <div className="text-muted-foreground text-xs">Progress</div>
                   <div className="font-medium">
                     {Math.round(benchmarkProgress)}%
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">Races</div>
+                  <div className="text-muted-foreground text-xs">Races</div>
                   <div className="font-medium">
                     {currentBenchmark ? (
                       `${currentBenchmark.races} races`
@@ -522,10 +522,10 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                       <TableCell className="text-center font-medium">
                         {benchmark.races}
                       </TableCell>
-                      <TableCell className="hidden text-center text-muted-foreground md:table-cell">
+                      <TableCell className="text-muted-foreground hidden text-center md:table-cell">
                         {benchmark.theoreticalMinimum}
                       </TableCell>
-                      <TableCell className="hidden text-center text-muted-foreground md:table-cell">
+                      <TableCell className="text-muted-foreground hidden text-center md:table-cell">
                         {benchmark.theoreticalMaximum}
                       </TableCell>
                       <TableCell className="text-center">
@@ -537,7 +537,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                           {(benchmark.efficiency * 100).toFixed(1)}%
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden text-center text-muted-foreground lg:table-cell">
+                      <TableCell className="text-muted-foreground hidden text-center lg:table-cell">
                         {benchmark.averageTimeMs !== undefined
                           ? benchmark.averageTimeMs
                           : 'N/A'}
@@ -559,9 +559,9 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-            <BarChart4 className="mb-2 h-10 w-10 text-muted-foreground" />
+            <BarChart4 className="text-muted-foreground mb-2 h-10 w-10" />
             <h3 className="mb-1 font-medium">No benchmark data</h3>
-            <p className="mb-4 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mb-4 text-sm">
               Run benchmarks to see how the algorithm performs
             </p>
             <Button
@@ -616,7 +616,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                   max={Math.min(100, customHorses)}
                 />
                 {customRaceSize > customHorses && (
-                  <p className="flex items-center text-xs text-destructive">
+                  <p className="text-destructive flex items-center text-xs">
                     <AlertCircle className="mr-1 h-3 w-3" />
                     Race size cannot exceed horse count
                   </p>
@@ -646,7 +646,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
             </div>
 
             {customBenchmarkResult && (
-              <div className="rounded-md bg-muted p-3">
+              <div className="bg-muted rounded-md p-3">
                 <h4 className="mb-2 text-sm font-medium">Result</h4>
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   <div>

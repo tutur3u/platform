@@ -1675,7 +1675,27 @@
         },
         "rmit-sset": {
           "name": "RMIT SSET",
-          "description": "Partner of the Neo League – Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
+          "description": "Partner of the Neo League - Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
+        },
+        "aptech": {
+          "name": "Aptech",
+          "description": "Sponsor of the Neo League - APTECH has been in Vietnam since 1999, providing reputable education primarily to students, high school learners and has trained over 100,000 international programmers for Vietnam's IT industry."
+        },
+        "holistics": {
+          "name": "Holistic",
+          "description": "Sponsor of the Neo League - Holistics offers a self-service business intelligence platform to help businesses improve their data capabilities easily, focusing on boosting data team productivity and making insights accessible across the company."
+        },
+        "AICT": {
+          "name": "AICT",
+          "description": "Sponsor of the Neo League - Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
+        },
+        "student-council": {
+          "name": "RMIT Student Council",
+          "description": "Partner of the Neo League - RMIT Vietnam Student Council (SC) is the representative of RMIT Vietnam student bodies. SC is the conduit for communication between students and the University. By listening and considering students’ concerns, SC aims to increase their education experience, personal welfare, social life and cultural activities. "
+        },
+        "netcompany": {
+          "name": "Netcompany",
+          "description": "Sponsor of the Neo League - Netcompany is an IT services company specializing in strategic projects that drive digital transformation through digital platforms, core systems, and infrastructure services."
         }
       },
       "special-thanks": {
