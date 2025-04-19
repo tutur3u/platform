@@ -2144,6 +2144,32 @@ export type Database = {
           },
         ];
       };
+      nova_challenge_manager_emails: {
+        Row: {
+          admin_email: string;
+          challenge_id: string;
+          created_at: string;
+        };
+        Insert: {
+          admin_email: string;
+          challenge_id?: string;
+          created_at?: string;
+        };
+        Update: {
+          admin_email?: string;
+          challenge_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_challenge_manager_emails_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_challenge_whitelisted_emails: {
         Row: {
           challenge_id: string;
@@ -2330,6 +2356,7 @@ export type Database = {
       nova_roles: {
         Row: {
           allow_challenge_management: boolean;
+          allow_manage_all_challenges: boolean;
           allow_role_management: boolean;
           created_at: string;
           email: string | null;
@@ -2338,6 +2365,7 @@ export type Database = {
         };
         Insert: {
           allow_challenge_management?: boolean;
+          allow_manage_all_challenges?: boolean;
           allow_role_management?: boolean;
           created_at?: string;
           email?: string | null;
@@ -2346,6 +2374,7 @@ export type Database = {
         };
         Update: {
           allow_challenge_management?: boolean;
+          allow_manage_all_challenges?: boolean;
           allow_role_management?: boolean;
           created_at?: string;
           email?: string | null;

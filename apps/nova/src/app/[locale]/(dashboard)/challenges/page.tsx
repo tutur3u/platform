@@ -22,12 +22,20 @@ export default async function Page() {
 
   const { data: whitelisted } = await sbAdmin
     .from('nova_roles')
-    .select('enabled, allow_challenge_management')
+    .select(
+      'enabled, allow_challenge_management, allow_manage_all_challenges,allow_role_management'
+    )
     .eq('email', user?.email as string)
     .maybeSingle();
 
   const isAdmin = Boolean(
     whitelisted?.enabled && whitelisted?.allow_challenge_management
+  );
+
+  //only superAdmin can create new challenge
+  const canCreateChallenges = Boolean(
+    whitelisted?.allow_manage_all_challenges ||
+      whitelisted?.allow_role_management
   );
 
   return (
@@ -36,7 +44,7 @@ export default async function Page() {
         <h1 className="text-3xl font-bold">
           {t('prompt-engineering-challenges')}
         </h1>
-        {isAdmin && (
+        {canCreateChallenges && (
           <CreateChallengeDialog
             trigger={
               <Button className="gap-2">
