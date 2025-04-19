@@ -1608,7 +1608,19 @@
         },
         "holistics": {
           "name": "Holistics",
+          "description": " Nhà Tài trợ củaủa Neo League – Holistics cung cấp nền tảng business intelligence tự phục vụ giúp doanh nghiệp nâng cao khả năng dữ liệu một cách dễ dàng, tập trung vào việc tăng năng suất cho đội ngũ dữ liệu và làm cho các thông tin dễ dàng truy cập trên toàn công ty."
+        },
+        "AICT": {
+          "name": "AICT",
           "description": "Partner of the Neo League – Prompt the Future 2025 competition, dedicated to fostering innovation and technical excellence in AI and prompt engineering among students."
+        },
+        "student-council": {
+          "name": "RMIT Student Council",
+          "description": "Đối tác của Neo League – Hội đồng Sinh viên RMIT Việt Nam (SC) đại diện cho sinh viên và là cầu nối giữa sinh viên và Đại học, nhằm nâng cao trải nghiệm học tập, phúc lợi cá nhân và các hoạt động văn hóa, xã hội của sinh viên."
+        },
+         "netcompany": {
+          "name": "Netcompany",
+          "description": "Nhà Tài trợ của Neo League – Netcompany là công ty dịch vụ CNTT chuyên về các dự án chiến lược thúc đẩy chuyển đổi số thông qua các nền tảng kỹ thuật số, hệ thống cốt lõi và dịch vụ hạ tầng."
         }
       },
       "special-thanks": {
