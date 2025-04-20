@@ -68,7 +68,8 @@
       "core-js",
       "esbuild",
       "sharp",
-      "supabase"
+      "supabase",
+      "unrs-resolver"
     ]
   }
 }
