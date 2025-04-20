@@ -60,12 +60,21 @@ export async function GET() {
       timeMax: timeMax.toISOString(),
       singleEvents: true, // separate recurring events
       orderBy: 'startTime',
+      maxResults: 1000,
     });
 
     const events = response.data.items || [];
 
+    // remove events that are exact multiples of 24 hours
+    const filteredEvents = events.filter((event) => {
+      const start = new Date(event.start?.dateTime || event.start?.date || '');
+      const end = new Date(event.end?.dateTime || event.end?.date || '');
+      const duration = end.getTime() - start.getTime();
+      return duration % 86400000 !== 0;
+    });
+
     // format the events to match the expected structure
-    const formattedEvents = events.map((event) => ({
+    const formattedEvents = filteredEvents.map((event) => ({
       google_event_id: event.id,
       title: event.summary || 'Untitled Event',
       description: event.description || '',
