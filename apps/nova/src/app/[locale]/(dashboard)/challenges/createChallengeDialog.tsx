@@ -11,8 +11,8 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 interface CreateChallengeDialogProps {
   trigger: React.ReactNode;
@@ -99,9 +99,7 @@ export default function CreateChallengeDialog({
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t('create')}</DialogTitle>
-          <DialogDescription>
-            {t('create-challenge')}
-          </DialogDescription>
+          <DialogDescription>{t('create-challenge')}</DialogDescription>
         </DialogHeader>
         <ChallengeForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
       </DialogContent>

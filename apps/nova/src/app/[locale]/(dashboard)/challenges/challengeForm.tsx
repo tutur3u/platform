@@ -43,9 +43,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import * as z from 'zod';
-import { useTranslations } from 'next-intl';
 
 const criteriaSchema = z.object({
   id: z.string().nullable(),
@@ -54,7 +54,6 @@ const criteriaSchema = z.object({
     message: 'Description must be at least 10 characters.',
   }),
 });
-
 
 const emailSchema = z.string().email({ message: 'Invalid email address' });
 
@@ -226,7 +225,7 @@ export default function ChallengeForm({
                           <Input placeholder="Challenge title" {...field} />
                         </FormControl>
                         <FormDescription>
-                        {t('details.title-description')}    
+                          {t('details.title-description')}
                         </FormDescription>
                         <FormMessage className="text-xs" />
                       </FormItem>
@@ -240,13 +239,13 @@ export default function ChallengeForm({
                         <FormLabel> {t('details.description')}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder = {t('details.description-placeholder')}
+                            placeholder={t('details.description-placeholder')}
                             className="min-h-32 resize-none"
                             {...field}
                           />
                         </FormControl>
                         <FormDescription>
-                        {t('details.form-description')}
+                          {t('details.form-description')}
                         </FormDescription>
                         <FormMessage className="text-xs" />
                       </FormItem>
@@ -272,7 +271,7 @@ export default function ChallengeForm({
                             />
                           </FormControl>
                           <FormDescription>
-                          {t('attempt-description')}
+                            {t('attempt-description')}
                           </FormDescription>
                           <FormMessage className="text-xs" />
                         </FormItem>
@@ -284,7 +283,7 @@ export default function ChallengeForm({
                       name="maxDailyAttempts"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>  {t('daily-attempts')}</FormLabel>
+                          <FormLabel> {t('daily-attempts')}</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -310,9 +309,11 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div className="flex flex-col gap-1">
-                    <CardTitle>{t("judging-criteria.judging-criteria")}</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground">
-                    {t("judging-criteria.judging-criteria-description")}
+                    <CardTitle>
+                      {t('judging-criteria.judging-criteria')}
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground text-sm">
+                      {t('judging-criteria.judging-criteria-description')}
                     </CardDescription>
                   </div>
                   <Button
@@ -323,7 +324,7 @@ export default function ChallengeForm({
                     className="h-8 gap-1"
                   >
                     <PlusCircle className="h-4 w-4" />
-                    <span>{t("judging-criteria.add-criteria")}</span>
+                    <span>{t('judging-criteria.add-criteria')}</span>
                   </Button>
                 </CardHeader>
                 <CardContent>
@@ -338,7 +339,7 @@ export default function ChallengeForm({
                             <div className="mb-3 flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <h4 className="text-sm font-medium">
-                                  {t("judging-criteria.criteria")} {index + 1}
+                                  {t('judging-criteria.criteria')} {index + 1}
                                 </h4>
                                 <TooltipProvider>
                                   <Tooltip>
@@ -369,7 +370,9 @@ export default function ChallengeForm({
                                 onClick={() => removeCriteria(index)}
                               >
                                 <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">{t("judging-criteria.remove-criteria")}</span>
+                                <span className="sr-only">
+                                  {t('judging-criteria.remove-criteria')}
+                                </span>
                               </Button>
                             </div>
                             <div className="space-y-3">
@@ -379,11 +382,13 @@ export default function ChallengeForm({
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel className="text-xs">
-                                      {t("judging-criteria.criteria-name")}
+                                      {t('judging-criteria.criteria-name')}
                                     </FormLabel>
                                     <FormControl>
                                       <Input
-                                        placeholder= {t("judging-criteria.criteria-name-placeholder")}
+                                        placeholder={t(
+                                          'judging-criteria.criteria-name-placeholder'
+                                        )}
                                         {...field}
                                       />
                                     </FormControl>
@@ -398,12 +403,16 @@ export default function ChallengeForm({
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel className="text-xs">
-                                      {t("judging-criteria.criteria-description")}
+                                      {t(
+                                        'judging-criteria.criteria-description'
+                                      )}
                                     </FormLabel>
                                     <FormControl>
                                       <Textarea
                                         className="min-h-24 resize-none"
-                                        placeholder= {t("judging-criteria.criteria-description-placeholder")}
+                                        placeholder={t(
+                                          'judging-criteria.criteria-description-placeholder'
+                                        )}
                                         {...field}
                                       />
                                     </FormControl>
@@ -416,8 +425,8 @@ export default function ChallengeForm({
                         </Card>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">
-                        {t("judging-criteria.no-criteria")}
+                      <p className="text-muted-foreground text-sm">
+                        {t('judging-criteria.no-criteria')}
                       </p>
                     )}
                   </div>
@@ -428,9 +437,9 @@ export default function ChallengeForm({
             <TabsContent value="security" className="mt-0">
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("security.security")}</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    {t("security.security-description")}
+                  <CardTitle>{t('security.security')}</CardTitle>
+                  <CardDescription className="text-muted-foreground text-sm">
+                    {t('security.security-description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -441,7 +450,10 @@ export default function ChallengeForm({
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between">
                           <div className="space-y-0.5">
-                            <FormLabel> {t('security.password-protect')} </FormLabel>
+                            <FormLabel>
+                              {' '}
+                              {t('security.password-protect')}{' '}
+                            </FormLabel>
                             <FormDescription>
                               {t('security.password-description')}
                             </FormDescription>
@@ -517,7 +529,7 @@ export default function ChallengeForm({
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between">
                           <div className="space-y-0.5">
-                            <FormLabel>{t("security.enable")}</FormLabel>
+                            <FormLabel>{t('security.enable')}</FormLabel>
                             <FormDescription>
                               {t('security.enable-description')}
                             </FormDescription>
@@ -539,9 +551,9 @@ export default function ChallengeForm({
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between">
                           <div className="space-y-0.5">
-                            <FormLabel> {t("whitelist.only")} </FormLabel>
+                            <FormLabel> {t('whitelist.only')} </FormLabel>
                             <FormDescription>
-                            {t("whitelist.whitelist-only-description")}
+                              {t('whitelist.whitelist-only-description')}
                             </FormDescription>
                           </div>
 
@@ -563,9 +575,9 @@ export default function ChallengeForm({
                           name="whitelistedEmails"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel> {t("whitelist.emails")} </FormLabel>
+                              <FormLabel> {t('whitelist.emails')} </FormLabel>
                               <FormDescription>
-                                {t("whitelist.emails-description")}
+                                {t('whitelist.emails-description')}
                               </FormDescription>
                               <div className="space-y-2">
                                 <div className="flex flex-wrap gap-2">
@@ -586,7 +598,9 @@ export default function ChallengeForm({
                                         }
                                       >
                                         <Trash2 className="h-3 w-3" />
-                                        <span className="sr-only">{t("whitelist.remove")}</span>
+                                        <span className="sr-only">
+                                          {t('whitelist.remove')}
+                                        </span>
                                       </Button>
                                     </Badge>
                                   ))}
@@ -596,14 +610,16 @@ export default function ChallengeForm({
                                   <FormControl>
                                     <Input
                                       ref={emailInputRef}
-                                      placeholder= {t("whitelist.email-enter-placeholder")}
+                                      placeholder={t(
+                                        'whitelist.email-enter-placeholder'
+                                      )}
                                     />
                                   </FormControl>
                                   <Button
                                     type="button"
                                     onClick={addEmailToWhitelist}
                                   >
-                                    {t("whitelist.add")}
+                                    {t('whitelist.add')}
                                   </Button>
                                 </div>
                               </div>
@@ -621,9 +637,9 @@ export default function ChallengeForm({
             <TabsContent value="duration" className="mt-0">
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("duration.duration")}</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    {t("duration.duration-description")}
+                  <CardTitle>{t('duration.duration')}</CardTitle>
+                  <CardDescription className="text-muted-foreground text-sm">
+                    {t('duration.duration-description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -632,7 +648,7 @@ export default function ChallengeForm({
                     name="duration"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("duration.seconds")}</FormLabel>
+                        <FormLabel>{t('duration.seconds')}</FormLabel>
                         <div className="flex flex-col gap-4">
                           <FormControl>
                             <Input type="number" {...field} />
@@ -640,7 +656,7 @@ export default function ChallengeForm({
 
                           <div className="flex flex-col gap-2">
                             <div className="text-sm font-medium">
-                            {t("duration.common-duration")}
+                              {t('duration.common-duration')}
                             </div>
                             <div className="flex flex-wrap gap-2">
                               <Button
@@ -649,7 +665,7 @@ export default function ChallengeForm({
                                 size="sm"
                                 onClick={() => form.setValue('duration', 1800)}
                               >
-                                {t("duration.30-minutes")}
+                                {t('duration.30-minutes')}
                               </Button>
                               <Button
                                 type="button"
@@ -657,7 +673,7 @@ export default function ChallengeForm({
                                 size="sm"
                                 onClick={() => form.setValue('duration', 3600)}
                               >
-                               {t("duration.1-hour")}
+                                {t('duration.1-hour')}
                               </Button>
                               <Button
                                 type="button"
@@ -665,7 +681,7 @@ export default function ChallengeForm({
                                 size="sm"
                                 onClick={() => form.setValue('duration', 7200)}
                               >
-                                 {t("duration.2-hour")}
+                                {t('duration.2-hour')}
                               </Button>
                               <Button
                                 type="button"
@@ -673,7 +689,7 @@ export default function ChallengeForm({
                                 size="sm"
                                 onClick={() => form.setValue('duration', 14400)}
                               >
-                                {t("duration.4-hour")}
+                                {t('duration.4-hour')}
                               </Button>
                             </div>
                           </div>
@@ -686,7 +702,7 @@ export default function ChallengeForm({
                         )}
 
                         <FormDescription>
-                          {t("duration.duration-display-description")}
+                          {t('duration.duration-display-description')}
                         </FormDescription>
                         <FormMessage className="text-xs" />
                       </FormItem>
@@ -699,9 +715,9 @@ export default function ChallengeForm({
             <TabsContent value="schedule" className="mt-0">
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("schedule.schedule")}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {t("schedule.schedule-description")}
+                  <CardTitle>{t('schedule.schedule')}</CardTitle>
+                  <p className="text-muted-foreground text-sm">
+                    {t('schedule.schedule-description')}
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -709,11 +725,11 @@ export default function ChallengeForm({
                     <div className="mb-2 flex items-center">
                       <CalendarIcon className="text-muted-foreground mr-2 h-4 w-4" />
                       <h3 className="text-sm font-medium">
-                      {t("schedule.timeline-recommendation")}
+                        {t('schedule.timeline-recommendation')}
                       </h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {t("schedule.timeline-recommendation-description")}
+                    <p className="text-muted-foreground text-xs">
+                      {t('schedule.timeline-recommendation-description')}
                     </p>
                   </div>
 
@@ -723,7 +739,10 @@ export default function ChallengeForm({
                       name="previewableAt"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel> {t("schedule.preview-available")} </FormLabel>
+                          <FormLabel>
+                            {' '}
+                            {t('schedule.preview-available')}{' '}
+                          </FormLabel>
                           <FormControl>
                             <DateTimePicker
                               value={field.value}
@@ -731,7 +750,7 @@ export default function ChallengeForm({
                             />
                           </FormControl>
                           <FormDescription>
-                            {t("schedule.preview-available-description")}
+                            {t('schedule.preview-available-description')}
                           </FormDescription>
                           <FormMessage className="text-xs" />
                         </FormItem>
@@ -743,7 +762,7 @@ export default function ChallengeForm({
                       name="openAt"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("schedule.open-at")}</FormLabel>
+                          <FormLabel>{t('schedule.open-at')}</FormLabel>
                           <FormControl>
                             <DateTimePicker
                               value={field.value}
@@ -751,7 +770,7 @@ export default function ChallengeForm({
                             />
                           </FormControl>
                           <FormDescription>
-                            {t("schedule.open-at-description")}
+                            {t('schedule.open-at-description')}
                           </FormDescription>
                           <FormMessage className="text-xs" />
                         </FormItem>
@@ -763,7 +782,7 @@ export default function ChallengeForm({
                       name="closeAt"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("schedule.end-at")}</FormLabel>
+                          <FormLabel>{t('schedule.end-at')}</FormLabel>
                           <FormControl>
                             <DateTimePicker
                               value={field.value}
@@ -771,7 +790,7 @@ export default function ChallengeForm({
                             />
                           </FormControl>
                           <FormDescription>
-                          {t("schedule.end-at-description")}
+                            {t('schedule.end-at-description')}
                           </FormDescription>
                           <FormMessage className="text-xs" />
                         </FormItem>
@@ -786,7 +805,7 @@ export default function ChallengeForm({
 
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting} className="px-6">
-            {isEditing ? t("update") :  t("create")}
+            {isEditing ? t('update') : t('create')}
           </Button>
         </div>
       </form>
