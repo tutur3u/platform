@@ -153,7 +153,9 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       .select('*');
 
     if (managersError) {
-      throw new Error(`Failed to fetch challenge managers: ${managersError.message}`);
+      throw new Error(
+        `Failed to fetch challenge managers: ${managersError.message}`
+      );
     }
 
     // Combine all data
