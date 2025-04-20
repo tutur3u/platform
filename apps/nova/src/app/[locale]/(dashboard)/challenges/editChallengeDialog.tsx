@@ -1,5 +1,5 @@
 'use client';
-import { useTranslations } from 'next-intl';
+
 import ChallengeForm, { ChallengeFormValues } from './challengeForm';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -35,7 +36,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
   const queryClient = useQueryClient();
 
   const t = useTranslations('nova.challenge');
-  
+
   // Convert string dates to Date objects for the form
   const formattedDefaultValues = useMemo(() => {
     return {
@@ -178,9 +179,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle> {t('edit')}</DialogTitle>
-          <DialogDescription>
-          {t('edit-description')}
-          </DialogDescription>
+          <DialogDescription>{t('edit-description')}</DialogDescription>
         </DialogHeader>
         <ChallengeForm
           challengeId={challenge.id}
