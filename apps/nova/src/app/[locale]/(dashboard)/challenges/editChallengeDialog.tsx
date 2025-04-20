@@ -1,5 +1,5 @@
 'use client';
-
+import { useTranslations } from 'next-intl';
 import ChallengeForm, { ChallengeFormValues } from './challengeForm';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -34,6 +34,8 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
 
   const queryClient = useQueryClient();
 
+  const t = useTranslations('nova.challenge');
+  
   // Convert string dates to Date objects for the form
   const formattedDefaultValues = useMemo(() => {
     return {
@@ -175,9 +177,9 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Challenge</DialogTitle>
+          <DialogTitle> {t('edit')}</DialogTitle>
           <DialogDescription>
-            Make changes to the challenge details.
+          {t('edit-description')}
           </DialogDescription>
         </DialogHeader>
         <ChallengeForm

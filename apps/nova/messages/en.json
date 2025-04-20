@@ -1888,7 +1888,121 @@
         "no-entries-found": "No entries found",
         "first-join": "Be the first to join the competition!"
       }
-    }
+    },
+    "challenge": {
+      "edit": "Edit Challenge",
+      "update": "Update Challenge",
+      "create": "Create Challenge",
+      "create-challenge": "Create a new prompt engineering challenge for users to practice with.",
+      "edit-description": "Edit the challenge details and settings.",
+      "save-changes": "Save Changes",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "delete-confirmation": "Are you sure you want to delete this challenge? This action cannot be undone.",
+      "limits": "Attempt Limits",
+      "max-attempts": "Max Attempts",
+      "attempt-description": "Total number of times a user can attempt this challenge.",
+      "daily-attempts": "Maximum Daily Attempts",
+      "number-of-attempts": "Number of times a user can attempt this per day.",
+      "details": {
+        "details": "Details",
+        "challenge-details": "Challenge Details",
+        "title": "Title",
+        "title-description": "Give your challenge a descriptive title.",
+        "description": "Description",
+        "description-placeholder": "Provide a detailed description of the challenge.",
+        "form-description": "Form Description"
+      },
+      "judging-criteria": {
+      "judging-criteria": "Judging Criteria",
+      "judging-criteria-description": "Define how submissions will be evaluated. Each criterion will be scored separately.",
+      "add-criteria": "Add Criteria",
+      "remove-criteria": "Remove",
+      "criteria-name": "Criteria Name",
+      "criteria-name-placeholder": "Criteria name (e.g., Clarity, Efficiency)",
+      "criteria-description": "Criteria Description",
+      "criteria-description-placeholder": "Explain how this criteria will be judged (e.g., 'How clear and unambiguous is the prompt?')",
+      "no-criteria": "No criteria added yet",
+      "criteria": "Criteria"
+      },
+      "security": {
+      "security": "Security",
+      "security-description": "Secure your challenge with a password or restrict access to specific users.",
+      "password-protect": "Password Protection",
+      "password-description": "Require a password to access this challenge",
+      "challenge-password": "Challenge Password",
+      "leave-empty": "Leave empty to keep current password",
+      "enter-password": "Enter new password",
+      "enter-or-leave-password": "Enter a new password or leave empty to keep the current one",
+      "must-be-6-characters": "Password must be at least 6 characters long",
+      "enable":"Enabled",
+      "enable-description": "Whether this challenge is currently enabled."
+      },
+      "whitelist": {
+        "only" : "Whitelisted Only",
+        "whitelist-only-description": "Restrict access to only whitelisted users.",
+        "emails": "Whitelisted Emails Adress",
+        "emails-description": "Only these email addresses will have access to the challenge.",
+        "remove": "Remove",
+        "email-enter-placeholder": "Enter email address",
+        "add": "Add"
+      },
+      "duration": {
+        "duration": "Duration",
+        "duration-description": "Set how long participants have to complete the challenge once they start.",
+        "seconds": "Seconds",
+        "common-duration": "Common Durations:",
+        "30-minutes": "30 Minutes",
+        "1-hour": "1 Hour",
+        "2-hour": "2 Hour",
+        "4-hour": "4 Hour",
+        "duration-display-description": "How long users have to complete this challenge once they start it."  
+      },
+      "schedule": {
+      "schedule": "Schedule",
+      "schedule-description": "Set when your challenge is available to participants.",
+      "timeline-recommendation": "Timeline Recommendation",
+      "timeline-recommendation-description": "For best results, set dates in this order: Preview Date ➝ Open Date ➝ Close Date.",
+      "preview-available": "Preview Available",
+      "preview-available-description": " When participants can preview this challenge before it starts.",
+      "open-at": "Open at",
+      "open-at-description": "When the challenge starts",
+      "end-at": "Open at",
+      "end-at-description": "When the challenge starts"
+      },
+      "cards": {
+        "disabled": "Disabled",
+        "upcoming": "Upcoming",
+        "preview": "Preview",
+        "active": "Active",
+        "closed": "Closed",
+        "your-session": "your session",
+        "in-progress": "In Progress",
+        "time-remaining": "Time Remaining",
+        "started-at": "Started at",
+        "ends-at": "Ends at",
+        "retry-challenges": "Retry Challenges",
+        "comeback-tomorrow": "Come back tomorrow",
+        "view-results": "View Results",
+        "resume-challenge": "Resume Challenge",
+        "start-challenge": "Start Challenge",
+        "not-available": "Not Available",
+        "available-soon": "Available Soon",
+        "not-yet-opened": "Not yet opened",
+        "open-menu": "Open Menu",
+        "edit": "Edit",
+        "delete": "Delete",
+        "duration": "Duration",
+        "total-attempts": "Total Attempts",
+        "daily-attempts": "Daily Attempts",
+        "preview-available": "Preview Available",
+        "open-in": "Opens in",
+        "closes-in": "Closes in",
+        "delete-challenge": "Delete Challenge",
+        "delete-challenge-description": "Are you sure you want to delete this challenge? This action cannot be undone.",
+        "cancel": "Cancel"
+      }
+
   },
   "onboarding": {
     "just-a-moment": "Just a moment...",
@@ -3190,4 +3304,5 @@
     "invalid_email": "Email is not valid",
     "required": "Team name is required"
   }
+}
 }
