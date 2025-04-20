@@ -78,4 +78,4 @@ jobs:
 
       - name: Deploy Project Artifacts to Vercel
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --archive=tgz --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
