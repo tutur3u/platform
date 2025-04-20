@@ -29,26 +29,45 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-export interface TeamMember {
-  user_id: string;
-  nova_teams: {
-    id: string;
-    name: string;
-    goals?: string;
-    description?: string;
-  };
-  users: {
+export interface TeamData {
+  id: string;
+  name: string;
+  description?: string;
+  goals?: string;
+  members: {
+    user_id: string;
     display_name: string;
     avatar_url: string | null;
-  };
+  }[];
+  rank?: number;
+  total_score?: number;
 }
 
-export function TeamProfile({ members }: { members: TeamMember[] }) {
-  const teamInfo = members[0]?.nova_teams;
-  const nova_infor = {
-    description: members[0]?.nova_teams.description,
-    goals: members[0]?.nova_teams.goals,
+export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
+  if (!teamData) {
+    return (
+      <div className="container max-w-6xl py-16 text-center">
+        <h2 className="text-2xl font-semibold">Team not found</h2>
+        <p className="text-muted-foreground mt-2">
+          The requested team could not be loaded.
+        </p>
+        <Button className="mt-4" asChild>
+          <Link href="/teams">View All Teams</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const teamInfo = {
+    ...teamData,
+    name: teamData.name,
   };
+
+  const nova_infor = {
+    description: teamData.description,
+    goals: teamData.goals,
+  };
+
   const [copied, setCopied] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const supabase = createClient();
@@ -62,7 +81,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
     isEditing: false,
   });
   const isTeamMember =
-    user?.id && members.some((member) => member.user_id === user?.id);
+    user?.id && teamData.members.some((member) => member.user_id === user?.id);
   const openDialog = (type: 'goals' | 'reports' | 'des') => {
     setDialogState({ isOpen: true, type, isEditing: false });
   };
@@ -99,7 +118,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
 
   // Team stats
   const teamStats = {
-    totalMembers: members.length,
+    totalMembers: teamData.members.length,
   };
 
   return (
@@ -140,9 +159,9 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
                 </AvatarFallback>
               </Avatar>
 
-              {/* Simple rank badge - we can use static data here */}
+              {/* Dynamic rank badge */}
               <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-xs font-bold text-white shadow-lg">
-                #12
+                #{teamData.rank || '?'}
               </div>
             </div>
 
@@ -231,12 +250,16 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
 
               <div className="flex items-center space-x-6">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-amber-500">#12</div>
+                  <div className="text-3xl font-bold text-amber-500">
+                    #{teamData.rank || '?'}
+                  </div>
                   <div className="text-muted-foreground text-sm">Rank</div>
                 </div>
 
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-500">358</div>
+                  <div className="text-3xl font-bold text-blue-500">
+                    {teamData.total_score || 0}
+                  </div>
                   <div className="text-muted-foreground text-sm">Points</div>
                 </div>
               </div>
@@ -302,14 +325,6 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
                   <Target className="mr-2 h-4 w-4 text-green-500" />
                   View Team Goals
                 </Button>
-                {/* <Button
-                  className="w-full justify-start"
-                  variant="outline"
-                  onClick={() => openDialog('reports')}
-                >
-                  <ScrollText className="mr-2 h-4 w-4" />
-                  Team Reports
-                </Button> */}
               </CardContent>
             </Card>
           </div>
@@ -326,7 +341,7 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {members.map((member, index) => (
+                {teamData.members.map((member, index) => (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -335,18 +350,16 @@ export function TeamProfile({ members }: { members: TeamMember[] }) {
                     className="hover:bg-muted/50 flex items-center space-x-4 rounded-lg border p-4 transition-all hover:shadow-md"
                   >
                     <Avatar className="border-border h-12 w-12 border">
-                      <AvatarImage src={member.users?.avatar_url || ''} />
+                      <AvatarImage src={member.avatar_url || ''} />
                       <AvatarFallback>
-                        {getInitials(member.users.display_name)}
+                        {getInitials(member.display_name)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <p className="font-medium">
-                        {member.users.display_name ||
-                          generateFunName(member.user_id)}
+                        {member.display_name || generateFunName(member.user_id)}
                       </p>
                       <p className="text-muted-foreground text-sm">
-                        {/* Simple static role based on index */}
                         {index === 0 ? 'Team Lead' : 'Member'}
                       </p>
                     </div>
