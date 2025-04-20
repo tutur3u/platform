@@ -58,16 +58,16 @@ export function RaceDetails({
         <CardContent className="p-4">
           <TabsContent
             value="results"
-            className="mt-0 focus-visible:ring-0 focus-visible:outline-none"
+            className="mt-0 focus-visible:outline-none focus-visible:ring-0"
           >
             <div className="space-y-4">
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Race Results</h3>
-                <div className="flex flex-wrap items-center gap-1 rounded-md bg-muted/30 p-3">
+                <div className="bg-muted/30 flex flex-wrap items-center gap-1 rounded-md p-3">
                   {currentRace.result.map((id, index) => (
                     <motion.div
                       key={id}
-                      className="flex items-center duration-300 animate-in fade-in slide-in-from-bottom-2"
+                      className="animate-in fade-in slide-in-from-bottom-2 flex items-center duration-300"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div
@@ -83,7 +83,7 @@ export function RaceDetails({
                         </div>
 
                         {showSpeeds && (
-                          <div className="absolute -bottom-8 left-1/2 z-20 -translate-x-1/2 rounded border bg-background px-1.5 py-0.5 text-xs whitespace-nowrap opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                          <div className="bg-background absolute -bottom-8 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded border px-1.5 py-0.5 text-xs opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                             Speed:{' '}
                             {horses.find((h) => h.id === id)?.speed.toFixed(1)}
                           </div>
@@ -93,7 +93,7 @@ export function RaceDetails({
                       {index < currentRace.result.length - 1 && (
                         <ChevronRight
                           size={20}
-                          className="mx-1 text-muted-foreground"
+                          className="text-muted-foreground mx-1"
                         />
                       )}
                     </motion.div>
@@ -132,7 +132,7 @@ export function RaceDetails({
                           <span className="text-xs font-medium">
                             Position: {position}/{currentRace.horses.length}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             Speed: {showSpeeds ? horse.speed.toFixed(2) : '???'}
                           </span>
                         </div>
@@ -144,7 +144,7 @@ export function RaceDetails({
 
               <div className="flex items-center justify-between">
                 <div className="h-2 flex-1 rounded-full bg-gradient-to-r from-green-400 to-red-400 shadow-inner"></div>
-                <div className="ml-2 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                <div className="text-muted-foreground ml-2 flex items-center gap-1 text-xs font-medium">
                   <span className="text-green-600 dark:text-green-500">
                     Faster
                   </span>
@@ -157,7 +157,7 @@ export function RaceDetails({
 
           <TabsContent
             value="history"
-            className="mt-0 focus-visible:ring-0 focus-visible:outline-none"
+            className="mt-0 focus-visible:outline-none focus-visible:ring-0"
           >
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Horse Racing History</h3>
@@ -182,7 +182,7 @@ export function RaceDetails({
                         <div className="text-sm font-medium">
                           Horse #{horseId}
                           {showSpeeds && (
-                            <span className="ml-1 text-xs text-muted-foreground">
+                            <span className="text-muted-foreground ml-1 text-xs">
                               (Speed: {horse.speed.toFixed(2)})
                             </span>
                           )}
@@ -191,7 +191,7 @@ export function RaceDetails({
 
                       {/* Race history */}
                       <div className="mt-2">
-                        <h4 className="mb-1 text-xs text-muted-foreground">
+                        <h4 className="text-muted-foreground mb-1 text-xs">
                           Race Performance:
                         </h4>
                         <div className="flex flex-wrap gap-1">
@@ -218,7 +218,7 @@ export function RaceDetails({
                       {/* Win rate visualization */}
                       {history.length > 0 && (
                         <div className="mt-2">
-                          <h4 className="mb-1 text-xs text-muted-foreground">
+                          <h4 className="text-muted-foreground mb-1 text-xs">
                             Performance:
                           </h4>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
@@ -230,7 +230,7 @@ export function RaceDetails({
                               }}
                             />
                           </div>
-                          <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                          <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
                             <span>
                               First place:{' '}
                               {Math.round(
@@ -262,7 +262,7 @@ export function RaceDetails({
 
           <TabsContent
             value="stats"
-            className="mt-0 focus-visible:ring-0 focus-visible:outline-none"
+            className="mt-0 focus-visible:outline-none focus-visible:ring-0"
           >
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Race Statistics</h3>

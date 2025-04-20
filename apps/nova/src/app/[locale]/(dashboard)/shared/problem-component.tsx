@@ -14,7 +14,7 @@ export default function ProblemComponent({ problem }: Props) {
     <div className={`space-y-6`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <BookOpen className="h-5 w-5 text-primary" />
+          <BookOpen className="text-primary h-5 w-5" />
           <h2 className="text-xl font-bold">{problem.title}</h2>
         </div>
         <Badge variant="outline" className="px-3 py-1">
@@ -26,12 +26,12 @@ export default function ProblemComponent({ problem }: Props) {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Info className="h-4 w-4 text-primary" />
+              <Info className="text-primary h-4 w-4" />
               Problem Description
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="prose prose-sm dark:prose-invert max-w-none">
               <p className="whitespace-pre-wrap">{problem.description}</p>
             </div>
           </CardContent>
@@ -41,7 +41,7 @@ export default function ProblemComponent({ problem }: Props) {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <FileText className="h-4 w-4 text-primary" />
+                <FileText className="text-primary h-4 w-4" />
                 Example
               </CardTitle>
             </CardHeader>
@@ -49,7 +49,7 @@ export default function ProblemComponent({ problem }: Props) {
               {problem.example_input && (
                 <div>
                   <h3 className="mb-2 text-sm font-medium">Input:</h3>
-                  <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
                     {problem.example_input}
                   </div>
                 </div>
@@ -58,7 +58,7 @@ export default function ProblemComponent({ problem }: Props) {
               {problem.example_output && (
                 <div>
                   <h3 className="mb-2 text-sm font-medium">Output:</h3>
-                  <div className="rounded-md bg-muted p-3 font-mono text-sm">
+                  <div className="bg-muted rounded-md p-3 font-mono text-sm">
                     {problem.example_output}
                   </div>
                 </div>
@@ -70,7 +70,7 @@ export default function ProblemComponent({ problem }: Props) {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Code className="h-4 w-4 text-primary" />
+              <Code className="text-primary h-4 w-4" />
               Tips for Solving
             </CardTitle>
           </CardHeader>
