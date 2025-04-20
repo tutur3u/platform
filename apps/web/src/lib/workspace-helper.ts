@@ -9,7 +9,7 @@ import { Workspace } from '@tuturuuu/types/primitives/Workspace';
 import { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 
-export async function getWorkspace(id: string) {
+export async function getWorkspace(id: string, requireUserRole = false) {
   const supabase = await createClient();
 
   const {
@@ -18,13 +18,15 @@ export async function getWorkspace(id: string) {
 
   if (!user) redirect('/login');
 
-  const { data, error } = await supabase
+  const queryBuilder = supabase
     .from('workspaces')
     .select(
       'id, name, avatar_url, logo_url, created_at, workspace_members(role)'
     )
-    .eq('id', id)
-    .single();
+    .eq('id', id);
+
+  if (requireUserRole) queryBuilder.eq('workspace_members.user_id', user.id);
+  const { data, error } = await queryBuilder.single();
 
   const workspaceJoined = !!data?.workspace_members[0]?.role;
 
@@ -36,6 +38,8 @@ export async function getWorkspace(id: string) {
     role: workspace_members[0]?.role,
     joined: workspaceJoined,
   };
+
+  console.log('ws', ws);
 
   return ws as Workspace;
 }

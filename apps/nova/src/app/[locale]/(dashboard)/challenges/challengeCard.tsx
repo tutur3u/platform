@@ -54,6 +54,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { formatDuration } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -78,7 +79,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
   const [status, setStatus] = useState<
     'disabled' | 'upcoming' | 'preview' | 'active' | 'closed'
   >('disabled');
-
+  const t = useTranslations('nova.challenge.cards');
   const fetchSession = useCallback(async () => {
     const response = await fetch(
       `/api/v1/sessions?challengeId=${challenge.id}`
@@ -273,7 +274,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             variant="outline"
             className="bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400"
           >
-            <AlertCircle className="mr-1 h-3 w-3" /> Disabled
+            <AlertCircle className="mr-1 h-3 w-3" /> {t('disabled')}
           </Badge>
         );
       case 'upcoming':
@@ -282,7 +283,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             variant="outline"
             className="bg-blue-100 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400"
           >
-            <Calendar className="mr-1 h-3 w-3" /> Upcoming
+            <Calendar className="mr-1 h-3 w-3" /> {t('upcoming')}
           </Badge>
         );
       case 'preview':
@@ -291,7 +292,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             variant="outline"
             className="bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400"
           >
-            <Eye className="mr-1 h-3 w-3" /> Preview
+            <Eye className="mr-1 h-3 w-3" /> {t('preview')}
           </Badge>
         );
       case 'active':
@@ -300,7 +301,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             variant="outline"
             className="bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400"
           >
-            <CheckCircle className="mr-1 h-3 w-3" /> Active
+            <CheckCircle className="mr-1 h-3 w-3" /> {t('active')}
           </Badge>
         );
       case 'closed':
@@ -309,7 +310,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             variant="outline"
             className="bg-gray-100 text-gray-800 dark:bg-gray-950/30 dark:text-gray-400"
           >
-            <TimerOff className="mr-1 h-3 w-3" /> Closed
+            <TimerOff className="mr-1 h-3 w-3" /> {t('closed')}
           </Badge>
         );
       default:
@@ -331,15 +332,15 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
       return (
         <div className="mt-4 rounded-md border border-dashed p-3">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-medium">Your Session</h3>
+            <h3 className="text-sm font-medium">{t('your-session')}</h3>
             <Badge variant="outline" className="text-xs">
-              In Progress
+              {t('in-progress')}
             </Badge>
           </div>
 
           <div className="flex flex-col items-center justify-center">
             <div className="text-muted-foreground flex items-center text-xs">
-              <Clock className="mr-1 h-3 w-3" /> Time remaining:
+              <Clock className="mr-1 h-3 w-3" /> {t('time-remaining')}:
             </div>
             <Countdown
               target={endTime}
@@ -355,10 +356,15 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
 
           <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
-              <span>Started at: {format(startTime, 'PPpp')}</span>
+              <span>
+                {' '}
+                {t('started-at')}: {format(startTime, 'PPpp')}
+              </span>
             </div>
             <div className="flex items-center">
-              <span>Ends at: {format(endTime, 'PPpp')}</span>
+              <span>
+                {t('ends-at')}: {format(endTime, 'PPpp')}
+              </span>
             </div>
           </div>
         </div>
@@ -384,13 +390,13 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                   challenge={challenge}
                   trigger={
                     <Button className="w-full gap-2">
-                      Retry Challenge <ArrowRight className="h-4 w-4" />
+                      {t('retry-challenges')} <ArrowRight className="h-4 w-4" />
                     </Button>
                   }
                 />
               ) : (
                 <Button disabled className="w-full gap-2">
-                  Comeback Tomorrow
+                  {t('comeback-tomorrow')}
                 </Button>
               ))}
 
@@ -399,7 +405,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
               className="w-full gap-2"
               variant="secondary"
             >
-              View Results <ArrowRight className="h-4 w-4" />
+              {t('view-results')} <ArrowRight className="h-4 w-4" />
             </Button>
           </>
         );
@@ -412,7 +418,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             challenge={challenge}
             trigger={
               <Button className="w-full gap-2">
-                Resume Challenge <ArrowRight className="h-4 w-4" />
+                {t('resume-challenge')} <ArrowRight className="h-4 w-4" />
               </Button>
             }
           />
@@ -425,7 +431,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           challenge={challenge}
           trigger={
             <Button className="w-full gap-2">
-              Start Challenge <ArrowRight className="h-4 w-4" />
+              {t('start-challenge')} <ArrowRight className="h-4 w-4" />
             </Button>
           }
         />
@@ -435,7 +441,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
     if (status === 'disabled') {
       return (
         <Button disabled className="w-full gap-2">
-          Not Available
+          {t('not-available')}
         </Button>
       );
     }
@@ -443,7 +449,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
     if (status === 'upcoming') {
       return (
         <Button disabled className="w-full gap-2">
-          Available Soon
+          {t('available-soon')}
         </Button>
       );
     }
@@ -451,7 +457,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
     if (status === 'preview') {
       return (
         <Button disabled className="w-full gap-2">
-          Not Yet Opened
+          {t('not-yet-opened')}
         </Button>
       );
     }
@@ -459,7 +465,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
     if (status === 'closed') {
       return (
         <Button disabled className="w-full gap-2">
-          Closed
+          {t('closed')}
         </Button>
       );
     }
@@ -479,7 +485,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
+                  <span className="sr-only">{t('open-menu')}</span>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -489,7 +495,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                   trigger={
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                       <Pencil className="mr-2 h-4 w-4" />
-                      Edit
+                      {t('edit')}
                     </DropdownMenuItem>
                   }
                 />
@@ -498,7 +504,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+                  {t('delete')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -511,7 +517,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             <div className="flex items-center">
               <Clock className="text-primary h-4 w-4 flex-shrink-0" />
               <span className="text-muted-foreground ml-2 text-sm">
-                Duration: {formatDuration(challenge.duration)}
+                {t('duration')}: {formatDuration(challenge.duration)}
               </span>
             </div>
 
@@ -522,7 +528,8 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                 <div className="flex items-center">
                   <AlertCircle className="h-4 w-4 text-indigo-500" />
                   <span className="text-muted-foreground ml-2 text-sm">
-                    Total attempts: {totalSessions}/{challenge.max_attempts}
+                    {t('total-attempts')}: {totalSessions}/
+                    {challenge.max_attempts}
                   </span>
                 </div>
               ) : (
@@ -537,7 +544,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                 <div className="flex items-center">
                   <AlertCircle className="h-4 w-4 text-violet-500" />
                   <span className="text-muted-foreground ml-2 text-sm">
-                    Daily attempts: {dailySessions}/
+                    {t('daily-attempts')}: {dailySessions}/
                     {challenge.max_daily_attempts}
                   </span>
                 </div>
@@ -550,7 +557,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                 <div className="mt-2 flex items-center">
                   <Eye className="h-4 w-4 text-amber-500" />
                   <span className="text-muted-foreground ml-2 text-sm">
-                    Preview available:{' '}
+                    {t('preview-available')}:{' '}
                     {formatDistanceToNow(new Date(challenge.previewable_at), {
                       addSuffix: true,
                     })}
@@ -568,7 +575,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                 <div className="flex items-center">
                   <CalendarCheck className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                   <span className="ml-2 text-sm font-medium text-blue-700 dark:text-blue-300">
-                    Opens in:
+                    {t('open-in')}
                   </span>
                 </div>
                 <Badge
@@ -601,7 +608,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                 <div className="flex items-center">
                   <CalendarX className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                   <span className="ml-2 text-sm font-medium text-amber-700 dark:text-amber-300">
-                    Closes in:
+                    {t('closes-in')}
                   </span>
                 </div>
                 <Badge
@@ -638,16 +645,15 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Challenge</AlertDialogTitle>
+            <AlertDialogTitle>{t('delete-challenge')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this challenge? This action cannot
-              be undone.
+              {t('delete-challenge-description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteChallenge}>
-              Delete
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
