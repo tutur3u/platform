@@ -24,7 +24,16 @@ SELECT
   cr.sum_criterion_score,
   COALESCE((cr.sum_criterion_score::float / NULLIF(cr.total_criteria * 10, 0)) * 10, 0) AS criteria_score,
   COALESCE((tc.passed_tests::float / NULLIF(tc.total_tests, 0)) * 5, 0) + 
-  COALESCE((cr.sum_criterion_score::float / NULLIF(cr.total_criteria * 10, 0)) * 5, 0) AS total_score
+  CASE
+    WHEN tc.total_tests > 0 AND cr.total_criteria > 0 THEN 
+      COALESCE((tc.passed_tests::float / tc.total_tests) * 5, 0) + 
+      COALESCE((cr.sum_criterion_score::float / (cr.total_criteria * 10)) * 5, 0)
+    WHEN tc.total_tests > 0 THEN 
+      COALESCE((tc.passed_tests::float / tc.total_tests) * 10, 0)
+    WHEN cr.total_criteria > 0 THEN 
+      COALESCE((cr.sum_criterion_score::float / (cr.total_criteria * 10)) * 10, 0)
+    ELSE 0
+  END AS total_score
 FROM nova_submissions s
 LEFT JOIN test_case_stats tc ON s.id = tc.submission_id
 LEFT JOIN criteria_stats cr ON s.id = cr.submission_id;
