@@ -23,7 +23,6 @@ SELECT
   cr.total_criteria,
   cr.sum_criterion_score,
   COALESCE((cr.sum_criterion_score::float / NULLIF(cr.total_criteria * 10, 0)) * 10, 0) AS criteria_score,
-  COALESCE((tc.passed_tests::float / NULLIF(tc.total_tests, 0)) * 5, 0) + 
   CASE
     WHEN tc.total_tests > 0 AND cr.total_criteria > 0 THEN 
       COALESCE((tc.passed_tests::float / tc.total_tests) * 5, 0) + 
