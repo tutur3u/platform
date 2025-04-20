@@ -33,6 +33,11 @@ const roundToNearest15Minutes = (date: Date): Date => {
   return roundedDate;
 };
 
+// Function to create a unique signature for an event based on its content
+const createEventSignature = (event: CalendarEvent): string => {
+  return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
+};
+
 // Updated context with improved type definitions
 const CalendarContext = createContext<{
   getEvent: (eventId: string) => CalendarEvent | undefined;
@@ -215,6 +220,95 @@ export const CalendarProvider = ({
     return await response.json();
   };
 
+  // Function to detect and remove duplicate events
+  const removeDuplicateEvents = useCallback(
+    async (eventsData: CalendarEvent[]) => {
+      if (!ws?.id || !eventsData || eventsData.length === 0) return eventsData;
+
+      // Group events by their signature
+      const eventGroups = new Map<string, CalendarEvent[]>();
+
+      eventsData.forEach((event) => {
+        const signature = createEventSignature(event);
+        if (!eventGroups.has(signature)) {
+          eventGroups.set(signature, []);
+        }
+        eventGroups.get(signature)!.push(event);
+      });
+
+      // Find duplicates that need to be removed
+      const eventsToDelete: string[] = [];
+      let deletionPerformed = false;
+
+      eventGroups.forEach((eventGroup, signature) => {
+        if (eventGroup.length > 1) {
+          console.log(
+            `Found ${eventGroup.length} duplicates with signature "${signature}"`
+          );
+
+          // Sort by creation time if available, otherwise by ID
+          // Keep the first/oldest event, delete the rest
+          const sortedEvents = [...eventGroup].sort((a, b) => {
+            // If we have created_at field, use it (check with optional chaining)
+            const aCreatedAt = (a as any)?.created_at;
+            const bCreatedAt = (b as any)?.created_at;
+            if (aCreatedAt && bCreatedAt) {
+              return (
+                new Date(aCreatedAt).getTime() - new Date(bCreatedAt).getTime()
+              );
+            }
+            // Otherwise sort by ID which is often sequential
+            return a.id.localeCompare(b.id);
+          });
+
+          // Keep the first event (oldest), mark the rest for deletion
+          const eventsToRemove = sortedEvents.slice(1);
+          eventsToRemove.forEach((event) => {
+            eventsToDelete.push(event.id);
+          });
+        }
+      });
+
+      // Delete duplicate events if any were found
+      if (eventsToDelete.length > 0) {
+        try {
+          const supabase = createClient();
+          // Delete in batches of 10 to avoid request size limitations
+          const batchSize = 10;
+          for (let i = 0; i < eventsToDelete.length; i += batchSize) {
+            const batch = eventsToDelete.slice(i, i + batchSize);
+            const { error } = await supabase
+              .from('workspace_calendar_events')
+              .delete()
+              .in('id', batch);
+
+            if (error) {
+              console.error('Error deleting duplicate events:', error);
+            } else {
+              deletionPerformed = true;
+              console.log(
+                `Successfully deleted ${batch.length} duplicate events`
+              );
+            }
+          }
+
+          // If events were deleted, refresh to get updated data
+          if (deletionPerformed) {
+            queryClient.invalidateQueries({
+              queryKey: ['calendarEvents', ws?.id],
+            });
+          }
+        } catch (err) {
+          console.error('Failed to delete duplicate events:', err);
+        }
+      }
+
+      // Return the filtered list without duplicates
+      return eventsData.filter((event) => !eventsToDelete.includes(event.id));
+    },
+    [ws?.id, queryClient]
+  );
+
   // Use React Query to fetch and cache the events
   const { data } = useQuery({
     queryKey: [
@@ -228,7 +322,16 @@ export const CalendarProvider = ({
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
   });
 
-  const events = useMemo(() => data?.data ?? [], [data]);
+  // Process events to remove duplicates, then memoize the result
+  const events = useMemo(() => {
+    const eventsData = data?.data ?? [];
+    // Check for duplicates whenever events are loaded or refreshed
+    if (eventsData.length > 0) {
+      // We need to run this asynchronously since it makes API calls
+      removeDuplicateEvents(eventsData);
+    }
+    return eventsData;
+  }, [data, removeDuplicateEvents]);
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
@@ -372,6 +475,29 @@ export const CalendarProvider = ({
 
         let eventColor = event.color || 'BLUE';
 
+        // Create an event signature to check for duplicates
+        const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+
+        // Check existing events for potential duplicates to prevent race condition
+        const duplicates = events.filter((e: CalendarEvent) => {
+          const existingSignature = createEventSignature(e);
+          return existingSignature === newEventSignature;
+        });
+
+        // If duplicates already exist, return the first one
+        if (duplicates.length > 0) {
+          console.log(
+            'Prevented duplicate event creation - matching event already exists'
+          );
+
+          // Clear any pending new event
+          setPendingNewEvent(null);
+
+          // Return the existing event
+          return duplicates[0];
+        }
+
+        // No duplicates, proceed with creating the event
         const { data, error } = await supabase
           .from('workspace_calendar_events')
           .insert({
@@ -405,7 +531,7 @@ export const CalendarProvider = ({
         throw err;
       }
     },
-    [ws, refresh, settings.categoryColors]
+    [ws, refresh, settings.categoryColors, events]
   );
 
   const addEmptyEvent = useCallback(
@@ -555,6 +681,37 @@ export const CalendarProvider = ({
         };
 
         try {
+          // Check for potential duplicates before creating a new event
+          if (updatedEvent.title || pendingNewEvent.title) {
+            const startDate = roundToNearest15Minutes(
+              new Date(newEventData.start_at || new Date())
+            );
+            const endDate = roundToNearest15Minutes(
+              new Date(newEventData.end_at || new Date())
+            );
+
+            const newEventSignature = `${newEventData.title || ''}|${newEventData.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+
+            // Check existing events for potential duplicates
+            const duplicates = events.filter((e: CalendarEvent) => {
+              const existingSignature = createEventSignature(e);
+              return existingSignature === newEventSignature;
+            });
+
+            // If duplicates already exist, return the first one
+            if (duplicates.length > 0) {
+              console.log(
+                'Prevented duplicate event creation during update - matching event already exists'
+              );
+
+              // Clear any pending new event
+              setPendingNewEvent(null);
+
+              // Return the existing event
+              return duplicates[0];
+            }
+          }
+
           // Create a new event instead of updating
           const result = await addEvent(
             newEventData as Omit<CalendarEvent, 'id'>
@@ -600,7 +757,7 @@ export const CalendarProvider = ({
         }, 250); // Reduced from 2000ms to 250ms for better responsiveness
       });
     },
-    [ws, processUpdateQueue, pendingNewEvent, addEvent]
+    [ws, processUpdateQueue, pendingNewEvent, addEvent, events]
   );
 
   const deleteEvent = useCallback(
@@ -747,6 +904,44 @@ export const CalendarProvider = ({
       const supabase = createClient();
       for (const event of newEvents) {
         try {
+          // Check for content-based duplicates (same title, description, dates)
+          // even if google_event_id is different
+          const potentialDuplicates = localEvents.filter((localEvent: any) => {
+            return (
+              localEvent.title === event.title &&
+              localEvent.description === (event.description || '') &&
+              localEvent.start_at === event.start_at &&
+              localEvent.end_at === event.end_at
+            );
+          });
+
+          // If we found a duplicate by content, update it with the Google Event ID
+          // instead of creating a new event
+          if (potentialDuplicates.length > 0) {
+            console.log(
+              `Found content duplicate for Google event "${event.title}"`
+            );
+
+            // Update the first duplicate with the Google Event ID
+            const { error: updateError } = await supabase
+              .from('workspace_calendar_events')
+              .update({ google_event_id: event.google_event_id })
+              .eq('id', potentialDuplicates[0].id);
+
+            if (updateError) {
+              console.error(
+                'Failed to update duplicate with Google Event ID:',
+                updateError
+              );
+            } else {
+              console.log(`Updated duplicate event with Google Event ID`);
+            }
+
+            // Skip the insertion below
+            continue;
+          }
+
+          // No duplicate found, proceed with normal insertion
           const { error } = await supabase
             .from('workspace_calendar_events')
             .insert({
