@@ -81,7 +81,7 @@ const CalendarColumn = ({ date }: CalendarColumnProps) => {
 
   return (
     <div
-      className="relative grid border border-r border-border/30"
+      className="border-border/30 relative grid border border-r"
       style={{
         gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)`,
         minWidth: '120px',

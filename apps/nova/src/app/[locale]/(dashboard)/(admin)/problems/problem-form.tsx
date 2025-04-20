@@ -336,7 +336,7 @@ export default function ProblemForm({
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       No test cases added yet.
                     </p>
                   )}

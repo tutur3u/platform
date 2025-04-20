@@ -32,7 +32,7 @@ export default function HeroAnimation() {
   return (
     <div className="pointer-events-none fixed inset-0">
       <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 will-change-transform"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 will-change-transform"
         animate={{
           rotate: [0, 360],
         }}

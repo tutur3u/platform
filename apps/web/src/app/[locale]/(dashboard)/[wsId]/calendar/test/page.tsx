@@ -240,11 +240,11 @@ export default function Page() {
                   {/* Date and Time */}
                   <div className="space-y-4">
                     <div>
-                      <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                      <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                         Start Time
                       </h3>
                       <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                        <CalendarIcon className="text-muted-foreground h-4 w-4" />
                         <p>
                           {generatedEvent.start_at
                             ? format(new Date(generatedEvent.start_at), 'PPP p')
@@ -254,11 +254,11 @@ export default function Page() {
                     </div>
 
                     <div>
-                      <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                      <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                         End Time
                       </h3>
                       <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                        <CalendarIcon className="text-muted-foreground h-4 w-4" />
                         <p>
                           {generatedEvent.end_at
                             ? format(new Date(generatedEvent.end_at), 'PPP p')
@@ -268,7 +268,7 @@ export default function Page() {
                     </div>
 
                     {generatedEvent.is_all_day && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="text-muted-foreground flex items-center gap-2">
                         <span>All day event</span>
                       </div>
                     )}
@@ -278,7 +278,7 @@ export default function Page() {
                   <div className="space-y-4">
                     {generatedEvent.location && (
                       <div>
-                        <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                        <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                           Location
                         </h3>
                         <p>{generatedEvent.location}</p>
@@ -287,7 +287,7 @@ export default function Page() {
 
                     {generatedEvent.description && (
                       <div>
-                        <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                        <h3 className="text-muted-foreground mb-1 text-sm font-medium">
                           Description
                         </h3>
                         <p>{generatedEvent.description}</p>

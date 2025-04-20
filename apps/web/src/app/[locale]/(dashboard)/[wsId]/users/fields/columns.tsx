@@ -109,7 +109,7 @@ export const userFieldColumns = (
             {(row.getValue('possible_values') as string[]).map((value) => (
               <div
                 key={value}
-                className="line-clamp-1 max-w-[8rem] rounded-lg border border-foreground/10 bg-foreground/5 p-1 break-all"
+                className="border-foreground/10 bg-foreground/5 line-clamp-1 max-w-[8rem] break-all rounded-lg border p-1"
               >
                 {value}
               </div>

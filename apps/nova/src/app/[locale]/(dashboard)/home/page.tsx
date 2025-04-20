@@ -18,7 +18,7 @@ export default async function HomePage() {
         <h1 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
           {t('badge')}
         </h1>
-        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
           {t('title')}
         </p>
       </div>

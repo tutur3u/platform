@@ -139,11 +139,11 @@ export default function InvoiceCard({
 
   return (
     <div className="overflow-x-auto xl:flex-none">
-      <div className="mx-auto h-fit w-full max-w-4xl flex-none rounded-xl shadow-lg dark:bg-foreground/10 print:bg-white print:text-black print:shadow-none">
+      <div className="dark:bg-foreground/10 mx-auto h-fit w-full max-w-4xl flex-none rounded-xl shadow-lg print:bg-white print:text-black print:shadow-none">
         <div
           ref={printableRef}
           id="printable-area"
-          className="h-full rounded-lg border p-6 text-foreground md:p-12"
+          className="text-foreground h-full rounded-lg border p-6 md:p-12"
         >
           {/* Header */}
           <div className="mb-8 flex flex-wrap items-center justify-between gap-8">
@@ -160,7 +160,7 @@ export default function InvoiceCard({
               <h1 className="mb-2 text-3xl font-bold">
                 {t('invoices.invoice')}
               </h1>
-              <p className="text-xs text-foreground/70 print:text-black">
+              <p className="text-foreground/70 text-xs print:text-black">
                 #{invoice.id}
               </p>
             </div>

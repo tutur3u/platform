@@ -1,6 +1,6 @@
 .ProseMirror {
   code {
-    @apply caret-white text-white bg-neutral-900 rounded-sm shadow-lg font-mono;
+    @apply rounded-sm bg-neutral-900 font-mono text-white caret-white shadow-lg;
 
     &::selection {
       @apply bg-white/30;
@@ -8,14 +8,14 @@
   }
 
   pre {
-    @apply caret-white bg-neutral-700 text-white rounded my-12 p-4 border border-black dark:bg-neutral-900 dark:border-neutral-800;
+    @apply my-12 rounded border border-black bg-neutral-700 p-4 text-white caret-white dark:border-neutral-800 dark:bg-neutral-900;
 
     *::selection {
       @apply bg-white/20;
     }
 
     code {
-      @apply bg-inherit text-inherit p-0 shadow-none;
+      @apply bg-inherit p-0 text-inherit shadow-none;
     }
 
     .hljs-comment,

@@ -31,13 +31,13 @@ export function ProblemDescription({ challenge }: ProblemDescriptionProps) {
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold">Example Input:</h3>
-              <pre className="overflow-x-auto rounded-md bg-muted p-2">
+              <pre className="bg-muted overflow-x-auto rounded-md p-2">
                 <code>{challenge.exampleInput}</code>
               </pre>
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold">Example Output:</h3>
-              <pre className="overflow-x-auto rounded-md bg-muted p-2">
+              <pre className="bg-muted overflow-x-auto rounded-md p-2">
                 <code>{challenge.exampleOutput}</code>
               </pre>
             </div>

@@ -12,7 +12,7 @@ export default function Slogan() {
         <h2 className="mb-4 text-xl font-bold md:text-3xl">
           {t('slogan.title')}
         </h2>
-        <p className="mb-8 text-balance text-muted-foreground">
+        <p className="text-muted-foreground mb-8 text-balance">
           {t('slogan.description')}
         </p>
         <Link href="/contact">
