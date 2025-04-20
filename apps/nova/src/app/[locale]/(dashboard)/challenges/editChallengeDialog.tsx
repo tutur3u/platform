@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -33,6 +34,8 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const queryClient = useQueryClient();
+
+  const t = useTranslations('nova.challenge');
 
   // Convert string dates to Date objects for the form
   const formattedDefaultValues = useMemo(() => {
@@ -175,10 +178,8 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Challenge</DialogTitle>
-          <DialogDescription>
-            Make changes to the challenge details.
-          </DialogDescription>
+          <DialogTitle> {t('edit')}</DialogTitle>
+          <DialogDescription>{t('edit-description')}</DialogDescription>
         </DialogHeader>
         <ChallengeForm
           challengeId={challenge.id}
