@@ -55,7 +55,7 @@ drop table "public"."nova_problem_criteria_scores";
 create table "public"."nova_submission_criteria" (
     "submission_id" uuid not null,
     "criteria_id" uuid not null,
-    "score" real not null,
+    "score" real not null check (score >= 0 and score <= 10),
     "feedback" text not null,
     "created_at" timestamp with time zone not null default now()
 );

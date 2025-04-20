@@ -59,6 +59,20 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   try {
+    const ctx = {
+      title: problem.title,
+      description: problem.description,
+      exampleInput: problem.example_input,
+      exampleOutput: problem.example_output,
+      testCaseInput: input,
+      userPrompt: prompt,
+    };
+
+    const exampleResponse = {
+      input: '<test case input>',
+      output: '<your test case output>',
+    };
+
     const systemInstruction = `
       You are an AI assistant that applies a given prompt instruction to process user input.
       You will be provided with:
@@ -73,21 +87,11 @@ export async function POST(req: Request, { params }: Params) {
       3. **Return** your result for the test case in a specific JSON format.
       
       Here is the problem context:
-      {
-        "title": "${problem.title}",
-        "description": "${problem.description}",
-        "exampleInput": "${problem.example_input}",
-        "exampleOutput": "${problem.example_output}",
-        "testCaseInput": "${input}",
-        "userPrompt": "${prompt}"
-      }
+      ${JSON.stringify(ctx)}
       
       Return ONLY a JSON object with this format:
-      {
-        "input": "given test case input",
-        "output": "your test case output",
-      }
-      
+      ${JSON.stringify(exampleResponse)}
+
       Your response must be valid JSON. Do not include explanations or commentary in the output.
       Don't include markdown formatting like \`\`\`json or \`\`\`.
       Just process the input according to the prompt and return the JSON object.

@@ -166,7 +166,7 @@ export default function PromptForm({ problem }: Props) {
 
       // Reset prompt and show success message
       setPrompt('');
-      setActiveTab('history');
+      setActiveTab('submissions');
 
       toast({
         title: 'Prompt submitted successfully',
@@ -255,10 +255,10 @@ export default function PromptForm({ problem }: Props) {
         }
 
         const data = await response.json();
-        // Extract input and output from the response
+
         return {
-          input: testcase.input,
-          output: data.response?.output || 'No output generated',
+          input: data.response.input,
+          output: data.response.output,
         };
       });
 

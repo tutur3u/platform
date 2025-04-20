@@ -89,6 +89,36 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   try {
+    const ctx = {
+      title: problem.title,
+      description: problem.description,
+      exampleInput: problem.example_input,
+      exampleOutput: problem.example_output,
+      testCaseInputs: testCases.map((testCase) => testCase.input),
+      criteria: challengeCriteria.map((criteria) => ({
+        name: criteria.name,
+        description: criteria.description,
+      })),
+      userPrompt: prompt,
+    };
+
+    const exampleResponse = {
+      testCaseEvaluation: [
+        {
+          input: '<test case input>',
+          output: '<your test case output>',
+        },
+      ],
+      criteriaEvaluation: [
+        {
+          name: '<criteria name>',
+          description: '<criteria description>',
+          score: 10,
+          feedback: '<feedback>',
+        },
+      ],
+    };
+
     // System Instruction for Evaluation with strict JSON output
     const systemInstruction = `
       You are an examiner in a prompt engineering competition.
@@ -105,24 +135,7 @@ export async function POST(req: Request, { params }: Params) {
       3. **Return** both your results for each test case and the criteria evaluation in a specific JSON format.
 
       Here is the problem context:
-      {
-        "title": "${problem.title}",
-        "description": "${problem.description}",
-        "exampleInput": "${problem.example_input}",
-        "exampleOutput": "${problem.example_output}",
-        "testCaseInputs": [
-          ${testCases.map((testCase) => `"${testCase.input}"`).join(', ')}
-        ],
-        "criteria": [
-          ${challengeCriteria
-            .map(
-              (criteria) =>
-                `{"name": "${criteria.name}", "description": "${criteria.description}"}`
-            )
-            .join(', ')}
-        ],
-        "userPrompt": "${prompt}"
-      }
+      ${JSON.stringify(ctx)}
 
       Scoring Criteria:
       - **10**: The user's response perfectly solves the problem or provides a clear and effective prompt that would solve the problem.
@@ -138,22 +151,7 @@ export async function POST(req: Request, { params }: Params) {
       4. CRITICAL: You MUST respond with ONLY a valid, properly formatted JSON object without any markdown formatting or code blocks. 
       5. The score MUST be from 0 to 10, can be in decimal.
       6. The response MUST use this EXACT format:
-      {
-        "testCaseEvaluation": [
-          {
-            "input": "given test case input",
-            "output": "your test case output",
-          }
-        ],
-        "criteriaEvaluation": [
-          {
-            "name": "criteria name",
-            "description": "criteria description",
-            "score": 10,
-            "feedback": "feedback"
-          }
-        ]
-      }
+      ${JSON.stringify(exampleResponse)}
     `;
 
     // Get the model

@@ -181,10 +181,11 @@ export default function PromptForm({ problem, session }: Props) {
       // Step 5: Refresh the submissions list
       const submissions = await fetchSubmissions(problem.id, session.id);
       setSubmissions(submissions);
+      setAttempts(submissions.length);
 
       // Reset prompt and show success message
       setPrompt('');
-      setActiveTab('history');
+      setActiveTab('submissions');
 
       toast({
         title: 'Prompt submitted successfully',
@@ -233,6 +234,7 @@ export default function PromptForm({ problem, session }: Props) {
       }
 
       const data = await response.json();
+
       setTestResult({
         input: data.response.input,
         output: data.response.output,

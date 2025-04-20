@@ -9,7 +9,6 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 type ExtendedNovaProblem = NovaProblem & {
   test_cases: NovaProblemTestCase[];
@@ -29,9 +28,9 @@ export default async function Page({ params }: Props) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className="text-xl font-semibold">Problem not found</p>
-        <Button onClick={() => redirect('/problems')}>
-          Go back to problems
-        </Button>
+        <Link href="/problems">
+          <Button>Go back to problems</Button>
+        </Link>
       </div>
     );
   }

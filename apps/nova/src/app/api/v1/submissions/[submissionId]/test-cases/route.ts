@@ -77,7 +77,11 @@ export async function PUT(request: Request, { params }: Params) {
     const body = await request.json();
     const { testCaseId, output, matched } = body;
 
-    if (!testCaseId || !output || typeof matched !== 'boolean') {
+    if (
+      !testCaseId ||
+      typeof output !== 'string' ||
+      typeof matched !== 'boolean'
+    ) {
       return NextResponse.json(
         { message: 'Invalid request body' },
         { status: 400 }

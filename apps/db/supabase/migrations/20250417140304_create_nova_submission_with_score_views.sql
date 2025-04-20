@@ -17,27 +17,14 @@ criteria_stats AS (
 )
 SELECT 
   s.*,
-
   tc.total_tests,
   tc.passed_tests,
-  (COALESCE(tc.passed_tests, 0)::float / NULLIF(tc.total_tests, 0)::float) * 5 AS test_case_score,
-
+  COALESCE((tc.passed_tests::float / NULLIF(tc.total_tests, 0)) * 10, 0) AS test_case_score,
   cr.total_criteria,
   cr.sum_criterion_score,
-  CASE 
-    WHEN tc.total_tests > 0 THEN
-      (COALESCE(cr.sum_criterion_score, 0)::float / (10 * NULLIF(cr.total_criteria, 0)::float)) * 5
-    ELSE
-      (COALESCE(cr.sum_criterion_score, 0)::float / (10 * NULLIF(cr.total_criteria, 0)::float)) * 10
-  END AS criteria_score,
-
-  ((COALESCE(tc.passed_tests, 0)::float / NULLIF(tc.total_tests, 0)::float) * 5) + 
-  (CASE 
-    WHEN tc.total_tests > 0 THEN
-      (COALESCE(cr.sum_criterion_score, 0)::float / (10 * NULLIF(cr.total_criteria, 0)::float)) * 5
-    ELSE
-      (COALESCE(cr.sum_criterion_score, 0)::float / (10 * NULLIF(cr.total_criteria, 0)::float)) * 10
-  END) AS total_score
+  COALESCE((cr.sum_criterion_score::float / NULLIF(cr.total_criteria * 10, 0)) * 10, 0) AS criteria_score,
+  COALESCE((tc.passed_tests::float / NULLIF(tc.total_tests, 0)) * 5, 0) + 
+  COALESCE((cr.sum_criterion_score::float / NULLIF(cr.total_criteria * 10, 0)) * 5, 0) AS total_score
 FROM nova_submissions s
 LEFT JOIN test_case_stats tc ON s.id = tc.submission_id
 LEFT JOIN criteria_stats cr ON s.id = cr.submission_id;
