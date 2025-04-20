@@ -694,7 +694,7 @@ export const CalendarProvider = ({
     }
     return await response.json();
   };
-  
+
   // Query to fetch Google Calendar events every 30 seconds
   const { data: googleData } = useQuery({
     queryKey: ['googleCalendarEvents', ws?.id],
@@ -704,24 +704,26 @@ export const CalendarProvider = ({
     staleTime: 1000 * 60, // Data is considered fresh for 1 minute
   });
   const googleEvents = useMemo(() => googleData?.events || [], [googleData]);
-  
+
   // Function to synchronize local events with Google Calendar
   const syncEvents = useCallback(async () => {
     if (!googleEvents.length || !enableExperimentalGoogleCalendar) return;
-  
+
     // Get local events that are synced with Google Calendar
     const localGoogleEvents: CalendarEvent[] = events.filter(
       (e: CalendarEvent) => e.google_event_id
     );
-  
+
     // Create a set of google_event_id from Google Calendar events for quick lookup
     const googleEventIds: Set<string | undefined> = new Set(
       googleEvents.map((e: { google_event_id?: string }) => e.google_event_id)
     );
-  
+
     // Identify events to delete: local events not present in Google Calendar
-    const eventsToDelete = localGoogleEvents.filter(e => !googleEventIds.has(e.google_event_id));
-  
+    const eventsToDelete = localGoogleEvents.filter(
+      (e) => !googleEventIds.has(e.google_event_id)
+    );
+
     // Delete events that no longer exist on Google Calendar
     for (const event of eventsToDelete) {
       try {
@@ -734,7 +736,7 @@ export const CalendarProvider = ({
         console.error('Failed to delete event:', err);
       }
     }
-  
+
     // Update or add events from Google Calendar
     for (const gEvent of googleEvents) {
       const localEvent: CalendarEvent | undefined = localGoogleEvents.find(
@@ -742,7 +744,7 @@ export const CalendarProvider = ({
       );
       if (localEvent) {
         // Check if there are any changes in the event details
-        const hasChanges = 
+        const hasChanges =
           localEvent.title !== gEvent.title ||
           localEvent.description !== gEvent.description ||
           localEvent.start_at !== gEvent.start_at ||
@@ -750,7 +752,7 @@ export const CalendarProvider = ({
           localEvent.color !== gEvent.color ||
           localEvent.location !== gEvent.location ||
           localEvent.priority !== gEvent.priority;
-  
+
         if (hasChanges) {
           try {
             const supabase = createClient();
@@ -774,38 +776,42 @@ export const CalendarProvider = ({
         // Add new event from Google Calendar
         try {
           const supabase = createClient();
-          await supabase
-            .from('workspace_calendar_events')
-            .insert({
-              title: gEvent.title,
-              description: gEvent.description || '',
-              start_at: gEvent.start_at,
-              end_at: gEvent.end_at,
-              color: gEvent.color || 'BLUE',
-              location: gEvent.location || '',
-              ws_id: ws?.id || '',
-              google_event_id: gEvent.google_event_id,
-              locked: gEvent.locked || false,
-              priority: gEvent.priority || 'medium',
-            });
+          await supabase.from('workspace_calendar_events').insert({
+            title: gEvent.title,
+            description: gEvent.description || '',
+            start_at: gEvent.start_at,
+            end_at: gEvent.end_at,
+            color: gEvent.color || 'BLUE',
+            location: gEvent.location || '',
+            ws_id: ws?.id || '',
+            google_event_id: gEvent.google_event_id,
+            locked: gEvent.locked || false,
+            priority: gEvent.priority || 'medium',
+          });
         } catch (err) {
           console.error('Failed to insert event:', err);
         }
       }
     }
-  
+
     // Refresh local events by invalidating the query
     queryClient.invalidateQueries(['calendarEvents', ws?.id]);
-  }, [googleEvents, events, ws?.id, queryClient, enableExperimentalGoogleCalendar]);
-  
+  }, [
+    googleEvents,
+    events,
+    ws?.id,
+    queryClient,
+    enableExperimentalGoogleCalendar,
+  ]);
+
   // Set up an interval to sync events every 30 seconds
   useEffect(() => {
     if (!enableExperimentalGoogleCalendar || !ws?.id) return;
-  
+
     const interval = setInterval(() => {
       syncEvents();
     }, 30000); // Sync every 30 seconds
-  
+
     return () => clearInterval(interval); // Clean up interval on unmount
   }, [enableExperimentalGoogleCalendar, ws?.id, syncEvents]);
   // Google Calendar sync moved to API Route
