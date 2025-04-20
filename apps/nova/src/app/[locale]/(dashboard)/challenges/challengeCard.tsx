@@ -54,9 +54,9 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { formatDuration } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
@@ -334,12 +334,12 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-medium">{t('your-session')}</h3>
             <Badge variant="outline" className="text-xs">
-            {t('in-progress')}
+              {t('in-progress')}
             </Badge>
           </div>
 
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center text-xs">
               <Clock className="mr-1 h-3 w-3" /> {t('time-remaining')}:
             </div>
             <Countdown
@@ -356,10 +356,15 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
 
           <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
-              <span> {t('started-at')}: {format(startTime, 'PPpp')}</span>
+              <span>
+                {' '}
+                {t('started-at')}: {format(startTime, 'PPpp')}
+              </span>
             </div>
             <div className="flex items-center">
-              <span>{t('ends-at')}: {format(endTime, 'PPpp')}</span>
+              <span>
+                {t('ends-at')}: {format(endTime, 'PPpp')}
+              </span>
             </div>
           </div>
         </div>
@@ -391,7 +396,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                 />
               ) : (
                 <Button disabled className="w-full gap-2">
-                 {t('comeback-tomorrow')}
+                  {t('comeback-tomorrow')}
                 </Button>
               ))}
 
@@ -452,7 +457,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
     if (status === 'preview') {
       return (
         <Button disabled className="w-full gap-2">
-         {t('not-yet-opened')}
+          {t('not-yet-opened')}
         </Button>
       );
     }
@@ -510,9 +515,9 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
 
           <div className="grid gap-2">
             <div className="flex items-center">
-              <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">
-              {t('duration')}: {formatDuration(challenge.duration)}
+              <Clock className="text-primary h-4 w-4 flex-shrink-0" />
+              <span className="text-muted-foreground ml-2 text-sm">
+                {t('duration')}: {formatDuration(challenge.duration)}
               </span>
             </div>
 
@@ -522,8 +527,9 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
               status === 'upcoming' ? (
                 <div className="flex items-center">
                   <AlertCircle className="h-4 w-4 text-indigo-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
-                  {t('total-attempts')}: {totalSessions}/{challenge.max_attempts}
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    {t('total-attempts')}: {totalSessions}/
+                    {challenge.max_attempts}
                   </span>
                 </div>
               ) : (
@@ -537,8 +543,8 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
               status === 'upcoming' ? (
                 <div className="flex items-center">
                   <AlertCircle className="h-4 w-4 text-violet-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
-                  {t('daily-attempts')}: {dailySessions}/
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    {t('daily-attempts')}: {dailySessions}/
                     {challenge.max_daily_attempts}
                   </span>
                 </div>
@@ -550,8 +556,8 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
               {status === 'upcoming' && challenge.previewable_at ? (
                 <div className="mt-2 flex items-center">
                   <Eye className="h-4 w-4 text-amber-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
-                  {t('preview-available')}:{' '}
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    {t('preview-available')}:{' '}
                     {formatDistanceToNow(new Date(challenge.previewable_at), {
                       addSuffix: true,
                     })}
@@ -569,7 +575,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                 <div className="flex items-center">
                   <CalendarCheck className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                   <span className="ml-2 text-sm font-medium text-blue-700 dark:text-blue-300">
-                  {t('open-in')}
+                    {t('open-in')}
                   </span>
                 </div>
                 <Badge
@@ -602,7 +608,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
                 <div className="flex items-center">
                   <CalendarX className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                   <span className="ml-2 text-sm font-medium text-amber-700 dark:text-amber-300">
-                  {t('closes-in')}
+                    {t('closes-in')}
                   </span>
                 </div>
                 <Badge
@@ -641,13 +647,13 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>{t('delete-challenge')}</AlertDialogTitle>
             <AlertDialogDescription>
-            {t('delete-challenge-description')}
+              {t('delete-challenge-description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteChallenge}>
-            {t('delete')}
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
