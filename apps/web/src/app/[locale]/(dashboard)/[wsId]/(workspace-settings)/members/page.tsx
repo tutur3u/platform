@@ -39,7 +39,7 @@ export default async function WorkspaceMembersPage({
   if (withoutPermission('manage_workspace_members'))
     redirect(`/${wsId}/settings`);
 
-  const ws = await getWorkspace(wsId);
+  const ws = await getWorkspace(wsId, true);
   const user = await getCurrentUser();
   const members = await getMembers(wsId, await searchParams);
 

@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface CreateChallengeDialogProps {
@@ -22,8 +23,8 @@ export default function CreateChallengeDialog({
 }: CreateChallengeDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const queryClient = useQueryClient();
+  const t = useTranslations('nova.challenge');
 
   const onSubmit = async (values: ChallengeFormValues) => {
     try {
@@ -114,11 +115,8 @@ export default function CreateChallengeDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Challenge</DialogTitle>
-          <DialogDescription>
-            Create a new prompt engineering challenge for users to practice
-            with.
-          </DialogDescription>
+          <DialogTitle>{t('create')}</DialogTitle>
+          <DialogDescription>{t('create-challenge')}</DialogDescription>
         </DialogHeader>
         <ChallengeForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
       </DialogContent>
