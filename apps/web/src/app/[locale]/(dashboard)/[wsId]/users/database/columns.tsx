@@ -250,7 +250,7 @@ export const getUserColumns = (
               : '-'}
           </div>
           {!!row.getValue('birthday') && (
-            <div className="w-fit rounded border bg-foreground/5 px-2 py-0.5 text-sm font-semibold">
+            <div className="bg-foreground/5 w-fit rounded border px-2 py-0.5 text-sm font-semibold">
               {row.getValue('birthday')
                 ? `${age} ${age > 1 ? t('common.years_old') : t('common.year_old')}`
                 : '-'}

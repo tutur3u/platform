@@ -1,7 +1,7 @@
 .ProseMirror {
   /* Placeholder Styles */
   .is-empty::before {
-    @apply text-black/40 dark:text-white/40 float-left h-0 pointer-events-none w-full;
+    @apply pointer-events-none float-left h-0 w-full text-black/40 dark:text-white/40;
   }
 
   &.ProseMirror-focused {
@@ -10,7 +10,9 @@
       content: 'Type  /  to browse options';
     }
 
-    > [data-type='columns'] > [data-type='column'] > p.is-empty.has-focus::before {
+    > [data-type='columns']
+      > [data-type='column']
+      > p.is-empty.has-focus::before {
       content: 'Type  /  to browse options';
     }
   }

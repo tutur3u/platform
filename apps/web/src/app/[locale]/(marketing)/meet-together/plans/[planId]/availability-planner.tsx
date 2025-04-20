@@ -21,12 +21,12 @@ export default function AvailabilityPlanner({
       <div className="flex items-center justify-center gap-4 text-sm">
         <div className="flex items-center gap-2">
           <div>{t('unavailable')}</div>
-          <div className="h-4 w-8 border border-foreground/50 bg-red-500/20" />
+          <div className="border-foreground/50 h-4 w-8 border bg-red-500/20" />
         </div>
 
         <div className="flex items-center gap-2">
           <div>{t('available')}</div>
-          <div className="h-4 w-8 border border-foreground/50 bg-green-500/70" />
+          <div className="border-foreground/50 h-4 w-8 border bg-green-500/70" />
         </div>
       </div>
 

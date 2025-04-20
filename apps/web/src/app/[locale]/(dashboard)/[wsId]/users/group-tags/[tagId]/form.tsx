@@ -117,7 +117,7 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
           ))}
         </div>
       ) : (
-        <div className="mt-4 rounded border border-dashed p-4 text-center font-semibold text-foreground/50 md:p-8">
+        <div className="text-foreground/50 mt-4 rounded border border-dashed p-4 text-center font-semibold md:p-8">
           This tag has no user groups yet.
         </div>
       )}

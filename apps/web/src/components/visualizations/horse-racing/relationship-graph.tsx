@@ -357,7 +357,7 @@ export function RelationshipGraph({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-2 text-xs text-muted-foreground">
+        <div className="text-muted-foreground mb-2 text-xs">
           {hoveredHorse !== null ? (
             <>
               Showing relationships for Horse #{hoveredHorse}:{' '}
@@ -377,7 +377,7 @@ export function RelationshipGraph({
         <div className="relative w-full">
           <canvas
             ref={canvasRef}
-            className="aspect-square w-full rounded-md bg-muted/30"
+            className="bg-muted/30 aspect-square w-full rounded-md"
             style={{ maxHeight: '400px' }}
           />
         </div>
@@ -385,13 +385,13 @@ export function RelationshipGraph({
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
           <div className="rounded-md border p-2 text-center">
             <div className="font-medium">Known Horses</div>
-            <div className="mt-1 text-2xl font-bold text-primary">
+            <div className="text-primary mt-1 text-2xl font-bold">
               {knownPositions.length}
             </div>
           </div>
           <div className="rounded-md border p-2 text-center">
             <div className="font-medium">Unknown Horses</div>
-            <div className="mt-1 text-2xl font-bold text-muted-foreground">
+            <div className="text-muted-foreground mt-1 text-2xl font-bold">
               {horses.length - knownPositions.length}
             </div>
           </div>

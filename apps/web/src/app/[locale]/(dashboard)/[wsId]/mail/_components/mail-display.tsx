@@ -187,13 +187,13 @@ export function MailDisplay({ mail }: MailDisplayProps) {
               </div>
             </div>
             {mail.date && (
-              <div className="ml-auto text-xs text-muted-foreground">
+              <div className="text-muted-foreground ml-auto text-xs">
                 {format(new Date(mail.date), 'PPpp')}
               </div>
             )}
           </div>
           <Separator />
-          <div className="flex-1 p-4 text-sm whitespace-pre-wrap">
+          <div className="flex-1 whitespace-pre-wrap p-4 text-sm">
             {mail.text}
           </div>
           <Separator className="mt-auto" />
@@ -208,7 +208,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 <div className="flex items-center">
                   <Label
                     htmlFor="mute"
-                    className="flex items-center gap-2 text-xs font-normal text-muted-foreground"
+                    className="text-muted-foreground flex items-center gap-2 text-xs font-normal"
                   >
                     <Switch id="mute" aria-label="Mute thread" disabled /> Mute
                     this thread
@@ -227,7 +227,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
           </div>
         </div>
       ) : (
-        <div className="p-8 text-center text-muted-foreground">
+        <div className="text-muted-foreground p-8 text-center">
           No message selected
         </div>
       )}

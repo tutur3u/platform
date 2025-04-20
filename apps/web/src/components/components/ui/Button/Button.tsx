@@ -31,7 +31,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const buttonClassName = cn(
-      'group flex items-center justify-center gap-2 rounded-md border border-transparent text-sm font-semibold whitespace-nowrap disabled:opacity-50',
+      'group flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent text-sm font-semibold disabled:opacity-50',
 
       variant === 'primary' &&
         cn(

@@ -22,7 +22,7 @@ export function ScrollToBottomButton({ className, ...props }: ButtonProps) {
   return (
     <Button
       className={cn(
-        'flex-none bg-background/20 backdrop-blur-lg transition-opacity duration-300',
+        'bg-background/20 flex-none backdrop-blur-lg transition-opacity duration-300',
         className
       )}
       onClick={() => {

@@ -70,7 +70,7 @@ export function AlgorithmAnalytics({
               {Math.round(efficiency * 100)}%
             </div>
             <Progress value={efficiency * 100} className="h-2" />
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               Based on theoretical minimum of {theoreticalMinRaces} races
             </div>
           </div>
@@ -83,7 +83,7 @@ export function AlgorithmAnalytics({
               {Math.round(progressPercentage * 100)}%
             </div>
             <Progress value={progressPercentage * 100} className="h-2" />
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               {currentRaceIndex + 1} of {races.length} races completed
             </div>
           </div>
@@ -142,7 +142,7 @@ export function AlgorithmAnalytics({
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             Shows potential vs actual information gained per race
           </div>
         </div>

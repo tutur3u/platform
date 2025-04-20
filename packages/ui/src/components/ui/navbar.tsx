@@ -112,7 +112,7 @@ export function Navbar({
             {afterTitle && (
               <Suspense
                 fallback={
-                  <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
+                  <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
                 }
               >
                 {afterTitle}

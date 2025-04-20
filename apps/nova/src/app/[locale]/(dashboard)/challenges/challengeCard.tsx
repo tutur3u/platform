@@ -354,7 +354,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             className="mb-2"
           />
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-xs">
             <div className="flex items-center">
               <span> {t('started-at')}: {format(startTime, 'PPpp')}</span>
             </div>
@@ -506,7 +506,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
           )}
         </CardHeader>
         <CardContent className="flex-grow">
-          <p className="mb-4 text-muted-foreground">{challenge.description}</p>
+          <p className="text-muted-foreground mb-4">{challenge.description}</p>
 
           <div className="grid gap-2">
             <div className="flex items-center">

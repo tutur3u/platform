@@ -128,10 +128,10 @@ export default function ChallengesList({ isAdmin }: Props) {
 
   return (
     <>
-      <div className="mb-6 rounded-lg border bg-card p-4 shadow-sm">
-        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4">
+      <div className="bg-card mb-6 rounded-lg border p-4 shadow-sm">
+        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-x-4 md:space-y-0">
           <div className="relative flex-1">
-            <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute left-3 top-2.5 h-4 w-4" />
             <Input
               placeholder="Search challenges..."
               className="pl-9"
@@ -141,7 +141,7 @@ export default function ChallengesList({ isAdmin }: Props) {
           </div>
 
           <div className="flex items-center">
-            <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+            <Filter className="text-muted-foreground mr-2 h-4 w-4" />
             <Tabs
               defaultValue="all"
               value={filter}
@@ -178,9 +178,9 @@ export default function ChallengesList({ isAdmin }: Props) {
         </div>
       ) : (
         <div className="mt-12 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-          <Clock className="h-12 w-12 text-muted-foreground/50" />
+          <Clock className="text-muted-foreground/50 h-12 w-12" />
           <h3 className="mt-4 text-xl font-medium">No challenges found</h3>
-          <p className="mt-2 max-w-md text-muted-foreground">
+          <p className="text-muted-foreground mt-2 max-w-md">
             {searchQuery
               ? 'No challenges match your search criteria. Try adjusting your filters or search terms.'
               : 'There are no challenges available at the moment. Check back later or contact an administrator.'}

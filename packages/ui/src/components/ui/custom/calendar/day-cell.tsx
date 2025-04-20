@@ -20,7 +20,7 @@ export const DayCell: React.FC<{
 }> = ({ day, currentDate, today, attendanceData, onDateClick }) => {
   if (!isCurrentMonth(day, currentDate))
     return (
-      <div className="flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold text-foreground/20 transition duration-300 md:rounded-lg">
+      <div className="text-foreground/20 flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold transition duration-300 md:rounded-lg">
         {day.getDate()}
       </div>
     );
@@ -33,7 +33,7 @@ export const DayCell: React.FC<{
       <button
         onClick={onDateClick ? () => onDateClick(day) : undefined}
         className={cn(
-          'flex flex-none cursor-default justify-center rounded border bg-foreground/5 p-2 font-semibold text-foreground/40 transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
+          'bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg',
           isAfter(day, today) &&
             'cursor-not-allowed opacity-50 hover:cursor-not-allowed'
         )}

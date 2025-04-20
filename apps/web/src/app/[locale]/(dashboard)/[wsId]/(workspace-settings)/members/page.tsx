@@ -39,7 +39,7 @@ export default async function WorkspaceMembersPage({
   if (withoutPermission('manage_workspace_members'))
     redirect(`/${wsId}/settings`);
 
-  const ws = await getWorkspace(wsId);
+  const ws = await getWorkspace(wsId, true);
   const user = await getCurrentUser();
   const members = await getMembers(wsId, await searchParams);
 
@@ -48,7 +48,7 @@ export default async function WorkspaceMembersPage({
 
   return (
     <>
-      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
+      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">
             {t('workspace-settings-layout.members')}

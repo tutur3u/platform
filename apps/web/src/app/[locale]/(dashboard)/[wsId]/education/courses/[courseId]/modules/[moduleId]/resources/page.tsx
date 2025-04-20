@@ -51,7 +51,7 @@ export default async function ModuleResourcesPage({ params }: Props) {
         resources.map((file) => (
           <div
             key={file.name}
-            className="flex flex-wrap items-center gap-2 rounded-lg border border-foreground/10 p-2 md:p-4"
+            className="border-foreground/10 flex flex-wrap items-center gap-2 rounded-lg border p-2 md:p-4"
           >
             <DeleteResourceButton path={`${storagePath}${file.name}`} />
             <div className="font-semibold hover:underline">
