@@ -9,9 +9,14 @@ import {
 } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@tuturuuu/ui/hover-card';
 import { CheckCircle2, Clock, PlayCircle, XCircle } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -264,7 +269,7 @@ export default function PromptForm({ problem, session }: Props) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="prompt" className="flex-1 overflow-hidden">
+          <TabsContent value="prompt" className="space-y-4">
             <div className="flex h-full flex-col">
               <div className="mb-2 flex items-center justify-between">
                 <div className="text-muted-foreground text-sm">
@@ -385,14 +390,7 @@ export default function PromptForm({ problem, session }: Props) {
           </TabsContent>
 
           <TabsContent value="submissions" className="space-y-4">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold">Submission History</h2>
-              <p className="text-muted-foreground text-sm">
-                Review your previous submissions and their scores
-              </p>
-            </div>
-
-            {submissions.length === 0 ? (
+            {submissions.length == 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                 <Clock className="text-muted-foreground mb-2 h-10 w-10" />
                 <h3 className="text-lg font-medium">No submissions yet</h3>
@@ -402,132 +400,141 @@ export default function PromptForm({ problem, session }: Props) {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {submissions.map((submission, index) => (
-                  <Card key={index} className="overflow-hidden">
-                    <CardHeader className="bg-muted/50 pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base">
-                          Attempt {index + 1}
-                        </CardTitle>
-                        <ScoreBadge
-                          score={submission.total_score}
-                          maxScore={10}
-                        >
-                          {submission.total_score}/10
-                        </ScoreBadge>
-                      </div>
-                      <p className="text-muted-foreground text-xs">
-                        Submitted on{' '}
+              submissions.map((submission) => (
+                <Card key={submission.id} className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-xs">
+                        <Clock className="mr-1 inline h-3 w-3" />
                         {new Date(submission.created_at).toLocaleString()}
-                      </p>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="mb-1 text-sm font-medium">Prompt</h4>
-                          <div className="bg-muted rounded-md p-3 text-sm">
-                            {submission.prompt}
-                          </div>
+                      </span>
+
+                      <ScoreBadge
+                        score={submission.total_score}
+                        maxScore={10}
+                        className="px-2 py-0"
+                      >
+                        {submission.total_score.toFixed(2)}/10
+                      </ScoreBadge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <h3 className="text-foreground mb-1 text-sm font-medium">
+                        Prompt:
+                      </h3>
+                      <div className="bg-muted rounded-md p-2 text-sm">
+                        {submission.prompt}
+                      </div>
+                    </div>
+
+                    {/* Test Case Evaluation */}
+                    {submission.total_tests > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-muted-foreground text-xs font-medium">
+                            Test Case Evaluation:
+                          </h3>
+                          <ScoreBadge
+                            score={submission.test_case_score}
+                            maxScore={10}
+                            className="px-2 py-0"
+                          >
+                            {submission.test_case_score.toFixed(2)}/10
+                          </ScoreBadge>
                         </div>
-
-                        {submission.criteria &&
-                          submission.criteria.length > 0 && (
-                            <div>
-                              <h4 className="mb-2 text-sm font-medium">
-                                Criteria Scores
-                              </h4>
-                              <div className="grid gap-2 sm:grid-cols-2">
-                                {submission.criteria.map((cs) => {
-                                  if (!cs || !cs.result) return null;
-                                  return (
-                                    <div
-                                      key={cs.id}
-                                      className={`flex items-center justify-between rounded-md border p-2 ${
-                                        cs.result.score >= 8
-                                          ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
-                                          : cs.result.score >= 5
-                                            ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
-                                            : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        {cs.result.score >= 8 ? (
-                                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                                        ) : cs.result.score >= 5 ? (
-                                          <Clock className="h-4 w-4 text-amber-500" />
-                                        ) : (
-                                          <XCircle className="h-4 w-4 text-red-500" />
-                                        )}
-                                        <span className="text-sm">
-                                          {cs.name}
-                                        </span>
-                                      </div>
-                                      <ScoreBadge
-                                        score={cs.result.score}
-                                        maxScore={10}
-                                      >
-                                        {cs.result.score}/10
-                                      </ScoreBadge>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                        {/* Test Case Evaluation */}
-                        {submission.total_tests > 0 && (
+                        <div className="space-y-2 rounded-md border p-4">
                           <div>
-                            <h4 className="mb-2 text-sm font-medium">
-                              Test Cases
-                            </h4>
-                            <div className="rounded-md border p-4">
-                              <div className="mb-2 flex items-center justify-between">
-                                <span className="text-sm">
-                                  Passed {submission.passed_tests} of{' '}
-                                  {submission.total_tests} test cases
-                                </span>
-                                <ScoreBadge
-                                  score={submission.test_case_score}
-                                  maxScore={10}
-                                >
-                                  {submission.test_case_score}/10
-                                </ScoreBadge>
-                              </div>
-                              <Progress
-                                value={
-                                  (submission.passed_tests /
-                                    submission.total_tests) *
-                                  100
-                                }
-                                className="h-2 w-full"
-                                indicatorClassName={
-                                  submission.test_case_score >= 4
-                                    ? 'bg-emerald-500'
-                                    : submission.test_case_score >= 2.5
-                                      ? 'bg-amber-500'
-                                      : 'bg-red-500'
-                                }
-                              />
-                            </div>
+                            <span className="text-sm">
+                              Passed {submission.passed_tests} of{' '}
+                              {submission.total_tests} test cases
+                            </span>
                           </div>
-                        )}
-
-                        <div>
-                          <h4 className="mb-1 text-sm font-medium">Feedback</h4>
-                          <p className="text-muted-foreground text-sm">
-                            {submission.criteria
-                              ?.map((c) => c.result?.feedback)
-                              .filter(Boolean)
-                              .join(' ')}
-                          </p>
+                          <Progress
+                            value={
+                              (submission.passed_tests /
+                                submission.total_tests) *
+                              100
+                            }
+                            className="h-2 w-full"
+                            indicatorClassName={
+                              submission.test_case_score >= 8
+                                ? 'bg-emerald-500'
+                                : submission.test_case_score >= 5
+                                  ? 'bg-amber-500'
+                                  : 'bg-red-500'
+                            }
+                          />
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    )}
+
+                    {/* Criteria Evaluation */}
+                    {submission.total_criteria > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-muted-foreground text-xs font-medium">
+                            Criteria Evaluation:
+                          </h3>
+                          <ScoreBadge
+                            score={submission.criteria_score}
+                            maxScore={10}
+                            className="px-2 py-0"
+                          >
+                            {submission.criteria_score.toFixed(2)}/10
+                          </ScoreBadge>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {submission.criteria.map((cs) => {
+                            if (!cs || !cs.result) return null;
+
+                            return (
+                              <HoverCard key={cs.id}>
+                                <HoverCardTrigger asChild>
+                                  <div
+                                    className={`flex cursor-pointer items-center justify-between rounded-md border p-2 ${
+                                      cs.result.score >= 8
+                                        ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
+                                        : cs.result.score >= 5
+                                          ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
+                                          : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {cs.result.score >= 8 ? (
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                      ) : cs.result.score >= 5 ? (
+                                        <Clock className="h-4 w-4 text-amber-500" />
+                                      ) : (
+                                        <XCircle className="h-4 w-4 text-red-500" />
+                                      )}
+                                      <span className="text-sm">{cs.name}</span>
+                                    </div>
+                                    <ScoreBadge
+                                      score={cs.result.score}
+                                      maxScore={10}
+                                    >
+                                      {cs.result.score}/10
+                                    </ScoreBadge>
+                                  </div>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80 p-4">
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium">Feedback</h4>
+                                    <p className="text-muted-foreground text-sm">
+                                      {cs.result.feedback}
+                                    </p>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
             )}
           </TabsContent>
         </Tabs>
