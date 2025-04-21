@@ -102,13 +102,38 @@ export async function GET(req: NextRequest) {
 
     // Calculate scores per challenge
     const challenge_scores: Record<string, number> = {};
+    const sessionSubmissions: Record<string, Record<string, number>> = {};
+
+    // First, group submissions by session and challenge
     userSubmissions.forEach((submission) => {
-      if (submission.nova_sessions && submission.nova_sessions.challenge_id) {
+      if (submission.nova_sessions && submission.session_id !== null) {
         const challengeId = submission.nova_sessions.challenge_id;
-        challenge_scores[challengeId] =
-          (challenge_scores[challengeId] || 0) + (submission.total_score || 0);
+        const sessionId = submission.session_id;
+
+        if (!sessionSubmissions[challengeId]) {
+          sessionSubmissions[challengeId] = {};
+        }
+
+        // Sum scores for each session
+        if (sessionId) {
+          sessionSubmissions[challengeId][sessionId] =
+            (sessionSubmissions[challengeId][sessionId] || 0) +
+            (submission.total_score || 0);
+        }
       }
     });
+
+    // Then find max score for each challenge across sessions
+    for (const challengeId in sessionSubmissions) {
+      const challengeSessionData = sessionSubmissions[challengeId];
+      if (challengeSessionData) {
+        const sessionScores = Object.values(challengeSessionData);
+        challenge_scores[challengeId] =
+          sessionScores.length > 0 ? Math.max(...sessionScores) : 0;
+      } else {
+        challenge_scores[challengeId] = 0;
+      }
+    }
 
     return {
       id: user.id,
