@@ -184,6 +184,7 @@
     "events": "Sự kiện"
   },
   "common": {
+    "allow_manage_all_challenges": "Cho phép quản lý tất cả các thử thách",
     "name_placeholder": "Nhập tên",
     "name": "Tên",
     "members": "Thành viên",

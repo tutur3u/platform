@@ -125,17 +125,12 @@ export default function UserProfileClient({
     day: 'numeric',
   });
 
-  const daysActive = Math.ceil(
-    (new Date().getTime() - (joinedDate?.getTime() || 0)) / (1000 * 3600 * 24)
-  );
-
   // Determine achievements based on profile data
   const achievements = [
     {
       id: 'early_adopter',
       title: 'Early Adopter',
       description: "Joined during the platform's early days",
-      unlocked: daysActive > 90,
       icon: <Rocket className="h-5 w-5" />,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
@@ -216,9 +211,6 @@ export default function UserProfileClient({
         })
       : 'Never',
   };
-
-  // Generate a streak value (mock data - would need real streak data in a real implementation)
-  const streak = Math.min(Math.floor(daysActive / 7), 15);
 
   // Generate a level based on total score
   const level = Math.floor(profile.totalScore / 500) + 1;
@@ -318,16 +310,6 @@ export default function UserProfileClient({
                     <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                     {profile.totalScore.toLocaleString()} Points
                   </Badge>
-
-                  {streak > 0 && (
-                    <Badge
-                      variant="outline"
-                      className="ml-2 border-orange-500/30 bg-orange-500/5 text-orange-600 dark:text-orange-400"
-                    >
-                      <Bolt className="mr-1.5 h-3.5 w-3.5" />
-                      {streak} Day Streak
-                    </Badge>
-                  )}
                 </div>
               )}
             </div>
@@ -484,20 +466,6 @@ export default function UserProfileClient({
                   <span className="font-medium">
                     {activityStats.bestScore.toFixed(1)}
                   </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
-                    Last Active
-                  </span>
-                  <span className="font-medium">
-                    {activityStats.lastActive}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
-                    Current Streak
-                  </span>
-                  <span className="font-medium">{streak} days</span>
                 </div>
               </CardContent>
             </Card>
