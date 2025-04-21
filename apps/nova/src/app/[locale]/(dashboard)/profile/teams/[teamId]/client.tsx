@@ -41,6 +41,10 @@ export interface TeamData {
   }[];
   rank?: number;
   total_score?: number;
+  active_since?: string;
+  stats?: {
+    active_since?: string;
+  };
 }
 
 export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
@@ -57,7 +61,6 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
       </div>
     );
   }
-
   const teamInfo = {
     ...teamData,
     name: teamData.name,
@@ -80,6 +83,32 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
     type: 'goals',
     isEditing: false,
   });
+
+  // Use either stats.active_since or the root active_since property
+  const activeSinceDate = teamData.stats?.active_since || teamData.active_since;
+
+  const formattedActiveDate = activeSinceDate
+    ? (() => {
+        try {
+          const date = new Date(activeSinceDate);
+
+          // Check if date is valid before formatting
+          if (isNaN(date.getTime())) {
+            return 'Unknown';
+          }
+
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          });
+        } catch (error) {
+          console.error('Error formatting date:', error);
+          return 'Unknown';
+        }
+      })()
+    : 'Unknown';
+
   const isTeamMember =
     user?.id && teamData.members.some((member) => member.user_id === user?.id);
   const openDialog = (type: 'goals' | 'reports' | 'des') => {
@@ -283,9 +312,9 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    Team Created
+                    Active Since
                   </span>
-                  <span className="font-medium">Apr 2023</span>
+                  <span className="font-medium">{formattedActiveDate}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
