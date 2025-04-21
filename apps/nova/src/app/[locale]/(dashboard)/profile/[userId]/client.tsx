@@ -125,17 +125,12 @@ export default function UserProfileClient({
     day: 'numeric',
   });
 
-  const daysActive = Math.ceil(
-    (new Date().getTime() - (joinedDate?.getTime() || 0)) / (1000 * 3600 * 24)
-  );
-
   // Determine achievements based on profile data
   const achievements = [
     {
       id: 'early_adopter',
       title: 'Early Adopter',
       description: "Joined during the platform's early days",
-      unlocked: daysActive > 90,
       icon: <Rocket className="h-5 w-5" />,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
@@ -217,18 +212,15 @@ export default function UserProfileClient({
       : 'Never',
   };
 
-  // Generate a streak value (mock data - would need real streak data in a real implementation)
-  const streak = Math.min(Math.floor(daysActive / 7), 15);
-
   // Generate a level based on total score
   const level = Math.floor(profile.totalScore / 500) + 1;
   const nextLevel = level + 1;
   const levelProgress = ((profile.totalScore % 500) / 500) * 100;
 
   return (
-    <div className="container max-w-6xl pb-16 pt-8">
+    <div className="container max-w-6xl pt-8 pb-16">
       {/* Breadcrumb navigation */}
-      <nav className="text-muted-foreground mb-8 flex items-center space-x-2 text-sm">
+      <nav className="mb-8 flex items-center space-x-2 text-sm text-muted-foreground">
         <Link href="/home" className="hover:text-foreground">
           Home
         </Link>
@@ -237,7 +229,7 @@ export default function UserProfileClient({
           Leaderboard
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="text-foreground font-medium">{profile.name}</span>
+        <span className="font-medium text-foreground">{profile.name}</span>
       </nav>
 
       {/* Profile Header */}
@@ -245,7 +237,7 @@ export default function UserProfileClient({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-card/50 mb-8 overflow-hidden rounded-xl border p-6 shadow-sm"
+        className="mb-8 overflow-hidden rounded-xl border bg-card/50 p-6 shadow-sm"
       >
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-col items-center gap-4 sm:flex-row">
@@ -254,9 +246,9 @@ export default function UserProfileClient({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="from-primary/30 to-primary/10 absolute -inset-0.5 rounded-full bg-gradient-to-br blur-md"
+                className="absolute -inset-0.5 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 blur-md"
               />
-              <Avatar className="border-background h-24 w-24 border-2 shadow-md">
+              <Avatar className="h-24 w-24 border-2 border-background shadow-md">
                 <AvatarImage src={profile.avatar} alt={profile.name} />
                 <AvatarFallback className="text-xl">
                   {profile.name.substring(0, 2).toUpperCase()}
@@ -264,7 +256,7 @@ export default function UserProfileClient({
               </Avatar>
 
               {profile.rank <= 3 && (
-                <div className="absolute -right-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg">
+                <div className="absolute -top-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg">
                   <Trophy className="h-4 w-4" />
                 </div>
               )}
@@ -285,7 +277,7 @@ export default function UserProfileClient({
                 </Badge>
               </div>
 
-              <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-muted-foreground">
                 <span className="flex items-center">
                   <Calendar className="mr-1.5 h-4 w-4" />
                   Joined {formattedJoinedDate}
@@ -295,7 +287,7 @@ export default function UserProfileClient({
 
                 <span className="flex items-center">
                   <Trophy className="mr-1.5 h-4 w-4 text-amber-500" />
-                  <span className="text-foreground font-medium">
+                  <span className="font-medium text-foreground">
                     Rank #{profile.rank}
                   </span>
                 </span>
@@ -318,16 +310,6 @@ export default function UserProfileClient({
                     <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                     {profile.totalScore.toLocaleString()} Points
                   </Badge>
-
-                  {streak > 0 && (
-                    <Badge
-                      variant="outline"
-                      className="ml-2 border-orange-500/30 bg-orange-500/5 text-orange-600 dark:text-orange-400"
-                    >
-                      <Bolt className="mr-1.5 h-3.5 w-3.5" />
-                      {streak} Day Streak
-                    </Badge>
-                  )}
                 </div>
               )}
             </div>
@@ -358,7 +340,7 @@ export default function UserProfileClient({
               {Math.round(levelProgress)}% to Level {nextLevel}
             </span>
           </div>
-          <Progress value={levelProgress} className="bg-primary/10 h-2" />
+          <Progress value={levelProgress} className="h-2 bg-primary/10" />
         </div>
       </motion.div>
 
@@ -369,13 +351,13 @@ export default function UserProfileClient({
         transition={{ duration: 0.4, delay: 0.1 }}
         className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4"
       >
-        <Card className="border-background/80 bg-card/50 overflow-hidden">
+        <Card className="overflow-hidden border-background/80 bg-card/50">
           <CardContent className="flex flex-col items-center justify-center p-0">
-            <div className="bg-primary/5 text-primary w-full py-2 text-center text-xs font-medium">
+            <div className="w-full bg-primary/5 py-2 text-center text-xs font-medium text-primary">
               SCORE
             </div>
             <div className="flex h-24 w-full flex-col items-center justify-center">
-              <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Trophy className="h-5 w-5" />
               </div>
               <p className="mt-1 text-2xl font-bold">
@@ -385,7 +367,7 @@ export default function UserProfileClient({
           </CardContent>
         </Card>
 
-        <Card className="border-background/80 bg-card/50 overflow-hidden">
+        <Card className="overflow-hidden border-background/80 bg-card/50">
           <CardContent className="flex flex-col items-center justify-center p-0">
             <div className="w-full bg-amber-500/5 py-2 text-center text-xs font-medium text-amber-600 dark:text-amber-400">
               RANK
@@ -399,7 +381,7 @@ export default function UserProfileClient({
           </CardContent>
         </Card>
 
-        <Card className="border-background/80 bg-card/50 overflow-hidden">
+        <Card className="overflow-hidden border-background/80 bg-card/50">
           <CardContent className="flex flex-col items-center justify-center p-0">
             <div className="w-full bg-indigo-500/5 py-2 text-center text-xs font-medium text-indigo-600 dark:text-indigo-400">
               CHALLENGES
@@ -415,7 +397,7 @@ export default function UserProfileClient({
           </CardContent>
         </Card>
 
-        <Card className="border-background/80 bg-card/50 overflow-hidden">
+        <Card className="overflow-hidden border-background/80 bg-card/50">
           <CardContent className="flex flex-col items-center justify-center p-0">
             <div className="w-full bg-green-500/5 py-2 text-center text-xs font-medium text-green-600 dark:text-green-400">
               ACHIEVEMENTS
@@ -462,7 +444,7 @@ export default function UserProfileClient({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     Submissions
                   </span>
                   <span className="font-medium">
@@ -470,7 +452,7 @@ export default function UserProfileClient({
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     Average Score
                   </span>
                   <span className="font-medium">
@@ -478,33 +460,19 @@ export default function UserProfileClient({
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-sm text-muted-foreground">
                     Best Score
                   </span>
                   <span className="font-medium">
                     {activityStats.bestScore.toFixed(1)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
-                    Last Active
-                  </span>
-                  <span className="font-medium">
-                    {activityStats.lastActive}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
-                    Current Streak
-                  </span>
-                  <span className="font-medium">{streak} days</span>
-                </div>
               </CardContent>
             </Card>
 
             {/* Best challenge */}
             {bestChallenge && (
-              <Card className="border-primary/10 bg-card/50 overflow-hidden md:col-span-2">
+              <Card className="overflow-hidden border-primary/10 bg-card/50 md:col-span-2">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
@@ -550,10 +518,10 @@ export default function UserProfileClient({
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/10 border-t px-6 py-3">
+                <CardFooter className="border-t bg-muted/10 px-6 py-3">
                   <Button
                     variant="ghost"
-                    className="text-muted-foreground hover:text-foreground ml-auto text-sm"
+                    className="ml-auto text-sm text-muted-foreground hover:text-foreground"
                     onClick={() => {
                       if (achievementsTabRef.current) {
                         achievementsTabRef.current.click();
@@ -598,7 +566,7 @@ export default function UserProfileClient({
                 {unlockedAchievements.length > 6 && (
                   <Button
                     variant="ghost"
-                    className="text-muted-foreground hover:text-foreground mt-4 w-full"
+                    className="mt-4 w-full text-muted-foreground hover:text-foreground"
                     onClick={() => {
                       if (achievementsTabRef.current) {
                         achievementsTabRef.current.click();
@@ -633,7 +601,7 @@ export default function UserProfileClient({
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="bg-card/50 hover:bg-card/80 overflow-hidden rounded-lg border shadow-sm transition-all"
+                      className="overflow-hidden rounded-lg border bg-card/50 shadow-sm transition-all hover:bg-card/80"
                     >
                       <div className="flex items-center justify-between gap-4 p-4">
                         <div className="flex items-center gap-4">
@@ -644,7 +612,7 @@ export default function UserProfileClient({
                             <p className="font-medium">
                               {activity.problemTitle}
                             </p>
-                            <p className="text-muted-foreground text-xs">
+                            <p className="text-xs text-muted-foreground">
                               {formatDistanceToNow(new Date(activity.date), {
                                 addSuffix: true,
                               })}
@@ -670,7 +638,7 @@ export default function UserProfileClient({
                 {profile.recentActivity.length > 3 && (
                   <Button
                     variant="ghost"
-                    className="text-muted-foreground hover:text-foreground mt-4 w-full"
+                    className="mt-4 w-full text-muted-foreground hover:text-foreground"
                     onClick={() => {
                       if (activityTabRef.current) {
                         activityTabRef.current.click();
@@ -701,7 +669,7 @@ export default function UserProfileClient({
                   {profile.challenges.map((challenge, index) => (
                     <motion.li
                       key={challenge.id}
-                      className="hover:bg-accent/5 rounded-lg border p-4 transition-colors"
+                      className="rounded-lg border p-4 transition-colors hover:bg-accent/5"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -730,7 +698,7 @@ export default function UserProfileClient({
                           Score: {challenge.score}
                         </Badge>
                       </div>
-                      <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">
+                      <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
                         {challenge.description}
                       </p>
                       <div className="mt-2">
@@ -762,7 +730,7 @@ export default function UserProfileClient({
                 </ul>
               ) : (
                 <div className="flex h-24 items-center justify-center">
-                  <p className="text-muted-foreground text-center">
+                  <p className="text-center text-muted-foreground">
                     No challenges completed yet
                   </p>
                 </div>
@@ -811,12 +779,12 @@ export default function UserProfileClient({
                     <h3 className="text-lg font-semibold">
                       {achievement.title}
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {achievement.description}
                     </p>
                     {achievement.unlocked && (
                       <Badge
-                        className={cn('bg-primary/10 mt-3', achievement.color)}
+                        className={cn('mt-3 bg-primary/10', achievement.color)}
                       >
                         <Sparkles className="mr-1 h-3 w-3" />
                         Unlocked
@@ -853,9 +821,9 @@ export default function UserProfileClient({
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="hover:bg-accent/5 relative ml-6 rounded-lg border p-4 transition-colors"
+                      className="relative ml-6 rounded-lg border p-4 transition-colors hover:bg-accent/5"
                     >
-                      <div className="bg-primary/10 text-primary absolute -left-10 flex h-8 w-8 items-center justify-center rounded-full">
+                      <div className="absolute -left-10 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <Clock className="h-4 w-4" />
                       </div>
                       <div className="mb-2 flex items-center justify-between">
@@ -865,7 +833,7 @@ export default function UserProfileClient({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger>
-                              <p className="text-muted-foreground text-xs">
+                              <p className="text-xs text-muted-foreground">
                                 {format(new Date(activity.date), 'PPP p')}
                               </p>
                             </TooltipTrigger>
@@ -880,7 +848,7 @@ export default function UserProfileClient({
                         </TooltipProvider>
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           Submitted a solution
                         </p>
                         <Badge
@@ -900,7 +868,7 @@ export default function UserProfileClient({
                 </div>
               ) : (
                 <div className="flex h-24 items-center justify-center">
-                  <p className="text-muted-foreground text-center">
+                  <p className="text-center text-muted-foreground">
                     No recent activity
                   </p>
                 </div>
