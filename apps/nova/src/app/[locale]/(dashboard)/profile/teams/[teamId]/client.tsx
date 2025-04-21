@@ -273,7 +273,9 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   Team Rank
                 </h3>
                 <p className="text-muted-foreground mt-1">
-                  This team is currently in the top performers
+                  {teamData.rank && teamData.rank <= 50
+                    ? 'This team is currently in the top performers'
+                    : 'This team is competing in the leaderboard'}
                 </p>
               </div>
 
