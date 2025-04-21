@@ -91,7 +91,7 @@ export default function ResultClient({ data }: Props) {
   const status = getChallengeStatus(stats.percentage);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 px-4 py-8 sm:px-6">
+    <div className="from-background to-muted/20 min-h-screen bg-gradient-to-b px-4 py-8 sm:px-6">
       <div className="mx-auto flex min-h-full max-w-6xl flex-col">
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
           <div className="mb-4 flex items-center gap-4 md:mb-0">
@@ -105,7 +105,7 @@ export default function ResultClient({ data }: Props) {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">{data.challenge.title}</h1>
-              <p className="mt-1 text-muted-foreground">
+              <p className="text-muted-foreground mt-1">
                 {data.challenge.description || 'Challenge Results'}
               </p>
             </div>
@@ -124,7 +124,7 @@ export default function ResultClient({ data }: Props) {
           <div className="flex flex-1 items-center justify-center">
             <Card className="max-w-md">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <div className="bg-muted text-muted-foreground mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
                   <BookOpen className="h-10 w-10" />
                 </div>
                 <CardTitle>No data available</CardTitle>
@@ -156,7 +156,7 @@ export default function ResultClient({ data }: Props) {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              <div className="bg-primary/10 text-primary flex items-center rounded-full px-3 py-1 text-sm font-medium">
                                 <Trophy className="mr-1 h-4 w-4" />
                                 {stats.score.toFixed(1)}/{stats.maxScore}
                               </div>
@@ -184,7 +184,7 @@ export default function ResultClient({ data }: Props) {
                         }
                       />
                       <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           You've attempted {stats.problemsAttempted || 0} out of{' '}
                           {stats.totalProblems || 0} problems
                         </p>
@@ -195,24 +195,24 @@ export default function ResultClient({ data }: Props) {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                      <div className="rounded-lg border bg-card/50 p-3 text-center transition-colors hover:bg-card/80">
-                        <div className="text-xs text-muted-foreground uppercase">
+                      <div className="bg-card/50 hover:bg-card/80 rounded-lg border p-3 text-center transition-colors">
+                        <div className="text-muted-foreground text-xs uppercase">
                           Sessions
                         </div>
                         <div className="mt-1 text-2xl font-bold">
                           {data.sessions.length}
                         </div>
                       </div>
-                      <div className="rounded-lg border bg-card/50 p-3 text-center transition-colors hover:bg-card/80">
-                        <div className="text-xs text-muted-foreground uppercase">
+                      <div className="bg-card/50 hover:bg-card/80 rounded-lg border p-3 text-center transition-colors">
+                        <div className="text-muted-foreground text-xs uppercase">
                           Problems
                         </div>
                         <div className="mt-1 text-2xl font-bold">
                           {data.sessions[0]?.problems.length || 0}
                         </div>
                       </div>
-                      <div className="rounded-lg border bg-card/50 p-3 text-center transition-colors hover:bg-card/80">
-                        <div className="text-xs text-muted-foreground uppercase">
+                      <div className="bg-card/50 hover:bg-card/80 rounded-lg border p-3 text-center transition-colors">
+                        <div className="text-muted-foreground text-xs uppercase">
                           Total Score
                         </div>
                         <div className="mt-1 flex items-center justify-center">
@@ -234,9 +234,9 @@ export default function ResultClient({ data }: Props) {
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-center justify-center rounded-lg bg-primary/5 p-5">
+                  <div className="bg-primary/5 flex flex-col items-center justify-center rounded-lg p-5">
                     <div className="text-center">
-                      <div className="mb-2 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground mb-2 text-sm">
                         Challenge Completed
                       </div>
                       <div className="relative flex items-center justify-center">
@@ -296,7 +296,7 @@ export default function ResultClient({ data }: Props) {
                 {data.sessions.map((session, sessionIndex) => (
                   <div
                     key={sessionIndex}
-                    className="mb-8 duration-500 animate-in fade-in-50 slide-in-from-bottom-3"
+                    className="animate-in fade-in-50 slide-in-from-bottom-3 mb-8 duration-500"
                   >
                     <SessionCard
                       session={session}
@@ -324,7 +324,7 @@ export default function ResultClient({ data }: Props) {
               </TabsContent>
 
               <TabsContent value="problems">
-                <div className="grid grid-cols-1 gap-4 duration-500 animate-in fade-in-50 slide-in-from-bottom-3 md:grid-cols-2 2xl:grid-cols-3">
+                <div className="animate-in fade-in-50 slide-in-from-bottom-3 grid grid-cols-1 gap-4 duration-500 md:grid-cols-2 2xl:grid-cols-3">
                   {data.sessions[0]?.problems.map((problem, problemIndex) => {
                     // Combine submissions from all sessions for this problem
                     const allSubmissions = data.sessions.flatMap(

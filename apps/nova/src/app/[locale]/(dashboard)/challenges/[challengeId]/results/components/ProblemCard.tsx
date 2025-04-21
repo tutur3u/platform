@@ -104,13 +104,13 @@ export default function ProblemCard({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-              <CodeIcon className="h-4 w-4 text-primary" />
+            <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+              <CodeIcon className="text-primary h-4 w-4" />
             </div>
             <CardTitle className="flex items-center gap-2">
               Problem {problemIndex + 1}
               {problem.title && (
-                <span className="text-sm font-normal text-muted-foreground">
+                <span className="text-muted-foreground text-sm font-normal">
                   {problem.title}
                 </span>
               )}
@@ -147,7 +147,7 @@ export default function ProblemCard({
             <>
               <Badge
                 variant="outline"
-                className="gap-1 bg-dynamic-green/10 px-2 py-0 text-xs text-dynamic-green"
+                className="bg-dynamic-green/10 text-dynamic-green gap-1 px-2 py-0 text-xs"
               >
                 <CheckCircle2 className="h-3 w-3 text-green-500" />
                 {latestSubmission.passed_tests}/{latestSubmission.total_tests}{' '}
@@ -166,11 +166,11 @@ export default function ProblemCard({
       </CardHeader>
 
       {problem.submissions.length > 0 && (
-        <CardContent className="pt-0 pb-2">
+        <CardContent className="pb-2 pt-0">
           <div className="space-y-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="text-muted-foreground flex items-center gap-1">
                   <Star className="h-3 w-3" /> Score
                 </span>
                 <span
@@ -179,7 +179,7 @@ export default function ProblemCard({
                   {bestSubmission.toFixed(1)}/{MAX_SCORE}
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
                 <div
                   className={`h-full rounded-full ${getScoreColor(bestSubmission)}`}
                   style={{ width: `${scoreProgress}%` }}
@@ -190,7 +190,7 @@ export default function ProblemCard({
             {testPassRate > 0 && (
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1 text-muted-foreground">
+                  <span className="text-muted-foreground flex items-center gap-1">
                     <CheckCircle2 className="h-3 w-3" /> Test Pass Rate
                   </span>
                   <span
@@ -222,7 +222,7 @@ export default function ProblemCard({
             problemIndex={problemIndex}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+          <div className="text-muted-foreground flex flex-col items-center justify-center py-6 text-center">
             <CodeIcon className="mb-2 h-10 w-10 opacity-20" />
             <p className="text-sm font-medium">No submissions yet</p>
             <p className="text-xs">Try solving this problem to see results</p>
