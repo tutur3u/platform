@@ -361,18 +361,20 @@ export function CategoryColorsSettings({
                           <div className="text-sm font-medium">
                             Select a color:
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              handleRemoveCategory(category);
-                              setEditingCategory(null);
-                            }}
-                            disabled={value.categories.length <= 1}
-                            className="text-muted-foreground hover:text-destructive h-7 w-7"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          <div className="pr-2.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                handleRemoveCategory(category);
+                                setEditingCategory(null);
+                              }}
+                              disabled={value.categories.length <= 1}
+                              className="text-muted-foreground hover:text-destructive h-7 w-7"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </div>
                         <div className="grid grid-cols-5 gap-2">
                           {Object.entries(colorMap).map(
