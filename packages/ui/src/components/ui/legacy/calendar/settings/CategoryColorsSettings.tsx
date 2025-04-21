@@ -51,7 +51,9 @@ export function CategoryColorsSettings({
   onChange,
 }: CategoryColorsSettingsProps) {
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [activeTab, setActiveTab] = useState<'categories' | 'suggestions'>('categories');
+  const [activeTab, setActiveTab] = useState<'categories' | 'suggestions'>(
+    'categories'
+  );
   const [editingCategory, setEditingCategory] = useState<number | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -129,12 +131,10 @@ export function CategoryColorsSettings({
     const currentCategoryNames = new Set(
       value.categories.map((cat) => cat.name.toLowerCase())
     );
-    const currentColors = new Set(
-      value.categories.map((cat) => cat.color)
-    );
+    const currentColors = new Set(value.categories.map((cat) => cat.color));
 
     const missingCategories = CATEGORY_SUGGESTIONS.filter(
-      (suggestion) => 
+      (suggestion) =>
         !currentCategoryNames.has(suggestion.name.toLowerCase()) &&
         !currentColors.has(suggestion.color)
     );
@@ -181,14 +181,14 @@ export function CategoryColorsSettings({
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedIndex === null) return;
-    
+
     if (draggedIndex !== index) {
       const newCategories = [...value.categories];
       const draggedItem = newCategories[draggedIndex];
       if (draggedItem) {
         newCategories.splice(draggedIndex, 1);
         newCategories.splice(index, 0, draggedItem);
-        
+
         onChange({ categories: newCategories });
         setDraggedIndex(index);
         setEditingCategory(null);
@@ -264,7 +264,8 @@ export function CategoryColorsSettings({
                 disabled={CATEGORY_SUGGESTIONS.every((suggestion) =>
                   value.categories.some(
                     (cat) =>
-                      cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
+                      cat.name.toLowerCase() ===
+                        suggestion.name.toLowerCase() ||
                       cat.color === suggestion.color
                   )
                 )}
