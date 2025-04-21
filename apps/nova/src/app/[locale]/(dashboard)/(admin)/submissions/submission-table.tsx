@@ -270,7 +270,7 @@ export function SubmissionTable({
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                          <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
                             {submission.user?.display_name?.charAt(0) || '?'}
                           </div>
                         )}
@@ -284,7 +284,7 @@ export function SubmissionTable({
                         <span className="font-medium">
                           {submission.problem?.title || 'Unknown Problem'}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           {submission.problem?.challenge?.title ||
                             'Unknown Challenge'}
                         </span>
@@ -339,7 +339,7 @@ export function SubmissionTable({
             <div className="col-span-full flex h-48 flex-col items-center justify-center space-y-4 rounded-lg border">
               {searchQuery ? (
                 <>
-                  <p className="text-center text-lg text-muted-foreground">
+                  <p className="text-muted-foreground text-center text-lg">
                     No results found for "{searchQuery}"
                   </p>
                   <Button
@@ -351,7 +351,7 @@ export function SubmissionTable({
                   </Button>
                 </>
               ) : (
-                <p className="text-center text-lg text-muted-foreground">
+                <p className="text-muted-foreground text-center text-lg">
                   No submissions found.
                 </p>
               )}
@@ -361,7 +361,7 @@ export function SubmissionTable({
             submissions.map((submission) => (
               <Card
                 key={submission.id}
-                className="cursor-pointer transition-colors hover:bg-accent/50"
+                className="hover:bg-accent/50 cursor-pointer transition-colors"
                 onClick={() => router.push(`/submissions/${submission.id}`)}
               >
                 <CardHeader className="pb-2">
@@ -385,7 +385,7 @@ export function SubmissionTable({
                           className="h-8 w-8 rounded-full"
                         />
                       ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                        <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
                           {submission.user?.display_name?.charAt(0) || '?'}
                         </div>
                       )}
@@ -398,7 +398,7 @@ export function SubmissionTable({
                       <p className="line-clamp-1 font-medium">
                         {submission.problem?.title || 'Unknown Problem'}
                       </p>
-                      <p className="line-clamp-1 text-sm text-muted-foreground">
+                      <p className="text-muted-foreground line-clamp-1 text-sm">
                         {submission.problem?.challenge?.title ||
                           'Unknown Challenge'}
                       </p>
