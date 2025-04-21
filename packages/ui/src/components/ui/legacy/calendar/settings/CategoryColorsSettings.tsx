@@ -51,10 +51,9 @@ export function CategoryColorsSettings({
   onChange,
 }: CategoryColorsSettingsProps) {
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [activeTab, setActiveTab] = useState<'categories' | 'suggestions'>(
-    'categories'
-  );
+  const [activeTab, setActiveTab] = useState<'categories' | 'suggestions'>('categories');
   const [editingCategory, setEditingCategory] = useState<number | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleCategoryChange = (
     index: number,
@@ -111,9 +110,11 @@ export function CategoryColorsSettings({
 
   // Add a suggested category that isn't already in the list
   const addSuggestedCategory = (suggestion: CategoryColor) => {
-    // Check if this category name already exists (case insensitive)
+    // Check if this category name or color already exists (case insensitive)
     const exists = value.categories.some(
-      (cat) => cat.name.toLowerCase() === suggestion.name.toLowerCase()
+      (cat) =>
+        cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
+        cat.color === suggestion.color
     );
 
     if (!exists) {
@@ -128,9 +129,14 @@ export function CategoryColorsSettings({
     const currentCategoryNames = new Set(
       value.categories.map((cat) => cat.name.toLowerCase())
     );
+    const currentColors = new Set(
+      value.categories.map((cat) => cat.color)
+    );
 
     const missingCategories = CATEGORY_SUGGESTIONS.filter(
-      (suggestion) => !currentCategoryNames.has(suggestion.name.toLowerCase())
+      (suggestion) => 
+        !currentCategoryNames.has(suggestion.name.toLowerCase()) &&
+        !currentColors.has(suggestion.color)
     );
 
     if (missingCategories.length > 0) {
@@ -165,6 +171,34 @@ export function CategoryColorsSettings({
         </div>
       </div>
     );
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+    setEditingCategory(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null) return;
+    
+    if (draggedIndex !== index) {
+      const newCategories = [...value.categories];
+      const draggedItem = newCategories[draggedIndex];
+      if (draggedItem) {
+        newCategories.splice(draggedIndex, 1);
+        newCategories.splice(index, 0, draggedItem);
+        
+        onChange({ categories: newCategories });
+        setDraggedIndex(index);
+        setEditingCategory(null);
+      }
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setEditingCategory(null);
   };
 
   return (
@@ -227,9 +261,11 @@ export function CategoryColorsSettings({
                 size="sm"
                 onClick={addAllSuggestions}
                 variant="outline"
-                disabled={CATEGORY_SUGGESTIONS.every((cat) =>
+                disabled={CATEGORY_SUGGESTIONS.every((suggestion) =>
                   value.categories.some(
-                    (c) => c.name.toLowerCase() === cat.name.toLowerCase()
+                    (cat) =>
+                      cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
+                      cat.color === suggestion.color
                   )
                 )}
               >
@@ -251,14 +287,18 @@ export function CategoryColorsSettings({
               {filteredCategories.map((category, index) => (
                 <Card
                   key={`${index}-${category.color}`}
-                  className={cn('group w-full overflow-hidden transition-all')}
+                  className="group w-full overflow-hidden transition-all"
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragEnd={handleDragEnd}
                 >
                   <CardContent className="p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex flex-1 items-center gap-3">
                         <div
                           className={cn(
-                            'h-6 w-6 flex-none cursor-pointer rounded-full border',
+                            'h-6 w-6 flex-none cursor-move rounded-full border',
                             colorMap[category.color].cbg
                           )}
                           key={`color-circle-${category.color}`}
@@ -266,23 +306,33 @@ export function CategoryColorsSettings({
                         />
 
                         {editingCategory === index ? (
-                          <Input
-                            value={category.name}
-                            onChange={(e) =>
-                              handleCategoryChange(index, {
-                                ...category,
-                                name: e.target.value,
-                              })
-                            }
-                            placeholder="Category name"
-                            className="h-8"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                setEditingCategory(null);
+                          <div className="flex flex-1 items-center justify-between">
+                            <Input
+                              value={category.name}
+                              onChange={(e) =>
+                                handleCategoryChange(index, {
+                                  ...category,
+                                  name: e.target.value,
+                                })
                               }
-                            }}
-                          />
+                              placeholder="Category name"
+                              className="h-8 w-40"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  setEditingCategory(null);
+                                }
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => setEditingCategory(null)}
+                            >
+                              Done
+                            </Button>
+                          </div>
                         ) : (
                           <div className="flex flex-1 items-center justify-between">
                             <div
@@ -302,26 +352,6 @@ export function CategoryColorsSettings({
                           </div>
                         )}
                       </div>
-
-                      <div
-                        className={cn(
-                          'flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100',
-                          editingCategory === index ? 'opacity-100' : 'hidden'
-                        )}
-                      >
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            handleRemoveCategory(category);
-                            setEditingCategory(null);
-                          }}
-                          disabled={value.categories.length <= 1}
-                          className="text-muted-foreground hover:text-destructive h-7 w-7"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
                     </div>
 
                     {/* Color picker */}
@@ -333,11 +363,15 @@ export function CategoryColorsSettings({
                           </div>
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => setEditingCategory(null)}
+                            size="icon"
+                            onClick={() => {
+                              handleRemoveCategory(category);
+                              setEditingCategory(null);
+                            }}
+                            disabled={value.categories.length <= 1}
+                            className="text-muted-foreground hover:text-destructive h-7 w-7"
                           >
-                            Done
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                         <div className="grid grid-cols-5 gap-2">
@@ -387,10 +421,11 @@ export function CategoryColorsSettings({
         <TabsContent value="suggestions" className="mt-0">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             {CATEGORY_SUGGESTIONS.map((suggestion, index) => {
-              // Check if this category already exists
+              // Check if this category name or color already exists
               const exists = value.categories.some(
                 (cat) =>
-                  cat.name.toLowerCase() === suggestion.name.toLowerCase()
+                  cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
+                  cat.color === suggestion.color
               );
 
               const colorInfo = colorMap[suggestion.color];
