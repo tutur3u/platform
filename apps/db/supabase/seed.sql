@@ -1338,10 +1338,11 @@ values
     ('local@tuturuuu.com', true);
 
 insert into
-    public.nova_roles (email, enabled, allow_challenge_management, allow_role_management)
+    public.nova_roles (email, enabled, allow_challenge_management, allow_role_management, allow_manage_all_challenges)
 values
-    ('local@tuturuuu.com', true, true, true);
+    ('local@tuturuuu.com', true, true, true, true);
 
+-- Populate nova_challenges
 insert into
     public.nova_challenges (id, title, description, duration, enabled, previewable_at, open_at, close_at, max_attempts, max_daily_attempts)
 values
@@ -1362,7 +1363,7 @@ values
         'Challenge 2',
         'Challenge Description 2',
         3600,
-        false,
+        true,
         now(),
         now(),
         now() + interval '7 days',
@@ -1382,6 +1383,7 @@ values
         10
     );
 
+-- Populate nova_problems
 insert into
     public.nova_problems (
         id,
@@ -1406,7 +1408,7 @@ values
         '00000000-0000-0000-0000-000000000002',
         'Sum the numbers',
         'Given a list of numbers, produce the sum of all numbers.',
-        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000002',
         '1, 2, 3, 4, 5',
         '15',
         100
@@ -1415,8 +1417,310 @@ values
         '00000000-0000-0000-0000-000000000003',
         'Find the maximum number',
         'Given a list of numbers, produce the maximum number.',
-        '00000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000003',
         '1, 2, 3, 4, 5',
         '5',
         100
+    );
+
+-- Populate nova_challenge_criteria (4 criteria per challenge)
+insert into
+    public.nova_challenge_criteria (id, name, description, challenge_id)
+values
+    -- Challenge 1 Criteria
+    (
+        '00000000-0000-0000-0000-000000000101',
+        'Clarity',
+        'The prompt should be clear and easy to understand, with explicit instructions.',
+        '00000000-0000-0000-0000-000000000001'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000102',
+        'Specificity',
+        'The prompt should be specific and detailed about what is being asked.',
+        '00000000-0000-0000-0000-000000000001'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000103',
+        'Proper Formatting',
+        'The prompt should be properly formatted with correct grammar and punctuation.',
+        '00000000-0000-0000-0000-000000000001'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000104',
+        'Relevance',
+        'The prompt should be relevant to the problem domain (fruits and colors).',
+        '00000000-0000-0000-0000-000000000001'
+    ),
+    
+    -- Challenge 2 Criteria
+    (
+        '00000000-0000-0000-0000-000000000201',
+        'Clarity',
+        'The prompt should clearly ask for a sum of numbers.',
+        '00000000-0000-0000-0000-000000000002'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000202',
+        'Mathematical Precision',
+        'The prompt should specify the exact mathematical operation (summation).',
+        '00000000-0000-0000-0000-000000000002'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000203',
+        'Input Format Specification',
+        'The prompt should specify the format of the input numbers.',
+        '00000000-0000-0000-0000-000000000002'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000204',
+        'Output Format Specification',
+        'The prompt should specify the expected format of the output.',
+        '00000000-0000-0000-0000-000000000002'
+    ),
+    
+    -- Challenge 3 Criteria
+    (
+        '00000000-0000-0000-0000-000000000301',
+        'Clarity',
+        'The prompt should clearly ask for finding the maximum number.',
+        '00000000-0000-0000-0000-000000000003'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000302',
+        'Mathematical Precision',
+        'The prompt should specify the exact operation (finding maximum value).',
+        '00000000-0000-0000-0000-000000000003'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000303',
+        'Input Format Specification',
+        'The prompt should specify the format of the input numbers.',
+        '00000000-0000-0000-0000-000000000003'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000304',
+        'Edge Cases Consideration',
+        'The prompt should address potential edge cases (equal values, negative numbers).',
+        '00000000-0000-0000-0000-000000000003'
+    );
+
+-- Populate nova_problem_test_cases (10 test cases per problem)
+insert into
+    public.nova_problem_test_cases (id, problem_id, input, output, hidden)
+values
+    -- Problem 1 Test Cases (Color the fruits)
+    (
+        '00000000-0000-0000-0000-000000001001',
+        '00000000-0000-0000-0000-000000000001',
+        'Apple, Banana, Cherry',
+        'Green, Yellow, Red',
+        false
+    ),
+    (
+        '00000000-0000-0000-0000-000000001002',
+        '00000000-0000-0000-0000-000000000001',
+        'Strawberry, Blueberry, Blackberry',
+        'Red, Blue, Black',
+        false
+    ),
+    (
+        '00000000-0000-0000-0000-000000001003',
+        '00000000-0000-0000-0000-000000000001',
+        'Orange, Lemon, Lime',
+        'Orange, Yellow, Green',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000001004',
+        '00000000-0000-0000-0000-000000000001',
+        'Grape, Watermelon, Kiwi',
+        'Purple, Green/Red, Green',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000001005',
+        '00000000-0000-0000-0000-000000000001',
+        'Pineapple, Mango, Papaya',
+        'Yellow/Brown, Yellow/Orange, Orange',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000001006',
+        '00000000-0000-0000-0000-000000000001',
+        'Peach, Pear, Plum',
+        'Orange/Pink, Green/Yellow, Purple',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000001007',
+        '00000000-0000-0000-0000-000000000001',
+        'Pomegranate, Coconut, Fig',
+        'Red, Brown, Purple',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000001008',
+        '00000000-0000-0000-0000-000000000001',
+        'Raspberry, Cranberry, Blueberry',
+        'Red, Red, Blue',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000001009',
+        '00000000-0000-0000-0000-000000000001',
+        'Avocado, Dragonfruit, Passion Fruit',
+        'Green, Pink/White, Purple/Yellow',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000001010',
+        '00000000-0000-0000-0000-000000000001',
+        'Guava, Lychee, Mangosteen',
+        'Green, White/Pink, Purple',
+        true
+    ),
+    
+    -- Problem 2 Test Cases (Sum the numbers)
+    (
+        '00000000-0000-0000-0000-000000002001',
+        '00000000-0000-0000-0000-000000000002',
+        '1, 2, 3, 4, 5',
+        '15',
+        false
+    ),
+    (
+        '00000000-0000-0000-0000-000000002002',
+        '00000000-0000-0000-0000-000000000002',
+        '10, 20, 30, 40, 50',
+        '150',
+        false
+    ),
+    (
+        '00000000-0000-0000-0000-000000002003',
+        '00000000-0000-0000-0000-000000000002',
+        '5, 10, 15, 20, 25',
+        '75',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000002004',
+        '00000000-0000-0000-0000-000000000002',
+        '2, 4, 6, 8, 10',
+        '30',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000002005',
+        '00000000-0000-0000-0000-000000000002',
+        '1, 3, 5, 7, 9',
+        '25',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000002006',
+        '00000000-0000-0000-0000-000000000002',
+        '100, 200, 300, 400, 500',
+        '1500',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000002007',
+        '00000000-0000-0000-0000-000000000002',
+        '-5, -4, -3, -2, -1',
+        '-15',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000002008',
+        '00000000-0000-0000-0000-000000000002',
+        '0, 0, 0, 0, 0',
+        '0',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000002009',
+        '00000000-0000-0000-0000-000000000002',
+        '1, -1, 2, -2, 3',
+        '3',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000002010',
+        '00000000-0000-0000-0000-000000000002',
+        '999, 1, 0, 0, 0',
+        '1000',
+        true
+    ),
+    
+    -- Problem 3 Test Cases (Find the maximum number)
+    (
+        '00000000-0000-0000-0000-000000003001',
+        '00000000-0000-0000-0000-000000000003',
+        '1, 2, 3, 4, 5',
+        '5',
+        false
+    ),
+    (
+        '00000000-0000-0000-0000-000000003002',
+        '00000000-0000-0000-0000-000000000003',
+        '5, 4, 3, 2, 1',
+        '5',
+        false
+    ),
+    (
+        '00000000-0000-0000-0000-000000003003',
+        '00000000-0000-0000-0000-000000000003',
+        '10, 20, 30, 40, 50',
+        '50',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000003004',
+        '00000000-0000-0000-0000-000000000003',
+        '5, 5, 5, 5, 5',
+        '5',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000003005',
+        '00000000-0000-0000-0000-000000000003',
+        '-5, -4, -3, -2, -1',
+        '-1',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000003006',
+        '00000000-0000-0000-0000-000000000003',
+        '0, 0, 0, 0, 1',
+        '1',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000003007',
+        '00000000-0000-0000-0000-000000000003',
+        '100, 99, 98, 97, 96',
+        '100',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000003008',
+        '00000000-0000-0000-0000-000000000003',
+        '-10, -20, -30, -40, -50',
+        '-10',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000003009',
+        '00000000-0000-0000-0000-000000000003',
+        '1, 1, 2, 2, 3',
+        '3',
+        true
+    ),
+    (
+        '00000000-0000-0000-0000-000000003010',
+        '00000000-0000-0000-0000-000000000003',
+        '999, 1000, 998, 997, 996',
+        '1000',
+        true
     );

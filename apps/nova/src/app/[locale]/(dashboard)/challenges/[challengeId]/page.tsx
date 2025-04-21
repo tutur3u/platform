@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import {
   NovaChallenge,
+  NovaChallengeCriteria,
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
@@ -13,6 +14,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 type ExtendedNovaChallenge = NovaChallenge & {
+  criteria: NovaChallengeCriteria[];
   problems: (NovaProblem & {
     test_cases: NovaProblemTestCase[];
   })[];
@@ -70,7 +72,7 @@ async function getChallenge(
     // Fetch challenge details
     const { data: challenge, error: challengeError } = await sbAdmin
       .from('nova_challenges')
-      .select('*')
+      .select('*, criteria:nova_challenge_criteria(*)')
       .eq('id', challengeId)
       .single();
 
@@ -95,6 +97,7 @@ async function getChallenge(
     const { data: testCases, error: testCaseError } = await sbAdmin
       .from('nova_problem_test_cases')
       .select('*')
+      .eq('hidden', false)
       .in('problem_id', problemIds);
 
     if (testCaseError) {

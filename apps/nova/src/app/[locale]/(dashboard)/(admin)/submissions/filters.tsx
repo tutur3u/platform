@@ -1,6 +1,7 @@
+'use client';
+
 import { Button } from '@tuturuuu/ui/button';
 import { LayoutGrid, LayoutList } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
   SelectContent,
@@ -8,13 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface ChallengeOption {
   id: string;
@@ -29,22 +25,22 @@ interface ProblemOption {
 
 interface SubmissionFiltersProps {
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  viewMode: 'table' | 'grid';
-  setViewMode: (mode: 'table' | 'grid') => void;
+  setSearchQuery?: (query: string) => void;
+  viewMode?: 'table' | 'grid';
+  setViewMode?: (mode: 'table' | 'grid') => void;
   selectedChallenge: string;
-  handleChallengeChange: (value: string) => void;
+  handleChallengeChange?: (value: string) => void;
   selectedProblem: string;
-  handleProblemChange: (value: string) => void;
-  handleClearFilters: () => void;
+  handleProblemChange?: (value: string) => void;
+  handleClearFilters?: () => void;
   challenges: ChallengeOption[];
   filteredProblems: ProblemOption[];
+  serverSide?: boolean;
 }
 
 export function SubmissionFilters({
   searchQuery,
-  setSearchQuery,
-  viewMode,
+  viewMode = 'table',
   setViewMode,
   selectedChallenge,
   handleChallengeChange,
@@ -53,67 +49,66 @@ export function SubmissionFilters({
   handleClearFilters,
   challenges,
   filteredProblems,
+  serverSide = false,
 }: SubmissionFiltersProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Handle challenge change
+  const onChallengeChange = (value: string) => {
+    if (serverSide) {
+      // Use URL-based navigation for server-side
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('search', searchQuery);
+      if (value !== 'all') params.set('challengeId', value);
+      // Reset problem selection when challenge changes
+
+      const queryString = params.toString();
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`);
+    } else if (handleChallengeChange) {
+      // Use callback for client-side
+      handleChallengeChange(value);
+    }
+  };
+
+  // Handle problem change
+  const onProblemChange = (value: string) => {
+    if (serverSide) {
+      // Use URL-based navigation for server-side
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('search', searchQuery);
+      if (selectedChallenge) params.set('challengeId', selectedChallenge);
+      if (value !== 'all') params.set('problemId', value);
+
+      const queryString = params.toString();
+      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`);
+    } else if (handleProblemChange) {
+      // Use callback for client-side
+      handleProblemChange(value);
+    }
+  };
+
+  // Handle clearing filters
+  const onClearFilters = () => {
+    if (serverSide) {
+      // Reset all filters by navigating to the base path
+      router.push(pathname);
+    } else if (handleClearFilters) {
+      // Use callback for client-side
+      handleClearFilters();
+    }
+  };
+
   return (
-    <>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div className="relative w-full max-w-sm">
-          <Input
-            type="text"
-            placeholder="Search submissions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-8"
-          />
-        </div>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex rounded-md border p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    'rounded-sm px-2',
-                    viewMode === 'table' && 'bg-accent'
-                  )}
-                  onClick={() => setViewMode('table')}
-                >
-                  <LayoutList className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    'rounded-sm px-2',
-                    viewMode === 'grid' && 'bg-accent'
-                  )}
-                  onClick={() => setViewMode('grid')}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Toggle view mode</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      {/* Filters */}
-      <div className="mb-6 flex flex-wrap items-end gap-4">
-        <div className="w-full max-w-xs">
-          <label className="mb-2 block text-sm font-medium">
-            Filter by Challenge
-          </label>
+    <div className="mb-6 rounded-lg border p-4">
+      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+        <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
           <Select
             value={selectedChallenge || 'all'}
-            onValueChange={handleChallengeChange}
+            onValueChange={onChallengeChange}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="All Challenges" />
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Challenge" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Challenges</SelectItem>
@@ -124,19 +119,13 @@ export function SubmissionFilters({
               ))}
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="w-full max-w-xs">
-          <label className="mb-2 block text-sm font-medium">
-            Filter by Problem
-          </label>
           <Select
             value={selectedProblem || 'all'}
-            onValueChange={handleProblemChange}
-            disabled={filteredProblems.length === 0}
+            onValueChange={onProblemChange}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="All Problems" />
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Problem" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Problems</SelectItem>
@@ -147,18 +136,47 @@ export function SubmissionFilters({
               ))}
             </SelectContent>
           </Select>
-        </div>
 
-        {(selectedChallenge || selectedProblem) && (
-          <Button
-            variant="outline"
-            onClick={handleClearFilters}
-            className="mb-[1px]"
-          >
-            Clear Filters
-          </Button>
-        )}
+          <div className="flex items-center space-x-2">
+            {(selectedChallenge || selectedProblem || searchQuery) && (
+              <Button
+                variant="outline"
+                onClick={onClearFilters}
+                className="whitespace-nowrap"
+              >
+                Clear Filters
+              </Button>
+            )}
+
+            {setViewMode && (
+              <div className="flex overflow-hidden rounded-md border">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setViewMode('table')}
+                  className={cn(
+                    'h-9 rounded-none px-3',
+                    viewMode === 'table' && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <LayoutList className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setViewMode('grid')}
+                  className={cn(
+                    'h-9 rounded-none px-3',
+                    viewMode === 'grid' && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -24,11 +24,13 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
       email,
       enabled,
       allow_challenge_management,
+      allow_manage_all_challenges,
       allow_role_management,
     }: {
       email: string;
       enabled: boolean;
       allow_challenge_management: boolean;
+      allow_manage_all_challenges: boolean;
       allow_role_management: boolean;
     }) => {
       const res = await fetch(`/api/v1/infrastructure/whitelist/${email}`, {
@@ -37,6 +39,7 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
           email,
           enabled,
           allow_challenge_management,
+          allow_manage_all_challenges,
           allow_role_management,
         }),
       });
@@ -105,6 +108,9 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
         const allowChallengeManagement = row.getValue(
           'allow_challenge_management'
         ) as boolean;
+        const allowManageAllChallenges = row.getValue(
+          'allow_manage_all_challenges'
+        ) as boolean;
         const allowRoleManagement = row.getValue(
           'allow_role_management'
         ) as boolean;
@@ -124,6 +130,7 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
                   email,
                   enabled: checked,
                   allow_challenge_management: allowChallengeManagement,
+                  allow_manage_all_challenges: allowManageAllChallenges,
                   allow_role_management: allowRoleManagement,
                 })
               }
@@ -149,6 +156,9 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
         const allowChallengeManagement = row.getValue(
           'allow_challenge_management'
         ) as boolean;
+        const allowManageAllChallenges = row.getValue(
+          'allow_manage_all_challenges'
+        ) as boolean;
         const allowRoleManagement = row.getValue(
           'allow_role_management'
         ) as boolean;
@@ -168,6 +178,55 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
                   email,
                   enabled,
                   allow_challenge_management: checked,
+                  allow_manage_all_challenges: allowManageAllChallenges,
+                  allow_role_management: allowRoleManagement,
+                })
+              }
+              disabled={isLoading}
+            />
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'allow_manage_all_challenges',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`common.allow_manage_all_challenges`)}
+        />
+      ),
+      cell: ({ row }) => {
+        const email = row.getValue('email') as string;
+        const enabled = row.getValue('enabled') as boolean;
+        const allowChallengeManagement = row.getValue(
+          'allow_challenge_management'
+        ) as boolean;
+        const allowManageAllChallenges = row.getValue(
+          'allow_manage_all_challenges'
+        ) as boolean;
+        const allowRoleManagement = row.getValue(
+          'allow_role_management'
+        ) as boolean;
+
+        const isLoading =
+          (toggleMutation.isPending &&
+            toggleMutation.variables?.email === email) ||
+          (isFetching > 0 && toggleMutation.variables?.email === email);
+
+        return (
+          <div className="flex items-center gap-2">
+            <Switch
+              id="allow_manage_all_challenges"
+              checked={allowManageAllChallenges}
+              onCheckedChange={(checked) =>
+                toggleMutation.mutate({
+                  email,
+                  enabled,
+                  allow_challenge_management: allowChallengeManagement,
+                  allow_manage_all_challenges: checked,
                   allow_role_management: allowRoleManagement,
                 })
               }
@@ -193,6 +252,9 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
         const allowChallengeManagement = row.getValue(
           'allow_challenge_management'
         ) as boolean;
+        const allowManageAllChallenges = row.getValue(
+          'allow_manage_all_challenges'
+        ) as boolean;
         const allowRoleManagement = row.getValue(
           'allow_role_management'
         ) as boolean;
@@ -212,6 +274,7 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
                   email,
                   enabled,
                   allow_challenge_management: allowChallengeManagement,
+                  allow_manage_all_challenges: allowManageAllChallenges,
                   allow_role_management: checked,
                 })
               }

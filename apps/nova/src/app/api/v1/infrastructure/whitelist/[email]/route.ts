@@ -2,13 +2,19 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(req: NextRequest) {
-  const { email, enabled, allow_challenge_management, allow_role_management } =
-    (await req.json()) as {
-      email: string;
-      enabled: boolean;
-      allow_challenge_management: boolean;
-      allow_role_management: boolean;
-    };
+  const {
+    email,
+    enabled,
+    allow_challenge_management,
+    allow_manage_all_challenges,
+    allow_role_management,
+  } = (await req.json()) as {
+    email: string;
+    enabled: boolean;
+    allow_challenge_management: boolean;
+    allow_manage_all_challenges: boolean;
+    allow_role_management: boolean;
+  };
 
   if (!email) {
     return NextResponse.json({ message: 'Email is required' }, { status: 400 });
@@ -20,6 +26,7 @@ export async function PUT(req: NextRequest) {
     email,
     enabled: enabled ?? false,
     allow_challenge_management: allow_challenge_management ?? false,
+    allow_manage_all_challenges: allow_manage_all_challenges ?? false,
     allow_role_management: allow_role_management ?? false,
   };
 

@@ -68,7 +68,6 @@ export async function PUT(request: Request, { params }: Params) {
     startTime?: string;
     endTime?: string;
     status?: string;
-    totalScore?: number;
     challengeId?: string;
   };
 
@@ -91,7 +90,6 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.startTime) updateData.start_time = body.startTime;
     if (body.endTime) updateData.end_time = body.endTime;
     if (body.status) updateData.status = body.status;
-    if (body.totalScore) updateData.total_score = body.totalScore;
     if (body.challengeId) updateData.challenge_id = body.challengeId;
     updateData.user_id = user.id;
 

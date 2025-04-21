@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "packageManager": "pnpm@10.8.1",
+  "packageManager": "pnpm@10.9.0",
   "dependencies": {
     "eslint": "^9.25.0",
     "react": "^19.1.0",

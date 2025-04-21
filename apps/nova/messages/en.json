@@ -184,6 +184,7 @@
     "events": "Events"
   },
   "common": {
+    "allow_manage_all_challenges": "Allow Manage All Challenges",
     "name_placeholder": "Enter name",
     "name": "Name",
     "members": "Members",

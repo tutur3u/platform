@@ -1,36 +1,33 @@
 'use client';
 
+import { ExtendedNovaSubmission, fetchSubmissions } from './actions';
+import ScoreBadge from '@/components/common/ScoreBadge';
 import {
-  NovaChallengeCriteria,
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
 } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { CheckCircle2, Clock, PlayCircle, XCircle } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@tuturuuu/ui/hover-card';
+import {
+  CheckCircle2,
+  Clock,
+  PlayCircle,
+  User,
+  XCircle,
+} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
 import React, { useEffect, useState } from 'react';
-
-type HistoryEntry = {
-  id: number;
-  prompt: string;
-  feedback: string;
-  score: number;
-  created_at: string;
-  criteria_scores?: {
-    criteria_id: string;
-    score: number;
-    criteria: NovaChallengeCriteria;
-  }[];
-};
 
 type TestResult = {
   input: string;
@@ -51,22 +48,44 @@ export default function PromptForm({ problem, session }: Props) {
   const [testingCustom, setTestingCustom] = useState(false);
   const [error, setError] = useState('');
   const [testResult, setTestResult] = useState<TestResult | null>(null);
-  const [submissions, setSubmissions] = useState<HistoryEntry[]>([]);
+  const [submissions, setSubmissions] = useState<ExtendedNovaSubmission[]>([]);
+  const [currentSessionSubmissions, setCurrentSessionSubmissions] = useState<
+    ExtendedNovaSubmission[]
+  >([]);
+  const [pastSessionSubmissions, setPastSessionSubmissions] = useState<
+    ExtendedNovaSubmission[]
+  >([]);
   const [attempts, setAttempts] = useState(0);
+  const [activeTab, setActiveTab] = useState('prompt');
+  const [submissionsTab, setSubmissionsTab] = useState('current');
 
   useEffect(() => {
     const getSubmissions = async () => {
-      const fetchedSubmissions = await fetchSubmissions(problem.id, session.id);
+      const fetchedSubmissions = await fetchSubmissions(
+        problem.id
+        // , session.id
+      );
       if (fetchedSubmissions) {
         setSubmissions(fetchedSubmissions);
-        setAttempts(fetchedSubmissions.length);
+
+        // Split submissions between current and past sessions
+        const current = fetchedSubmissions.filter(
+          (s) => s.session_id === session.id
+        );
+        const past = fetchedSubmissions.filter(
+          (s) => s.session_id !== session.id
+        );
+
+        setCurrentSessionSubmissions(current);
+        setPastSessionSubmissions(past);
+        setAttempts(current.length);
       }
     };
 
     getSubmissions();
-  }, [session.id]);
+  }, [problem.id, session.id]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -98,62 +117,130 @@ export default function PromptForm({ problem, session }: Props) {
     setError('');
 
     try {
-      const response = await fetch(`/api/v1/problems/${problem.id}/prompt`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
+      // Step 1: Get evaluation results from the problem API
+      const promptResponse = await fetch(
+        `/api/v1/problems/${problem.id}/prompt`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        }
+      );
 
-      if (!response.ok) {
+      if (!promptResponse.ok) {
         throw new Error('Failed to process prompt');
       }
 
-      const data = await response.json();
-      const feedback = data.response.feedback || '';
-      const score = data.response.score || 0;
+      const promptData = await promptResponse.json();
+      const testCaseEvaluation = promptData.response.testCaseEvaluation || [];
+      const criteriaEvaluation = promptData.response.criteriaEvaluation || [];
 
-      // Add to submissions
+      // Step 2: Create the submission record
       const submissionResponse = await fetch(`/api/v1/submissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt,
-          feedback,
-          score,
           problemId: problem.id,
           sessionId: session.id,
         }),
       });
 
       if (!submissionResponse.ok) {
-        throw new Error('Failed to create submission');
+        const errorData = await submissionResponse.json();
+        throw new Error(
+          errorData.message || 'Failed to submit prompt. Please try again.'
+        );
       }
 
-      const fetchedSubmissions = await fetchSubmissions(problem.id, session.id);
-      if (fetchedSubmissions) {
-        setSubmissions(fetchedSubmissions);
-        setAttempts(fetchedSubmissions.length);
-      }
+      // Get the newly created submission ID
+      const submissionData = await submissionResponse.json();
+      const submissionId = submissionData.id;
 
-      const updatedSessionResponse = await fetch(
-        `/api/v1/sessions/${session.id}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            totalScore: session.total_score + score,
-          }),
-        }
+      // Step 3: Save test case results
+      await Promise.allSettled(
+        testCaseEvaluation.map(async (testCase: any) => {
+          // Find matching test case in the problem
+          const matchingTestCase = problem.test_cases.find(
+            (tc) => tc.input === testCase.input
+          );
+
+          if (matchingTestCase) {
+            await fetch(`/api/v1/submissions/${submissionId}/test-cases`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                testCaseId: matchingTestCase.id,
+                output: testCase.output,
+                matched: matchingTestCase.output === testCase.output,
+              }),
+            });
+          }
+        })
       );
 
-      if (!updatedSessionResponse.ok) {
-        throw new Error('Failed to update session');
+      // Step 4: Save criteria evaluations
+      // First, fetch the challenge criteria to get IDs
+      const criteriaResponse = await fetch(
+        `/api/v1/criteria?challengeId=${problem.challenge_id}`
+      );
+      if (criteriaResponse.ok) {
+        const challengeCriteria = await criteriaResponse.json();
+
+        // Then save each criteria evaluation with proper ID mapping
+        await Promise.allSettled(
+          criteriaEvaluation.map(async (criteriaEval: any) => {
+            // Find matching criteria by name
+            const matchingCriteria = challengeCriteria.find(
+              (c: any) => c.name === criteriaEval.name
+            );
+
+            if (matchingCriteria) {
+              await fetch(`/api/v1/submissions/${submissionId}/criteria`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  criteriaId: matchingCriteria.id,
+                  score: criteriaEval.score,
+                  feedback: criteriaEval.feedback,
+                }),
+              });
+            }
+          })
+        );
       }
-    } catch (error: any) {
-      console.error('Error:', error);
+
+      // Step 5: Refresh the submissions list
+      const submissions = await fetchSubmissions(
+        problem.id
+        // , session.id
+      );
+      setSubmissions(submissions);
+
+      // Split submissions between current and past sessions
+      const current = submissions.filter((s) => s.session_id === session.id);
+      const past = submissions.filter((s) => s.session_id !== session.id);
+
+      setCurrentSessionSubmissions(current);
+      setPastSessionSubmissions(past);
+      setAttempts(current.length);
+
+      // Reset prompt and show success message
+      setPrompt('');
+      setActiveTab('submissions');
+
+      toast({
+        title: 'Prompt submitted successfully',
+        description: 'Your prompt has been evaluated.',
+      });
+    } catch (error) {
+      console.error('Error submitting prompt:', error);
       toast({
         title: 'Error',
-        description: 'Failed to process submission',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to submit prompt. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -179,7 +266,7 @@ export default function PromptForm({ problem, session }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt,
-            customTestCase,
+            input: customTestCase,
           }),
         }
       );
@@ -189,9 +276,10 @@ export default function PromptForm({ problem, session }: Props) {
       }
 
       const data = await response.json();
+
       setTestResult({
-        input: data.input,
-        output: data.output,
+        input: data.response.input,
+        output: data.response.output,
       });
     } catch (error: any) {
       console.error('Error testing prompt:', error);
@@ -203,13 +291,13 @@ export default function PromptForm({ problem, session }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto pb-96">
-        <Tabs defaultValue="submit" className="w-full">
-          <TabsList className="mb-4 grid w-full grid-cols-3">
-            <TabsTrigger value="submit">Submit Prompt</TabsTrigger>
-            <TabsTrigger value="test">Test Custom Case</TabsTrigger>
-            <TabsTrigger value="history" className="relative">
-              History
+      <div className="flex-1 overflow-y-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-4 grid w-full grid-cols-2">
+            <TabsTrigger value="prompt">Prompt</TabsTrigger>
+            {/* <TabsTrigger value="test">Test</TabsTrigger> */}
+            <TabsTrigger value="submissions" className="relative">
+              Submissions
               {submissions.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
                   {submissions.length}
@@ -218,113 +306,76 @@ export default function PromptForm({ problem, session }: Props) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="submit" className="space-y-4">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">Your Prompt</h2>
-                <p className="text-muted-foreground text-sm">
-                  Create a prompt that solves the problem effectively
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant={attempts >= 3 ? 'destructive' : 'outline'}
-                  className="px-3 py-1"
-                >
-                  {3 - attempts} attempts remaining
-                </Badge>
-                <Progress
-                  value={(attempts / 3) * 100}
-                  max={100}
-                  className={cn(
-                    'h-2 w-16',
-                    attempts >= 3
-                      ? 'bg-destructive/20'
-                      : attempts >= 2
-                        ? 'bg-amber-500/20'
-                        : 'bg-emerald-500/20'
-                  )}
-                  indicatorClassName={
-                    attempts >= 3
-                      ? 'bg-destructive'
-                      : attempts >= 2
-                        ? 'bg-amber-500'
-                        : 'bg-emerald-500'
-                  }
-                />
-              </div>
-            </div>
-
-            {isSubmitting && (
-              <div className="flex items-center justify-center py-10">
-                <LoadingIndicator />
-              </div>
-            )}
-
-            {!isSubmitting && submissions.length > 0 && (
-              <div className="border-foreground/10 bg-foreground/10 text-foreground mx-auto flex max-w-3xl flex-col items-center justify-center space-y-6 rounded-lg border p-6 shadow-md">
-                <h3 className="text-2xl font-semibold">Your Last Attempt</h3>
-                <div className="border-foreground/5 bg-foreground/5 w-full rounded-lg border p-4 shadow-md">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-foreground text-sm">
-                        <strong className="font-medium">Prompt: </strong>
-                        {submissions[submissions.length - 1]?.prompt}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-foreground text-sm">
-                        <strong className="font-medium">Score: </strong>
-                        <Badge
-                          variant={
-                            (submissions[submissions.length - 1]?.score || 0) >=
-                            8
-                              ? 'success'
-                              : (submissions[submissions.length - 1]?.score ||
-                                    0) >= 5
-                                ? 'warning'
-                                : 'destructive'
-                          }
-                        >
-                          {submissions[submissions.length - 1]?.score || 0}/10
-                        </Badge>
-                      </p>
-                    </div>
-                    {submissions.length > 0 &&
-                      submissions[submissions.length - 1]?.criteria_scores &&
-                      (submissions[submissions.length - 1]?.criteria_scores
-                        ?.length || 0) > 0 && (
-                        <div>
-                          <strong className="text-sm font-medium">
-                            Criteria Scores:
-                          </strong>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {submissions[
-                              submissions.length - 1
-                            ]?.criteria_scores?.map((cs) => {
-                              if (!cs || !cs.criteria) return null;
-                              return (
-                                <Badge
-                                  key={cs.criteria_id}
-                                  variant={
-                                    cs.score >= 8
-                                      ? 'success'
-                                      : cs.score >= 5
-                                        ? 'warning'
-                                        : 'destructive'
-                                  }
-                                >
-                                  {cs.criteria.name || 'Unknown'}: {cs.score}
-                                </Badge>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                  </div>
+          <TabsContent value="prompt" className="space-y-4">
+            <div className="flex h-full flex-col">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="text-muted-foreground text-sm">
+                  Characters: {prompt.length} / {problem.max_prompt_length}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={attempts >= 3 ? 'destructive' : 'outline'}
+                    className="px-3 py-1"
+                  >
+                    {3 - attempts} attempts remaining
+                  </Badge>
+                  <Progress
+                    value={(prompt.length / problem.max_prompt_length) * 100}
+                    className="h-1 w-24"
+                    indicatorClassName={
+                      attempts >= 3
+                        ? 'bg-destructive'
+                        : attempts >= 2
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
+                    }
+                  />
                 </div>
               </div>
-            )}
+
+              <div className="flex flex-1 flex-col pb-4">
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center py-10">
+                    <LoadingIndicator />
+                  </div>
+                ) : (
+                  <>
+                    <Textarea
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={
+                        attempts >= 3
+                          ? 'Maximum attempts reached'
+                          : 'Write your prompt here...'
+                      }
+                      className="min-h-[200px] flex-1 resize-none"
+                      maxLength={problem.max_prompt_length}
+                      disabled={attempts >= 3}
+                    />
+
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        onClick={handleSend}
+                        disabled={
+                          !prompt.trim() || isSubmitting || attempts >= 3
+                        }
+                        className="gap-2"
+                      >
+                        {isSubmitting ? (
+                          <LoadingIndicator className="h-4 w-4" />
+                        ) : (
+                          <PlayCircle className="h-4 w-4" />
+                        )}
+                        Submit
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="test" className="space-y-4">
@@ -375,15 +426,8 @@ export default function PromptForm({ problem, session }: Props) {
             </div>
           </TabsContent>
 
-          <TabsContent value="history" className="space-y-4">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold">Submission History</h2>
-              <p className="text-muted-foreground text-sm">
-                Review your previous submissions and their scores
-              </p>
-            </div>
-
-            {submissions.length === 0 ? (
+          <TabsContent value="submissions" className="space-y-4">
+            {submissions.length == 0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                 <Clock className="text-muted-foreground mb-2 h-10 w-10" />
                 <h3 className="text-lg font-medium">No submissions yet</h3>
@@ -393,156 +437,226 @@ export default function PromptForm({ problem, session }: Props) {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {submissions.map((submission, index) => (
-                  <Card key={index} className="overflow-hidden">
-                    <CardHeader className="bg-muted/50 pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base">
-                          Attempt {index + 1}
-                        </CardTitle>
-                        <Badge
-                          variant={
-                            submission.score >= 8
-                              ? 'success'
-                              : submission.score >= 5
-                                ? 'warning'
-                                : 'destructive'
-                          }
-                        >
-                          Score: {submission.score}/10
+              <>
+                <Tabs
+                  value={submissionsTab}
+                  onValueChange={setSubmissionsTab}
+                  className="w-full"
+                >
+                  <TabsList className="mb-4 grid w-full grid-cols-2">
+                    <TabsTrigger value="current" className="relative">
+                      Current Session
+                      {currentSessionSubmissions.length > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {currentSessionSubmissions.length}
                         </Badge>
-                      </div>
-                      <p className="text-muted-foreground text-xs">
-                        Submitted on{' '}
-                        {new Date(submission.created_at).toLocaleString()}
-                      </p>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="mb-1 text-sm font-medium">Prompt</h4>
-                          <div className="bg-muted rounded-md p-3 text-sm">
-                            {submission.prompt}
-                          </div>
-                        </div>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="past" className="relative">
+                      Past Sessions
+                      {pastSessionSubmissions.length > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {pastSessionSubmissions.length}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
 
-                        {submission.criteria_scores &&
-                          submission.criteria_scores.length > 0 && (
-                            <div>
-                              <h4 className="mb-2 text-sm font-medium">
-                                Criteria Scores
-                              </h4>
-                              <div className="grid gap-2 sm:grid-cols-2">
-                                {submission.criteria_scores.map((cs) => {
-                                  if (!cs || !cs.criteria) return null;
-                                  return (
-                                    <div
-                                      key={cs.criteria_id}
-                                      className={`flex items-center justify-between rounded-md border p-2 ${
-                                        cs.score >= 8
-                                          ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
-                                          : cs.score >= 5
-                                            ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
-                                            : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        {cs.score >= 8 ? (
-                                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                                        ) : cs.score >= 5 ? (
-                                          <Clock className="h-4 w-4 text-amber-500" />
-                                        ) : (
-                                          <XCircle className="h-4 w-4 text-red-500" />
-                                        )}
-                                        <span className="text-sm">
-                                          {cs.criteria.name}
-                                        </span>
-                                      </div>
-                                      <Badge
-                                        variant={
-                                          cs.score >= 8
-                                            ? 'success'
-                                            : cs.score >= 5
-                                              ? 'warning'
-                                              : 'destructive'
-                                        }
-                                      >
-                                        {cs.score}/10
-                                      </Badge>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                        <div>
-                          <h4 className="mb-1 text-sm font-medium">Feedback</h4>
-                          <p className="text-muted-foreground text-sm">
-                            {submission.feedback}
-                          </p>
-                        </div>
+                  <TabsContent value="current" className="space-y-4">
+                    {currentSessionSubmissions.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <h3 className="text-lg font-medium">
+                          No submissions in current session
+                        </h3>
+                        <p className="text-muted-foreground mt-1 text-sm">
+                          Submit your first prompt to see results here.
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    ) : (
+                      currentSessionSubmissions.map((submission) => (
+                        <SubmissionCard
+                          key={submission.id}
+                          submission={submission}
+                          isCurrent={true}
+                        />
+                      ))
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="past" className="space-y-4">
+                    {pastSessionSubmissions.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+                        <Clock className="text-muted-foreground mb-2 h-10 w-10" />
+                        <h3 className="text-lg font-medium">
+                          No submissions from past sessions
+                        </h3>
+                        <p className="text-muted-foreground mt-1 text-sm">
+                          Past session submissions will appear here.
+                        </p>
+                      </div>
+                    ) : (
+                      pastSessionSubmissions.map((submission) => (
+                        <SubmissionCard
+                          key={submission.id}
+                          submission={submission}
+                          isCurrent={false}
+                        />
+                      ))
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </>
             )}
           </TabsContent>
         </Tabs>
-      </div>
-
-      {/* Fixed Chat Input */}
-      <div className="absolute bottom-0 left-0 right-0 border-t shadow-md">
-        <div className="bg-background flex flex-col gap-2 rounded-b-lg border p-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder={
-                attempts >= 3
-                  ? 'Maximum attempts reached'
-                  : 'Type your prompt...'
-              }
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isSubmitting || attempts >= 3}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleSend}
-              disabled={isSubmitting || attempts >= 3 || !prompt.trim()}
-              className="whitespace-nowrap"
-            >
-              {isSubmitting ? 'Sending...' : 'Submit'}
-            </Button>
-          </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <div className="text-muted-foreground flex items-center justify-between text-xs">
-            <span>
-              {prompt.length} / {problem.max_prompt_length} characters
-            </span>
-            <span>
-              {attempts >= 3
-                ? 'No attempts remaining'
-                : `${3 - attempts} attempts remaining`}
-            </span>
-          </div>
-        </div>
       </div>
     </div>
   );
 }
 
-async function fetchSubmissions(problemId: string, sessionId: string) {
-  const response = await fetch(
-    `/api/v1/submissions?problemId=${problemId}&sessionId=${sessionId}`
+interface SubmissionCardProps {
+  submission: ExtendedNovaSubmission;
+  isCurrent: boolean;
+}
+
+function SubmissionCard({ submission, isCurrent }: SubmissionCardProps) {
+  return (
+    <Card
+      key={submission.id}
+      className={`overflow-hidden ${isCurrent ? '' : 'border-muted-foreground/20'}`}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-xs">
+              <Clock className="mr-1 inline h-3 w-3" />
+              {new Date(submission.created_at).toLocaleString()}
+            </span>
+
+            {!isCurrent && (
+              <Badge variant="outline" className="text-xs">
+                <User className="mr-1 h-3 w-3" />
+                Past Session
+              </Badge>
+            )}
+          </div>
+
+          <ScoreBadge
+            score={submission.total_score}
+            maxScore={10}
+            className="px-2 py-0"
+          >
+            {submission.total_score.toFixed(2)}/10
+          </ScoreBadge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <h3 className="text-foreground mb-1 text-sm font-medium">Prompt:</h3>
+          <div className="bg-muted rounded-md p-2 text-sm">
+            {submission.prompt}
+          </div>
+        </div>
+
+        {/* Test Case Evaluation */}
+        {submission.total_tests > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-muted-foreground text-xs font-medium">
+                Test Case Evaluation:
+              </h3>
+              <ScoreBadge
+                score={submission.test_case_score}
+                maxScore={10}
+                className="px-2 py-0"
+              >
+                {submission.test_case_score.toFixed(2)}/10
+              </ScoreBadge>
+            </div>
+            <div className="space-y-2 rounded-md border p-4">
+              <div>
+                <span className="text-sm">
+                  Passed {submission.passed_tests} of {submission.total_tests}{' '}
+                  test cases
+                </span>
+              </div>
+              <Progress
+                value={(submission.passed_tests / submission.total_tests) * 100}
+                className="h-2 w-full"
+                indicatorClassName={
+                  submission.test_case_score >= 8
+                    ? 'bg-emerald-500'
+                    : submission.test_case_score >= 5
+                      ? 'bg-amber-500'
+                      : 'bg-red-500'
+                }
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Criteria Evaluation */}
+        {submission.total_criteria > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-muted-foreground text-xs font-medium">
+                Criteria Evaluation:
+              </h3>
+              <ScoreBadge
+                score={submission.criteria_score}
+                maxScore={10}
+                className="px-2 py-0"
+              >
+                {submission.criteria_score.toFixed(2)}/10
+              </ScoreBadge>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {submission.criteria.map((cs) => {
+                if (!cs || !cs.result) return null;
+
+                return (
+                  <HoverCard key={cs.id}>
+                    <HoverCardTrigger asChild>
+                      <div
+                        className={`flex cursor-pointer items-center justify-between rounded-md border p-2 ${
+                          cs.result.score >= 8
+                            ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
+                            : cs.result.score >= 5
+                              ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'
+                              : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {cs.result.score >= 8 ? (
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                          ) : cs.result.score >= 5 ? (
+                            <Clock className="h-4 w-4 text-amber-500" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-500" />
+                          )}
+                          <span className="text-sm">{cs.name}</span>
+                        </div>
+                        <ScoreBadge score={cs.result.score} maxScore={10}>
+                          {cs.result.score}/10
+                        </ScoreBadge>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80 p-4">
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Feedback</h4>
+                        <p className="text-muted-foreground text-sm">
+                          {cs.result.feedback}
+                        </p>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-  const data = await response.json();
-  if (response.ok) {
-    return data;
-  } else {
-    console.log('Error fetching data');
-    return null;
-  }
 }
