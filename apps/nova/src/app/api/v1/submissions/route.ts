@@ -87,12 +87,17 @@ export async function POST(request: Request) {
     // Validate request body with Zod
     const validatedData = createSubmissionSchema.parse(body);
 
-    const { error: countError, count } = await supabase
+    const queryBuilder = supabase
       .from('nova_submissions')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .eq('problem_id', validatedData.problemId)
-      .eq('session_id', validatedData.sessionId);
+      .eq('problem_id', validatedData.problemId);
+
+    if (validatedData.sessionId) {
+      queryBuilder.eq('session_id', validatedData.sessionId);
+    }
+
+    const { error: countError, count } = await queryBuilder;
 
     if (countError) {
       console.error('Database Error when counting submissions: ', countError);
