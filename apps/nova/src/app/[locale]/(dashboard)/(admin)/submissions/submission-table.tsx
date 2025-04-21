@@ -82,6 +82,52 @@ export function SubmissionTable({
 }: SubmissionTableProps) {
   const router = useRouter();
 
+  // Function to calculate which page numbers to show
+  const getVisiblePageNumbers = () => {
+    // Always show first and last pages
+    // Show pages around current page
+    const delta = 2; // Number of pages to show before and after current page
+    const range: number[] = [];
+
+    // Calculate start and end, ensuring they're within bounds
+    let start = Math.max(1, currentPage - delta);
+    let end = Math.min(totalPages, currentPage + delta);
+
+    // Adjust if needed to ensure we show enough pages
+    if (end - start < 2 * delta) {
+      if (start === 1) {
+        end = Math.min(start + 2 * delta, totalPages);
+      } else if (end === totalPages) {
+        start = Math.max(end - 2 * delta, 1);
+      }
+    }
+
+    // Add range
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+
+    // Add ellipses and endpoints
+    const result: (number | string)[] = [];
+
+    // Add first page if not in range
+    if (start > 1) {
+      result.push(1);
+      if (start > 2) result.push('...');
+    }
+
+    // Add range
+    result.push(...range);
+
+    // Add last page if not in range
+    if (end < totalPages) {
+      if (end < totalPages - 1) result.push('...');
+      result.push(totalPages);
+    }
+
+    return result;
+  };
+
   return (
     <>
       {viewMode === 'table' && (
@@ -224,7 +270,7 @@ export function SubmissionTable({
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
-                          <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                             {submission.user?.display_name?.charAt(0) || '?'}
                           </div>
                         )}
@@ -238,7 +284,7 @@ export function SubmissionTable({
                         <span className="font-medium">
                           {submission.problem?.title || 'Unknown Problem'}
                         </span>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-xs text-muted-foreground">
                           {submission.problem?.challenge?.title ||
                             'Unknown Challenge'}
                         </span>
@@ -293,7 +339,7 @@ export function SubmissionTable({
             <div className="col-span-full flex h-48 flex-col items-center justify-center space-y-4 rounded-lg border">
               {searchQuery ? (
                 <>
-                  <p className="text-muted-foreground text-center text-lg">
+                  <p className="text-center text-lg text-muted-foreground">
                     No results found for "{searchQuery}"
                   </p>
                   <Button
@@ -305,7 +351,7 @@ export function SubmissionTable({
                   </Button>
                 </>
               ) : (
-                <p className="text-muted-foreground text-center text-lg">
+                <p className="text-center text-lg text-muted-foreground">
                   No submissions found.
                 </p>
               )}
@@ -315,7 +361,7 @@ export function SubmissionTable({
             submissions.map((submission) => (
               <Card
                 key={submission.id}
-                className="hover:bg-accent/50 cursor-pointer transition-colors"
+                className="cursor-pointer transition-colors hover:bg-accent/50"
                 onClick={() => router.push(`/submissions/${submission.id}`)}
               >
                 <CardHeader className="pb-2">
@@ -339,7 +385,7 @@ export function SubmissionTable({
                           className="h-8 w-8 rounded-full"
                         />
                       ) : (
-                        <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                           {submission.user?.display_name?.charAt(0) || '?'}
                         </div>
                       )}
@@ -352,7 +398,7 @@ export function SubmissionTable({
                       <p className="line-clamp-1 font-medium">
                         {submission.problem?.title || 'Unknown Problem'}
                       </p>
-                      <p className="text-muted-foreground line-clamp-1 text-sm">
+                      <p className="line-clamp-1 text-sm text-muted-foreground">
                         {submission.problem?.challenge?.title ||
                           'Unknown Challenge'}
                       </p>
@@ -387,18 +433,22 @@ export function SubmissionTable({
                 />
               </PaginationItem>
 
-              {[...Array(totalPages)].map((_, i) => (
+              {getVisiblePageNumbers().map((pageNum, i) => (
                 <PaginationItem key={i}>
-                  <PaginationLink
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setCurrentPage(i + 1);
-                    }}
-                    isActive={currentPage === i + 1}
-                  >
-                    {i + 1}
-                  </PaginationLink>
+                  {pageNum === '...' ? (
+                    <span className="px-4 py-2">...</span>
+                  ) : (
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(pageNum as number);
+                      }}
+                      isActive={currentPage === pageNum}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  )}
                 </PaginationItem>
               ))}
 
