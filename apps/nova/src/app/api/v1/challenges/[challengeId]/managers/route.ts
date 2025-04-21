@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Check if user has permission to add managers
   const { data: userRole } = await sbAdmin
     .from('nova_roles')
     .select(
@@ -44,6 +43,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
+  if (
+    !userRole.allow_manage_all_challenges &&
+    !userRole.allow_role_management
+  ) {
+    const { count, error } = await sbAdmin
+      .from('nova_challenge_manager_emails')
+      .select('admin_email', { count: 'exact', head: true })
+      .eq('challenge_id', challengeId)
+      .eq('admin_email', user.email);
+
+    if (error || count === 0) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+  }
+
   try {
     const body = await request.json();
     const { adminEmail } = body;
@@ -55,7 +69,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify admin exists and can actually manage challenges
+    // Verify admin exists and can manage challenges
     const { data: adminData, error: adminError } = await sbAdmin
       .from('nova_roles')
       .select('email, enabled, allow_challenge_management')
@@ -135,7 +149,6 @@ export async function DELETE(request: NextRequest) {
   const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 
-  // Authentication checks (similar to your POST method)
   const {
     data: { user },
     error: authError,
@@ -145,7 +158,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Permission checks (similar to your POST method)
   const { data: userRole } = await sbAdmin
     .from('nova_roles')
     .select(
@@ -160,6 +172,21 @@ export async function DELETE(request: NextRequest) {
     !userRole?.allow_role_management
   ) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  if (
+    !userRole.allow_manage_all_challenges &&
+    !userRole.allow_role_management
+  ) {
+    const { count, error } = await sbAdmin
+      .from('nova_challenge_manager_emails')
+      .select('admin_email', { count: 'exact', head: true })
+      .eq('challenge_id', challengeId)
+      .eq('admin_email', user.email);
+
+    if (error || count === 0) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
   }
 
   try {
