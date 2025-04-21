@@ -5,7 +5,7 @@ import {
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  request: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ teamId: string }> }
 ) {
   const supabase = await createClient();
