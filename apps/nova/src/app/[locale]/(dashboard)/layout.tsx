@@ -15,6 +15,7 @@ import {
   Code,
   Home,
   List,
+  Mail,
   ShieldCheck,
   Trophy,
   Users,
@@ -86,6 +87,11 @@ export default async function RootLayout({
       name: t('leaderboard'),
       href: '/leaderboard',
       icon: <Trophy className="h-4 w-4" />,
+    },
+    {
+      name: t('invitations'),
+      href: '/invitation',
+      icon: <Mail className="h-4 w-4" />,
     },
     {
       name: t('teams'),

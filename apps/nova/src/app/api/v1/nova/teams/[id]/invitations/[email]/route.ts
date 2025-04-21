@@ -11,7 +11,7 @@ export async function DELETE(
     const { id, email } = await params;
     const decodedEmail = decodeURIComponent(email);
 
-    // Check if the team exists
+    // Check  if the team exists
     const { error: teamError } = await supabase
       .from('nova_teams')
       .select('*')

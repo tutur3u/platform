@@ -26,7 +26,6 @@ export const respondToInvitation = async ({
   teamId: string;
   action: 'accept' | 'decline';
 }) => {
-  console.log('team', teamId);
   const response = await fetch('/api/v1/teams/invites', {
     method: 'PATCH',
     headers: {

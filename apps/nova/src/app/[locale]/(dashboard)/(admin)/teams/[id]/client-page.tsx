@@ -31,6 +31,8 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import {
+  AlertCircle,
+  CheckCircle,
   Loader2,
   Mail,
   Trash,
@@ -65,8 +67,7 @@ export default function TeamDetailsClient({
 
   const [activeTab, setActiveTab] = useState('members');
   const [members, setMembers] = useState<PlatformUser[]>(initialMembers);
-  const [invitations, setInvitations] =
-    useState<PlatformUser[]>(initialInvitations);
+  const [invitations, setInvitations] = useState(initialInvitations);
   const [isInviteLoading, setIsInviteLoading] = useState(false);
 
   const emailFormSchema = z.object({
@@ -82,17 +83,18 @@ export default function TeamDetailsClient({
     },
   });
 
-  const removeMember = async (userId: string) => {
+  const removeMember = async (memberId: string, targetTeamId: string) => {
     try {
-      const res = await fetch(
-        `/api/v1/nova/teams/${teamId}/members/${userId}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const res = await fetch('/api/v1/teams/members', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ memberId, targetTeamId }),
+      });
 
       if (res.ok) {
-        setMembers(members.filter((member) => member.id !== userId));
+        setMembers(members.filter((member) => member.id !== memberId));
         toast.success(t('teams.member_removed'));
       } else {
         const data = await res.json();
@@ -114,22 +116,36 @@ export default function TeamDetailsClient({
         return;
       }
 
-      const res = await fetch(`/api/v1/nova/teams/${teamId}/invitations`, {
+      // Updated to match your backend route expectations
+      const res = await fetch('/api/v1/teams/invites', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
+          teamId: teamId,
           email: values.email,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
+
+        // Create a new invitation object to add to the state
+        const newInvitation = {
+          email: values.email,
+          team_id: teamId,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        };
+
         // Add the new invitation to the list
-        setInvitations([data.data, ...invitations]);
+        setInvitations([newInvitation, ...invitations]);
         emailForm.reset();
-        toast.success(t('teams.invitation_sent'));
+        toast.success(data.message || t('teams.invitation_sent'));
       } else {
-        const data = await res.json();
-        toast.error(data.error || t('teams.failed_to_invite'));
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.message || t('teams.failed_to_invite'));
       }
     } catch (error) {
       console.error(error);
@@ -142,7 +158,7 @@ export default function TeamDetailsClient({
   const removeInvitation = async (email: string) => {
     try {
       const res = await fetch(
-        `/api/v1/nova/teams/${teamId}/invitations/${encodeURIComponent(email)}`,
+        `/api/v1/teams/invites?teamId=${encodeURIComponent(teamId)}&email=${encodeURIComponent(email)}`,
         {
           method: 'DELETE',
         }
@@ -158,6 +174,50 @@ export default function TeamDetailsClient({
     } catch (error) {
       console.error(error);
       toast.error(t('teams.failed_to_remove_invitation'));
+    }
+  };
+
+  const renderStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-yellow-100 text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-400"
+          >
+            <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Pending
+          </Badge>
+        );
+      case 'accepted':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400"
+          >
+            <CheckCircle className="mr-1 h-3 w-3" /> Accepted
+          </Badge>
+        );
+      case 'declined':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400"
+          >
+            <AlertCircle className="mr-1 h-3 w-3" /> Declined
+          </Badge>
+        );
+      case 'expired':
+        return (
+          <Badge
+            variant="outline"
+            className="bg-gray-200 text-gray-800 dark:bg-gray-700/30 dark:text-gray-400"
+          >
+            <AlertCircle className="mr-1 h-3 w-3" /> Expired
+          </Badge>
+        );
+
+      default:
+        return null;
     }
   };
 
@@ -349,7 +409,7 @@ export default function TeamDetailsClient({
                                 {t('common.cancel')}
                               </AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => removeMember(member.id!)}
+                                onClick={() => removeMember(member.id!, teamId)}
                               >
                                 {t('common.remove')}
                               </AlertDialogAction>
@@ -396,6 +456,7 @@ export default function TeamDetailsClient({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {renderStatusBadge(invitation.status)}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button

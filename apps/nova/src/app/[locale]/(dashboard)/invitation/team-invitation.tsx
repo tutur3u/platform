@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Check, Inbox, Users, X } from '@tuturuuu/ui/icons';
+import { Check, Inbox, Shield, X } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
@@ -29,8 +29,6 @@ export const TeamInvitation = () => {
     queryKey: ['teamInvitations'],
     queryFn: fetchTeamInvitations,
   });
-
-  console.log('invitation:', invitations);
 
   // Mutation for responding invitations
   const { mutate, isPending } = useMutation({
@@ -71,7 +69,7 @@ export const TeamInvitation = () => {
         onSuccess: () => {
           toast({
             title: 'Rejected',
-            description: 'Rejected Succesfully',
+            description: 'Rejected Successfully',
           });
         },
       }
@@ -80,23 +78,25 @@ export const TeamInvitation = () => {
 
   if (error) {
     return (
-      <div className="p-4">
-        <Card className="border-red-200">
-          <CardContent className="pt-6">
-            <p className="text-red-500">error</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-red-200">
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center text-center">
+            <X className="mb-2 h-12 w-12 text-red-500" />
+            <h3 className="text-lg font-semibold">
+              Unable to Load Invitations
+            </h3>
+            <p className="text-muted-foreground">
+              There was a problem loading your team invitations. Please try
+              again later.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold">{t('teams.invitations')}</h1>
-        <p className="text-muted-foreground">Invitation Description hehe</p>
-      </div>
-
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -116,12 +116,12 @@ export const TeamInvitation = () => {
         </div>
       ) : invitations.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 pt-6">
-            <Inbox className="text-muted-foreground mb-4 h-12 w-12" />
-            <p className="text-xl font-semibold">{t('teams.no_invitations')}</p>
-            <p className="text-muted-foreground mt-2 max-w-md text-center">
-              {/* {t('teams.no_invitations_desc')} */}
-              No invitation
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Inbox className="text-muted-foreground mb-4 h-16 w-16" />
+            <h3 className="mb-2 text-xl font-semibold">No Team Invitations</h3>
+            <p className="text-muted-foreground max-w-md text-center">
+              You don't have any pending team invitations at this time. When
+              someone invites you to join their team, it will appear here.
             </p>
           </CardContent>
         </Card>
@@ -133,8 +133,8 @@ export const TeamInvitation = () => {
                 <div className="flex items-center justify-between">
                   <CardTitle>{invitation.nova_teams.name}</CardTitle>
                   <div className="text-muted-foreground flex items-center text-sm">
-                    <Users className="mr-1 h-4 w-4" />
-                    <span>mời bởi</span>
+                    <Shield className="mr-1 h-4 w-4" />
+                    <span>Join as team member</span>
                   </div>
                 </div>
                 <CardDescription>

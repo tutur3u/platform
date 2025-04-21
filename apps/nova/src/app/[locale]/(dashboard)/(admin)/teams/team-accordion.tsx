@@ -50,7 +50,8 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
   >({
     queryKey: ['team', teamId, 'invitations'],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/nova/teams/${teamId}/invitations`);
+      const res = await fetch(`/api/v1/teams/invites/${teamId}`);
+      ('api/v1/teams/invites/[teamId]/route.ts');
       if (!res.ok) throw new Error('Failed to fetch invitations');
       const data = await res.json();
       return data.data as Invitation[];
