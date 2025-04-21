@@ -102,8 +102,8 @@ export default function SessionCard({
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-              <Target className="h-4 w-4 text-primary" />
+            <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+              <Target className="text-primary h-4 w-4" />
             </div>
             <CardTitle>Session {sessionIndex + 1}</CardTitle>
             {isActive && (
@@ -116,11 +116,11 @@ export default function SessionCard({
             )}
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <div className="flex items-center text-muted-foreground">
+            <div className="text-muted-foreground flex items-center">
               <Calendar className="mr-1 h-3.5 w-3.5" />
               {timeAgo}
             </div>
-            <div className="flex items-center text-muted-foreground">
+            <div className="text-muted-foreground flex items-center">
               <Clock className="mr-1 h-3.5 w-3.5" />
               {hours > 0 ? `${hours}h ` : ''}
               {minutes}m
@@ -140,16 +140,16 @@ export default function SessionCard({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="flex flex-col rounded-lg border bg-card/50 p-4 transition-all hover:bg-card">
+          <div className="bg-card/50 hover:bg-card flex flex-col rounded-lg border p-4 transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-muted-foreground text-sm font-medium">
                 Total Score
               </span>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div>
-                      <Award className="h-4 w-4 text-primary" />
+                      <Award className="text-primary h-4 w-4" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -164,14 +164,14 @@ export default function SessionCard({
               <span className={`text-2xl font-bold ${scoreColorClass}`}>
                 {totalScore.toFixed(1)}
               </span>
-              <span className="ml-1 text-sm text-muted-foreground">
+              <span className="text-muted-foreground ml-1 text-sm">
                 /{maxPossibleScore}
               </span>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="text-muted-foreground mt-1 text-xs">
               {percentageScore.toFixed(0)}% completion
             </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="bg-muted mt-2 h-1.5 w-full overflow-hidden rounded-full">
               <div
                 className={`h-full rounded-full ${progressColorClass}`}
                 style={{ width: `${percentageScore}%` }}
@@ -179,24 +179,24 @@ export default function SessionCard({
             </div>
           </div>
 
-          <div className="flex flex-col rounded-lg border bg-card/50 p-4 transition-all hover:bg-card">
+          <div className="bg-card/50 hover:bg-card flex flex-col rounded-lg border p-4 transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-muted-foreground text-sm font-medium">
                 Problems Attempted
               </span>
-              <Zap className="h-4 w-4 text-primary" />
+              <Zap className="text-primary h-4 w-4" />
             </div>
             <div className="mt-2 flex items-baseline">
               <span className="text-2xl font-bold">{problemsAttempted}</span>
-              <span className="ml-1 text-sm text-muted-foreground">
+              <span className="text-muted-foreground ml-1 text-sm">
                 /{session.problems.length}
               </span>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="text-muted-foreground mt-1 text-xs">
               {((problemsAttempted / session.problems.length) * 100).toFixed(0)}
               % attempted
             </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="bg-muted mt-2 h-1.5 w-full overflow-hidden rounded-full">
               <div
                 className="h-full rounded-full bg-blue-500"
                 style={{
@@ -206,22 +206,22 @@ export default function SessionCard({
             </div>
           </div>
 
-          <div className="flex flex-col rounded-lg border bg-card/50 p-4 transition-all hover:bg-card">
+          <div className="bg-card/50 hover:bg-card flex flex-col rounded-lg border p-4 transition-all">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-muted-foreground text-sm font-medium">
                 Performance
               </span>
-              <AlertCircle className="h-4 w-4 text-primary" />
+              <AlertCircle className="text-primary h-4 w-4" />
             </div>
             <div className="mt-2 flex items-baseline">
               <span className="text-2xl font-bold">
                 {averageScore.toFixed(1)}
               </span>
-              <span className="ml-1 text-sm text-muted-foreground">
+              <span className="text-muted-foreground ml-1 text-sm">
                 /{MAX_SCORE_PER_PROBLEM} per problem
               </span>
             </div>
-            <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+            <div className="text-muted-foreground mt-1 flex justify-between text-xs">
               <span>
                 {totalSubmissions} submission{totalSubmissions !== 1 ? 's' : ''}
               </span>
@@ -230,7 +230,7 @@ export default function SessionCard({
                 per problem
               </span>
             </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="bg-muted mt-2 h-1.5 w-full overflow-hidden rounded-full">
               <div
                 className={`h-full rounded-full ${getProgressColor((averageScore / MAX_SCORE_PER_PROBLEM) * 100)}`}
                 style={{

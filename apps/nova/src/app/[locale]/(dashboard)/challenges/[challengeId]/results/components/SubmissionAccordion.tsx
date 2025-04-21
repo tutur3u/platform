@@ -61,10 +61,10 @@ export default function SubmissionAccordion({
           <AccordionItem
             key={subIndex}
             value={`submission-${sessionIndex}-${problemIndex}-${subIndex}`}
-            className="overflow-hidden rounded-lg border border-b px-0 data-[state=open]:bg-muted/30"
+            className="data-[state=open]:bg-muted/30 overflow-hidden rounded-lg border border-b px-0"
           >
             <AccordionTrigger
-              className="group gap-0 rounded-t-lg px-3 py-3 hover:bg-muted/50"
+              className="hover:bg-muted/50 group gap-0 rounded-t-lg px-3 py-3"
               showChevron={false}
             >
               <div className="flex w-full items-center justify-between">
@@ -90,7 +90,7 @@ export default function SubmissionAccordion({
                       {isBest && (
                         <Badge
                           variant="outline"
-                          className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-xs text-dynamic-yellow"
+                          className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow text-xs"
                         >
                           Best
                         </Badge>
@@ -99,27 +99,27 @@ export default function SubmissionAccordion({
                         subIndex !== submissions.length - 1 && (
                           <Badge
                             variant="outline"
-                            className="border-dynamic-green/20 bg-dynamic-green/10 text-xs text-dynamic-green"
+                            className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green text-xs"
                           >
                             <TrendingUp className="mr-1 h-3 w-3" />+
                             {scoreImprovement.toFixed(1)}
                           </Badge>
                         )}
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {timeAgo}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="hidden items-center text-xs text-muted-foreground md:flex">
+                  <div className="text-muted-foreground hidden items-center text-xs md:flex">
                     {submission.passed_tests}/{submission.total_tests} tests
                     passed
                     {testPassRatio >= 0.8 ? (
-                      <CheckCircle2 className="ml-1 h-3.5 w-3.5 text-dynamic-green" />
+                      <CheckCircle2 className="text-dynamic-green ml-1 h-3.5 w-3.5" />
                     ) : (
-                      <XCircle className="ml-1 h-3.5 w-3.5 text-dynamic-orange" />
+                      <XCircle className="text-dynamic-orange ml-1 h-3.5 w-3.5" />
                     )}
                   </div>
 
@@ -133,11 +133,11 @@ export default function SubmissionAccordion({
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="overflow-hidden px-0 pt-0 pb-0">
+            <AccordionContent className="overflow-hidden px-0 pb-0 pt-0">
               <Separator />
               <div className="p-4">
                 <div className="mb-4 flex items-center justify-between">
-                  <div className="flex items-center text-sm text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center text-sm">
                     <Clock className="mr-1.5 h-4 w-4" />
                     Submitted on {createdAt.toLocaleString()}
                   </div>
@@ -178,7 +178,7 @@ export default function SubmissionAccordion({
                         </Badge>
                       </div>
 
-                      <div className="space-y-1 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground space-y-1 text-sm">
                         <div className="flex items-center justify-between">
                           <span>Total Tests:</span>
                           <span className="font-medium">
@@ -227,11 +227,11 @@ export default function SubmissionAccordion({
                                 {criterion.result?.score.toFixed(1)}
                               </Badge>
                             </div>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               {criterion.description}
                             </p>
                             {criterion.result?.feedback && (
-                              <div className="rounded-sm bg-muted/50 p-2 text-xs">
+                              <div className="bg-muted/50 rounded-sm p-2 text-xs">
                                 {criterion.result.feedback}
                               </div>
                             )}
