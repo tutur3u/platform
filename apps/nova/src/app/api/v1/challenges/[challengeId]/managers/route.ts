@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       .from('nova_challenge_manager_emails')
       .insert({
         challenge_id: challengeId,
-        admin_email: adminEmail,
+        email: adminEmail,
       })
       .select()
       .single();
@@ -168,7 +168,7 @@ export async function DELETE(request: NextRequest) {
       .from('nova_challenge_manager_emails')
       .delete()
       .eq('challenge_id', challengeId)
-      .eq('admin_email', adminEmail);
+      .eq('email', adminEmail);
 
     if (error) {
       console.error('Error removing admin manager:', error);

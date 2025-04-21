@@ -2146,19 +2146,19 @@ export type Database = {
       };
       nova_challenge_manager_emails: {
         Row: {
-          admin_email: string;
           challenge_id: string;
           created_at: string;
+          email: string;
         };
         Insert: {
-          admin_email: string;
           challenge_id?: string;
           created_at?: string;
+          email: string;
         };
         Update: {
-          admin_email?: string;
           challenge_id?: string;
           created_at?: string;
+          email?: string;
         };
         Relationships: [
           {

@@ -101,7 +101,7 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
     const { data: managedChallenges, error: managerError } = await sbAdmin
       .from('nova_challenge_manager_emails')
       .select('challenge_id')
-      .eq('admin_email', user.email);
+      .eq('email', user.email);
 
     if (managerError) {
       console.error('Error fetching managed challenges:', managerError);
@@ -170,7 +170,7 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       managingAdmins:
         allManagers
           ?.filter((m) => m.challenge_id === challenge.id)
-          .map((m) => m.admin_email) || [],
+          .map((m) => m.email) || [],
     }));
   } catch (error) {
     console.error('Error fetching challenges:', error);

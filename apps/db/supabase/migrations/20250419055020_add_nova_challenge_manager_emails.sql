@@ -1,15 +1,14 @@
 create table "public"."nova_challenge_manager_emails" (
     "challenge_id" uuid not null default gen_random_uuid(),
-    "admin_email" text not null,
+    "email" text not null,
     "created_at" timestamp with time zone not null default now()
 );
-
 
 alter table "public"."nova_challenge_manager_emails" enable row level security;
 
 alter table "public"."nova_roles" add column "allow_manage_all_challenges" boolean not null default false;
 
-CREATE UNIQUE INDEX nova_challenge_manager_emails_pkey ON public.nova_challenge_manager_emails USING btree (challenge_id, admin_email);
+CREATE UNIQUE INDEX nova_challenge_manager_emails_pkey ON public.nova_challenge_manager_emails USING btree (challenge_id, email);
 
 alter table "public"."nova_challenge_manager_emails" add constraint "nova_challenge_manager_emails_pkey" PRIMARY KEY using index "nova_challenge_manager_emails_pkey";
 
@@ -58,4 +57,3 @@ grant trigger on table "public"."nova_challenge_manager_emails" to "service_role
 grant truncate on table "public"."nova_challenge_manager_emails" to "service_role";
 
 grant update on table "public"."nova_challenge_manager_emails" to "service_role";
-
