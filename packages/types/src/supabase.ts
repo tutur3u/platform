@@ -2144,6 +2144,32 @@ export type Database = {
           },
         ];
       };
+      nova_challenge_manager_emails: {
+        Row: {
+          challenge_id: string;
+          created_at: string;
+          email: string;
+        };
+        Insert: {
+          challenge_id?: string;
+          created_at?: string;
+          email: string;
+        };
+        Update: {
+          challenge_id?: string;
+          created_at?: string;
+          email?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_challenge_manager_emails_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_challenge_whitelisted_emails: {
         Row: {
           challenge_id: string;
@@ -2330,6 +2356,7 @@ export type Database = {
       nova_roles: {
         Row: {
           allow_challenge_management: boolean;
+          allow_manage_all_challenges: boolean;
           allow_role_management: boolean;
           created_at: string;
           email: string | null;
@@ -2338,6 +2365,7 @@ export type Database = {
         };
         Insert: {
           allow_challenge_management?: boolean;
+          allow_manage_all_challenges?: boolean;
           allow_role_management?: boolean;
           created_at?: string;
           email?: string | null;
@@ -2346,6 +2374,7 @@ export type Database = {
         };
         Update: {
           allow_challenge_management?: boolean;
+          allow_manage_all_challenges?: boolean;
           allow_role_management?: boolean;
           created_at?: string;
           email?: string | null;
@@ -6199,6 +6228,13 @@ export type Database = {
           amount: number;
         }[];
       };
+      get_team_rank: {
+        Args: { lookup_team_id: string };
+        Returns: {
+          rank: number;
+          total_score: number;
+        }[];
+      };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -6351,12 +6387,8 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
-      is_nova_user_email_in_team: {
-        Args: { _user_email: string; _team_id: string };
-        Returns: boolean;
-      };
-      is_nova_user_id_in_team: {
-        Args: { _user_id: string; _team_id: string };
+      is_nova_member_in_team: {
+        Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
       is_org_member: {

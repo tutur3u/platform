@@ -16,11 +16,13 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
   whitelists: NovaChallengeWhitelistedEmail[];
+  managingAdmins?: string[];
 };
 
 interface Props {
@@ -33,6 +35,8 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const queryClient = useQueryClient();
+
+  const t = useTranslations('nova.challenge');
 
   // Convert string dates to Date objects for the form
   const formattedDefaultValues = useMemo(() => {
@@ -51,6 +55,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       enabled: challenge.enabled,
       whitelistedOnly: challenge.whitelisted_only,
       whitelistedEmails: challenge.whitelists.map((w) => w.email),
+      managingAdmins: challenge.managingAdmins || [],
       openAt: challenge.open_at ? new Date(challenge.open_at) : null,
       closeAt: challenge.close_at ? new Date(challenge.close_at) : null,
       previewableAt: challenge.previewable_at
@@ -154,6 +159,38 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
         ),
       ]);
 
+      // Handle managing admins
+      const adminsToAdd = values.managingAdmins.filter(
+        (email) => !(challenge.managingAdmins || []).includes(email)
+      );
+
+      const adminsToRemove = (challenge.managingAdmins || []).filter(
+        (email) => !values.managingAdmins.includes(email)
+      );
+
+      // Process admin changes
+      await Promise.allSettled([
+        // Add new admin managers
+        ...adminsToAdd.map((adminEmail) =>
+          fetch(`/api/v1/challenges/${challenge.id}/managers`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ adminEmail }),
+          })
+        ),
+        // Remove admin managers that were deselected
+        ...adminsToRemove.map((adminEmail) =>
+          fetch(
+            `/api/v1/challenges/${challenge.id}/managers?adminEmail=${encodeURIComponent(adminEmail)}`,
+            {
+              method: 'DELETE',
+            }
+          )
+        ),
+      ]);
+
       // Invalidate challenges query to trigger a refetch
       queryClient.invalidateQueries({ queryKey: ['challenges'] });
 
@@ -175,10 +212,8 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Challenge</DialogTitle>
-          <DialogDescription>
-            Make changes to the challenge details.
-          </DialogDescription>
+          <DialogTitle> {t('edit')}</DialogTitle>
+          <DialogDescription>{t('edit-description')}</DialogDescription>
         </DialogHeader>
         <ChallengeForm
           challengeId={challenge.id}

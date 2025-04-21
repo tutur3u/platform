@@ -53,11 +53,11 @@ jobs:
         run: pnpm format:check || echo "format_failed=true" >> $GITHUB_OUTPUT
 
       - name: Apply Prettier fixes
-        if: steps.check-format.outputs.format_failed == 'true' && github.event_name != 'pull_request'
+        if: steps.check-format.outputs.format_failed == 'true'
         run: pnpm format
 
       - name: Check for changes
-        if: steps.check-format.outputs.format_failed == 'true' && github.event_name != 'pull_request'
+        if: steps.check-format.outputs.format_failed == 'true'
         id: git-check
         run: |
           if [[ -n $(git status --porcelain) ]]; then
@@ -67,13 +67,13 @@ jobs:
           fi
 
       - name: Configure Git
-        if: steps.git-check.outputs.changes == 'true' && github.event_name != 'pull_request'
+        if: steps.git-check.outputs.changes == 'true'
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
       - name: Create Pull Request
-        if: steps.git-check.outputs.changes == 'true' && github.event_name != 'pull_request'
+        if: steps.git-check.outputs.changes == 'true'
         id: create-pr
         uses: peter-evans/create-pull-request@v6
         with:
@@ -89,7 +89,7 @@ jobs:
           delete-branch: true
 
       - name: Fail Workflow After Creating PR
-        if: steps.create-pr.outputs.pull-request-number != '' && github.event_name != 'pull_request'
+        if: steps.create-pr.outputs.pull-request-number != ''
         run: |
           echo "Prettier formatting issues were found and a PR has been created."
           echo "PR: ${{ steps.create-pr.outputs.pull-request-url }}"
