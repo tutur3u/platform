@@ -201,10 +201,13 @@ export function TeamProfile({ teamData }: { teamData: TeamData | null }) {
                   <Users className="mr-1 h-3.5 w-3.5 text-blue-500" />
                   {teamStats.totalMembers} Members
                 </Badge>
-                <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white">
-                  <Trophy className="mr-1 h-3.5 w-3.5" />
-                  Top 15%
-                </Badge>
+                +
+                {teamData.rank && (
+                  <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white">
+                    <Trophy className="mr-1 h-3.5 w-3.5" />
+                    {teamData.rank <= 20 ? 'Top 15%' : `Rank #${teamData.rank}`}
+                  </Badge>
+                )}
               </div>
 
               {/* Display description if available */}
