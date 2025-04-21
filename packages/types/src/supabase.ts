@@ -6476,6 +6476,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      is_nova_role_manager: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
       is_nova_user_email_in_team: {
         Args: { _user_email: string; _team_id: string };
         Returns: boolean;
