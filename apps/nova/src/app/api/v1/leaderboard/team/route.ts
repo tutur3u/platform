@@ -38,8 +38,8 @@ export async function GET(req: NextRequest) {
 
   // 2. Get all scores in one go
   const { data: scoreData, error: scoreError } = await sbAdmin
-    .from('nova_submissions')
-    .select('user_id, score');
+    .from('nova_submissions_with_scores')
+    .select('user_id, total_score');
 
   if (scoreError) {
     return NextResponse.json({ error: scoreError.message }, { status: 500 });
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
 
     const score = scoreData
       .filter((s) => s.user_id === member.user_id)
-      .reduce((sum, s) => sum + (s.score ?? 0), 0);
+      .reduce((sum, s) => sum + (s.total_score ?? 0), 0);
 
     if (!teamsMap.has(teamId)) {
       teamsMap.set(teamId, {

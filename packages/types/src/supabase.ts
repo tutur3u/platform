@@ -2247,59 +2247,29 @@ export type Database = {
         };
         Relationships: [];
       };
-      nova_problem_criteria_scores: {
-        Row: {
-          created_at: string;
-          criteria_id: string;
-          problem_id: string;
-          score: number;
-        };
-        Insert: {
-          created_at?: string;
-          criteria_id: string;
-          problem_id: string;
-          score: number;
-        };
-        Update: {
-          created_at?: string;
-          criteria_id?: string;
-          problem_id?: string;
-          score?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_problem_criteria_scores_criteria_id_fkey';
-            columns: ['criteria_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_challenge_criteria';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_problem_criteria_scores_problem_id_fkey';
-            columns: ['problem_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_problems';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       nova_problem_test_cases: {
         Row: {
           created_at: string;
+          hidden: boolean;
           id: string;
           input: string;
+          output: string;
           problem_id: string;
         };
         Insert: {
           created_at?: string;
+          hidden?: boolean;
           id?: string;
           input: string;
+          output: string;
           problem_id: string;
         };
         Update: {
           created_at?: string;
+          hidden?: boolean;
           id?: string;
           input?: string;
+          output?: string;
           problem_id?: string;
         };
         Relationships: [
@@ -2391,7 +2361,6 @@ export type Database = {
           id: string;
           start_time: string;
           status: string;
-          total_score: number;
           user_id: string;
         };
         Insert: {
@@ -2401,7 +2370,6 @@ export type Database = {
           id?: string;
           start_time: string;
           status: string;
-          total_score: number;
           user_id: string;
         };
         Update: {
@@ -2411,7 +2379,6 @@ export type Database = {
           id?: string;
           start_time?: string;
           status?: string;
-          total_score?: number;
           user_id?: string;
         };
         Relationships: [
@@ -2431,31 +2398,94 @@ export type Database = {
           },
         ];
       };
-      nova_submission_outputs: {
+      nova_submission_criteria: {
         Row: {
           created_at: string;
-          id: number;
-          output: string;
-          submission_id: number;
+          criteria_id: string;
+          feedback: string;
+          score: number;
+          submission_id: string;
         };
         Insert: {
           created_at?: string;
-          id?: number;
-          output: string;
-          submission_id: number;
+          criteria_id: string;
+          feedback: string;
+          score: number;
+          submission_id: string;
         };
         Update: {
           created_at?: string;
-          id?: number;
-          output?: string;
-          submission_id?: number;
+          criteria_id?: string;
+          feedback?: string;
+          score?: number;
+          submission_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'nova_submission_outputs_submission_id_fkey';
+            foreignKeyName: 'nova_submission_criteria_criteria_id_fkey';
+            columns: ['criteria_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenge_criteria';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_submission_criteria_submission_id_fkey';
             columns: ['submission_id'];
             isOneToOne: false;
             referencedRelation: 'nova_submissions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_submission_criteria_submission_id_fkey';
+            columns: ['submission_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_submissions_with_scores';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_submission_test_cases: {
+        Row: {
+          created_at: string;
+          matched: boolean;
+          output: string;
+          submission_id: string;
+          test_case_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          matched?: boolean;
+          output: string;
+          submission_id: string;
+          test_case_id: string;
+        };
+        Update: {
+          created_at?: string;
+          matched?: boolean;
+          output?: string;
+          submission_id?: string;
+          test_case_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_submission_test_cases_submission_id_fkey';
+            columns: ['submission_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_submissions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_submission_test_cases_submission_id_fkey';
+            columns: ['submission_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_submissions_with_scores';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_submission_test_cases_test_case_id_fkey';
+            columns: ['test_case_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_problem_test_cases';
             referencedColumns: ['id'];
           },
         ];
@@ -2463,31 +2493,25 @@ export type Database = {
       nova_submissions: {
         Row: {
           created_at: string;
-          feedback: string;
-          id: number;
+          id: string;
           problem_id: string;
           prompt: string;
-          score: number;
           session_id: string | null;
           user_id: string;
         };
         Insert: {
           created_at?: string;
-          feedback: string;
-          id?: number;
+          id?: string;
           problem_id: string;
           prompt: string;
-          score: number;
           session_id?: string | null;
           user_id: string;
         };
         Update: {
           created_at?: string;
-          feedback?: string;
-          id?: number;
+          id?: string;
           problem_id?: string;
           prompt?: string;
-          score?: number;
           session_id?: string | null;
           user_id?: string;
         };
@@ -5838,6 +5862,46 @@ export type Database = {
           user_id: string | null;
         };
         Relationships: [];
+      };
+      nova_submissions_with_scores: {
+        Row: {
+          created_at: string | null;
+          criteria_score: number | null;
+          id: string | null;
+          passed_tests: number | null;
+          problem_id: string | null;
+          prompt: string | null;
+          session_id: string | null;
+          sum_criterion_score: number | null;
+          test_case_score: number | null;
+          total_criteria: number | null;
+          total_score: number | null;
+          total_tests: number | null;
+          user_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_submissions_problem_id_fkey';
+            columns: ['problem_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_problems';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_submissions_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'nova_submissions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       user_groups_with_tags: {
         Row: {
