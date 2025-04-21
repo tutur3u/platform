@@ -51,10 +51,9 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       userRole?.allow_manage_all_challenges ||
       false;
 
-    const isSuperAdmin =
-      userRole?.allow_role_management ||
-      userRole?.allow_manage_all_challenges ||
-      false;
+    const isSuperAdmin = +!!(
+      userRole?.allow_role_management && userRole?.allow_manage_all_challenges
+    );
 
     // Fetch all challenges
     const { data: challenges, error: challengesError } = await sbAdmin
