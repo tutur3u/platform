@@ -91,7 +91,8 @@ export async function POST(request: Request) {
       .from('nova_submissions')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .eq('problem_id', validatedData.problemId);
+      .eq('problem_id', validatedData.problemId)
+      .eq('session_id', validatedData.sessionId);
 
     if (countError) {
       console.error('Database Error when counting submissions: ', countError);
