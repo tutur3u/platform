@@ -934,26 +934,29 @@ export const CalendarProvider = ({
         try {
           // Check for content-based duplicates (same title, description, dates)
           // even if google_event_id is different
-          const potentialDuplicates = localEvents.filter((localEvent: any) => {
-            return (
-              localEvent.title === event.title &&
-              localEvent.description === (event.description || '') &&
-              localEvent.start_at === event.start_at &&
-              localEvent.end_at === event.end_at
-            );
-          });
+          const potentialDuplicates = events.filter(
+            (localEvent: CalendarEvent) => {
+              return (
+                localEvent.title === gEvent.title &&
+                localEvent.description === (gEvent.description || '') &&
+                localEvent.start_at === gEvent.start_at &&
+                localEvent.end_at === gEvent.end_at
+              );
+            }
+          );
 
           // If we found a duplicate by content, update it with the Google Event ID
           // instead of creating a new event
           if (potentialDuplicates.length > 0) {
             console.log(
-              `Found content duplicate for Google event "${event.title}"`
+              `Found content duplicate for Google event "${gEvent.title}"`
             );
 
             // Update the first duplicate with the Google Event ID
+            const supabase = createClient();
             const { error: updateError } = await supabase
               .from('workspace_calendar_events')
-              .update({ google_event_id: event.google_event_id })
+              .update({ google_event_id: gEvent.google_event_id })
               .eq('id', potentialDuplicates[0].id);
 
             if (updateError) {
@@ -970,19 +973,20 @@ export const CalendarProvider = ({
           }
 
           // No duplicate found, proceed with normal insertion
+          const supabase = createClient();
           const { error } = await supabase
             .from('workspace_calendar_events')
             .insert({
-              title: event.title,
-              description: event.description || '',
-              start_at: event.start_at,
-              end_at: event.end_at,
-              color: event.color || 'BLUE',
-              location: event.location || '',
+              title: gEvent.title,
+              description: gEvent.description || '',
+              start_at: gEvent.start_at,
+              end_at: gEvent.end_at,
+              color: gEvent.color || 'BLUE',
+              location: gEvent.location || '',
               ws_id: ws?.id ?? '',
-              google_event_id: event.google_event_id,
-              locked: event.locked || false,
-              priority: event.priority || 'medium',
+              google_event_id: gEvent.google_event_id,
+              locked: gEvent.locked || false,
+              priority: gEvent.priority || 'medium',
             });
 
           if (error) throw error;
