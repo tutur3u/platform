@@ -845,64 +845,92 @@ export const CalendarProvider = ({
 
   // Automatically fetch Google Calendar events
   const fetchGoogleCalendarEvents = async () => {
-    if (!ws?.id || !enableExperimentalGoogleCalendar) return { events: [] };
-
     const response = await fetch('/api/v1/calendar/auth/fetch');
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        errorData.error || 'Failed to fetch Google Calendar events'
-      );
+      throw new Error('Failed to fetch Google Calendar events');
     }
     return await response.json();
   };
 
-  // Auto query Google Calendar events
+  // Query to fetch Google Calendar events every 30 seconds
   const { data: googleData } = useQuery({
     queryKey: ['googleCalendarEvents', ws?.id],
     queryFn: fetchGoogleCalendarEvents,
     enabled: !!ws?.id && enableExperimentalGoogleCalendar,
-    refetchInterval: 30000,
-    staleTime: 1000 * 60,
+    refetchInterval: 30000, // Fetch every 30 seconds
+    staleTime: 1000 * 60, // Data is considered fresh for 1 minute
   });
-
   const googleEvents = useMemo(() => googleData?.events || [], [googleData]);
 
-  // getting local events from Supabase
-  const fetchLocalEvents = async () => {
-    if (!ws?.id) return [];
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('workspace_calendar_events')
-      .select('*')
-      .eq('ws_id', ws.id);
-    if (error) throw error;
-    return data;
-  };
-
-  const { data: localData } = useQuery({
-    queryKey: ['localCalendarEvents', ws?.id],
-    queryFn: fetchLocalEvents,
-    enabled: !!ws?.id,
-  });
-
-  const localEvents = useMemo(() => localData || [], [localData]);
-
-  // function to sync new events
-  const syncNewEvents = useCallback(async () => {
+  // Function to synchronize local events with Google Calendar
+  const syncEvents = useCallback(async () => {
     if (!googleEvents.length || !enableExperimentalGoogleCalendar) return;
 
-    // find new events that are not in local events
-    const newEvents = googleEvents.filter(
-      (gEvent: any) =>
-        !localEvents.some(
-          (lEvent: any) => lEvent.google_event_id === gEvent.google_event_id
-        )
+    // Get local events that are synced with Google Calendar
+    const localGoogleEvents: CalendarEvent[] = events.filter(
+      (e: CalendarEvent) => e.google_event_id
     );
 
-    if (newEvents.length > 0) {
-      const supabase = createClient();
-      for (const event of newEvents) {
+    // Create a set of google_event_id from Google Calendar events for quick lookup
+    const googleEventIds: Set<string | undefined> = new Set(
+      googleEvents.map((e: { google_event_id?: string }) => e.google_event_id)
+    );
+
+    // Identify events to delete: local events not present in Google Calendar
+    const eventsToDelete = localGoogleEvents.filter(
+      (e) => !googleEventIds.has(e.google_event_id)
+    );
+
+    // Delete events that no longer exist on Google Calendar
+    for (const event of eventsToDelete) {
+      try {
+        const supabase = createClient();
+        await supabase
+          .from('workspace_calendar_events')
+          .delete()
+          .eq('id', event.id);
+      } catch (err) {
+        console.error('Failed to delete event:', err);
+      }
+    }
+
+    // Update or add events from Google Calendar
+    for (const gEvent of googleEvents) {
+      const localEvent: CalendarEvent | undefined = localGoogleEvents.find(
+        (e: CalendarEvent) => e.google_event_id === gEvent.google_event_id
+      );
+      if (localEvent) {
+        // Check if there are any changes in the event details
+        const hasChanges =
+          localEvent.title !== gEvent.title ||
+          localEvent.description !== gEvent.description ||
+          localEvent.start_at !== gEvent.start_at ||
+          localEvent.end_at !== gEvent.end_at ||
+          localEvent.color !== gEvent.color ||
+          localEvent.location !== gEvent.location ||
+          localEvent.priority !== gEvent.priority;
+
+        if (hasChanges) {
+          try {
+            const supabase = createClient();
+            await supabase
+              .from('workspace_calendar_events')
+              .update({
+                title: gEvent.title,
+                description: gEvent.description || '',
+                start_at: gEvent.start_at,
+                end_at: gEvent.end_at,
+                color: gEvent.color || 'BLUE',
+                location: gEvent.location || '',
+                priority: gEvent.priority || 'medium',
+              })
+              .eq('id', localEvent.id);
+          } catch (err) {
+            console.error('Failed to update event:', err);
+          }
+        }
+      } else {
+        // Add new event from Google Calendar
         try {
           // Check for content-based duplicates (same title, description, dates)
           // even if google_event_id is different
@@ -959,25 +987,31 @@ export const CalendarProvider = ({
 
           if (error) throw error;
         } catch (err) {
-          console.error('Failed to sync event:', err);
+          console.error('Failed to insert event:', err);
         }
       }
-      // update local events in cache
-      queryClient.invalidateQueries(['localCalendarEvents', ws?.id]);
     }
+
+    // Refresh local events by invalidating the query
+    queryClient.invalidateQueries(['calendarEvents', ws?.id]);
   }, [
     googleEvents,
-    localEvents,
+    events,
     ws?.id,
     queryClient,
     enableExperimentalGoogleCalendar,
   ]);
 
-  // run syncNewEvents when googleEvents change
+  // Set up an interval to sync events every 30 seconds
   useEffect(() => {
-    syncNewEvents();
-  }, [googleEvents, syncNewEvents]);
+    if (!enableExperimentalGoogleCalendar || !ws?.id) return;
 
+    const interval = setInterval(() => {
+      syncEvents();
+    }, 30000); // Sync every 30 seconds
+
+    return () => clearInterval(interval); // Clean up interval on unmount
+  }, [enableExperimentalGoogleCalendar, ws?.id, syncEvents]);
   // Google Calendar sync moved to API Route
   const syncWithGoogleCalendar = useCallback(
     async (event: CalendarEvent) => {
