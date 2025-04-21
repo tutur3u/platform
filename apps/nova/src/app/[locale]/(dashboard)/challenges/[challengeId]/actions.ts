@@ -1,9 +1,11 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
-import { NovaSubmission } from '@tuturuuu/types/db';
-import { NovaSubmissionCriteria } from '@tuturuuu/types/db';
+import {
+  NovaChallengeCriteria,
+  NovaSubmission,
+  NovaSubmissionCriteria,
+} from '@tuturuuu/types/db';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 
 export type ExtendedNovaSubmission = NovaSubmission & {
@@ -21,14 +23,14 @@ export type ExtendedNovaSubmission = NovaSubmission & {
 
 export async function fetchSubmissions(
   problemId: string,
-  sessionId: string
+  sessionId?: string
 ): Promise<ExtendedNovaSubmission[]> {
   const sbAdmin = await createAdminClient();
   const user = await getCurrentSupabaseUser();
 
   if (!user) return [];
 
-  const { data: submissions, error } = await sbAdmin
+  const queryBuilder = sbAdmin
     .from('nova_submissions_with_scores')
     .select(
       `
@@ -39,9 +41,16 @@ export async function fetchSubmissions(
       )
     `
     )
-    .eq('problem_id', problemId)
-    .eq('session_id', sessionId)
-    .eq('user_id', user.id);
+    .eq('problem_id', problemId);
+
+  if (sessionId) {
+    queryBuilder.eq('session_id', sessionId);
+  }
+
+  const { data: submissions, error } = await queryBuilder.eq(
+    'user_id',
+    user.id
+  );
 
   if (error) {
     console.error('Error fetching submissions:', error);
