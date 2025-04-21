@@ -22,6 +22,7 @@ import { useMemo, useState } from 'react';
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
   whitelists: NovaChallengeWhitelistedEmail[];
+  managingAdmins?: string[];
 };
 
 interface Props {
@@ -54,6 +55,7 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
       enabled: challenge.enabled,
       whitelistedOnly: challenge.whitelisted_only,
       whitelistedEmails: challenge.whitelists.map((w) => w.email),
+      managingAdmins: challenge.managingAdmins || [],
       openAt: challenge.open_at ? new Date(challenge.open_at) : null,
       closeAt: challenge.close_at ? new Date(challenge.close_at) : null,
       previewableAt: challenge.previewable_at
@@ -150,6 +152,38 @@ export default function EditChallengeDialog({ challenge, trigger }: Props) {
         ...emailsToDelete.map((email) =>
           fetch(
             `/api/v1/challenges/${challenge.id}/whitelists?email=${email}`,
+            {
+              method: 'DELETE',
+            }
+          )
+        ),
+      ]);
+
+      // Handle managing admins
+      const adminsToAdd = values.managingAdmins.filter(
+        (email) => !(challenge.managingAdmins || []).includes(email)
+      );
+
+      const adminsToRemove = (challenge.managingAdmins || []).filter(
+        (email) => !values.managingAdmins.includes(email)
+      );
+
+      // Process admin changes
+      await Promise.allSettled([
+        // Add new admin managers
+        ...adminsToAdd.map((adminEmail) =>
+          fetch(`/api/v1/challenges/${challenge.id}/managers`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ adminEmail }),
+          })
+        ),
+        // Remove admin managers that were deselected
+        ...adminsToRemove.map((adminEmail) =>
+          fetch(
+            `/api/v1/challenges/${challenge.id}/managers?adminEmail=${encodeURIComponent(adminEmail)}`,
             {
               method: 'DELETE',
             }
