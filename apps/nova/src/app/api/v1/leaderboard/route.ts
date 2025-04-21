@@ -94,10 +94,11 @@ export async function GET(req: NextRequest) {
     const userSubmissions = submissionsData.filter(
       (s) => s.user_id === user.user_id
     );
-    const total_score = userSubmissions.reduce(
-      (sum, s) => sum + (s.total_score || 0),
-      0
-    );
+
+    const total_score =
+      userSubmissions.length > 0
+        ? Math.max(...userSubmissions.map((s) => s.total_score || 0))
+        : 0;
 
     // Calculate scores per challenge
     const challenge_scores: Record<string, number> = {};

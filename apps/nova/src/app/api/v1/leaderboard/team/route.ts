@@ -62,9 +62,13 @@ export async function GET(req: NextRequest) {
     const displayName = member.users.display_name;
     const avatarUrl = member.users.avatar_url;
 
-    const score = scoreData
-      .filter((s) => s.user_id === member.user_id)
-      .reduce((sum, s) => sum + (s.total_score ?? 0), 0);
+    const userSubmissions = scoreData.filter(
+      (s) => s.user_id === member.user_id
+    );
+    const score =
+      userSubmissions.length > 0
+        ? Math.max(...userSubmissions.map((s) => s.total_score ?? 0))
+        : 0;
 
     if (!teamsMap.has(teamId)) {
       teamsMap.set(teamId, {
