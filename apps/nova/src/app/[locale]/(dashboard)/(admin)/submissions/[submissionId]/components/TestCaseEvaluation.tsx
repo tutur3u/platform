@@ -32,7 +32,7 @@ export default function TestCaseEvaluation({
       <div className="mb-4 flex items-center justify-between">
         <div className="space-y-1">
           <h3 className="font-medium">Test Case Results</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {submission.passed_tests} of {submission.total_tests} test cases
             passed
           </p>
@@ -91,7 +91,7 @@ export default function TestCaseEvaluation({
                       Passed
                     </div>
                   ) : (
-                    <div className="flex items-center text-destructive">
+                    <div className="text-destructive flex items-center">
                       <XCircle className="mr-1 h-4 w-4" />
                       Failed
                     </div>

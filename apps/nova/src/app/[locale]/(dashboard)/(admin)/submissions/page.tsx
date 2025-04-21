@@ -22,7 +22,7 @@ export default async function Page({
     <div className="container mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">{t('submissions')}</h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="text-muted-foreground mt-2">
           Manage and review user submissions
         </p>
       </div>

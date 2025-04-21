@@ -30,26 +30,26 @@ export function SubmissionOverview({ stats }: SubmissionStatsProps) {
           <CardTitle className="text-sm font-medium">
             Total Submissions
           </CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <Users className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             {stats.totalCount.toLocaleString()}
           </div>
-          <p className="text-xs text-muted-foreground">All time submissions</p>
+          <p className="text-muted-foreground text-xs">All time submissions</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Unique Users</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <Users className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
             {stats.uniqueUsersCount.toLocaleString()}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Users who have submitted
           </p>
         </CardContent>
@@ -60,13 +60,13 @@ export function SubmissionOverview({ stats }: SubmissionStatsProps) {
           <CardTitle className="text-sm font-medium">
             Latest Submission
           </CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <Clock className="text-muted-foreground h-4 w-4" />
         </CardHeader>
         <CardContent>
           <div className="text-md font-bold">
             {formatDate(stats.latestSubmissionDate)}
           </div>
-          <p className="text-xs text-muted-foreground">Most recent activity</p>
+          <p className="text-muted-foreground text-xs">Most recent activity</p>
         </CardContent>
       </Card>
     </div>
