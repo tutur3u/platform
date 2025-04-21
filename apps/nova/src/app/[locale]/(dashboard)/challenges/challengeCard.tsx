@@ -66,9 +66,14 @@ type ExtendedNovaChallenge = NovaChallenge & {
 interface Props {
   isAdmin: boolean;
   challenge: ExtendedNovaChallenge;
+  canManage: boolean;
 }
 
-export default function ChallengeCard({ isAdmin, challenge }: Props) {
+export default function ChallengeCard({
+  isAdmin,
+  challenge,
+  canManage,
+}: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -481,7 +486,7 @@ export default function ChallengeCard({ isAdmin, challenge }: Props) {
             <CardTitle>{challenge.title}</CardTitle>
             {renderStatusBadge()}
           </div>
-          {isAdmin && (
+          {canManage && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
