@@ -49,10 +49,11 @@ export default function ResultClient({ data }: Props) {
     const totalProblems = data.sessions[0]?.problems.length || 0;
     const maxPossibleScore = totalProblems * MAX_SCORE_PER_PROBLEM;
 
-    let totalScore = 0;
+    let maxTotalScore = 0;
     const problemsAttempted = new Set();
 
     data.sessions.forEach((session) => {
+      let totalScore = 0;
       session.problems.forEach((problem, index) => {
         if (problem.submissions.length > 0) {
           problemsAttempted.add(index);
@@ -62,12 +63,13 @@ export default function ResultClient({ data }: Props) {
           totalScore += bestScore;
         }
       });
+      maxTotalScore = Math.max(maxTotalScore, totalScore);
     });
 
     return {
-      score: totalScore,
+      score: maxTotalScore,
       maxScore: maxPossibleScore,
-      percentage: (totalScore / maxPossibleScore) * 100,
+      percentage: (maxTotalScore / maxPossibleScore) * 100,
       problemsAttempted: problemsAttempted.size,
       totalProblems,
     };
