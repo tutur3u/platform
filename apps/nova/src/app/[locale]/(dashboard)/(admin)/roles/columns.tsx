@@ -204,6 +204,9 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
         const allowChallengeManagement = row.getValue(
           'allow_challenge_management'
         ) as boolean;
+        const allowManageAllChallenges = row.getValue(
+          'allow_manage_all_challenges'
+        ) as boolean;
         const allowRoleManagement = row.getValue(
           'allow_role_management'
         ) as boolean;
@@ -217,13 +220,13 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
           <div className="flex items-center gap-2">
             <Switch
               id="allow_manage_all_challenges"
-              checked={allowChallengeManagement}
+              checked={allowManageAllChallenges}
               onCheckedChange={(checked) =>
                 toggleMutation.mutate({
                   email,
                   enabled,
-                  allow_manage_all_challenges: checked,
                   allow_challenge_management: allowChallengeManagement,
+                  allow_manage_all_challenges: checked,
                   allow_role_management: allowRoleManagement,
                 })
               }
