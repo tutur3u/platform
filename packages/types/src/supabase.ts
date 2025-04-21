@@ -6228,13 +6228,6 @@ export type Database = {
           amount: number;
         }[];
       };
-      get_team_rank: {
-        Args: { lookup_team_id: string };
-        Returns: {
-          rank: number;
-          total_score: number;
-        }[];
-      };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -6387,8 +6380,12 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
-      is_nova_member_in_team: {
-        Args: Record<PropertyKey, never>;
+      is_nova_user_email_in_team: {
+        Args: { _user_email: string; _team_id: string };
+        Returns: boolean;
+      };
+      is_nova_user_id_in_team: {
+        Args: { _user_id: string; _team_id: string };
         Returns: boolean;
       };
       is_org_member: {

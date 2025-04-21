@@ -51,9 +51,8 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       userRole?.allow_manage_all_challenges ||
       false;
 
-    const isSuperAdmin = +!!(
-      userRole?.allow_role_management && userRole?.allow_manage_all_challenges
-    );
+    const isSuperAdmin =
+      userRole?.allow_role_management && userRole?.allow_manage_all_challenges;
 
     // Fetch all challenges
     const { data: challenges, error: challengesError } = await sbAdmin
@@ -167,7 +166,7 @@ export async function fetchChallenges(): Promise<ExtendedNovaChallenge[]> {
       whitelists: isAdmin
         ? allWhitelists?.filter((w) => w.challenge_id === challenge.id) || []
         : [],
-      canManage: isSuperAdmin || managedChallengeIds.has(challenge.id),
+      canManage: isSuperAdmin || managedChallengeIds.has(challenge.id) || false,
       managingAdmins:
         allManagers
           ?.filter((m) => m.challenge_id === challenge.id)
