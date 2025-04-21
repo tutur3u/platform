@@ -2501,7 +2501,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
-          id: string;
+          id?: string;
           problem_id: string;
           prompt: string;
           session_id?: string | null;

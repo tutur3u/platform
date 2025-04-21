@@ -299,3 +299,5 @@ SELECT
 FROM nova_submissions s
 LEFT JOIN test_case_stats tc ON s.id = tc.submission_id
 LEFT JOIN criteria_stats cr ON s.id = cr.submission_id;
+
+alter table "public"."nova_submissions" alter column "id" set default gen_random_uuid();

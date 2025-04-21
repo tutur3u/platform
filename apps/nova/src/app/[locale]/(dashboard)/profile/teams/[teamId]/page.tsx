@@ -89,8 +89,8 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
 
     // Now fetch scores for all teams to calculate ranks dynamically
     const { data: scoreData, error: scoreError } = await sbAdmin
-      .from('nova_submissions')
-      .select('user_id, score, created_at');
+      .from('nova_submissions_with_scores')
+      .select('user_id, score:total_score, created_at');
 
     if (scoreError) {
       console.error('Error fetching scores:', scoreError.message);
@@ -124,6 +124,9 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
     const userScores = new Map<string, number>();
     scoreData.forEach((score) => {
       const userId = score.user_id;
+      if (!userId) {
+        return;
+      }
       const currentScore = userScores.get(userId) || 0;
       userScores.set(userId, currentScore + (score.score || 0));
     });
@@ -230,8 +233,9 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
     const recentScores = scoreData
       .filter(
         (score) =>
+          score.created_at &&
           score.created_at > oneWeekAgoISOString &&
-          teamMembersMap.get(actualTeamId ?? '')?.includes(score.user_id)
+          teamMembersMap.get(actualTeamId ?? '')?.includes(score.user_id ?? '')
       )
       .reduce((sum, score) => sum + (score.score || 0), 0);
 
