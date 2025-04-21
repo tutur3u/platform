@@ -1338,9 +1338,9 @@ values
     ('local@tuturuuu.com', true);
 
 insert into
-    public.nova_roles (email, enabled, allow_challenge_management, allow_role_management)
+    public.nova_roles (email, enabled, allow_challenge_management, allow_role_management, allow_manage_all_challenges)
 values
-    ('local@tuturuuu.com', true, true, true);
+    ('local@tuturuuu.com', true, true, true, true);
 
 -- Populate nova_challenges
 insert into
