@@ -173,6 +173,7 @@ export default function ChallengesList({ isAdmin }: Props) {
               isAdmin={isAdmin}
               key={challenge.id}
               challenge={challenge}
+              canManage={challenge.canManage}
             />
           ))}
         </div>
